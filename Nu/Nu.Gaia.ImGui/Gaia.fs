@@ -42,7 +42,10 @@ module Gaia =
     let mutable private assetPickerSearchStr = ""
     let mutable private showAssetPicker = false
     let mutable private showInspector = false
+    let mutable private showOpenGroupDialog = false
+    let mutable private showSaveGroupDialog = false
     let mutable private darkTheme = false // TODO: load this from config
+    let mutable private groupFilePath = ""
     let mutable private dragDropPayloadOpt = None
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
@@ -85,7 +88,7 @@ module Gaia =
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d Globals.World
         match pickedOpt with
         | Some entity ->
-            selectedEntityTdsOpt <- Some { DescribedEntity = entity }
+            selectedEntityTdsOpt <- Some { EntityOpt = entity }
             //DUMMY
             //tryShowSelectedEntityInHierarchyIfVisible form
             Some (0.0f, entity)
@@ -94,7 +97,7 @@ module Gaia =
             let pickedOpt = World.tryPickEntity3d mousePosition entities3d Globals.World
             match pickedOpt with
             | Some (intersection, entity) ->
-                selectedEntityTdsOpt <- Some { DescribedEntity = entity }
+                selectedEntityTdsOpt <- Some { EntityOpt = entity }
                 //DUMMY
                 //tryShowSelectedEntityInHierarchyIfVisible form
                 Some (intersection, entity)
@@ -263,8 +266,8 @@ module Gaia =
 
         // render selection highlights
         match selectedEntityTdsOpt with
-        | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
-            let entity = entityTds.DescribedEntity
+        | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
+            let entity = entityTds.EntityOpt
             let absolute = entity.GetAbsolute Globals.World
             let bounds = entity.GetHighlightBounds Globals.World
             if entity.GetIs2d Globals.World then
@@ -308,52 +311,59 @@ module Gaia =
 
     let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup Globals.World
+            filePaths <- Map.add selectedGroup.GroupAddress groupFilePath filePaths
+            true
         with exn ->
             //DUMMY
             //MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            ()
+            false
 
     let private tryLoadSelectedGroup filePath =
 
-        // old world in case we need to rewind
-        let oldWorld = Globals.World
+        // ensure group isn't protected
+        if not (selectedGroup.GetProtected Globals.World) then
 
-        try // try to destroy current group
-            if not (selectedGroup.GetProtected Globals.World) then
-                Globals.World <- World.destroyGroupImmediate selectedGroup Globals.World
+            // attempt to load group descriptor
+            let groupAndDescriptorOpt =
+                try let groupDescriptorStr = File.ReadAllText filePath
+                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                    let groupName =
+                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                        | Some (Atom (name, _)) -> name
+                        | _ -> failwithumf ()
+                    Right (selectedScreen / groupName, groupDescriptor)
+                with exn ->
+                    Left exn
 
-                // load and add group, updating tab and selected group in the process
-                let groupDescriptorStr = File.ReadAllText filePath
-                let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                let groupName =
-                    match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
-                    | Some (Atom (name, _)) -> name
-                    | _ -> failwithumf ()
-                let group = selectedScreen / groupName
-                if not (group.Exists Globals.World) then
+            // attempt to load group
+            match groupAndDescriptorOpt with
+            | Right (group, groupDescriptor) ->
+                let oldWorld = Globals.World
+                try
+                    if group.Exists Globals.World then Globals.World <- World.destroyGroupImmediate selectedGroup Globals.World
                     let (group, world) = World.readGroup groupDescriptor None selectedScreen Globals.World
                     let world = Globals.World <- world
                     selectedGroup <- group
-                    Some group
-            
-                // handle load failure
-                else
+                    match selectedEntityTdsOpt with
+                    | Some entityTds when not (entityTds.EntityOpt.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                    | Some _ | None -> ()
+                    filePaths <- Map.add group.GroupAddress groupFilePath filePaths
+                    true
+                with exn ->
                     Globals.World <- World.choose oldWorld
                     //DUMMY
-                    //MessageBox.Show ("Could not load group file with same name as an existing group", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    None
+                    //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    false
 
-            else
+            | Left exn ->
                 //DUMMY
-                //MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                None
+                //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                false
 
-        // handle load failure
-        with exn ->
-            Globals.World <- World.choose oldWorld
+        else
             //DUMMY
-            //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            None
+            //MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            false
 
     let private createEntity atMouse inHierarchy (dispatcherNameOpt : string option) =
         Globals.pushPastWorld ()
@@ -370,8 +380,8 @@ module Gaia =
         let name = generateEntityName dispatcherName selectedGroup
         let surnames =
             match selectedEntityTdsOpt with
-            | Some entityTds when entityTds.DescribedEntity.Exists Globals.World && inHierarchy ->
-                let parent = entityTds.DescribedEntity
+            | Some entityTds when entityTds.EntityOpt.Exists Globals.World && inHierarchy ->
+                let parent = entityTds.EntityOpt
                 Array.add name parent.Surnames
             | Some _ | None -> [|name|]
         let (entity, world) = World.createEntity5 dispatcherName overlayDescriptor (Some surnames) selectedGroup Globals.World
@@ -418,7 +428,7 @@ module Gaia =
                     (v3Dup Constants.Render.LightProbeSizeDefault)
             Globals.World <- entity.SetProbeBounds bounds Globals.World
         | Some _ | None -> ()
-        selectedEntityTdsOpt <- Some { DescribedEntity = entity }
+        selectedEntityTdsOpt <- Some { EntityOpt = entity }
         //DUMMY
         //tryShowSelectedEntityInHierarchy form
 
@@ -464,38 +474,6 @@ module Gaia =
         groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
         groupCreationForm.ShowDialog form |> ignore
 
-    let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let group = selectedGroup
-            form.saveFileDialog.Title <- "Save '" + group.Name + "' As"
-            match Map.tryFind group.GroupAddress filePaths with
-            | Some filePath -> form.saveFileDialog.FileName <- filePath
-            | None -> form.saveFileDialog.FileName <- String.Empty
-            if saveAs || String.IsNullOrWhiteSpace form.saveFileDialog.FileName then
-                match form.saveFileDialog.ShowDialog form with
-                | DialogResult.OK ->
-                    let filePath = form.saveFileDialog.FileName
-                    trySaveSelectedGroup filePath world
-                    filePaths <- Map.add group.GroupAddress filePath filePaths
-                    world
-                | _ -> world
-            else trySaveSelectedGroup form.saveFileDialog.FileName world; world
-
-    let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            form.openFileDialog.FileName <- String.Empty
-            match form.openFileDialog.ShowDialog form with
-            | DialogResult.OK ->
-                let world = Globals.pushPastWorld world
-                let filePath = form.openFileDialog.FileName
-                match tryLoadSelectedGroup form filePath world with
-                | (Some group, world) ->
-                    filePaths <- Map.add group.GroupAddress filePath filePaths
-                    deselectEntity form world // currently selected entity may be gone if loading into an existing group
-                    world
-                | (None, world) -> world
-            | _ -> world
-
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             match form.groupTabControl.TabPages.Count with
@@ -517,16 +495,6 @@ module Gaia =
                 else
                     MessageBox.Show ("Cannot close a protected group (such as one created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
-
-    let private handleFormRunButtonClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let advancing = form.runButton.Checked
-            let world =
-                if advancing then
-                    form.displayPanel.Focus () |> ignore
-                    Globals.pushPastWorld world
-                else world
-            World.setAdvancing advancing world
 
     let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
@@ -903,7 +871,7 @@ module Gaia =
         let children = Globals.World |> entity.GetChildren |> Seq.toArray
         if ImGui.TreeNodeEx (entity.Name, if Array.notEmpty children then ImGuiTreeNodeFlags.None else ImGuiTreeNodeFlags.Leaf) then
             if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                selectedEntityTdsOpt <- Some { DescribedEntity = entity }
+                selectedEntityTdsOpt <- Some { EntityOpt = entity }
             if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                 if not (entity.GetAbsolute Globals.World) then
                     if entity.GetIs2d Globals.World then
@@ -934,7 +902,7 @@ module Gaia =
                                 Globals.World <- World.insertEntityOrder sourceEntity previousOpt next Globals.World
                                 Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
                                 Globals.World <- sourceEntity'.SetMountOptWithAdjustment mountOpt Globals.World
-                                selectedEntityTdsOpt <- Some { DescribedEntity = sourceEntity' }
+                                selectedEntityTdsOpt <- Some { EntityOpt = sourceEntity' }
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
                             else // alt not pressed
@@ -942,7 +910,7 @@ module Gaia =
                                 let mount = Relation.makeParent ()
                                 Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
                                 Globals.World <- sourceEntity'.SetMountOptWithAdjustment (Some mount) Globals.World
-                                selectedEntityTdsOpt <- Some { DescribedEntity = sourceEntity' }
+                                selectedEntityTdsOpt <- Some { EntityOpt = sourceEntity' }
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
                         else
@@ -967,9 +935,17 @@ module Gaia =
             if ImGui.BeginMenuBar () then
                 if ImGui.BeginMenu "File" then
                     if ImGui.MenuItem ("New Group", "Ctrl+N") then ()
-                    if ImGui.MenuItem ("Open Group", "Ctrl+O") then ()
-                    if ImGui.MenuItem ("Save Group", "Ctrl+S") then ()
-                    if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then ()
+                    if ImGui.MenuItem ("Open Group", "Ctrl+O") then
+                        showOpenGroupDialog <- true
+                    if ImGui.MenuItem ("Save Group", "Ctrl+S") then
+                        match Map.tryFind selectedGroup.GroupAddress filePaths with
+                        | Some groupFilePath -> trySaveSelectedGroup groupFilePath |> ignore<bool>
+                        | None -> showSaveGroupDialog <- true
+                    if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then
+                        match Map.tryFind selectedGroup.GroupAddress filePaths with
+                        | Some filePath -> groupFilePath <- filePath
+                        | None -> groupFilePath <- ""
+                        showSaveGroupDialog <- true
                     if ImGui.MenuItem "Close Group" then ()
                     ImGui.Separator ()
                     if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
@@ -978,12 +954,12 @@ module Gaia =
                     if ImGui.MenuItem ("Undo", "Ctrl+Z") then
                         if Globals.tryUndo () then
                             match selectedEntityTdsOpt with
-                            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                            | Some entityTds when not (entityTds.EntityOpt.Exists Globals.World) -> selectedEntityTdsOpt <- None
                             | Some _ | None -> ()
                     if ImGui.MenuItem ("Redo", "Ctrl+Y") then
                         if Globals.tryRedo () then
                             match selectedEntityTdsOpt with
-                            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                            | Some entityTds when not (entityTds.EntityOpt.Exists Globals.World) -> selectedEntityTdsOpt <- None
                             | Some _ | None -> ()
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut", "Ctrl+X") then ()
@@ -1057,7 +1033,7 @@ module Gaia =
                             let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
                             Globals.World <- sourceEntity.SetMountOptWithAdjustment None Globals.World
                             Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
-                            selectedEntityTdsOpt <- Some { DescribedEntity = sourceEntity' }
+                            selectedEntityTdsOpt <- Some { EntityOpt = sourceEntity' }
                             //DUMMY
                             //tryShowSelectedEntityInHierarchy form
                     | None -> ()
@@ -1094,8 +1070,8 @@ module Gaia =
         //
         if ImGui.Begin "Properties" then
             match selectedEntityTdsOpt with
-            | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
-                let entity = entityTds.DescribedEntity
+            | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
+                let entity = entityTds.EntityOpt
                 let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
                 let properties = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor (Some (entity, Globals.World))
                 for property in properties do
@@ -1209,7 +1185,7 @@ module Gaia =
 
         if ImGui.Begin "Property Editor" then
             match selectedEntityTdsOpt with
-            | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
+            | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
                 match propertyFocusedOpt with
                 | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                     let converter = SymbolicConverter (false, None, property.PropertyType)
@@ -1257,7 +1233,7 @@ module Gaia =
         if ImGui.Begin "Asset Viewer" then
             ImGui.Text "Search:"
             ImGui.SameLine ()
-            ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
+            ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
             let assets = Metadata.getDiscoveredAssets ()
             for package in assets do
                 if ImGui.TreeNode package.Key then
@@ -1353,7 +1329,7 @@ module Gaia =
                                 if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
                                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                                         match selectedEntityTdsOpt with
-                                        | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
+                                        | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
                                             match propertyFocusedOpt with
                                             | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                                                 let converter = SymbolicConverter (false, None, property.PropertyType)
@@ -1367,6 +1343,30 @@ module Gaia =
                         ImGui.TreePop ()
                 ImGui.EndPopup ()
             if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
+
+        if showOpenGroupDialog then
+            let title = "Choose a nugroup file..."
+            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &showOpenGroupDialog) then
+                ImGui.Text "File Path:"
+                ImGui.SameLine ()
+                ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
+                if ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                    Globals.pushPastWorld ()
+                    showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
+                if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
+
+        if showSaveGroupDialog then
+            let title = "Save a nugroup file..."
+            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &showSaveGroupDialog) then
+                ImGui.Text "File Path:"
+                ImGui.SameLine ()
+                ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
+                if ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                    Globals.pushPastWorld ()
+                    showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
+            if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
 
         if showInspector then
             ImGui.ShowStackToolWindow ()
