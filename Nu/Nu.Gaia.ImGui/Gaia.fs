@@ -52,8 +52,7 @@ module Gaia =
     let mutable private dragDropPayloadOpt = None
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
-    let mutable private lightMappingConfig =
-        { LightMappingEnabled = true }
+    let mutable private lightMappingConfig = { LightMappingEnabled = true }
     let mutable private ssaoConfig =
         { SsaoEnabled = true
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
@@ -1269,13 +1268,11 @@ module Gaia =
 
         if ImGui.Begin "Audio Player" then
             ImGui.Text "Master Sound Volume"
-            ImGui.SetNextItemWidth 250.0f
             let mutable masterSoundVolume = World.getMasterSoundVolume Globals.World
             if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSoundVolume masterSoundVolume Globals.World
             ImGui.SameLine ()
             ImGui.Text (string masterSoundVolume)
             ImGui.Text "Master Song Volume"
-            ImGui.SetNextItemWidth 250.0f
             let mutable masterSongVolume = World.getMasterSongVolume Globals.World
             if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSongVolume masterSongVolume Globals.World
             ImGui.SameLine ()
