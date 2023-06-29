@@ -35,16 +35,19 @@ module Gaia =
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityTdsOpt = None // TODO: see if we can make this just a regular Entity reference.
-    let mutable private creationDispatcherName = null // this will be initialized on start
-    let mutable private creationOverlayName = "(Default Overlay)"
-    let mutable private creationElevation = 0.0f
+    let mutable private newGroupDispatcherName = nameof GroupDispatcher
+    let mutable private newEntityDispatcherName = null // this will be initialized on start
+    let mutable private newEntityOverlayName = "(Default Overlay)"
+    let mutable private newEntityElevation = 0.0f
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
     let mutable private showAssetPicker = false
     let mutable private showInspector = false
+    let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
     let mutable private darkTheme = false // TODO: load this from config
+    let mutable private newGroupName = nameof Group
     let mutable private groupFilePath = ""
     let mutable private dragDropPayloadOpt = None
     let mutable private assetGraphStr = null // this will be initialized on start
@@ -370,9 +373,9 @@ module Gaia =
         let dispatcherName =
             match dispatcherNameOpt with
             | Some dispatcherName -> dispatcherName
-            | None -> creationDispatcherName
+            | None -> newEntityDispatcherName
         let overlayDescriptor =
-            match creationOverlayName with
+            match newEntityOverlayName with
             | "(Default Overlay)" -> DefaultOverlay
             | "(Routed Overlay)" -> RoutedOverlay
             | "(No Overlay)" -> NoOverlay
@@ -399,7 +402,7 @@ module Gaia =
                 else viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, World.getEyeSize2d Globals.World, eyeCenter, eyeSize)
             entityTransform.Position <- entityPosition.V3
             entityTransform.Size <- entity.GetQuickSize Globals.World
-            entityTransform.Elevation <- creationElevation
+            entityTransform.Elevation <- newEntityElevation
             if snaps2dSelected
             then Globals.World <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform Globals.World
             else Globals.World <- entity.SetTransform entityTransform Globals.World
@@ -893,7 +896,7 @@ module Gaia =
                         let sourceEntityAddressStr = payload
                         let sourceEntity = Entity sourceEntityAddressStr
                         if not (sourceEntity.GetProtected Globals.World) then
-                            if ImGui.IsKeyPressed ImGuiKey.LeftAlt || ImGui.IsKeyPressed ImGuiKey.RightAlt then // alt pressed
+                            if ImGui.IsAltPressed () then
                                 let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                                 let previousOpt = World.tryGetPreviousEntity next Globals.World
                                 let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
@@ -905,7 +908,7 @@ module Gaia =
                                 selectedEntityTdsOpt <- Some { EntityOpt = sourceEntity' }
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
-                            else // alt not pressed
+                            else
                                 let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
                                 let mount = Relation.makeParent ()
                                 Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
@@ -934,7 +937,8 @@ module Gaia =
         if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
             if ImGui.BeginMenuBar () then
                 if ImGui.BeginMenu "File" then
-                    if ImGui.MenuItem ("New Group", "Ctrl+N") then ()
+                    if ImGui.MenuItem ("New Group", "Ctrl+N") then
+                        showNewGroupDialog <- true
                     if ImGui.MenuItem ("Open Group", "Ctrl+O") then
                         showOpenGroupDialog <- true
                     if ImGui.MenuItem ("Save Group", "Ctrl+S") then
@@ -976,27 +980,27 @@ module Gaia =
             if ImGui.Button "Create" then createEntity false false None
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
-            let creationDispatcherNames = World.getEntityDispatchers Globals.World |> Map.toKeyArray
-            if ImGui.BeginCombo ("##creationDispatcherName", creationDispatcherName) then
-                for dispatcherName in creationDispatcherNames do
+            let newEntityDispatcherNames = World.getEntityDispatchers Globals.World |> Map.toKeyArray
+            if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
+                for dispatcherName in newEntityDispatcherNames do
                     if ImGui.Selectable dispatcherName then
-                        creationDispatcherName <- dispatcherName
+                        newEntityDispatcherName <- dispatcherName
                 ImGui.EndCombo ()
             ImGui.SameLine ()
             ImGui.Text "w/ Overlay"
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
             let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays Globals.World |> Map.toKeyArray)
-            if ImGui.BeginCombo ("##creationOverlayName", creationOverlayName) then
+            if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
                 for overlayName in overlayNames do
                     if ImGui.Selectable overlayName then
-                        creationDispatcherName <- overlayName
+                        newEntityDispatcherName <- overlayName
                 ImGui.EndCombo ()
             ImGui.SameLine ()
             ImGui.Text "@ Elevation"
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 50.0f
-            ImGui.DragFloat ("##creationElevation", &creationElevation) |> ignore<bool>
+            ImGui.DragFloat ("##newEntityElevation", &newEntityElevation) |> ignore<bool>
             ImGui.SameLine ()
             if ImGui.Button "Quick Size" then ()
             ImGui.SameLine ()
@@ -1344,6 +1348,44 @@ module Gaia =
                 ImGui.EndPopup ()
             if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
 
+        if showNewGroupDialog then
+            let title = "Create a group..."
+            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &showNewGroupDialog) then
+                ImGui.Text "Group Name:"
+                ImGui.SameLine ()
+                ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
+                let groupDispatcherNames = World.getGroupDispatchers Globals.World |> Map.toKeyArray
+                if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
+                    for dispatcherName in groupDispatcherNames do
+                        if ImGui.Selectable dispatcherName then
+                            newGroupDispatcherName <- dispatcherName
+                    ImGui.EndCombo ()
+                let newGroup = selectedScreen / newGroupName
+                if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && not (newGroup.Exists Globals.World) then
+                    let oldWorld = Globals.World
+                    try Globals.World <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen Globals.World |> snd
+                        showNewGroupDialog <- false
+                    with exn ->
+                        Globals.World <- World.choose oldWorld
+                        //DUMMY
+                        //MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                        ()
+                        
+                    //let world = Globals.pushPastWorld world
+                    //let group = selectedGroup
+                    //if not (group.GetProtected world) then
+                    //    let world = World.destroyGroupImmediate group world
+                    //    deselectEntity form world
+                    //    form.groupTabControl.TabPages.RemoveByKey group.Name
+                    //    let groupTabControl = form.groupTabControl
+                    //    let groupTab = groupTabControl.SelectedTab
+                    //    selectedGroup <- selectedScreen / groupTab.Text
+                    //    filePaths <- Map.remove group.GroupAddress filePaths
+                    //    world
+
+                if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
+
         if showOpenGroupDialog then
             let title = "Choose a nugroup file..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1351,7 +1393,7 @@ module Gaia =
                 ImGui.Text "File Path:"
                 ImGui.SameLine ()
                 ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
-                if ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                if (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
                     Globals.pushPastWorld ()
                     showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
                 if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
@@ -1363,7 +1405,7 @@ module Gaia =
                 ImGui.Text "File Path:"
                 ImGui.SameLine ()
                 ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
-                if ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
                     Globals.pushPastWorld ()
                     showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
             if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
@@ -1511,14 +1553,14 @@ module Gaia =
                 targetDir <- targetDir'
                 selectedScreen <- screen
                 selectedGroup <- Nu.World.getGroups screen Globals.World |> Seq.head
-                creationDispatcherName <- Nu.World.getEntityDispatchers Globals.World |> Seq.head |> fun kvp -> kvp.Key
+                newEntityDispatcherName <- Nu.World.getEntityDispatchers Globals.World |> Seq.head |> fun kvp -> kvp.Key
                 assetGraphStr <-
                     match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
                     | Right assetGraph ->
                         let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
                         let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                         PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                    | Left errer ->
+                    | Left error ->
                         //DUMMY
                         //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                         ""
