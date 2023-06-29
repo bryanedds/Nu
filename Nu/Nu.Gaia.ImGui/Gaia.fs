@@ -52,6 +52,12 @@ module Gaia =
     let mutable private dragDropPayloadOpt = None
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
+    let mutable private ssaoConfig =
+        { SsaoEnabled = true
+          SsaoIntensity = Constants.Render.SsaoIntensityDefault
+          SsaoBias = Constants.Render.SsaoBiasDefault
+          SsaoRadius = Constants.Render.SsaoRadiusDefault
+          SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
     let private getSnaps () =
         if snaps2dSelected
@@ -1259,7 +1265,7 @@ module Gaia =
                 with _ -> ()
             ImGui.End ()
 
-        if ImGui.Begin "Audio" then
+        if ImGui.Begin "Audio Player" then
             ImGui.Text "Master Sound Volume"
             ImGui.SetNextItemWidth 250.0f
             let mutable masterSoundVolume = World.getMasterSoundVolume Globals.World
@@ -1272,6 +1278,28 @@ module Gaia =
             if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSongVolume masterSongVolume Globals.World
             ImGui.SameLine ()
             ImGui.Text (string masterSongVolume)
+            ImGui.End ()
+
+        if ImGui.Begin "Renderer" then
+            ImGui.Text "Ssao (Screen-Space Ambient Occlusion)"
+            let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
+            let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
+            let mutable ssaoBias = ssaoConfig.SsaoBias
+            let mutable ssaoRadius = ssaoConfig.SsaoRadius
+            let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
+            ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
+            if ssaoEnabled then
+                ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
+                ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
+                ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
+                ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, 256) |> ignore<bool>
+            ssaoConfig <-
+                { SsaoEnabled = ssaoEnabled
+                  SsaoIntensity = ssaoIntensity
+                  SsaoBias = ssaoBias
+                  SsaoRadius = ssaoRadius
+                  SsaoSampleCount = ssaoSampleCount }
+            Globals.World <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) Globals.World
             ImGui.End ()
 
         if showAssetPicker then

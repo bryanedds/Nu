@@ -71,6 +71,9 @@ type ImGui (windowWidth : int, windowHeight : int) =
         let io = ImGui.GetIO ()
         io.Fonts
 
+    member this.HandleKeyChar (keyChar : char) =
+        charsPressed.Add keyChar
+
     member this.BeginFrame () =
         ImGui.NewFrame ()
 
@@ -106,8 +109,8 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.Render ()
         ImGui.GetDrawData ()
 
-    member this.HandleKeyChar (keyChar : char) =
-        charsPressed.Add keyChar
+    member this.CleanUp () =
+        ImGui.DestroyContext context
 
 [<RequireQualifiedAccess>]
 module ImGui =
