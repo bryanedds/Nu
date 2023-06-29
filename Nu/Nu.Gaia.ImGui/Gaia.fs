@@ -449,34 +449,6 @@ module Gaia =
                     world
             | _ -> world
 
-    let private handleFormSelectInHierarchy (form : GaiaForm) (_ : EventArgs) =
-        tryShowSelectedEntityInHierarchy form
-
-    let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
-        use groupCreationForm = new GroupCreationForm ()
-        groupCreationForm.StartPosition <- FormStartPosition.CenterParent
-        groupCreationForm.dispatcherTextBox.Text <- typeof<GroupDispatcher>.Name
-        groupCreationForm.okButton.Click.Add $ fun _ ->
-            Globals.nextPreUpdate $ fun world ->
-                let oldWorld = world
-                let world = Globals.pushPastWorld world
-                let groupName = groupCreationForm.nameTextBox.Text
-                let groupDispatcherName = groupCreationForm.dispatcherTextBox.Text
-                try if String.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup4 groupDispatcherName (Some groupName) selectedScreen world |> snd
-                    refreshGroupTabs form world
-                    refreshHierarchyTreeView form world
-                    deselectEntity form world
-                    form.groupTabControl.SelectTab (form.groupTabControl.TabPages.IndexOfKey groupName)
-                    world
-                with exn ->
-                    let world = World.choose oldWorld
-                    MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            groupCreationForm.Close ()
-        groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
-        groupCreationForm.ShowDialog form |> ignore
-
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             match form.groupTabControl.TabPages.Count with
