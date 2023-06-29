@@ -355,63 +355,6 @@ module Gaia =
             //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             None
 
-    (*let private populateOverlayerTextBox (form : GaiaForm) =
-        let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
-        match Overlayer.tryMakeFromFile [] overlayerFilePath with
-        | Right overlayer ->
-            let selectionStart = form.overlayerTextBox.SelectionStart
-            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            let extrinsicOverlaysPretty = PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-            form.overlayerTextBox.Text <- extrinsicOverlaysPretty.Replace ("\n", "\r\n")
-            form.overlayerTextBox.SelectionStart <- selectionStart
-        | Left error ->
-            MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-
-    let private tryReloadOverlayer form world =
-        let overlayerDir = targetDir + "/../../.."
-        match World.tryReloadOverlayer overlayerDir targetDir world with
-        | (Right overlayer, world) ->
-            refreshOverlayComboBox form world
-            (Right overlayer, world)
-        | (Left error, world) -> (Left error, world)
-
-    let private tryLoadOverlayer (form : GaiaForm) world =
-        match tryReloadOverlayer form world with
-        | (Right overlayer, world) ->
-            let selectionStart = form.overlayerTextBox.SelectionStart
-            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            let extrinsicOverlaysPretty = PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-            form.overlayerTextBox.Text <- extrinsicOverlaysPretty.Replace ("\n", "\r\n")
-            form.overlayerTextBox.SelectionStart <- selectionStart
-            world
-        | (Left error, world) ->
-            MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to Reload Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            world
-
-    let private trySaveOverlayer (form : GaiaForm) world =
-        let oldWorld = world
-        let overlayerSourceDir = targetDir + "/../../.."
-        let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
-        try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-            (true, world)
-        with exn ->
-            MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to Save Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (false, oldWorld)
-
-    let private populateEventFilterTextBox (form : GaiaForm) =
-        let eventFilterStr = scstring Constants.Editor.EventFilter
-        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-        let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
-        form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
-
-    let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (args : ItemDragEventArgs) =
-        if args.Button = MouseButtons.Left then
-            form.DoDragDrop (args.Item, DragDropEffects.Move) |> ignore*)
-
     let private createEntity atMouse inHierarchy (dispatcherNameOpt : string option) =
         Globals.pushPastWorld ()
         let dispatcherName =
