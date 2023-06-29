@@ -518,18 +518,6 @@ module Gaia =
                     MessageBox.Show ("Cannot close a protected group (such as one created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
 
-    let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextUpdate $ fun world ->
-            match Globals.tryUndo world with
-            | (true, world) -> refreshFormOnUndoRedo form world; world
-            | (false, world) -> world
-
-    let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextUpdate $ fun world ->
-            match Globals.tryRedo world with
-            | (true, world) -> refreshFormOnUndoRedo form world; world
-            | (false, world) -> world
-
     let private handleFormRunButtonClick (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             let advancing = form.runButton.Checked
@@ -598,19 +586,6 @@ module Gaia =
                 form.entityPropertyGrid.Refresh ()
                 world
             | _ -> failwithumf ()
-
-    let private handleFormSnap3d (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let (positionSnap, degreesSnap, scaleSnap) = otherSnaps
-            let otherSnaps' =
-                (snd (Single.TryParse form.positionSnapTextBox.Text),
-                 snd (Single.TryParse form.degreesSnapTextBox.Text),
-                 snd (Single.TryParse form.scaleSnapTextBox.Text))
-            otherSnaps <- otherSnaps'
-            form.positionSnapTextBox.Text <- scstring positionSnap
-            form.degreesSnapTextBox.Text <- scstring degreesSnap
-            form.scaleSnapTextBox.Text <- scstring scaleSnap
-            world
 
     let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
@@ -747,124 +722,6 @@ module Gaia =
             selectGroup selectedGroup' form world
             world
 
-    let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let eventTracerOpt =
-                if form.traceEventsCheckBox.Checked
-                then Some (Log.remark "Event")
-                else None
-            World.setEventTracerOpt eventTracerOpt world
-
-    let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let oldWorld = world
-            try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
-                let world = World.setEventFilter eventFilter world
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-                let eventFilterPretty = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
-                form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
-                world
-            with exn ->
-                let world = World.choose oldWorld
-                MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid Event Filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
-    let private handleRefreshEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let eventFilter = World.getEventFilter world
-            let eventFilterStr = scstring eventFilter
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-            let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
-            form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
-            world
-
-    let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match trySavePrelude form world with
-            | (true, world) ->
-                match tryReloadPrelude form world with
-                | (Right _, world) -> world
-                | (Left error, world) ->
-                    MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | (false, world) -> world
-
-    let private handleLoadPreludeClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match tryReloadPrelude form world with
-            | (Right preludeStr, world) ->
-                form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
-                world
-            | (Left error, world) ->
-                MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to Load Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
-    let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match trySaveAssetGraph form world with
-            | (true, world) ->
-                match tryReloadAssetGraph form world with
-                | (Right _, world) -> world
-                | (Left error, world) ->
-                    MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | (false, world) -> world
-
-    let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            tryLoadAssetGraph form world
-
-    let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match trySaveOverlayer form world with
-            | (true, world) ->
-                match tryReloadOverlayer form world with
-                | (Right _, world) -> world
-                | (Left error, world) ->
-                    MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | (false, world) -> world
-
-    let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            tryLoadOverlayer form world
-
-    let private handleEvalClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let exprsStr =
-                if String.notEmpty form.evalInputTextBox.SelectedText
-                then form.evalInputTextBox.SelectedText
-                else form.evalInputTextBox.Text
-            let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
-            try let exprs = scvalue<Scripting.Expr array> exprsStr
-                let group = selectedGroup
-                let (selectedSimulant, localFrame) =
-                    match form.entityPropertyGrid.SelectedObject with
-                    | :?
-                        EntityTypeDescriptorSource as entityTds when
-                        form.propertyTabControl.SelectedTab <> form.groupTabPage ->
-                        let entity = entityTds.DescribedEntity
-                        (entity :> Simulant, entity.GetScriptFrame world)
-                    | _ -> (group :> Simulant, group.GetScriptFrame world)
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Scripting.Expr>).PrettyPrinter
-                let struct (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
-                let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
-                let evaledsStr = String.concat "\n" evaledStrs
-                form.evalOutputTextBox.ReadOnly <- false
-                form.evalOutputTextBox.Text <-
-                    if String.notEmpty form.evalOutputTextBox.Text
-                    then form.evalOutputTextBox.Text + evaledsStr.Replace ("\n", "\r\n")
-                    else evaledsStr.Replace ("\n", "\r\n")
-                form.evalOutputTextBox.ReadOnly <- true
-                world
-            with exn -> Log.debug ("Could not evaluate input due to: " + scstring exn); world
-
-    let private handleClearOutputClick (form : GaiaForm) (_ : EventArgs) =
-        form.evalOutputTextBox.Text <- String.Empty
-
-    let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
-        form.overlayComboBox.SelectedIndex <- 0
-
     let private handleKeyboardInput key (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
             if Keys.Enter = key then
@@ -926,7 +783,17 @@ module Gaia =
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
         | DialogResult.Cancel -> args.Cancel <- true
-        | _ -> ()*)
+        | _ -> ()
+
+    let private updateEyeDrag (_ : GaiaForm) world =
+        match dragEyeState with
+        | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
+            let mousePositionScreen = World.getMousePosition2dScreen world
+            let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
+            let world = World.setEyeCenter2d eyeCenter world
+            dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
+            world
+        | DragEyeInactive -> world*)
 
     let private updateEntityDrag () =
 
@@ -1032,68 +899,6 @@ module Gaia =
                         Globals.World <- entity.SetAngularVelocity v3Zero Globals.World
             | DragEntityInactive -> ()
 
-    (*let private updateEyeDrag (_ : GaiaForm) world =
-        match dragEyeState with
-        | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
-            let mousePositionScreen = World.getMousePosition2dScreen world
-            let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
-            let world = World.setEyeCenter2d eyeCenter world
-            dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
-            world
-        | DragEyeInactive -> world
-
-    let private updateUndoButton (form : GaiaForm) world =
-        if form.undoToolStripMenuItem.Enabled then
-            if not (Globals.canUndo ()) then
-                form.undoToolStripMenuItem.Enabled <- false
-        elif Globals.canUndo () then
-            form.undoToolStripMenuItem.Enabled <- not (World.getImperative world)
-
-    let private updateRedoButton (form : GaiaForm) world =
-        if form.redoToolStripMenuItem.Enabled then
-            if not (Globals.canRedo ()) then
-                form.redoToolStripMenuItem.Enabled <- false
-        elif Globals.canRedo () then
-            form.redoToolStripMenuItem.Enabled <- not (World.getImperative world)
-
-    let private preUpdateEditorWorld (form : GaiaForm) world =
-        let world = Globals.processPreUpdaters world
-        let world =
-            if refreshHierarchyViewRequested
-            then refreshHierarchyTreeViewImmediate form world
-            else world
-        let world = updateEntityDrag form world
-        let world = updateEyeDrag form world
-        if  Form.ActiveForm = (form :> Form) &&
-            not form.propertyValueTextBox.Focused &&
-            not form.applyPropertyButton.Focused &&
-            not form.IsClosing then
-            refreshPropertyEditor form
-        if form.IsDisposed
-        then World.exit world
-        else world
-
-    let private perUpdateEditorWorld (form : GaiaForm) world =
-        let world = Globals.processUpdaters world
-        let world =
-            if refreshHierarchyViewRequested
-            then refreshHierarchyTreeViewImmediate form world
-            else world
-        updateUndoButton form world
-        updateRedoButton form world
-        if  Form.ActiveForm = (form :> Form) &&
-            not form.propertyValueTextBox.Focused &&
-            not form.applyPropertyButton.Focused &&
-            not form.IsClosing then
-            refreshPropertyEditor form
-        if form.IsDisposed
-        then World.exit world
-        else world
-
-    let private postUpdateEditorWorld (_ : GaiaForm) world =
-        Application.DoEvents ()
-        world*)
-
     let rec imGuiEntityHierarchy (entity : Entity) =
         let children = Globals.World |> entity.GetChildren |> Seq.toArray
         if ImGui.TreeNodeEx (entity.Name, if Array.notEmpty children then ImGuiTreeNodeFlags.None else ImGuiTreeNodeFlags.Leaf) then
@@ -1170,8 +975,8 @@ module Gaia =
                     if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
                     ImGui.EndMenu ()
                 if ImGui.BeginMenu "Edit" then
-                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then ()
-                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then ()
+                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then Globals.tryUndo () |> ignore<bool>
+                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then Globals.tryRedo () |> ignore<bool>
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut", "Ctrl+X") then ()
                     if ImGui.MenuItem ("Copy", "Ctrl+C") then ()
@@ -1181,7 +986,7 @@ module Gaia =
                     if ImGui.MenuItem ("Delete", "Ctrl+D") then ()
                     if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then ()
                     ImGui.Separator ()
-                    if ImGui.MenuItem ("Run / Pause", "F5") then ()
+                    if ImGui.MenuItem ("Run/Pause", "F5") then ()
                     ImGui.EndMenu ()
                 ImGui.EndMenuBar ()
             if ImGui.Button "Create" then createEntity false false None
