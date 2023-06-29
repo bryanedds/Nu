@@ -263,7 +263,7 @@ module Gaia =
 
         // render selection highlights
         match selectedEntityTdsOpt with
-        | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
+        | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
             let entity = entityTds.DescribedEntity
             let absolute = entity.GetAbsolute Globals.World
             let bounds = entity.GetHighlightBounds Globals.World
@@ -370,7 +370,7 @@ module Gaia =
         let name = generateEntityName dispatcherName selectedGroup
         let surnames =
             match selectedEntityTdsOpt with
-            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) && inHierarchy ->
+            | Some entityTds when entityTds.DescribedEntity.Exists Globals.World && inHierarchy ->
                 let parent = entityTds.DescribedEntity
                 Array.add name parent.Surnames
             | Some _ | None -> [|name|]
@@ -1094,7 +1094,7 @@ module Gaia =
         //
         if ImGui.Begin "Properties" then
             match selectedEntityTdsOpt with
-            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
+            | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
                 let entity = entityTds.DescribedEntity
                 let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
                 let properties = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor (Some (entity, Globals.World))
@@ -1209,7 +1209,7 @@ module Gaia =
 
         if ImGui.Begin "Property Editor" then
             match selectedEntityTdsOpt with
-            | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
+            | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
                 match propertyFocusedOpt with
                 | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                     let converter = SymbolicConverter (false, None, property.PropertyType)
@@ -1353,7 +1353,7 @@ module Gaia =
                                 if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
                                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                                         match selectedEntityTdsOpt with
-                                        | Some entityTds when not (entityTds.DescribedEntity.Exists Globals.World) ->
+                                        | Some entityTds when entityTds.DescribedEntity.Exists Globals.World ->
                                             match propertyFocusedOpt with
                                             | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                                                 let converter = SymbolicConverter (false, None, property.PropertyType)
