@@ -52,6 +52,8 @@ module Gaia =
     let mutable private dragDropPayloadOpt = None
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
+    let mutable private lightMappingConfig =
+        { LightMappingEnabled = true }
     let mutable private ssaoConfig =
         { SsaoEnabled = true
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
@@ -1281,7 +1283,12 @@ module Gaia =
             ImGui.End ()
 
         if ImGui.Begin "Renderer" then
-            ImGui.Text "Ssao (Screen-Space Ambient Occlusion)"
+            ImGui.Text "Light-Mapping (local light mapping)"
+            let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
+            ImGui.Checkbox ("Light-Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
+            lightMappingConfig <- { LightMappingEnabled = lightMappingEnabled }
+            Globals.World <- World.enqueueRenderMessage3d (ConfigureLightMapping lightMappingConfig) Globals.World
+            ImGui.Text "Ssao (screen-space ambient occlusion)"
             let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
             let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
             let mutable ssaoBias = ssaoConfig.SsaoBias
