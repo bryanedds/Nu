@@ -34,7 +34,7 @@ module Gaia =
     let mutable private targetDir = "."
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
-    let mutable private selectedEntityTdsOpt = None // TODO: see if we can make this just a regular Entity reference.
+    let mutable private selectedEntityOpt = None
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
     let mutable private newEntityDispatcherName = null // this will be initialized on start
     let mutable private newEntityOverlayName = "(Default Overlay)"
@@ -91,7 +91,7 @@ module Gaia =
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d Globals.World
         match pickedOpt with
         | Some entity ->
-            selectedEntityTdsOpt <- Some { EntityOpt = entity }
+            selectedEntityOpt <- Some entity
             //DUMMY
             //tryShowSelectedEntityInHierarchyIfVisible form
             Some (0.0f, entity)
@@ -100,7 +100,7 @@ module Gaia =
             let pickedOpt = World.tryPickEntity3d mousePosition entities3d Globals.World
             match pickedOpt with
             | Some (intersection, entity) ->
-                selectedEntityTdsOpt <- Some { EntityOpt = entity }
+                selectedEntityOpt <- Some entity
                 //DUMMY
                 //tryShowSelectedEntityInHierarchyIfVisible form
                 Some (intersection, entity)
@@ -268,9 +268,8 @@ module Gaia =
                     Globals.World
 
         // render selection highlights
-        match selectedEntityTdsOpt with
-        | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
-            let entity = entityTds.EntityOpt
+        match selectedEntityOpt with
+        | Some entity when entity.Exists Globals.World ->
             let absolute = entity.GetAbsolute Globals.World
             let bounds = entity.GetHighlightBounds Globals.World
             if entity.GetIs2d Globals.World then
@@ -347,8 +346,8 @@ module Gaia =
                     let (group, world) = World.readGroup groupDescriptor None selectedScreen Globals.World
                     let world = Globals.World <- world
                     selectedGroup <- group
-                    match selectedEntityTdsOpt with
-                    | Some entityTds when not (entityTds.EntityOpt.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                    match selectedEntityOpt with
+                    | Some entity when not (entity.Exists Globals.World) -> selectedEntityOpt <- None
                     | Some _ | None -> ()
                     filePaths <- Map.add group.GroupAddress groupFilePath filePaths
                     true
@@ -382,10 +381,8 @@ module Gaia =
             | overlayName -> ExplicitOverlay overlayName
         let name = generateEntityName dispatcherName selectedGroup
         let surnames =
-            match selectedEntityTdsOpt with
-            | Some entityTds when entityTds.EntityOpt.Exists Globals.World && inHierarchy ->
-                let parent = entityTds.EntityOpt
-                Array.add name parent.Surnames
+            match selectedEntityOpt with
+            | Some entity when entity.Exists Globals.World && inHierarchy -> Array.add name entity.Surnames
             | Some _ | None -> [|name|]
         let (entity, world) = World.createEntity5 dispatcherName overlayDescriptor (Some surnames) selectedGroup Globals.World
         let world = Globals.World <- world
@@ -431,7 +428,7 @@ module Gaia =
                     (v3Dup Constants.Render.LightProbeSizeDefault)
             Globals.World <- entity.SetProbeBounds bounds Globals.World
         | Some _ | None -> ()
-        selectedEntityTdsOpt <- Some { EntityOpt = entity }
+        selectedEntityOpt <- Some entity
         //DUMMY
         //tryShowSelectedEntityInHierarchy form
 
@@ -846,7 +843,7 @@ module Gaia =
         let children = Globals.World |> entity.GetChildren |> Seq.toArray
         if ImGui.TreeNodeEx (entity.Name, if Array.notEmpty children then ImGuiTreeNodeFlags.None else ImGuiTreeNodeFlags.Leaf) then
             if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                selectedEntityTdsOpt <- Some { EntityOpt = entity }
+                selectedEntityOpt <- Some entity
             if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                 if not (entity.GetAbsolute Globals.World) then
                     if entity.GetIs2d Globals.World then
@@ -877,7 +874,7 @@ module Gaia =
                                 Globals.World <- World.insertEntityOrder sourceEntity previousOpt next Globals.World
                                 Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
                                 Globals.World <- sourceEntity'.SetMountOptWithAdjustment mountOpt Globals.World
-                                selectedEntityTdsOpt <- Some { EntityOpt = sourceEntity' }
+                                selectedEntityOpt <- Some sourceEntity'
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
                             else
@@ -885,7 +882,9 @@ module Gaia =
                                 let mount = Relation.makeParent ()
                                 Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
                                 Globals.World <- sourceEntity'.SetMountOptWithAdjustment (Some mount) Globals.World
-                                selectedEntityTdsOpt <- Some { EntityOpt = sourceEntity' }
+                                selectedEntityOpt <- Some sourceEntity'
+                                //DUMMY
+                                //ImGui.SetItemOpt ()
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
                         else
@@ -927,7 +926,7 @@ module Gaia =
                         if not (selectedGroup.GetProtected Globals.World) && Set.count groups > 1 then
                             Globals.pushPastWorld ()
                             let groupsRemaining = Set.remove selectedGroup groups
-                            selectedEntityTdsOpt <- None
+                            selectedEntityOpt <- None
                             Globals.World <- World.destroyGroupImmediate selectedGroup Globals.World
                             filePaths <- Map.remove selectedGroup.GroupAddress filePaths
                             selectedGroup <- Seq.head groupsRemaining
@@ -937,13 +936,13 @@ module Gaia =
                 if ImGui.BeginMenu "Edit" then
                     if ImGui.MenuItem ("Undo", "Ctrl+Z") then
                         if Globals.tryUndo () then
-                            match selectedEntityTdsOpt with
-                            | Some entityTds when not (entityTds.EntityOpt.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                            match selectedEntityOpt with
+                            | Some entity when not (entity.Exists Globals.World) -> selectedEntityOpt <- None
                             | Some _ | None -> ()
                     if ImGui.MenuItem ("Redo", "Ctrl+Y") then
                         if Globals.tryRedo () then
-                            match selectedEntityTdsOpt with
-                            | Some entityTds when not (entityTds.EntityOpt.Exists Globals.World) -> selectedEntityTdsOpt <- None
+                            match selectedEntityOpt with
+                            | Some entity when not (entity.Exists Globals.World) -> selectedEntityOpt <- None
                             | Some _ | None -> ()
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut", "Ctrl+X") then ()
@@ -957,18 +956,6 @@ module Gaia =
                     if ImGui.MenuItem ("Run/Pause", "F5") then ()
                     ImGui.EndMenu ()
                 ImGui.EndMenuBar ()
-            ImGui.Text "Group:"
-            ImGui.SameLine ()
-            ImGui.SetNextItemWidth 100.0f
-            let groups = World.getGroups selectedScreen Globals.World
-            let mutable selectedGroupName = selectedGroup.Name
-            if ImGui.BeginCombo ("##selectedGroupAddressStr", selectedGroupName) then
-                for group in groups do
-                    if ImGui.Selectable group.Name then
-                        selectedEntityTdsOpt <- None
-                        selectedGroup <- group
-                ImGui.EndCombo ()
-            ImGui.SameLine ()
             if ImGui.Button "Create" then createEntity false false None
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
@@ -1019,6 +1006,14 @@ module Gaia =
             ImGui.End ()
 
         if ImGui.Begin "Hierarchy" then
+            let groups = World.getGroups selectedScreen Globals.World
+            let mutable selectedGroupName = selectedGroup.Name
+            if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
+                for group in groups do
+                    if ImGui.Selectable group.Name then
+                        selectedEntityOpt <- None
+                        selectedGroup <- group
+                ImGui.EndCombo ()
             if ImGui.BeginDragDropTarget () then
                 if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                     match dragDropPayloadOpt with
@@ -1029,7 +1024,7 @@ module Gaia =
                             let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
                             Globals.World <- sourceEntity.SetMountOptWithAdjustment None Globals.World
                             Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
-                            selectedEntityTdsOpt <- Some { EntityOpt = sourceEntity' }
+                            selectedEntityOpt <- Some sourceEntity'
                             //DUMMY
                             //tryShowSelectedEntityInHierarchy form
                     | None -> ()
@@ -1065,9 +1060,9 @@ module Gaia =
         //  Flag Enums
         //
         if ImGui.Begin "Properties" then
-            match selectedEntityTdsOpt with
-            | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
-                let entity = entityTds.EntityOpt
+            match selectedEntityOpt with
+            | Some entity when entity.Exists Globals.World ->
+                let entityTds = { DescribedEntity = entity }
                 let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
                 let properties = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor (Some (entity, Globals.World))
                 for property in properties do
@@ -1180,8 +1175,9 @@ module Gaia =
             ImGui.End ()
 
         if ImGui.Begin "Property Editor" then
-            match selectedEntityTdsOpt with
-            | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
+            match selectedEntityOpt with
+            | Some entity when entity.Exists Globals.World ->
+                let entityTds = { DescribedEntity = entity }
                 match propertyFocusedOpt with
                 | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                     let converter = SymbolicConverter (false, None, property.PropertyType)
@@ -1324,8 +1320,9 @@ module Gaia =
                             if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
                                 if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
                                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                                        match selectedEntityTdsOpt with
-                                        | Some entityTds when entityTds.EntityOpt.Exists Globals.World ->
+                                        match selectedEntityOpt with
+                                        | Some entity when entity.Exists Globals.World ->
+                                            let entityTds = { DescribedEntity = entity }
                                             match propertyFocusedOpt with
                                             | Some property when property.PropertyType <> typeof<ComputedProperty> ->
                                                 let converter = SymbolicConverter (false, None, property.PropertyType)
@@ -1357,6 +1354,7 @@ module Gaia =
                 if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && not (newGroup.Exists Globals.World) then
                     let oldWorld = Globals.World
                     try Globals.World <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen Globals.World |> snd
+                        selectedGroup <- newGroup
                         showNewGroupDialog <- false
                     with exn ->
                         Globals.World <- World.choose oldWorld

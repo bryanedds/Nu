@@ -9,7 +9,7 @@ open Nu
 open Nu.Gaia
 
 type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
-    { EntityOpt : Entity }
+    { DescribedEntity : Entity }
 
 and EntityPropertyDescriptor (propertyDescriptor, attributes) =
     inherit System.ComponentModel.PropertyDescriptor (propertyDescriptor.PropertyName, attributes)
@@ -53,7 +53,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let entityTds = source :?> EntityTypeDescriptorSource
-            match PropertyDescriptor.tryGetValue propertyDescriptor entityTds.EntityOpt Globals.World with
+            match PropertyDescriptor.tryGetValue propertyDescriptor entityTds.DescribedEntity Globals.World with
             | Some value -> value
             | None -> null
 
@@ -61,7 +61,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
 
         // grab the type descriptor and entity
         let entityTds = source :?> EntityTypeDescriptorSource
-        let entity = entityTds.EntityOpt
+        let entity = entityTds.DescribedEntity
 
         // pull string quotes out of string
         let value =
@@ -135,7 +135,7 @@ and EntityTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? EntityTypeDescriptorSource as source -> Some (source.EntityOpt :> Simulant, Globals.World)
+            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity :> Simulant, Globals.World)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let nameDescriptor = makePropertyDescriptor ({ PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }, [||])
