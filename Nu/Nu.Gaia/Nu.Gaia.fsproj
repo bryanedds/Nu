@@ -75,7 +75,7 @@
 		<PackageReference Include="Csv" Version="1.0.58" />
 		<PackageReference Include="FParsec" Version="1.0.3" />
 		<PackageReference Include="Aether.Physics2D" Version="1.5.0" />
-		<PackageReference Include="FSharp.Compiler.Service" Version="43.7.300-preview.23127.2" />
+		<PackageReference Include="FSharp.Compiler.Service" Version="43.7.300" />
 		<PackageReference Include="ImGui.NET" Version="1.89.5.2" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
 		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
@@ -89,10 +89,6 @@
 		<ProjectReference Include="..\..\Nu\Nu.Gaia.Design\Nu.Gaia.Design.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="7.0.300-beta.23127.2" />
 	</ItemGroup>
 
 </Project>

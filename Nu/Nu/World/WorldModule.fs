@@ -819,7 +819,13 @@ module WorldModule =
 
     type World with // Plugin
 
+        /// Whether the current plugin allow code reloading.
+        [<FunctionBinding>]
+        static member getAllowCodeReload world =
+            world.WorldExtension.Plugin.AllowCodeReload
+
         /// Get the user-defined edit modes.
+        [<FunctionBinding>]
         static member getEditModes world =
             world.WorldExtension.Plugin.EditModes
 

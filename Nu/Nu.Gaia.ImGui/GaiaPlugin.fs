@@ -12,3 +12,4 @@ open Nu
 /// The default plugin used by Gaia when a plugin from a game is not utilized.
 type GaiaPlugin () =
     inherit NuPlugin ()
+    override this.AllowCodeReload = false

@@ -1597,6 +1597,10 @@ and [<ReferenceEquality>] World =
 /// specific values and configurations.
 and [<AbstractClass>] NuPlugin () =
 
+    /// Whether or not code reloading is permitted by current plugin
+    abstract AllowCodeReload : bool
+    default this.AllowCodeReload = true
+
     /// Provides a list of modes for setting game state via the editor.
     abstract EditModes : Map<string, World -> World>
     default this.EditModes = Map.empty
