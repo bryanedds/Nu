@@ -2550,7 +2550,7 @@ module WorldModuleEntity =
                         let position =
                             if atMouse
                             then (viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyeCenter, eyeSize)).V3
-                            else (viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyeCenter, eyeSize)).V3
+                            else (viewport.MouseToWorld2d (entityState.Absolute, World.getEyeSize2d world, eyeCenter, eyeSize)).V3
                         match snapsEir with
                         | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Right _ -> (position, None)
