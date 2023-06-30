@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Numerics
+open System.Runtime.InteropServices
 open System.Threading
 open SDL2
 open Prime
@@ -663,17 +664,13 @@ module WorldModule2 =
                     if evt.wheel.y <> 0 then imGui.HandleMouseWheelChange (single evt.wheel.y)
                     // TODO: publish mouse wheel engine events.
                     world
-                | SDL.SDL_EventType.SDL_KEYDOWN ->
+                | SDL.SDL_EventType.SDL_TEXTINPUT ->
                     let imGui = World.getImGui world
+                    imGui.HandleKeyChar (char evt.text.text.FixedElementField)
+                    world
+                | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
-                    let sym = uint key.sym
-                    if sym <= 126u && keyboard.repeat = byte 0 then
-                        let keyChar =
-                            if KeyboardState.isShiftDown ()
-                            then char sym - char 32
-                            else char sym
-                        imGui.HandleKeyChar keyChar
                     let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                     let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
