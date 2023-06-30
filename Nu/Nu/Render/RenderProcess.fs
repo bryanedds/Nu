@@ -43,7 +43,10 @@ type RendererInline () =
         member this.Terminated =
             terminated
 
-        member this.Start fontsOpt windowOpt =
+        member this.Start fontsOpt windowOpt_ =
+
+            // assign windowOpt
+            windowOpt <- windowOpt_
 
             // ensure renderers not already created
             match renderersOpt with
