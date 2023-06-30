@@ -1889,8 +1889,8 @@ module Gaia =
         Globals.World <- World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEyeDragBegin form) Events.MouseCenterDown Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEyeDragEnd form) Events.MouseCenterUp Simulants.Game Globals.World
+        Globals.World <- World.subscribe (handleNuEyeDragBegin form) Events.MouseMiddleDown Simulants.Game Globals.World
+        Globals.World <- World.subscribe (handleNuEyeDragEnd form) Events.MouseMiddleUp Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuUpdate form) Events.Update Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuRender form) Events.Render Simulants.Game Globals.World
         Globals.World <- World.subscribe (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Simulants.Game Globals.World

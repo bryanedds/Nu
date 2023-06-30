@@ -57,7 +57,7 @@ module WorldModule2 =
 
     (* Transition Values *)
     let private ScreenTransitionMouseLeftId = Gen.id
-    let private ScreenTransitionMouseCenterId = Gen.id
+    let private ScreenTransitionMouseMiddleId = Gen.id
     let private ScreenTransitionMouseRightId = Gen.id
     let private ScreenTransitionMouseX1Id = Gen.id
     let private ScreenTransitionMouseX2Id = Gen.id
@@ -194,7 +194,7 @@ module WorldModule2 =
             match state with
             | IdlingState _ ->
                 let world = World.unsubscribe ScreenTransitionMouseLeftId world
-                let world = World.unsubscribe ScreenTransitionMouseCenterId world
+                let world = World.unsubscribe ScreenTransitionMouseMiddleId world
                 let world = World.unsubscribe ScreenTransitionMouseRightId world
                 let world = World.unsubscribe ScreenTransitionMouseX1Id world
                 let world = World.unsubscribe ScreenTransitionMouseX2Id world
@@ -202,7 +202,7 @@ module WorldModule2 =
                 world
             | IncomingState _ | OutgoingState _ ->
                 let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseCenterId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Middle/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
