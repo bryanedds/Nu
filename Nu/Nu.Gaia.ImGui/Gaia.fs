@@ -46,7 +46,7 @@ module Gaia =
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
-    let mutable private darkTheme = false // TODO: load this from config
+    let mutable private lightTheme = false // TODO: load this from config
     let mutable private newGroupName = nameof Group
     let mutable private groupFilePath = ""
     let mutable private dragDropPayloadOpt = None
@@ -454,21 +454,28 @@ module Gaia =
         //DUMMY
         //tryShowSelectedEntityInHierarchy form
 
-    (*let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            match form.entityPropertyGrid.SelectedObject with
-            | :? EntityTypeDescriptorSource as entityTds ->
-                if not (entityTds.DescribedEntity.GetProtected world) then
-                    let world = World.destroyEntity entityTds.DescribedEntity world
-                    deselectEntity form world
-                    world
-                else
-                    MessageBox.Show ("Cannot destroy a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | _ -> world
+    let private tryQuickSizeSelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists Globals.World ->
+            Globals.pushPastWorld ()
+            Globals.World <- entity.SetSize (entity.GetQuickSize Globals.World) Globals.World
+            true
+        | Some _ | None -> false
 
-    let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
+    let private tryDeleteSelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists Globals.World ->
+            if not (entity.GetProtected Globals.World) then
+                Globals.pushPastWorld ()
+                Globals.World <- World.destroyEntity entity Globals.World
+                true
+            else
+                //DUMMY
+                //MessageBox.Show ("Cannot destroy a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                false
+        | Some _ | None -> false
+
+    (*let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
@@ -506,20 +513,6 @@ module Gaia =
                 tryShowSelectedEntityInHierarchy form
                 world
             | None -> world
-
-    let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = entityTds.DescribedEntity
-                let world = Globals.pushPastWorld world
-                let world = entity.SetSize (entity.GetQuickSize world) world
-                Globals.World <- world // must be set for property grid
-                form.entityPropertyGrid.Refresh ()
-                world
-            | _ -> failwithumf ()
 
     let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
@@ -955,9 +948,13 @@ module Gaia =
             ImGui.Text "@ Elevation"
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 50.0f
-            ImGui.DragFloat ("##newEntityElevation", &newEntityElevation) |> ignore<bool>
+            ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.1f) |> ignore<bool>
             ImGui.SameLine ()
-            if ImGui.Button "Quick Size" then ()
+            if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
+            ImGui.SameLine ()
+            if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.Text "|"
             ImGui.SameLine ()
             if World.getHalted Globals.World then
                 if ImGui.Button "<Run>" then
@@ -968,6 +965,8 @@ module Gaia =
                     Globals.pushPastWorld ()
                     Globals.World <- World.setAdvancing false Globals.World
             ImGui.SameLine ()
+            ImGui.Text "|"
+            ImGui.SameLine ()
             ImGui.Text "Reload:"
             ImGui.SameLine ()
             if ImGui.Button "Assets" then tryReloadAssets ()
@@ -976,16 +975,18 @@ module Gaia =
             ImGui.SameLine ()
             if ImGui.Button "All" then tryReloadAll ()
             ImGui.SameLine ()
+            ImGui.Text "|"
+            ImGui.SameLine ()
             ImGui.Text "Inspector"
             ImGui.SameLine ()
             ImGui.Checkbox ("##showInspector", &showInspector) |> ignore<bool>
             ImGui.SameLine ()
-            ImGui.Text "Dark"
+            ImGui.Text "Light"
             ImGui.SameLine ()
-            if ImGui.Checkbox ("##darkTheme", &darkTheme) then
-                if darkTheme
-                then ImGui.StyleColorsDark ()
-                else ImGui.StyleColorsLight ()
+            if ImGui.Checkbox ("##darkTheme", &lightTheme) then
+                if lightTheme
+                then ImGui.StyleColorsLight ()
+                else ImGui.StyleColorsDark ()
             ImGui.SameLine ()
             ImGui.End ()
 
