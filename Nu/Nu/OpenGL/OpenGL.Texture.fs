@@ -68,8 +68,6 @@ module Texture =
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
         Hl.Assert ()
-        OpenGL.Gl.PrioritizeTextures ([|texture|], [|Constants.Render.TexturePriorityDefault|])
-        ignore<ErrorCode> (OpenGL.Gl.GetError ()) // ignore errors since certain uses of Gl.PrioritizeTextures can raise an InvalidOperation error for no reason that I have yet deciphered.
         if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
         texture
 
@@ -137,7 +135,6 @@ module Texture =
             Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
             if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
             Hl.Assert ()
-            ignore<ErrorCode> (Gl.GetError ()) // ignore errors since certain uses of Gl.PrioritizeTextures can raise an InvalidOperation error for no reason that I have yet deciphered.
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
             Right (metadata, texture)
 
