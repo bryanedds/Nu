@@ -533,107 +533,106 @@ module Gaia =
                 form.displayPanel.Focus () |> ignore
                 let world = Globals.pushPastWorld world
                 callback world
-            | (false, _) -> world
+            | (false, _) -> world*)
 
-    let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match tryReloadAssetGraph form world with
-            | (Right assetGraph, world) ->
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                let assetGraphPretty = PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
-                form.assetGraphTextBox.Text <- assetGraphPretty.Replace ("\n", "\r\n")
-                world
-            | (Left error, world) ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
+    let private tryReloadAssets () =
+        let assetSourceDir = targetDir + "/../../.."
+        match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir Globals.World with
+        | (Right assetGraph, world) ->
+            let world = Globals.World <- world
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+            assetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
+        | (Left error, world) ->
+            let world = Globals.World <- world
+            //DUMMY
+            //MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            ()
 
-    let private handleFormReloadCode form (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            clearSelections form // keep old type information from sticking around in re-painting property editors
-            let workingDirPath = targetDir + "/../../.."
-            Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
-            try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
-                | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
-                | fsprojFilePaths ->
-                    let buildName =
+    let private tryReloadCode () =
+        Globals.pushPastWorld ()
+        let oldWorld = Globals.World
+        let workingDirPath = targetDir + "/../../.."
+        Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
+        try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
+            | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'.")
+            | fsprojFilePaths ->
+                let buildName =
 #if DEBUG
-                        "Debug"
+                    "Debug"
 #else
-                        "Release"
+                    "Release"
 #endif
-                    let fsprojFilePath = fsprojFilePaths.[0]
-                    Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
-                    let fsprojFileLines = File.ReadAllLines fsprojFilePath
-                    let fsprojNugetPaths = // imagine manually parsing an xml file...
-                        fsprojFileLines |>
-                        Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "PackageReference") |>
-                        Array.map (fun line -> line.Replace ("<PackageReference Include=", "nuget: ")) |>
-                        Array.map (fun line -> line.Replace (" Version=", ", ")) |>
-                        Array.map (fun line -> line.Replace ("/>", "")) |>
-                        Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> line.Trim ())
-                    let fsprojDllFilePaths =
-                        fsprojFileLines |>
-                        Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "HintPath" && line.Contains ".dll") |>
-                        Array.map (fun line -> line.Replace ("<HintPath>", "")) |>
-                        Array.map (fun line -> line.Replace ("</HintPath>", "")) |>
-                        Array.map (fun line -> line.Replace ("=", "")) |>
-                        Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> line.Replace ("\\", "/")) |>
-                        Array.map (fun line -> line.Trim ())
-                    let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
-                        ["#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\""
-                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.dll\""
-                         "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\""]
-                    let fsprojFsFilePaths =
-                        fsprojFileLines |>
-                        Array.map (fun line -> line.Trim ()) |>
-                        Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
-                        Array.filter (fun line -> line.Contains "Compile Include" && not (line.Contains "Program.fs")) |>
-                        Array.map (fun line -> line.Replace ("<Compile Include", "")) |>
-                        Array.map (fun line -> line.Replace ("/>", "")) |>
-                        Array.map (fun line -> line.Replace ("=", "")) |>
-                        Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> line.Replace ("\\", "/")) |>
-                        Array.map (fun line -> line.Trim ())
-                    let fsxFileString =
-                        String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
-                        String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
-                        String.Join ("\n", fsprojProjectLines) + "\n" +
-                        String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
-                    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536" // TODO: P1: pull these from fsproj!
-                    Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
-                    let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; fsProjectNoWarn|]
-                    use errorStream = new StringWriter ()
-                    use inStream = new StringReader ""
-                    use outStream = new StringWriter ()
-                    let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
-                    use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream)
-                    try session.EvalInteraction fsxFileString
-                        let error = string errorStream
-                        if error.Length > 0
-                        then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + error)
-                        else Log.info "Code compiled with no warnings."
-                        Log.info "Updating code..."
-                        let world = World.updateLateBindings session.DynamicAssemblies world
-                        Log.info "Code updated."
-                        world
-                    with _ ->
-                        let error = string errorStream
-                        Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
-                        World.choose world
-            with exn ->
-                Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
-                World.choose world
+                let fsprojFilePath = fsprojFilePaths.[0]
+                Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
+                let fsprojFileLines = File.ReadAllLines fsprojFilePath
+                let fsprojNugetPaths = // imagine manually parsing an xml file...
+                    fsprojFileLines |>
+                    Array.map (fun line -> line.Trim ()) |>
+                    Array.filter (fun line -> line.Contains "PackageReference") |>
+                    Array.map (fun line -> line.Replace ("<PackageReference Include=", "nuget: ")) |>
+                    Array.map (fun line -> line.Replace (" Version=", ", ")) |>
+                    Array.map (fun line -> line.Replace ("/>", "")) |>
+                    Array.map (fun line -> line.Replace ("\"", "")) |>
+                    Array.map (fun line -> line.Trim ())
+                let fsprojDllFilePaths =
+                    fsprojFileLines |>
+                    Array.map (fun line -> line.Trim ()) |>
+                    Array.filter (fun line -> line.Contains "HintPath" && line.Contains ".dll") |>
+                    Array.map (fun line -> line.Replace ("<HintPath>", "")) |>
+                    Array.map (fun line -> line.Replace ("</HintPath>", "")) |>
+                    Array.map (fun line -> line.Replace ("=", "")) |>
+                    Array.map (fun line -> line.Replace ("\"", "")) |>
+                    Array.map (fun line -> line.Replace ("\\", "/")) |>
+                    Array.map (fun line -> line.Trim ())
+                let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
+                    ["#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\""
+                     "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.dll\""
+                     "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\""]
+                let fsprojFsFilePaths =
+                    fsprojFileLines |>
+                    Array.map (fun line -> line.Trim ()) |>
+                    Array.filter (fun line -> line.Contains "Compile Include" && line.Contains ".fs") |>
+                    Array.filter (fun line -> line.Contains "Compile Include" && not (line.Contains "Program.fs")) |>
+                    Array.map (fun line -> line.Replace ("<Compile Include", "")) |>
+                    Array.map (fun line -> line.Replace ("/>", "")) |>
+                    Array.map (fun line -> line.Replace ("=", "")) |>
+                    Array.map (fun line -> line.Replace ("\"", "")) |>
+                    Array.map (fun line -> line.Replace ("\\", "/")) |>
+                    Array.map (fun line -> line.Trim ())
+                let fsxFileString =
+                    String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
+                    String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
+                    String.Join ("\n", fsprojProjectLines) + "\n" +
+                    String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
+                let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536" // TODO: P1: pull these from fsproj!
+                Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
+                let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; fsProjectNoWarn|]
+                use errorStream = new StringWriter ()
+                use inStream = new StringReader ""
+                use outStream = new StringWriter ()
+                let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
+                use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream)
+                try session.EvalInteraction fsxFileString
+                    let error = string errorStream
+                    if error.Length > 0
+                    then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + error)
+                    else Log.info "Code compiled with no warnings."
+                    Log.info "Updating code..."
+                    Globals.World <- World.updateLateBindings session.DynamicAssemblies Globals.World
+                    Log.info "Code updated."
+                with _ ->
+                    let error = string errorStream
+                    Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
+                    Globals.World <- World.choose oldWorld
+        with exn ->
+            Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
+            Globals.World <- World.choose oldWorld
 
-    let private handleFormReloadAll (form : GaiaForm) (args : EventArgs) =
-        handleFormReloadAssets form args
-        handleFormReloadCode form args
+    let private tryReloadAll () =
+        tryReloadAssets ()
+        tryReloadCode ()
 
-    let private handleKeyboardInput key (form : GaiaForm) world =
+    (*let private handleKeyboardInput key (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
             if Keys.Enter = key then
                 if  form.createEntityComboBox.Focused &&
@@ -962,6 +961,14 @@ module Gaia =
                 if ImGui.Button "Pause" then
                     Globals.pushPastWorld ()
                     Globals.World <- World.setAdvancing false Globals.World
+            ImGui.SameLine ()
+            ImGui.Text "Reload:"
+            ImGui.SameLine ()
+            if ImGui.Button "Assets" then tryReloadAssets ()
+            ImGui.SameLine ()
+            if ImGui.Button "Code" then tryReloadCode ()
+            ImGui.SameLine ()
+            if ImGui.Button "All" then tryReloadAll ()
             ImGui.SameLine ()
             ImGui.Text "Inspector"
             ImGui.SameLine ()
