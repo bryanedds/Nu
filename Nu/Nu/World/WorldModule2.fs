@@ -662,7 +662,7 @@ module WorldModule2 =
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let sym = uint key.sym
-                    if sym >= 33u && sym <= 126u && keyboard.repeat = byte 0 then
+                    if sym <= 126u && keyboard.repeat = byte 0 then
                         let keyChar =
                             if KeyboardState.isShiftDown ()
                             then char sym - char 32
