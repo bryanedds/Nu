@@ -46,6 +46,7 @@ module Gaia =
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
+    let mutable private editWhileAdvancing = false
     let mutable private lightTheme = false // TODO: load this from config
     let mutable private newGroupName = nameof Group
     let mutable private groupFilePath = ""
@@ -96,11 +97,11 @@ module Gaia =
 
     let private canEditWithMouse () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureMouse) && World.getHalted Globals.World
+        not (io.WantCaptureMouse) && (World.getHalted Globals.World || editWhileAdvancing)
 
     let private canEditWithKeyboard () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureKeyboard) && World.getHalted Globals.World
+        not (io.WantCaptureKeyboard) && (World.getHalted Globals.World || editWhileAdvancing)
 
     let private tryMousePick mousePosition =
         let entities2d = getPickableEntities2d ()
@@ -958,13 +959,15 @@ module Gaia =
             ImGui.Text "|"
             ImGui.SameLine ()
             if World.getHalted Globals.World then
-                if ImGui.Button "<Run>" then
+                if ImGui.Button "*Run*" then
                     Globals.pushPastWorld ()
                     Globals.World <- World.setAdvancing true Globals.World
             else
                 if ImGui.Button "Pause" then
                     Globals.pushPastWorld ()
                     Globals.World <- World.setAdvancing false Globals.World
+                ImGui.SameLine ()
+                ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
