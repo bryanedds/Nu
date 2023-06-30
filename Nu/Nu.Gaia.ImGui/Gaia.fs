@@ -514,14 +514,6 @@ module Gaia =
                 world
             | None -> world
 
-    let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            let world = World.setEyeCenter2d v2Zero world
-            let world = World.setEyeCenter3d Constants.Engine.EyeCenter3dDefault world
-            let world = World.setEyeRotation3d quatIdentity world
-            world
-
     let private handleFormSelectEditMode (form : GaiaForm) (_ : EventArgs) =
         Globals.nextPreUpdate $ fun world ->
             let editModes = World.getEditModes world
@@ -549,6 +541,7 @@ module Gaia =
         if World.getAllowCodeReload Globals.World then
             Globals.pushPastWorld ()
             let oldWorld = Globals.World
+            selectedEntityOpt <- None // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
             let workingDirPath = targetDir + "/../../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
@@ -630,6 +623,11 @@ module Gaia =
     let private tryReloadAll () =
         tryReloadAssets ()
         tryReloadCode ()
+
+    let private resetEye () =
+        Globals.World <- World.setEyeCenter2d v2Zero Globals.World
+        Globals.World <- World.setEyeCenter3d Constants.Engine.EyeCenter3dDefault Globals.World
+        Globals.World <- World.setEyeRotation3d quatIdentity Globals.World
 
     (*let private handleKeyboardInput key (form : GaiaForm) world =
         if Form.ActiveForm = (form :> Form) then
@@ -925,6 +923,8 @@ module Gaia =
                     if ImGui.MenuItem ("Run/Pause", "F5") then ()
                     ImGui.EndMenu ()
                 ImGui.EndMenuBar ()
+            ImGui.Text "Entity:"
+            ImGui.SameLine ()
             if ImGui.Button "Create" then createEntity false false None
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
@@ -964,6 +964,12 @@ module Gaia =
                 if ImGui.Button "Pause" then
                     Globals.pushPastWorld ()
                     Globals.World <- World.setAdvancing false Globals.World
+            ImGui.SameLine ()
+            ImGui.Text "|"
+            ImGui.SameLine ()
+            ImGui.Text "Eye:"
+            ImGui.SameLine ()
+            if ImGui.Button "Reset" then resetEye ()
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
