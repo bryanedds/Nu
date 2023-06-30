@@ -513,17 +513,7 @@ module Gaia =
                 selectEntity entity form world
                 tryShowSelectedEntityInHierarchy form
                 world
-            | None -> world
-
-    let private handleFormSelectEditMode (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let editModes = World.getEditModes world
-            match editModes.TryGetValue (form.editModeComboBox.SelectedItem :?> string) with
-            | (true, callback) ->
-                form.displayPanel.Focus () |> ignore
-                let world = Globals.pushPastWorld world
-                callback world
-            | (false, _) -> world*)
+            | None -> world*)
 
     let private tryReloadAssets () =
         let assetSourceDir = targetDir + "/../../.."
@@ -968,6 +958,32 @@ module Gaia =
                     Globals.World <- World.setAdvancing false Globals.World
                 ImGui.SameLine ()
                 ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.Text "|"
+            ImGui.SameLine ()
+            ImGui.Text "Snap:"
+            ImGui.SameLine ()
+            ImGui.Text "2d"
+            ImGui.SameLine ()
+            ImGui.Checkbox ("##snaps2dSelected", &snaps2dSelected) |> ignore<bool>
+            ImGui.SameLine ()
+            let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
+            ImGui.Text "Pos"
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth 36.0f
+            ImGui.DragFloat ("##p", &p, (if snaps2dSelected then 0.1f else 0.01f), 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.Text "Deg"
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth 36.0f
+            ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+            ImGui.SameLine ()
+            ImGui.Text "Scl"
+            ImGui.SameLine ()
+            ImGui.SetNextItemWidth 36.0f
+            ImGui.DragFloat ("##s", &s, 0.01f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+            ImGui.SameLine ()
+            if snaps2dSelected then snaps2d <- (p, d, s) else snaps3d <- (p, d, s)
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
