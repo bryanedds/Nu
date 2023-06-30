@@ -91,7 +91,12 @@ module Gaia =
         generateEntityName3 dispatcherName existingEntityNames
 
     let private canEditWithMouse () =
-        World.getAdvancing Globals.World
+        let io = ImGui.GetIO ()
+        not (io.WantCaptureMouse) && World.getHalted Globals.World
+
+    let private canEditWithKeyboard () =
+        let io = ImGui.GetIO ()
+        not (io.WantCaptureKeyboard) && World.getHalted Globals.World
 
     let private tryMousePick mousePosition =
         let entities2d = getPickableEntities2d ()
@@ -134,15 +139,17 @@ module Gaia =
 
     let private handleNuMouseRightDown (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
-        let handled = if World.getAdvancing Globals.World then Cascade else Resolve
-        let mousePosition = World.getMousePosition Globals.World
-        let _ = tryMousePick mousePosition
-        rightClickPosition <- mousePosition
-        (handled, Globals.World)
+        if canEditWithMouse () then
+            let handling = if World.getAdvancing Globals.World then Cascade else Resolve
+            let mousePosition = World.getMousePosition Globals.World
+            let _ = tryMousePick mousePosition
+            rightClickPosition <- mousePosition
+            (handling, Globals.World)
+        else (Resolve, Globals.World)
 
     let private handleNuEntityDragBegin (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
-        if not (canEditWithMouse ()) then
+        if canEditWithMouse () then
             let handled = if World.getAdvancing Globals.World then Cascade else Resolve
             let mousePosition = World.getMousePosition Globals.World
             match tryMousePick mousePosition with
@@ -192,33 +199,37 @@ module Gaia =
 
     let private handleNuEntityDragEnd (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
-        if canEditWithMouse () then (Cascade, Globals.World)
-        else
+        if canEditWithMouse () then
             let handled = if World.getAdvancing Globals.World then Cascade else Resolve
             match dragEntityState with
             | DragEntityPosition2d _ | DragEntityRotation2d _ | DragEntityPosition3d _ | DragEntityRotation3d _ ->
                 dragEntityState <- DragEntityInactive
                 (handled, Globals.World)
             | DragEntityInactive -> (Resolve, Globals.World)
+        else (Cascade, Globals.World)
 
     let private handleNuEyeDragBegin (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
-        let mousePositionScreen = World.getMousePosition2dScreen Globals.World
-        let dragState = DragEyeCenter2d (World.getEyeCenter2d Globals.World + mousePositionScreen, mousePositionScreen)
-        dragEyeState <- dragState
-        (Resolve, Globals.World)
+        if canEditWithMouse () then
+            let mousePositionScreen = World.getMousePosition2dScreen Globals.World
+            let dragState = DragEyeCenter2d (World.getEyeCenter2d Globals.World + mousePositionScreen, mousePositionScreen)
+            dragEyeState <- dragState
+            (Resolve, Globals.World)
+        else (Resolve, Globals.World)
 
     let private handleNuEyeDragEnd (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
-        match dragEyeState with
-        | DragEyeCenter2d _ ->
-            dragEyeState <- DragEyeInactive
-            (Resolve, Globals.World)
-        | DragEyeInactive -> (Resolve, Globals.World)
+        if canEditWithMouse () then
+            match dragEyeState with
+            | DragEyeCenter2d _ ->
+                dragEyeState <- DragEyeInactive
+                (Resolve, Globals.World)
+            | DragEyeInactive -> (Resolve, Globals.World)
+        else (Resolve, Globals.World)
 
     let private handleNuUpdate (_ : Event<unit, Game>) world =
         let world = Globals.World <- world
-        if World.getHalted Globals.World then
+        if canEditWithKeyboard () then
             let position = World.getEyeCenter3d Globals.World
             let rotation = World.getEyeRotation3d Globals.World
             let moveSpeed =
@@ -697,7 +708,7 @@ module Gaia =
 
     let private updateEntityDrag () =
 
-        if not (canEditWithMouse ()) then
+        if canEditWithMouse () then
             match dragEntityState with
             | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
                 let localTime = DateTimeOffset.Now - time
