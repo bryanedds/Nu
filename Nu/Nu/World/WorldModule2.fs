@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
 open System.Threading
 open SDL2
 open Prime
@@ -667,6 +666,7 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_TEXTINPUT ->
                     let imGui = World.getImGui world
                     imGui.HandleKeyChar (char evt.text.text.FixedElementField)
+                    // TODO: publish text input engine events.
                     world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
