@@ -88,7 +88,7 @@ module Gaia =
         then generateEntityName3 dispatcherName existingEntityNames
         else name
 
-    let private generateEntityName dispatcherName selectedGroup =
+    let private generateEntityName dispatcherName =
         let existingEntityNames =
             World.getEntitiesFlattened selectedGroup Globals.World |>
             Seq.map (fun entity -> entity.Name) |>
@@ -402,7 +402,7 @@ module Gaia =
             | "(Routed Overlay)" -> RoutedOverlay
             | "(No Overlay)" -> NoOverlay
             | overlayName -> ExplicitOverlay overlayName
-        let name = generateEntityName dispatcherName selectedGroup
+        let name = generateEntityName dispatcherName
         let surnames =
             match selectedEntityOpt with
             | Some entity when entity.Exists Globals.World && inHierarchy -> Array.add name entity.Surnames
@@ -476,44 +476,43 @@ module Gaia =
                 false
         | Some _ | None -> false
 
-    (*let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
-            | _ -> failwithumf ()
+    let private tryCopySelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists Globals.World ->
+            World.copyEntityToClipboard entity Globals.World
+            true
+        | Some _ | None -> false
 
-    let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                if not (entityTds.DescribedEntity.GetProtected world) then
-                    let world = Globals.pushPastWorld world
-                    let world = World.cutEntityToClipboard entityTds.DescribedEntity world
-                    deselectEntity form world
-                    world
-                else
-                    MessageBox.Show ("Cannot cut a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | _ -> failwithumf ()
+    let private tryCutSelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists Globals.World ->
+            if not (entity.GetProtected Globals.World) then
+                Globals.pushPastWorld ()
+                selectedEntityOpt <- None
+                Globals.World <- World.cutEntityToClipboard entity Globals.World
+                true
+            else
+                //DUMMY
+                //MessageBox.Show ("Cannot cut a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                false
+        | Some _ | None -> false
 
-    let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            let surnamesOpt =
-                World.tryGetEntityDispatcherNameOnClipboard world |>
-                Option.map (fun dispatcherName -> generateEntityName dispatcherName selectedGroup world) |>
-                Option.map Array.singleton
-            let snapsEir = getSnaps form |> if form.snap3dButton.Checked then Right else Left
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup world
-            match entityOpt with
-            | Some entity ->
-                selectEntity entity form world
-                tryShowSelectedEntityInHierarchy form
-                world
-            | None -> world*)
+    let private tryPaste atMouse =
+        Globals.pushPastWorld ()
+        let surnamesOpt =
+            World.tryGetEntityDispatcherNameOnClipboard Globals.World |>
+            Option.map (fun dispatcherName -> generateEntityName dispatcherName) |>
+            Option.map Array.singleton
+        let snapsEir = if snaps2dSelected then Left snaps2d else Right snaps3d
+        let (entityOpt, world) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup Globals.World
+        let world = Globals.World <- world
+        match entityOpt with
+        | Some entity ->
+            selectedEntityOpt <- Some entity
+            //DUMMY
+            //tryShowSelectedEntityInHierarchy form
+            true
+        | None -> false
 
     let private tryReloadAssets () =
         let assetSourceDir = targetDir + "/../../.."
@@ -904,9 +903,9 @@ module Gaia =
                             | Some entity when not (entity.Exists Globals.World) -> selectedEntityOpt <- None
                             | Some _ | None -> ()
                     ImGui.Separator ()
-                    if ImGui.MenuItem ("Cut", "Ctrl+X") then ()
-                    if ImGui.MenuItem ("Copy", "Ctrl+C") then ()
-                    if ImGui.MenuItem ("Paste", "Ctrl+V") then ()
+                    if ImGui.MenuItem ("Cut", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
+                    if ImGui.MenuItem ("Copy", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
+                    if ImGui.MenuItem ("Paste", "Ctrl+V") then tryPaste false |> ignore<bool>
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Create", "Ctrl+E") then ()
                     if ImGui.MenuItem ("Delete", "Ctrl+D") then ()
@@ -940,7 +939,7 @@ module Gaia =
             ImGui.Text "@ Elevation"
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 50.0f
-            ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.1f) |> ignore<bool>
+            ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.05f, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
             ImGui.SameLine ()
             if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
             ImGui.SameLine ()
