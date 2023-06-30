@@ -690,17 +690,16 @@ module Gaia =
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
         | DialogResult.Cancel -> args.Cancel <- true
-        | _ -> ()
+        | _ -> ()*)
 
-    let private updateEyeDrag (_ : GaiaForm) world =
+    let private updateEyeDrag () =
         match dragEyeState with
         | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
-            let mousePositionScreen = World.getMousePosition2dScreen world
+            let mousePositionScreen = World.getMousePosition2dScreen Globals.World
             let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
-            let world = World.setEyeCenter2d eyeCenter world
+            Globals.World <- World.setEyeCenter2d eyeCenter Globals.World
             dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
-            world
-        | DragEyeInactive -> world*)
+        | DragEyeInactive -> ()
 
     let private updateEntityDrag () =
 
@@ -867,6 +866,8 @@ module Gaia =
         // TODO: figure out some sort of exception handling strategy for Gaia interaction.
 
         let world = Globals.World <- world
+
+        updateEyeDrag ()
 
         updateEntityDrag ()
 
@@ -1598,8 +1599,8 @@ module Gaia =
                 Globals.World <- World.subscribe handleNuMouseRightDown Events.MouseRightDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game Globals.World
-                Globals.World <- World.subscribe handleNuEyeDragBegin Events.MouseCenterDown Simulants.Game Globals.World
-                Globals.World <- World.subscribe handleNuEyeDragEnd Events.MouseCenterUp Simulants.Game Globals.World
+                Globals.World <- World.subscribe handleNuEyeDragBegin Events.MouseMiddleDown Simulants.Game Globals.World
+                Globals.World <- World.subscribe handleNuEyeDragEnd Events.MouseMiddleUp Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuUpdate Events.Update Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuRender Events.Render Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuSelectedScreenOptChange Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game Globals.World
