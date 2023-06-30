@@ -651,7 +651,7 @@ module WorldModule3 =
                 let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
                 let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault staticModelsMetadata
-                let rendererProcess = RendererInline () :> RendererProcess
+                let rendererProcess = RendererThread () :> RendererProcess
                 rendererProcess.Start (Some imGui.Fonts) (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                 let audioPlayer =
