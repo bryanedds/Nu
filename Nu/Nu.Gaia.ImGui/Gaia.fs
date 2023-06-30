@@ -343,6 +343,24 @@ module Gaia =
             //MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             false
 
+    let private tryUndo () =
+        if Globals.tryUndo () then
+            match selectedEntityOpt with
+            | Some entity when not (entity.Exists Globals.World) ->
+                selectedEntityOpt <- None
+                true
+            | Some _ | None -> false
+        else false
+
+    let private tryRedo () =
+        if Globals.tryRedo () then
+            match selectedEntityOpt with
+            | Some entity when not (entity.Exists Globals.World) ->
+                selectedEntityOpt <- None
+                true
+            | Some _ | None -> false
+        else false
+
     let private tryLoadSelectedGroup filePath =
 
         // ensure group isn't protected
@@ -476,13 +494,6 @@ module Gaia =
                 false
         | Some _ | None -> false
 
-    let private tryCopySelectedEntity () =
-        match selectedEntityOpt with
-        | Some entity when entity.Exists Globals.World ->
-            World.copyEntityToClipboard entity Globals.World
-            true
-        | Some _ | None -> false
-
     let private tryCutSelectedEntity () =
         match selectedEntityOpt with
         | Some entity when entity.Exists Globals.World ->
@@ -495,6 +506,13 @@ module Gaia =
                 //DUMMY
                 //MessageBox.Show ("Cannot cut a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 false
+        | Some _ | None -> false
+
+    let private tryCopySelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists Globals.World ->
+            World.copyEntityToClipboard entity Globals.World
+            true
         | Some _ | None -> false
 
     let private tryPaste atMouse =
@@ -619,68 +637,10 @@ module Gaia =
         Globals.World <- World.setEyeCenter3d Constants.Engine.EyeCenter3dDefault Globals.World
         Globals.World <- World.setEyeRotation3d quatIdentity Globals.World
 
-    (*let private handleKeyboardInput key (form : GaiaForm) world =
-        if Form.ActiveForm = (form :> Form) then
-            if Keys.Enter = key then
-                if  form.createEntityComboBox.Focused &&
-                    not form.createEntityComboBox.DroppedDown then
-                    handleFormCreateEntity false false None form (EventArgs ())
-            if Keys.Escape = key then
-                if form.FocusedControl = form.displayPanel then deselectEntity form world
-                form.displayPanel.Focus () |> ignore<bool>
-            if Keys.F5 = key then form.runButton.PerformClick ()
-            if Keys.D3 = key && Keys.None = Control.ModifierKeys then form.snap3dButton.Checked <- form.snap3dButton.Checked
-            if Keys.Q = key && Keys.Control = Control.ModifierKeys then handleFormQuickSize form (EventArgs ())
-            if Keys.N = key && Keys.Control = Control.ModifierKeys then handleFormNew form (EventArgs ())
-            if Keys.O = key && Keys.Control = Control.ModifierKeys then handleFormOpen form (EventArgs ())
-            if Keys.S = key && Keys.Control = Control.ModifierKeys then handleFormSave false form (EventArgs ())
-            if (Keys.A = key || Keys.Enter = key) && Keys.Alt = Control.ModifierKeys then
-                match form.rolloutTabControl.SelectedTab.Name with
-                | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
-                | "preludeTabPage" -> form.applyPreludeButton.PerformClick ()
-                | "assetGraphTabPage" -> form.applyAssetGraphButton.PerformClick ()
-                | "overlayerTabPage" -> form.applyOverlayerButton.PerformClick ()
-                | "eventTracingTabPage" -> form.applyEventFilterButton.PerformClick ()
-                | _ -> ()
-            if Keys.D = key && Keys.Alt = Control.ModifierKeys then
-                match form.rolloutTabControl.SelectedTab.Name with
-                | "propertyEditorTabPage" -> form.discardPropertyButton.PerformClick ()
-                | "preludeTabPage" -> form.discardPreludeButton.PerformClick ()
-                | "assetGraphTabPage" -> form.discardAssetGraphButton.PerformClick ()
-                | "overlayerTabPage" -> form.discardOverlayerButton.PerformClick ()
-                | "eventTracingTabPage" -> form.discardEventFilterButton.PerformClick ()
-                | _ -> ()
-            if (Keys.P = key || Keys.Enter = key) && Keys.Alt = Control.ModifierKeys then (form.rolloutTabControl.SelectTab "propertyEditorTabPage"; form.propertyValueTextBox.Select (); form.propertyValueTextBox.SelectAll ())
-            if Keys.E = key && Keys.Alt = Control.ModifierKeys then (form.rolloutTabControl.SelectTab "evaluatorTabPage"; form.evalInputTextBox.Select ())
-            if Keys.K = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
-            if Keys.T = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
-            if Keys.V = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
-            if Keys.L = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
-            match form.FocusedControl  with
-            | :? ToolStripDropDown | :? TextBox -> ()
-            // | :? ToolStripComboBox -> () // doesn't implement Control... not sure how to match.
-            | _ ->
-                if Keys.X = key && Keys.None = Control.ModifierKeys then form.constrainXButton.Checked <- not form.constrainXButton.Checked
-                if Keys.Y = key && Keys.None = Control.ModifierKeys then form.constrainYButton.Checked <- not form.constrainYButton.Checked
-                if Keys.Z = key && Keys.None = Control.ModifierKeys then form.constrainZButton.Checked <- not form.constrainZButton.Checked
-                if Keys.C = key && Keys.None = Control.ModifierKeys then
-                    form.constrainXButton.Checked <- false
-                    form.constrainYButton.Checked <- false
-                    form.constrainZButton.Checked <- false
-                if Keys.A = key && Keys.Control = Control.ModifierKeys then handleFormSave true form (EventArgs ())
-                if Keys.Z = key && Keys.Control = Control.ModifierKeys then handleFormUndo form (EventArgs ())
-                if Keys.Y = key && Keys.Control = Control.ModifierKeys then handleFormRedo form (EventArgs ())
-                if Keys.E = key && Keys.Control = Control.ModifierKeys then handleFormCreateEntity false false None form (EventArgs ())
-                if Keys.D = key && Keys.Control = Control.ModifierKeys then handleFormDeleteEntity form (EventArgs ())
-                if Keys.X = key && Keys.Control = Control.ModifierKeys then handleFormCut form (EventArgs ())
-                if Keys.C = key && Keys.Control = Control.ModifierKeys then handleFormCopy form (EventArgs ())
-                if Keys.V = key && Keys.Control = Control.ModifierKeys then handleFormPaste false form (EventArgs ())
-                if Keys.Delete = key then handleFormDeleteEntity form (EventArgs ())
-
-    let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
-        match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
-        | DialogResult.Cancel -> args.Cancel <- true
-        | _ -> ()*)
+    let private toggleAdvancing () =
+        let advancing = World.getAdvancing Globals.World
+        if not advancing then Globals.pushPastWorld ()
+        Globals.World <- World.setAdvancing (not advancing) Globals.World
 
     let private updateEyeDrag () =
         match dragEyeState with
@@ -861,6 +821,21 @@ module Gaia =
 
         updateEntityDrag ()
 
+        if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
+        if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlPressed () then tryQuickSizeSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlPressed () then showNewGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.D && ImGui.IsCtrlPressed () then tryDeleteSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false None
+        if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
+
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
         if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
@@ -892,26 +867,18 @@ module Gaia =
                     if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
                     ImGui.EndMenu ()
                 if ImGui.BeginMenu "Edit" then
-                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then
-                        if Globals.tryUndo () then
-                            match selectedEntityOpt with
-                            | Some entity when not (entity.Exists Globals.World) -> selectedEntityOpt <- None
-                            | Some _ | None -> ()
-                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then
-                        if Globals.tryRedo () then
-                            match selectedEntityOpt with
-                            | Some entity when not (entity.Exists Globals.World) -> selectedEntityOpt <- None
-                            | Some _ | None -> ()
+                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
+                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Cut", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
                     if ImGui.MenuItem ("Copy", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
                     if ImGui.MenuItem ("Paste", "Ctrl+V") then tryPaste false |> ignore<bool>
                     ImGui.Separator ()
-                    if ImGui.MenuItem ("Create", "Ctrl+E") then ()
-                    if ImGui.MenuItem ("Delete", "Ctrl+D") then ()
-                    if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then ()
+                    if ImGui.MenuItem ("Create", "Ctrl+Enter") then createEntity false false None
+                    if ImGui.MenuItem ("Delete", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
+                    if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
                     ImGui.Separator ()
-                    if ImGui.MenuItem ("Run/Pause", "F5") then ()
+                    if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
                     ImGui.EndMenu ()
                 ImGui.EndMenuBar ()
             ImGui.Text "Entity:"
@@ -953,7 +920,6 @@ module Gaia =
                     Globals.World <- World.setAdvancing true Globals.World
             else
                 if ImGui.Button "Pause" then
-                    Globals.pushPastWorld ()
                     Globals.World <- World.setAdvancing false Globals.World
                 ImGui.SameLine ()
                 ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
