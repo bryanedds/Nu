@@ -530,7 +530,7 @@ module WorldModule2 =
                 match AssetGraph.tryMakeFromFile (outputDirectory + "/" + Assets.Global.AssetGraphFilePath) with
                 | Right assetGraph ->
 
-                    // build assets reload asset metadata
+                    // build and reload assets
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     Metadata.generateMetadata (World.getImperative world) assetGraph
                     let world = World.reloadExistingAssets world
