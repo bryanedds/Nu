@@ -71,6 +71,10 @@ type ImGui (windowWidth : int, windowHeight : int) =
         let io = ImGui.GetIO ()
         io.Fonts
 
+    member this.HandleMouseWheelChange change =
+        let io = ImGui.GetIO ()
+        io.MouseWheel <- io.MouseWheel + change
+
     member this.HandleKeyChar (keyChar : char) =
         charsPressed.Add keyChar
 
@@ -94,6 +98,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
         // update keyboard states
         io.KeyCtrl <- KeyboardState.isCtrlDown ()
+        if io.KeyCtrl then Console.WriteLine ()
         io.KeyAlt <- KeyboardState.isAltDown ()
         io.KeyShift <- KeyboardState.isShiftDown ()
         let keysDown = io.KeysDown

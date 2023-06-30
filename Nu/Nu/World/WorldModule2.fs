@@ -658,7 +658,13 @@ module WorldModule2 =
                     let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true true world
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
                     World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                | SDL.SDL_EventType.SDL_MOUSEWHEEL ->
+                    let imGui = World.getImGui world
+                    if evt.wheel.y <> 0 then imGui.HandleMouseWheelChange (single evt.wheel.y)
+                    // TODO: publish mouse wheel engine events.
+                    world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
+                    let imGui = World.getImGui world
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let sym = uint key.sym
@@ -667,7 +673,7 @@ module WorldModule2 =
                             if KeyboardState.isShiftDown ()
                             then char sym - char 32
                             else char sym
-                        (World.getImGui world).HandleKeyChar keyChar
+                        imGui.HandleKeyChar keyChar
                     let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                     let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
