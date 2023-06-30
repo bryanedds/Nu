@@ -555,10 +555,10 @@ module WorldModule =
 
         static member internal cleanUpSubsystems world =
             World.updateSubsystems (fun subsystems ->
-                subsystems.ImGui.CleanUp ()
+                subsystems.RendererProcess.Terminate ()
                 subsystems.PhysicsEngine3d.CleanUp ()
                 subsystems.PhysicsEngine2d.CleanUp ()
-                subsystems.RendererProcess.Terminate ()
+                subsystems.ImGui.CleanUp ()
                 subsystems) world
 
     type World with // EventGraph
