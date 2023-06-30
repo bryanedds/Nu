@@ -4,13 +4,9 @@
 namespace Nu.Gaia
 open System
 open System.Collections.Generic
-open System.ComponentModel
-open System.Drawing
 open System.IO
-open System.Linq
 open System.Numerics
 open System.Reflection
-open System.Runtime.InteropServices
 open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
 open FSharp.Reflection
