@@ -64,8 +64,8 @@ type ImGui (windowWidth : int, windowHeight : int) =
         // add default font
         fonts.AddFontDefault () |> ignore<ImFontPtr>
 
-        // configure styling theme to light
-        ImGui.StyleColorsLight ()
+        // configure styling theme to dark
+        ImGui.StyleColorsDark ()
 
     member this.Fonts =
         let io = ImGui.GetIO ()
