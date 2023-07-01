@@ -1020,7 +1020,7 @@ module Gaia =
                     then ImGui.StyleColorsLightPlus ()
                     else ImGui.StyleColorsDarkPlus ()
                 ImGui.SameLine ()
-                ImGui.Text "Full Screen (F11)"
+                ImGui.Text "Full (F11)"
                 ImGui.SameLine ()
                 ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
                 ImGui.End ()
