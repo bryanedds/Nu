@@ -54,12 +54,13 @@ type ImGui (windowWidth : int, windowHeight : int) =
         keyMap.[int ImGuiKey.Backspace] <- int KeyboardKey.Backspace
         keyMap.[int ImGuiKey.Enter] <- int KeyboardKey.Return
         keyMap.[int ImGuiKey.Escape] <- int KeyboardKey.Escape
-        keyMap.[int ImGuiKey.A] <- int KeyboardKey.A
-        keyMap.[int ImGuiKey.C] <- int KeyboardKey.C
-        keyMap.[int ImGuiKey.V] <- int KeyboardKey.V
-        keyMap.[int ImGuiKey.X] <- int KeyboardKey.X
-        keyMap.[int ImGuiKey.Y] <- int KeyboardKey.Y
-        keyMap.[int ImGuiKey.Z] <- int KeyboardKey.Z
+        keyMap.[int ImGuiKey.LeftCtrl] <- int KeyboardKey.Lctrl
+        keyMap.[int ImGuiKey.RightCtrl] <- int KeyboardKey.Rctrl
+        keyMap.[int ImGuiKey.LeftAlt] <- int KeyboardKey.Lalt
+        keyMap.[int ImGuiKey.RightAlt] <- int KeyboardKey.Ralt
+        keyMap.[int ImGuiKey.LeftShift] <- int KeyboardKey.Lshift
+        keyMap.[int ImGuiKey.RightShift] <- int KeyboardKey.Rshift
+        for i in 0 .. dec 26 do keyMap.[int ImGuiKey.A + i] <- int KeyboardKey.A + i
 
         // add default font
         fonts.AddFontDefault () |> ignore<ImFontPtr>
@@ -70,6 +71,18 @@ type ImGui (windowWidth : int, windowHeight : int) =
     member this.Fonts =
         let io = ImGui.GetIO ()
         io.Fonts
+
+    member this.HandleCtrlKeyChange down =
+        let io = ImGui.GetIO ()
+        io.KeyCtrl <- down
+
+    member this.HandleAltKeyChange down =
+        let io = ImGui.GetIO ()
+        io.KeyAlt <- down
+
+    member this.HandleShiftKeyChange down =
+        let io = ImGui.GetIO ()
+        io.KeyShift <- down
 
     member this.HandleMouseWheelChange change =
         let io = ImGui.GetIO ()
@@ -97,10 +110,6 @@ type ImGui (windowWidth : int, windowHeight : int) =
         io.MousePos <- MouseState.getPosition ()
 
         // update keyboard states
-        io.KeyCtrl <- KeyboardState.isCtrlDown ()
-        if io.KeyCtrl then Console.WriteLine ()
-        io.KeyAlt <- KeyboardState.isAltDown ()
-        io.KeyShift <- KeyboardState.isShiftDown ()
         let keysDown = io.KeysDown
         for keyboardKey in keyboardKeys do
             keysDown.[int keyboardKey] <- KeyboardState.isKeyDown keyboardKey
@@ -117,20 +126,23 @@ type ImGui (windowWidth : int, windowHeight : int) =
     member this.CleanUp () =
         ImGui.DestroyContext context
 
-[<RequireQualifiedAccess>]
-module ImGui =
+    static member IsCtrlPressed () =
+        // NOTE: using modifier detection from imgui since it works better given how things have been configued.
+        KeyboardState.isCtrlDown ()
+        //ImGui.IsKeyPressed ImGuiKey.LeftCtrl ||
+        //ImGui.IsKeyPressed ImGuiKey.RightCtrl
 
-    let IsCtrlPressed () =
-        ImGui.IsKeyPressed ImGuiKey.LeftCtrl ||
-        ImGui.IsKeyPressed ImGuiKey.RightCtrl
+    static member IsAltPressed () =
+        // NOTE: using modifier detection from imgui since it works better given how things have been configued.
+        KeyboardState.isAltDown ()
+        //ImGui.IsKeyPressed ImGuiKey.LeftAlt ||
+        //ImGui.IsKeyPressed ImGuiKey.RightAlt
 
-    let IsAltPressed () =
-        ImGui.IsKeyPressed ImGuiKey.LeftAlt ||
-        ImGui.IsKeyPressed ImGuiKey.RightAlt
+    static member IsShiftPressed () =
+        // NOTE: using modifier detection from imgui since it works better given how things have been configued.
+        KeyboardState.isShiftDown ()
+        //ImGui.IsKeyPressed ImGuiKey.LeftShift ||
+        //ImGui.IsKeyPressed ImGuiKey.RightShift
 
-    let IsShiftPressed () =
-        ImGui.IsKeyPressed ImGuiKey.LeftShift ||
-        ImGui.IsKeyPressed ImGuiKey.RightShift
-
-    let IsCtrlPlusKeyPressed (key : ImGuiKey) =
-        IsCtrlPressed () && ImGui.IsKeyPressed key
+    static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
+        ImGui.IsCtrlPressed () && ImGui.IsKeyPressed key

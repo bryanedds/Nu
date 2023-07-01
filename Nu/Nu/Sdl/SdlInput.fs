@@ -97,8 +97,7 @@ module KeyboardState =
 
     /// Check that either ctrl key is down.
     let internal isCtrlDown () =
-        isKeyDown KeyboardKey.Lctrl ||
-        isKeyDown KeyboardKey.Rctrl
+        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_CTRL <> 0
 
     /// Check that both ctrl keys are up.
     let internal isCtrlUp () =
@@ -106,8 +105,7 @@ module KeyboardState =
 
     /// Check that either alt key is down.
     let internal isAltDown () =
-        isKeyDown KeyboardKey.Lalt ||
-        isKeyDown KeyboardKey.Ralt
+        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_ALT <> 0
 
     /// Check that both alt keys are up.
     let internal isAltUp () =
@@ -115,8 +113,7 @@ module KeyboardState =
 
     /// Check that either shift key is down.
     let internal isShiftDown () =
-        isKeyDown KeyboardKey.Lshift ||
-        isKeyDown KeyboardKey.Rshift
+        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_SHIFT <> 0
 
     /// Check that both shift keys are up.
     let internal isShiftUp () =
