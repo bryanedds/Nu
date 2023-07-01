@@ -7,11 +7,13 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Reflection
+open System.Runtime.InteropServices
 open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
 open FSharp.Reflection
 open Prime
 open ImGuiNET
+open ImGuizmoNET
 open Nu
 open Nu.Gaia
 
@@ -25,6 +27,7 @@ module Gaia =
     let mutable private snaps2dSelected = true
     let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private fullScreen = false
     let mutable private propertyDescriptorFocusedOpt = None
     let mutable private filePaths = Map.empty<Group Address, string>
     let mutable private targetDir = "."
@@ -833,6 +836,7 @@ module Gaia =
 
         let io = ImGui.GetIO ()
         if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
+        if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
         if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlPressed () then tryQuickSizeSelectedEntity () |> ignore<bool>
         if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlPressed () then showNewGroupDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
@@ -850,345 +854,307 @@ module Gaia =
 
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
-        if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
-            if ImGui.BeginMenuBar () then
-                if ImGui.BeginMenu "File" then
-                    if ImGui.MenuItem ("New Group", "Ctrl+N") then
-                        showNewGroupDialog <- true
-                    if ImGui.MenuItem ("Open Group", "Ctrl+O") then
-                        showOpenGroupDialog <- true
-                    if ImGui.MenuItem ("Save Group", "Ctrl+S") then
-                        match Map.tryFind selectedGroup.GroupAddress filePaths with
-                        | Some groupFilePath -> trySaveSelectedGroup groupFilePath |> ignore<bool>
-                        | None -> showSaveGroupDialog <- true
-                    if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then
-                        match Map.tryFind selectedGroup.GroupAddress filePaths with
-                        | Some filePath -> groupFilePath <- filePath
-                        | None -> groupFilePath <- ""
-                        showSaveGroupDialog <- true
-                    if ImGui.MenuItem "Close Group" then
-                        let groups = Globals.World |> World.getGroups selectedScreen |> Set.ofSeq
-                        if not (selectedGroup.GetProtected Globals.World) && Set.count groups > 1 then
-                            Globals.pushPastWorld ()
-                            let groupsRemaining = Set.remove selectedGroup groups
-                            selectedEntityOpt <- None
-                            Globals.World <- World.destroyGroupImmediate selectedGroup Globals.World
-                            filePaths <- Map.remove selectedGroup.GroupAddress filePaths
-                            selectedGroup <- Seq.head groupsRemaining
-                    ImGui.Separator ()
-                    if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
-                    ImGui.EndMenu ()
-                if ImGui.BeginMenu "Edit" then
-                    if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
-                    if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
-                    ImGui.Separator ()
-                    if ImGui.MenuItem ("Cut", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
-                    if ImGui.MenuItem ("Copy", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
-                    if ImGui.MenuItem ("Paste", "Ctrl+V") then tryPaste false |> ignore<bool>
-                    ImGui.Separator ()
-                    if ImGui.MenuItem ("Create", "Ctrl+Enter") then createEntity false false
-                    if ImGui.MenuItem ("Delete", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
-                    if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
-                    ImGui.Separator ()
-                    if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
-                    ImGui.EndMenu ()
-                ImGui.EndMenuBar ()
-            ImGui.Text "Entity:"
-            ImGui.SameLine ()
-            if ImGui.Button "Create" then createEntity false false
-            ImGui.SameLine ()
-            ImGui.SetNextItemWidth 150.0f
-            if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
-                for dispatcherName in (World.getEntityDispatchers Globals.World).Keys do
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
-                        newEntityDispatcherName <- dispatcherName
-                ImGui.EndCombo ()
-            ImGui.SameLine ()
-            ImGui.Text "w/ Overlay"
-            ImGui.SameLine ()
-            ImGui.SetNextItemWidth 150.0f
-            let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays Globals.World |> Map.toKeyArray)
-            if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
-                for overlayName in overlayNames do
-                    if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
-                        newEntityDispatcherName <- overlayName
-                ImGui.EndCombo ()
-            ImGui.SameLine ()
-            ImGui.Text "@ Elevation"
-            ImGui.SameLine ()
-            ImGui.SetNextItemWidth 50.0f
-            ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.05f, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
-            ImGui.SameLine ()
-            if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
-            ImGui.SameLine ()
-            if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
-            ImGui.SameLine ()
-            ImGui.Text "|"
-            ImGui.SameLine ()
-            if World.getHalted Globals.World then
-                if ImGui.Button "*Run*" then
-                    Globals.pushPastWorld ()
-                    Globals.World <- World.setAdvancing true Globals.World
-            else
-                if ImGui.Button "Pause" then
-                    Globals.World <- World.setAdvancing false Globals.World
-                ImGui.SameLine ()
-                ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
-            ImGui.SameLine ()
-            ImGui.Text "|"
-            ImGui.SameLine ()
-            ImGui.Text "Snap:"
-            ImGui.SameLine ()
-            ImGui.Text "2d"
-            ImGui.SameLine ()
-            ImGui.Checkbox ("##snaps2dSelected", &snaps2dSelected) |> ignore<bool>
-            ImGui.SameLine ()
-            let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
-            ImGui.Text "Pos"
-            ImGui.SameLine ()
-            ImGui.SetNextItemWidth 36.0f
-            ImGui.DragFloat ("##p", &p, (if snaps2dSelected then 0.1f else 0.01f), 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
-            ImGui.SameLine ()
-            ImGui.Text "Deg"
-            ImGui.SameLine ()
-            ImGui.SetNextItemWidth 36.0f
-            ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
-            ImGui.SameLine ()
-            ImGui.Text "Scl"
-            ImGui.SameLine ()
-            ImGui.SetNextItemWidth 36.0f
-            ImGui.DragFloat ("##s", &s, 0.01f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
-            ImGui.SameLine ()
-            if snaps2dSelected then snaps2d <- (p, d, s) else snaps3d <- (p, d, s)
-            ImGui.SameLine ()
-            ImGui.Text "|"
-            ImGui.SameLine ()
-            ImGui.Text "Eye:"
-            ImGui.SameLine ()
-            if ImGui.Button "Reset" then resetEye ()
-            ImGui.SameLine ()
-            ImGui.Text "|"
-            ImGui.SameLine ()
-            ImGui.Text "Reload:"
-            ImGui.SameLine ()
-            if ImGui.Button "Assets" then tryReloadAssets ()
-            ImGui.SameLine ()
-            if ImGui.Button "Code" then tryReloadCode ()
-            ImGui.SameLine ()
-            if ImGui.Button "All" then tryReloadAll ()
-            ImGui.SameLine ()
-            ImGui.Text "|"
-            ImGui.SameLine ()
-            ImGui.Text "Inspector"
-            ImGui.SameLine ()
-            ImGui.Checkbox ("##showInspector", &showInspector) |> ignore<bool>
-            ImGui.SameLine ()
-            ImGui.Text "Light"
-            ImGui.SameLine ()
-            if ImGui.Checkbox ("##darkTheme", &lightTheme) then
-                if lightTheme
-                then ImGui.StyleColorsLight ()
-                else ImGui.StyleColorsDark ()
-            ImGui.SameLine ()
-            ImGui.End ()
-
-        if ImGui.Begin "Hierarchy" then
-            let groups = World.getGroups selectedScreen Globals.World
-            let mutable selectedGroupName = selectedGroup.Name
-            if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
-                for group in groups do
-                    if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
-                        selectedEntityOpt <- None
-                        selectedGroup <- group
-                ImGui.EndCombo ()
-            if ImGui.BeginDragDropTarget () then
-                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
-                    match dragDropPayloadOpt with
-                    | Some payload ->
-                        let sourceEntityAddressStr = payload
-                        let sourceEntity = Entity sourceEntityAddressStr
-                        if not (sourceEntity.GetProtected Globals.World) then
-                            let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
-                            Globals.World <- sourceEntity.SetMountOptWithAdjustment None Globals.World
-                            Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
-                            selectedEntityOpt <- Some sourceEntity'
-                            //DUMMY
-                            //tryShowSelectedEntityInHierarchy form
-                    | None -> ()
-            let entities =
-                World.getEntitiesSovereign selectedGroup Globals.World |>
-                Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder Globals.World), entity)) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.map snd
-            for entity in entities do
-                imGuiEntityHierarchy entity
-            ImGui.End ()
-
-        // TODO: implement in order of priority -
-        //
-        //  option & voption with custom checkbox header
-        //  Enums
-        //  AssetTag w/ picking
-        //  RenderStyle
-        //  Substance
-        //  SymbolicCompression
-        //  TmxMap
-        //  LightType
-        //  MaterialProperties
-        //
-        //  Layout
-        //  CollisionMask
-        //  CollisionCategories
-        //  CollisionDetection
-        //  BodyShape
-        //  JointDevice
-        //  DateTimeOffset?
-        //  Flag Enums
-        //
-        if ImGui.Begin "Properties" then
+        ImGui.SetNextWindowPos v2Zero
+        ImGui.SetNextWindowSize io.DisplaySize
+        if ImGui.Begin ("Panel", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
             match selectedEntityOpt with
-            | Some entity when entity.Exists Globals.World ->
-                let propertyDescriptors = EntityPropertyDescriptor.getPropertyDescriptors entity Globals.World
-                for propertyDescriptor in propertyDescriptors do
-                    let ty = propertyDescriptor.PropertyType
-                    let converter = SymbolicConverter ty
-                    let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                    let value = EntityPropertyDescriptor.getValue propertyDescriptor entity Globals.World
-                    let valueStr = converter.ConvertToString value
-                    match value with
-                    | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetEntityProperty b' propertyDescriptor entity
-                    | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int8 i') propertyDescriptor entity
-                    | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint8 i') propertyDescriptor entity
-                    | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int16 i') propertyDescriptor entity
-                    | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint16 i') propertyDescriptor entity
-                    | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int32 i') propertyDescriptor entity
-                    | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint32 i') propertyDescriptor entity
-                    | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int64 i') propertyDescriptor entity
-                    | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint64 i') propertyDescriptor entity
-                    | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (single f') propertyDescriptor entity
-                    | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (double f') propertyDescriptor entity
-                    | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
-                    | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
-                    | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
-                    | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
-                    | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
-                    | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
-                    | :? Box2 as b ->
-                        ImGui.Text propertyDescriptor.PropertyName
-                        let mutable min = v2 b.Min.X b.Min.Y
-                        let mutable size = v2 b.Size.X b.Size.Y
-                        ImGui.Indent ()
-                        if  ImGui.DragFloat2 ("Min", &min) ||
-                            ImGui.DragFloat2 ("Size", &size) then
-                            let b' = box2 min size
-                            imGuiSetEntityProperty b' propertyDescriptor entity
-                        ImGui.Unindent ()
-                    | :? Box3 as b ->
-                        ImGui.Text propertyDescriptor.PropertyName
-                        let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
-                        let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
-                        ImGui.Indent ()
-                        if  ImGui.DragFloat3 ("Min", &min) ||
-                            ImGui.DragFloat3 ("Size", &size) then
-                            let b' = box3 min size
-                            imGuiSetEntityProperty b' propertyDescriptor entity
-                        ImGui.Unindent ()
-                    | :? Box2i as b ->
-                        ImGui.Text propertyDescriptor.PropertyName
-                        let mutable min = v2i b.Min.X b.Min.Y
-                        let mutable size = v2i b.Size.X b.Size.Y
-                        ImGui.Indent ()
-                        if  ImGui.DragInt2 ("Min", &min.X) ||
-                            ImGui.DragInt2 ("Size", &size.X) then
-                            let b' = box2i min size
-                            imGuiSetEntityProperty b' propertyDescriptor entity
-                        ImGui.Unindent ()
-                    | :? Quaternion as q ->
-                        let mutable v = v4 q.X q.Y q.Z q.W
-                        if ImGui.DragFloat4 (propertyDescriptor.PropertyName, &v) then
-                            let q' = quat v.X v.Y v.Z v.W
-                            imGuiSetEntityProperty q' propertyDescriptor entity
-                    | :? Color as c ->
-                        let mutable v = v4 c.R c.G c.B c.A
-                        if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
-                            let c' = color v.X v.Y v.Z v.W
-                            imGuiSetEntityProperty c' propertyDescriptor entity
-                    | _ when isPropertyAssetTag ->
-                        let mutable valueStr' = valueStr
-                        if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
-                            try let value' = converter.ConvertFromString valueStr'
-                                imGuiSetEntityProperty value' propertyDescriptor entity
-                            with
-                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                            | :? ConversionException -> ()
-                        if ImGui.BeginDragDropTarget () then
-                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                match dragDropPayloadOpt with
-                                | Some payload ->
-                                    try let propertyValueEscaped = payload
-                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                        imGuiSetEntityProperty propertyValue propertyDescriptor entity
-                                    with
-                                    | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                                    | :? ConversionException -> ()
-                                | None -> ()
-                            ImGui.EndDragDropTarget ()
-                    | _ ->
-                        let mutable combo = false
-                        if FSharpType.IsUnion ty then
-                            let cases = FSharpType.GetUnionCases ty
-                            if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
-                                combo <- true
-                                let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                                let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
-                                let mutable tag = unionCaseInfo.Tag
-                                if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
-                                    let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                                    imGuiSetEntityProperty value' propertyDescriptor entity
-                        if not combo then
+            | Some entity ->
+                let io = ImGui.GetIO ()
+                let viewport = Constants.Render.Viewport
+                let viewMatrix = viewport.View3d (entity.GetAbsolute Globals.World, World.getEyeCenter3d Globals.World, World.getEyeRotation3d Globals.World)
+                let view = viewMatrix.ToArray ()
+                let projection = (viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent).ToArray ()
+                let affineMatrix = (entity.GetAffineMatrix Globals.World).ToArray ()
+                ImGuizmo.SetOrthographic false
+                ImGuizmo.SetDrawlist ()
+                ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                if ImGuizmo.Manipulate (&view.[0], &projection.[0], OPERATION.TRANSLATE, MODE.WORLD, &affineMatrix.[0]) then
+                    let affineMatrix' = Matrix4x4.CreateFromArray affineMatrix
+                    let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
+                    if Matrix4x4.Decompose (affineMatrix', &scale, &rotation, &position) then
+                        Globals.World <- entity.SetScale scale Globals.World
+                        Globals.World <- entity.SetRotation rotation Globals.World
+                        Globals.World <- entity.SetPosition position Globals.World
+            | None -> ()
+            ImGui.End ()
+
+        if not fullScreen then
+
+            if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
+                if ImGui.BeginMenuBar () then
+                    if ImGui.BeginMenu "File" then
+                        if ImGui.MenuItem ("New Group", "Ctrl+N") then
+                            showNewGroupDialog <- true
+                        if ImGui.MenuItem ("Open Group", "Ctrl+O") then
+                            showOpenGroupDialog <- true
+                        if ImGui.MenuItem ("Save Group", "Ctrl+S") then
+                            match Map.tryFind selectedGroup.GroupAddress filePaths with
+                            | Some groupFilePath -> trySaveSelectedGroup groupFilePath |> ignore<bool>
+                            | None -> showSaveGroupDialog <- true
+                        if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then
+                            match Map.tryFind selectedGroup.GroupAddress filePaths with
+                            | Some filePath -> groupFilePath <- filePath
+                            | None -> groupFilePath <- ""
+                            showSaveGroupDialog <- true
+                        if ImGui.MenuItem "Close Group" then
+                            let groups = Globals.World |> World.getGroups selectedScreen |> Set.ofSeq
+                            if not (selectedGroup.GetProtected Globals.World) && Set.count groups > 1 then
+                                Globals.pushPastWorld ()
+                                let groupsRemaining = Set.remove selectedGroup groups
+                                selectedEntityOpt <- None
+                                Globals.World <- World.destroyGroupImmediate selectedGroup Globals.World
+                                filePaths <- Map.remove selectedGroup.GroupAddress filePaths
+                                selectedGroup <- Seq.head groupsRemaining
+                        ImGui.Separator ()
+                        if ImGui.MenuItem "Exit" then Globals.World <- World.exit Globals.World
+                        ImGui.EndMenu ()
+                    if ImGui.BeginMenu "Edit" then
+                        if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
+                        if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
+                        ImGui.Separator ()
+                        if ImGui.MenuItem ("Cut", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
+                        if ImGui.MenuItem ("Copy", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
+                        if ImGui.MenuItem ("Paste", "Ctrl+V") then tryPaste false |> ignore<bool>
+                        ImGui.Separator ()
+                        if ImGui.MenuItem ("Create", "Ctrl+Enter") then createEntity false false
+                        if ImGui.MenuItem ("Delete", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
+                        if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
+                        ImGui.Separator ()
+                        if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
+                        ImGui.EndMenu ()
+                    ImGui.EndMenuBar ()
+                ImGui.Text "Entity:"
+                ImGui.SameLine ()
+                if ImGui.Button "Create" then createEntity false false
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 150.0f
+                if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
+                    for dispatcherName in (World.getEntityDispatchers Globals.World).Keys do
+                        if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
+                            newEntityDispatcherName <- dispatcherName
+                    ImGui.EndCombo ()
+                ImGui.SameLine ()
+                ImGui.Text "w/ Overlay"
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 150.0f
+                let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays Globals.World |> Map.toKeyArray)
+                if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
+                    for overlayName in overlayNames do
+                        if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
+                            newEntityDispatcherName <- overlayName
+                    ImGui.EndCombo ()
+                ImGui.SameLine ()
+                ImGui.Text "@ Elevation"
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 50.0f
+                ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.05f, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
+                ImGui.SameLine ()
+                if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
+                ImGui.SameLine ()
+                if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+                ImGui.SameLine ()
+                ImGui.Text "|"
+                ImGui.SameLine ()
+                if World.getHalted Globals.World then
+                    if ImGui.Button "*Run*" then
+                        Globals.pushPastWorld ()
+                        Globals.World <- World.setAdvancing true Globals.World
+                else
+                    if ImGui.Button "Pause" then
+                        Globals.World <- World.setAdvancing false Globals.World
+                    ImGui.SameLine ()
+                    ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
+                ImGui.SameLine ()
+                ImGui.Text "|"
+                ImGui.SameLine ()
+                ImGui.Text "Snap:"
+                ImGui.SameLine ()
+                ImGui.Text "2d"
+                ImGui.SameLine ()
+                ImGui.Checkbox ("##snaps2dSelected", &snaps2dSelected) |> ignore<bool>
+                ImGui.SameLine ()
+                let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
+                ImGui.Text "Pos"
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 36.0f
+                ImGui.DragFloat ("##p", &p, (if snaps2dSelected then 0.1f else 0.01f), 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                ImGui.SameLine ()
+                ImGui.Text "Deg"
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 36.0f
+                ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                ImGui.SameLine ()
+                ImGui.Text "Scl"
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 36.0f
+                ImGui.DragFloat ("##s", &s, 0.01f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                ImGui.SameLine ()
+                if snaps2dSelected then snaps2d <- (p, d, s) else snaps3d <- (p, d, s)
+                ImGui.SameLine ()
+                ImGui.Text "|"
+                ImGui.SameLine ()
+                ImGui.Text "Eye:"
+                ImGui.SameLine ()
+                if ImGui.Button "Reset" then resetEye ()
+                ImGui.SameLine ()
+                ImGui.Text "|"
+                ImGui.SameLine ()
+                ImGui.Text "Reload:"
+                ImGui.SameLine ()
+                if ImGui.Button "Assets" then tryReloadAssets ()
+                ImGui.SameLine ()
+                if ImGui.Button "Code" then tryReloadCode ()
+                ImGui.SameLine ()
+                if ImGui.Button "All" then tryReloadAll ()
+                ImGui.SameLine ()
+                ImGui.Text "|"
+                ImGui.SameLine ()
+                ImGui.Text "Inspector"
+                ImGui.SameLine ()
+                ImGui.Checkbox ("##showInspector", &showInspector) |> ignore<bool>
+                ImGui.SameLine ()
+                ImGui.Text "Light"
+                ImGui.SameLine ()
+                if ImGui.Checkbox ("##darkTheme", &lightTheme) then
+                    if lightTheme
+                    then ImGui.StyleColorsLightPlus ()
+                    else ImGui.StyleColorsDarkPlus ()
+                ImGui.SameLine ()
+                ImGui.Text "Full Screen (F11)"
+                ImGui.SameLine ()
+                ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                ImGui.End ()
+
+            if ImGui.Begin "Hierarchy" then
+                let groups = World.getGroups selectedScreen Globals.World
+                let mutable selectedGroupName = selectedGroup.Name
+                if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
+                    for group in groups do
+                        if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
+                            selectedEntityOpt <- None
+                            selectedGroup <- group
+                    ImGui.EndCombo ()
+                if ImGui.BeginDragDropTarget () then
+                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                        match dragDropPayloadOpt with
+                        | Some payload ->
+                            let sourceEntityAddressStr = payload
+                            let sourceEntity = Entity sourceEntityAddressStr
+                            if not (sourceEntity.GetProtected Globals.World) then
+                                let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
+                                Globals.World <- sourceEntity.SetMountOptWithAdjustment None Globals.World
+                                Globals.World <- World.renameEntityImmediate sourceEntity sourceEntity' Globals.World
+                                selectedEntityOpt <- Some sourceEntity'
+                                //DUMMY
+                                //tryShowSelectedEntityInHierarchy form
+                        | None -> ()
+                let entities =
+                    World.getEntitiesSovereign selectedGroup Globals.World |>
+                    Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder Globals.World), entity)) |>
+                    Array.ofSeq |>
+                    Array.sortBy fst |>
+                    Array.map snd
+                for entity in entities do
+                    imGuiEntityHierarchy entity
+                ImGui.End ()
+
+            // TODO: implement in order of priority -
+            //
+            //  option & voption with custom checkbox header
+            //  Enums
+            //  AssetTag w/ picking
+            //  RenderStyle
+            //  Substance
+            //  SymbolicCompression
+            //  TmxMap
+            //  LightType
+            //  MaterialProperties
+            //
+            //  Layout
+            //  CollisionMask
+            //  CollisionCategories
+            //  CollisionDetection
+            //  BodyShape
+            //  JointDevice
+            //  DateTimeOffset?
+            //  Flag Enums
+            //
+            if ImGui.Begin "Properties" then
+                match selectedEntityOpt with
+                | Some entity when entity.Exists Globals.World ->
+                    let propertyDescriptors = EntityPropertyDescriptor.getPropertyDescriptors entity Globals.World
+                    for propertyDescriptor in propertyDescriptors do
+                        let ty = propertyDescriptor.PropertyType
+                        let converter = SymbolicConverter ty
+                        let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                        let value = EntityPropertyDescriptor.getValue propertyDescriptor entity Globals.World
+                        let valueStr = converter.ConvertToString value
+                        match value with
+                        | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetEntityProperty b' propertyDescriptor entity
+                        | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int8 i') propertyDescriptor entity
+                        | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint8 i') propertyDescriptor entity
+                        | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int16 i') propertyDescriptor entity
+                        | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint16 i') propertyDescriptor entity
+                        | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int32 i') propertyDescriptor entity
+                        | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint32 i') propertyDescriptor entity
+                        | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int64 i') propertyDescriptor entity
+                        | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint64 i') propertyDescriptor entity
+                        | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (single f') propertyDescriptor entity
+                        | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (double f') propertyDescriptor entity
+                        | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                        | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                        | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                        | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                        | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                        | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                        | :? Box2 as b ->
+                            ImGui.Text propertyDescriptor.PropertyName
+                            let mutable min = v2 b.Min.X b.Min.Y
+                            let mutable size = v2 b.Size.X b.Size.Y
+                            ImGui.Indent ()
+                            if  ImGui.DragFloat2 ("Min", &min) ||
+                                ImGui.DragFloat2 ("Size", &size) then
+                                let b' = box2 min size
+                                imGuiSetEntityProperty b' propertyDescriptor entity
+                            ImGui.Unindent ()
+                        | :? Box3 as b ->
+                            ImGui.Text propertyDescriptor.PropertyName
+                            let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
+                            let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
+                            ImGui.Indent ()
+                            if  ImGui.DragFloat3 ("Min", &min) ||
+                                ImGui.DragFloat3 ("Size", &size) then
+                                let b' = box3 min size
+                                imGuiSetEntityProperty b' propertyDescriptor entity
+                            ImGui.Unindent ()
+                        | :? Box2i as b ->
+                            ImGui.Text propertyDescriptor.PropertyName
+                            let mutable min = v2i b.Min.X b.Min.Y
+                            let mutable size = v2i b.Size.X b.Size.Y
+                            ImGui.Indent ()
+                            if  ImGui.DragInt2 ("Min", &min.X) ||
+                                ImGui.DragInt2 ("Size", &size.X) then
+                                let b' = box2i min size
+                                imGuiSetEntityProperty b' propertyDescriptor entity
+                            ImGui.Unindent ()
+                        | :? Quaternion as q ->
+                            let mutable v = v4 q.X q.Y q.Z q.W
+                            if ImGui.DragFloat4 (propertyDescriptor.PropertyName, &v) then
+                                let q' = quat v.X v.Y v.Z v.W
+                                imGuiSetEntityProperty q' propertyDescriptor entity
+                        | :? Color as c ->
+                            let mutable v = v4 c.R c.G c.B c.A
+                            if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
+                                let c' = color v.X v.Y v.Z v.W
+                                imGuiSetEntityProperty c' propertyDescriptor entity
+                        | _ when isPropertyAssetTag ->
                             let mutable valueStr' = valueStr
-                            if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
+                            if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
                                 try let value' = converter.ConvertFromString valueStr'
                                     imGuiSetEntityProperty value' propertyDescriptor entity
                                 with
                                 | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                                 | :? ConversionException -> ()
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some propertyDescriptor
-            | Some _ | None -> ()
-            ImGui.End ()
-
-        if ImGui.Begin "Property Editor" then
-            match selectedEntityOpt with
-            | Some entity when entity.Exists Globals.World ->
-                match propertyDescriptorFocusedOpt with
-                | Some propertyDescriptor when propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
-                    let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                    match imGuiGetEntityProperty propertyDescriptor entity with
-                    | null -> ()
-                    | propertyValue ->
-                        ImGui.Text propertyDescriptor.PropertyName
-                        ImGui.SameLine ()
-                        ImGui.Text ":"
-                        ImGui.SameLine ()
-                        ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
-                        let propertyValueUnescaped = converter.ConvertToString propertyValue
-                        let propertyValueEscaped = String.escape propertyValueUnescaped
-                        let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                        if isPropertyAssetTag then
-                            ImGui.SameLine ()
-                            if ImGui.Button "Pick" then showAssetPicker <- true
-                        let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
-                        if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
-                            try let propertyValueEscaped = propertyValuePretty
-                                let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                imGuiSetEntityProperty propertyValue propertyDescriptor entity
-                            with
-                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                            | :? ConversionException -> ()
-                        if isPropertyAssetTag then
                             if ImGui.BeginDragDropTarget () then
                                 if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                     match dragDropPayloadOpt with
@@ -1202,133 +1168,207 @@ module Gaia =
                                         | :? ConversionException -> ()
                                     | None -> ()
                                 ImGui.EndDragDropTarget ()
+                        | _ ->
+                            let mutable combo = false
+                            if FSharpType.IsUnion ty then
+                                let cases = FSharpType.GetUnionCases ty
+                                if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                                    combo <- true
+                                    let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                                    let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                                    let mutable tag = unionCaseInfo.Tag
+                                    if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
+                                        let value' = FSharpValue.MakeUnion (cases.[tag], [||])
+                                        imGuiSetEntityProperty value' propertyDescriptor entity
+                            if not combo then
+                                let mutable valueStr' = valueStr
+                                if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
+                                    try let value' = converter.ConvertFromString valueStr'
+                                        imGuiSetEntityProperty value' propertyDescriptor entity
+                                    with
+                                    | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                    | :? ConversionException -> ()
+                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some propertyDescriptor
                 | Some _ | None -> ()
-            | Some _ | None -> ()
-            ImGui.End ()
+                ImGui.End ()
 
-        if ImGui.Begin "Asset Viewer" then
-            ImGui.Text "Search:"
-            ImGui.SameLine ()
-            ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
-            let assets = Metadata.getDiscoveredAssets ()
-            for package in assets do
-                if ImGui.TreeNode package.Key then
-                    for assetName in package.Value do
-                        if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
-                            ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
-                            if ImGui.BeginDragDropSource () then
-                                let assetTagStr = "[" + package.Key + " " + assetName + "]"
-                                dragDropPayloadOpt <- Some assetTagStr
-                                ImGui.Text assetTagStr
-                                ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
-                                ImGui.EndDragDropSource ()
-                            ImGui.TreePop ()
-                    ImGui.TreePop ()
-            ImGui.End ()
+            if ImGui.Begin "Property Editor" then
+                match selectedEntityOpt with
+                | Some entity when entity.Exists Globals.World ->
+                    match propertyDescriptorFocusedOpt with
+                    | Some propertyDescriptor when propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                        let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                        match imGuiGetEntityProperty propertyDescriptor entity with
+                        | null -> ()
+                        | propertyValue ->
+                            ImGui.Text propertyDescriptor.PropertyName
+                            ImGui.SameLine ()
+                            ImGui.Text ":"
+                            ImGui.SameLine ()
+                            ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
+                            let propertyValueUnescaped = converter.ConvertToString propertyValue
+                            let propertyValueEscaped = String.escape propertyValueUnescaped
+                            let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                            if isPropertyAssetTag then
+                                ImGui.SameLine ()
+                                if ImGui.Button "Pick" then showAssetPicker <- true
+                            let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                            if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                                try let propertyValueEscaped = propertyValuePretty
+                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                    imGuiSetEntityProperty propertyValue propertyDescriptor entity
+                                with
+                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                | :? ConversionException -> ()
+                            if isPropertyAssetTag then
+                                if ImGui.BeginDragDropTarget () then
+                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                        match dragDropPayloadOpt with
+                                        | Some payload ->
+                                            try let propertyValueEscaped = payload
+                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                imGuiSetEntityProperty propertyValue propertyDescriptor entity
+                                            with
+                                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                            | :? ConversionException -> ()
+                                        | None -> ()
+                                    ImGui.EndDragDropTarget ()
+                    | Some _ | None -> ()
+                | Some _ | None -> ()
+                ImGui.End ()
 
-        if ImGui.Begin "Asset Graph" then
-            if ImGui.Button "Save" then
-                let assetSourceDir = targetDir + "/../../.."
-                let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
-                try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                    File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-                with exn ->
-                    //DUMMY
-                    //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    ()
-            ImGui.SameLine ()
-            if ImGui.Button "Load" then
-                match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
-                | Right assetGraph ->
-                    let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                    assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                | Left errer ->
-                    //DUMMY
-                    //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    ()
-            ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
-            ImGui.End ()
+            if ImGui.Begin "Asset Viewer" then
+                ImGui.Text "Search:"
+                ImGui.SameLine ()
+                ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
+                let assets = Metadata.getDiscoveredAssets ()
+                for package in assets do
+                    if ImGui.TreeNode package.Key then
+                        for assetName in package.Value do
+                            if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
+                                ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
+                                if ImGui.BeginDragDropSource () then
+                                    let assetTagStr = "[" + package.Key + " " + assetName + "]"
+                                    dragDropPayloadOpt <- Some assetTagStr
+                                    ImGui.Text assetTagStr
+                                    ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
+                                    ImGui.EndDragDropSource ()
+                                ImGui.TreePop ()
+                        ImGui.TreePop ()
+                ImGui.End ()
 
-        if ImGui.Begin "Overlayer" then
-            if ImGui.Button "Save" then
-                let overlayerSourceDir = targetDir + "/../../.."
-                let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
-                try let overlays = scvalue<Overlay list> overlayerStr
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                    File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-                with exn ->
-                    //DUMMY
-                    //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    ()
-            ImGui.SameLine ()
-            if ImGui.Button "Load" then
-                let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
-                match Overlayer.tryMakeFromFile [] overlayerFilePath with
-                | Right overlayer ->
-                    let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-                    let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                    overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-                | Left error ->
-                    //DUMMY
-                    //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    ()
-            ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
-            ImGui.End ()
+            if ImGui.Begin "Asset Graph" then
+                if ImGui.Button "Save" then
+                    let assetSourceDir = targetDir + "/../../.."
+                    let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                    try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                        File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
+                    with exn ->
+                        //DUMMY
+                        //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                        ()
+                ImGui.SameLine ()
+                if ImGui.Button "Load" then
+                    match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+                    | Right assetGraph ->
+                        let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                        assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+                    | Left errer ->
+                        //DUMMY
+                        //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                        ()
+                ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                ImGui.End ()
 
-        if ImGui.Begin "Event Tracing" then
-            let mutable traceEvents = Globals.World |> World.getEventTracerOpt |> Option.isSome
-            if ImGui.Checkbox ("Trace Events", &traceEvents) then
-                Globals.World <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) Globals.World
-            let eventFilter = World.getEventFilter Globals.World
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-            let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
-            if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
-                try let eventFilter = scvalue<EventFilter> eventFilterStr
-                    Globals.World <- World.setEventFilter eventFilter Globals.World
-                with _ -> ()
-            ImGui.End ()
+            if ImGui.Begin "Overlayer" then
+                if ImGui.Button "Save" then
+                    let overlayerSourceDir = targetDir + "/../../.."
+                    let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                    try let overlays = scvalue<Overlay list> overlayerStr
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                        File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
+                    with exn ->
+                        //DUMMY
+                        //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                        ()
+                ImGui.SameLine ()
+                if ImGui.Button "Load" then
+                    let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
+                    match Overlayer.tryMakeFromFile [] overlayerFilePath with
+                    | Right overlayer ->
+                        let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                        overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+                    | Left error ->
+                        //DUMMY
+                        //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                        ()
+                ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                ImGui.End ()
 
-        if ImGui.Begin "Audio Player" then
-            ImGui.Text "Master Sound Volume"
-            let mutable masterSoundVolume = World.getMasterSoundVolume Globals.World
-            if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSoundVolume masterSoundVolume Globals.World
-            ImGui.SameLine ()
-            ImGui.Text (string masterSoundVolume)
-            ImGui.Text "Master Song Volume"
-            let mutable masterSongVolume = World.getMasterSongVolume Globals.World
-            if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSongVolume masterSongVolume Globals.World
-            ImGui.SameLine ()
-            ImGui.Text (string masterSongVolume)
-            ImGui.End ()
+            if ImGui.Begin "Event Tracing" then
+                let mutable traceEvents = Globals.World |> World.getEventTracerOpt |> Option.isSome
+                if ImGui.Checkbox ("Trace Events", &traceEvents) then
+                    Globals.World <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) Globals.World
+                let eventFilter = World.getEventFilter Globals.World
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
+                let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+                if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
+                    try let eventFilter = scvalue<EventFilter> eventFilterStr
+                        Globals.World <- World.setEventFilter eventFilter Globals.World
+                    with _ -> ()
+                ImGui.End ()
 
-        if ImGui.Begin "Renderer" then
-            ImGui.Text "Light-Mapping (local light mapping)"
-            let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
-            ImGui.Checkbox ("Light-Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
-            lightMappingConfig <- { LightMappingEnabled = lightMappingEnabled }
-            Globals.World <- World.enqueueRenderMessage3d (ConfigureLightMapping lightMappingConfig) Globals.World
-            ImGui.Text "Ssao (screen-space ambient occlusion)"
-            let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
-            let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
-            let mutable ssaoBias = ssaoConfig.SsaoBias
-            let mutable ssaoRadius = ssaoConfig.SsaoRadius
-            let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
-            ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
-            if ssaoEnabled then
-                ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
-                ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
-                ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
-                ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, 256) |> ignore<bool>
-            ssaoConfig <-
-                { SsaoEnabled = ssaoEnabled
-                  SsaoIntensity = ssaoIntensity
-                  SsaoBias = ssaoBias
-                  SsaoRadius = ssaoRadius
-                  SsaoSampleCount = ssaoSampleCount }
-            Globals.World <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) Globals.World
-            ImGui.End ()
+            if ImGui.Begin "Audio Player" then
+                ImGui.Text "Master Sound Volume"
+                let mutable masterSoundVolume = World.getMasterSoundVolume Globals.World
+                if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSoundVolume masterSoundVolume Globals.World
+                ImGui.SameLine ()
+                ImGui.Text (string masterSoundVolume)
+                ImGui.Text "Master Song Volume"
+                let mutable masterSongVolume = World.getMasterSongVolume Globals.World
+                if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then Globals.World <- World.setMasterSongVolume masterSongVolume Globals.World
+                ImGui.SameLine ()
+                ImGui.Text (string masterSongVolume)
+                ImGui.End ()
+
+            if ImGui.Begin "Renderer" then
+                ImGui.Text "Light-Mapping (local light mapping)"
+                let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
+                ImGui.Checkbox ("Light-Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
+                lightMappingConfig <- { LightMappingEnabled = lightMappingEnabled }
+                Globals.World <- World.enqueueRenderMessage3d (ConfigureLightMapping lightMappingConfig) Globals.World
+                ImGui.Text "Ssao (screen-space ambient occlusion)"
+                let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
+                let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
+                let mutable ssaoBias = ssaoConfig.SsaoBias
+                let mutable ssaoRadius = ssaoConfig.SsaoRadius
+                let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
+                ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
+                if ssaoEnabled then
+                    ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
+                    ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
+                    ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
+                    ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, 256) |> ignore<bool>
+                ssaoConfig <-
+                    { SsaoEnabled = ssaoEnabled
+                      SsaoIntensity = ssaoIntensity
+                      SsaoBias = ssaoBias
+                      SsaoRadius = ssaoRadius
+                      SsaoSampleCount = ssaoSampleCount }
+                Globals.World <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) Globals.World
+                ImGui.End ()
+
+        else
+            if ImGui.Begin "Full Screen Enabled" then
+                ImGui.Text "Full Screen (F11)"
+                ImGui.SameLine ()
+                ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                ImGui.End ()
 
         if showContextMenu then
             ImGui.SetNextWindowPos rightClickPosition
