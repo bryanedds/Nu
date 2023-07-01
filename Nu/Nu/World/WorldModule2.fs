@@ -1480,7 +1480,13 @@ module EntityDispatcherModule2 =
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
-    let getCategory (propertyName : string) =
+    let getPropertyDescriptors (entity : Entity) world =
+        let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
+        nameDescriptor :: propertyDescriptors
+
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
@@ -1489,21 +1495,17 @@ module EntityPropertyDescriptor =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Xtension Properties"
 
-    let getReadOnly (propertyName : string) =
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         propertyName <> "Degrees" && propertyName <> "DegreesLocal" && // HACK: we allow degrees specifically for the editor.
         Reflection.isPropertyNonPersistentByName propertyName
 
-    let getPropertyDescriptors (entity : Entity) world =
-        let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
-        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
-        nameDescriptor :: propertyDescriptors
-
-    let getPropertyValue propertyDescriptor (entity : Entity) world : obj =
+    let getValue propertyDescriptor (entity : Entity) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor entity world with
         | Some value -> value
         | None -> null
 
-    let trySetPropertyValue (value : obj) propertyDescriptor (entity : Entity) world =
+    let trySetValue (value : obj) propertyDescriptor (entity : Entity) world =
 
         // pull string quotes out of string
         let value =
@@ -1647,24 +1649,26 @@ module GroupDispatcherModule =
 [<RequireQualifiedAccess>]
 module GroupPropertyDescriptor =
 
-    let getCategory (propertyName : string) =
+    let getPropertyDescriptors (group : Group) world =
+        PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
+
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
         elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
         else "Xtension Properties"
 
-    let getReadOnly (propertyName : string) =
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         Reflection.isPropertyNonPersistentByName propertyName
 
-    let getPropertyDescriptors (group : Group) world =
-        PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
-
-    let getPropertyValue propertyDescriptor (group : Group) world : obj =
+    let getValue propertyDescriptor (group : Group) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor group world with
         | Some value -> value
         | None -> null
 
-    let trySetPropertyValue (value : obj) propertyDescriptor (group : Group) world =
+    let trySetValue (value : obj) propertyDescriptor (group : Group) world =
         
         // pull string quotes out of string
         let value =
@@ -1775,24 +1779,26 @@ module ScreenDispatcherModule =
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 
-    let getCategory (propertyName : string) =
+    let getPropertyDescriptors (screen : Screen) world =
+        PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
+
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
         elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
         else "Xtension Properties"
 
-    let getReadOnly (propertyName : string) =
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         Reflection.isPropertyNonPersistentByName propertyName
 
-    let getPropertyDescriptors (screen : Screen) world =
-        PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
-
-    let getPropertyValue propertyDescriptor (screen : Screen) world : obj =
+    let getValue propertyDescriptor (screen : Screen) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor screen world with
         | Some value -> value
         | None -> null
 
-    let trySetPropertyValue (value : obj) propertyDescriptor (screen : Screen) world =
+    let trySetValue (value : obj) propertyDescriptor (screen : Screen) world =
         
         // pull string quotes out of string
         let value =
@@ -1904,7 +1910,8 @@ module GameDispatcherModule =
 [<RequireQualifiedAccess>]
 module GamePropertyDescriptor =
 
-    let getCategory (propertyName : string) =
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
         elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "DesiredScreen" || propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
@@ -1913,18 +1920,19 @@ module GamePropertyDescriptor =
              "Built-In Properties"
         else "Xtension Properties"
 
-    let getReadOnly (propertyName : string) =
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
         Reflection.isPropertyNonPersistentByName propertyName
 
     let getPropertyDescriptors (game : Game) world =
         PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
 
-    let getPropertyValue propertyDescriptor (game : Game) world : obj =
+    let getValue propertyDescriptor (game : Game) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor game world with
         | Some value -> value
         | None -> null
 
-    let trySetPropertyValue (value : obj) propertyDescriptor (game : Game) world =
+    let trySetValue (value : obj) propertyDescriptor (game : Game) world =
         
         // pull string quotes out of string
         let value =
@@ -1941,6 +1949,49 @@ module GamePropertyDescriptor =
         | _ ->
             let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value game world
             Right world
+
+[<RequireQualifiedAccess>]
+module SimulantPropertyDescriptor =
+
+    let getPropertyDescriptors (simulant : Simulant) world =
+        match simulant with
+        | :? Entity as entity -> EntityPropertyDescriptor.getPropertyDescriptors entity world
+        | :? Group as group -> GroupPropertyDescriptor.getPropertyDescriptors group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.getPropertyDescriptors screen world
+        | :? Game as game -> GamePropertyDescriptor.getPropertyDescriptors game world
+        | _ -> failwithumf ()
+
+    let getCategory propertyDesciptor (simulant : Simulant) =
+        match simulant with
+        | :? Entity -> EntityPropertyDescriptor.getCategory propertyDesciptor
+        | :? Group -> GroupPropertyDescriptor.getCategory propertyDesciptor
+        | :? Screen -> ScreenPropertyDescriptor.getCategory propertyDesciptor
+        | :? Game -> GamePropertyDescriptor.getCategory propertyDesciptor
+        | _ -> failwithumf ()
+
+    let getReadOnly propertyDesciptor (simulant : Simulant) =
+        match simulant with
+        | :? Entity -> EntityPropertyDescriptor.getReadOnly propertyDesciptor
+        | :? Group -> GroupPropertyDescriptor.getReadOnly propertyDesciptor
+        | :? Screen -> ScreenPropertyDescriptor.getReadOnly propertyDesciptor
+        | :? Game -> GamePropertyDescriptor.getReadOnly propertyDesciptor
+        | _ -> failwithumf ()
+
+    let getValue propertyDescriptor (simulant : Simulant) world =
+        match simulant with
+        | :? Entity as entity -> EntityPropertyDescriptor.getValue propertyDescriptor entity world
+        | :? Group as group -> GroupPropertyDescriptor.getValue propertyDescriptor group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.getValue propertyDescriptor screen world
+        | :? Game as game -> GamePropertyDescriptor.getValue propertyDescriptor game world
+        | _ -> failwithumf ()
+
+    let trySetValue value propertyDescriptor (simulant : Simulant) world =
+        match simulant with
+        | :? Entity as entity -> EntityPropertyDescriptor.trySetValue value propertyDescriptor entity world
+        | :? Group as group -> GroupPropertyDescriptor.trySetValue value propertyDescriptor group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.trySetValue value propertyDescriptor screen world
+        | :? Game as game -> GamePropertyDescriptor.trySetValue value propertyDescriptor game world
+        | _ -> failwithumf ()
 
 [<AutoOpen>]
 module WorldModule2' =
