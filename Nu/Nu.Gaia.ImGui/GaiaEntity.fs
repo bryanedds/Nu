@@ -74,7 +74,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
 
         // change property
         match propertyName with
-            
+
         // change the surnames property
         | "Surnames" ->
             let surnames = value :?> string array
