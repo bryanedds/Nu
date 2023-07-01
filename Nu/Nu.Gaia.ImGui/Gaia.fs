@@ -21,6 +21,7 @@ module Gaia =
 
     // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms
     let mutable private rightClickPosition = v2Zero
+    let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
     let mutable private snaps2dSelected = true
     let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
@@ -140,7 +141,7 @@ module Gaia =
             // just keep current group selection and screen if no screen selected
             (Cascade, Globals.World)
 
-    let private handleNuRightClick (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuEntityContext (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
         if canEditWithMouse () then
             let handling = if World.getAdvancing Globals.World then Cascade else Resolve
@@ -151,13 +152,44 @@ module Gaia =
             (handling, Globals.World)
         else (Resolve, Globals.World)
 
-    let private handleNuLeftClick (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuEntityDragBegin (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
         if canEditWithMouse () then
-            let handling = if World.getAdvancing Globals.World then Cascade else Resolve
+            let handled = if World.getAdvancing Globals.World then Cascade else Resolve
             let mousePosition = World.getMousePosition Globals.World
-            tryMousePick mousePosition |> ignore<(single * Entity) option>
-            (handling, Globals.World)
+            match tryMousePick mousePosition with
+            | Some (_, entity) ->
+                if entity.GetIs2d Globals.World then
+                    Globals.pushPastWorld ()
+                    if World.isKeyboardShiftDown Globals.World then
+                        let viewport = World.getViewport Globals.World
+                        let eyeCenter = World.getEyeCenter2d Globals.World
+                        let eyeSize = World.getEyeSize2d Globals.World
+                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeSize)
+                        let entityDegrees = if entity.MountExists Globals.World then entity.GetDegreesLocal Globals.World else entity.GetDegrees Globals.World
+                        dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
+                        (handled, Globals.World)
+                    else
+                        let viewport = World.getViewport Globals.World
+                        let eyeCenter = World.getEyeCenter2d Globals.World
+                        let eyeSize = World.getEyeSize2d Globals.World
+                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute Globals.World, mousePosition, eyeCenter, eyeSize)
+                        let entityPosition = entity.GetPosition Globals.World
+                        dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+                        (handled, Globals.World)
+                else (handled, Globals.World)
+            | None -> (handled, Globals.World)
+        else (Cascade, Globals.World)
+
+    let private handleNuEntityDragEnd (_ : Event<MouseButtonData, Game>) world =
+        let world = Globals.World <- world
+        if canEditWithMouse () then
+            let handled = if World.getAdvancing Globals.World then Cascade else Resolve
+            match dragEntityState with
+            | DragEntityPosition2d _ | DragEntityRotation2d _ ->
+                dragEntityState <- DragEntityInactive
+                (handled, Globals.World)
+            | DragEntityInactive -> (Resolve, Globals.World)
         else (Cascade, Globals.World)
 
     let private handleNuEyeDragBegin (_ : Event<MouseButtonData, Game>) world =
@@ -239,7 +271,7 @@ module Gaia =
 
         // render selection highlights
         match selectedEntityOpt with
-        | Some entity when entity.Exists Globals.World && ImGui.IsCtrlPressed () ->
+        | Some entity when entity.Exists Globals.World ->
             let absolute = entity.GetAbsolute Globals.World
             let bounds = entity.GetHighlightBounds Globals.World
             if entity.GetIs2d Globals.World then
@@ -262,7 +294,7 @@ module Gaia =
                                       Emission = Color.Zero
                                       Flip = FlipNone }})
                         Globals.World
-            else
+            elif ImGui.IsCtrlPressed () then
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center
                 Globals.World <-
@@ -595,6 +627,55 @@ module Gaia =
             dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
         | DragEyeInactive -> ()
 
+    let private updateEntityDrag () =
+        if canEditWithMouse () then
+            match dragEntityState with
+            | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                let localTime = DateTimeOffset.Now - time
+                if entity.Exists Globals.World && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute Globals.World) Globals.World
+                    let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
+                    let entityPositionSnapped =
+                        if snaps2dSelected
+                        then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition.V3
+                        else entityPosition.V3
+                    let entityPosition = entity.GetPosition Globals.World
+                    let entityPositionDelta = entityPositionSnapped - entityPosition
+                    let entityPositionConstrained = entityPosition + entityPositionDelta
+                    match Option.bind (tryResolve entity) (entity.GetMountOpt Globals.World) with
+                    | Some parent ->
+                        let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix Globals.World |> Matrix4x4.Inverse)
+                        Globals.World <- entity.SetPositionLocal entityPositionLocal Globals.World
+                    | None ->
+                        Globals.World <- entity.SetPosition entityPositionConstrained Globals.World
+                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" Globals.World) &&
+                        Option.isSome (entity.TryGetProperty "AngularVelocity" Globals.World) then
+                        Globals.World <- entity.SetLinearVelocity v3Zero Globals.World
+                        Globals.World <- entity.SetAngularVelocity v3Zero Globals.World
+            | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                let localTime = DateTimeOffset.Now - time
+                if entity.Exists Globals.World && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute Globals.World) Globals.World
+                    let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
+                    let entityDegreeSnapped =
+                        if snaps2dSelected
+                        then Math.snapF (Triple.snd (getSnaps ())) entityDegree
+                        else entityDegree
+                    let entityDegree = (entity.GetDegreesLocal Globals.World).Z
+                    if entity.MountExists Globals.World then
+                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                        let entityDegreeLocal = entityDegree + entityDegreeDelta
+                        Globals.World <- entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) Globals.World
+                    else
+                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                        let entityDegree = entityDegree + entityDegreeDelta
+                        Globals.World <- entity.SetDegrees (v3 0.0f 0.0f entityDegree) Globals.World
+                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" Globals.World) &&
+                        Option.isSome (entity.TryGetProperty "AngularVelocity" Globals.World) then
+                        Globals.World <- entity.SetLinearVelocity v3Zero Globals.World
+                        Globals.World <- entity.SetAngularVelocity v3Zero Globals.World
+            | DragEntityInactive -> ()
+
     let rec imGuiEntityHierarchy (entity : Entity) =
         let children = Globals.World |> entity.GetChildren |> Seq.toArray
         if ImGui.TreeNodeEx (entity.Name, if Array.notEmpty children then ImGuiTreeNodeFlags.None else ImGuiTreeNodeFlags.Leaf) then
@@ -674,6 +755,8 @@ module Gaia =
 
         updateEyeDrag ()
 
+        updateEntityDrag ()
+
         let io = ImGui.GetIO ()
         if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
         if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
@@ -700,47 +783,26 @@ module Gaia =
         ImGui.SetNextWindowSize io.DisplaySize
         if ImGui.Begin ("Panel", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
             match selectedEntityOpt with
-            | Some entity when entity.Exists Globals.World ->
-                if entity.GetIs2d Globals.World then
-                    let viewport = Constants.Render.Viewport
-                    let viewMatrix = viewport.View2d (entity.GetAbsolute Globals.World, World.getEyeCenter2d Globals.World, World.getEyeSize2d Globals.World)
-                    let view = viewMatrix.ToArray ()
-                    let projection = (viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent).ToArray ()
-                    let affineMatrix = (entity.GetAffineMatrix Globals.World).ToArray ()
-                    let operation =
-                        if ImGui.IsShiftPressed () then OPERATION.SCALE
-                        elif ImGui.IsAltPressed () then OPERATION.ROTATE
-                        else OPERATION.TRANSLATE
-                    ImGuizmo.SetOrthographic true
-                    ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
-                    ImGuizmo.SetDrawlist () // NOTE: I guess this goes right before Manipulate?
-                    if ImGuizmo.Manipulate (&view.[0], &projection.[0], operation, MODE.WORLD, &affineMatrix.[0]) then
-                        let affineMatrix' = Matrix4x4.CreateFromArray affineMatrix
-                        let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
-                        if Matrix4x4.Decompose (affineMatrix', &scale, &rotation, &position) then
-                            Globals.World <- entity.SetScale scale Globals.World
-                            Globals.World <- entity.SetRotation rotation Globals.World
-                            Globals.World <- entity.SetPosition position Globals.World
-                else
-                    let viewport = Constants.Render.Viewport
-                    let viewMatrix = viewport.View3d (entity.GetAbsolute Globals.World, World.getEyeCenter3d Globals.World, World.getEyeRotation3d Globals.World)
-                    let view = viewMatrix.ToArray ()
-                    let projection = (viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent).ToArray ()
-                    let affineMatrix = (entity.GetAffineMatrix Globals.World).ToArray ()
-                    let operation =
-                        if ImGui.IsShiftPressed () then OPERATION.SCALE
-                        elif ImGui.IsAltPressed () then OPERATION.ROTATE
-                        else OPERATION.TRANSLATE
-                    ImGuizmo.SetOrthographic false
-                    ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
-                    ImGuizmo.SetDrawlist () // NOTE: I guess this goes right before Manipulate?
-                    if ImGuizmo.Manipulate (&view.[0], &projection.[0], operation, MODE.WORLD, &affineMatrix.[0]) then
-                        let affineMatrix' = Matrix4x4.CreateFromArray affineMatrix
-                        let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
-                        if Matrix4x4.Decompose (affineMatrix', &scale, &rotation, &position) then
-                            Globals.World <- entity.SetScale scale Globals.World
-                            Globals.World <- entity.SetRotation rotation Globals.World
-                            Globals.World <- entity.SetPosition position Globals.World
+            | Some entity when entity.Exists Globals.World && entity.GetIs3d Globals.World ->
+                let viewport = Constants.Render.Viewport
+                let viewMatrix = viewport.View3d (entity.GetAbsolute Globals.World, World.getEyeCenter3d Globals.World, World.getEyeRotation3d Globals.World)
+                let view = viewMatrix.ToArray ()
+                let projection = (viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent).ToArray ()
+                let affineMatrix = (entity.GetAffineMatrix Globals.World).ToArray ()
+                let operation =
+                    if ImGui.IsShiftPressed () then OPERATION.SCALE
+                    elif ImGui.IsAltPressed () then OPERATION.ROTATE
+                    else OPERATION.TRANSLATE
+                ImGuizmo.SetOrthographic false
+                ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                ImGuizmo.SetDrawlist () // NOTE: I guess this goes right before Manipulate?
+                if ImGuizmo.Manipulate (&view.[0], &projection.[0], operation, MODE.WORLD, &affineMatrix.[0]) then
+                    let affineMatrix' = Matrix4x4.CreateFromArray affineMatrix
+                    let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
+                    if Matrix4x4.Decompose (affineMatrix', &scale, &rotation, &position) then
+                        Globals.World <- entity.SetScale scale Globals.World
+                        Globals.World <- entity.SetRotation rotation Globals.World
+                        Globals.World <- entity.SetPosition position Globals.World
             | Some _ | None -> ()
             ImGui.End ()
 
@@ -1516,8 +1578,9 @@ module Gaia =
                         //DUMMY
                         //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                         ""
-                Globals.World <- World.subscribe handleNuRightClick Events.MouseRightUp Simulants.Game Globals.World
-                Globals.World <- World.subscribe handleNuLeftClick Events.MouseLeftDown Simulants.Game Globals.World
+                Globals.World <- World.subscribe handleNuEntityContext Events.MouseRightUp Simulants.Game Globals.World
+                Globals.World <- World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game Globals.World
+                Globals.World <- World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEyeDragBegin Events.MouseMiddleDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEyeDragEnd Events.MouseMiddleUp Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuUpdate Events.Update Simulants.Game Globals.World
