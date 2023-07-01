@@ -8,13 +8,6 @@ open Prime
 open Nu
 open Nu.Gaia
 
-type DragEntityState =
-    | DragEntityPosition2d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
-    | DragEntityRotation2d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity
-    | DragEntityPosition3d of Time : DateTimeOffset * EntityDragOffset : Vector3 * EntityPlane : Plane3 * Entity : Entity
-    | DragEntityRotation3d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * EntityDragAxis : Vector3 * Entity : Entity
-    | DragEntityInactive
-
 type DragEyeState =
     | DragEyeCenter2d of Vector2 * Vector2
     | DragEyeInactive
