@@ -120,19 +120,19 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.DestroyContext context
 
     static member IsCtrlPressed () =
-        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
+        // HACK: using modifier detection from sdl since it works better given how things have been configued.
         KeyboardState.isCtrlDown ()
         //ImGui.IsKeyPressed ImGuiKey.LeftCtrl ||
         //ImGui.IsKeyPressed ImGuiKey.RightCtrl
 
     static member IsAltPressed () =
-        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
+        // HACK: using modifier detection from sdl since it works better given how things have been configued.
         KeyboardState.isAltDown ()
         //ImGui.IsKeyPressed ImGuiKey.LeftAlt ||
         //ImGui.IsKeyPressed ImGuiKey.RightAlt
 
     static member IsShiftPressed () =
-        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
+        // HACK: using modifier detection from sdl since it works better given how things have been configued.
         KeyboardState.isShiftDown ()
         //ImGui.IsKeyPressed ImGuiKey.LeftShift ||
         //ImGui.IsKeyPressed ImGuiKey.RightShift
