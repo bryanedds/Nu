@@ -1350,7 +1350,7 @@ module Gaia =
                     ImGui.EndCombo ()
                 if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showContextMenu <- false
                 if  ImGui.IsMouseClicked ImGuiMouseButton.Right ||
-                    ImGui.IsEscapePressed () then
+                    ImGui.IsKeyPressed ImGuiKey.Escape then
                     showContextMenu <- false
                 ImGui.End ()
 
@@ -1382,7 +1382,7 @@ module Gaia =
                                     ImGui.TreePop ()
                         ImGui.TreePop ()
                 ImGui.EndPopup ()
-            if ImGui.IsEscapePressed () then showAssetPicker <- false
+            if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
 
         if showNewGroupDialog then
             let title = "Create a group..."
@@ -1407,7 +1407,7 @@ module Gaia =
                         //DUMMY
                         //MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                         ()
-                if ImGui.IsEscapePressed () then showNewGroupDialog <- false
+                if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
 
         if showOpenGroupDialog then
             let title = "Choose a nugroup file..."
@@ -1419,7 +1419,7 @@ module Gaia =
                 if (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
                     Globals.pushPastWorld ()
                     showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
-                if ImGui.IsEscapePressed () then showOpenGroupDialog <- false
+                if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
 
         if showSaveGroupDialog then
             let title = "Save a nugroup file..."
@@ -1431,7 +1431,7 @@ module Gaia =
                 if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
                     Globals.pushPastWorld ()
                     showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
-            if ImGui.IsEscapePressed () then showSaveGroupDialog <- false
+            if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
 
         if showInspector then
             ImGui.ShowStackToolWindow ()
