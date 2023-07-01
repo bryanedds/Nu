@@ -1106,12 +1106,11 @@ module Gaia =
                     | _ when isPropertyAssetTag ->
                         let mutable valueStr' = valueStr
                         if ImGui.InputText (property.Name, &valueStr', 4096u) then
-                            if strNeq valueStr' valueStr then
-                                try let value' = converter.ConvertFromString valueStr'
-                                    property.SetValue (entityTds, value')
-                                with
-                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                                | :? ConversionException -> ()
+                            try let value' = converter.ConvertFromString valueStr'
+                                property.SetValue (entityTds, value')
+                            with
+                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                            | :? ConversionException -> ()
                         if ImGui.BeginDragDropTarget () then
                             if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                 match dragDropPayloadOpt with
@@ -1140,12 +1139,11 @@ module Gaia =
                         if not combo then
                             let mutable valueStr' = valueStr
                             if ImGui.InputText (property.Name, &valueStr', 131072u) then
-                                if strNeq valueStr' valueStr then
-                                    try let value' = converter.ConvertFromString valueStr'
-                                        property.SetValue (entityTds, value')
-                                    with
-                                    | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                                    | :? ConversionException -> ()
+                                try let value' = converter.ConvertFromString valueStr'
+                                    property.SetValue (entityTds, value')
+                                with
+                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                | :? ConversionException -> ()
                     if ImGui.IsItemFocused () then propertyFocusedOpt <- Some property
             | Some _ | None -> ()
             ImGui.End ()
@@ -1171,17 +1169,15 @@ module Gaia =
                         if isPropertyAssetTag then
                             ImGui.SameLine ()
                             if ImGui.Button "Pick" then showAssetPicker <- true
-                        let propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
-                        let mutable propertyValuePretty' = propertyValuePretty
-                        if ImGui.InputTextMultiline ("##propertyValuePretty'", &propertyValuePretty', 131072u, v2 -1.0f -1.0f) then
-                            if strNeq propertyValuePretty' propertyValuePretty then
-                                try let propertyValueEscaped = propertyValuePretty'
-                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                    property.SetValue (entityTds, propertyValue)
-                                with
-                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                                | :? ConversionException -> ()
+                        let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                        if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                            try let propertyValueEscaped = propertyValuePretty
+                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                property.SetValue (entityTds, propertyValue)
+                            with
+                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                            | :? ConversionException -> ()
                         if isPropertyAssetTag then
                             if ImGui.BeginDragDropTarget () then
                                 if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
@@ -1277,13 +1273,11 @@ module Gaia =
                 Globals.World <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) Globals.World
             let eventFilter = World.getEventFilter Globals.World
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-            let eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
-            let mutable eventFilterStr' = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
-            if ImGui.InputTextMultiline ("##eventFilterStr'", &eventFilterStr', 131072u, v2 -1.0f -1.0f) then
-                if strNeq eventFilterStr' eventFilterStr then
-                    try let eventFilter = scvalue<EventFilter> eventFilterStr'
-                        Globals.World <- World.setEventFilter eventFilter Globals.World
-                    with _ -> ()
+            let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+            if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
+                try let eventFilter = scvalue<EventFilter> eventFilterStr
+                    Globals.World <- World.setEventFilter eventFilter Globals.World
+                with _ -> ()
             ImGui.End ()
 
         if ImGui.Begin "Audio Player" then
