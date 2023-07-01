@@ -808,10 +808,10 @@ module Gaia =
             ImGui.TreePop ()
 
     let imGuiGetEntityProperty propertyDescriptor entity =
-        EntityPropertyDescriptor.getPropertyValue propertyDescriptor entity Globals.World
+        EntityPropertyDescriptor.getValue propertyDescriptor entity Globals.World
 
     let imGuiSetEntityProperty value propertyDescriptor entity =
-        match EntityPropertyDescriptor.trySetPropertyValue value propertyDescriptor entity Globals.World with
+        match EntityPropertyDescriptor.trySetValue value propertyDescriptor entity Globals.World with
         | Right world -> Globals.World <- world
         | Left (error, world) -> messageBoxOpt <- Some error; Globals.World <- world
 
@@ -1049,7 +1049,7 @@ module Gaia =
                     let ty = propertyDescriptor.PropertyType
                     let converter = SymbolicConverter ty
                     let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                    let value = EntityPropertyDescriptor.getPropertyValue propertyDescriptor entity Globals.World
+                    let value = EntityPropertyDescriptor.getValue propertyDescriptor entity Globals.World
                     let valueStr = converter.ConvertToString value
                     match value with
                     | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetEntityProperty b' propertyDescriptor entity
