@@ -1477,6 +1477,83 @@ module EntityDispatcherModule2 =
             [define Entity.Size Constants.Engine.EntitySize3dDefault
              define Entity.Centered Constants.Engine.EntityCentered3dDefault]
 
+[<RequireQualifiedAccess>]
+module EntityPropertyDescriptor =
+
+    let getCategory (propertyName : string) =
+        let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
+        let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "Ambient Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Built-In Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
+        else "Xtension Properties"
+
+    let getReadOnly (propertyName : string) =
+        propertyName <> "Degrees" && propertyName <> "DegreesLocal" && // HACK: we allow degrees specifically for the editor.
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getPropertyDescriptors (entity : Entity) world =
+        let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
+        nameDescriptor :: propertyDescriptors
+
+    let getPropertyValue propertyDescriptor (entity : Entity) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor entity world with
+        | Some value -> value
+        | None -> null
+
+    let trySetPropertyValue (value : obj) propertyDescriptor (entity : Entity) world =
+
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+
+        // change property
+        match propertyDescriptor.PropertyName with
+
+        // change the surnames property
+        | "Surnames" ->
+            let surnames = value :?> string array
+            if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) surnames then
+                let target = Nu.Entity (entity.Group.GroupAddress <-- rtoa surnames)
+                let world = World.renameEntityImmediate entity target world
+                Right world
+            else Left ("Invalid entity surnames '" + scstring surnames + "'.", world)
+
+        // change the name property
+        | Constants.Engine.NamePropertyName ->
+            let name = value :?> string
+            if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
+                let targetNames =
+                    entity.Group.GroupAddress.Names |>
+                    flip Array.append (Array.allButLast entity.Surnames) |>
+                    Array.add name
+                let target = Nu.Entity targetNames
+                let world = World.renameEntityImmediate entity target world
+                Right world
+            else Left ("Invalid entity name '" + name + "'.", world)
+
+        // change facet names
+        | Constants.Engine.FacetNamesPropertyName ->
+            let facetNames = value :?> string Set
+            match World.trySetEntityFacetNames facetNames entity world with
+            | (Right (), world) -> Right world
+            | (Left error, world) -> Left (error, world)
+
+        // change the property dynamically
+        | _ ->
+            match propertyDescriptor.PropertyName with
+            | Constants.Engine.OverlayNameOptPropertyName ->
+                match World.trySetEntityOverlayNameOpt (value :?> string option) entity world with
+                | (Right (), world) -> Right world
+                | (Left error, world) -> Left (error, world)
+            | _ ->
+                let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value entity world
+                Right world
+
 [<AutoOpen>]
 module GroupDispatcherModule =
 
@@ -1566,6 +1643,44 @@ module GroupDispatcherModule =
         /// Implements additional editing behavior for a group via the ImGui API.
         abstract Edit : 'model * EditOperation * Group * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
+
+[<RequireQualifiedAccess>]
+module GroupPropertyDescriptor =
+
+    let getCategory (propertyName : string) =
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
+        else "Xtension Properties"
+
+    let getReadOnly (propertyName : string) =
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getPropertyDescriptors (group : Group) world =
+        PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
+
+    let getPropertyValue propertyDescriptor (group : Group) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor group world with
+        | Some value -> value
+        | None -> null
+
+    let trySetPropertyValue (value : obj) propertyDescriptor (group : Group) world =
+        
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+            
+        // change the name property
+        match propertyDescriptor.PropertyName with
+        | Constants.Engine.NamePropertyName ->
+            Left ("Changing the name of a group after it has been created is not yet implemented.", world)
+
+        // change the property dynamically
+        | _ ->
+            let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value group world
+            Right world
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1657,6 +1772,44 @@ module ScreenDispatcherModule =
         abstract Edit : 'model * EditOperation * Screen * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
 
+[<RequireQualifiedAccess>]
+module ScreenPropertyDescriptor =
+
+    let getCategory (propertyName : string) =
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
+        else "Xtension Properties"
+
+    let getReadOnly (propertyName : string) =
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getPropertyDescriptors (screen : Screen) world =
+        PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
+
+    let getPropertyValue propertyDescriptor (screen : Screen) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor screen world with
+        | Some value -> value
+        | None -> null
+
+    let trySetPropertyValue (value : obj) propertyDescriptor (screen : Screen) world =
+        
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+            
+        // change the name property
+        match propertyDescriptor.PropertyName with
+        | Constants.Engine.NamePropertyName ->
+            Left ("Changing the name of a screen after it has been created is not yet implemented.", world)
+
+        // change the property dynamically
+        | _ ->
+            let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value screen world
+            Right world
+
 [<AutoOpen>]
 module GameDispatcherModule =
 
@@ -1747,6 +1900,47 @@ module GameDispatcherModule =
         /// Implements additional editing behavior for a game via the ImGui API.
         abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
+
+[<RequireQualifiedAccess>]
+module GamePropertyDescriptor =
+
+    let getCategory (propertyName : string) =
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        elif propertyName = "DesiredScreen" || propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
+             propertyName = "EyeCenter2d" || propertyName = "EyeSize2d" || propertyName = "EyeCenter3d" || propertyName = "EyeRotation3d" ||
+             propertyName = "EyeFrustum3dEnclosed" || propertyName = "EyeFrustum3dExposed" || propertyName = "EyeFrustum3dImposter" then
+             "Built-In Properties"
+        else "Xtension Properties"
+
+    let getReadOnly (propertyName : string) =
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getPropertyDescriptors (game : Game) world =
+        PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
+
+    let getPropertyValue propertyDescriptor (game : Game) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor game world with
+        | Some value -> value
+        | None -> null
+
+    let trySetPropertyValue (value : obj) propertyDescriptor (game : Game) world =
+        
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+            
+        // change the name property
+        match propertyDescriptor.PropertyName with
+        | Constants.Engine.NamePropertyName ->
+            Left ("Changing the name of a game after it has been created is not yet implemented.", world)
+
+        // change the property dynamically
+        | _ ->
+            let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value game world
+            Right world
 
 [<AutoOpen>]
 module WorldModule2' =

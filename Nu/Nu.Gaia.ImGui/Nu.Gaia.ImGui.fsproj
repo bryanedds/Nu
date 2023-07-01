@@ -34,10 +34,6 @@
 	<ItemGroup>
 		<Compile Include="GaiaConstants.fs" />
 		<Compile Include="GaiaPrelude.fs" />
-		<Compile Include="GaiaEntity.fs" />
-		<Compile Include="GaiaGroup.fs" />
-		<Compile Include="GaiaScreen.fs" />
-		<Compile Include="GaiaGame.fs" />
 		<Compile Include="Gaia.fs" />
 		<Compile Include="GaiaPlugin.fs" />
 		<Compile Include="Program.fs" />
