@@ -406,13 +406,10 @@ module Gaia =
             //MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             false
 
-    let private createEntity atMouse inHierarchy (dispatcherNameOpt : string option) =
+    let private createEntity atMouse inHierarchy =
         Globals.pushPastWorld ()
-        let dispatcherName =
-            match dispatcherNameOpt with
-            | Some dispatcherName -> dispatcherName
-            | None -> newEntityDispatcherName
-        let overlayDescriptor =
+        let dispatcherName = newEntityDispatcherName
+        let overlayNameDescriptor =
             match newEntityOverlayName with
             | "(Default Overlay)" -> DefaultOverlay
             | "(Routed Overlay)" -> RoutedOverlay
@@ -423,7 +420,7 @@ module Gaia =
             match selectedEntityOpt with
             | Some entity when entity.Exists Globals.World && inHierarchy -> Array.add name entity.Surnames
             | Some _ | None -> [|name|]
-        let (entity, world) = World.createEntity5 dispatcherName overlayDescriptor (Some surnames) selectedGroup Globals.World
+        let (entity, world) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup Globals.World
         let world = Globals.World <- world
         let (positionSnap, degreesSnap, scaleSnap) = getSnaps ()
         let viewport = World.getViewport Globals.World
@@ -841,7 +838,7 @@ module Gaia =
         if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.D && ImGui.IsCtrlPressed () then tryDeleteSelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false None
+        if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false
         if not (io.WantCaptureKeyboard) then
             if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
             if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
@@ -889,7 +886,7 @@ module Gaia =
                     if ImGui.MenuItem ("Copy", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
                     if ImGui.MenuItem ("Paste", "Ctrl+V") then tryPaste false |> ignore<bool>
                     ImGui.Separator ()
-                    if ImGui.MenuItem ("Create", "Ctrl+Enter") then createEntity false false None
+                    if ImGui.MenuItem ("Create", "Ctrl+Enter") then createEntity false false
                     if ImGui.MenuItem ("Delete", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
                     if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
                     ImGui.Separator ()
@@ -898,13 +895,12 @@ module Gaia =
                 ImGui.EndMenuBar ()
             ImGui.Text "Entity:"
             ImGui.SameLine ()
-            if ImGui.Button "Create" then createEntity false false None
+            if ImGui.Button "Create" then createEntity false false
             ImGui.SameLine ()
             ImGui.SetNextItemWidth 150.0f
-            let newEntityDispatcherNames = World.getEntityDispatchers Globals.World |> Map.toKeyArray
             if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
-                for dispatcherName in newEntityDispatcherNames do
-                    if ImGui.Selectable dispatcherName then
+                for dispatcherName in (World.getEntityDispatchers Globals.World).Keys do
+                    if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
                         newEntityDispatcherName <- dispatcherName
                 ImGui.EndCombo ()
             ImGui.SameLine ()
@@ -914,7 +910,7 @@ module Gaia =
             let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays Globals.World |> Map.toKeyArray)
             if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
                 for overlayName in overlayNames do
-                    if ImGui.Selectable overlayName then
+                    if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
                         newEntityDispatcherName <- overlayName
                 ImGui.EndCombo ()
             ImGui.SameLine ()
@@ -1001,7 +997,7 @@ module Gaia =
             let mutable selectedGroupName = selectedGroup.Name
             if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
                 for group in groups do
-                    if ImGui.Selectable group.Name then
+                    if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
                         selectedEntityOpt <- None
                         selectedGroup <- group
                 ImGui.EndCombo ()
@@ -1341,7 +1337,16 @@ module Gaia =
                 if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showContextMenu <- false
                 if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showContextMenu <- false
                 ImGui.Separator ()
-                if ImGui.Button "Create" then createEntity true false None; showContextMenu <- false
+                if ImGui.Button "Create" then createEntity true false; showContextMenu <- false
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 150.0f
+                if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
+                    for dispatcherName in (World.getEntityDispatchers Globals.World).Keys do
+                        if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
+                            newEntityDispatcherName <- dispatcherName
+                            createEntity true false
+                            showContextMenu <- false
+                    ImGui.EndCombo ()
                 if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showContextMenu <- false
                 if ImGui.IsMouseClicked ImGuiMouseButton.Right || ImGui.IsKeyPressed ImGuiKey.Escape then showContextMenu <- false
                 ImGui.End ()
@@ -1383,10 +1388,9 @@ module Gaia =
                 ImGui.Text "Group Name:"
                 ImGui.SameLine ()
                 ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
-                let groupDispatcherNames = World.getGroupDispatchers Globals.World |> Map.toKeyArray
                 if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
-                    for dispatcherName in groupDispatcherNames do
-                        if ImGui.Selectable dispatcherName then
+                    for dispatcherName in (World.getGroupDispatchers Globals.World).Keys do
+                        if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
                             newGroupDispatcherName <- dispatcherName
                     ImGui.EndCombo ()
                 let newGroup = selectedScreen / newGroupName
