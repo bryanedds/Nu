@@ -3,6 +3,7 @@ open System
 open System.Collections.Generic
 open Prime
 open ImGuiNET
+open ImGuizmoNET
 open Nu
 
 /// Wraps ImGui context, state, and calls.
@@ -25,6 +26,12 @@ type ImGui (windowWidth : int, windowHeight : int) =
     do
         // make context current
         ImGui.SetCurrentContext context
+
+        // set guizmo context
+        ImGuizmo.SetImGuiContext context
+
+        // enable guizmo
+        ImGuizmo.Enable true
 
         // retrieve configuration targets
         let io = ImGui.GetIO ()
@@ -67,7 +74,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         fonts.AddFontDefault () |> ignore<ImFontPtr>
 
         // configure styling theme to dark
-        ImGui.StyleColorsDark ()
+        ImGui.StyleColorsDarkPlus ()
 
     member this.Fonts =
         let io = ImGui.GetIO ()
@@ -82,6 +89,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     member this.BeginFrame () =
         ImGui.NewFrame ()
+        ImGuizmo.BeginFrame ()
 
     member this.EndFrame (deltaSeconds : single) =
         let io = ImGui.GetIO ()
@@ -118,6 +126,22 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     member this.CleanUp () =
         ImGui.DestroyContext context
+
+    static member StyleColorsDarkPlus () =
+        ImGui.StyleColorsDark ()
+        let style = ImGui.GetStyle ()
+        let colors = style.Colors
+        colors.[int ImGuiCol.MenuBarBg] <- v4 0.0f 0.0f 0.0f 0.667f
+        colors.[int ImGuiCol.WindowBg] <- v4 0.0f 0.0f 0.0f 0.333f
+        colors.[int ImGuiCol.TitleBg] <- v4 0.0f 0.0f 0.0f 0.5f
+
+    static member StyleColorsLightPlus () =
+        ImGui.StyleColorsLight ()
+        let style = ImGui.GetStyle ()
+        let colors = style.Colors
+        colors.[int ImGuiCol.MenuBarBg] <- v4 1.0f 1.0f 1.0f 0.667f
+        colors.[int ImGuiCol.WindowBg] <- v4 1.0f 1.0f 1.0f 0.333f
+        colors.[int ImGuiCol.TitleBg] <- v4 1.0f 1.0f 1.0f 0.5f
 
     static member IsCtrlPressed () =
         // HACK: using modifier detection from sdl since it works better given how things have been configued.
