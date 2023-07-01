@@ -139,13 +139,14 @@ module Gaia =
             // just keep current group selection and screen if no screen selected
             (Cascade, Globals.World)
 
-    let private handleNuMouseRightDown (_ : Event<MouseButtonData, Game>) world =
+    let private handleNuEntityContext (_ : Event<MouseButtonData, Game>) world =
         let world = Globals.World <- world
         if canEditWithMouse () then
             let handling = if World.getAdvancing Globals.World then Cascade else Resolve
             let mousePosition = World.getMousePosition Globals.World
             let _ = tryMousePick mousePosition
             rightClickPosition <- mousePosition
+            showContextMenu <- true
             (handling, Globals.World)
         else (Resolve, Globals.World)
 
@@ -850,11 +851,6 @@ module Gaia =
             if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
 
-        if not (io.WantCaptureMouse) then
-            if ImGui.IsMouseClicked ImGuiMouseButton.Right then
-                rightClickPosition <- ImGui.GetMousePos ()
-                showContextMenu <- true
-
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
         if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
@@ -1339,7 +1335,15 @@ module Gaia =
             ImGui.End ()
 
         if showContextMenu then
+            ImGui.SetNextWindowPos rightClickPosition
             if ImGui.Begin "ContextMenu" then
+                if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showContextMenu <- false
+                if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showContextMenu <- false
+                if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showContextMenu <- false
+                ImGui.Separator ()
+                if ImGui.Button "Create" then createEntity true false None; showContextMenu <- false
+                if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showContextMenu <- false
+                if ImGui.IsMouseClicked ImGuiMouseButton.Right || ImGui.IsKeyPressed ImGuiKey.Escape then showContextMenu <- false
                 ImGui.End ()
 
         if showAssetPicker then
@@ -1599,7 +1603,7 @@ module Gaia =
                         //DUMMY
                         //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                         ""
-                Globals.World <- World.subscribe handleNuMouseRightDown Events.MouseRightDown Simulants.Game Globals.World
+                Globals.World <- World.subscribe handleNuEntityContext Events.MouseRightUp Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game Globals.World
                 Globals.World <- World.subscribe handleNuEyeDragBegin Events.MouseMiddleDown Simulants.Game Globals.World
