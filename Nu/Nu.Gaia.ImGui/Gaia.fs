@@ -24,7 +24,7 @@ module Gaia =
     let mutable private dragEyeState = DragEyeInactive
     let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-    let mutable private propertyFocusedOpt = None
+    let mutable private propertyDescriptorFocusedOpt = None
     let mutable private snaps2dSelected = true
     let mutable private filePaths = Map.empty<Group Address, string>
     let mutable private targetDir = "."
@@ -807,6 +807,14 @@ module Gaia =
             for child in children do imGuiEntityHierarchy child
             ImGui.TreePop ()
 
+    let imGuiGetEntityProperty propertyDescriptor entity =
+        EntityPropertyDescriptor.getPropertyValue propertyDescriptor entity Globals.World
+
+    let imGuiSetEntityProperty value propertyDescriptor entity =
+        match EntityPropertyDescriptor.trySetPropertyValue value propertyDescriptor entity Globals.World with
+        | Right world -> Globals.World <- world
+        | Left (error, world) -> messageBoxOpt <- Some error; Globals.World <- world
+
     let imGuiProcess world =
 
         // TODO: figure out some sort of exception handling strategy for Gaia interaction.
@@ -1036,78 +1044,76 @@ module Gaia =
         if ImGui.Begin "Properties" then
             match selectedEntityOpt with
             | Some entity when entity.Exists Globals.World ->
-                let entityTds = { DescribedEntity = entity }
-                let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-                let properties = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor (Some (entity, Globals.World))
-                for property in properties do
-                    let ty = property.PropertyType
+                let propertyDescriptors = EntityPropertyDescriptor.getPropertyDescriptors entity Globals.World
+                for propertyDescriptor in propertyDescriptors do
+                    let ty = propertyDescriptor.PropertyType
                     let converter = SymbolicConverter ty
-                    let isPropertyAssetTag = property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                    let value = property.GetValue entityTds
+                    let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                    let value = EntityPropertyDescriptor.getPropertyValue propertyDescriptor entity Globals.World
                     let valueStr = converter.ConvertToString value
                     match value with
-                    | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (property.Name, &b') then property.SetValue (entityTds, b')
-                    | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int8 i')
-                    | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint8 i')
-                    | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int16 i')
-                    | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint16 i')
-                    | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int32 i')
-                    | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint32 i')
-                    | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, int64 i')
-                    | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (property.Name, &i') then property.SetValue (entityTds, uint64 i')
-                    | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (property.Name, &f') then property.SetValue (entityTds, single f')
-                    | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (property.Name, &f') then property.SetValue (entityTds, double f')
-                    | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (property.Name, &v') then property.SetValue (entityTds, v')
-                    | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (property.Name, &v') then property.SetValue (entityTds, v')
-                    | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (property.Name, &v') then property.SetValue (entityTds, v')
-                    | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (property.Name, &v'.X) then property.SetValue (entityTds, v')
-                    | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (property.Name, &v'.X) then property.SetValue (entityTds, v')
-                    | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (property.Name, &v'.X) then property.SetValue (entityTds, v')
+                    | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetEntityProperty b' propertyDescriptor entity
+                    | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int8 i') propertyDescriptor entity
+                    | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint8 i') propertyDescriptor entity
+                    | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int16 i') propertyDescriptor entity
+                    | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint16 i') propertyDescriptor entity
+                    | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int32 i') propertyDescriptor entity
+                    | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint32 i') propertyDescriptor entity
+                    | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int64 i') propertyDescriptor entity
+                    | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint64 i') propertyDescriptor entity
+                    | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (single f') propertyDescriptor entity
+                    | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (double f') propertyDescriptor entity
+                    | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                    | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                    | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                    | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                    | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                    | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
                     | :? Box2 as b ->
-                        ImGui.Text property.Name
+                        ImGui.Text propertyDescriptor.PropertyName
                         let mutable min = v2 b.Min.X b.Min.Y
                         let mutable size = v2 b.Size.X b.Size.Y
                         ImGui.Indent ()
                         if  ImGui.DragFloat2 ("Min", &min) ||
                             ImGui.DragFloat2 ("Size", &size) then
                             let b' = box2 min size
-                            property.SetValue (entityTds, b')
+                            imGuiSetEntityProperty b' propertyDescriptor entity
                         ImGui.Unindent ()
                     | :? Box3 as b ->
-                        ImGui.Text property.Name
+                        ImGui.Text propertyDescriptor.PropertyName
                         let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
                         let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
                         ImGui.Indent ()
                         if  ImGui.DragFloat3 ("Min", &min) ||
                             ImGui.DragFloat3 ("Size", &size) then
                             let b' = box3 min size
-                            property.SetValue (entityTds, b')
+                            imGuiSetEntityProperty b' propertyDescriptor entity
                         ImGui.Unindent ()
                     | :? Box2i as b ->
-                        ImGui.Text property.Name
+                        ImGui.Text propertyDescriptor.PropertyName
                         let mutable min = v2i b.Min.X b.Min.Y
                         let mutable size = v2i b.Size.X b.Size.Y
                         ImGui.Indent ()
                         if  ImGui.DragInt2 ("Min", &min.X) ||
                             ImGui.DragInt2 ("Size", &size.X) then
                             let b' = box2i min size
-                            property.SetValue (entityTds, b')
+                            imGuiSetEntityProperty b' propertyDescriptor entity
                         ImGui.Unindent ()
                     | :? Quaternion as q ->
                         let mutable v = v4 q.X q.Y q.Z q.W
-                        if ImGui.DragFloat4 (property.Name, &v) then
+                        if ImGui.DragFloat4 (propertyDescriptor.PropertyName, &v) then
                             let q' = quat v.X v.Y v.Z v.W
-                            property.SetValue (entityTds, q')
+                            imGuiSetEntityProperty q' propertyDescriptor entity
                     | :? Color as c ->
                         let mutable v = v4 c.R c.G c.B c.A
-                        if ImGui.ColorEdit4 (property.Name, &v) then
+                        if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
                             let c' = color v.X v.Y v.Z v.W
-                            property.SetValue (entityTds, c')
+                            imGuiSetEntityProperty c' propertyDescriptor entity
                     | _ when isPropertyAssetTag ->
                         let mutable valueStr' = valueStr
-                        if ImGui.InputText (property.Name, &valueStr', 4096u) then
+                        if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
                             try let value' = converter.ConvertFromString valueStr'
-                                property.SetValue (entityTds, value')
+                                imGuiSetEntityProperty value' propertyDescriptor entity
                             with
                             | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                             | :? ConversionException -> ()
@@ -1118,7 +1124,7 @@ module Gaia =
                                     try let propertyValueEscaped = payload
                                         let propertyValueUnescaped = String.unescape propertyValueEscaped
                                         let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                        property.SetValue (entityTds, propertyValue)
+                                        imGuiSetEntityProperty propertyValue propertyDescriptor entity
                                     with
                                     | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                                     | :? ConversionException -> ()
@@ -1133,39 +1139,38 @@ module Gaia =
                                 let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
                                 let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
                                 let mutable tag = unionCaseInfo.Tag
-                                if ImGui.Combo (property.Name, &tag, caseNames, caseNames.Length) then
+                                if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
                                     let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                                    property.SetValue (entityTds, value')
+                                    imGuiSetEntityProperty value' propertyDescriptor entity
                         if not combo then
                             let mutable valueStr' = valueStr
-                            if ImGui.InputText (property.Name, &valueStr', 131072u) then
+                            if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
                                 try let value' = converter.ConvertFromString valueStr'
-                                    property.SetValue (entityTds, value')
+                                    imGuiSetEntityProperty value' propertyDescriptor entity
                                 with
                                 | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                                 | :? ConversionException -> ()
-                    if ImGui.IsItemFocused () then propertyFocusedOpt <- Some property
+                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some propertyDescriptor
             | Some _ | None -> ()
             ImGui.End ()
 
         if ImGui.Begin "Property Editor" then
             match selectedEntityOpt with
             | Some entity when entity.Exists Globals.World ->
-                let entityTds = { DescribedEntity = entity }
-                match propertyFocusedOpt with
-                | Some property when property.PropertyType <> typeof<ComputedProperty> ->
-                    let converter = SymbolicConverter (false, None, property.PropertyType)
-                    match property.GetValue entityTds with
+                match propertyDescriptorFocusedOpt with
+                | Some propertyDescriptor when propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                    let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                    match imGuiGetEntityProperty propertyDescriptor entity with
                     | null -> ()
                     | propertyValue ->
-                        ImGui.Text property.Name
+                        ImGui.Text propertyDescriptor.PropertyName
                         ImGui.SameLine ()
                         ImGui.Text ":"
                         ImGui.SameLine ()
-                        ImGui.Text property.Description
+                        ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
                         let propertyValueUnescaped = converter.ConvertToString propertyValue
                         let propertyValueEscaped = String.escape propertyValueUnescaped
-                        let isPropertyAssetTag = property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                        let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
                         if isPropertyAssetTag then
                             ImGui.SameLine ()
                             if ImGui.Button "Pick" then showAssetPicker <- true
@@ -1174,7 +1179,7 @@ module Gaia =
                             try let propertyValueEscaped = propertyValuePretty
                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                property.SetValue (entityTds, propertyValue)
+                                imGuiSetEntityProperty propertyValue propertyDescriptor entity
                             with
                             | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                             | :? ConversionException -> ()
@@ -1186,7 +1191,7 @@ module Gaia =
                                         try let propertyValueEscaped = payload
                                             let propertyValueUnescaped = String.unescape propertyValueEscaped
                                             let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                            property.SetValue (entityTds, propertyValue)
+                                            imGuiSetEntityProperty propertyValue propertyDescriptor entity
                                         with
                                         | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
                                         | :? ConversionException -> ()
@@ -1336,13 +1341,12 @@ module Gaia =
                                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                                         match selectedEntityOpt with
                                         | Some entity when entity.Exists Globals.World ->
-                                            let entityTds = { DescribedEntity = entity }
-                                            match propertyFocusedOpt with
-                                            | Some property when property.PropertyType <> typeof<ComputedProperty> ->
-                                                let converter = SymbolicConverter (false, None, property.PropertyType)
+                                            match propertyDescriptorFocusedOpt with
+                                            | Some propertyDescriptor when propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                                                let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
                                                 let propertyValueStr = "[" + package.Key + " " + assetName + "]"
                                                 let propertyValue = converter.ConvertFromString propertyValueStr
-                                                property.SetValue (entityTds, propertyValue)
+                                                imGuiSetEntityProperty propertyValue propertyDescriptor entity
                                             | Some _ | None -> ()
                                         | Some _ | None -> ()
                                         showAssetPicker <- false
