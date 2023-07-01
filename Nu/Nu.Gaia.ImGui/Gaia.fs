@@ -37,6 +37,7 @@ module Gaia =
     let mutable private newEntityElevation = 0.0f
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
+    let mutable private showContextMenu = false
     let mutable private showAssetPicker = false
     let mutable private showInspector = false
     let mutable private showNewGroupDialog = false
@@ -764,6 +765,13 @@ module Gaia =
                         let eyeRotation = World.getEyeRotation3d Globals.World
                         let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
                         Globals.World <- World.setEyeCenter3d (entity.GetPosition Globals.World + eyeCenterOffset) Globals.World
+            if ImGui.BeginPopupContextItem () then
+                selectedEntityOpt <- Some entity
+                if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
+                if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
+                ImGui.Separator ()
+                if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+                ImGui.EndPopup ()
             if ImGui.BeginDragDropSource () then
                 let entityAddressStr = scstring entity.EntityAddress
                 dragDropPayloadOpt <- Some entityAddressStr
@@ -841,6 +849,11 @@ module Gaia =
             if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
+
+        if not (io.WantCaptureMouse) then
+            if ImGui.IsMouseClicked ImGuiMouseButton.Right then
+                rightClickPosition <- ImGui.GetMousePos ()
+                showContextMenu <- true
 
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
@@ -1324,6 +1337,10 @@ module Gaia =
                   SsaoSampleCount = ssaoSampleCount }
             Globals.World <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) Globals.World
             ImGui.End ()
+
+        if showContextMenu then
+            if ImGui.Begin "ContextMenu" then
+                ImGui.End ()
 
         if showAssetPicker then
             let title = "Choose an Asset..."

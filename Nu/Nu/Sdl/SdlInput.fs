@@ -47,7 +47,7 @@ type [<StructuralEquality; StructuralComparison>] GamepadButton =
 module internal MouseState =
 
     /// Convert a MouseButton to SDL's representation.
-    let toSdlButton mouseButton =
+    let internal toSdlButton mouseButton =
         match mouseButton with
         | MouseLeft -> SDL.SDL_BUTTON_LEFT
         | MouseMiddle -> SDL.SDL_BUTTON_MIDDLE
@@ -56,7 +56,7 @@ module internal MouseState =
         | MouseX2 -> SDL.SDL_BUTTON_X2
 
     /// Convert SDL's representation of a mouse button to a MouseButton.
-    let toNuButton mouseButton =
+    let internal toNuButton mouseButton =
         match mouseButton with
         | SDL.SDL_BUTTON_LEFT -> MouseLeft
         | SDL.SDL_BUTTON_MIDDLE -> MouseMiddle
@@ -82,7 +82,7 @@ module internal MouseState =
         not (isButtonDown mouseButton)
 
 [<RequireQualifiedAccess>]
-module KeyboardState =
+module internal KeyboardState =
 
     /// Check that the given keyboard key is down.
     let internal isKeyDown (key : KeyboardKey) =
@@ -119,14 +119,11 @@ module KeyboardState =
     let internal isShiftUp () =
         not (isShiftDown ())
 
+// TODO: internalize all this and expose through World API.
 [<RequireQualifiedAccess>]        
 module GamepadState =
 
     let mutable private Joysticks = [||]
-
-    /// Check that an SDL gamepad button is supported.
-    let isSdlButtonSupported button =
-        button < 8
 
     /// Initialize gamepad state.
     let init () =
@@ -136,6 +133,10 @@ module GamepadState =
                 // NOTE: we don't have a matching call to SDL.SDL_JoystickClose, but it may not be necessary
                 SDL.SDL_JoystickOpen joystick)
                 [|0 .. indices|]
+
+    /// Check that an SDL gamepad button is supported.
+    let isSdlButtonSupported button =
+        button < 8
 
     /// Get the number of open gamepad.
     let getGamepadCount () =
