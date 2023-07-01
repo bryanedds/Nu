@@ -73,18 +73,6 @@ type ImGui (windowWidth : int, windowHeight : int) =
         let io = ImGui.GetIO ()
         io.Fonts
 
-    member this.HandleCtrlKeyChange down =
-        let io = ImGui.GetIO ()
-        io.KeyCtrl <- down
-
-    member this.HandleAltKeyChange down =
-        let io = ImGui.GetIO ()
-        io.KeyAlt <- down
-
-    member this.HandleShiftKeyChange down =
-        let io = ImGui.GetIO ()
-        io.KeyShift <- down
-
     member this.HandleMouseWheelChange change =
         let io = ImGui.GetIO ()
         io.MouseWheel <- io.MouseWheel + change
@@ -135,6 +123,11 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     member this.CleanUp () =
         ImGui.DestroyContext context
+
+    static member IsEscapePressed () =
+        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
+        KeyboardState.isKeyDown KeyboardKey.Escape
+        //ImGui.IsKeyPressed ImGuiKey.Escape
 
     static member IsCtrlPressed () =
         // NOTE: using modifier detection from sdl since it works better given how things have been configued.

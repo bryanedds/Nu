@@ -1332,6 +1332,7 @@ module Gaia =
 
         if showContextMenu then
             ImGui.SetNextWindowPos rightClickPosition
+            ImGui.SetNextWindowSize (v2 230.0f 150.0f)
             if ImGui.Begin "ContextMenu" then
                 if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showContextMenu <- false
                 if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showContextMenu <- false
@@ -1339,7 +1340,7 @@ module Gaia =
                 ImGui.Separator ()
                 if ImGui.Button "Create" then createEntity true false; showContextMenu <- false
                 ImGui.SameLine ()
-                ImGui.SetNextItemWidth 150.0f
+                ImGui.SetNextItemWidth -1.0f
                 if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
                     for dispatcherName in (World.getEntityDispatchers Globals.World).Keys do
                         if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
@@ -1348,7 +1349,9 @@ module Gaia =
                             showContextMenu <- false
                     ImGui.EndCombo ()
                 if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showContextMenu <- false
-                if ImGui.IsMouseClicked ImGuiMouseButton.Right || ImGui.IsKeyPressed ImGuiKey.Escape then showContextMenu <- false
+                if  ImGui.IsMouseClicked ImGuiMouseButton.Right ||
+                    ImGui.IsEscapePressed () then
+                    showContextMenu <- false
                 ImGui.End ()
 
         if showAssetPicker then
@@ -1379,7 +1382,7 @@ module Gaia =
                                     ImGui.TreePop ()
                         ImGui.TreePop ()
                 ImGui.EndPopup ()
-            if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
+            if ImGui.IsEscapePressed () then showAssetPicker <- false
 
         if showNewGroupDialog then
             let title = "Create a group..."
@@ -1404,7 +1407,7 @@ module Gaia =
                         //DUMMY
                         //MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                         ()
-                if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
+                if ImGui.IsEscapePressed () then showNewGroupDialog <- false
 
         if showOpenGroupDialog then
             let title = "Choose a nugroup file..."
@@ -1416,7 +1419,7 @@ module Gaia =
                 if (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
                     Globals.pushPastWorld ()
                     showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
-                if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
+                if ImGui.IsEscapePressed () then showOpenGroupDialog <- false
 
         if showSaveGroupDialog then
             let title = "Save a nugroup file..."
@@ -1428,7 +1431,7 @@ module Gaia =
                 if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
                     Globals.pushPastWorld ()
                     showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
-            if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
+            if ImGui.IsEscapePressed () then showSaveGroupDialog <- false
 
         if showInspector then
             ImGui.ShowStackToolWindow ()
