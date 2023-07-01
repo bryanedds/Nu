@@ -60,6 +60,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         keyMap.[int ImGuiKey.RightAlt] <- int KeyboardKey.Ralt
         keyMap.[int ImGuiKey.LeftShift] <- int KeyboardKey.Lshift
         keyMap.[int ImGuiKey.RightShift] <- int KeyboardKey.Rshift
+        for i in 0 .. dec 10 do keyMap.[int ImGuiKey._0 + i] <- int KeyboardKey.Num0 + i
         for i in 0 .. dec 26 do keyMap.[int ImGuiKey.A + i] <- int KeyboardKey.A + i
 
         // add default font
@@ -114,6 +115,15 @@ type ImGui (windowWidth : int, windowHeight : int) =
         for keyboardKey in keyboardKeys do
             keysDown.[int keyboardKey] <- KeyboardState.isKeyDown keyboardKey
 
+        // update keyboard states.
+        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
+        io.KeyCtrl <- KeyboardState.isCtrlDown ()
+        io.KeyAlt <- KeyboardState.isAltDown ()
+        io.KeyShift <- KeyboardState.isShiftDown ()
+        let keysDown = io.KeysDown
+        for keyboardKey in keyboardKeys do
+            keysDown.[int keyboardKey] <- KeyboardState.isKeyDown keyboardKey
+
         // register key char input
         for c in charsPressed do
             io.AddInputCharacter (uint32 c)
@@ -127,19 +137,19 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.DestroyContext context
 
     static member IsCtrlPressed () =
-        // NOTE: using modifier detection from imgui since it works better given how things have been configued.
+        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
         KeyboardState.isCtrlDown ()
         //ImGui.IsKeyPressed ImGuiKey.LeftCtrl ||
         //ImGui.IsKeyPressed ImGuiKey.RightCtrl
 
     static member IsAltPressed () =
-        // NOTE: using modifier detection from imgui since it works better given how things have been configued.
+        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
         KeyboardState.isAltDown ()
         //ImGui.IsKeyPressed ImGuiKey.LeftAlt ||
         //ImGui.IsKeyPressed ImGuiKey.RightAlt
 
     static member IsShiftPressed () =
-        // NOTE: using modifier detection from imgui since it works better given how things have been configued.
+        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
         KeyboardState.isShiftDown ()
         //ImGui.IsKeyPressed ImGuiKey.LeftShift ||
         //ImGui.IsKeyPressed ImGuiKey.RightShift
