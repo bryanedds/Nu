@@ -60,7 +60,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         keyMap.[int ImGuiKey.RightAlt] <- int KeyboardKey.Ralt
         keyMap.[int ImGuiKey.LeftShift] <- int KeyboardKey.Lshift
         keyMap.[int ImGuiKey.RightShift] <- int KeyboardKey.Rshift
-        for i in 0 .. dec 10 do keyMap.[int ImGuiKey._0 + i] <- int KeyboardKey.Num0 + i
+        for i in 0 .. dec 10 do keyMap.[int ImGuiKey._1 + i] <- int KeyboardKey.Num1 + i
         for i in 0 .. dec 26 do keyMap.[int ImGuiKey.A + i] <- int KeyboardKey.A + i
 
         // add default font
@@ -98,11 +98,6 @@ type ImGui (windowWidth : int, windowHeight : int) =
         mouseDown.[2] <- MouseState.isButtonDown MouseMiddle
         io.MousePos <- MouseState.getPosition ()
 
-        // update keyboard states
-        let keysDown = io.KeysDown
-        for keyboardKey in keyboardKeys do
-            keysDown.[int keyboardKey] <- KeyboardState.isKeyDown keyboardKey
-
         // update keyboard states.
         // NOTE: using modifier detection from sdl since it works better given how things have been configued.
         io.KeyCtrl <- KeyboardState.isCtrlDown ()
@@ -123,11 +118,6 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     member this.CleanUp () =
         ImGui.DestroyContext context
-
-    static member IsEscapePressed () =
-        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
-        KeyboardState.isKeyDown KeyboardKey.Escape
-        //ImGui.IsKeyPressed ImGuiKey.Escape
 
     static member IsCtrlPressed () =
         // NOTE: using modifier detection from sdl since it works better given how things have been configued.
