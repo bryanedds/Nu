@@ -817,20 +817,22 @@ module Gaia =
 
         updateEntityDrag ()
 
+        let io = ImGui.GetIO ()
         if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
         if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlPressed () then tryQuickSizeSelectedEntity () |> ignore<bool>
         if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlPressed () then showNewGroupDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
         if ImGui.IsKeyPressed ImGuiKey.D && ImGui.IsCtrlPressed () then tryDeleteSelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
         if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false None
-        if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
+        if not (io.WantCaptureKeyboard) then
+            if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
 
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
@@ -1104,11 +1106,12 @@ module Gaia =
                     | _ when isPropertyAssetTag ->
                         let mutable valueStr' = valueStr
                         if ImGui.InputText (property.Name, &valueStr', 4096u) then
-                            try let value' = converter.ConvertFromString valueStr'
-                                property.SetValue (entityTds, value')
-                            with
-                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                            | :? ConversionException -> ()
+                            if strNeq valueStr' valueStr then
+                                try let value' = converter.ConvertFromString valueStr'
+                                    property.SetValue (entityTds, value')
+                                with
+                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                | :? ConversionException -> ()
                         if ImGui.BeginDragDropTarget () then
                             if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                 match dragDropPayloadOpt with
@@ -1137,11 +1140,12 @@ module Gaia =
                         if not combo then
                             let mutable valueStr' = valueStr
                             if ImGui.InputText (property.Name, &valueStr', 131072u) then
-                                try let value' = converter.ConvertFromString valueStr'
-                                    property.SetValue (entityTds, value')
-                                with
-                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                                | :? ConversionException -> ()
+                                if strNeq valueStr' valueStr then
+                                    try let value' = converter.ConvertFromString valueStr'
+                                        property.SetValue (entityTds, value')
+                                    with
+                                    | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                    | :? ConversionException -> ()
                     if ImGui.IsItemFocused () then propertyFocusedOpt <- Some property
             | Some _ | None -> ()
             ImGui.End ()
@@ -1167,15 +1171,17 @@ module Gaia =
                         if isPropertyAssetTag then
                             ImGui.SameLine ()
                             if ImGui.Button "Pick" then showAssetPicker <- true
-                        let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
-                        if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
-                            try let propertyValueEscaped = propertyValuePretty
-                                let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                property.SetValue (entityTds, propertyValue)
-                            with
-                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
-                            | :? ConversionException -> ()
+                        let propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                        let mutable propertyValuePretty' = propertyValuePretty
+                        if ImGui.InputTextMultiline ("##propertyValuePretty'", &propertyValuePretty', 131072u, v2 -1.0f -1.0f) then
+                            if strNeq propertyValuePretty' propertyValuePretty then
+                                try let propertyValueEscaped = propertyValuePretty'
+                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                    property.SetValue (entityTds, propertyValue)
+                                with
+                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                | :? ConversionException -> ()
                         if isPropertyAssetTag then
                             if ImGui.BeginDragDropTarget () then
                                 if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
@@ -1271,11 +1277,13 @@ module Gaia =
                 Globals.World <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) Globals.World
             let eventFilter = World.getEventFilter Globals.World
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-            let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
-            if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
-                try let eventFilter = scvalue<EventFilter> eventFilterStr
-                    Globals.World <- World.setEventFilter eventFilter Globals.World
-                with _ -> ()
+            let eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+            let mutable eventFilterStr' = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+            if ImGui.InputTextMultiline ("##eventFilterStr'", &eventFilterStr', 131072u, v2 -1.0f -1.0f) then
+                if strNeq eventFilterStr' eventFilterStr then
+                    try let eventFilter = scvalue<EventFilter> eventFilterStr'
+                        Globals.World <- World.setEventFilter eventFilter Globals.World
+                    with _ -> ()
             ImGui.End ()
 
         if ImGui.Begin "Audio Player" then

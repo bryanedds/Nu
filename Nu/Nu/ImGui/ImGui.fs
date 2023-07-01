@@ -54,6 +54,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         keyMap.[int ImGuiKey.Backspace] <- int KeyboardKey.Backspace
         keyMap.[int ImGuiKey.Enter] <- int KeyboardKey.Return
         keyMap.[int ImGuiKey.Escape] <- int KeyboardKey.Escape
+        keyMap.[int ImGuiKey.GraveAccent] <- int KeyboardKey.Grave
         keyMap.[int ImGuiKey.LeftCtrl] <- int KeyboardKey.Lctrl
         keyMap.[int ImGuiKey.RightCtrl] <- int KeyboardKey.Rctrl
         keyMap.[int ImGuiKey.LeftAlt] <- int KeyboardKey.Lalt
