@@ -1,9 +1,9 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open Prime
 open ImGuiNET
 open ImGuizmoNET
+open Prime
 open Nu
 
 /// Wraps ImGui context, state, and calls.
