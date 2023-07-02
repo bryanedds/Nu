@@ -198,6 +198,12 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "renderGame" "" EventTrace.empty
             World.publishPlus () Events.Render eventTrace game false false world
 
+        /// Edit a game with the given operation using the ImGui APIs.
+        /// Intended only to be called by editors like Gaia.
+        static member editGame operation (game : Game) world =
+            let dispatcher = game.GetDispatcher world
+            dispatcher.Edit (operation, game, world)
+
         /// Get all the entities in the world.
         [<FunctionBinding "getEntities0">]
         static member getEntities1 world =
