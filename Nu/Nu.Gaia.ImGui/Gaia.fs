@@ -825,9 +825,10 @@ module Gaia =
                     let affineMatrix' = Matrix4x4.CreateFromArray affineMatrix
                     let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
                     if Matrix4x4.Decompose (affineMatrix', &scale, &rotation, &position) then
-                        world <- entity.SetScale scale world
+                        let (p, d, s) = if not snaps2dSelected then snaps3d else (0.0f, 0.0f, 0.0f)
+                        world <- entity.SetScale (Math.snapF3d s scale) world
                         world <- entity.SetRotation rotation world
-                        world <- entity.SetPosition position world
+                        world <- entity.SetPosition (Math.snapF3d p position) world
                 if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulating <- false
             | Some _ | None -> ()
             ImGui.End ()
@@ -934,7 +935,9 @@ module Gaia =
                 ImGui.Text "Deg"
                 ImGui.SameLine ()
                 ImGui.SetNextItemWidth 36.0f
-                ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                if snaps2dSelected
+                then ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                else ImGui.DragFloat ("##d", &d, 0.0f, 0.0f, 0.0f, "%2.2f") |> ignore<bool> // unchangable 3d rotation
                 ImGui.SameLine ()
                 ImGui.Text "Scl"
                 ImGui.SameLine ()
