@@ -1391,6 +1391,12 @@ module EntityDispatcherModule2 =
             let view = this.View (this.GetModel entity world, entity, world)
             World.renderView view world
 
+        override this.Edit (operation, entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, entity, world)
+            let world = this.SetModel model entity world
+            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
+
         override this.Signal (signalObj, entity, world) =
             match signalObj with
             | :? 'message as message -> entity.SignalPlus<'model, 'message, 'command> message world

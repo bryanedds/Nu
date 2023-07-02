@@ -545,10 +545,17 @@ module WorldEntityModule =
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
 
         /// Send a signal to an entity.
-        member this.Signal<'message, 'command> (signal : Signal) world =
-            (this.GetDispatcher world).Signal (signal, this, world)
+        member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
 
     type World with
+
+        static member editEntity operation (entity : Entity) world =
+            let dispatcher = entity.GetDispatcher world
+            let world = dispatcher.Edit (operation, entity, world)
+            let facets = entity.GetFacets world
+            if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
+            then Array.fold (fun world (facet : Facet) -> facet.Edit (operation, entity, world)) world facets
+            else world
 
 #if !DISABLE_ENTITY_PRE_UPDATE
         static member internal preUpdateEntity (entity : Entity) world =

@@ -50,13 +50,15 @@ and AppendProperties =
 /// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
 /// replaced.
 and [<ReferenceEquality>] ReplaceProperty =
-    { PushPastWorld : World -> World
+    { Snapshot : World -> World
       IndicateReplaced : World -> World
-      Property : Property }
+      PropertyDescriptor : PropertyDescriptor }
 
 /// Details the additional editing behavior for a simulant in a viewport.
 and [<ReferenceEquality>] OverlayViewport =
-    { PushPastWorld : World -> World
+    { Snapshot : World -> World
+      ViewportView : Matrix4x4
+      ViewportProjection : Matrix4x4
       ViewportBounds : Box2 }
 
 /// Specifies an aspect of simulant editing to perform.

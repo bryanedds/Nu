@@ -23,6 +23,7 @@ open Nu.Gaia
 // Initial layout.
 // Non-entity property editing.
 // ImGui dispatcher callbacks.
+// View guizmo.
 // Multi-selection.
 ///////////////////////////////////
 
@@ -889,14 +890,16 @@ module Gaia =
 
         ImGui.SetNextWindowPos v2Zero
         ImGui.SetNextWindowSize io.DisplaySize
-        if ImGui.Begin ("Panel", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
+        if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
             match selectedEntityOpt with
             | Some entity when entity.Exists world && entity.GetIs3d world ->
                 let viewport = Constants.Render.Viewport
                 let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
                 let view = viewMatrix.ToArray ()
-                let projection = (viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent).ToArray ()
-                let affineMatrix = (entity.GetAffineMatrix world).ToArray ()
+                let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
+                let projection = projectionMatrix.ToArray ()
+                let affineMatrix = entity.GetAffineMatrix world
+                let affine = affineMatrix.ToArray ()
                 let operation =
                     if ImGui.IsShiftPressed () then OPERATION.SCALE
                     elif ImGui.IsAltPressed () then OPERATION.ROTATE
@@ -904,17 +907,24 @@ module Gaia =
                 ImGuizmo.SetOrthographic false
                 ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
                 ImGuizmo.SetDrawlist () // NOTE: I guess this goes right before Manipulate?
-                if ImGuizmo.Manipulate (&view.[0], &projection.[0], operation, MODE.WORLD, &affineMatrix.[0]) then
+                if ImGuizmo.Manipulate (&view.[0], &projection.[0], operation, MODE.WORLD, &affine.[0]) then
                     if not manipulating && ImGui.IsMouseDown ImGuiMouseButton.Left then
                         snapshot ()
                         manipulating <- true
-                    let affineMatrix' = Matrix4x4.CreateFromArray affineMatrix
+                    let affine' = Matrix4x4.CreateFromArray affine
                     let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
-                    if Matrix4x4.Decompose (affineMatrix', &scale, &rotation, &position) then
+                    if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
                         let (p, d, s) = if not snaps2dSelected then snaps3d else (0.0f, 0.0f, 0.0f)
                         world <- entity.SetScale (Math.snapF3d s scale) world
                         world <- entity.SetRotation rotation world
                         world <- entity.SetPosition (Math.snapF3d p position) world
+                let operation =
+                    OverlayViewport
+                        { Snapshot = fun world -> snapshot (); world
+                          ViewportView = viewMatrix
+                          ViewportProjection = projectionMatrix
+                          ViewportBounds = box2 v2Zero io.DisplaySize }
+                world <- World.editEntity operation entity world
                 if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulating <- false
             | Some _ | None -> ()
             ImGui.End ()
@@ -1061,9 +1071,10 @@ module Gaia =
                     for editMode in editModes do
                         if ImGui.Selectable (editMode.Key, strEq editMode.Key projectEditMode) then
                             projectEditMode <- editMode.Key
-                            snapshot ()
+                            snapshot () // snapshot before mode change
                             selectedEntityOpt <- None
                             world <- editMode.Value world
+                            snapshot () // snapshot before after change
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
                 ImGui.Text "Full (F11)"
@@ -1134,111 +1145,120 @@ module Gaia =
                         if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick) then
                             let propertyDescriptorsSorted = Array.sortBy (fun pd -> pd.PropertyName) propertyDescriptors
                             for propertyDescriptor in propertyDescriptorsSorted do
-                                let ty = propertyDescriptor.PropertyType
-                                let converter = SymbolicConverter ty
-                                let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                                let value = EntityPropertyDescriptor.getValue propertyDescriptor entity world
-                                let valueStr = converter.ConvertToString value
-                                match value with
-                                | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetEntityProperty b' propertyDescriptor entity
-                                | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int8 i') propertyDescriptor entity
-                                | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint8 i') propertyDescriptor entity
-                                | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int16 i') propertyDescriptor entity
-                                | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint16 i') propertyDescriptor entity
-                                | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int32 i') propertyDescriptor entity
-                                | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint32 i') propertyDescriptor entity
-                                | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int64 i') propertyDescriptor entity
-                                | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint64 i') propertyDescriptor entity
-                                | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (single f') propertyDescriptor entity
-                                | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (double f') propertyDescriptor entity
-                                | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
-                                | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
-                                | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
-                                | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
-                                | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
-                                | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
-                                | :? Box2 as b ->
-                                    ImGui.Text propertyDescriptor.PropertyName
-                                    let mutable min = v2 b.Min.X b.Min.Y
-                                    let mutable size = v2 b.Size.X b.Size.Y
-                                    ImGui.Indent ()
-                                    if  ImGui.InputFloat2 ("Min", &min) ||
-                                        ImGui.InputFloat2 ("Size", &size) then
-                                        let b' = box2 min size
-                                        imGuiSetEntityProperty b' propertyDescriptor entity
-                                    ImGui.Unindent ()
-                                | :? Box3 as b ->
-                                    ImGui.Text propertyDescriptor.PropertyName
-                                    let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
-                                    let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
-                                    ImGui.Indent ()
-                                    if  ImGui.InputFloat3 ("Min", &min) ||
-                                        ImGui.InputFloat3 ("Size", &size) then
-                                        let b' = box3 min size
-                                        imGuiSetEntityProperty b' propertyDescriptor entity
-                                    ImGui.Unindent ()
-                                | :? Box2i as b ->
-                                    ImGui.Text propertyDescriptor.PropertyName
-                                    let mutable min = v2i b.Min.X b.Min.Y
-                                    let mutable size = v2i b.Size.X b.Size.Y
-                                    ImGui.Indent ()
-                                    if  ImGui.InputInt2 ("Min", &min.X) ||
-                                        ImGui.InputInt2 ("Size", &size.X) then
-                                        let b' = box2i min size
-                                        imGuiSetEntityProperty b' propertyDescriptor entity
-                                    ImGui.Unindent ()
-                                | :? Quaternion as q ->
-                                    let mutable v = v4 q.X q.Y q.Z q.W
-                                    if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v) then
-                                        let q' = quat v.X v.Y v.Z v.W
-                                        imGuiSetEntityProperty q' propertyDescriptor entity
-                                | :? Color as c ->
-                                    let mutable v = v4 c.R c.G c.B c.A
-                                    if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
-                                        let c' = color v.X v.Y v.Z v.W
-                                        imGuiSetEntityProperty c' propertyDescriptor entity
-                                | _ when isPropertyAssetTag ->
-                                    let mutable valueStr' = valueStr
-                                    if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
-                                        try let value' = converter.ConvertFromString valueStr'
-                                            imGuiSetEntityProperty value' propertyDescriptor entity
-                                        with
-                                        | :? ParseException // TODO: use ParseException once Prime is updated.
-                                        | :? ConversionException -> ()
-                                    if ImGui.BeginDragDropTarget () then
-                                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                            match dragDropPayloadOpt with
-                                            | Some payload ->
-                                                try let propertyValueEscaped = payload
-                                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                    imGuiSetEntityProperty propertyValue propertyDescriptor entity
-                                                with
-                                                | :? ParseException // TODO: use ParseException once Prime is updated.
-                                                | :? ConversionException -> ()
-                                            | None -> ()
-                                        ImGui.EndDragDropTarget ()
-                                | _ ->
-                                    let mutable combo = false
-                                    if FSharpType.IsUnion ty then
-                                        let cases = FSharpType.GetUnionCases ty
-                                        if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
-                                            combo <- true
-                                            let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                                            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
-                                            let mutable tag = unionCaseInfo.Tag
-                                            if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
-                                                let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                                                imGuiSetEntityProperty value' propertyDescriptor entity
-                                    if not combo then
+                                let mutable replaced = false
+                                let replaceProperty =
+                                    ReplaceProperty
+                                        { Snapshot = fun world -> snapshot (); world
+                                          IndicateReplaced = fun world -> replaced <- true; world
+                                          PropertyDescriptor = propertyDescriptor }
+                                world <- World.editEntity replaceProperty entity world
+                                if not replaced then
+                                    let ty = propertyDescriptor.PropertyType
+                                    let converter = SymbolicConverter ty
+                                    let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                                    let value = EntityPropertyDescriptor.getValue propertyDescriptor entity world
+                                    let valueStr = converter.ConvertToString value
+                                    match value with
+                                    | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetEntityProperty b' propertyDescriptor entity
+                                    | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int8 i') propertyDescriptor entity
+                                    | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint8 i') propertyDescriptor entity
+                                    | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int16 i') propertyDescriptor entity
+                                    | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint16 i') propertyDescriptor entity
+                                    | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int32 i') propertyDescriptor entity
+                                    | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint32 i') propertyDescriptor entity
+                                    | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (int64 i') propertyDescriptor entity
+                                    | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetEntityProperty (uint64 i') propertyDescriptor entity
+                                    | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (single f') propertyDescriptor entity
+                                    | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetEntityProperty (double f') propertyDescriptor entity
+                                    | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                                    | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                                    | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetEntityProperty v' propertyDescriptor entity
+                                    | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                                    | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                                    | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetEntityProperty v' propertyDescriptor entity
+                                    | :? Box2 as b ->
+                                        ImGui.Text propertyDescriptor.PropertyName
+                                        let mutable min = v2 b.Min.X b.Min.Y
+                                        let mutable size = v2 b.Size.X b.Size.Y
+                                        ImGui.Indent ()
+                                        if  ImGui.InputFloat2 ("Min", &min) ||
+                                            ImGui.InputFloat2 ("Size", &size) then
+                                            let b' = box2 min size
+                                            imGuiSetEntityProperty b' propertyDescriptor entity
+                                        ImGui.Unindent ()
+                                    | :? Box3 as b ->
+                                        ImGui.Text propertyDescriptor.PropertyName
+                                        let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
+                                        let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
+                                        ImGui.Indent ()
+                                        if  ImGui.InputFloat3 ("Min", &min) ||
+                                            ImGui.InputFloat3 ("Size", &size) then
+                                            let b' = box3 min size
+                                            imGuiSetEntityProperty b' propertyDescriptor entity
+                                        ImGui.Unindent ()
+                                    | :? Box2i as b ->
+                                        ImGui.Text propertyDescriptor.PropertyName
+                                        let mutable min = v2i b.Min.X b.Min.Y
+                                        let mutable size = v2i b.Size.X b.Size.Y
+                                        ImGui.Indent ()
+                                        if  ImGui.InputInt2 ("Min", &min.X) ||
+                                            ImGui.InputInt2 ("Size", &size.X) then
+                                            let b' = box2i min size
+                                            imGuiSetEntityProperty b' propertyDescriptor entity
+                                        ImGui.Unindent ()
+                                    | :? Quaternion as q ->
+                                        let mutable v = v4 q.X q.Y q.Z q.W
+                                        if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v) then
+                                            let q' = quat v.X v.Y v.Z v.W
+                                            imGuiSetEntityProperty q' propertyDescriptor entity
+                                    | :? Color as c ->
+                                        let mutable v = v4 c.R c.G c.B c.A
+                                        if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
+                                            let c' = color v.X v.Y v.Z v.W
+                                            imGuiSetEntityProperty c' propertyDescriptor entity
+                                    | _ when isPropertyAssetTag ->
                                         let mutable valueStr' = valueStr
-                                        if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
+                                        if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
                                             try let value' = converter.ConvertFromString valueStr'
                                                 imGuiSetEntityProperty value' propertyDescriptor entity
                                             with
                                             | :? ParseException // TODO: use ParseException once Prime is updated.
                                             | :? ConversionException -> ()
+                                        if ImGui.BeginDragDropTarget () then
+                                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                                match dragDropPayloadOpt with
+                                                | Some payload ->
+                                                    try let propertyValueEscaped = payload
+                                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                        imGuiSetEntityProperty propertyValue propertyDescriptor entity
+                                                    with
+                                                    | :? ParseException // TODO: use ParseException once Prime is updated.
+                                                    | :? ConversionException -> ()
+                                                | None -> ()
+                                            ImGui.EndDragDropTarget ()
+                                    | _ ->
+                                        let mutable combo = false
+                                        if FSharpType.IsUnion ty then
+                                            let cases = FSharpType.GetUnionCases ty
+                                            if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                                                combo <- true
+                                                let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                                                let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                                                let mutable tag = unionCaseInfo.Tag
+                                                if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
+                                                    let value' = FSharpValue.MakeUnion (cases.[tag], [||])
+                                                    imGuiSetEntityProperty value' propertyDescriptor entity
+                                        if not combo then
+                                            let mutable valueStr' = valueStr
+                                            if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
+                                                try let value' = converter.ConvertFromString valueStr'
+                                                    imGuiSetEntityProperty value' propertyDescriptor entity
+                                                with
+                                                | :? ParseException // TODO: use ParseException once Prime is updated.
+                                                | :? ConversionException -> ()
                                 if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some propertyDescriptor
+                    world <- World.editEntity AppendProperties entity world
                 | Some _ | None -> ()
                 ImGui.End ()
 
