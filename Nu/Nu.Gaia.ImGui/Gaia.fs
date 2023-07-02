@@ -1465,7 +1465,7 @@ module Gaia =
             if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
 
         if showOpenProjectDialog then
-            let title = "Choose a project .dll... *MANUAL RESTART REQUIRED!*"
+            let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
             if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
                 ImGui.Text "File Path:"
