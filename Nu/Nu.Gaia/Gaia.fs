@@ -993,7 +993,7 @@ module Gaia =
                                     with
                                     | :? ParseException // TODO: use ParseException once Prime is updated.
                                     | :? ConversionException -> ()
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some propertyDescriptor
+                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
         world <- World.edit AppendProperties simulant world
 
     let imGuiProcess wtemp =
@@ -1276,49 +1276,48 @@ module Gaia =
                 ImGui.End ()
 
             if ImGui.Begin "Property Editor" then
-                match selectedEntityOpt with
-                | Some entity when entity.Exists world ->
-                    match propertyDescriptorFocusedOpt with
-                    | Some propertyDescriptor when propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
-                        let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                        match imGuiGetProperty propertyDescriptor entity with
-                        | null -> ()
-                        | propertyValue ->
-                            ImGui.Text propertyDescriptor.PropertyName
+                match propertyDescriptorFocusedOpt with
+                | Some (propertyDescriptor, simulant) when
+                    World.getExists simulant world &&
+                    propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                    let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                    match imGuiGetProperty propertyDescriptor simulant with
+                    | null -> ()
+                    | propertyValue ->
+                        ImGui.Text propertyDescriptor.PropertyName
+                        ImGui.SameLine ()
+                        ImGui.Text ":"
+                        ImGui.SameLine ()
+                        ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
+                        let propertyValueUnescaped = converter.ConvertToString propertyValue
+                        let propertyValueEscaped = String.escape propertyValueUnescaped
+                        let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                        if isPropertyAssetTag then
                             ImGui.SameLine ()
-                            ImGui.Text ":"
-                            ImGui.SameLine ()
-                            ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
-                            let propertyValueUnescaped = converter.ConvertToString propertyValue
-                            let propertyValueEscaped = String.escape propertyValueUnescaped
-                            let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                            if isPropertyAssetTag then
-                                ImGui.SameLine ()
-                                if ImGui.Button "Pick" then showAssetPicker <- true
-                            let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
-                            if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
-                                try let propertyValueEscaped = propertyValuePretty
-                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                    imGuiSetProperty propertyValue propertyDescriptor entity
-                                with
-                                | :? ParseException // TODO: use ParseException once Prime is updated.
-                                | :? ConversionException -> ()
-                            if isPropertyAssetTag then
-                                if ImGui.BeginDragDropTarget () then
-                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                        match dragDropPayloadOpt with
-                                        | Some payload ->
-                                            try let propertyValueEscaped = payload
-                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                imGuiSetProperty propertyValue propertyDescriptor entity
-                                            with
-                                            | :? ParseException // TODO: use ParseException once Prime is updated.
-                                            | :? ConversionException -> ()
-                                        | None -> ()
-                                    ImGui.EndDragDropTarget ()
-                    | Some _ | None -> ()
+                            if ImGui.Button "Pick" then showAssetPicker <- true
+                        let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                        if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                            try let propertyValueEscaped = propertyValuePretty
+                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                imGuiSetProperty propertyValue propertyDescriptor simulant
+                            with
+                            | :? ParseException // TODO: use ParseException once Prime is updated.
+                            | :? ConversionException -> ()
+                        if isPropertyAssetTag then
+                            if ImGui.BeginDragDropTarget () then
+                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                    match dragDropPayloadOpt with
+                                    | Some payload ->
+                                        try let propertyValueEscaped = payload
+                                            let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                            let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                            imGuiSetProperty propertyValue propertyDescriptor simulant
+                                        with
+                                        | :? ParseException // TODO: use ParseException once Prime is updated.
+                                        | :? ConversionException -> ()
+                                    | None -> ()
+                                ImGui.EndDragDropTarget ()
                 | Some _ | None -> ()
                 ImGui.End ()
 
@@ -1481,15 +1480,14 @@ module Gaia =
                             if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
                                 if ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) then
                                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                                        match selectedEntityOpt with
-                                        | Some entity when entity.Exists world ->
-                                            match propertyDescriptorFocusedOpt with
-                                            | Some propertyDescriptor when propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
-                                                let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                                                let propertyValueStr = "[" + package.Key + " " + assetName + "]"
-                                                let propertyValue = converter.ConvertFromString propertyValueStr
-                                                imGuiSetProperty propertyValue propertyDescriptor entity
-                                            | Some _ | None -> ()
+                                        match propertyDescriptorFocusedOpt with
+                                        | Some (propertyDescriptor, simulant) when
+                                            World.getExists simulant world &&
+                                            propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                                            let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                                            let propertyValueStr = "[" + package.Key + " " + assetName + "]"
+                                            let propertyValue = converter.ConvertFromString propertyValueStr
+                                            imGuiSetProperty propertyValue propertyDescriptor simulant
                                         | Some _ | None -> ()
                                         showAssetPicker <- false
                                     ImGui.TreePop ()
