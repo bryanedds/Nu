@@ -15,6 +15,7 @@ open ImGuiNET
 open ImGuizmoNET
 open Nu
 open Nu.Gaia
+open System.Diagnostics
 
 [<RequireQualifiedAccess>]
 module Gaia =
@@ -42,10 +43,14 @@ module Gaia =
     let mutable private showContextMenu = false
     let mutable private showAssetPicker = false
     let mutable private showInspector = false
+    let mutable private showOpenProjectDialog = false
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
     let mutable private editWhileAdvancing = false
+    let mutable private projectFilePath = ""
+    let mutable private projectEditMode = "Title"
+    let mutable private projectImperativeExecution = false
     let mutable private newGroupName = nameof Group
     let mutable private groupFilePath = ""
     let mutable private dragDropPayloadOpt = None
@@ -359,6 +364,56 @@ module Gaia =
 
         // fin
         (Cascade, world)
+
+    /// Attempt to select a target directory for the desired plugin and its assets from the give file path.
+    let trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
+        let filePathAndDirNameAndTypesOpt =
+            if not (String.IsNullOrWhiteSpace filePathOpt) then
+                let filePath = filePathOpt
+                try let dirName = Path.GetDirectoryName filePath
+                    try Directory.SetCurrentDirectory dirName
+                        let assembly = Assembly.Load (File.ReadAllBytes filePath)
+                        Right (Some (filePath, dirName, assembly.GetTypes ()))
+                    with _ ->
+                        let assembly = Assembly.LoadFrom filePath
+                        Right (Some (filePath, dirName, assembly.GetTypes ()))
+                with _ -> Left ()
+            else Right None
+        match filePathAndDirNameAndTypesOpt with
+        | Right (Some (filePath, dirName, types)) ->
+            let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
+            match pluginTypeOpt with
+            | Some ty ->
+                let plugin = Activator.CreateInstance ty :?> NuPlugin
+                Right (Some (filePath, dirName, plugin))
+            | None -> Left ()
+        | Right None -> Right None
+        | Left () -> Left ()
+
+    /// Select a target directory for the desired plugin and its assets.
+    let selectNuPlugin gaiaPlugin =
+        let savedState =
+            try if File.Exists Constants.Editor.SavedStateFilePath
+                then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
+                else SavedState.defaultState
+            with _ -> SavedState.defaultState
+        let gaiaDirectory = Directory.GetCurrentDirectory ()
+        let (targetDir, plugin) =
+            match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectFilePath with
+            | Right (Some (filePath, targetDir, plugin)) ->
+                Constants.Override.fromAppConfig filePath
+                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                with _ -> Log.info "Could not save editor state."
+                (targetDir, plugin)
+            | Right None ->
+                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                with _ -> Log.info "Could not save editor state."
+                (".", gaiaPlugin)
+            | Left () ->
+                if not (String.IsNullOrWhiteSpace savedState.ProjectFilePath) then
+                    Log.trace ("Invalid Nu Assembly: " + savedState.ProjectFilePath)
+                (".", gaiaPlugin)
+        (savedState, targetDir, plugin)
 
     let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup world
@@ -837,6 +892,9 @@ module Gaia =
             if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
                 if ImGui.BeginMenuBar () then
                     if ImGui.BeginMenu "File" then
+                        if ImGui.MenuItem ("Open Project", "Ctrl+P") then
+                            showOpenProjectDialog <- true
+                        ImGui.Separator ()
                         if ImGui.MenuItem ("New Group", "Ctrl+N") then
                             showNewGroupDialog <- true
                         if ImGui.MenuItem ("Open Group", "Ctrl+O") then
@@ -879,7 +937,7 @@ module Gaia =
                     ImGui.EndMenuBar ()
                 if ImGui.Button "Create" then createEntity false false
                 ImGui.SameLine ()
-                ImGui.SetNextItemWidth 250.0f
+                ImGui.SetNextItemWidth 200.0f
                 if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
                     for dispatcherName in (World.getEntityDispatchers world).Keys do
                         if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
@@ -888,7 +946,7 @@ module Gaia =
                 ImGui.SameLine ()
                 ImGui.Text "w/ Overlay"
                 ImGui.SameLine ()
-                ImGui.SetNextItemWidth 200.0f
+                ImGui.SetNextItemWidth 150.0f
                 let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays world |> Map.toKeyArray)
                 if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
                     for overlayName in overlayNames do
@@ -962,6 +1020,18 @@ module Gaia =
                 if ImGui.Button "All" then tryReloadAll ()
                 ImGui.SameLine ()
                 ImGui.Text "|"
+                ImGui.SameLine ()
+                ImGui.Text "Mode:"
+                ImGui.SameLine ()
+                ImGui.SetNextItemWidth 150.0f
+                if ImGui.BeginCombo ("##projectEditMode", projectEditMode) then
+                    let editModes = World.getEditModes world
+                    for editMode in editModes do
+                        if ImGui.Selectable (editMode.Key, strEq editMode.Key projectEditMode) then
+                            snapshot ()
+                            selectedEntityOpt <- None
+                            world <- editMode.Value world
+                    ImGui.EndCombo ()
                 ImGui.SameLine ()
                 ImGui.Text "Full (F11)"
                 ImGui.SameLine ()
@@ -1355,6 +1425,33 @@ module Gaia =
                 ImGui.EndPopup ()
             if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
 
+        if showOpenProjectDialog then
+            let title = "Choose a project .dll... *MANUAL RESTART REQUIRED!*"
+            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
+                ImGui.Text "File Path:"
+                ImGui.SameLine ()
+                ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &projectFilePath, 4096u) |> ignore<bool>
+                ImGui.Text "Game Mode:"
+                ImGui.SameLine ()
+                ImGui.InputText ("##projectGameMode", &projectEditMode, 4096u) |> ignore<bool>
+                ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &projectImperativeExecution) |> ignore<bool>
+                if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
+                    String.notEmpty projectFilePath &&
+                    File.Exists projectFilePath then
+                    showOpenProjectDialog <- false
+                    let savedState =
+                        { ProjectFilePath = projectFilePath
+                          EditModeOpt = Some projectEditMode
+                          UseImperativeExecution = projectImperativeExecution }
+                    let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                    let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                    try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                        Directory.SetCurrentDirectory gaiaDirectory
+                        world <- World.exit world
+                    with _ -> Log.info "Could not save editor state and open project."
+                if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
+
         if showNewGroupDialog then
             let title = "Create a group..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1385,7 +1482,9 @@ module Gaia =
                 ImGui.Text "File Path:"
                 ImGui.SameLine ()
                 ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
-                if (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
+                if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
+                    String.notEmpty groupFilePath &&
+                    File.Exists projectFilePath then
                     snapshot ()
                     showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
                 if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
@@ -1419,8 +1518,11 @@ module Gaia =
 
         world
 
-    let rec private runWithCleanUp targetDir' screen wtemp =
+    let rec private runWithCleanUp savedState targetDir' screen wtemp =
         world <- wtemp
+        projectFilePath <- savedState.ProjectFilePath
+        projectImperativeExecution <- savedState.UseImperativeExecution
+        projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
         targetDir <- targetDir'
         selectedScreen <- screen
         selectedGroup <- Nu.World.getGroups screen world |> Seq.head
@@ -1461,56 +1563,6 @@ module Gaia =
                 0
         world <- Unchecked.defaultof<_>
         result
-
-    /// Attempt to select a target directory for the desired plugin and its assets from the give file path.
-    let trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
-        let filePathAndDirNameAndTypesOpt =
-            if not (String.IsNullOrWhiteSpace filePathOpt) then
-                let filePath = filePathOpt
-                try let dirName = Path.GetDirectoryName filePath
-                    try Directory.SetCurrentDirectory dirName
-                        let assembly = Assembly.Load (File.ReadAllBytes filePath)
-                        Right (Some (filePath, dirName, assembly.GetTypes ()))
-                    with _ ->
-                        let assembly = Assembly.LoadFrom filePath
-                        Right (Some (filePath, dirName, assembly.GetTypes ()))
-                with _ -> Left ()
-            else Right None
-        match filePathAndDirNameAndTypesOpt with
-        | Right (Some (filePath, dirName, types)) ->
-            let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
-            match pluginTypeOpt with
-            | Some ty ->
-                let plugin = Activator.CreateInstance ty :?> NuPlugin
-                Right (Some (filePath, dirName, plugin))
-            | None -> Left ()
-        | Right None -> Right None
-        | Left () -> Left ()
-
-    /// Select a target directory for the desired plugin and its assets.
-    let selectNuPlugin gaiaPlugin =
-        let savedState =
-            try if File.Exists Constants.Editor.SavedStateFilePath
-                then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-                else SavedState.defaultState
-            with _ -> SavedState.defaultState
-        let savedStateDirectory = Directory.GetCurrentDirectory ()
-        let (targetDir, plugin) =
-            match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.AssemblyFilePath with
-            | Right (Some (filePath, targetDir, plugin)) ->
-                Constants.Override.fromAppConfig filePath
-                try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                with _ -> Log.info "Could not save editor state."
-                (targetDir, plugin)
-            | Right None ->
-                try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                with _ -> Log.info "Could not save editor state."
-                (".", gaiaPlugin)
-            | Left () ->
-                if not (String.IsNullOrWhiteSpace savedState.AssemblyFilePath) then
-                    Log.trace ("Invalid Nu Assembly: " + savedState.AssemblyFilePath)
-                (".", gaiaPlugin)
-        (savedState, targetDir, plugin)
 
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
@@ -1589,6 +1641,6 @@ module Gaia =
                 let world = World.subscribe handleNuRender Events.Render Simulants.Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game world
                 let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
-                runWithCleanUp targetDir screen world
+                runWithCleanUp savedState targetDir screen world
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
         | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
