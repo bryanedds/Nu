@@ -365,8 +365,7 @@ module Gaia =
             filePaths <- Map.add selectedGroup.GroupAddress groupFilePath filePaths
             true
         with exn ->
-            //DUMMY
-            //MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
             false
 
     let private tryLoadSelectedGroup filePath =
@@ -401,18 +400,17 @@ module Gaia =
                     true
                 with exn ->
                     world <- World.choose oldWorld
-                    //DUMMY
-                    //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
                     false
 
+            // error
             | Left exn ->
-                //DUMMY
-                //MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
                 false
 
+        // error
         else
-            //DUMMY
-            //MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the Elmish API)."
             false
 
     let private createEntity atMouse inHierarchy =
@@ -492,8 +490,7 @@ module Gaia =
                 world <- World.destroyEntity entity world
                 true
             else
-                //DUMMY
-                //MessageBox.Show ("Cannot destroy a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                messageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the Elmish API)."
                 false
         | Some _ | None -> false
 
@@ -506,8 +503,7 @@ module Gaia =
                 world <- World.cutEntityToClipboard entity world
                 true
             else
-                //DUMMY
-                //MessageBox.Show ("Cannot cut a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                messageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the Elmish API)."
                 false
         | Some _ | None -> false
 
@@ -543,8 +539,7 @@ module Gaia =
             assetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
         | (Left error, wtemp) ->
             world <- wtemp
-            //DUMMY
-            //MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            messageBoxOpt <- Some ("Asset reload error due to: " + error + "'.")
             ()
 
     let private tryReloadCode () =
@@ -757,10 +752,7 @@ module Gaia =
                                 //ImGui.SetItemOpt ()
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
-                        else
-                            //DUMMY
-                            //MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                            ()
+                        else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."
                     | None -> ()
             for child in children do imGuiEntityHierarchy child
             ImGui.TreePop ()
@@ -1207,10 +1199,7 @@ module Gaia =
                     try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
                         let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                         File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-                    with exn ->
-                        //DUMMY
-                        //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                        ()
+                    with exn ->messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
                 ImGui.SameLine ()
                 if ImGui.Button "Load" then
                     match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
@@ -1218,10 +1207,7 @@ module Gaia =
                         let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
                         let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                         assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                    | Left errer ->
-                        //DUMMY
-                        //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                        ()
+                    | Left error ->messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
                 ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                 ImGui.End ()
 
@@ -1232,10 +1218,7 @@ module Gaia =
                     try let overlays = scvalue<Overlay list> overlayerStr
                         let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
                         File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-                    with exn ->
-                        //DUMMY
-                        //MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                        ()
+                    with exn ->messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
                 ImGui.SameLine ()
                 if ImGui.Button "Load" then
                     let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
@@ -1244,10 +1227,7 @@ module Gaia =
                         let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
                         let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
                         overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-                    | Left error ->
-                        //DUMMY
-                        //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                        ()
+                    | Left error ->messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                 ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                 ImGui.End ()
 
@@ -1385,9 +1365,7 @@ module Gaia =
                         showNewGroupDialog <- false
                     with exn ->
                         world <- World.choose oldWorld
-                        //DUMMY
-                        //MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                        ()
+                        messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
                 if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
 
         if showOpenGroupDialog then
@@ -1455,8 +1433,7 @@ module Gaia =
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             | Left error ->
-                //DUMMY
-                //MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                 ""
         let result =
             try World.runWithCleanUp tautology id id id imGuiProcess Live true world
