@@ -15,7 +15,16 @@ open ImGuizmoNET
 open Prime
 open Nu
 open Nu.Gaia
-open System.Diagnostics
+
+///////////////////////////////////
+// TODO:
+// Paste in hierarchy.
+// Property categories / ordering.
+// Property definitions.
+// Initial layout.
+// Non-entity property editing.
+// Multi-selection.
+///////////////////////////////////
 
 [<RequireQualifiedAccess>]
 module Gaia =
