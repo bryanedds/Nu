@@ -1146,7 +1146,8 @@ module WorldModule2 =
             let world = World.processPhysics2d world
             world
 
-        static member private cleanUp world =
+        /// Clean-up the resources held by the world.
+        static member cleanUp world =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
@@ -1312,8 +1313,8 @@ module WorldModule2 =
             else world
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp liveness world =
-            try let world = World.runWithoutCleanUp tautology id id id id liveness true world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world =
+            try let world = World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->

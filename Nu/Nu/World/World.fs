@@ -719,6 +719,6 @@ module WorldModule3 =
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig plugin with
-                | Right world -> World.runWithCleanUp Live world
+                | Right world -> World.runWithCleanUp tautology id id id id Live true world
                 | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
