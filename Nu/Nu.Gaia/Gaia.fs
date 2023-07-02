@@ -21,9 +21,30 @@ open Nu.Gaia
 // Paste in hierarchy.
 // Property definitions.
 // Initial layout.
-// Non-entity property editing.
 // View guizmo.
 // Multi-selection.
+//
+// TODO: implement in order of priority -
+//
+//  option & voption with custom checkbox header
+//  Enums
+//  AssetTag wtemp/ picking
+//  RenderStyle
+//  Substance
+//  SymbolicCompression
+//  TmxMap
+//  LightType
+//  MaterialProperties
+//
+//  Layout
+//  CollisionMask
+//  CollisionCategories
+//  CollisionDetection
+//  BodyShape
+//  JointDevice
+//  DateTimeOffset?
+//  Flag Enums
+//
 ///////////////////////////////////
 
 [<RequireQualifiedAccess>]
@@ -1236,31 +1257,21 @@ module Gaia =
                     imGuiEntityHierarchy entity
                 ImGui.End ()
 
-            // TODO: implement in order of priority -
-            //
-            //  option & voption with custom checkbox header
-            //  Enums
-            //  AssetTag wtemp/ picking
-            //  RenderStyle
-            //  Substance
-            //  SymbolicCompression
-            //  TmxMap
-            //  LightType
-            //  MaterialProperties
-            //
-            //  Layout
-            //  CollisionMask
-            //  CollisionCategories
-            //  CollisionDetection
-            //  BodyShape
-            //  JointDevice
-            //  DateTimeOffset?
-            //  Flag Enums
-            //
-            if ImGui.Begin "Properties" then
+            if ImGui.Begin "Game Properties" then
+                imGuiEditProperties Simulants.Game
+                ImGui.End ()
+
+            if ImGui.Begin "Screen Properties" then
+                imGuiEditProperties selectedScreen
+                ImGui.End ()
+
+            if ImGui.Begin "Group Properties" then
+                imGuiEditProperties selectedGroup
+                ImGui.End ()
+
+            if ImGui.Begin "Entity Properties" then
                 match selectedEntityOpt with
-                | Some entity when entity.Exists world ->
-                    imGuiEditProperties entity
+                | Some entity when entity.Exists world -> imGuiEditProperties entity
                 | Some _ | None -> ()
                 ImGui.End ()
 
