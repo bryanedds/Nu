@@ -132,9 +132,9 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.StyleColorsDark ()
         let style = ImGui.GetStyle ()
         let colors = style.Colors
-        colors.[int ImGuiCol.MenuBarBg] <- v4 0.0f 0.0f 0.0f 0.667f
-        colors.[int ImGuiCol.WindowBg] <- v4 0.0f 0.0f 0.0f 0.333f
+        colors.[int ImGuiCol.MenuBarBg] <- v4 0.0f 0.0f 0.0f 0.5f
         colors.[int ImGuiCol.TitleBg] <- v4 0.0f 0.0f 0.0f 0.5f
+        colors.[int ImGuiCol.WindowBg] <- v4 0.0f 0.0f 0.0f 0.333f
 
     static member IsCtrlPressed () =
         // HACK: using modifier detection from sdl since it works better given how things have been configued.

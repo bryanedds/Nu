@@ -187,6 +187,7 @@ module Gaia =
                 | None ->
                     let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
                     group
+            selectedEntityOpt <- None
             selectedGroup <- group
             selectedScreen <- screen
             (Cascade, world)
@@ -1028,6 +1029,7 @@ module Gaia =
                     let editModes = World.getEditModes world
                     for editMode in editModes do
                         if ImGui.Selectable (editMode.Key, strEq editMode.Key projectEditMode) then
+                            projectEditMode <- editMode.Key
                             snapshot ()
                             selectedEntityOpt <- None
                             world <- editMode.Value world
