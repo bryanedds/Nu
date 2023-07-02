@@ -875,125 +875,149 @@ module Gaia =
         | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
 
     let imGuiEditProperties (simulant : Simulant) =
+        let mutable simulant = simulant
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
         for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
             if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick) then
                 let propertyDescriptorsSorted = Array.sortBy (fun pd -> pd.PropertyName) propertyDescriptors
                 for propertyDescriptor in propertyDescriptorsSorted do
-                    let mutable replaced = false
-                    let replaceProperty =
-                        ReplaceProperty
-                            { Snapshot = fun world -> snapshot (); world
-                              IndicateReplaced = fun world -> replaced <- true; world
-                              PropertyDescriptor = propertyDescriptor }
-                    world <- World.edit replaceProperty simulant world
-                    if not replaced then
-                        let ty = propertyDescriptor.PropertyType
-                        let converter = SymbolicConverter ty
-                        let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                        let value = SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
-                        let valueStr = converter.ConvertToString value
-                        match value with
-                        | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetProperty b' propertyDescriptor simulant
-                        | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int8 i') propertyDescriptor simulant
-                        | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint8 i') propertyDescriptor simulant
-                        | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int16 i') propertyDescriptor simulant
-                        | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint16 i') propertyDescriptor simulant
-                        | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int32 i') propertyDescriptor simulant
-                        | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint32 i') propertyDescriptor simulant
-                        | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int64 i') propertyDescriptor simulant
-                        | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint64 i') propertyDescriptor simulant
-                        | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetProperty (single f') propertyDescriptor simulant
-                        | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetProperty (double f') propertyDescriptor simulant
-                        | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
-                        | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
-                        | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
-                        | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
-                        | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
-                        | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
-                        | :? Box2 as b ->
-                            ImGui.Text propertyDescriptor.PropertyName
-                            let mutable min = v2 b.Min.X b.Min.Y
-                            let mutable size = v2 b.Size.X b.Size.Y
-                            ImGui.Indent ()
-                            if  ImGui.InputFloat2 ("Min", &min) ||
-                                ImGui.InputFloat2 ("Size", &size) then
-                                let b' = box2 min size
-                                imGuiSetProperty b' propertyDescriptor simulant
-                            ImGui.Unindent ()
-                        | :? Box3 as b ->
-                            ImGui.Text propertyDescriptor.PropertyName
-                            let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
-                            let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
-                            ImGui.Indent ()
-                            if  ImGui.InputFloat3 ("Min", &min) ||
-                                ImGui.InputFloat3 ("Size", &size) then
-                                let b' = box3 min size
-                                imGuiSetProperty b' propertyDescriptor simulant
-                            ImGui.Unindent ()
-                        | :? Box2i as b ->
-                            ImGui.Text propertyDescriptor.PropertyName
-                            let mutable min = v2i b.Min.X b.Min.Y
-                            let mutable size = v2i b.Size.X b.Size.Y
-                            ImGui.Indent ()
-                            if  ImGui.InputInt2 ("Min", &min.X) ||
-                                ImGui.InputInt2 ("Size", &size.X) then
-                                let b' = box2i min size
-                                imGuiSetProperty b' propertyDescriptor simulant
-                            ImGui.Unindent ()
-                        | :? Quaternion as q ->
-                            let mutable v = v4 q.X q.Y q.Z q.W
-                            if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v) then
-                                let q' = quat v.X v.Y v.Z v.W
-                                imGuiSetProperty q' propertyDescriptor simulant
-                        | :? Color as c ->
-                            let mutable v = v4 c.R c.G c.B c.A
-                            if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
-                                let c' = color v.X v.Y v.Z v.W
-                                imGuiSetProperty c' propertyDescriptor simulant
-                        | _ when isPropertyAssetTag ->
-                            let mutable valueStr' = valueStr
-                            if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
-                                try let value' = converter.ConvertFromString valueStr'
-                                    imGuiSetProperty value' propertyDescriptor simulant
-                                with
-                                | :? ParseException // TODO: use ParseException once Prime is updated.
-                                | :? ConversionException -> ()
-                            if ImGui.BeginDragDropTarget () then
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match dragDropPayloadOpt with
-                                    | Some payload ->
-                                        try let propertyValueEscaped = payload
-                                            let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                            let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                            imGuiSetProperty propertyValue propertyDescriptor simulant
-                                        with
-                                        | :? ParseException // TODO: use ParseException once Prime is updated.
-                                        | :? ConversionException -> ()
-                                    | None -> ()
-                                ImGui.EndDragDropTarget ()
-                        | _ ->
-                            let mutable combo = false
-                            if FSharpType.IsUnion ty then
-                                let cases = FSharpType.GetUnionCases ty
-                                if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
-                                    combo <- true
-                                    let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                                    let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
-                                    let mutable tag = unionCaseInfo.Tag
-                                    if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
-                                        let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                                        imGuiSetProperty value' propertyDescriptor simulant
-                            if not combo then
+                    if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then
+                        match simulant with
+                        | :? Entity as entity ->
+                            // NOTE: name edit properties can't be replaced.
+                            let mutable name = entity.Name
+                            let flags = if entity.GetProtected world then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None
+                            if ImGui.InputText ("Name", &name, 4096u, flags) then
+                                imGuiSetProperty name propertyDescriptor simulant
+                                let entity' = Entity (Array.add name entity.Parent.SimulantAddress.Names)
+                                selectedEntityOpt <- Some entity'
+                                simulant <- entity'
+                        | :? Group as group ->
+                            // NOTE: only edit entities names for now.
+                            let mutable name = group.Name
+                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        | :? Screen as screen ->
+                            // NOTE: only edit entities names for now.
+                            let mutable name = screen.Name
+                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        | _ -> ()
+                        // NOTE: don't edit names in property editor for now.
+                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- None
+                    else
+                        let mutable replaced = false
+                        let replaceProperty =
+                            ReplaceProperty
+                                { Snapshot = fun world -> snapshot (); world
+                                  IndicateReplaced = fun world -> replaced <- true; world
+                                  PropertyDescriptor = propertyDescriptor }
+                        world <- World.edit replaceProperty simulant world
+                        if not replaced then
+                            let ty = propertyDescriptor.PropertyType
+                            let converter = SymbolicConverter ty
+                            let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                            let value = SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
+                            let valueStr = converter.ConvertToString value
+                            match value with
+                            | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetProperty b' propertyDescriptor simulant
+                            | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int8 i') propertyDescriptor simulant
+                            | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint8 i') propertyDescriptor simulant
+                            | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int16 i') propertyDescriptor simulant
+                            | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint16 i') propertyDescriptor simulant
+                            | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int32 i') propertyDescriptor simulant
+                            | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint32 i') propertyDescriptor simulant
+                            | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int64 i') propertyDescriptor simulant
+                            | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint64 i') propertyDescriptor simulant
+                            | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetProperty (single f') propertyDescriptor simulant
+                            | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetProperty (double f') propertyDescriptor simulant
+                            | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
+                            | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
+                            | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
+                            | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
+                            | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
+                            | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
+                            | :? Box2 as b ->
+                                ImGui.Text propertyDescriptor.PropertyName
+                                let mutable min = v2 b.Min.X b.Min.Y
+                                let mutable size = v2 b.Size.X b.Size.Y
+                                ImGui.Indent ()
+                                if  ImGui.InputFloat2 ("Min", &min) ||
+                                    ImGui.InputFloat2 ("Size", &size) then
+                                    let b' = box2 min size
+                                    imGuiSetProperty b' propertyDescriptor simulant
+                                ImGui.Unindent ()
+                            | :? Box3 as b ->
+                                ImGui.Text propertyDescriptor.PropertyName
+                                let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
+                                let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
+                                ImGui.Indent ()
+                                if  ImGui.InputFloat3 ("Min", &min) ||
+                                    ImGui.InputFloat3 ("Size", &size) then
+                                    let b' = box3 min size
+                                    imGuiSetProperty b' propertyDescriptor simulant
+                                ImGui.Unindent ()
+                            | :? Box2i as b ->
+                                ImGui.Text propertyDescriptor.PropertyName
+                                let mutable min = v2i b.Min.X b.Min.Y
+                                let mutable size = v2i b.Size.X b.Size.Y
+                                ImGui.Indent ()
+                                if  ImGui.InputInt2 ("Min", &min.X) ||
+                                    ImGui.InputInt2 ("Size", &size.X) then
+                                    let b' = box2i min size
+                                    imGuiSetProperty b' propertyDescriptor simulant
+                                ImGui.Unindent ()
+                            | :? Quaternion as q ->
+                                let mutable v = v4 q.X q.Y q.Z q.W
+                                if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v) then
+                                    let q' = quat v.X v.Y v.Z v.W
+                                    imGuiSetProperty q' propertyDescriptor simulant
+                            | :? Color as c ->
+                                let mutable v = v4 c.R c.G c.B c.A
+                                if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
+                                    let c' = color v.X v.Y v.Z v.W
+                                    imGuiSetProperty c' propertyDescriptor simulant
+                            | _ when isPropertyAssetTag ->
                                 let mutable valueStr' = valueStr
-                                if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
+                                if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
                                     try let value' = converter.ConvertFromString valueStr'
                                         imGuiSetProperty value' propertyDescriptor simulant
                                     with
                                     | :? ParseException // TODO: use ParseException once Prime is updated.
                                     | :? ConversionException -> ()
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                                if ImGui.BeginDragDropTarget () then
+                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                        match dragDropPayloadOpt with
+                                        | Some payload ->
+                                            try let propertyValueEscaped = payload
+                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                imGuiSetProperty propertyValue propertyDescriptor simulant
+                                            with
+                                            | :? ParseException // TODO: use ParseException once Prime is updated.
+                                            | :? ConversionException -> ()
+                                        | None -> ()
+                                    ImGui.EndDragDropTarget ()
+                            | _ ->
+                                let mutable combo = false
+                                if FSharpType.IsUnion ty then
+                                    let cases = FSharpType.GetUnionCases ty
+                                    if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                                        combo <- true
+                                        let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                                        let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                                        let mutable tag = unionCaseInfo.Tag
+                                        if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
+                                            let value' = FSharpValue.MakeUnion (cases.[tag], [||])
+                                            imGuiSetProperty value' propertyDescriptor simulant
+                                if not combo then
+                                    let mutable valueStr' = valueStr
+                                    if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
+                                        try let value' = converter.ConvertFromString valueStr'
+                                            imGuiSetProperty value' propertyDescriptor simulant
+                                        with
+                                        | :? ParseException // TODO: use ParseException once Prime is updated.
+                                        | :? ConversionException -> ()
+                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
         world <- World.edit AppendProperties simulant world
 
     let imGuiProcess wtemp =
