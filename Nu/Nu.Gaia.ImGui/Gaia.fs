@@ -19,7 +19,6 @@ open Nu.Gaia
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms
     let mutable private world = Unchecked.defaultof<World> // this will be initialized on start
     let mutable private rightClickPosition = v2Zero
     let mutable private dragEntityState = DragEntityInactive
