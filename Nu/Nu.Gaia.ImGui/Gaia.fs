@@ -1327,12 +1327,12 @@ module Gaia =
             if ImGui.Begin "Audio Player" then
                 ImGui.Text "Master Sound Volume"
                 let mutable masterSoundVolume = World.getMasterSoundVolume world
-                if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then world <- World.setMasterSoundVolume masterSoundVolume world
+                if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then world <- World.setMasterSoundVolume masterSoundVolume world
                 ImGui.SameLine ()
                 ImGui.Text (string masterSoundVolume)
                 ImGui.Text "Master Song Volume"
                 let mutable masterSongVolume = World.getMasterSongVolume world
-                if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f, "", ImGuiSliderFlags.Logarithmic) then world <- World.setMasterSongVolume masterSongVolume world
+                if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then world <- World.setMasterSongVolume masterSongVolume world
                 ImGui.SameLine ()
                 ImGui.Text (string masterSongVolume)
                 ImGui.End ()
