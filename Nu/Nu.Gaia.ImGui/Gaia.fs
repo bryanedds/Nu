@@ -1131,7 +1131,7 @@ module Gaia =
                     let propertyDescriptors = world |> EntityPropertyDescriptor.getPropertyDescriptors entity |> Array.ofList
                     let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
                     for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
-                        if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen) then
+                        if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick) then
                             let propertyDescriptorsSorted = Array.sortBy (fun pd -> pd.PropertyName) propertyDescriptors
                             for propertyDescriptor in propertyDescriptorsSorted do
                                 let ty = propertyDescriptor.PropertyType
