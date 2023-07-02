@@ -538,6 +538,21 @@ module Gaia =
             true
         | Some _ | None -> false
 
+    let private tryReorderSelectedEntity up =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            let peerOpt =
+                if up
+                then World.tryGetPreviousEntity entity world
+                else World.tryGetNextEntity entity world
+            match peerOpt with
+            | Some peer ->
+                if not (entity.GetProtected world) && not (peer.GetProtected world)
+                then world <- World.swapEntityOrders entity peer world
+                else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the Elmish API)."
+            | None -> ()
+        | Some _ | None -> ()
+
     let private tryDeleteSelectedEntity () =
         match selectedEntityOpt with
         | Some entity when entity.Exists world ->
@@ -755,7 +770,12 @@ module Gaia =
 
     let rec imGuiEntityHierarchy (entity : Entity) =
         let children = world |> entity.GetChildren |> Seq.toArray
-        if ImGui.TreeNodeEx (entity.Name, if Array.notEmpty children then ImGuiTreeNodeFlags.None else ImGuiTreeNodeFlags.Leaf) then
+        let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
+        let treeNodeFlags =
+            (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
+            (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
+            ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
+        if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
             if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                 selectedEntityOpt <- Some entity
             if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
@@ -844,6 +864,8 @@ module Gaia =
         if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.D && ImGui.IsCtrlPressed () then tryDeleteSelectedEntity () |> ignore<bool>
         if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false
+        if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity true
+        if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity false
         if not (io.WantCaptureKeyboard) then
             if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
             if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
@@ -1064,7 +1086,7 @@ module Gaia =
                                 //tryShowSelectedEntityInHierarchy form
                         | None -> ()
                 let entities =
-                    World.getEntitiesSovereign selectedGroup world |>
+                    World.getEntitiesSovereign selectedGroup world |> // TODO: P1: see if we can optimize entity hierarchy queries!
                     Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
                     Array.ofSeq |>
                     Array.sortBy fst |>
@@ -1260,10 +1282,11 @@ module Gaia =
                 ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
                 let assets = Metadata.getDiscoveredAssets ()
                 for package in assets do
-                    if ImGui.TreeNode package.Key then
+                    let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
+                    if ImGui.TreeNodeEx (package.Key, flags) then
                         for assetName in package.Value do
                             if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
-                                ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
+                                ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
                                 if ImGui.BeginDragDropSource () then
                                     let assetTagStr = "[" + package.Key + " " + assetName + "]"
                                     dragDropPayloadOpt <- Some assetTagStr
@@ -1406,10 +1429,11 @@ module Gaia =
                 ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
                 let assets = Metadata.getDiscoveredAssets ()
                 for package in assets do
-                    if ImGui.TreeNode package.Key then
+                    let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
+                    if ImGui.TreeNodeEx (package.Key, flags) then
                         for assetName in package.Value do
                             if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
-                                if ImGui.TreeNodeEx (assetName, ImGuiTreeNodeFlags.Leaf) then
+                                if ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) then
                                     if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                                         match selectedEntityOpt with
                                         | Some entity when entity.Exists world ->
@@ -1513,7 +1537,7 @@ module Gaia =
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
             if ImGui.BeginPopupModal (title, &showing) then
                 ImGui.TextWrapped messageBox
-                if ImGui.Button "Okay" then showing <- false
+                if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
                 ImGui.EndPopup ()
             if not showing then messageBoxOpt <- None
         | None -> ()
