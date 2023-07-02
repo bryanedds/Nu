@@ -549,14 +549,6 @@ module WorldEntityModule =
 
     type World with
 
-        static member editEntity operation (entity : Entity) world =
-            let dispatcher = entity.GetDispatcher world
-            let world = dispatcher.Edit (operation, entity, world)
-            let facets = entity.GetFacets world
-            if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
-            then Array.fold (fun world (facet : Facet) -> facet.Edit (operation, entity, world)) world facets
-            else world
-
 #if !DISABLE_ENTITY_PRE_UPDATE
         static member internal preUpdateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
@@ -571,19 +563,6 @@ module WorldEntityModule =
                 World.publishPlus () entity.PreUpdateEvent eventTrace Simulants.Game false false world
             else world
 #endif
-
-        static member internal updateEntity (entity : Entity) world =
-            let dispatcher = entity.GetDispatcher world
-            let world = dispatcher.Update (entity, world)
-            let facets = entity.GetFacets world
-            let world =
-                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
-                then Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
-                else world
-            if World.getEntityPublishUpdates entity world then
-                let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
-                World.publishPlus () entity.UpdateEvent eventTrace Simulants.Game false false world
-            else world
 
 #if !DISABLE_ENTITY_POST_UPDATE
         static member internal postUpdateEntity (entity : Entity) world =
@@ -611,6 +590,29 @@ module WorldEntityModule =
             if World.getEntityPublishRenders entity world then
                 let eventTrace = EventTrace.debug "World" "renderEntity" "" EventTrace.empty
                 World.publishPlus () entity.RenderEvent eventTrace Simulants.Game false false world
+            else world
+
+        static member internal updateEntity (entity : Entity) world =
+            let dispatcher = entity.GetDispatcher world
+            let world = dispatcher.Update (entity, world)
+            let facets = entity.GetFacets world
+            let world =
+                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
+                then Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+                else world
+            if World.getEntityPublishUpdates entity world then
+                let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
+                World.publishPlus () entity.UpdateEvent eventTrace Simulants.Game false false world
+            else world
+
+        /// Edit an entity with the given operation using the ImGui APIs.
+        /// Intended only to be called by editors like Gaia.
+        static member editEntity operation (entity : Entity) world =
+            let dispatcher = entity.GetDispatcher world
+            let world = dispatcher.Edit (operation, entity, world)
+            let facets = entity.GetFacets world
+            if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
+            then Array.fold (fun world (facet : Facet) -> facet.Edit (operation, entity, world)) world facets
             else world
 
         /// Get all the entities in a group.

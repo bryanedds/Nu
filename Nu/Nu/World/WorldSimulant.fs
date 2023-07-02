@@ -158,6 +158,16 @@ module WorldSimulantModule =
             | :? Screen as screen -> World.destroyScreen screen world
             | _ -> failwithumf ()
 
+        /// Edit a simulant with the given operation using the ImGui APIs.
+        /// Intended only to be called by editors like Gaia.
+        static member edit operation (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.editEntity operation entity world
+            | :? Group as group -> World.editGroup operation group world
+            | :? Screen as screen -> World.editScreen operation screen world
+            | :? Game as game -> World.editGame operation game world
+            | _ -> failwithumf ()
+
         /// Get the script frame in which the given simulant's script code will run.
         static member internal tryGetScriptFrame (simulant : Simulant) world =
             match simulant with

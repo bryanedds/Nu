@@ -2464,10 +2464,6 @@ module WorldModuleEntity =
             | (Right _, world) -> world
             | (Left _, world) -> world
 
-        static member internal viewEntityProperties entity world =
-            let state = World.getEntityState entity world
-            World.viewSimulantStateProperties state
-
         static member internal updateEntityInEntityTree oldVisible oldStatic oldLight (oldPresence : Presence) oldBounds (entity : Entity) oldWorld world =
 
             // only do this when entity is selected
@@ -2515,6 +2511,10 @@ module WorldModuleEntity =
 
             // fin
             else world
+
+        static member internal viewEntityProperties entity world =
+            let state = World.getEntityState entity world
+            World.viewSimulantStateProperties state
 
         /// Clear the content of the clipboard.
         static member clearClipboard (_ : World) =

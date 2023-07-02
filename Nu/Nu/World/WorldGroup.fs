@@ -148,6 +148,12 @@ module WorldGroupModule =
             let eventTrace = EventTrace.debug "World" "renderGroup" "" EventTrace.empty
             World.publishPlus () (Events.Render --> group) eventTrace Simulants.Game false false world
 
+        /// Edit a game with the given operation using the ImGui APIs.
+        /// Intended only to be called by editors like Gaia.
+        static member editGroup operation (group : Group) world =
+            let dispatcher = group.GetDispatcher world
+            dispatcher.Edit (operation, group, world)
+
         /// Get all the groups in a screen.
         [<FunctionBinding>]
         static member getGroups (screen : Screen) world =
