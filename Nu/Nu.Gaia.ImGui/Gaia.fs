@@ -1422,8 +1422,7 @@ module Gaia =
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                 PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
             | Left error ->
-                //DUMMY
-                //MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
                 ""
         overlayerStr <-
             let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
