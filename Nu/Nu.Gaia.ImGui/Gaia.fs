@@ -23,6 +23,7 @@ open Nu.Gaia
 // Property definitions.
 // Initial layout.
 // Non-entity property editing.
+// ImGui dispatcher callbacks.
 // Multi-selection.
 ///////////////////////////////////
 
