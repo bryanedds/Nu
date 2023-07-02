@@ -1434,7 +1434,7 @@ module Gaia =
                 ImGui.Text "File Path:"
                 ImGui.SameLine ()
                 ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &projectFilePath, 4096u) |> ignore<bool>
-                ImGui.Text "Game Mode:"
+                ImGui.Text "Edit Mode:"
                 ImGui.SameLine ()
                 ImGui.InputText ("##projectGameMode", &projectEditMode, 4096u) |> ignore<bool>
                 ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &projectImperativeExecution) |> ignore<bool>
