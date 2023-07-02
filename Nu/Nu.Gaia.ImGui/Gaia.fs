@@ -1086,7 +1086,7 @@ module Gaia =
                                 try let value' = converter.ConvertFromString valueStr'
                                     imGuiSetEntityProperty value' propertyDescriptor entity
                                 with
-                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                | :? ParseException // TODO: use ParseException once Prime is updated.
                                 | :? ConversionException -> ()
                             if ImGui.BeginDragDropTarget () then
                                 if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
@@ -1097,7 +1097,7 @@ module Gaia =
                                             let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                             imGuiSetEntityProperty propertyValue propertyDescriptor entity
                                         with
-                                        | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                        | :? ParseException // TODO: use ParseException once Prime is updated.
                                         | :? ConversionException -> ()
                                     | None -> ()
                                 ImGui.EndDragDropTarget ()
@@ -1119,7 +1119,7 @@ module Gaia =
                                     try let value' = converter.ConvertFromString valueStr'
                                         imGuiSetEntityProperty value' propertyDescriptor entity
                                     with
-                                    | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                    | :? ParseException // TODO: use ParseException once Prime is updated.
                                     | :? ConversionException -> ()
                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some propertyDescriptor
                 | Some _ | None -> ()
@@ -1152,7 +1152,7 @@ module Gaia =
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     imGuiSetEntityProperty propertyValue propertyDescriptor entity
                                 with
-                                | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                | :? ParseException // TODO: use ParseException once Prime is updated.
                                 | :? ConversionException -> ()
                             if isPropertyAssetTag then
                                 if ImGui.BeginDragDropTarget () then
@@ -1164,7 +1164,7 @@ module Gaia =
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                                 imGuiSetEntityProperty propertyValue propertyDescriptor entity
                                             with
-                                            | :? (*Parse*)Exception // TODO: use ParseException once Prime is updated.
+                                            | :? ParseException // TODO: use ParseException once Prime is updated.
                                             | :? ConversionException -> ()
                                         | None -> ()
                                     ImGui.EndDragDropTarget ()
