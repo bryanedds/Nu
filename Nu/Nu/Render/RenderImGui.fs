@@ -2,8 +2,8 @@
 open System
 open System.Numerics
 open System.Runtime.CompilerServices
-open Prime
 open ImGuiNET
+open Prime
 open Nu
 
 /// Renders an imgui view.

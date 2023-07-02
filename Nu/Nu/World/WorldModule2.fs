@@ -9,6 +9,7 @@ open System.IO
 open System.Numerics
 open System.Threading
 open SDL2
+open ImGuiNET
 open Prime
 open Nu
 open Nu.Declarative
@@ -639,25 +640,31 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseMove" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mousePosition = World.getMousePosition world
-                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
-                    let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
-                    let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
-                    let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publishPlus eventData mouseButtonDownEvent eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureMouse) then
+                        let mousePosition = World.getMousePosition world
+                        let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                        let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
+                        let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
+                        let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonDown" EventTrace.empty
+                        let world = World.publishPlus eventData mouseButtonDownEvent eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
+                        World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    else world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mousePosition = World.getMousePosition world
-                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
-                    let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
-                    let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
-                    let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureMouse) then
+                        let mousePosition = World.getMousePosition world
+                        let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                        let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
+                        let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
+                        let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonUp" EventTrace.empty
+                        let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
+                        World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    else world
                 | SDL.SDL_EventType.SDL_MOUSEWHEEL ->
                     let imGui = World.getImGui world
                     if evt.wheel.y <> 0 then imGui.HandleMouseWheelChange (single evt.wheel.y)
@@ -669,21 +676,27 @@ module WorldModule2 =
                     // TODO: publish text input engine events.
                     world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
-                    let keyboard = evt.key
-                    let key = keyboard.keysym
-                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
-                    let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureKeyboard) then
+                        let keyboard = evt.key
+                        let key = keyboard.keysym
+                        let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
+                        let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
+                        World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
-                    let keyboard = evt.key
-                    let key = keyboard.keysym
-                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
-                    let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureKeyboard) then
+                        let keyboard = evt.key
+                        let key = keyboard.keysym
+                        let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
+                        let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
+                        World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    else world
                 | SDL.SDL_EventType.SDL_JOYHATMOTION ->
                     let index = evt.jhat.which
                     let direction = evt.jhat.hatValue

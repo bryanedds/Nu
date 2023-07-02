@@ -6,9 +6,9 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
-open Prime
 open SDL2
 open ImGuiNET
+open Prime
 open Nu
 
 /// A renderer process that may or may not be threaded.

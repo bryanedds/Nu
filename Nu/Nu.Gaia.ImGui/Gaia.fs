@@ -10,9 +10,9 @@ open System.Reflection
 open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
 open FSharp.Reflection
-open Prime
 open ImGuiNET
 open ImGuizmoNET
+open Prime
 open Nu
 open Nu.Gaia
 open System.Diagnostics

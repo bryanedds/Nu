@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open SDL2
+open ImGuiNET
 open Prime
 open Nu
 
