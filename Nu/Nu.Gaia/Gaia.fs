@@ -1602,17 +1602,14 @@ module Gaia =
                     let templateFileName = "Nu.Template.fsproj"
                     let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
                     let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
+                    let newProjectDll = newProjectDir + "/bin/Debug/net7.0/" + newProjectName + ".dll"
                     let newFileName = newProjectName + ".fsproj"
                     let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
                     let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
-                    if not validName then
-                        ImGui.SameLine ()
-                        ImGui.Text "Invalid project name!"
+                    if not validName then ImGui.Text "Invalid project name!"
                     let validDirectory = not (Directory.Exists newProjectDir)
-                    if not validDirectory then
-                        ImGui.SameLine ()
-                        ImGui.Text "Project already exists!"
-                    if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && validName && validDirectory then
+                    if not validDirectory then ImGui.Text "Project already exists!"
+                    if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) then
 
                         // attempt to create project files
                         try Log.info ("Creating project '" + newProjectName + "' in '" + projectsDir + "'...")
@@ -1667,7 +1664,7 @@ module Gaia =
                             // configure editor to open new project then exit
                             showNewProjectDialog <- false
                             let savedState =
-                                { ProjectFilePath = newProject
+                                { ProjectFilePath = newProjectDll
                                   EditModeOpt = Some "Title"
                                   UseImperativeExecution = projectImperativeExecution }
                             let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
