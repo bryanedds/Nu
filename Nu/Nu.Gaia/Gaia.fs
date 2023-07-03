@@ -1639,6 +1639,11 @@ module Gaia =
                             // add project to sln file
                             Directory.SetCurrentDirectory slnDir
                             let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
+                            let insertionIndex = List.findIndexBack ((=) "\tEndProjectSection") slnLines
+                            let slnLines = 
+                                List.take insertionIndex slnLines @
+                                ["\t\t{" + projectGuidStr + "} = {" + projectGuidStr + "}"] @
+                                List.skip insertionIndex slnLines
                             let insertionIndex = List.findIndex ((=) "Global") slnLines
                             let slnLines =
                                 List.take insertionIndex slnLines @
