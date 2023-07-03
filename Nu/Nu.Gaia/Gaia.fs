@@ -141,7 +141,6 @@ module Gaia =
         if entityOpt <> selectedEntityOpt then
             ImGui.SetWindowFocus null
             selectedEntityOpt <- entityOpt
-            showSelectedEntity <- true
 
     let private snapshot () =
         world <- Nu.World.shelve world
@@ -220,7 +219,6 @@ module Gaia =
         match pickedOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
-            showSelectedEntity <- true
             Some (0.0f, entity)
         | None ->
             let entities3d = getPickableEntities3d ()
@@ -228,10 +226,9 @@ module Gaia =
             match pickedOpt with
             | Some (intersection, entity) ->
                 selectEntityOpt (Some entity)
-                showSelectedEntity <- true
                 Some (intersection, entity)
             | None -> None
-    
+
     (* Nu Event Handlers *)
 
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) wtemp =
@@ -868,7 +865,7 @@ module Gaia =
             (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
         if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
-            if showSelectedEntity then
+            if showSelectedEntity && selectedEntityOpt = Some entity then
                 ImGui.SetScrollHereY ()
                 showSelectedEntity <- false
             if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
