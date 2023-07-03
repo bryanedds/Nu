@@ -4,6 +4,7 @@
 namespace Nu.Gaia
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open System.Numerics
 open System.Reflection
@@ -113,6 +114,7 @@ module Gaia =
     let mutable private messageBoxOpt = Option<string>.None
     let mutable private showEntityContextMenu = false
     let mutable private showAssetPickerDialog = false
+    let mutable private showNewProjectDialog = false
     let mutable private showOpenProjectDialog = false
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
@@ -1140,7 +1142,9 @@ module Gaia =
             if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
                 if ImGui.BeginMenuBar () then
                     if ImGui.BeginMenu "File" then
-                        if ImGui.MenuItem ("Open Project", "Ctrl+P") then
+                        if ImGui.MenuItem ("New Project") then
+                            showNewProjectDialog <- true
+                        if ImGui.MenuItem ("Open Project") then
                             showOpenProjectDialog <- true
                         ImGui.Separator ()
                         if ImGui.MenuItem ("New Group", "Ctrl+N") then
@@ -1574,6 +1578,115 @@ module Gaia =
                         ImGui.TreePop ()
                 ImGui.EndPopup ()
             if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
+
+        // new project dialog
+        if showNewProjectDialog then
+
+            // ensure template directory exists
+            let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
+            let slnDir = programDir + "/../../../../.." |> Path.Simplify
+            let templateDir = programDir + "/../../../../Nu.Template" |> Path.Simplify
+            if Directory.Exists templateDir then
+
+                // prompt user to create new project
+                if ImGui.Begin "Create Nu Project... *EDITOR RESTART REQUIRED!*" then
+                    ImGui.Text "Project Name"
+                    ImGui.SameLine ()
+                    let mutable newProjectName = "MyGame"
+                    ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
+                    newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
+                    let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
+                    let templateFileName = "Nu.Template.fsproj"
+                    let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
+                    let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
+                    let newFileName = newProjectName + ".fsproj"
+                    let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
+                    let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
+                    if not validName then
+                        ImGui.SameLine ()
+                        ImGui.Text "Invalid project name!"
+                    let validDirectory = not (Directory.Exists newProjectDir)
+                    if not validDirectory then
+                        ImGui.SameLine ()
+                        ImGui.Text "Project already exists!"
+                    if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && validName && validDirectory then
+
+                        // attempt to create project files
+                        try Log.info ("Creating project '" + newProjectName + "' in '" + projectsDir + "'...")
+
+                            // install nu template
+                            Directory.SetCurrentDirectory templateDir
+                            Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
+                            Process.Start("dotnet", "new install ./").WaitForExit()
+
+                            // instantiate nu template
+                            Directory.SetCurrentDirectory projectsDir
+                            Directory.CreateDirectory newProjectName |> ignore<DirectoryInfo>
+                            Directory.SetCurrentDirectory newProjectDir
+                            Process.Start("dotnet", "new nu-game --force").WaitForExit()
+
+                            // rename project file
+                            File.Copy (templateFileName, newFileName, true)
+                            File.Delete templateFileName
+
+                            // substitute project guid in project file
+                            let projectGuid = Gen.id
+                            let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
+                            let newProjectStr = File.ReadAllText newProject
+                            let newProjectStr = newProjectStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
+                            File.WriteAllText (newProject, newProjectStr)
+
+                            // add project to sln file
+                            Directory.SetCurrentDirectory slnDir
+                            let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
+                            let insertionIndex = List.findIndex ((=) "Global") slnLines
+                            let slnLines =
+                                List.take insertionIndex slnLines @
+                                ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + newProjectName + "\", \"Projects\\" + newProjectName + "\\" + newProjectName + ".fsproj\", \"{" + projectGuidStr + "}\""
+                                 "EndProject"] @
+                                List.skip insertionIndex slnLines
+                            let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
+                            let slnLines =
+                                List.take insertionIndex slnLines @
+                                ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
+                                 "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
+                                 "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
+                                 "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|x64"] @
+                                List.skip insertionIndex slnLines
+                            let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
+                            let slnLines =
+                                List.take insertionIndex slnLines @
+                                ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
+                                List.skip insertionIndex slnLines
+                            File.WriteAllLines ("Nu.sln", List.toArray slnLines)
+                            Log.info ("Project '" + newProjectName + "'" + "created.")
+
+                            // configure editor to open new project then exit
+                            showNewProjectDialog <- false
+                            let savedState =
+                                { ProjectFilePath = newProjectDir
+                                  EditModeOpt = Some "Title"
+                                  UseImperativeExecution = projectImperativeExecution }
+                            let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                            let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                Directory.SetCurrentDirectory gaiaDirectory
+                                world <- World.exit world
+                            with _ -> Log.info "Could not save editor state and open new project."
+
+                        // log failure
+                        with exn -> Log.debug ("Failed to create new project '" + newProjectName + "' due to: " + scstring exn)
+
+                    // escape to cancel
+                    if ImGui.IsKeyPressed ImGuiKey.Escape then showNewProjectDialog <- false
+
+                    // fin
+                    ImGui.End ()
+
+            // template project missing
+            else
+                Log.debug "Template project is missing; new project cannot be generated."
+                showNewProjectDialog <- false
 
         // open project dialog
         if showOpenProjectDialog then
