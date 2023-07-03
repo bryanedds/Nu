@@ -19,6 +19,7 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
+// Try to make group loading more sensible.
 // More custom property views.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
