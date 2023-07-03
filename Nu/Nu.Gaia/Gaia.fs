@@ -21,6 +21,7 @@ open Nu.Gaia
 // Find and fix crash bugs.
 // Re-enable general exception handler.
 // Sketchy groupFilePath state.
+// Move New Project to Gaia.
 // More custom property views.
 // Initial layout.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
