@@ -138,9 +138,16 @@ module Gaia =
             selectedGroup <- group
 
     let private selectEntityOpt entityOpt =
+
+        // HACK: in order to keep the property of one simulant from copied to another simulant when the selected
+        // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
+        // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
+        // in it.
         if entityOpt <> selectedEntityOpt then
-            ImGui.SetWindowFocus null
-            selectedEntityOpt <- entityOpt
+            ImGui.SetWindowFocus "Entity Hierarchy"
+
+        // actually set the selection
+        selectedEntityOpt <- entityOpt
 
     let private snapshot () =
         world <- Nu.World.shelve world
