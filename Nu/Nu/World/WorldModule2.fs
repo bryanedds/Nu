@@ -1276,8 +1276,7 @@ module WorldModule2 =
 
                                                                 // process imgui frame
                                                                 let imGui = World.getImGui world
-                                                                let elapsed = max (single Constants.GameTime.DesiredFrameTimeMinimum) (World.getClockDelta world)
-                                                                if not firstFrame then imGui.EndFrame elapsed
+                                                                if not firstFrame then imGui.EndFrame ()
                                                                 imGui.BeginFrame ()
                                                                 let world = World.imGuiProcess world
                                                                 let world = imGuiProcess world
