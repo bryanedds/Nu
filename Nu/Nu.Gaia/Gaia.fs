@@ -19,8 +19,6 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
-// Find manipulate input state bugs.
-// Initial layout.
 // More custom property views.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
@@ -63,7 +61,8 @@ module Gaia =
 
     (* Active Editing States *)
 
-    let mutable private manipulating = false
+    let mutable private manipulationActive = false
+    let mutable private manipulationOperation = OPERATION.TRANSLATE
     let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
     let mutable private propertyDescriptorFocusedOpt = None
@@ -1111,25 +1110,31 @@ module Gaia =
                         let projection = projectionMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
-                        let operation =
-                            if ImGui.IsShiftPressed () then OPERATION.SCALE
-                            elif ImGui.IsAltPressed () then OPERATION.ROTATE
-                            else OPERATION.TRANSLATE
                         ImGuizmo.SetOrthographic false
                         ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
                         ImGuizmo.SetDrawlist () // NOTE: I guess this goes right before Manipulate?
-                        if ImGuizmo.Manipulate (&view.[0], &projection.[0], operation, MODE.WORLD, &affine.[0]) then
-                            if not manipulating && ImGui.IsMouseDown ImGuiMouseButton.Left then
+                        if not manipulationActive then
+                            if ImGui.IsShiftPressed () then manipulationOperation <- OPERATION.SCALE
+                            elif ImGui.IsAltPressed () then manipulationOperation <- OPERATION.ROTATE
+                            else manipulationOperation <- OPERATION.TRANSLATE
+                        if ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0]) then
+                            if not manipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
                                 snapshot ()
-                                manipulating <- true
+                                manipulationActive <- true
                             let affine' = Matrix4x4.CreateFromArray affine
                             let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
                                 let (p, _, s) = if not snaps2dSelected then snaps3d else (0.0f, 0.0f, 0.0f)
-                                match operation with
-                                | OPERATION.SCALE -> world <- entity.SetScale (Math.snapF3d s scale) world
+                                scale <- Math.snapF3d s scale
+                                if scale.X < 0.01f then scale.X <- 0.01f
+                                if scale.Y < 0.01f then scale.Y <- 0.01f
+                                if scale.Z < 0.01f then scale.Z <- 0.01f
+                                position <- Math.snapF3d p position
+                                match manipulationOperation with
+                                | OPERATION.SCALE -> world <- entity.SetScale scale world
                                 | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
-                                | OPERATION.TRANSLATE -> world <- entity.SetPosition (Math.snapF3d p position) world
+                                | OPERATION.TRANSLATE -> world <- entity.SetPosition position world
+                                | _ -> () // nothing to do
                             world <- entity.SetLinearVelocity v3Zero world
                             world <- entity.SetAngularVelocity v3Zero world
                         let operation =
@@ -1139,7 +1144,7 @@ module Gaia =
                                   ViewportProjection = projectionMatrix
                                   ViewportBounds = box2 v2Zero io.DisplaySize }
                         world <- World.editEntity operation entity world
-                        if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulating <- false
+                        if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
                     | Some _ | None -> ()
                     ImGui.End ()
 
