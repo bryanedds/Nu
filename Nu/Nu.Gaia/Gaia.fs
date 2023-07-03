@@ -18,13 +18,15 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
+// Property carry over to new selection bug.
+// Crash bugs.
 // Paste in hierarchy.
 // Property definitions.
 // Initial layout.
 // View guizmo.
 // Multi-selection.
 //
-// TODO: implement in order of priority -
+// properties order of priority -
 //
 //  option & voption with custom checkbox header
 //  Enums
@@ -106,6 +108,21 @@ module Gaia =
         worldsPast <- world :: worldsPast
         worldsFuture <- []
 
+    let selectScreen screen =
+        if screen <> selectedScreen then
+            ImGui.SetWindowFocus null
+            selectedScreen <- screen
+
+    let selectGroup group =
+        if group <> selectedGroup then
+            ImGui.SetWindowFocus null
+            selectedGroup <- group
+
+    let selectEntityOpt entityOpt =
+        if entityOpt <> selectedEntityOpt then
+            ImGui.SetWindowFocus null
+            selectedEntityOpt <- entityOpt
+
     let canUndo () =
         List.notEmpty worldsPast
 
@@ -126,7 +143,7 @@ module Gaia =
              else false) then
             match selectedEntityOpt with
             | Some entity when not (entity.Exists world) ->
-                selectedEntityOpt <- None
+                selectEntityOpt None
                 true
             | Some _ | None -> false
         else false
@@ -145,7 +162,7 @@ module Gaia =
              else false) then
             match selectedEntityOpt with
             | Some entity when not (entity.Exists world) ->
-                selectedEntityOpt <- None
+                selectEntityOpt None
                 true
             | Some _ | None -> false
         else false
@@ -191,7 +208,7 @@ module Gaia =
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
         match pickedOpt with
         | Some entity ->
-            selectedEntityOpt <- Some entity
+            selectEntityOpt (Some entity)
             //DUMMY
             //tryShowSelectedEntityInHierarchyIfVisible form
             Some (0.0f, entity)
@@ -200,7 +217,7 @@ module Gaia =
             let pickedOpt = World.tryPickEntity3d mousePosition entities3d world
             match pickedOpt with
             | Some (intersection, entity) ->
-                selectedEntityOpt <- Some entity
+                selectEntityOpt (Some entity)
                 //DUMMY
                 //tryShowSelectedEntityInHierarchyIfVisible form
                 Some (intersection, entity)
@@ -217,9 +234,9 @@ module Gaia =
                 | None ->
                     let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
                     group
-            selectedEntityOpt <- None
-            selectedGroup <- group
-            selectedScreen <- screen
+            selectEntityOpt None
+            selectGroup group
+            selectScreen screen
             (Cascade, world)
         | None ->
             // just keep current group selection and screen if no screen selected
@@ -478,9 +495,9 @@ module Gaia =
                 try
                     if group.Exists world then world <- World.destroyGroupImmediate selectedGroup world
                     let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
-                    selectedGroup <- group
+                    selectGroup group
                     match selectedEntityOpt with
-                    | Some entity when not (entity.Exists world) -> selectedEntityOpt <- None
+                    | Some entity when not (entity.Exists world) -> selectEntityOpt None
                     | Some _ | None -> ()
                     filePaths <- Map.add group.GroupAddress groupFilePath filePaths
                     true
@@ -556,7 +573,7 @@ module Gaia =
                     (v3Dup Constants.Render.LightProbeSizeDefault)
             world <- entity.SetProbeBounds bounds world
         | Some _ | None -> ()
-        selectedEntityOpt <- Some entity
+        selectEntityOpt (Some entity)
         //DUMMY
         //tryShowSelectedEntityInHierarchy form
 
@@ -600,7 +617,7 @@ module Gaia =
         | Some entity when entity.Exists world ->
             if not (entity.GetProtected world) then
                 snapshot ()
-                selectedEntityOpt <- None
+                selectEntityOpt None
                 world <- World.cutEntityToClipboard entity world
                 true
             else
@@ -625,7 +642,7 @@ module Gaia =
         let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup world in world <- wtemp
         match entityOpt with
         | Some entity ->
-            selectedEntityOpt <- Some entity
+            selectEntityOpt (Some entity)
             //DUMMY
             //tryShowSelectedEntityInHierarchy form
             true
@@ -647,7 +664,7 @@ module Gaia =
         if World.getAllowCodeReload world then
             snapshot ()
             let oldWorld = world
-            selectedEntityOpt <- None // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
+            selectEntityOpt None // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
             let workingDirPath = targetDir + "/../../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
@@ -807,7 +824,7 @@ module Gaia =
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
         if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
             if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                selectedEntityOpt <- Some entity
+                selectEntityOpt (Some entity)
             if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                 if not (entity.GetAbsolute world) then
                     if entity.GetIs2d world then
@@ -817,7 +834,7 @@ module Gaia =
                         let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
                         world <- World.setEyeCenter3d (entity.GetPosition world + eyeCenterOffset) world
             if ImGui.BeginPopupContextItem () then
-                selectedEntityOpt <- Some entity
+                selectEntityOpt (Some entity)
                 if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
                 if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
                 ImGui.Separator ()
@@ -845,7 +862,7 @@ module Gaia =
                                 world <- World.insertEntityOrder sourceEntity previousOpt next world
                                 world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                 world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                selectedEntityOpt <- Some sourceEntity'
+                                selectEntityOpt (Some sourceEntity')
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
                             else
@@ -853,7 +870,7 @@ module Gaia =
                                 let mount = Relation.makeParent ()
                                 world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                 world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
-                                selectedEntityOpt <- Some sourceEntity'
+                                selectEntityOpt (Some sourceEntity')
                                 //DUMMY
                                 //ImGui.SetItemOpt ()
                                 //DUMMY
@@ -891,7 +908,7 @@ module Gaia =
                             if ImGui.InputText ("Name", &name, 4096u, flags) then
                                 imGuiSetProperty name propertyDescriptor simulant
                                 let entity' = Entity (Array.add name entity.Parent.SimulantAddress.Names)
-                                selectedEntityOpt <- Some entity'
+                                selectEntityOpt (Some entity')
                                 simulant <- entity'
                         | :? Group as group ->
                             // NOTE: only edit entities names for now.
@@ -1050,7 +1067,7 @@ module Gaia =
             if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Escape then selectedEntityOpt <- None
+            if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
 
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
@@ -1121,10 +1138,10 @@ module Gaia =
                             if not (selectedGroup.GetProtected world) && Set.count groups > 1 then
                                 snapshot ()
                                 let groupsRemaining = Set.remove selectedGroup groups
-                                selectedEntityOpt <- None
+                                selectEntityOpt None
                                 world <- World.destroyGroupImmediate selectedGroup world
                                 filePaths <- Map.remove selectedGroup.GroupAddress filePaths
-                                selectedGroup <- Seq.head groupsRemaining
+                                selectGroup (Seq.head groupsRemaining)
                         ImGui.Separator ()
                         if ImGui.MenuItem "Exit" then world <- World.exit world
                         ImGui.EndMenu ()
@@ -1238,7 +1255,7 @@ module Gaia =
                         if ImGui.Selectable (editMode.Key, strEq editMode.Key projectEditMode) then
                             projectEditMode <- editMode.Key
                             snapshot () // snapshot before mode change
-                            selectedEntityOpt <- None
+                            selectEntityOpt None
                             world <- editMode.Value world
                             snapshot () // snapshot before after change
                     ImGui.EndCombo ()
@@ -1254,8 +1271,8 @@ module Gaia =
                 if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
                     for group in groups do
                         if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
-                            selectedEntityOpt <- None
-                            selectedGroup <- group
+                            selectEntityOpt None
+                            selectGroup group
                     ImGui.EndCombo ()
                 if ImGui.BeginDragDropTarget () then
                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
@@ -1267,7 +1284,7 @@ module Gaia =
                                 let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
                                 world <- sourceEntity.SetMountOptWithAdjustment None world
                                 world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                selectedEntityOpt <- Some sourceEntity'
+                                selectEntityOpt (Some sourceEntity')
                                 //DUMMY
                                 //tryShowSelectedEntityInHierarchy form
                         | None -> ()
@@ -1562,7 +1579,7 @@ module Gaia =
                 if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && not (newGroup.Exists world) then
                     let oldWorld = world
                     try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
-                        selectedGroup <- newGroup
+                        selectGroup newGroup
                         showNewGroupDialog <- false
                     with exn ->
                         world <- World.choose oldWorld
@@ -1618,8 +1635,8 @@ module Gaia =
         projectImperativeExecution <- savedState.UseImperativeExecution
         projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
         targetDir <- targetDir'
-        selectedScreen <- screen
-        selectedGroup <- Nu.World.getGroups screen world |> Seq.head
+        selectScreen screen
+        selectGroup (Nu.World.getGroups screen world |> Seq.head)
         newEntityDispatcherName <- Nu.World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         assetGraphStr <-
             match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
