@@ -1139,10 +1139,10 @@ module Gaia =
                                 | _ -> () // nothing to do
                             if World.getAdvancing world then
                                 match entity.TryGetProperty (nameof entity.LinearVelocity) world with
-                                | Some property when property.PropertyType = typeof<single> -> world <- entity.SetLinearVelocity v3Zero world
+                                | Some property when property.PropertyType = typeof<Vector3> -> world <- entity.SetLinearVelocity v3Zero world
                                 | Some _ | None -> ()
                                 match entity.TryGetProperty (nameof entity.AngularVelocity) world with
-                                | Some property when property.PropertyType = typeof<single> -> world <- entity.SetAngularVelocity v3Zero world
+                                | Some property when property.PropertyType = typeof<Vector3> -> world <- entity.SetAngularVelocity v3Zero world
                                 | Some _ | None -> ()
                         let operation =
                             OverlayViewport
