@@ -63,6 +63,7 @@ module Gaia =
     (* Active Editing States *)
 
     let mutable private manipulating = false
+    let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
     let mutable private propertyDescriptorFocusedOpt = None
     let mutable private dragDropPayloadOpt = None
@@ -71,7 +72,6 @@ module Gaia =
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
-    let mutable private showSelectedEntity = false
 
     (* Configuration States *)
 
@@ -864,60 +864,61 @@ module Gaia =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
             (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
-        if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
-            if showSelectedEntity && selectedEntityOpt = Some entity then
-                ImGui.SetScrollHereY ()
-                showSelectedEntity <- false
-            if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                selectEntityOpt (Some entity)
-            if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                if not (entity.GetAbsolute world) then
-                    if entity.GetIs2d world then
-                        world <- World.setEyeCenter2d (entity.GetCenter world).V2 world
-                    else
-                        let eyeRotation = World.getEyeRotation3d world
-                        let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
-                        world <- World.setEyeCenter3d (entity.GetPosition world + eyeCenterOffset) world
-            if ImGui.BeginPopupContextItem () then
-                selectEntityOpt (Some entity)
-                if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
-                if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
-                ImGui.Separator ()
-                if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
-                ImGui.EndPopup ()
-            if ImGui.BeginDragDropSource () then
-                let entityAddressStr = scstring entity.EntityAddress
-                dragDropPayloadOpt <- Some entityAddressStr
-                ImGui.Text entity.Name
-                ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
-                ImGui.EndDragDropSource ()
-            if ImGui.BeginDragDropTarget () then
-                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
-                    match dragDropPayloadOpt with
-                    | Some payload ->
-                        let sourceEntityAddressStr = payload
-                        let sourceEntity = Entity sourceEntityAddressStr
-                        if not (sourceEntity.GetProtected world) then
-                            if ImGui.IsAltPressed () then
-                                let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                                let previousOpt = World.tryGetPreviousEntity next world
-                                let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                                let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
-                                let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
-                                world <- World.insertEntityOrder sourceEntity previousOpt next world
-                                world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                selectEntityOpt (Some sourceEntity')
-                                showSelectedEntity <- true
-                            else
-                                let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
-                                let mount = Relation.makeParent ()
-                                world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
-                                selectEntityOpt (Some sourceEntity')
-                                showSelectedEntity <- true
-                        else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."
-                    | None -> ()
+        let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
+        if showSelectedEntity && selectedEntityOpt = Some entity then
+            ImGui.SetScrollHereY ()
+            showSelectedEntity <- false
+        if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+            selectEntityOpt (Some entity)
+        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+            if not (entity.GetAbsolute world) then
+                if entity.GetIs2d world then
+                    world <- World.setEyeCenter2d (entity.GetCenter world).V2 world
+                else
+                    let eyeRotation = World.getEyeRotation3d world
+                    let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
+                    world <- World.setEyeCenter3d (entity.GetPosition world + eyeCenterOffset) world
+        if ImGui.BeginPopupContextItem () then
+            selectEntityOpt (Some entity)
+            if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
+            ImGui.Separator ()
+            if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+            ImGui.EndPopup ()
+        if ImGui.BeginDragDropSource () then
+            let entityAddressStr = scstring entity.EntityAddress
+            dragDropPayloadOpt <- Some entityAddressStr
+            ImGui.Text entity.Name
+            ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
+            ImGui.EndDragDropSource ()
+        if ImGui.BeginDragDropTarget () then
+            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                match dragDropPayloadOpt with
+                | Some payload ->
+                    let sourceEntityAddressStr = payload
+                    let sourceEntity = Entity sourceEntityAddressStr
+                    if not (sourceEntity.GetProtected world) then
+                        if ImGui.IsAltPressed () then
+                            let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                            let previousOpt = World.tryGetPreviousEntity next world
+                            let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
+                            let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                            let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
+                            world <- World.insertEntityOrder sourceEntity previousOpt next world
+                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                            world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                            selectEntityOpt (Some sourceEntity')
+                            showSelectedEntity <- true
+                        else
+                            let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
+                            let mount = Relation.makeParent ()
+                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                            world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
+                            selectEntityOpt (Some sourceEntity')
+                            showSelectedEntity <- true
+                    else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."
+                | None -> ()
+        if expanded then
             for child in children do imGuiEntityHierarchy child
             ImGui.TreePop ()
 
