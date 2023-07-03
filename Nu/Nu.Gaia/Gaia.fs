@@ -1137,8 +1137,13 @@ module Gaia =
                                 | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
                                 | OPERATION.TRANSLATE -> world <- entity.SetPosition position world
                                 | _ -> () // nothing to do
-                            world <- entity.SetLinearVelocity v3Zero world
-                            world <- entity.SetAngularVelocity v3Zero world
+                            if World.getAdvancing world then
+                                match entity.TryGetProperty (nameof entity.LinearVelocity) world with
+                                | Some property when property.PropertyType = typeof<single> -> world <- entity.SetLinearVelocity v3Zero world
+                                | Some _ | None -> ()
+                                match entity.TryGetProperty (nameof entity.AngularVelocity) world with
+                                | Some property when property.PropertyType = typeof<single> -> world <- entity.SetAngularVelocity v3Zero world
+                                | Some _ | None -> ()
                         let operation =
                             OverlayViewport
                                 { Snapshot = fun world -> snapshot (); world
