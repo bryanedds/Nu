@@ -19,8 +19,7 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
-// Find and fix crash bugs.
-// Re-enable general exception handler.
+// Find manipulate input state bugs.
 // More custom property views.
 // Initial layout.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
@@ -1127,9 +1126,12 @@ module Gaia =
                             let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
                                 let (p, _, s) = if not snaps2dSelected then snaps3d else (0.0f, 0.0f, 0.0f)
-                                world <- entity.SetScale (Math.snapF3d s scale) world
-                                world <- entity.SetRotation rotation world
-                                world <- entity.SetPosition (Math.snapF3d p position) world
+                                match operation with
+                                | OPERATION.SCALE -> world <- entity.SetScale (Math.snapF3d s scale) world
+                                | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
+                                | OPERATION.TRANSLATE -> world <- entity.SetPosition (Math.snapF3d p position) world
+                            world <- entity.SetLinearVelocity v3Zero world
+                            world <- entity.SetAngularVelocity v3Zero world
                         let operation =
                             OverlayViewport
                                 { Snapshot = fun world -> snapshot (); world
