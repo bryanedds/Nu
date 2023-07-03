@@ -651,12 +651,6 @@ module Gaia =
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
                 | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'.")
                 | fsprojFilePaths ->
-                    let buildName =
-#if DEBUG
-                        "Debug"
-#else
-                        "Release"
-#endif
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
@@ -680,9 +674,9 @@ module Gaia =
                         Array.map (fun line -> line.Replace ("\\", "/")) |>
                         Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
-                        ["#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\""
-                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.dll\""
-                         "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\""]
+                        ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Editor.BuildName + "/netstandard2.0/Nu.Math.dll\""
+                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Editor.BuildName + "/net7.0/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Editor.BuildName + "/net7.0/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
@@ -1598,17 +1592,11 @@ module Gaia =
                     ImGui.SameLine ()
                     ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
                     newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
-                    let buildName =
-#if DEBUG
-                        "Debug"
-#else
-                        "Release"
-#endif
                     let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
                     let templateFileName = "Nu.Template.fsproj"
                     let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
                     let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
-                    let newProjectDll = newProjectDir + "/bin/" + buildName + "/net7.0/" + newProjectName + ".dll"
+                    let newProjectDll = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
                     let newFileName = newProjectName + ".fsproj"
                     let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
                     let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
