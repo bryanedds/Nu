@@ -69,6 +69,7 @@ module Gaia =
     let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
     let mutable private propertyDescriptorFocusedOpt = None
+    let mutable private newProjectName = "MyGame"
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
@@ -1595,14 +1596,19 @@ module Gaia =
                 if ImGui.Begin "Create Nu Project... *EDITOR RESTART REQUIRED!*" then
                     ImGui.Text "Project Name"
                     ImGui.SameLine ()
-                    let mutable newProjectName = "MyGame"
                     ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
                     newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
+                    let buildName =
+#if DEBUG
+                        "Debug"
+#else
+                        "Release"
+#endif
                     let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
                     let templateFileName = "Nu.Template.fsproj"
                     let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
                     let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
-                    let newProjectDll = newProjectDir + "/bin/Debug/net7.0/" + newProjectName + ".dll"
+                    let newProjectDll = newProjectDir + "/bin/" + buildName + "/net7.0/" + newProjectName + ".dll"
                     let newFileName = newProjectName + ".fsproj"
                     let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
                     let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
@@ -1667,7 +1673,6 @@ module Gaia =
                             Log.info ("Project '" + newProjectName + "'" + "created.")
 
                             // configure editor to open new project then exit
-                            showNewProjectDialog <- false
                             let savedState =
                                 { ProjectFilePath = newProjectDll
                                   EditModeOpt = Some "Title"
@@ -1677,20 +1682,26 @@ module Gaia =
                             try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
                                 Directory.SetCurrentDirectory gaiaDirectory
                                 world <- World.exit world
-                            with _ -> Log.info "Could not save editor state and open new project."
+                            with _ -> Log.trace "Could not save editor state and open new project."
+
+                            // close dialog
+                            showNewProjectDialog <- false
+                            newProjectName <- "MyGame"
 
                         // log failure
-                        with exn -> Log.debug ("Failed to create new project '" + newProjectName + "' due to: " + scstring exn)
+                        with exn -> Log.trace ("Failed to create new project '" + newProjectName + "' due to: " + scstring exn)
 
                     // escape to cancel
-                    if ImGui.IsKeyPressed ImGuiKey.Escape then showNewProjectDialog <- false
+                    if ImGui.IsKeyPressed ImGuiKey.Escape then
+                        showNewProjectDialog <- false
+                        newProjectName <- "MyGame"
 
                     // fin
                     ImGui.End ()
 
             // template project missing
             else
-                Log.debug "Template project is missing; new project cannot be generated."
+                Log.trace "Template project is missing; new project cannot be generated."
                 showNewProjectDialog <- false
 
         // open project dialog
