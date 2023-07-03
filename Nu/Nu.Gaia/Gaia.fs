@@ -18,16 +18,17 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
-// Property carry over to new selection bug.
-// Crash bugs.
-// Paste in hierarchy.
-// Property definitions.
-// Initial layout.
-// View guizmo.
-// Multi-selection.
+// Find and fix crash bugs.
 // Re-enable general exception handler.
+// Sketchy groupFilePath state.
+// More custom property views.
+// Initial layout.
+// Traditional close w/ Alt+F4 as well as confirmation dialog.
+// View guizmo.
+// Paste in hierarchy.
+// Multi-selection.
 //
-// properties order of priority -
+// Custom properties order of priority:
 //
 //  option & voption with custom checkbox header
 //  Enums
@@ -53,44 +54,38 @@ open Nu.Gaia
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    (* State Variables - mutable to ease interfacing with ImGui *)
+    (* World States - mutable to accomodatae ImGui's intended authoring style *)
 
     let mutable private world = Unchecked.defaultof<World> // this will be initialized on start
+    let mutable private worldsPast = []
+    let mutable private worldsFuture = []
+
+    (* Active Editing States *)
+
+    let mutable private manipulating = false
     let mutable private rightClickPosition = v2Zero
+    let mutable private propertyDescriptorFocusedOpt = None
+    let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
-    let mutable private snaps2dSelected = true
-    let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
-    let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-    let mutable private fullScreen = false
-    let mutable private propertyDescriptorFocusedOpt = None
-    let mutable private filePaths = Map.empty<Group Address, string>
-    let mutable private targetDir = "."
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
+
+    (* Configuration States *)
+
+    let mutable private fullScreen = false
+    let mutable private editWhileAdvancing = false
+    let mutable private snaps2dSelected = true
+    let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
+    let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
     let mutable private newEntityDispatcherName = null // this will be initialized on start
     let mutable private newEntityOverlayName = "(Default Overlay)"
     let mutable private newEntityElevation = 0.0f
+    let mutable private newGroupName = nameof Group
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
-    let mutable private showEntityContextMenu = false
-    let mutable private showAssetPickerDialog = false
-    let mutable private showInspector = false
-    let mutable private showOpenProjectDialog = false
-    let mutable private showNewGroupDialog = false
-    let mutable private showOpenGroupDialog = false
-    let mutable private showSaveGroupDialog = false
-    let mutable private editWhileAdvancing = false
-    let mutable private projectFilePath = ""
-    let mutable private projectEditMode = "Title"
-    let mutable private projectImperativeExecution = false
-    let mutable private newGroupName = nameof Group
-    let mutable private groupFilePath = ""
-    let mutable private dragDropPayloadOpt = None
-    let mutable private assetGraphStr = null // this will be initialized on start
-    let mutable private overlayerStr = null // this will be initialized on start
     let mutable private lightMappingConfig = { LightMappingEnabled = true }
     let mutable private ssaoConfig =
         { SsaoEnabled = true
@@ -98,10 +93,28 @@ module Gaia =
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
-    let mutable private manipulating = false
+
+    (* Project States *)
+
+    let mutable private targetDir = "."
+    let mutable private projectFilePath = ""
+    let mutable private projectEditMode = "Title"
+    let mutable private projectImperativeExecution = false
+    let mutable private assetGraphStr = null // this will be initialized on start
+    let mutable private overlayerStr = null // this will be initialized on start
+    let mutable private groupFilePaths = Map.empty<Group Address, string>
+    let mutable private groupFilePath = ""
+
+    (* Modal Activity States *)
+
     let mutable private messageBoxOpt = Option<string>.None
-    let mutable private worldsPast = []
-    let mutable private worldsFuture = []
+    let mutable private showEntityContextMenu = false
+    let mutable private showAssetPickerDialog = false
+    let mutable private showOpenProjectDialog = false
+    let mutable private showNewGroupDialog = false
+    let mutable private showOpenGroupDialog = false
+    let mutable private showSaveGroupDialog = false
+    let mutable private showInspector = false
 
     (* Prelude Functions *)
 
@@ -487,7 +500,7 @@ module Gaia =
 
     let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup world
-            filePaths <- Map.add selectedGroup.GroupAddress groupFilePath filePaths
+            groupFilePaths <- Map.add selectedGroup.GroupAddress groupFilePath groupFilePaths
             true
         with exn ->
             messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
@@ -521,7 +534,7 @@ module Gaia =
                     match selectedEntityOpt with
                     | Some entity when not (entity.Exists world) -> selectEntityOpt None
                     | Some _ | None -> ()
-                    filePaths <- Map.add group.GroupAddress groupFilePath filePaths
+                    groupFilePaths <- Map.add group.GroupAddress groupFilePath groupFilePaths
                     true
                 with exn ->
                     world <- World.choose oldWorld
@@ -1131,11 +1144,11 @@ module Gaia =
                         if ImGui.MenuItem ("Open Group", "Ctrl+O") then
                             showOpenGroupDialog <- true
                         if ImGui.MenuItem ("Save Group", "Ctrl+S") then
-                            match Map.tryFind selectedGroup.GroupAddress filePaths with
+                            match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
                             | Some groupFilePath -> trySaveSelectedGroup groupFilePath |> ignore<bool>
                             | None -> showSaveGroupDialog <- true
                         if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then
-                            match Map.tryFind selectedGroup.GroupAddress filePaths with
+                            match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
                             | Some filePath -> groupFilePath <- filePath
                             | None -> groupFilePath <- ""
                             showSaveGroupDialog <- true
@@ -1146,7 +1159,7 @@ module Gaia =
                                 let groupsRemaining = Set.remove selectedGroup groups
                                 selectEntityOpt None
                                 world <- World.destroyGroupImmediate selectedGroup world
-                                filePaths <- Map.remove selectedGroup.GroupAddress filePaths
+                                groupFilePaths <- Map.remove selectedGroup.GroupAddress groupFilePaths
                                 selectGroup (Seq.head groupsRemaining)
                         ImGui.Separator ()
                         if ImGui.MenuItem "Exit" then world <- World.exit world
