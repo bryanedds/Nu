@@ -33,3 +33,9 @@ module Constants =
                  EventFilter.Pattern (Rexpr "Integration", [])
                  EventFilter.Pattern (Rexpr "BodyTransform", [])
                  EventFilter.Pattern (Rexpr "Mouse/Move", [])]
+        let [<Literal>] BuildName =
+#if DEBUG
+            "Debug"
+#else
+            "Release"
+#endif
