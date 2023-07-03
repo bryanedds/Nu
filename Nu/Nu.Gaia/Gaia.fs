@@ -738,6 +738,7 @@ module Gaia =
         world <- World.setAdvancing (not advancing) world
 
     let private trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
+        let gaiaDir = Directory.GetCurrentDirectory ()
         let filePathAndDirNameAndTypesOpt =
             if not (String.IsNullOrWhiteSpace filePathOpt) then
                 let filePath = filePathOpt
@@ -748,7 +749,9 @@ module Gaia =
                     with _ ->
                         let assembly = Assembly.LoadFrom filePath
                         Right (Some (filePath, dirName, assembly.GetTypes ()))
-                with _ -> Left ()
+                with _ ->
+                    Directory.SetCurrentDirectory gaiaDir
+                    Left ()
             else Right None
         match filePathAndDirNameAndTypesOpt with
         | Right (Some (filePath, dirName, types)) ->
@@ -757,7 +760,9 @@ module Gaia =
             | Some ty ->
                 let plugin = Activator.CreateInstance ty :?> NuPlugin
                 Right (Some (filePath, dirName, plugin))
-            | None -> Left ()
+            | None ->
+                Directory.SetCurrentDirectory gaiaDir
+                Left ()
         | Right None -> Right None
         | Left () -> Left ()
 
@@ -768,22 +773,20 @@ module Gaia =
                 else SavedState.defaultState
             with _ -> SavedState.defaultState
         let gaiaDirectory = Directory.GetCurrentDirectory ()
-        let (targetDir, plugin) =
-            match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectFilePath with
-            | Right (Some (filePath, targetDir, plugin)) ->
-                Constants.Override.fromAppConfig filePath
-                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                with _ -> Log.info "Could not save editor state."
-                (targetDir, plugin)
-            | Right None ->
-                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                with _ -> Log.info "Could not save editor state."
-                (".", gaiaPlugin)
-            | Left () ->
-                if not (String.IsNullOrWhiteSpace savedState.ProjectFilePath) then
-                    Log.trace ("Invalid Nu Assembly: " + savedState.ProjectFilePath)
-                (".", gaiaPlugin)
-        (savedState, targetDir, plugin)
+        match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectFilePath with
+        | Right (Some (filePath, targetDir, plugin)) ->
+            Constants.Override.fromAppConfig filePath
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+            with _ -> Log.info "Could not save editor state."
+            (savedState, targetDir, plugin)
+        | Right None ->
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+            with _ -> Log.info "Could not save editor state."
+            (savedState, ".", gaiaPlugin)
+        | Left () ->
+            if not (String.IsNullOrWhiteSpace savedState.ProjectFilePath) then
+                Log.trace ("Invalid Nu Assembly: " + savedState.ProjectFilePath)
+            (SavedState.defaultState, ".", gaiaPlugin)
 
     (* ImGui Callback Functions *)
 
@@ -1664,7 +1667,7 @@ module Gaia =
                             // configure editor to open new project then exit
                             showNewProjectDialog <- false
                             let savedState =
-                                { ProjectFilePath = newProjectDir
+                                { ProjectFilePath = newProject
                                   EditModeOpt = Some "Title"
                                   UseImperativeExecution = projectImperativeExecution }
                             let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
