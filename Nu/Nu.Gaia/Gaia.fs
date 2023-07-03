@@ -20,8 +20,8 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 // Find manipulate input state bugs.
-// More custom property views.
 // Initial layout.
+// More custom property views.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
@@ -1300,12 +1300,33 @@ module Gaia =
                         ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
                         ImGui.End ()
 
+                    // asset viewer window
+                    if ImGui.Begin "Asset Viewer" then
+                        ImGui.SetNextItemWidth -1.0f
+                        ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
+                        let assets = Metadata.getDiscoveredAssets ()
+                        for package in assets do
+                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
+                            if ImGui.TreeNodeEx (package.Key, flags) then
+                                for assetName in package.Value do
+                                    if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
+                                        ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
+                                        if ImGui.BeginDragDropSource () then
+                                            let assetTagStr = "[" + package.Key + " " + assetName + "]"
+                                            dragDropPayloadOpt <- Some assetTagStr
+                                            ImGui.Text assetTagStr
+                                            ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
+                                            ImGui.EndDragDropSource ()
+                                        ImGui.TreePop ()
+                                ImGui.TreePop ()
+                        ImGui.End ()
+
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
-                        if ImGui.Button "Show Selected" then
-                            showSelectedEntity <- true
+                        if ImGui.Button "Show Selected" then showSelectedEntity <- true
                         let groups = World.getGroups selectedScreen world
                         let mutable selectedGroupName = selectedGroup.Name
+                        ImGui.SetNextItemWidth -1.0f
                         if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
                             for group in groups do
                                 if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
@@ -1402,28 +1423,6 @@ module Gaia =
                                             | None -> ()
                                         ImGui.EndDragDropTarget ()
                         | Some _ | None -> ()
-                        ImGui.End ()
-
-                    // asset viewer window
-                    if ImGui.Begin "Asset Viewer" then
-                        ImGui.Text "Search:"
-                        ImGui.SameLine ()
-                        ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
-                        let assets = Metadata.getDiscoveredAssets ()
-                        for package in assets do
-                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
-                            if ImGui.TreeNodeEx (package.Key, flags) then
-                                for assetName in package.Value do
-                                    if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
-                                        ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
-                                        if ImGui.BeginDragDropSource () then
-                                            let assetTagStr = "[" + package.Key + " " + assetName + "]"
-                                            dragDropPayloadOpt <- Some assetTagStr
-                                            ImGui.Text assetTagStr
-                                            ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
-                                            ImGui.EndDragDropSource ()
-                                        ImGui.TreePop ()
-                                ImGui.TreePop ()
                         ImGui.End ()
 
                     // asset graph window
@@ -1561,8 +1560,7 @@ module Gaia =
                     let title = "Choose an Asset..."
                     if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                     if ImGui.BeginPopupModal (title, &showAssetPickerDialog) then
-                        ImGui.Text "Search:"
-                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth -1.0f
                         ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
                         let assets = Metadata.getDiscoveredAssets ()
                         for package in assets do
@@ -1827,10 +1825,10 @@ module Gaia =
 
     let rec private runWithCleanUp savedState targetDir' screen wtemp =
         world <- wtemp
-        projectFilePath <- savedState.ProjectFilePath
-        projectImperativeExecution <- savedState.UseImperativeExecution
-        projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
         targetDir <- targetDir'
+        projectFilePath <- savedState.ProjectFilePath
+        projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
+        projectImperativeExecution <- savedState.UseImperativeExecution
         selectScreen screen
         selectGroup (Nu.World.getGroups screen world |> Seq.head)
         newEntityDispatcherName <- Nu.World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
@@ -1853,21 +1851,7 @@ module Gaia =
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                 ""
-        let result =
-            try World.runWithCleanUp tautology id id id imGuiProcess Live true world
-            with exn ->
-                //DUMMY
-                //match MessageBox.Show
-                //    ("Unexpected exception due to: " + scstring exn + "\nWould you like to undo the last operation to try to keep Gaia running?",
-                //     "Unexpected Exception",
-                //     MessageBoxButtons.YesNo,
-                //     MessageBoxIcon.Error) with
-                //| DialogResult.Yes ->
-                //    form.undoToolStripMenuItem.PerformClick ()
-                //    WORLD <- World.choose WORLD
-                //    runWithCleanUp form
-                //| _ -> WORLD <- World.choose WORLD
-                0
+        let result = World.runWithCleanUp tautology id id id imGuiProcess Live true world
         world <- Unchecked.defaultof<_>
         result
 
@@ -1950,6 +1934,184 @@ module Gaia =
                 let world = World.subscribe handleNuRender Events.Render Simulants.Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game world
                 let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
+                let imguiIniFilePath = targetDir + "/imgui.ini"
+                if not (File.Exists imguiIniFilePath) then
+                    let imguiIniFileStr = """
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
+[Window][DockSpaceViewport_11111111]
+Pos=0,0
+Size=1920,1080
+Collapsed=0
+
+[Window][Panel]
+Size=1920,1080
+Collapsed=0
+
+[Window][Gaia]
+Pos=0,0
+Size=1920,54
+Collapsed=0
+DockId=0x00000002,0
+
+[Window][Hierarchy]
+Pos=0,57
+Size=174,1023
+Collapsed=0
+DockId=0x0000000B,0
+
+[Window][Properties]
+Pos=1574,58
+Size=346,1022
+Collapsed=0
+DockId=0x00000006,0
+
+[Window][Property Editor]
+Pos=303,875
+Size=693,205
+Collapsed=0
+DockId=0x00000001,0
+
+[Window][Asset Viewer]
+Pos=153,56
+Size=148,1024
+Collapsed=0
+DockId=0x00000010,0
+
+[Window][Asset Graph]
+Pos=998,875
+Size=619,205
+Collapsed=0
+DockId=0x00000009,2
+
+[Window][Overlayer]
+Pos=998,875
+Size=619,205
+Collapsed=0
+DockId=0x00000009,3
+
+[Window][Event Tracing]
+Pos=998,875
+Size=619,205
+Collapsed=0
+DockId=0x00000009,4
+
+[Window][Audio Player]
+Pos=998,875
+Size=619,205
+Collapsed=0
+DockId=0x00000009,0
+
+[Window][Renderer]
+Pos=998,875
+Size=619,205
+Collapsed=0
+DockId=0x00000009,1
+
+[Window][Choose a project .dll and configuration...]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Choose a project .dll... EDITOR RESTART REQUIRED!]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Create a group...]
+Pos=899,490
+Size=407,124
+Collapsed=0
+
+[Window][Full Screen Enabled]
+Pos=60,60
+Size=162,54
+Collapsed=0
+
+[Window][Choose a nugroup file...]
+Pos=807,397
+Size=403,84
+Collapsed=0
+
+[Window][Choose a project .dll... *MANUAL RESTART REQUIRED!*]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Message!]
+Pos=706,456
+Size=433,93
+Collapsed=0
+
+[Window][Viewport]
+Pos=0,0
+Size=1920,1080
+Collapsed=0
+
+[Window][Entity Properties]
+Pos=1619,56
+Size=301,1024
+Collapsed=0
+DockId=0x0000000E,3
+
+[Window][Group Properties]
+Pos=1619,56
+Size=301,1024
+Collapsed=0
+DockId=0x0000000E,2
+
+[Window][Screen Properties]
+Pos=1619,56
+Size=301,1024
+Collapsed=0
+DockId=0x0000000E,1
+
+[Window][Game Properties]
+Pos=1619,56
+Size=301,1024
+Collapsed=0
+DockId=0x0000000E,0
+
+[Window][Entity Hierarchy]
+Pos=0,56
+Size=151,1024
+Collapsed=0
+DockId=0x0000000A,0
+
+[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
+Pos=741,382
+Size=411,123
+Collapsed=0
+
+[Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
+Pos=769,372
+Size=642,129
+Collapsed=0
+
+[Docking][Data]
+DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
+  DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
+  DockNode            ID=0x0000000F Parent=0x8B93E3BD SizeRef=1920,1024 Split=X
+    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1617,1080 Split=X
+      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=301,1080 Split=X Selected=0x29EABFBD
+        DockNode      ID=0x0000000B Parent=0x00000007 SizeRef=174,1022 Selected=0x29EABFBD
+        DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Split=X Selected=0xAE464409
+          DockNode    ID=0x0000000A Parent=0x0000000C SizeRef=151,1024 Selected=0xAE464409
+          DockNode    ID=0x00000010 Parent=0x0000000C SizeRef=148,1024 Selected=0xD92922EC
+      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1314,1080 Split=X
+        DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
+          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,817 CentralNode=1
+          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,205 Split=X Selected=0xD4E24632
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=693,205 Selected=0x61D81DE4
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=619,205 Selected=0xF7114A64
+        DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
+    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=301,1080 Selected=0xD5116FF8
+
+"""
+                    File.WriteAllText (imguiIniFilePath, imguiIniFileStr)
                 runWithCleanUp savedState targetDir screen world
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
         | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
