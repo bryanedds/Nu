@@ -46,6 +46,9 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
         // configure docking enabled
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
+        
+        // configure imgui advance time to a constant speed regardless of frame-rate
+        io.DeltaTime <- 1.0f / 60.0f
 
         // configure key mappings
         keyMap.[int ImGuiKey.Tab] <- int KeyboardKey.Tab
@@ -92,10 +95,8 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.NewFrame ()
         ImGuizmo.BeginFrame ()
 
-    member this.EndFrame (deltaSeconds : single) =
-        let io = ImGui.GetIO ()
-        io.DisplaySize <- v2 (single windowWidth) (single windowHeight)
-        io.DeltaTime <- deltaSeconds
+    member this.EndFrame () =
+        () // nothing to do
 
     member this.InputFrame () =
 
