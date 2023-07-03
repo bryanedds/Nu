@@ -716,6 +716,7 @@ module Quaternion =
         member this.RollPitchYaw = MathHelper.RollPitchYaw &this
 
     let quatIdentity = Quaternion.Identity
+    let inline quat x y z w = Quaternion (x, y, z, w)
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
 
@@ -1058,6 +1059,13 @@ module Matrix4x4 =
             let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
             if Matrix4x4.Decompose (this, &scale, &rotation, &position) then rotation
             else quatIdentity
+
+        static member CreateFromArray (arr : single array) =
+            Matrix4x4
+                (arr.[00], arr.[01], arr.[02], arr.[03],
+                 arr.[04], arr.[05], arr.[06], arr.[07],
+                 arr.[08], arr.[09], arr.[10], arr.[11],
+                 arr.[12], arr.[13], arr.[14], arr.[15])
 
         /// Convert a Matrix4x4 to an array.
         member this.ToArray () =

@@ -2,22 +2,19 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net7.0-windows</TargetFramework>
-		<UseWindowsForms>true</UseWindowsForms>
-		<EnableWindowsTargeting>true</EnableWindowsTargeting>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<ProjectGuid>{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}</ProjectGuid>
+		<TargetFramework>net7.0</TargetFramework>
+		<ProjectGuid>{11386F8B-C0AE-4F9A-B5FD-3112A704DC14}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<ServerGarbageCollection>true</ServerGarbageCollection>
 		<TieredPGO>true</TieredPGO>
 		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
-		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net7.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net7.0-windows/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
+		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net7.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net7.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
-		<WarningLevel>3</WarningLevel>
+		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
 
@@ -25,7 +22,7 @@
 		<WarnOn>FS1182</WarnOn>
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<Tailcalls>False</Tailcalls>
-		<WarningLevel>3</WarningLevel>
+		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
 
@@ -37,10 +34,6 @@
 	<ItemGroup>
 		<Compile Include="GaiaConstants.fs" />
 		<Compile Include="GaiaPrelude.fs" />
-		<Compile Include="GaiaEntity.fs" />
-		<Compile Include="GaiaGroup.fs" />
-		<Compile Include="GaiaScreen.fs" />
-		<Compile Include="GaiaGame.fs" />
 		<Compile Include="Gaia.fs" />
 		<Compile Include="GaiaPlugin.fs" />
 		<Compile Include="Program.fs" />
@@ -75,23 +68,19 @@
 		<PackageReference Include="Csv" Version="1.0.58" />
 		<PackageReference Include="FParsec" Version="1.0.3" />
 		<PackageReference Include="Aether.Physics2D" Version="1.5.0" />
-		<PackageReference Include="FSharp.Compiler.Service" Version="43.7.300-preview.23127.2" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
 		<PackageReference Include="Nito.Collections.Deque" Version="1.1.0" />
-		<PackageReference Include="Prime" Version="9.7.0" />
+		<PackageReference Include="Prime" Version="9.8.0" />
 		<PackageReference Include="Prime.Scripting" Version="9.5.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
+		<PackageReference Include="FSharp.Compiler.Service" Version="43.7.300" />
+		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
-		<ProjectReference Include="..\..\Nu\Nu.Gaia.Design\Nu.Gaia.Design.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Update="FSharp.Core" Version="7.0.300-beta.23127.2" />
 	</ItemGroup>
 
 </Project>

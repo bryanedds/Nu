@@ -158,6 +158,16 @@ module WorldSimulantModule =
             | :? Screen as screen -> World.destroyScreen screen world
             | _ -> failwithumf ()
 
+        /// Edit a simulant with the given operation using the ImGui APIs.
+        /// Intended only to be called by editors like Gaia.
+        static member edit operation (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.editEntity operation entity world
+            | :? Group as group -> World.editGroup operation group world
+            | :? Screen as screen -> World.editScreen operation screen world
+            | :? Game as game -> World.editGame operation game world
+            | _ -> failwithumf ()
+
         /// Get the script frame in which the given simulant's script code will run.
         static member internal tryGetScriptFrame (simulant : Simulant) world =
             match simulant with
@@ -272,12 +282,11 @@ module PropertyDescriptor =
         World.trySetProperty propertyName property simulant world
 
     /// Get the property descriptors as constructed from the given function in the given context.
-    let getPropertyDescriptors<'s when 's :> SimulantState> makePropertyDescriptor contextOpt =
-        match contextOpt with
-        | Some (simulant, world) ->
+    let getPropertyDescriptors<'s when 's :> SimulantState> simulantOpt world =
+        match simulantOpt with
+        | Some simulant ->
             // OPTIMIZATION: seqs used for speed.
             let properties = typeof<'s>.GetProperties ()
-            let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.TransformPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Flags") properties
@@ -291,8 +300,8 @@ module PropertyDescriptor =
                 Seq.map (fun (property : PropertyInfo) ->
                     let propertyName = property.Name
                     let property = World.getProperty propertyName simulant world
-                    let property = { PropertyType = property.PropertyType; PropertyName = propertyName }
-                    makePropertyDescriptor (property, [|typeConverterAttribute|]))
+                    let propertyDescriptor = { PropertyType = property.PropertyType; PropertyName = propertyName }
+                    propertyDescriptor)
                     properties
             let propertyDescriptors =
                 match simulant :> obj with
@@ -306,7 +315,6 @@ module PropertyDescriptor =
                                 elif not (Reflection.isPropertyNonPersistentByName propertyName) then
                                     let propertyType = property.PropertyType
                                     let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
-                                    let propertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|]) : System.ComponentModel.PropertyDescriptor
                                     propertyDescriptor :: propertyDescriptors'
                                 else propertyDescriptors')
                             []

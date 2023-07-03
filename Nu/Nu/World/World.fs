@@ -494,14 +494,14 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init config.NuConfig // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
-            let subsystems = { PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
+            let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
             let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
@@ -552,11 +552,10 @@ module WorldModule3 =
             // make the world's subsystems
             let physicsEngine2d = MockPhysicsEngine.make ()
             let physicsEngine3d = MockPhysicsEngine.make ()
-            let rendererProcess =
-                RendererInline
-                    ((fun _ -> MockRenderer2d.make () :> Renderer2d),
-                     (fun _ -> MockRenderer3d.make () :> Renderer3d))
+            let rendererProcess = RendererInline () :> RendererProcess
+            rendererProcess.Start None None // params implicate mock renderers
             let audioPlayer = MockAudioPlayer.make ()
+            let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
 
             // make the world's scripting environment
             let scriptingEnv = Scripting.Env.make ()
@@ -574,7 +573,7 @@ module WorldModule3 =
             let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame world
@@ -649,20 +648,11 @@ module WorldModule3 =
                     dictPlus HashIdentity.Structural
 
                 // make the world's subsystems
+                let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
                 let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault staticModelsMetadata
-                let createRenderer2d =
-                    fun config ->
-                        match SdlDeps.getWindowOpt sdlDeps with
-                        | Some window -> GlRenderer2d.make window config :> Renderer2d
-                        | None -> MockRenderer2d.make () :> Renderer2d
-                let createRenderer3d =
-                    fun config ->
-                        match SdlDeps.getWindowOpt sdlDeps with
-                        | Some window -> GlRenderer3d.make window config :> Renderer3d
-                        | None -> MockRenderer3d.make () :> Renderer3d
-                let rendererProcess = RendererThread (createRenderer2d, createRenderer3d) :> RendererProcess
-                rendererProcess.Start ()
+                let rendererProcess = RendererThread () :> RendererProcess
+                rendererProcess.Start (Some imGui.Fonts) (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                 let audioPlayer =
                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
@@ -696,7 +686,7 @@ module WorldModule3 =
                     let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
@@ -729,6 +719,6 @@ module WorldModule3 =
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig plugin with
-                | Right world -> World.run3 sdlDeps Live world
+                | Right world -> World.runWithCleanUp tautology id id id id Live true world
                 | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure

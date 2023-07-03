@@ -67,9 +67,3 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 
 /// A renderer tag interface.
 type Renderer = interface end
-
-/// Configures a renderer.
-type RendererConfig =
-    { ShouldInitializeContext : bool
-      ShouldBeginFrame : bool
-      ShouldEndFrame : bool }

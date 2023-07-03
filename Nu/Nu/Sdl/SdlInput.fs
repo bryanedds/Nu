@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open SDL2
+open ImGuiNET
 open Prime
 open Nu
 
@@ -13,7 +14,7 @@ open Nu
 /// Describes a mouse button.
 type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseLeft
-    | MouseCenter
+    | MouseMiddle
     | MouseRight
     | MouseX1
     | MouseX2
@@ -47,19 +48,19 @@ type [<StructuralEquality; StructuralComparison>] GamepadButton =
 module internal MouseState =
 
     /// Convert a MouseButton to SDL's representation.
-    let toSdlButton mouseButton =
+    let internal toSdlButton mouseButton =
         match mouseButton with
         | MouseLeft -> SDL.SDL_BUTTON_LEFT
-        | MouseCenter -> SDL.SDL_BUTTON_MIDDLE
+        | MouseMiddle -> SDL.SDL_BUTTON_MIDDLE
         | MouseRight -> SDL.SDL_BUTTON_RIGHT
         | MouseX1 -> SDL.SDL_BUTTON_X1
         | MouseX2 -> SDL.SDL_BUTTON_X2
 
     /// Convert SDL's representation of a mouse button to a MouseButton.
-    let toNuButton mouseButton =
+    let internal toNuButton mouseButton =
         match mouseButton with
         | SDL.SDL_BUTTON_LEFT -> MouseLeft
-        | SDL.SDL_BUTTON_MIDDLE -> MouseCenter
+        | SDL.SDL_BUTTON_MIDDLE -> MouseMiddle
         | SDL.SDL_BUTTON_RIGHT -> MouseRight
         | SDL.SDL_BUTTON_X1 -> MouseX1
         | SDL.SDL_BUTTON_X2 -> MouseX2
@@ -82,7 +83,7 @@ module internal MouseState =
         not (isButtonDown mouseButton)
 
 [<RequireQualifiedAccess>]
-module KeyboardState =
+module internal KeyboardState =
 
     /// Check that the given keyboard key is down.
     let internal isKeyDown (key : KeyboardKey) =
@@ -97,8 +98,7 @@ module KeyboardState =
 
     /// Check that either ctrl key is down.
     let internal isCtrlDown () =
-        isKeyDown KeyboardKey.Lctrl ||
-        isKeyDown KeyboardKey.Rctrl
+        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_CTRL <> 0
 
     /// Check that both ctrl keys are up.
     let internal isCtrlUp () =
@@ -106,8 +106,7 @@ module KeyboardState =
 
     /// Check that either alt key is down.
     let internal isAltDown () =
-        isKeyDown KeyboardKey.Lalt ||
-        isKeyDown KeyboardKey.Ralt
+        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_ALT <> 0
 
     /// Check that both alt keys are up.
     let internal isAltUp () =
@@ -115,30 +114,30 @@ module KeyboardState =
 
     /// Check that either shift key is down.
     let internal isShiftDown () =
-        isKeyDown KeyboardKey.Lshift ||
-        isKeyDown KeyboardKey.Rshift
+        int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_SHIFT <> 0
 
     /// Check that both shift keys are up.
     let internal isShiftUp () =
         not (isShiftDown ())
 
+// TODO: internalize all this and expose through World API.
 [<RequireQualifiedAccess>]        
 module GamepadState =
 
     let mutable private Joysticks = [||]
-
-    /// Check that an SDL gamepad button is supported.
-    let isSdlButtonSupported button =
-        button < 8
 
     /// Initialize gamepad state.
     let init () =
         let indices = SDL.SDL_NumJoysticks ()
         Joysticks <-
             Array.map (fun joystick ->
-                // NOTE: we don't have a match call to SDL.SDL_JoystickClose, but it may not be necessary
+                // NOTE: we don't have a matching call to SDL.SDL_JoystickClose, but it may not be necessary
                 SDL.SDL_JoystickOpen joystick)
                 [|0 .. indices|]
+
+    /// Check that an SDL gamepad button is supported.
+    let isSdlButtonSupported button =
+        button < 8
 
     /// Get the number of open gamepad.
     let getGamepadCount () =

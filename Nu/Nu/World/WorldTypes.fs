@@ -43,6 +43,30 @@ type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling *
 /// Represents an unsubscription operation for an event.
 and Unsubscription = World -> World
 
+/// Details additional editing behavior for an simulant's properties.
+and AppendProperties =
+    { PushPastWorld : World -> World }
+
+/// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
+/// replaced.
+and [<ReferenceEquality>] ReplaceProperty =
+    { Snapshot : World -> World
+      IndicateReplaced : World -> World
+      PropertyDescriptor : PropertyDescriptor }
+
+/// Details the additional editing behavior for a simulant in a viewport.
+and [<ReferenceEquality>] OverlayViewport =
+    { Snapshot : World -> World
+      ViewportView : Matrix4x4
+      ViewportProjection : Matrix4x4
+      ViewportBounds : Box2 }
+
+/// Specifies an aspect of simulant editing to perform.
+and [<ReferenceEquality>] EditOperation =
+    | AppendProperties 
+    | ReplaceProperty of ReplaceProperty
+    | OverlayViewport of OverlayViewport
+
 /// The data for a change in a simulant.
 and ChangeData =
     { Name : string
@@ -223,6 +247,7 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             | _ -> failwithumf ()
 
 /// Generalized interface tag for late-bound objects.
+/// TODO: consider renaming this to LateBound.
 and LateBindings = interface end
 
 /// Generalized interface tag for dispatchers.
@@ -271,6 +296,10 @@ and GameDispatcher () =
     abstract TrySynchronize : bool * Game * World -> World
     default this.TrySynchronize (_, _, world) = world
 
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : EditOperation * Game * World -> World
+    default this.Edit (_, _, world) = world
+
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
     inherit SimulantDispatcher ()
@@ -311,6 +340,10 @@ and ScreenDispatcher () =
     abstract TrySynchronize : bool * Screen * World -> World
     default this.TrySynchronize (_, _, world) = world
 
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : EditOperation * Screen * World -> World
+    default this.Edit (_, _, world) = world
+
 /// The default dispatcher for groups.
 and GroupDispatcher () =
     inherit SimulantDispatcher ()
@@ -350,6 +383,10 @@ and GroupDispatcher () =
     /// Attempt to synchronize the content of a group.
     abstract TrySynchronize : bool * Group * World -> World
     default this.TrySynchronize (_, _, world) = world
+
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : EditOperation * Group * World -> World
+    default this.Edit (_, _, world) = world
 
 /// The default dispatcher for entities.
 and EntityDispatcher (is2d, isGui : bool, centered, physical) =
@@ -449,6 +486,10 @@ and EntityDispatcher (is2d, isGui : bool, centered, physical) =
     abstract TryGetHighlightBounds : Entity * World -> Box3 option
     default this.TryGetHighlightBounds (_, _) = None
 
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : EditOperation * Entity * World -> World
+    default this.Edit (_, _, world) = world
+
     /// Whether the dispatcher participates directly in a physics system (not counting its facets).
     member this.Physical = physical
 
@@ -517,6 +558,10 @@ and Facet (physical) =
         if WorldTypes.getEntityIs2d entity world
         then Constants.Engine.EntitySize2dDefault
         else Constants.Engine.EntitySize3dDefault
+
+    /// Participate in defining additional editing behavior for an entity via the ImGui API.
+    abstract Edit : EditOperation * Entity * World -> World
+    default this.Edit (_, _, world) = world
 
     /// Whether a facet participates in a physics system.
     member this.Physical = physical
@@ -660,7 +705,7 @@ and [<ReferenceEquality>] EntityContent =
 /// Generalized interface for simulant state.
 and SimulantState =
     interface
-        abstract member GetXtension : unit -> Xtension
+        abstract GetXtension : unit -> Xtension
         end
 
 /// Hosts the ongoing state of a game.
@@ -1411,8 +1456,10 @@ and [<ReferenceEquality>] Dispatchers =
       RebuildOctree : World -> Entity Octree }
 
 /// The subsystems contained by the engine.
+/// TODO: Make ImGui a mockable interface.
 and [<ReferenceEquality>] internal Subsystems =
-    { PhysicsEngine2d : PhysicsEngine
+    { ImGui : ImGui
+      PhysicsEngine2d : PhysicsEngine
       PhysicsEngine3d : PhysicsEngine
       RendererProcess : RendererProcess
       AudioPlayer : AudioPlayer }
@@ -1552,6 +1599,10 @@ and [<ReferenceEquality>] World =
 /// specific values and configurations.
 and [<AbstractClass>] NuPlugin () =
 
+    /// Whether or not code reloading is permitted by current plugin
+    abstract AllowCodeReload : bool
+    default this.AllowCodeReload = true
+
     /// Provides a list of modes for setting game state via the editor.
     abstract EditModes : Map<string, World -> World>
     default this.EditModes = Map.empty
@@ -1593,6 +1644,10 @@ and [<AbstractClass>] NuPlugin () =
     /// A call-back at the end of each frame.
     abstract PostProcess : World -> World
     default this.PostProcess world = world
+
+    /// A call-back for imgui processing based on the optional mode string.
+    abstract ImGuiProcess : World -> World
+    default this.ImGuiProcess world = world
 
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =

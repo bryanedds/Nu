@@ -9,6 +9,7 @@ open System.IO
 open System.Numerics
 open System.Threading
 open SDL2
+open ImGuiNET
 open Prime
 open Nu
 open Nu.Declarative
@@ -57,7 +58,7 @@ module WorldModule2 =
 
     (* Transition Values *)
     let private ScreenTransitionMouseLeftId = Gen.id
-    let private ScreenTransitionMouseCenterId = Gen.id
+    let private ScreenTransitionMouseMiddleId = Gen.id
     let private ScreenTransitionMouseRightId = Gen.id
     let private ScreenTransitionMouseX1Id = Gen.id
     let private ScreenTransitionMouseX2Id = Gen.id
@@ -194,7 +195,7 @@ module WorldModule2 =
             match state with
             | IdlingState _ ->
                 let world = World.unsubscribe ScreenTransitionMouseLeftId world
-                let world = World.unsubscribe ScreenTransitionMouseCenterId world
+                let world = World.unsubscribe ScreenTransitionMouseMiddleId world
                 let world = World.unsubscribe ScreenTransitionMouseRightId world
                 let world = World.unsubscribe ScreenTransitionMouseX1Id world
                 let world = World.unsubscribe ScreenTransitionMouseX2Id world
@@ -202,7 +203,7 @@ module WorldModule2 =
                 world
             | IncomingState _ | OutgoingState _ ->
                 let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseCenterId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Middle/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
                 let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
@@ -530,7 +531,7 @@ module WorldModule2 =
                 match AssetGraph.tryMakeFromFile (outputDirectory + "/" + Assets.Global.AssetGraphFilePath) with
                 | Right assetGraph ->
 
-                    // build assets reload asset metadata
+                    // build and reload assets
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     Metadata.generateMetadata (World.getImperative world) assetGraph
                     let world = World.reloadExistingAssets world
@@ -639,41 +640,63 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseMove" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mousePosition = World.getMousePosition world
-                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
-                    let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
-                    let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
-                    let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publishPlus eventData mouseButtonDownEvent eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureMouse) then
+                        let mousePosition = World.getMousePosition world
+                        let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                        let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
+                        let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
+                        let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonDown" EventTrace.empty
+                        let world = World.publishPlus eventData mouseButtonDownEvent eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
+                        World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    else world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mousePosition = World.getMousePosition world
-                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
-                    let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
-                    let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
-                    let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureMouse) then
+                        let mousePosition = World.getMousePosition world
+                        let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                        let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
+                        let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
+                        let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonUp" EventTrace.empty
+                        let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
+                        World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true true world
+                    else world
+                | SDL.SDL_EventType.SDL_MOUSEWHEEL ->
+                    let imGui = World.getImGui world
+                    if evt.wheel.y <> 0 then imGui.HandleMouseWheelChange (single evt.wheel.y)
+                    // TODO: publish mouse wheel engine events.
+                    world
+                | SDL.SDL_EventType.SDL_TEXTINPUT ->
+                    let imGui = World.getImGui world
+                    imGui.HandleKeyChar (char evt.text.text.FixedElementField)
+                    // TODO: publish text input engine events.
+                    world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
-                    let keyboard = evt.key
-                    let key = keyboard.keysym
-                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
-                    let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureKeyboard) then
+                        let keyboard = evt.key
+                        let key = keyboard.keysym
+                        let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
+                        let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
+                        World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
-                    let keyboard = evt.key
-                    let key = keyboard.keysym
-                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
-                    let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Simulants.Game true true world
-                    let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    let io = ImGui.GetIO ()
+                    if not (io.WantCaptureKeyboard) then
+                        let keyboard = evt.key
+                        let key = keyboard.keysym
+                        let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
+                        let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Simulants.Game true true world
+                        let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
+                        World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true true world
+                    else world
                 | SDL.SDL_EventType.SDL_JOYHATMOTION ->
                     let index = evt.jhat.which
                     let direction = evt.jhat.hatValue
@@ -1136,19 +1159,21 @@ module WorldModule2 =
             let world = World.processPhysics2d world
             world
 
-        static member private cleanUp world =
+        /// Clean-up the resources held by the world.
+        static member cleanUp world =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess (sdlDeps : SdlDeps) liveness firstFrame world =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world =
 
             // run loop if user-defined run-while predicate passes
             TotalTimer.Start ()
             if runWhile world then
 
-                // run user-defined pre-process callback
+                // run user-defined pre-process callbacks
                 PreProcessTimer.Start ()
+                let world = World.preProcess world
                 let world = preProcess world
                 PreProcessTimer.Stop ()
                 match liveness with
@@ -1194,8 +1219,9 @@ module WorldModule2 =
                                         match World.getLiveness world with
                                         | Live ->
 
-                                            // run user-defined per-process callback
+                                            // run user-defined per-process callbacks
                                             PerProcessTimer.Start ()
+                                            let world = World.perProcess world
                                             let world = perProcess world
                                             PerProcessTimer.Stop ()
                                             match World.getLiveness world with
@@ -1216,7 +1242,7 @@ module WorldModule2 =
                                                     match World.getLiveness world with
                                                     | Live ->
                                                     
-                                                        // run engine and user-defined per-process callback
+                                                        // run engine and user-defined per-process callbacks
                                                         PostProcessTimer.Start ()
                                                         let world = World.postProcess world
                                                         let world = postProcess world
@@ -1248,17 +1274,19 @@ module WorldModule2 =
                                                                 let rendererProcess = World.getRendererProcess world
                                                                 if not firstFrame then rendererProcess.Swap ()
 
-                                                                // avoid updating faster than desired FPS
+                                                                // process imgui frame
+                                                                let imGui = World.getImGui world
+                                                                if not firstFrame then imGui.EndFrame ()
+                                                                imGui.BeginFrame ()
+                                                                let world = World.imGuiProcess world
+                                                                let world = imGuiProcess world
+                                                                imGui.InputFrame ()
+                                                                let drawData = imGui.RenderFrame ()
+
+                                                                // avoid updating faster than desired
                                                                 if FrameTimer.IsRunning then
-                                                                    let frameTimeSlop =
-                                                                        Constants.GameTime.DesiredFrameTimeSlop
-                                                                    let frameTimeMinimum =
-                                                                        match Constants.GameTime.DesiredFrameRate with
-                                                                        | StaticFrameRate frameRate -> 1.0 / double frameRate - frameTimeSlop
-                                                                        | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - frameTimeSlop
-                                                                        | DynamicFrameRate None -> Constants.GameTime.DesiredFrameTimeMinimum - frameTimeSlop
-                                                                    while let e = FrameTimer.Elapsed in e.TotalSeconds < frameTimeMinimum do
-                                                                        Thread.Yield () |> ignore<bool> // use Yield rather than Sleep for better precision
+                                                                    while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
+                                                                        Thread.Yield () |> ignore<bool>
                                                                 FrameTimer.Restart ()
 
                                                                 // process rendering (2/2)
@@ -1273,12 +1301,13 @@ module WorldModule2 =
                                                                     (World.getEyeCenter2d world)
                                                                     (World.getEyeSize2d world)
                                                                     (World.getWindowSize world)
+                                                                    drawData
 
                                                                 // update time and recur
                                                                 TotalTimer.Stop ()
                                                                 let world = World.updateTime world
                                                                 WorldModule.TaskletProcessingStarted <- false
-                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess sdlDeps liveness false world
+                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness false world
 
                                                             // fin
                                                             | Dead -> world
@@ -1295,9 +1324,9 @@ module WorldModule2 =
                 | Dead -> world
             else world
 
-        /// Run the game engine using the given dependencies and returning exit code upon termination.
-        static member run3 (sdlDeps : SdlDeps) liveness world =
-            try let world = World.runWithoutCleanUp tautology id id id sdlDeps liveness true world
+        /// Run the game engine using the given world and returning exit code upon termination.
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world =
+            try let world = World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->
@@ -1361,6 +1390,12 @@ module EntityDispatcherModule2 =
             let view = this.View (this.GetModel entity world, entity, world)
             World.renderView view world
 
+        override this.Edit (operation, entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, entity, world)
+            let world = this.SetModel model entity world
+            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
+
         override this.Signal (signalObj, entity, world) =
             match signalObj with
             | :? 'message as message -> entity.SignalPlus<'model, 'message, 'command> message world
@@ -1380,28 +1415,32 @@ module EntityDispatcherModule2 =
             World.setEntityContent content entity world
 
         /// Initialize the game's own content.
-        abstract member Initialize : 'model * Entity -> InitializerContent list
+        abstract Initialize : 'model * Entity -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The physics synchronization handler for the elmish / MMCC programming model.
-        abstract member Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
+        abstract Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Entity * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Entity * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Entity * World -> Signal list * World
+        abstract Command : 'model * 'command * Entity * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Entity -> EntityContent list
+        abstract Content : 'model * Entity -> EntityContent list
         default this.Content (_, _) = []
 
         /// Describes how the entity is to be viewed using the View API.
-        abstract member View : 'model * Entity * World -> View
+        abstract View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for an entity via the ImGui API.
+        abstract Edit : 'model * EditOperation * Entity * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
 
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, false, centered, physical, makeInitial)
@@ -1456,6 +1495,85 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize3dDefault
              define Entity.Centered Constants.Engine.EntityCentered3dDefault]
+
+[<RequireQualifiedAccess>]
+module EntityPropertyDescriptor =
+
+    let getPropertyDescriptors (entity : Entity) world =
+        let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
+        nameDescriptor :: propertyDescriptors
+
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
+        let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "Ambient Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Built-In Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
+        else "Xtension Properties"
+
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        propertyName <> "Degrees" && propertyName <> "DegreesLocal" && // HACK: we allow degrees specifically for the editor.
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getValue propertyDescriptor (entity : Entity) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor entity world with
+        | Some value -> value
+        | None -> null
+
+    let trySetValue (value : obj) propertyDescriptor (entity : Entity) world =
+
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+
+        // change property
+        match propertyDescriptor.PropertyName with
+
+        // change the surnames property
+        | "Surnames" ->
+            let surnames = value :?> string array
+            if Array.forall (fun (name : string) -> name.IndexOfAny Symbol.IllegalNameCharsArray = -1) surnames then
+                let target = Nu.Entity (entity.Group.GroupAddress <-- rtoa surnames)
+                let world = World.renameEntityImmediate entity target world
+                Right world
+            else Left ("Invalid entity surnames '" + scstring surnames + "'.", world)
+
+        // change the name property
+        | Constants.Engine.NamePropertyName ->
+            let name = value :?> string
+            if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
+                let targetNames =
+                    entity.Group.GroupAddress.Names |>
+                    flip Array.append (Array.allButLast entity.Surnames) |>
+                    Array.add name
+                let target = Nu.Entity targetNames
+                let world = World.renameEntityImmediate entity target world
+                Right world
+            else Left ("Invalid entity name '" + name + "'.", world)
+
+        // change facet names
+        | Constants.Engine.FacetNamesPropertyName ->
+            let facetNames = value :?> string Set
+            match World.trySetEntityFacetNames facetNames entity world with
+            | (Right (), world) -> Right world
+            | (Left error, world) -> Left (error, world)
+
+        // change the property dynamically
+        | _ ->
+            match propertyDescriptor.PropertyName with
+            | Constants.Engine.OverlayNameOptPropertyName ->
+                match World.trySetEntityOverlayNameOpt (value :?> string option) entity world with
+                | (Right (), world) -> Right world
+                | (Left error, world) -> Left (error, world)
+            | _ ->
+                let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value entity world
+                Right world
 
 [<AutoOpen>]
 module GroupDispatcherModule =
@@ -1524,24 +1642,68 @@ module GroupDispatcherModule =
             World.setGroupContent content group world
 
         /// Initialize the group's own content.
-        abstract member Initialize : 'model * Group -> InitializerContent list
+        abstract Initialize : 'model * Group -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Group * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Group * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Group * World -> Signal list * World
+        abstract Command : 'model * 'command * Group * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Group -> EntityContent list
+        abstract Content : 'model * Group -> EntityContent list
         default this.Content (_, _) = []
 
         /// Describes how the group is to be viewed using the View API.
-        abstract member View : 'model * Group * World -> View
+        abstract View : 'model * Group * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for a group via the ImGui API.
+        abstract Edit : 'model * EditOperation * Group * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
+
+[<RequireQualifiedAccess>]
+module GroupPropertyDescriptor =
+
+    let getPropertyDescriptors (group : Group) world =
+        PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
+
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
+        else "Xtension Properties"
+
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getValue propertyDescriptor (group : Group) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor group world with
+        | Some value -> value
+        | None -> null
+
+    let trySetValue (value : obj) propertyDescriptor (group : Group) world =
+        
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+            
+        // change the name property
+        match propertyDescriptor.PropertyName with
+        | Constants.Engine.NamePropertyName ->
+            Left ("Changing the name of a group after it has been created is not yet implemented.", world)
+
+        // change the property dynamically
+        | _ ->
+            let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value group world
+            Right world
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1610,24 +1772,68 @@ module ScreenDispatcherModule =
             World.setScreenContent content screen world
 
         /// Initialize the screen's own content.
-        abstract member Initialize : 'model * Screen -> InitializerContent list
+        abstract Initialize : 'model * Screen -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Screen * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Screen * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Screen * World -> Signal list * World
+        abstract Command : 'model * 'command * Screen * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Screen -> GroupContent list
+        abstract Content : 'model * Screen -> GroupContent list
         default this.Content (_, _) = []
 
         /// Describes how the screen is to be viewed using the View API.
-        abstract member View : 'model * Screen * World -> View
+        abstract View : 'model * Screen * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for a screen via the ImGui API.
+        abstract Edit : 'model * EditOperation * Screen * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
+
+[<RequireQualifiedAccess>]
+module ScreenPropertyDescriptor =
+
+    let getPropertyDescriptors (screen : Screen) world =
+        PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
+
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
+        else "Xtension Properties"
+
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getValue propertyDescriptor (screen : Screen) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor screen world with
+        | Some value -> value
+        | None -> null
+
+    let trySetValue (value : obj) propertyDescriptor (screen : Screen) world =
+        
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+            
+        // change the name property
+        match propertyDescriptor.PropertyName with
+        | Constants.Engine.NamePropertyName ->
+            Left ("Changing the name of a screen after it has been created is not yet implemented.", world)
+
+        // change the property dynamically
+        | _ ->
+            let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value screen world
+            Right world
 
 [<AutoOpen>]
 module GameDispatcherModule =
@@ -1697,24 +1903,114 @@ module GameDispatcherModule =
             synchronize initializing game world this |> snd
 
         /// Initialize the game's own content.
-        abstract member Initialize : 'model * Game -> InitializerContent list
+        abstract Initialize : 'model * Game -> InitializerContent list
         default this.Initialize (_, _) = []
 
         /// The message handler of the elmish / MMCC programming model.
-        abstract member Message : 'model * 'message * Game * World -> Signal list * 'model
+        abstract Message : 'model * 'message * Game * World -> Signal list * 'model
         default this.Message (model, _, _, _) = just model
 
         /// The command handler of the elmish / MMCC programming model.
-        abstract member Command : 'model * 'command * Game * World -> Signal list * World
+        abstract Command : 'model * 'command * Game * World -> Signal list * World
         default this.Command (_, _, _, world) = just world
 
         /// The content specifier of the elmish / MMCC programming model.
-        abstract member Content : 'model * Game -> ScreenContent list
+        abstract Content : 'model * Game -> ScreenContent list
         default this.Content (_, _) = []
 
         /// Describes how the game is to be viewed using the View API.
-        abstract member View : 'model * Game * World -> View
+        abstract View : 'model * Game * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Implements additional editing behavior for a game via the ImGui API.
+        abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
+
+[<RequireQualifiedAccess>]
+module GamePropertyDescriptor =
+
+    let getCategory propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        if propertyName.EndsWith "Script" || propertyName.EndsWith "ScriptOpt" then "Scripts"
+        elif propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        elif propertyName = "DesiredScreen" || propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
+             propertyName = "EyeCenter2d" || propertyName = "EyeSize2d" || propertyName = "EyeCenter3d" || propertyName = "EyeRotation3d" ||
+             propertyName = "EyeFrustum3dEnclosed" || propertyName = "EyeFrustum3dExposed" || propertyName = "EyeFrustum3dImposter" then
+             "Built-In Properties"
+        else "Xtension Properties"
+
+    let getReadOnly propertyDescriptor =
+        let propertyName = propertyDescriptor.PropertyName
+        Reflection.isPropertyNonPersistentByName propertyName
+
+    let getPropertyDescriptors (game : Game) world =
+        PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
+
+    let getValue propertyDescriptor (game : Game) world : obj =
+        match PropertyDescriptor.tryGetValue propertyDescriptor game world with
+        | Some value -> value
+        | None -> null
+
+    let trySetValue (value : obj) propertyDescriptor (game : Game) world =
+        
+        // pull string quotes out of string
+        let value =
+            match value with
+            | :? string as str -> str.Replace ("\"", "") :> obj
+            | _ -> value
+            
+        // change the name property
+        match propertyDescriptor.PropertyName with
+        | Constants.Engine.NamePropertyName ->
+            Left ("Changing the name of a game after it has been created is not yet implemented.", world)
+
+        // change the property dynamically
+        | _ ->
+            let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value game world
+            Right world
+
+[<RequireQualifiedAccess>]
+module SimulantPropertyDescriptor =
+
+    let getPropertyDescriptors (simulant : Simulant) world =
+        match simulant with
+        | :? Entity as entity -> EntityPropertyDescriptor.getPropertyDescriptors entity world
+        | :? Group as group -> GroupPropertyDescriptor.getPropertyDescriptors group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.getPropertyDescriptors screen world
+        | :? Game as game -> GamePropertyDescriptor.getPropertyDescriptors game world
+        | _ -> failwithumf ()
+
+    let getCategory propertyDesciptor (simulant : Simulant) =
+        match simulant with
+        | :? Entity -> EntityPropertyDescriptor.getCategory propertyDesciptor
+        | :? Group -> GroupPropertyDescriptor.getCategory propertyDesciptor
+        | :? Screen -> ScreenPropertyDescriptor.getCategory propertyDesciptor
+        | :? Game -> GamePropertyDescriptor.getCategory propertyDesciptor
+        | _ -> failwithumf ()
+
+    let getReadOnly propertyDesciptor (simulant : Simulant) =
+        match simulant with
+        | :? Entity -> EntityPropertyDescriptor.getReadOnly propertyDesciptor
+        | :? Group -> GroupPropertyDescriptor.getReadOnly propertyDesciptor
+        | :? Screen -> ScreenPropertyDescriptor.getReadOnly propertyDesciptor
+        | :? Game -> GamePropertyDescriptor.getReadOnly propertyDesciptor
+        | _ -> failwithumf ()
+
+    let getValue propertyDescriptor (simulant : Simulant) world =
+        match simulant with
+        | :? Entity as entity -> EntityPropertyDescriptor.getValue propertyDescriptor entity world
+        | :? Group as group -> GroupPropertyDescriptor.getValue propertyDescriptor group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.getValue propertyDescriptor screen world
+        | :? Game as game -> GamePropertyDescriptor.getValue propertyDescriptor game world
+        | _ -> failwithumf ()
+
+    let trySetValue value propertyDescriptor (simulant : Simulant) world =
+        match simulant with
+        | :? Entity as entity -> EntityPropertyDescriptor.trySetValue value propertyDescriptor entity world
+        | :? Group as group -> GroupPropertyDescriptor.trySetValue value propertyDescriptor group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.trySetValue value propertyDescriptor screen world
+        | :? Game as game -> GamePropertyDescriptor.trySetValue value propertyDescriptor game world
+        | _ -> failwithumf ()
 
 [<AutoOpen>]
 module WorldModule2' =

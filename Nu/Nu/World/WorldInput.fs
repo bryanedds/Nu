@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open ImGuiNET
 open Prime
 open Nu
 
@@ -23,7 +24,10 @@ module WorldInputModule =
         [<FunctionBinding>]
         static member isMouseButtonDown mouseButton world =
             ignore (world : World)
-            MouseState.isButtonDown mouseButton
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureMouse) then
+                MouseState.isButtonDown mouseButton
+            else false
 
         /// Check that the given mouse button is up.
         [<FunctionBinding>]
@@ -75,7 +79,10 @@ module WorldInputModule =
         [<FunctionBinding>]
         static member isKeyboardKeyDown key world =
             ignore (world : World)
-            KeyboardState.isKeyDown key
+            let io = ImGui.GetIO ()
+            if not (io.WantCaptureKeyboard) then
+                KeyboardState.isKeyDown key
+            else false
 
         /// Check that the given keyboard key is up.
         [<FunctionBinding>]

@@ -185,6 +185,12 @@ module WorldScreenModule =
             let eventTrace = EventTrace.debug "World" "renderScreen" "" EventTrace.empty
             World.publishPlus () (Events.Render --> screen) eventTrace Simulants.Game false false world
 
+        /// Edit a screen with the given operation using the ImGui APIs.
+        /// Intended only to be called by editors like Gaia.
+        static member editScreen operation (screen : Screen) world =
+            let dispatcher = screen.GetDispatcher world
+            dispatcher.Edit (operation, screen, world)
+
         /// Get all the screens in the world.
         [<FunctionBinding>]
         static member getScreens world =

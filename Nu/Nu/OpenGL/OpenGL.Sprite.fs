@@ -189,7 +189,7 @@ module Sprite =
         Hl.Assert ()
 
         // teardown state
-        Gl.Disable EnableCap.CullFace
-        Gl.Disable EnableCap.Blend
-        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
         Gl.BlendEquation BlendEquationMode.FuncAdd
+        Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+        Gl.Disable EnableCap.Blend
+        Gl.Disable EnableCap.CullFace

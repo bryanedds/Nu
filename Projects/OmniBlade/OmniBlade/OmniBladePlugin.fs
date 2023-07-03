@@ -13,6 +13,8 @@ type OmniBladePlugin () =
     override this.EditModes =
         Map.ofSeq
             [("Title", fun world -> Simulants.Game.SetModel (Gui Title) world)
+             ("Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world)
+             ("Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world)
              ("Field", fun world -> Simulants.Game.SetModel (Field (Field.initial Slot1 world)) world)
              ("FieldDebug", fun world -> Simulants.Game.SetModel (Field (Field.debug world)) world)
              ("BattleDebug", fun world -> Simulants.Game.SetModel (Field (Field.debugBattle world)) world)

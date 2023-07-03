@@ -62,9 +62,9 @@ module WorldGameModule =
         member this.MouseLeftChangeEvent = Events.MouseLeftChange
         member this.MouseLeftDownEvent = Events.MouseLeftDown
         member this.MouseLeftUpEvent = Events.MouseLeftUp
-        member this.MouseCenterChangeEvent = Events.MouseCenterChange
-        member this.MouseCenterDownEvent = Events.MouseCenterDown
-        member this.MouseCenterUpEvent = Events.MouseCenterUp
+        member this.MouseMiddleChangeEvent = Events.MouseMiddleChange
+        member this.MouseMiddleDownEvent = Events.MouseMiddleDown
+        member this.MouseMiddleUpEvent = Events.MouseMiddleUp
         member this.MouseRightChangeEvent = Events.MouseRightChange
         member this.MouseRightDownEvent = Events.MouseRightDown
         member this.MouseRightUpEvent = Events.MouseRightUp
@@ -197,6 +197,12 @@ module WorldGameModule =
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderGame" "" EventTrace.empty
             World.publishPlus () Events.Render eventTrace game false false world
+
+        /// Edit a game with the given operation using the ImGui APIs.
+        /// Intended only to be called by editors like Gaia.
+        static member editGame operation (game : Game) world =
+            let dispatcher = game.GetDispatcher world
+            dispatcher.Edit (operation, game, world)
 
         /// Get all the entities in the world.
         [<FunctionBinding "getEntities0">]
