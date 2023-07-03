@@ -21,14 +21,13 @@ open Nu.Gaia
 // TODO:
 // Find and fix crash bugs.
 // Re-enable general exception handler.
-// Sketchy groupFilePath state.
-// Move New Project to Gaia.
 // More custom property views.
 // Initial layout.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
+// File explorer dialog.
 // Multi-selection?
 //
 // Custom properties order of priority:
@@ -543,6 +542,7 @@ module Gaia =
                     | Some entity when not (entity.Exists world) -> selectEntityOpt None
                     | Some _ | None -> ()
                     groupFilePaths <- Map.add group.GroupAddress groupFilePath groupFilePaths
+                    groupFilePath <- ""
                     true
                 with exn ->
                     world <- World.choose oldWorld
