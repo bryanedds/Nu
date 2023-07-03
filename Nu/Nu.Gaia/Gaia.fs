@@ -25,6 +25,7 @@ open Nu.Gaia
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
 // File explorer dialog.
+// Double-click in overlay selected and show entity in hierarchy.
 // Multi-selection?
 //
 // Custom properties order of priority:
@@ -871,7 +872,7 @@ module Gaia =
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
             (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
-            ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
+            ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
         if showSelectedEntity && selectedEntityOpt = Some entity then
             ImGui.SetScrollHereY ()
@@ -935,7 +936,7 @@ module Gaia =
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
         for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
-            if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick) then
+            if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
                 let propertyDescriptorsSorted = Array.sortBy (fun pd -> pd.PropertyName) propertyDescriptors
                 for propertyDescriptor in propertyDescriptorsSorted do
                     if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then
@@ -1311,7 +1312,7 @@ module Gaia =
                         ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
                         let assets = Metadata.getDiscoveredAssets ()
                         for package in assets do
-                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
+                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
                             if ImGui.TreeNodeEx (package.Key, flags) then
                                 for assetName in package.Value do
                                     if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
@@ -1569,7 +1570,7 @@ module Gaia =
                         ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
                         let assets = Metadata.getDiscoveredAssets ()
                         for package in assets do
-                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
+                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
                             if ImGui.TreeNodeEx (package.Key, flags) then
                                 for assetName in package.Value do
                                     if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
