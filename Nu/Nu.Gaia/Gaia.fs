@@ -26,7 +26,8 @@ open Nu.Gaia
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
-// Multi-selection.
+// Try to figure out how to snapshot only on first property interaction.
+// Multi-selection?
 //
 // Custom properties order of priority:
 //
