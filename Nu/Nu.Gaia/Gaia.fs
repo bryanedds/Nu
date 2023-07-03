@@ -25,6 +25,7 @@ open Nu.Gaia
 // Initial layout.
 // View guizmo.
 // Multi-selection.
+// Re-enable general exception handler.
 //
 // properties order of priority -
 //
@@ -52,6 +53,8 @@ open Nu.Gaia
 [<RequireQualifiedAccess>]
 module Gaia =
 
+    (* State Variables - mutable to ease interfacing with ImGui *)
+
     let mutable private world = Unchecked.defaultof<World> // this will be initialized on start
     let mutable private rightClickPosition = v2Zero
     let mutable private dragEntityState = DragEntityInactive
@@ -72,8 +75,8 @@ module Gaia =
     let mutable private newEntityElevation = 0.0f
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
-    let mutable private showContextMenu = false
-    let mutable private showAssetPicker = false
+    let mutable private showEntityContextMenu = false
+    let mutable private showAssetPickerDialog = false
     let mutable private showInspector = false
     let mutable private showOpenProjectDialog = false
     let mutable private showNewGroupDialog = false
@@ -100,34 +103,35 @@ module Gaia =
     let mutable private worldsPast = []
     let mutable private worldsFuture = []
 
-    let private imGuiMessage message =
-        messageBoxOpt <- Some message
+    (* Prelude Functions *)
 
-    let snapshot () =
-        world <- Nu.World.shelve world
-        worldsPast <- world :: worldsPast
-        worldsFuture <- []
+    let private canEditWithMouse () =
+        let io = ImGui.GetIO ()
+        not (io.WantCaptureMouse) && (World.getHalted world || editWhileAdvancing)
 
-    let selectScreen screen =
+    let private canEditWithKeyboard () =
+        let io = ImGui.GetIO ()
+        not (io.WantCaptureKeyboard) && (World.getHalted world || editWhileAdvancing)
+
+    let private selectScreen screen =
         if screen <> selectedScreen then
             ImGui.SetWindowFocus null
             selectedScreen <- screen
 
-    let selectGroup group =
+    let private selectGroup group =
         if group <> selectedGroup then
             ImGui.SetWindowFocus null
             selectedGroup <- group
 
-    let selectEntityOpt entityOpt =
+    let private selectEntityOpt entityOpt =
         if entityOpt <> selectedEntityOpt then
             ImGui.SetWindowFocus null
             selectedEntityOpt <- entityOpt
 
-    let canUndo () =
-        List.notEmpty worldsPast
-
-    let canRedo () =
-        List.notEmpty worldsPast
+    let private snapshot () =
+        world <- Nu.World.shelve world
+        worldsPast <- world :: worldsPast
+        worldsFuture <- []
 
     let private tryUndo () =
         if
@@ -195,14 +199,6 @@ module Gaia =
             Set.ofSeq
         generateEntityName3 dispatcherName existingEntityNames
 
-    let private canEditWithMouse () =
-        let io = ImGui.GetIO ()
-        not (io.WantCaptureMouse) && (World.getHalted world || editWhileAdvancing)
-
-    let private canEditWithKeyboard () =
-        let io = ImGui.GetIO ()
-        not (io.WantCaptureKeyboard) && (World.getHalted world || editWhileAdvancing)
-
     let private tryMousePick mousePosition =
         let entities2d = getPickableEntities2d ()
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
@@ -222,6 +218,8 @@ module Gaia =
                 //tryShowSelectedEntityInHierarchyIfVisible form
                 Some (intersection, entity)
             | None -> None
+    
+    (* Nu Event Handlers *)
 
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) wtemp =
         world <- wtemp
@@ -249,7 +247,7 @@ module Gaia =
             let mousePosition = World.getMousePosition world
             let _ = tryMousePick mousePosition
             rightClickPosition <- mousePosition
-            showContextMenu <- true
+            showEntityContextMenu <- true
             (handling, world)
         else (Resolve, world)
 
@@ -413,108 +411,18 @@ module Gaia =
         // fin
         (Cascade, world)
 
-    /// Attempt to select a target directory for the desired plugin and its assets from the give file path.
-    let trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
-        let filePathAndDirNameAndTypesOpt =
-            if not (String.IsNullOrWhiteSpace filePathOpt) then
-                let filePath = filePathOpt
-                try let dirName = Path.GetDirectoryName filePath
-                    try Directory.SetCurrentDirectory dirName
-                        let assembly = Assembly.Load (File.ReadAllBytes filePath)
-                        Right (Some (filePath, dirName, assembly.GetTypes ()))
-                    with _ ->
-                        let assembly = Assembly.LoadFrom filePath
-                        Right (Some (filePath, dirName, assembly.GetTypes ()))
-                with _ -> Left ()
-            else Right None
-        match filePathAndDirNameAndTypesOpt with
-        | Right (Some (filePath, dirName, types)) ->
-            let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
-            match pluginTypeOpt with
-            | Some ty ->
-                let plugin = Activator.CreateInstance ty :?> NuPlugin
-                Right (Some (filePath, dirName, plugin))
-            | None -> Left ()
-        | Right None -> Right None
-        | Left () -> Left ()
+    (* Editor Commands *)
 
-    /// Select a target directory for the desired plugin and its assets.
-    let selectNuPlugin gaiaPlugin =
-        let savedState =
-            try if File.Exists Constants.Editor.SavedStateFilePath
-                then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-                else SavedState.defaultState
-            with _ -> SavedState.defaultState
-        let gaiaDirectory = Directory.GetCurrentDirectory ()
-        let (targetDir, plugin) =
-            match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectFilePath with
-            | Right (Some (filePath, targetDir, plugin)) ->
-                Constants.Override.fromAppConfig filePath
-                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                with _ -> Log.info "Could not save editor state."
-                (targetDir, plugin)
-            | Right None ->
-                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                with _ -> Log.info "Could not save editor state."
-                (".", gaiaPlugin)
-            | Left () ->
-                if not (String.IsNullOrWhiteSpace savedState.ProjectFilePath) then
-                    Log.trace ("Invalid Nu Assembly: " + savedState.ProjectFilePath)
-                (".", gaiaPlugin)
-        (savedState, targetDir, plugin)
+    let private getProperty propertyDescriptor simulant =
+        SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
 
-    let private trySaveSelectedGroup filePath =
-        try World.writeGroupToFile filePath selectedGroup world
-            filePaths <- Map.add selectedGroup.GroupAddress groupFilePath filePaths
-            true
-        with exn ->
-            messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
-            false
-
-    let private tryLoadSelectedGroup filePath =
-
-        // ensure group isn't protected
-        if not (selectedGroup.GetProtected world) then
-
-            // attempt to load group descriptor
-            let groupAndDescriptorOpt =
-                try let groupDescriptorStr = File.ReadAllText filePath
-                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                    let groupName =
-                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
-                        | Some (Atom (name, _)) -> name
-                        | _ -> failwithumf ()
-                    Right (selectedScreen / groupName, groupDescriptor)
-                with exn ->
-                    Left exn
-
-            // attempt to load group
-            match groupAndDescriptorOpt with
-            | Right (group, groupDescriptor) ->
-                let oldWorld = world
-                try
-                    if group.Exists world then world <- World.destroyGroupImmediate selectedGroup world
-                    let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
-                    selectGroup group
-                    match selectedEntityOpt with
-                    | Some entity when not (entity.Exists world) -> selectEntityOpt None
-                    | Some _ | None -> ()
-                    filePaths <- Map.add group.GroupAddress groupFilePath filePaths
-                    true
-                with exn ->
-                    world <- World.choose oldWorld
-                    messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
-                    false
-
-            // error
-            | Left exn ->
-                messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
-                false
-
-        // error
-        else
-            messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the Elmish API)."
-            false
+    let private setProperty (value : obj) propertyDescriptor simulant =
+        match value with
+        | :? Color -> () // NOTE: color editor is draggable, which means it causes an unbounded number of snapshots currently.
+        | _ -> snapshot ()
+        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
+        | Right wtemp -> world <- wtemp
+        | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
 
     let private createEntity atMouse inHierarchy =
         snapshot ()
@@ -576,6 +484,59 @@ module Gaia =
         selectEntityOpt (Some entity)
         //DUMMY
         //tryShowSelectedEntityInHierarchy form
+
+    let private trySaveSelectedGroup filePath =
+        try World.writeGroupToFile filePath selectedGroup world
+            filePaths <- Map.add selectedGroup.GroupAddress groupFilePath filePaths
+            true
+        with exn ->
+            messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
+            false
+
+    let private tryLoadSelectedGroup filePath =
+
+        // ensure group isn't protected
+        if not (selectedGroup.GetProtected world) then
+
+            // attempt to load group descriptor
+            let groupAndDescriptorOpt =
+                try let groupDescriptorStr = File.ReadAllText filePath
+                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                    let groupName =
+                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                        | Some (Atom (name, _)) -> name
+                        | _ -> failwithumf ()
+                    Right (selectedScreen / groupName, groupDescriptor)
+                with exn ->
+                    Left exn
+
+            // attempt to load group
+            match groupAndDescriptorOpt with
+            | Right (group, groupDescriptor) ->
+                let oldWorld = world
+                try
+                    if group.Exists world then world <- World.destroyGroupImmediate selectedGroup world
+                    let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
+                    selectGroup group
+                    match selectedEntityOpt with
+                    | Some entity when not (entity.Exists world) -> selectEntityOpt None
+                    | Some _ | None -> ()
+                    filePaths <- Map.add group.GroupAddress groupFilePath filePaths
+                    true
+                with exn ->
+                    world <- World.choose oldWorld
+                    messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                    false
+
+            // error
+            | Left exn ->
+                messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                false
+
+        // error
+        else
+            messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the Elmish API)."
+            false
 
     let private tryQuickSizeSelectedEntity () =
         match selectedEntityOpt with
@@ -741,7 +702,7 @@ module Gaia =
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
                 world <- World.choose oldWorld
-        else imGuiMessage "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
+        else messageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
     let private tryReloadAll () =
         tryReloadAssets ()
@@ -756,6 +717,56 @@ module Gaia =
         let advancing = World.getAdvancing world
         if not advancing then snapshot ()
         world <- World.setAdvancing (not advancing) world
+
+    let private trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
+        let filePathAndDirNameAndTypesOpt =
+            if not (String.IsNullOrWhiteSpace filePathOpt) then
+                let filePath = filePathOpt
+                try let dirName = Path.GetDirectoryName filePath
+                    try Directory.SetCurrentDirectory dirName
+                        let assembly = Assembly.Load (File.ReadAllBytes filePath)
+                        Right (Some (filePath, dirName, assembly.GetTypes ()))
+                    with _ ->
+                        let assembly = Assembly.LoadFrom filePath
+                        Right (Some (filePath, dirName, assembly.GetTypes ()))
+                with _ -> Left ()
+            else Right None
+        match filePathAndDirNameAndTypesOpt with
+        | Right (Some (filePath, dirName, types)) ->
+            let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
+            match pluginTypeOpt with
+            | Some ty ->
+                let plugin = Activator.CreateInstance ty :?> NuPlugin
+                Right (Some (filePath, dirName, plugin))
+            | None -> Left ()
+        | Right None -> Right None
+        | Left () -> Left ()
+
+    let private selectNuPlugin gaiaPlugin =
+        let savedState =
+            try if File.Exists Constants.Editor.SavedStateFilePath
+                then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
+                else SavedState.defaultState
+            with _ -> SavedState.defaultState
+        let gaiaDirectory = Directory.GetCurrentDirectory ()
+        let (targetDir, plugin) =
+            match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectFilePath with
+            | Right (Some (filePath, targetDir, plugin)) ->
+                Constants.Override.fromAppConfig filePath
+                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                with _ -> Log.info "Could not save editor state."
+                (targetDir, plugin)
+            | Right None ->
+                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                with _ -> Log.info "Could not save editor state."
+                (".", gaiaPlugin)
+            | Left () ->
+                if not (String.IsNullOrWhiteSpace savedState.ProjectFilePath) then
+                    Log.trace ("Invalid Nu Assembly: " + savedState.ProjectFilePath)
+                (".", gaiaPlugin)
+        (savedState, targetDir, plugin)
+
+    (* ImGui Callback Functions *)
 
     let private updateEyeDrag () =
         match dragEyeState with
@@ -815,7 +826,30 @@ module Gaia =
                         world <- entity.SetAngularVelocity v3Zero world
             | DragEntityInactive -> ()
 
-    let rec imGuiEntityHierarchy (entity : Entity) =
+    let private updateHotkeys () =
+        let io = ImGui.GetIO ()
+        if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
+        if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
+        if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
+        if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlPressed () then tryQuickSizeSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlPressed () then showNewGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.D && ImGui.IsCtrlPressed () then tryDeleteSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false
+        if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity true
+        if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity false
+        if not (io.WantCaptureKeyboard) then
+            if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
+
+    let rec private imGuiEntityHierarchy (entity : Entity) =
         let children = world |> entity.GetChildren |> Seq.toArray
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
@@ -880,18 +914,7 @@ module Gaia =
             for child in children do imGuiEntityHierarchy child
             ImGui.TreePop ()
 
-    let imGuiGetProperty propertyDescriptor simulant =
-        SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
-
-    let imGuiSetProperty (value : obj) propertyDescriptor simulant =
-        match value with
-        | :? Color -> () // NOTE: color editor is draggable, which means it causes an unbounded number of snapshots currently.
-        | _ -> snapshot ()
-        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
-        | Right wtemp -> world <- wtemp
-        | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
-
-    let imGuiEditProperties (simulant : Simulant) =
+    let private imGuiEditProperties (simulant : Simulant) =
         let mutable simulant = simulant
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
@@ -906,7 +929,7 @@ module Gaia =
                             let mutable name = entity.Name
                             let flags = if entity.GetProtected world then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None
                             if ImGui.InputText ("Name", &name, 4096u, flags) then
-                                imGuiSetProperty name propertyDescriptor simulant
+                                setProperty name propertyDescriptor simulant
                                 let entity' = Entity (Array.add name entity.Parent.SimulantAddress.Names)
                                 selectEntityOpt (Some entity')
                                 simulant <- entity'
@@ -936,23 +959,23 @@ module Gaia =
                             let value = SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
                             let valueStr = converter.ConvertToString value
                             match value with
-                            | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then imGuiSetProperty b' propertyDescriptor simulant
-                            | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int8 i') propertyDescriptor simulant
-                            | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint8 i') propertyDescriptor simulant
-                            | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int16 i') propertyDescriptor simulant
-                            | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint16 i') propertyDescriptor simulant
-                            | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int32 i') propertyDescriptor simulant
-                            | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint32 i') propertyDescriptor simulant
-                            | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (int64 i') propertyDescriptor simulant
-                            | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then imGuiSetProperty (uint64 i') propertyDescriptor simulant
-                            | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetProperty (single f') propertyDescriptor simulant
-                            | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then imGuiSetProperty (double f') propertyDescriptor simulant
-                            | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
-                            | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
-                            | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v') then imGuiSetProperty v' propertyDescriptor simulant
-                            | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
-                            | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
-                            | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (propertyDescriptor.PropertyName, &v'.X) then imGuiSetProperty v' propertyDescriptor simulant
+                            | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then setProperty b' propertyDescriptor simulant
+                            | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int8 i') propertyDescriptor simulant
+                            | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint8 i') propertyDescriptor simulant
+                            | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int16 i') propertyDescriptor simulant
+                            | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint16 i') propertyDescriptor simulant
+                            | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int32 i') propertyDescriptor simulant
+                            | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint32 i') propertyDescriptor simulant
+                            | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int64 i') propertyDescriptor simulant
+                            | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint64 i') propertyDescriptor simulant
+                            | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then setProperty (single f') propertyDescriptor simulant
+                            | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then setProperty (double f') propertyDescriptor simulant
+                            | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (propertyDescriptor.PropertyName, &v') then setProperty v' propertyDescriptor simulant
+                            | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (propertyDescriptor.PropertyName, &v') then setProperty v' propertyDescriptor simulant
+                            | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v') then setProperty v' propertyDescriptor simulant
+                            | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (propertyDescriptor.PropertyName, &v'.X) then setProperty v' propertyDescriptor simulant
+                            | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (propertyDescriptor.PropertyName, &v'.X) then setProperty v' propertyDescriptor simulant
+                            | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (propertyDescriptor.PropertyName, &v'.X) then setProperty v' propertyDescriptor simulant
                             | :? Box2 as b ->
                                 ImGui.Text propertyDescriptor.PropertyName
                                 let mutable min = v2 b.Min.X b.Min.Y
@@ -961,7 +984,7 @@ module Gaia =
                                 if  ImGui.InputFloat2 ("Min", &min) ||
                                     ImGui.InputFloat2 ("Size", &size) then
                                     let b' = box2 min size
-                                    imGuiSetProperty b' propertyDescriptor simulant
+                                    setProperty b' propertyDescriptor simulant
                                 ImGui.Unindent ()
                             | :? Box3 as b ->
                                 ImGui.Text propertyDescriptor.PropertyName
@@ -971,7 +994,7 @@ module Gaia =
                                 if  ImGui.InputFloat3 ("Min", &min) ||
                                     ImGui.InputFloat3 ("Size", &size) then
                                     let b' = box3 min size
-                                    imGuiSetProperty b' propertyDescriptor simulant
+                                    setProperty b' propertyDescriptor simulant
                                 ImGui.Unindent ()
                             | :? Box2i as b ->
                                 ImGui.Text propertyDescriptor.PropertyName
@@ -981,23 +1004,23 @@ module Gaia =
                                 if  ImGui.InputInt2 ("Min", &min.X) ||
                                     ImGui.InputInt2 ("Size", &size.X) then
                                     let b' = box2i min size
-                                    imGuiSetProperty b' propertyDescriptor simulant
+                                    setProperty b' propertyDescriptor simulant
                                 ImGui.Unindent ()
                             | :? Quaternion as q ->
                                 let mutable v = v4 q.X q.Y q.Z q.W
                                 if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v) then
                                     let q' = quat v.X v.Y v.Z v.W
-                                    imGuiSetProperty q' propertyDescriptor simulant
+                                    setProperty q' propertyDescriptor simulant
                             | :? Color as c ->
                                 let mutable v = v4 c.R c.G c.B c.A
                                 if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
                                     let c' = color v.X v.Y v.Z v.W
-                                    imGuiSetProperty c' propertyDescriptor simulant
+                                    setProperty c' propertyDescriptor simulant
                             | _ when isPropertyAssetTag ->
                                 let mutable valueStr' = valueStr
                                 if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
                                     try let value' = converter.ConvertFromString valueStr'
-                                        imGuiSetProperty value' propertyDescriptor simulant
+                                        setProperty value' propertyDescriptor simulant
                                     with
                                     | :? ParseException // TODO: use ParseException once Prime is updated.
                                     | :? ConversionException -> ()
@@ -1008,7 +1031,7 @@ module Gaia =
                                             try let propertyValueEscaped = payload
                                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                imGuiSetProperty propertyValue propertyDescriptor simulant
+                                                setProperty propertyValue propertyDescriptor simulant
                                             with
                                             | :? ParseException // TODO: use ParseException once Prime is updated.
                                             | :? ConversionException -> ()
@@ -1025,52 +1048,33 @@ module Gaia =
                                         let mutable tag = unionCaseInfo.Tag
                                         if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
                                             let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                                            imGuiSetProperty value' propertyDescriptor simulant
+                                            setProperty value' propertyDescriptor simulant
                                 if not combo then
                                     let mutable valueStr' = valueStr
                                     if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
                                         try let value' = converter.ConvertFromString valueStr'
-                                            imGuiSetProperty value' propertyDescriptor simulant
+                                            setProperty value' propertyDescriptor simulant
                                         with
                                         | :? ParseException // TODO: use ParseException once Prime is updated.
                                         | :? ConversionException -> ()
                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
         world <- World.edit AppendProperties simulant world
 
-    let imGuiProcess wtemp =
+    let private imGuiProcess wtemp =
 
-        // TODO: figure out some sort of exception handling strategy for Gaia interaction.
-
+        // transfer to world mutation mode
         world <- wtemp
 
+        // process non-widget specific input
         updateEyeDrag ()
-
         updateEntityDrag ()
+        updateHotkeys ()
 
-        let io = ImGui.GetIO ()
-        if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
-        if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
-        if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
-        if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlPressed () then tryQuickSizeSelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlPressed () then showNewGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.D && ImGui.IsCtrlPressed () then tryDeleteSelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false
-        if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity true
-        if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity false
-        if not (io.WantCaptureKeyboard) then
-            if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
-            if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
-
+        // enable global docking
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
+        // viewport interaction
+        let io = ImGui.GetIO ()
         ImGui.SetNextWindowPos v2Zero
         ImGui.SetNextWindowSize io.DisplaySize
         if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
@@ -1112,8 +1116,10 @@ module Gaia =
             | Some _ | None -> ()
             ImGui.End ()
 
+        // show all windows when out in full-screen mode
         if not fullScreen then
 
+            // main menu window
             if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
                 if ImGui.BeginMenuBar () then
                     if ImGui.BeginMenu "File" then
@@ -1265,7 +1271,8 @@ module Gaia =
                 ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
                 ImGui.End ()
 
-            if ImGui.Begin "Hierarchy" then
+            // entity hierarchy window
+            if ImGui.Begin "Entity Hierarchy" then
                 let groups = World.getGroups selectedScreen world
                 let mutable selectedGroupName = selectedGroup.Name
                 if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
@@ -1298,31 +1305,36 @@ module Gaia =
                     imGuiEntityHierarchy entity
                 ImGui.End ()
 
+            // game properties window
             if ImGui.Begin "Game Properties" then
                 imGuiEditProperties Simulants.Game
                 ImGui.End ()
 
+            // screen properties window
             if ImGui.Begin "Screen Properties" then
                 imGuiEditProperties selectedScreen
                 ImGui.End ()
 
+            // group properties window
             if ImGui.Begin "Group Properties" then
                 imGuiEditProperties selectedGroup
                 ImGui.End ()
 
+            // entity properties window
             if ImGui.Begin "Entity Properties" then
                 match selectedEntityOpt with
                 | Some entity when entity.Exists world -> imGuiEditProperties entity
                 | Some _ | None -> ()
                 ImGui.End ()
 
+            // property editor window
             if ImGui.Begin "Property Editor" then
                 match propertyDescriptorFocusedOpt with
                 | Some (propertyDescriptor, simulant) when
                     World.getExists simulant world &&
                     propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
                     let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                    match imGuiGetProperty propertyDescriptor simulant with
+                    match getProperty propertyDescriptor simulant with
                     | null -> ()
                     | propertyValue ->
                         ImGui.Text propertyDescriptor.PropertyName
@@ -1335,13 +1347,13 @@ module Gaia =
                         let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
                         if isPropertyAssetTag then
                             ImGui.SameLine ()
-                            if ImGui.Button "Pick" then showAssetPicker <- true
+                            if ImGui.Button "Pick" then showAssetPickerDialog <- true
                         let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
                         if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
                             try let propertyValueEscaped = propertyValuePretty
                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                imGuiSetProperty propertyValue propertyDescriptor simulant
+                                setProperty propertyValue propertyDescriptor simulant
                             with
                             | :? ParseException // TODO: use ParseException once Prime is updated.
                             | :? ConversionException -> ()
@@ -1353,7 +1365,7 @@ module Gaia =
                                         try let propertyValueEscaped = payload
                                             let propertyValueUnescaped = String.unescape propertyValueEscaped
                                             let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                            imGuiSetProperty propertyValue propertyDescriptor simulant
+                                            setProperty propertyValue propertyDescriptor simulant
                                         with
                                         | :? ParseException // TODO: use ParseException once Prime is updated.
                                         | :? ConversionException -> ()
@@ -1362,6 +1374,7 @@ module Gaia =
                 | Some _ | None -> ()
                 ImGui.End ()
 
+            // asset viewer window
             if ImGui.Begin "Asset Viewer" then
                 ImGui.Text "Search:"
                 ImGui.SameLine ()
@@ -1383,6 +1396,7 @@ module Gaia =
                         ImGui.TreePop ()
                 ImGui.End ()
 
+            // asset graph window
             if ImGui.Begin "Asset Graph" then
                 if ImGui.Button "Save" then
                     let assetSourceDir = targetDir + "/../../.."
@@ -1402,6 +1416,7 @@ module Gaia =
                 ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                 ImGui.End ()
 
+            // overlayer window
             if ImGui.Begin "Overlayer" then
                 if ImGui.Button "Save" then
                     let overlayerSourceDir = targetDir + "/../../.."
@@ -1422,6 +1437,7 @@ module Gaia =
                 ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                 ImGui.End ()
 
+            // event tracing window
             if ImGui.Begin "Event Tracing" then
                 let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
                 if ImGui.Checkbox ("Trace Events", &traceEvents) then
@@ -1435,6 +1451,7 @@ module Gaia =
                     with _ -> ()
                 ImGui.End ()
 
+            // audio player window
             if ImGui.Begin "Audio Player" then
                 ImGui.Text "Master Sound Volume"
                 let mutable masterSoundVolume = World.getMasterSoundVolume world
@@ -1448,6 +1465,7 @@ module Gaia =
                 ImGui.Text (string masterSongVolume)
                 ImGui.End ()
 
+            // renderer window
             if ImGui.Begin "Renderer" then
                 ImGui.Text "Light-Mapping (local light mapping)"
                 let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
@@ -1475,6 +1493,7 @@ module Gaia =
                 world <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
                 ImGui.End ()
 
+        // in full-screen mode, just show full-screen short cut window
         else
             if ImGui.Begin "Full Screen Enabled" then
                 ImGui.Text "Full Screen (F11)"
@@ -1482,11 +1501,12 @@ module Gaia =
                 ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
                 ImGui.End ()
 
-        if showContextMenu then
+        // entity context menu
+        if showEntityContextMenu then
             ImGui.SetNextWindowPos rightClickPosition
             ImGui.SetNextWindowSize (v2 250.0f 135.0f)
             if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar) then
-                if ImGui.Button "Create" then createEntity true false; showContextMenu <- false
+                if ImGui.Button "Create" then createEntity true false; showEntityContextMenu <- false
                 ImGui.SameLine ()
                 ImGui.SetNextItemWidth -1.0f
                 if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
@@ -1494,22 +1514,23 @@ module Gaia =
                         if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
                             newEntityDispatcherName <- dispatcherName
                             createEntity true false
-                            showContextMenu <- false
+                            showEntityContextMenu <- false
                     ImGui.EndCombo ()
-                if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showContextMenu <- false
+                if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                 if  ImGui.IsMouseClicked ImGuiMouseButton.Right ||
                     ImGui.IsKeyPressed ImGuiKey.Escape then
-                    showContextMenu <- false
+                    showEntityContextMenu <- false
                 ImGui.Separator ()
-                if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showContextMenu <- false
-                if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showContextMenu <- false
-                if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showContextMenu <- false
+                if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
+                if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
+                if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showEntityContextMenu <- false
                 ImGui.End ()
 
-        if showAssetPicker then
+        // asset picker dialog
+        if showAssetPickerDialog then
             let title = "Choose an Asset..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-            if ImGui.BeginPopupModal (title, &showAssetPicker) then
+            if ImGui.BeginPopupModal (title, &showAssetPickerDialog) then
                 ImGui.Text "Search:"
                 ImGui.SameLine ()
                 ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
@@ -1528,14 +1549,15 @@ module Gaia =
                                             let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
                                             let propertyValueStr = "[" + package.Key + " " + assetName + "]"
                                             let propertyValue = converter.ConvertFromString propertyValueStr
-                                            imGuiSetProperty propertyValue propertyDescriptor simulant
+                                            setProperty propertyValue propertyDescriptor simulant
                                         | Some _ | None -> ()
-                                        showAssetPicker <- false
+                                        showAssetPickerDialog <- false
                                     ImGui.TreePop ()
                         ImGui.TreePop ()
                 ImGui.EndPopup ()
-            if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPicker <- false
+            if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
 
+        // open project dialog
         if showOpenProjectDialog then
             let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1563,6 +1585,7 @@ module Gaia =
                     with _ -> Log.info "Could not save editor state and open project."
                 if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
 
+        // new group dialog
         if showNewGroupDialog then
             let title = "Create a group..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1586,6 +1609,7 @@ module Gaia =
                         messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
                 if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
 
+        // open group dialog
         if showOpenGroupDialog then
             let title = "Choose a nugroup file..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1600,6 +1624,7 @@ module Gaia =
                     showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
                 if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
 
+        // save group dialog
         if showSaveGroupDialog then
             let title = "Save a nugroup file..."
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -1612,12 +1637,10 @@ module Gaia =
                     showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
             if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
 
-        if showInspector then
-            ImGui.ShowStackToolWindow ()
-
+        // message box dialog
         match messageBoxOpt with
         | Some messageBox ->
-            let title = "Message!"
+            let title = "Message."
             let mutable showing = true
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
             if ImGui.BeginPopupModal (title, &showing) then
@@ -1627,6 +1650,11 @@ module Gaia =
             if not showing then messageBoxOpt <- None
         | None -> ()
 
+        // imgui inspector window
+        if showInspector then
+            ImGui.ShowStackToolWindow ()
+
+        // transfer out of world mutation mode
         world
 
     let rec private runWithCleanUp savedState targetDir' screen wtemp =
@@ -1674,6 +1702,8 @@ module Gaia =
                 0
         world <- Unchecked.defaultof<_>
         result
+
+    (* Public API *)
 
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
