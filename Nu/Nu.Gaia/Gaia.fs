@@ -71,6 +71,7 @@ module Gaia =
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
+    let mutable private showSelectedEntity = false
 
     (* Configuration States *)
 
@@ -140,6 +141,7 @@ module Gaia =
         if entityOpt <> selectedEntityOpt then
             ImGui.SetWindowFocus null
             selectedEntityOpt <- entityOpt
+            showSelectedEntity <- true
 
     let private snapshot () =
         world <- Nu.World.shelve world
@@ -218,8 +220,7 @@ module Gaia =
         match pickedOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
-            //DUMMY
-            //tryShowSelectedEntityInHierarchyIfVisible form
+            showSelectedEntity <- true
             Some (0.0f, entity)
         | None ->
             let entities3d = getPickableEntities3d ()
@@ -227,8 +228,7 @@ module Gaia =
             match pickedOpt with
             | Some (intersection, entity) ->
                 selectEntityOpt (Some entity)
-                //DUMMY
-                //tryShowSelectedEntityInHierarchyIfVisible form
+                showSelectedEntity <- true
                 Some (intersection, entity)
             | None -> None
     
@@ -495,8 +495,7 @@ module Gaia =
             world <- entity.SetProbeBounds bounds world
         | Some _ | None -> ()
         selectEntityOpt (Some entity)
-        //DUMMY
-        //tryShowSelectedEntityInHierarchy form
+        showSelectedEntity <- true
 
     let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup world
@@ -617,8 +616,7 @@ module Gaia =
         match entityOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
-            //DUMMY
-            //tryShowSelectedEntityInHierarchy form
+            showSelectedEntity <- true
             true
         | None -> false
 
@@ -870,6 +868,9 @@ module Gaia =
             (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.OpenOnDoubleClick
         if ImGui.TreeNodeEx (entity.Name, treeNodeFlags) then
+            if showSelectedEntity then
+                ImGui.SetScrollHereY ()
+                showSelectedEntity <- false
             if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
                 selectEntityOpt (Some entity)
             if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
@@ -910,18 +911,14 @@ module Gaia =
                                 world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                 world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
                                 selectEntityOpt (Some sourceEntity')
-                                //DUMMY
-                                //tryShowSelectedEntityInHierarchy form
+                                showSelectedEntity <- true
                             else
                                 let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
                                 let mount = Relation.makeParent ()
                                 world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                 world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
                                 selectEntityOpt (Some sourceEntity')
-                                //DUMMY
-                                //ImGui.SetItemOpt ()
-                                //DUMMY
-                                //tryShowSelectedEntityInHierarchy form
+                                showSelectedEntity <- true
                         else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."
                     | None -> ()
             for child in children do imGuiEntityHierarchy child
@@ -1286,6 +1283,8 @@ module Gaia =
 
             // entity hierarchy window
             if ImGui.Begin "Entity Hierarchy" then
+                if ImGui.Button "Show Selected" then
+                    showSelectedEntity <- true
                 let groups = World.getGroups selectedScreen world
                 let mutable selectedGroupName = selectedGroup.Name
                 if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
@@ -1305,8 +1304,7 @@ module Gaia =
                                 world <- sourceEntity.SetMountOptWithAdjustment None world
                                 world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                 selectEntityOpt (Some sourceEntity')
-                                //DUMMY
-                                //tryShowSelectedEntityInHierarchy form
+                                showSelectedEntity <- true
                         | None -> ()
                 let entities =
                     World.getEntitiesSovereign selectedGroup world |> // TODO: P1: see if we can optimize entity hierarchy queries!
