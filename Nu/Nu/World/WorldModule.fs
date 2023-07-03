@@ -558,6 +558,7 @@ module WorldModule =
                 subsystems.RendererProcess.Terminate ()
                 subsystems.PhysicsEngine3d.CleanUp ()
                 subsystems.PhysicsEngine2d.CleanUp ()
+                subsystems.ImGui.CleanUp ()
                 subsystems) world
 
     type World with // EventGraph
@@ -818,7 +819,13 @@ module WorldModule =
 
     type World with // Plugin
 
+        /// Whether the current plugin allow code reloading.
+        [<FunctionBinding>]
+        static member getAllowCodeReload world =
+            world.WorldExtension.Plugin.AllowCodeReload
+
         /// Get the user-defined edit modes.
+        [<FunctionBinding>]
         static member getEditModes world =
             world.WorldExtension.Plugin.EditModes
 
@@ -842,6 +849,9 @@ module WorldModule =
 
         static member internal postProcess world =
             world.WorldExtension.Plugin.PostProcess world
+
+        static member internal imGuiProcess world =
+            world.WorldExtension.Plugin.ImGuiProcess world
 
     type World with // Debugging
 

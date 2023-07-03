@@ -4,397 +4,285 @@
 namespace Nu.Gaia
 open System
 open System.Collections.Generic
-open System.ComponentModel
-open System.Drawing
+open System.Diagnostics
 open System.IO
-open System.Linq
 open System.Numerics
 open System.Reflection
-open System.Runtime.InteropServices
-open System.Windows.Forms
 open FSharp.Compiler.Interactive
+open FSharp.NativeInterop
 open FSharp.Reflection
+open ImGuiNET
+open ImGuizmoNET
 open Prime
 open Nu
 open Nu.Gaia
-open Nu.Gaia.Design
+
+///////////////////////////////////
+// TODO:
+// Try to make group loading more sensible.
+// More custom property views.
+// Traditional close w/ Alt+F4 as well as confirmation dialog.
+// View guizmo.
+// Paste in hierarchy.
+// Try to figure out how to snapshot only on first property interaction.
+// File explorer dialog.
+// Double-click in overlay selected and show entity in hierarchy.
+// Multi-selection?
+//
+// Custom properties order of priority:
+//
+//  option & voption with custom checkbox header
+//  Enums
+//  AssetTag wtemp/ picking
+//  RenderStyle
+//  Substance
+//  SymbolicCompression
+//  TmxMap
+//  LightType
+//  MaterialProperties
+//
+//  Layout
+//  CollisionMask
+//  CollisionCategories
+//  CollisionDetection
+//  BodyShape
+//  JointDevice
+//  DateTimeOffset?
+//  Flag Enums
+//
+///////////////////////////////////
 
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    // uses global variables for state because Gaia relies on Nu.Gaia.Globals to interoperate Nu and WinForms
-    let mutable private propertyPickButtonClickHandler = EventHandler (fun _ _ -> ())
-    let mutable private refreshHierarchyViewRequested = false // HACK: make sure hierarchy view isn't updated more than once per frame.
+    (* World States - mutable to accomodatae ImGui's intended authoring style *)
+
+    let mutable private world = Unchecked.defaultof<World> // this will be initialized on start
+    let mutable private worldsPast = []
+    let mutable private worldsFuture = []
+
+    (* Active Editing States *)
+
+    let mutable private manipulationActive = false
+    let mutable private manipulationOperation = OPERATION.TRANSLATE
+    let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
+    let mutable private propertyDescriptorFocusedOpt = None
+    let mutable private newProjectName = "MyGame"
+    let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
-    let mutable private otherSnaps = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-    let mutable private filePaths = Map.empty<Group Address, string>
-    let mutable private targetDir = "."
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
+    let mutable private selectedEntityOpt = Option<Entity>.None
 
-    let private getPickableEntities2d world =
-        let (entities, world) = World.getEntitiesInView2d (HashSet ()) world
+    (* Configuration States *)
+
+    let mutable private fullScreen = false
+    let mutable private editWhileAdvancing = false
+    let mutable private snaps2dSelected = true
+    let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
+    let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private newGroupDispatcherName = nameof GroupDispatcher
+    let mutable private newEntityDispatcherName = null // this will be initialized on start
+    let mutable private newEntityOverlayName = "(Default Overlay)"
+    let mutable private newEntityElevation = 0.0f
+    let mutable private newGroupName = nameof Group
+    let mutable private assetViewerSearchStr = ""
+    let mutable private assetPickerSearchStr = ""
+    let mutable private lightMappingConfig = { LightMappingEnabled = true }
+    let mutable private ssaoConfig =
+        { SsaoEnabled = true
+          SsaoIntensity = Constants.Render.SsaoIntensityDefault
+          SsaoBias = Constants.Render.SsaoBiasDefault
+          SsaoRadius = Constants.Render.SsaoRadiusDefault
+          SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
+
+    (* Project States *)
+
+    let mutable private targetDir = "."
+    let mutable private projectFilePath = ""
+    let mutable private projectEditMode = "Title"
+    let mutable private projectImperativeExecution = false
+    let mutable private assetGraphStr = null // this will be initialized on start
+    let mutable private overlayerStr = null // this will be initialized on start
+    let mutable private groupFilePaths = Map.empty<Group Address, string>
+    let mutable private groupFilePath = ""
+
+    (* Modal Activity States *)
+
+    let mutable private messageBoxOpt = Option<string>.None
+    let mutable private recoverableExceptionOpt = Option<Exception * World>.None
+    let mutable private showEntityContextMenu = false
+    let mutable private showAssetPickerDialog = false
+    let mutable private showNewProjectDialog = false
+    let mutable private showOpenProjectDialog = false
+    let mutable private showNewGroupDialog = false
+    let mutable private showOpenGroupDialog = false
+    let mutable private showSaveGroupDialog = false
+    let mutable private showInspector = false
+
+    (* Prelude Functions *)
+
+    let private canEditWithMouse () =
+        let io = ImGui.GetIO ()
+        not (io.WantCaptureMouse) && (World.getHalted world || editWhileAdvancing)
+
+    let private canEditWithKeyboard () =
+        let io = ImGui.GetIO ()
+        not (io.WantCaptureKeyboard) && (World.getHalted world || editWhileAdvancing)
+
+    let private selectScreen screen =
+        if screen <> selectedScreen then
+            ImGui.SetWindowFocus null
+            selectedScreen <- screen
+
+    let private selectGroup group =
+        if group <> selectedGroup then
+            ImGui.SetWindowFocus null
+            selectedGroup <- group
+
+    let private selectEntityOpt entityOpt =
+
+        // HACK: in order to keep the property of one simulant from copied to another simulant when the selected
+        // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
+        // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
+        // in it.
+        if entityOpt <> selectedEntityOpt then
+            ImGui.SetWindowFocus "Entity Hierarchy"
+
+        // actually set the selection
+        selectedEntityOpt <- entityOpt
+
+    let private snapshot () =
+        world <- Nu.World.shelve world
+        worldsPast <- world :: worldsPast
+        worldsFuture <- []
+
+    let private tryUndo () =
+        if
+            (if not (Nu.World.getImperative world) then
+                match worldsPast with
+                | worldPast :: worldsPast' ->
+                    let worldFuture = Nu.World.shelve world
+                    world <- Nu.World.unshelve worldPast
+                    worldsPast <- worldsPast'
+                    worldsFuture <- worldFuture :: worldsFuture
+                    true
+                | [] -> false
+             else false) then
+            match selectedEntityOpt with
+            | Some entity when not (entity.Exists world) ->
+                selectEntityOpt None
+                true
+            | Some _ | None -> false
+        else false
+
+    let private tryRedo () =
+        if
+            (if not (Nu.World.getImperative world) then
+                match worldsFuture with
+                | worldFuture :: worldsFuture' ->
+                    let worldPast = Nu.World.shelve world
+                    world <- Nu.World.unshelve worldFuture
+                    worldsPast <- worldPast :: worldsPast
+                    worldsFuture <- worldsFuture'
+                    true
+                | [] -> false
+             else false) then
+            match selectedEntityOpt with
+            | Some entity when not (entity.Exists world) ->
+                selectEntityOpt None
+                true
+            | Some _ | None -> false
+        else false
+
+    let private getSnaps () =
+        if snaps2dSelected
+        then snaps2d
+        else snaps3d
+
+    let private getPickableEntities2d () =
+        let (entities, wtemp) = World.getEntitiesInView2d (HashSet ()) world in world <- wtemp
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
-        (entitiesInGroup, world)
+        entitiesInGroup
 
-    let private getPickableEntities3d world =
-        let (entities, world) = World.getEntitiesInView3d (HashSet ()) world
+    let private getPickableEntities3d () =
+        let (entities, wtemp) = World.getEntitiesInView3d (HashSet ()) world in world <- wtemp
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
-        (entitiesInGroup, world)
+        entitiesInGroup
 
-    let private getSnaps (form : GaiaForm) =
-        let positionSnap = snd (Single.TryParse form.positionSnapTextBox.Text)
-        let degreesSnap = snd (Single.TryParse form.degreesSnapTextBox.Text)
-        let scaleSnap = snd (Single.TryParse form.scaleSnapTextBox.Text)
-        (positionSnap, degreesSnap, scaleSnap)
-    
-    let private getCreationElevation (form : GaiaForm) =
-        snd (Single.TryParse form.createElevationTextBox.Text)
-
-    let rec private generateEntityName3 dispatcherName existingEntityNames world =
+    let rec private generateEntityName3 dispatcherName existingEntityNames =
         let mutable name = Gen.nameForEditor dispatcherName
         if Set.contains name existingEntityNames
-        then generateEntityName3 dispatcherName existingEntityNames world
+        then generateEntityName3 dispatcherName existingEntityNames
         else name
 
-    let private generateEntityName dispatcherName selectedGroup world =
+    let private generateEntityName dispatcherName =
         let existingEntityNames =
             World.getEntitiesFlattened selectedGroup world |>
             Seq.map (fun entity -> entity.Name) |>
             Set.ofSeq
-        generateEntityName3 dispatcherName existingEntityNames world
+        generateEntityName3 dispatcherName existingEntityNames
 
-    let private clearSelections (form : GaiaForm) =
-        form.entityPropertyGrid.SelectedObject <- null
-        form.propertyTabControl.SelectedIndex <- 3
-        form.propertyEditor.Enabled <- false
-        form.propertyNameLabel.Text <- String.Empty
-
-    let private refreshSelections (form : GaiaForm) world =
-        clearSelections form
-        form.groupPropertyGrid.SelectedObject <- { DescribedGroup = Seq.head (World.getGroups selectedScreen world); Form = form }
-        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = selectedScreen; Form = form }
-        form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
-
-    let private refreshEditModes (form : GaiaForm) world =
-        let editModes = World.getEditModes world
-        form.editModeComboBox.Items.Clear ()
-        for (modeName, _) in editModes.Pairs do
-            form.editModeComboBox.Items.Add modeName |> ignore
-        if form.editModeComboBox.Items.Count <> 0 then
-            form.editModeComboBox.Enabled <- true
-        else form.editModeComboBox.Enabled <- false
-
-    let private refreshOverlayComboBox (form : GaiaForm) world =
-        form.overlayComboBox.Items.Clear ()
-        form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
-        form.overlayComboBox.Items.Add "(Routed Overlay)" |> ignore
-        form.overlayComboBox.Items.Add "(No Overlay)" |> ignore
-        let overlays = world |> World.getOverlays |> Map.toValueList
-        for overlay in overlays do
-            form.overlayComboBox.Items.Add overlay.OverlayName |> ignore
-        form.overlayComboBox.SelectedIndex <- 0
-
-    let private refreshCreateComboBox (form : GaiaForm) world =
-        form.createEntityComboBox.Items.Clear ()
-        for dispatcherKvp in World.getEntityDispatchers world do
-            form.createEntityComboBox.Items.Add dispatcherKvp.Key |> ignore
-        form.createEntityComboBox.SelectedIndex <- 0
-
-    let private collectHierarchyTreeNodes (form : GaiaForm) (_ : World) =
-        let rec collect (node : TreeNode) =
-            seq {
-                yield node
-                yield! node.Nodes.Cast<_> ()
-                for child in node.Nodes do
-                    yield! collect child }
-        let result =
-            seq {
-                for node in form.hierarchyTreeView.Nodes do
-                    yield node
-                    yield!
-                        if node.Nodes.Count <> 0
-                        then collect node.Nodes.[0].Parent
-                        else Seq.empty }
-        Array.ofSeq result
-
-    let private tryGetHierarchyTreeNode name (form : GaiaForm) (world : World) =
-        let nodes = collectHierarchyTreeNodes form world
-        Array.tryFind (fun (node : TreeNode) -> node.Name = name) nodes
-
-    let private containsHierarchyTreeNode name (form : GaiaForm) (world : World) =
-        Option.isSome (tryGetHierarchyTreeNode name form world)
-
-    let private refreshHierarchyTreeView (_ : GaiaForm) (_ : World) =
-        refreshHierarchyViewRequested <- true
-
-    let private refreshHierarchyTreeViewImmediate (form : GaiaForm) world =
-        // TODO: this code can cause severe performance issues. To unfuck performance, we will probably have to find a
-        // way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
-        // imperatively.
-        Globals.World <- world // must be set for property grid
-        let treeNodesState = form.hierarchyTreeView.GetExpandedNodesState ()
-        form.hierarchyTreeView.Nodes.Clear ()
-        let entities =
-            World.getEntitiesFlattened selectedGroup world |>
-            Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
-            Array.ofSeq |>
-            Array.sortBy fst |>
-            Array.map snd
-        for entity in entities do
-            let mutable namesUsed = [||]
-            let mutable parentNodeOpt = Option<TreeNode>.None
-            for name in entity.Surnames do
-                namesUsed <- Array.add name namesUsed
-                let childNodeKey = namesUsed |> rtoa |> string
-                match parentNodeOpt with
-                | None ->
-                    if not (form.hierarchyTreeView.Nodes.ContainsKey childNodeKey) then
-                        let childNode = TreeNode name
-                        childNode.Name <- childNodeKey
-                        form.hierarchyTreeView.Nodes.Add childNode |> ignore
-                        parentNodeOpt <- Some childNode
-                    else parentNodeOpt <- Some form.hierarchyTreeView.Nodes.[childNodeKey]
-                | Some parentNode ->
-                    if not (parentNode.Nodes.ContainsKey childNodeKey) then
-                        let childNode = TreeNode name
-                        childNode.Name <- childNodeKey
-                        parentNode.Nodes.Add childNode |> ignore
-                        parentNodeOpt <- Some childNode
-                    else parentNodeOpt <- Some parentNode.Nodes.[childNodeKey]
-        form.hierarchyTreeView.RestoreExpandedNodesState treeNodesState
-        refreshHierarchyViewRequested <- false
-        world
-
-    let private refreshGroupTabs (form : GaiaForm) world =
-
-        // add groups imperatively to preserve existing group tabs
-        let groups = World.getGroups selectedScreen world
-        let groupTabPages = form.groupTabControl.TabPages
-        for group in groups do
-            let groupName = group.Name
-            if not (groupTabPages.ContainsKey groupName) then
-                groupTabPages.Add (groupName, groupName)
-    
-        // remove groups imperatively to preserve existing group tabs 
-        for groupTabPage in groupTabPages do
-            if Seq.notExists (fun (group : Group) -> group.Name = groupTabPage.Name) groups then
-                groupTabPages.RemoveByKey groupTabPage.Name
-
-    // TODO: factor out the duplicated node finding code.
-    let private tryShowSelectedEntityInHierarchy (form : GaiaForm) =
-        let pathOpt =
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> None
-            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.Surnames |> String.join Constants.Address.SeparatorStr |> Some
-            | _ -> None
-        match pathOpt with
-        | Some path ->
-            let nodeOpt = form.hierarchyTreeView.TryGetNodeFromPath path
-            if notNull nodeOpt then
-                form.hierarchyTreeView.SelectedNode <- nodeOpt
-        | None -> ()
-
-    let private tryShowSelectedEntityInHierarchyIfVisible (form : GaiaForm) =
-        let pathOpt =
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> None
-            | :? EntityTypeDescriptorSource as entityTds -> entityTds.DescribedEntity.Surnames |> String.join Constants.Address.SeparatorStr |> Some
-            | _ -> None
-        match pathOpt with
-        | Some path ->
-            let nodeOpt = form.hierarchyTreeView.TryGetNodeFromPath path
-            if notNull nodeOpt && nodeOpt.IsVisible then
-                form.hierarchyTreeView.SelectedNode <- nodeOpt
-            else form.hierarchyTreeView.SelectedNode <- null
-        | None -> ()
-
-    let private tryShowSelectedEntityInDisplay (form : GaiaForm) world =
-        match form.entityPropertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            let entity = entityTds.DescribedEntity
-            let world =
-                if not (entity.GetAbsolute world) then
-                    if entity.GetIs2d world
-                    then World.setEyeCenter2d (entity.GetCenter world).V2 world
-                    else
-                        let eyeRotation = World.getEyeRotation3d world
-                        let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
-                        World.setEyeCenter3d (entity.GetPosition world + eyeCenterOffset) world
-                else world
-            world
-        | _ -> world
-
-    let private selectEntity entity (form : GaiaForm) world =
-
-        // select entity in property grid
-        Globals.World <- world // must be set for property grid
-        let entityTds = { DescribedEntity = entity; Form = form }
-        let previousGridItem = form.entityPropertyGrid.SelectedGridItem
-        form.entityPropertyGrid.SelectedObject <- entityTds
-
-        // show previous grid item or model if available
-        let gridItems = dictPlus StringComparer.Ordinal []
-        let gridEntry = form.entityPropertyGrid.SelectedGridItem.Parent
-        let gridEntry = if notNull gridEntry.Parent then gridEntry.Parent else gridEntry
-        for gridItem in gridEntry.GridItems do
-            for gridItem in gridItem.GridItems do
-                gridItems.Add (gridItem.Label, gridItem)
-        if notNull previousGridItem then
-            match gridItems.TryGetValue previousGridItem.Label with
-            | (true, gridItem) -> form.entityPropertyGrid.SelectedGridItem <- gridItem
-            | (false, _) -> if entity.GetModelGeneric<obj> world <> box () then form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-        elif entity.GetModelGeneric<obj> world <> box () then
-            form.entityPropertyGrid.SelectedGridItem <- gridItems.[Constants.Engine.ModelPropertyName]
-
-        // show entity property tab
-        form.propertyTabControl.SelectTab 3
-
-    let private deselectEntity (form : GaiaForm) world =
-        Globals.World <- world // must be set for property grid
-        form.entityPropertyGrid.SelectedObject <- null
-        form.hierarchyTreeView.SelectedNode <- null
-
-    let private refreshEntityPropertyGrid (form : GaiaForm) world =
-        match form.entityPropertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            Globals.World <- world // must be set for property grid
-            if entityTds.DescribedEntity.Exists world
-            then form.entityPropertyGrid.Refresh ()
-            else deselectEntity form world
-        | _ -> ()
-
-    let private selectGroup group (form : GaiaForm) world =
-        let groupTds = { DescribedGroup = group; Form = form }
-        Globals.World <- world // must be set for property grid
-        form.groupPropertyGrid.SelectedObject <- groupTds
-
-    let private deselectGroup (form : GaiaForm) world =
-        Globals.World <- world // must be set for property grid
-        form.groupPropertyGrid.SelectedObject <- null
-
-    let private refreshGroupPropertyGrid (form : GaiaForm) world =
-        match form.groupPropertyGrid.SelectedObject with
-        | :? GroupTypeDescriptorSource as groupTds ->
-            Globals.World <- world // must be set for property grid
-            if groupTds.DescribedGroup.Exists world
-            then form.groupPropertyGrid.Refresh ()
-            else deselectGroup form world
-        | _ -> ()
-
-    let private refreshScreenPropertyGrid (form : GaiaForm) world =
-        match form.screenPropertyGrid.SelectedObject with
-        | :? ScreenTypeDescriptorSource as screenTds ->
-            Globals.World <- world // must be set for property grid
-            if screenTds.DescribedScreen.Exists world then
-                form.screenPropertyGrid.Refresh ()
-        | _ -> ()
-
-    let private refreshGamePropertyGrid (form : GaiaForm) world =
-        match form.gamePropertyGrid.SelectedObject with
-        | :? GameTypeDescriptorSource ->
-            Globals.World <- world // must be set for property grid
-            form.screenPropertyGrid.Refresh ()
-        | _ -> ()
-
-    let private refreshFormOnUndoRedo (form : GaiaForm) world =
-        refreshEntityPropertyGrid form world
-        refreshGroupPropertyGrid form world
-        refreshScreenPropertyGrid form world
-        refreshGamePropertyGrid form world
-        refreshGroupTabs form world
-        refreshHierarchyTreeView form world
-        form.runButton.Checked <- World.getAdvancing world
-
-    let private canEditWithMouse (form : GaiaForm) world =
-        World.getAdvancing world &&
-        not form.liveEditCheckBox.Checked
-
-    let private tryMousePick mousePosition (form : GaiaForm) world =
-        let (entities2d, world) = getPickableEntities2d world
+    let private tryMousePick mousePosition =
+        let entities2d = getPickableEntities2d ()
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
         match pickedOpt with
         | Some entity ->
-            selectEntity entity form world
-            tryShowSelectedEntityInHierarchyIfVisible form
-            (Some (0.0f, entity), world)
+            selectEntityOpt (Some entity)
+            Some (0.0f, entity)
         | None ->
-            let (entities3d, world) = getPickableEntities3d world
+            let entities3d = getPickableEntities3d ()
             let pickedOpt = World.tryPickEntity3d mousePosition entities3d world
             match pickedOpt with
             | Some (intersection, entity) ->
-                selectEntity entity form world
-                tryShowSelectedEntityInHierarchyIfVisible form
-                (Some (intersection, entity), world)
-            | None -> (None, world)
+                selectEntityOpt (Some entity)
+                Some (intersection, entity)
+            | None -> None
 
-    let private handleNuEntityLifeCycle (form : GaiaForm) (evt : Event<LifeCycleData, Game>) world =
-        Globals.World <- world // handle re-entry
-        match evt.Data with
-        | RegisterData _ ->
-            refreshHierarchyTreeView form world
-            (Cascade, world)
-        | UnregisteringData simulant ->
-            let nodeKey = scstring (rtoa (simulant :?> Entity).Surnames)
-            for node in collectHierarchyTreeNodes form world do
-                if node.Name = nodeKey then
-                    node.Remove ()
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> (Cascade, world)
-            | :? EntityTypeDescriptorSource as entityTds ->
-                if atoa evt.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
-                    dragEntityState <- DragEntityInactive
-                    deselectEntity form world
-                    (Cascade, world)
-                else (Cascade, world)
-            | _ -> failwithumf ()
-        | MountOptChangeData _ ->
-            refreshHierarchyTreeView form world
-            (Cascade, world)
+    (* Nu Event Handlers *)
 
-    let private handleNuGroupLifeCycle (form : GaiaForm) (_ : Event<LifeCycleData, Game>) world =
-        Globals.World <- world // handle re-entry
-        refreshGroupTabs form world
-        refreshHierarchyTreeView form world
-        (Cascade, world)
-
-    let private handleNuSelectedScreenOptChange (form : GaiaForm) (evt : Event<ChangeData, Game>) world =
-        Globals.World <- world // handle re-entry
+    let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) wtemp =
+        world <- wtemp
         match evt.Data.Value :?> Screen option with
         | Some screen ->
             let groups = World.getGroups screen world
-            let (group, world) =
+            let group =
                 match Seq.tryHead groups with
-                | None -> World.createGroup (Some "Group") screen world
-                | Some group -> (group, world)
-            selectedGroup <- group
-            selectedScreen <- screen
-            refreshGroupTabs form world
-            refreshHierarchyTreeView form world
-            refreshSelections form world
+                | Some group -> group
+                | None ->
+                    let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
+                    group
+            selectEntityOpt None
+            selectGroup group
+            selectScreen screen
             (Cascade, world)
         | None ->
             // just keep current group selection and screen if no screen selected
             (Cascade, world)
 
-    let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let handled = if World.getAdvancing world then Cascade else Resolve
-        let mousePosition = World.getMousePosition world
-        let (_, world) = tryMousePick mousePosition form world
-        rightClickPosition <- mousePosition
-        (handled, world)
+    let private handleNuEntityContext (_ : Event<MouseButtonData, Game>) wtemp =
+        world <- wtemp
+        if canEditWithMouse () then
+            let handling = if World.getAdvancing world then Cascade else Resolve
+            let mousePosition = World.getMousePosition world
+            let _ = tryMousePick mousePosition
+            rightClickPosition <- mousePosition
+            showEntityContextMenu <- true
+            (handling, world)
+        else (Resolve, world)
 
-    let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        if not (canEditWithMouse form world) then
+    let private handleNuEntityDragBegin (_ : Event<MouseButtonData, Game>) wtemp =
+        world <- wtemp
+        if canEditWithMouse () then
             let handled = if World.getAdvancing world then Cascade else Resolve
             let mousePosition = World.getMousePosition world
-            match tryMousePick mousePosition form world with
-            | (Some (_, entity), world) ->
-                let world = Globals.pushPastWorld world
-                if World.isKeyboardShiftDown world then
-                    if entity.GetIs2d world then
+            match tryMousePick mousePosition with
+            | Some (_, entity) ->
+                if entity.GetIs2d world then
+                    snapshot ()
+                    if World.isKeyboardShiftDown world then
                         let viewport = World.getViewport world
                         let eyeCenter = World.getEyeCenter2d world
                         let eyeSize = World.getEyeSize2d world
@@ -407,65 +295,46 @@ module Gaia =
                         let eyeCenter = World.getEyeCenter2d world
                         let eyeSize = World.getEyeSize2d world
                         let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
-                        let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
-                        let (entityDegree, entityAxis) =
-                            match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                            | (true, false, false) -> (entityDegrees.X, v3Right)
-                            | (false, true, false) -> (entityDegrees.Y, v3Up)
-                            | (false, false, true) -> (entityDegrees.Z, v3Back)
-                            | (_, _, _) -> (entityDegrees.Y, v3Up)
-                        dragEntityState <- DragEntityRotation3d (DateTimeOffset.Now, mousePositionWorld, entityDegree + mousePositionWorld.Y, entityAxis, entity)
-                        (handled, world)
-                else
-                    if entity.GetIs2d world then
-                        let viewport = World.getViewport world
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
                         let entityPosition = entity.GetPosition world
                         dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                         (handled, world)
-                    else
-                        let viewport = World.getViewport world
-                        let eyeCenter = World.getEyeCenter3d world
-                        let eyeRotation = World.getEyeRotation3d world
-                        let mouseRayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
-                        let entityPosition = entity.GetPosition world
-                        let entityPlane = plane3 entityPosition (Vector3.Transform (v3Forward, World.getEyeRotation3d world))
-                        let intersectionOpt = mouseRayWorld.Intersection entityPlane
-                        if intersectionOpt.HasValue then
-                            let entityDragOffset = intersectionOpt.Value - entityPosition
-                            dragEntityState <- DragEntityPosition3d (DateTimeOffset.Now, entityDragOffset, entityPlane, entity)
-                        (handled, world)
-            | (None, world) -> (handled, world)
+                else (handled, world)
+            | None -> (handled, world)
         else (Cascade, world)
 
-    let private handleNuEntityDragEnd (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        if canEditWithMouse form world then (Cascade, world)
-        else
+    let private handleNuEntityDragEnd (_ : Event<MouseButtonData, Game>) wtemp =
+        world <- wtemp
+        if canEditWithMouse () then
             let handled = if World.getAdvancing world then Cascade else Resolve
             match dragEntityState with
-            | DragEntityPosition2d _ | DragEntityRotation2d _ | DragEntityPosition3d _ | DragEntityRotation3d _ ->
+            | DragEntityPosition2d _ | DragEntityRotation2d _ ->
                 dragEntityState <- DragEntityInactive
-                form.entityPropertyGrid.Refresh ()
                 (handled, world)
             | DragEntityInactive -> (Resolve, world)
+        else (Cascade, world)
 
-    let private handleNuEyeDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let mousePositionScreen = World.getMousePosition2dScreen world
-        let dragState = DragEyeCenter2d (World.getEyeCenter2d world + mousePositionScreen, mousePositionScreen)
-        dragEyeState <- dragState
-        (Resolve, world)
-
-    let private handleNuEyeDragEnd (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        match dragEyeState with
-        | DragEyeCenter2d _ ->
-            dragEyeState <- DragEyeInactive
+    let private handleNuEyeDragBegin (_ : Event<MouseButtonData, Game>) wtemp =
+        world <- wtemp
+        if canEditWithMouse () then
+            let mousePositionScreen = World.getMousePosition2dScreen world
+            let dragState = DragEyeCenter2d (World.getEyeCenter2d world + mousePositionScreen, mousePositionScreen)
+            dragEyeState <- dragState
             (Resolve, world)
-        | DragEyeInactive -> (Resolve, world)
+        else (Resolve, world)
 
-    let private handleNuUpdate (form : GaiaForm) (_ : Event<unit, Game>) world =
-        if not form.runButton.Checked || form.liveEditCheckBox.Checked then
+    let private handleNuEyeDragEnd (_ : Event<MouseButtonData, Game>) wtemp =
+        world <- wtemp
+        if canEditWithMouse () then
+            match dragEyeState with
+            | DragEyeCenter2d _ ->
+                dragEyeState <- DragEyeInactive
+                (Resolve, world)
+            | DragEyeInactive -> (Resolve, world)
+        else (Resolve, world)
+
+    let private handleNuUpdate (_ : Event<unit, Game>) wtemp =
+        world <- wtemp
+        if canEditWithKeyboard () then
             let position = World.getEyeCenter3d world
             let rotation = World.getEyeRotation3d world
             let moveSpeed =
@@ -475,59 +344,40 @@ module Gaia =
             let turnSpeed =
                 if World.isKeyboardShiftDown world then 0.025f
                 else 0.05f
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.W world
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.S world
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.A world
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.D world
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.Q world
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.E world
-                then World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.Up world
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.Down world
-                then World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.Left world
-                then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
-                else world
-            let world =
-                if World.isKeyboardKeyDown KeyboardKey.Right world
-                then World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
-                else world
+            if World.isKeyboardKeyDown KeyboardKey.W world then
+                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+            if World.isKeyboardKeyDown KeyboardKey.S world then
+                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+            if World.isKeyboardKeyDown KeyboardKey.A world then
+                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+            if World.isKeyboardKeyDown KeyboardKey.D world then
+                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+            if World.isKeyboardKeyDown KeyboardKey.Q world then
+                world <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) world
+            if World.isKeyboardKeyDown KeyboardKey.E world then
+                world <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) world
+            if World.isKeyboardKeyDown KeyboardKey.Up world then
+                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+            if World.isKeyboardKeyDown KeyboardKey.Down world then
+                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+            if World.isKeyboardKeyDown KeyboardKey.Left world then
+                world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
+            if World.isKeyboardKeyDown KeyboardKey.Right world then
+                world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
             (Cascade, world)
         else (Cascade, world)
 
-    let private handleNuRender (form : GaiaForm) (_ : Event<unit, Game>) world =
+    let private handleNuRender (_ : Event<unit, Game>) wtemp =
 
         // render lights of the selected group in play
-        let (entities, world) = World.getLightsInPlay3d (HashSet ()) world
+        world <- wtemp
+        let (entities, wtemp) = World.getLightsInPlay3d (HashSet ()) world in world <- wtemp
         let lightsInGroup =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetLight world) |>
             Seq.toArray
-        let world =
-            Array.fold (fun world (light : Entity) ->
+        for light in lightsInGroup do
+            world <-
                 World.enqueueRenderMessage3d
                     (RenderStaticModel
                         { Absolute = false
@@ -537,21 +387,18 @@ module Gaia =
                           MaterialProperties = MaterialProperties.defaultProperties
                           RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
                           StaticModel = Assets.Default.LightbulbModel })
-                    world)
-                world lightsInGroup
+                    world
 
         // render selection highlights
-        let world =
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = entityTds.DescribedEntity
-                let absolute = entity.GetAbsolute world
-                let bounds = entity.GetHighlightBounds world
-                if entity.GetIs2d world then
-                    let elevation = Single.MaxValue
-                    let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
-                    let image = Assets.Default.HighlightImage
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            let absolute = entity.GetAbsolute world
+            let bounds = entity.GetHighlightBounds world
+            if entity.GetIs2d world then
+                let elevation = Single.MaxValue
+                let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
+                let image = Assets.Default.HighlightImage
+                world <-
                     World.enqueueRenderMessage2d
                         (LayeredOperation2d
                             { Elevation = elevation
@@ -567,9 +414,10 @@ module Gaia =
                                       Emission = Color.Zero
                                       Flip = FlipNone }})
                         world
-                else
-                    let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
-                    boundsMatrix.Translation <- bounds.Center
+            elif ImGui.IsCtrlPressed () then
+                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
+                boundsMatrix.Translation <- bounds.Center
+                world <-
                     World.enqueueRenderMessage3d
                         (RenderStaticModel
                             { Absolute = absolute
@@ -580,798 +428,230 @@ module Gaia =
                               RenderType = ForwardRenderType (0.0f, Single.MinValue)
                               StaticModel = Assets.Default.HighlightModel })
                         world
-            | _ -> world
+        | Some _ | None -> ()
 
         // fin
         (Cascade, world)
-    let private trySaveSelectedGroup filePath world =
-        let oldWorld = world
+
+    (* Editor Commands *)
+
+    let private getProperty propertyDescriptor simulant =
+        SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
+
+    let private setProperty (value : obj) propertyDescriptor simulant =
+        match value with
+        | :? Color -> () // NOTE: color editor is draggable, which means it causes an unbounded number of snapshots currently.
+        | _ -> snapshot ()
+        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
+        | Right wtemp -> world <- wtemp
+        | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
+
+    let private createEntity atMouse inHierarchy =
+        snapshot ()
+        let dispatcherName = newEntityDispatcherName
+        let overlayNameDescriptor =
+            match newEntityOverlayName with
+            | "(Default Overlay)" -> DefaultOverlay
+            | "(Routed Overlay)" -> RoutedOverlay
+            | "(No Overlay)" -> NoOverlay
+            | overlayName -> ExplicitOverlay overlayName
+        let name = generateEntityName dispatcherName
+        let surnames =
+            match selectedEntityOpt with
+            | Some entity when entity.Exists world && inHierarchy -> Array.add name entity.Surnames
+            | Some _ | None -> [|name|]
+        let (entity, wtemp) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup world in world <- wtemp
+        let (positionSnap, degreesSnap, scaleSnap) = getSnaps ()
+        let viewport = World.getViewport world
+        let mousePosition = World.getMousePosition world
+        let mutable entityTransform = entity.GetTransform world
+        if entity.GetIs2d world then
+            let eyeCenter = World.getEyeCenter2d world
+            let eyeSize = World.getEyeSize2d world
+            let entityPosition =
+                if atMouse
+                then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world, eyeCenter, eyeSize)
+            entityTransform.Position <- entityPosition.V3
+            entityTransform.Size <- entity.GetQuickSize world
+            entityTransform.Elevation <- newEntityElevation
+            if snaps2dSelected
+            then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
+            else world <- entity.SetTransform entityTransform world
+        else
+            let eyeCenter = World.getEyeCenter3d world
+            let eyeRotation = World.getEyeRotation3d world
+            let entityPosition =
+                if atMouse then
+                    let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
+                    let forward = Vector3.Transform (v3Forward, eyeRotation)
+                    let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
+                    (ray.Intersection plane).Value
+                else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
+            entityTransform.Position <- entityPosition
+            entityTransform.Size <- entity.GetQuickSize world
+            if not snaps2dSelected
+            then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
+            else world <- entity.SetTransform entityTransform world
+        if inHierarchy then
+            world <- entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+        match entity.TryGetProperty (nameof entity.ProbeBounds) world with
+        | Some property when property.PropertyType = typeof<Box3> ->
+            let bounds =
+                box3
+                    (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition world)
+                    (v3Dup Constants.Render.LightProbeSizeDefault)
+            world <- entity.SetProbeBounds bounds world
+        | Some _ | None -> ()
+        selectEntityOpt (Some entity)
+        showSelectedEntity <- true
+
+    let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup world
+            groupFilePaths <- Map.add selectedGroup.GroupAddress groupFilePath groupFilePaths
+            true
         with exn ->
-            World.choose oldWorld |> ignore
-            MessageBox.Show ("Could not save file due to: " + scstring exn, "File Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
+            false
 
-    let private tryLoadSelectedGroup (form : GaiaForm) filePath world =
+    let private tryLoadSelectedGroup filePath =
 
-        // old world in case we need to rewind
-        let oldWorld = world
+        // ensure group isn't protected
+        if not (selectedGroup.GetProtected world) then
 
-        try // try to destroy current group
-            if not (selectedGroup.GetProtected world) then
-                let world = World.destroyGroupImmediate selectedGroup world
-
-                // load and add group, updating tab and selected group in the process
-                let groupDescriptorStr = File.ReadAllText filePath
-                let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                let groupName =
-                    match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
-                    | Some (Atom (name, _)) -> name
-                    | _ -> failwithumf ()
-                let group = selectedScreen / groupName
-                if not (group.Exists world) then
-                    let (group, world) = World.readGroup groupDescriptor None selectedScreen world
-                    form.groupTabControl.SelectedTab.Text <- group.Name
-                    form.groupTabControl.SelectedTab.Name <- group.Name
-                    selectedGroup <- group
-
-                    // refresh hierarchy view
-                    refreshHierarchyTreeView form world
-                    (Some group, world)
-            
-                // handle load failure
-                else
-                    let world = World.choose oldWorld
-                    MessageBox.Show ("Could not load group file with same name as an existing group", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    (None, world)
-
-            else
-                MessageBox.Show ("Cannot load into a protected simulant (such as a group created by the Elmish API).", "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                (None, world)
-
-        // handle load failure
-        with exn ->
-            let world = World.choose oldWorld
-            MessageBox.Show ("Could not load group file due to: " + scstring exn, "File Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (None, world)
-
-    let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
-        form.Close ()
-
-    let private handleFormCreateElevationPlusClick (form : GaiaForm) (_ : EventArgs) =
-        let elevation = snd (Single.TryParse form.createElevationTextBox.Text)
-        form.createElevationTextBox.Text <- scstring (elevation + 1.0f)
-
-    let private handleFormCreateElevationMinusClick (form : GaiaForm) (_ : EventArgs) =
-        let elevation = snd (Single.TryParse form.createElevationTextBox.Text)
-        form.createElevationTextBox.Text <- scstring (elevation - 1.0f)
-
-    let private handlePropertyPickAsset (form : GaiaForm) world =
-        use assetPicker = new AssetPicker ()
-        let assets = Metadata.getDiscoveredAssets ()
-        for package in assets do
-            let node = assetPicker.assetTreeView.Nodes.Add package.Key
-            for assetName in package.Value do
-                node.Nodes.Add assetName |> ignore
-        assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-        assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-        assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
-        assetPicker.searchTextBox.TextChanged.Add(fun _ ->
-            assetPicker.assetTreeView.Nodes.Clear ()
-            for package in assets do
-                let node = assetPicker.assetTreeView.Nodes.Add package.Key
-                for assetName in package.Value do
-                    if assetName.Contains assetPicker.searchTextBox.Text then
-                        node.Nodes.Add assetName |> ignore
-            assetPicker.assetTreeView.ExpandAll ())
-        match assetPicker.ShowDialog () with
-        | DialogResult.OK ->
-            match assetPicker.assetTreeView.SelectedNode with
-            | null -> world
-            | selectedNode ->
-                match selectedNode.Parent with
-                | null -> world
-                | selectedNodeParent ->
-                    let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
-                    form.propertyValueTextBox.Text <- scstring assetTag
-                    form.applyPropertyButton.PerformClick ()
-                    world
-        | _ -> world
-
-    let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
-        use entityPicker = new EntityPicker ()
-        let surnamesStrs =
-            World.getEntitiesFlattened selectedGroup world |>
-            Seq.filter (fun entity -> not (Gen.isNameGenerated entity.Name)) |>
-            Seq.map (fun entity -> entity.Surnames |> rtoa |> string) |>
-            flip Seq.append [Constants.Editor.NonePick] |>
-            Seq.toArray
-        entityPicker.entityListBox.Items.AddRange (Array.map box surnamesStrs)
-        entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-        entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-        entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
-        entityPicker.searchTextBox.TextChanged.Add(fun _ ->
-            entityPicker.entityListBox.Items.Clear ()
-            for namesStr in surnamesStrs do
-                if namesStr.Contains entityPicker.searchTextBox.Text || namesStr = Constants.Editor.NonePick then
-                    entityPicker.entityListBox.Items.Add namesStr |> ignore)
-        match entityPicker.ShowDialog () with
-        | DialogResult.OK ->
-            match entityPicker.entityListBox.SelectedItem with
-            | :? string as parentSurnamesStr ->
-                match parentSurnamesStr with
-                | Constants.Editor.NonePick ->
-                    entityTds.DescribedEntity.SetMountOptWithAdjustment None world
-                | _ ->
-                    let entity = entityTds.DescribedEntity
-                    let parent = Entity (string entity.Group.GroupAddress + Constants.Address.SeparatorStr + parentSurnamesStr)
-                    let parentRelation = Relation.relate entity.EntityAddress parent.EntityAddress
-                    if parentRelation <> Relation.makeCurrent () then
-                        form.propertyValueTextBox.Text <- scstring parentRelation
-                        if propertyDescriptor.Name = "MountOpt"
-                        then entity.SetMountOptWithAdjustment (Some parentRelation) world
-                        else form.applyPropertyButton.PerformClick (); world
-                    else form.applyPropertyButton.PerformClick (); world
-            | _ -> world
-        | _ -> world
-
-    let private handlePropertyPickButton (propertyDescriptor : System.ComponentModel.PropertyDescriptor) entityTds form world =
-        if propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag> then handlePropertyPickAsset form world
-        elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
-        else world
-
-    let private refreshPropertyEditor4 isEntity (propertyGrid : PropertyGrid) (form : GaiaForm) world =
-        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
-        | (null, _) | (_, null) ->
-            form.propertyEditor.Enabled <- false
-            form.propertyNameLabel.Text <- String.Empty
-            form.propertyDescriptionTextBox.Text <- String.Empty
-            form.propertyValueTextBox.Text <- String.Empty
-        | (selectedObject, selectedGridItem) ->
-            match selectedGridItem.GridItemType with
-            | GridItemType.Property ->
-                let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                let typeConverter = SymbolicConverter (false, None, ty)
-                form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
-                form.propertyNameLabel.Text <- selectedGridItem.Label
-                form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
-                    let (_, _, prettyPrinter) =
-                        match (isEntity, selectedGridItem.Label) with
-                        | (true, Constants.Engine.OverlayNameOptPropertyName) ->
-                            let overlays = World.getOverlays world
-                            let overlayNames = overlays |> Map.toValueList |> List.map (fun overlay -> overlay.OverlayName)
-                            (String.concat " " overlayNames, "", PrettyPrinter.defaultPrinter)
-                        | (true, Constants.Engine.FacetNamesPropertyName) ->
-                            let facetNames = world |> World.getFacets |> Map.toKeyList
-                            (String.concat " " facetNames, "", PrettyPrinter.defaultPrinter)
-                        | (_, _) ->
-                            let syntax = SyntaxAttribute.defaultValue ty
-                            let keywords0 =
-                                if ty = typeof<Scripting.Expr>
-                                then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
-                                else syntax.Keywords0
-                            (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
-                    let selectionStart = form.propertyValueTextBox.SelectionStart
-                    let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
-                    let strEscaped = String.escape strUnescaped
-                    let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                    form.propertyValueTextBox.Text <- strPretty.Replace ("\n", "\r\n")
-                    form.propertyValueTextBox.SelectionStart <- selectionStart
-                    form.pickPropertyButton.Visible <-
-                        selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option> ||
-                        (selectedGridItem.PropertyDescriptor.PropertyType.IsGenericType &&
-                         selectedGridItem.PropertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>)
-                    form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-                    propertyPickButtonClickHandler <- EventHandler (fun _ _ ->
-                        if isEntity then
-                            let selectedEntityTds = selectedObject :?> EntityTypeDescriptorSource
-                            let handler = handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form
-                            Globals.nextPreUpdate handler)
-                    form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
-            | _ ->
-                form.propertyEditor.Enabled <- false
-                form.propertyNameLabel.Text <- String.Empty
-                form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBox.Text <- String.Empty
-                form.pickPropertyButton.Visible <- false
-                form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-
-    let private applyPropertyEditor2 (propertyGrid : PropertyGrid) (form : GaiaForm) =
-        match (propertyGrid.SelectedObject, propertyGrid.SelectedGridItem) with
-        | (null, _) -> ()
-        | (_, null) -> failwithumf ()
-        | (selectedObject, selectedGridItem) ->
-            match selectedGridItem.GridItemType with
-            | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
-                let propertyDescriptor = selectedGridItem.PropertyDescriptor
-                let typeConverter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                try let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
-                    let strUnescaped = String.unescape strEscaped
-                    let propertyValue = typeConverter.ConvertFromString strUnescaped
-                    propertyDescriptor.SetValue (selectedObject, propertyValue)
-                with
-                | :? ConversionException as exn ->
-                    match exn.SymbolOpt with
-                    | Some symbol ->
-                        match Symbol.getOriginOpt symbol with
-                        | ValueSome origin ->
-                            form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
-                            form.propertyValueTextBox.Focus () |> ignore<bool>
-                        | ValueNone -> ()
-                    | None -> ()
-                    Log.info ("Invalid apply property operation due to: " + scstring exn)
-                | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
-            | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
-
-    let private refreshPropertyEditor (form : GaiaForm) =
-        let world = Globals.World // handle re-entry
-        match form.propertyTabControl.SelectedIndex with
-        | 0 -> refreshPropertyEditor4 false form.gamePropertyGrid form world
-        | 1 -> refreshPropertyEditor4 false form.screenPropertyGrid form world
-        | 2 -> refreshPropertyEditor4 false form.groupPropertyGrid form world
-        | 3 -> refreshPropertyEditor4 true form.entityPropertyGrid form world
-        | _ -> failwithumf ()
-
-    let private applyPropertyEditor (form : GaiaForm) =
-        match form.propertyTabControl.SelectedIndex with
-        | 0 -> applyPropertyEditor2 form.gamePropertyGrid form
-        | 1 -> applyPropertyEditor2 form.screenPropertyGrid form
-        | 2 -> applyPropertyEditor2 form.groupPropertyGrid form
-        | 3 -> applyPropertyEditor2 form.entityPropertyGrid form
-        | _ -> failwithumf ()
-
-    let private populatePreludeTextBox (form : GaiaForm) =
-        match World.tryReadPrelude () with
-        | Right (preludeStr, _) ->
-            form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
-        | Left error ->
-            MessageBox.Show ("Could not read prelude due to: " + error + "'.", "Failed to Read Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-
-    let private tryReloadPrelude (_ : GaiaForm) world =
-        let assetSourceDir = targetDir + "/../../.."
-        World.tryReloadPrelude assetSourceDir targetDir world
-
-    let private trySavePrelude (form : GaiaForm) world =
-        let oldWorld = world
-        let preludeSourceDir = targetDir + "/../../.."
-        let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
-        try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
-            File.WriteAllText (preludeFilePath, preludeStr)
-            (true, world)
-        with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (false, World.choose oldWorld)
-
-    let private populateAssetGraphTextBox (form : GaiaForm) =
-        match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
-        | Right assetGraph ->
-            let selectionStart = form.assetGraphTextBox.SelectionStart
-            let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            let packageDescriptorsPretty = PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-            form.assetGraphTextBox.Text <- packageDescriptorsPretty.Replace ("\n", "\r\n")
-            form.assetGraphTextBox.SelectionStart <- selectionStart
-        | Left error ->
-            MessageBox.Show ("Could not read asset graph due to: " + error + "'.", "Failed to Read Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-
-    let private tryReloadAssetGraph (_ : GaiaForm) world =
-        let assetSourceDir = targetDir + "/../../.."
-        World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world
-
-    let private tryLoadAssetGraph (form : GaiaForm) world =
-        match tryReloadAssetGraph form world with
-        | (Right assetGraph, world) ->
-            let selectionStart = form.assetGraphTextBox.SelectionStart
-            let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            let packageDescriptorsPretty = PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-            form.assetGraphTextBox.Text <- packageDescriptorsPretty.Replace ("\n", "\r\n")
-            form.assetGraphTextBox.SelectionStart <- selectionStart
-            world
-        | (Left error, world) ->
-            MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to Load Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            world
-
-    let private trySaveAssetGraph (form : GaiaForm) world =
-        let oldWorld = world
-        let assetSourceDir = targetDir + "/../../.."
-        let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
-        try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-            File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-            (true, world)
-        with exn ->
-            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to Save Asset Graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (false, World.choose oldWorld)
-
-    let private populateOverlayerTextBox (form : GaiaForm) =
-        let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
-        match Overlayer.tryMakeFromFile [] overlayerFilePath with
-        | Right overlayer ->
-            let selectionStart = form.overlayerTextBox.SelectionStart
-            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            let extrinsicOverlaysPretty = PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-            form.overlayerTextBox.Text <- extrinsicOverlaysPretty.Replace ("\n", "\r\n")
-            form.overlayerTextBox.SelectionStart <- selectionStart
-        | Left error ->
-            MessageBox.Show ("Could not read overlayer due to: " + error + "'.", "Failed to Read Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-
-    let private tryReloadOverlayer form world =
-        let overlayerDir = targetDir + "/../../.."
-        match World.tryReloadOverlayer overlayerDir targetDir world with
-        | (Right overlayer, world) ->
-            refreshOverlayComboBox form world
-            (Right overlayer, world)
-        | (Left error, world) -> (Left error, world)
-
-    let private tryLoadOverlayer (form : GaiaForm) world =
-        match tryReloadOverlayer form world with
-        | (Right overlayer, world) ->
-            let selectionStart = form.overlayerTextBox.SelectionStart
-            let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            let extrinsicOverlaysPretty = PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-            form.overlayerTextBox.Text <- extrinsicOverlaysPretty.Replace ("\n", "\r\n")
-            form.overlayerTextBox.SelectionStart <- selectionStart
-            world
-        | (Left error, world) ->
-            MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to Reload Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            world
-
-    let private trySaveOverlayer (form : GaiaForm) world =
-        let oldWorld = world
-        let overlayerSourceDir = targetDir + "/../../.."
-        let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
-        try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-            File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-            (true, world)
-        with exn ->
-            MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to Save Overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            (false, oldWorld)
-
-    let private populateEventFilterTextBox (form : GaiaForm) =
-        let eventFilterStr = scstring Constants.Editor.EventFilter
-        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-        let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
-        form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
-
-    let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGroupPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGroupPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormScreenPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormScreenPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGamePropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormGamePropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handlePropertyTabControlSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
-        let world = Globals.World // handle re-entry
-        match form.propertyTabControl.SelectedIndex with
-        | 0 -> refreshGamePropertyGrid form world
-        | 1 -> refreshScreenPropertyGrid form world
-        | 2 -> refreshGroupPropertyGrid form world
-        | 3 -> refreshEntityPropertyGrid form world
-        | _ -> failwithumf ()
-
-    let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
-        refreshPropertyEditor form
-
-    let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
-        applyPropertyEditor form
-
-    let private handleFormHierarchyTreeViewItemDrag (form : GaiaForm) (args : ItemDragEventArgs) =
-        if args.Button = MouseButtons.Left then
-            form.DoDragDrop (args.Item, DragDropEffects.Move) |> ignore
-
-    let private handleFormHierarchyTreeViewDragEnter (_ : GaiaForm) (args : DragEventArgs) =
-        args.Effect <- args.AllowedEffect
-
-    let private handleFormHierarchyTreeViewDragDrop (form : GaiaForm) (args : DragEventArgs) =
-
-        // TODO: lift this out.
-        let rec containsNode (source : TreeNode) (target : TreeNode) =
-            if isNull target.Parent then false
-            elif target.Parent = source then true
-            else containsNode source target.Parent
-
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            let targetPoint = form.hierarchyTreeView.PointToClient (Point (args.X, args.Y))
-            let targetNodeOpt = form.hierarchyTreeView.GetNodeAt targetPoint
-            let draggedNode = args.Data.GetData typeof<TreeNode> :?> TreeNode
-            let source = Entity (selectedGroup.GroupAddress <-- Address.makeFromString draggedNode.Name)
-            if not (source.GetProtected world) then
-                if isNull targetNodeOpt then
-                    let source' = Entity (selectedGroup.GroupAddress <-- Address.makeFromString source.Name)
-                    let world = source.SetMountOptWithAdjustment None world
-                    let world = World.renameEntityImmediate source source' world
-                    let world = refreshHierarchyTreeViewImmediate form world
-                    selectEntity source' form world
-                    tryShowSelectedEntityInHierarchy form
-                    world
-                elif draggedNode <> targetNodeOpt && not (containsNode draggedNode targetNodeOpt) then
-                    if args.KeyState &&& 32 = 0 then // alt not pressed
-                        let source' = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name) / source.Name
-                        let mount = Relation.makeParent ()
-                        let world = World.renameEntityImmediate source source' world
-                        let world = source'.SetMountOptWithAdjustment (Some mount) world
-                        let world = refreshHierarchyTreeViewImmediate form world
-                        selectEntity source' form world
-                        tryShowSelectedEntityInHierarchy form
-                        world
-                    else // alt pressed
-                        let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromString targetNodeOpt.Name)
-                        let previousOpt = World.tryGetPreviousEntity next world
-                        let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                        let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
-                        let source' = match parentOpt with Some parent -> parent / source.Name | None -> selectedGroup / source.Name
-                        let world = World.insertEntityOrder source previousOpt next world
-                        let world = World.renameEntityImmediate source source' world
-                        let world = source'.SetMountOptWithAdjustment mountOpt world
-                        let world = refreshHierarchyTreeViewImmediate form world
-                        selectEntity source' form world
-                        tryShowSelectedEntityInHierarchy form
-                        world
-                else world
-            else
-                MessageBox.Show ("Cannot relocate a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
-    let private handleFormHierarchyTreeViewCollapseClick (form : GaiaForm) (_ : EventArgs) =
-        form.hierarchyTreeView.CollapseAll ()
-
-    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (evt : TreeViewEventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            if notNull form.hierarchyTreeView.SelectedNode then
-                let nodeKey = form.hierarchyTreeView.SelectedNode.Name
-                let address = Address.makeFromString nodeKey
-                let entity = Entity (selectedGroup.GroupAddress <-- atoa address)
-                if  entity.Exists world &&
-                    evt.Action <> TreeViewAction.Unknown then
-                    selectEntity entity form world
-                world
-            else world
-
-    let private handleFormHierarchyTreeViewClick (form : GaiaForm) (evt : TreeNodeMouseClickEventArgs) =
-        if evt.Button = MouseButtons.Right then
-            form.hierarchyTreeView.SelectedNode <- evt.Node
-
-    let private handleFormHierarchyTreeViewDoubleClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            tryShowSelectedEntityInDisplay form world
-
-    let private handleFormCreateEntity atMouse inHierarchy (dispatcherNameOpt : string option) (form : GaiaForm) (_ : EventArgs) =
-        form.displayPanel.Focus () |> ignore<bool>
-        Globals.nextPreUpdate $ fun world ->
-            let oldWorld = world
-            try let world = Globals.pushPastWorld world
-                let dispatcherName =
-                    match dispatcherNameOpt with
-                    | Some dispatcherName -> dispatcherName
-                    | None -> form.createEntityComboBox.Text
-                let overlayDescriptor =
-                    match form.overlayComboBox.Text with
-                    | "(Default Overlay)" -> DefaultOverlay
-                    | "(Routed Overlay)" -> RoutedOverlay
-                    | "(No Overlay)" -> NoOverlay
-                    | overlayName -> ExplicitOverlay overlayName
-                let name = generateEntityName dispatcherName selectedGroup world
-                let surnames =
-                    match form.entityPropertyGrid.SelectedObject with
-                    | null -> [|name|]
-                    | :? GroupTypeDescriptorSource -> [|name|]
-                    | :? EntityTypeDescriptorSource as entityTds when inHierarchy ->
-                        let parent = entityTds.DescribedEntity
-                        Array.add name parent.Surnames
-                    | _ -> [|name|]
-                let (entity, world) = World.createEntity5 dispatcherName overlayDescriptor (Some surnames) selectedGroup world
-                let (positionSnap, degreesSnap, scaleSnap) = getSnaps form
-                let viewport = World.getViewport world
-                let mousePosition = World.getMousePosition world
-                let mutable entityTransform = entity.GetTransform world
-                let world =
-                    if entity.GetIs2d world then
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let entityPosition =
-                            if atMouse
-                            then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
-                            else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world * 0.5f, eyeCenter, eyeSize)
-                        entityTransform.Position <- entityPosition.V3
-                        entityTransform.Size <- entity.GetQuickSize world
-                        entityTransform.Elevation <- getCreationElevation form
-                        if not form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
-                        else entity.SetTransform entityTransform world
-                    else
-                        let eyeCenter = World.getEyeCenter3d world
-                        let eyeRotation = World.getEyeRotation3d world
-                        let entityPosition =
-                            if atMouse then
-                                let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
-                                let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
-                                (ray.Intersection plane).Value
-                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
-                        entityTransform.Position <- entityPosition
-                        entityTransform.Size <- entity.GetQuickSize world
-                        if form.snap3dButton.Checked
-                        then entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
-                        else entity.SetTransform entityTransform world
-                let world =
-                    if inHierarchy
-                    then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
-                    else world
-                let world =
-                    match entity.TryGetProperty (nameof entity.ProbeBounds) world with
-                    | Some property when property.PropertyType = typeof<Box3> ->
-                        let bounds =
-                            box3
-                                (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition world)
-                                (v3Dup Constants.Render.LightProbeSizeDefault)
-                        entity.SetProbeBounds bounds world
-                    | Some _ | None -> world
-                let world = refreshHierarchyTreeViewImmediate form world
-                selectEntity entity form world
-                tryShowSelectedEntityInHierarchy form
-                world
-            with exn ->
-                let world = World.choose oldWorld
-                MessageBox.Show (scstring exn, "Could Not Create Entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
-    let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            match form.entityPropertyGrid.SelectedObject with
-            | :? EntityTypeDescriptorSource as entityTds ->
-                if not (entityTds.DescribedEntity.GetProtected world) then
-                    let world = World.destroyEntity entityTds.DescribedEntity world
-                    deselectEntity form world
-                    world
-                else
-                    MessageBox.Show ("Cannot destroy a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | _ -> world
-
-    let private handleFormSelectInHierarchy (form : GaiaForm) (_ : EventArgs) =
-        tryShowSelectedEntityInHierarchy form
-
-    let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
-        use groupCreationForm = new GroupCreationForm ()
-        groupCreationForm.StartPosition <- FormStartPosition.CenterParent
-        groupCreationForm.dispatcherTextBox.Text <- typeof<GroupDispatcher>.Name
-        groupCreationForm.okButton.Click.Add $ fun _ ->
-            Globals.nextPreUpdate $ fun world ->
-                let oldWorld = world
-                let world = Globals.pushPastWorld world
-                let groupName = groupCreationForm.nameTextBox.Text
-                let groupDispatcherName = groupCreationForm.dispatcherTextBox.Text
-                try if String.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup4 groupDispatcherName (Some groupName) selectedScreen world |> snd
-                    refreshGroupTabs form world
-                    refreshHierarchyTreeView form world
-                    deselectEntity form world
-                    form.groupTabControl.SelectTab (form.groupTabControl.TabPages.IndexOfKey groupName)
-                    world
+            // attempt to load group descriptor
+            let groupAndDescriptorOpt =
+                try let groupDescriptorStr = File.ReadAllText filePath
+                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                    let groupName =
+                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                        | Some (Atom (name, _)) -> name
+                        | _ -> failwithumf ()
+                    Right (selectedScreen / groupName, groupDescriptor)
                 with exn ->
-                    let world = World.choose oldWorld
-                    MessageBox.Show ("Could not create group due to: " + scstring exn, "Group Creation Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            groupCreationForm.Close ()
-        groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
-        groupCreationForm.ShowDialog form |> ignore
+                    Left exn
 
-    let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let group = selectedGroup
-            form.saveFileDialog.Title <- "Save '" + group.Name + "' As"
-            match Map.tryFind group.GroupAddress filePaths with
-            | Some filePath -> form.saveFileDialog.FileName <- filePath
-            | None -> form.saveFileDialog.FileName <- String.Empty
-            if saveAs || String.IsNullOrWhiteSpace form.saveFileDialog.FileName then
-                match form.saveFileDialog.ShowDialog form with
-                | DialogResult.OK ->
-                    let filePath = form.saveFileDialog.FileName
-                    trySaveSelectedGroup filePath world
-                    filePaths <- Map.add group.GroupAddress filePath filePaths
-                    world
-                | _ -> world
-            else trySaveSelectedGroup form.saveFileDialog.FileName world; world
+            // attempt to load group
+            match groupAndDescriptorOpt with
+            | Right (group, groupDescriptor) ->
+                let oldWorld = world
+                try
+                    if group.Exists world then world <- World.destroyGroupImmediate selectedGroup world
+                    let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
+                    selectGroup group
+                    match selectedEntityOpt with
+                    | Some entity when not (entity.Exists world) -> selectEntityOpt None
+                    | Some _ | None -> ()
+                    groupFilePaths <- Map.add group.GroupAddress groupFilePath groupFilePaths
+                    groupFilePath <- ""
+                    true
+                with exn ->
+                    world <- World.choose oldWorld
+                    messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                    false
 
-    let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            form.openFileDialog.FileName <- String.Empty
-            match form.openFileDialog.ShowDialog form with
-            | DialogResult.OK ->
-                let world = Globals.pushPastWorld world
-                let filePath = form.openFileDialog.FileName
-                match tryLoadSelectedGroup form filePath world with
-                | (Some group, world) ->
-                    filePaths <- Map.add group.GroupAddress filePath filePaths
-                    deselectEntity form world // currently selected entity may be gone if loading into an existing group
-                    world
-                | (None, world) -> world
-            | _ -> world
+            // error
+            | Left exn ->
+                messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                false
 
-    let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match form.groupTabControl.TabPages.Count with
-            | 1 ->
-                MessageBox.Show ("Cannot close the only remaining group.", "Group Close Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-            | _ ->
-                let world = Globals.pushPastWorld world
-                let group = selectedGroup
-                if not (group.GetProtected world) then
-                    let world = World.destroyGroupImmediate group world
-                    deselectEntity form world
-                    form.groupTabControl.TabPages.RemoveByKey group.Name
-                    let groupTabControl = form.groupTabControl
-                    let groupTab = groupTabControl.SelectedTab
-                    selectedGroup <- selectedScreen / groupTab.Text
-                    filePaths <- Map.remove group.GroupAddress filePaths
-                    world
-                else
-                    MessageBox.Show ("Cannot close a protected group (such as one created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
+        // error
+        else
+            messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the Elmish API)."
+            false
 
-    let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextUpdate $ fun world ->
-            match Globals.tryUndo world with
-            | (true, world) -> refreshFormOnUndoRedo form world; world
-            | (false, world) -> world
+    let private tryQuickSizeSelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            snapshot ()
+            world <- entity.SetSize (entity.GetQuickSize world) world
+            true
+        | Some _ | None -> false
 
-    let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextUpdate $ fun world ->
-            match Globals.tryRedo world with
-            | (true, world) -> refreshFormOnUndoRedo form world; world
-            | (false, world) -> world
+    let private tryReorderSelectedEntity up =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            let peerOpt =
+                if up
+                then World.tryGetPreviousEntity entity world
+                else World.tryGetNextEntity entity world
+            match peerOpt with
+            | Some peer ->
+                if not (entity.GetProtected world) && not (peer.GetProtected world)
+                then world <- World.swapEntityOrders entity peer world
+                else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the Elmish API)."
+            | None -> ()
+        | Some _ | None -> ()
 
-    let private handleFormRunButtonClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let advancing = form.runButton.Checked
-            let world =
-                if advancing then
-                    form.displayPanel.Focus () |> ignore
-                    Globals.pushPastWorld world
-                else world
-            World.setAdvancing advancing world
+    let private tryDeleteSelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            if not (entity.GetProtected world) then
+                snapshot ()
+                world <- World.destroyEntity entity world
+                true
+            else
+                messageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the Elmish API)."
+                false
+        | Some _ | None -> false
 
-    let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            if form.songPlaybackButton.Checked
-            then World.setMasterSongVolume 1.0f world
-            else World.setMasterSongVolume 0.0f world
+    let private tryCutSelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            if not (entity.GetProtected world) then
+                snapshot ()
+                selectEntityOpt None
+                world <- World.cutEntityToClipboard entity world
+                true
+            else
+                messageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the Elmish API)."
+                false
+        | Some _ | None -> false
 
-    let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
-            | _ -> failwithumf ()
+    let private tryCopySelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            World.copyEntityToClipboard entity world
+            true
+        | Some _ | None -> false
 
-    let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                if not (entityTds.DescribedEntity.GetProtected world) then
-                    let world = Globals.pushPastWorld world
-                    let world = World.cutEntityToClipboard entityTds.DescribedEntity world
-                    deselectEntity form world
-                    world
-                else
-                    MessageBox.Show ("Cannot cut a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | _ -> failwithumf ()
+    let private tryPaste atMouse =
+        snapshot ()
+        let surnamesOpt =
+            World.tryGetEntityDispatcherNameOnClipboard world |>
+            Option.map (fun dispatcherName -> generateEntityName dispatcherName) |>
+            Option.map Array.singleton
+        let snapsEir = if snaps2dSelected then Left snaps2d else Right snaps3d
+        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup world in world <- wtemp
+        match entityOpt with
+        | Some entity ->
+            selectEntityOpt (Some entity)
+            showSelectedEntity <- true
+            true
+        | None -> false
 
-    let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            let surnamesOpt =
-                World.tryGetEntityDispatcherNameOnClipboard world |>
-                Option.map (fun dispatcherName -> generateEntityName dispatcherName selectedGroup world) |>
-                Option.map Array.singleton
-            let snapsEir = getSnaps form |> if form.snap3dButton.Checked then Right else Left
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup world
-            match entityOpt with
-            | Some entity ->
-                selectEntity entity form world
-                tryShowSelectedEntityInHierarchy form
-                world
-            | None -> world
+    let private tryReloadAssets () =
+        let assetSourceDir = targetDir + "/../../.."
+        match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
+        | (Right assetGraph, wtemp) ->
+            world <- wtemp
+            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+            assetGraphStr <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
+        | (Left error, wtemp) ->
+            world <- wtemp
+            messageBoxOpt <- Some ("Asset reload error due to: " + error + "'.")
+            ()
 
-    let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            match form.entityPropertyGrid.SelectedObject with
-            | null -> world
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let entity = entityTds.DescribedEntity
-                let world = Globals.pushPastWorld world
-                let world = entity.SetSize (entity.GetQuickSize world) world
-                Globals.World <- world // must be set for property grid
-                form.entityPropertyGrid.Refresh ()
-                world
-            | _ -> failwithumf ()
-
-    let private handleFormSnap3d (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let (positionSnap, degreesSnap, scaleSnap) = otherSnaps
-            let otherSnaps' =
-                (snd (Single.TryParse form.positionSnapTextBox.Text),
-                 snd (Single.TryParse form.degreesSnapTextBox.Text),
-                 snd (Single.TryParse form.scaleSnapTextBox.Text))
-            otherSnaps <- otherSnaps'
-            form.positionSnapTextBox.Text <- scstring positionSnap
-            form.degreesSnapTextBox.Text <- scstring degreesSnap
-            form.scaleSnapTextBox.Text <- scstring scaleSnap
-            world
-
-    let private handleFormResetEye (_ : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            let world = World.setEyeCenter2d v2Zero world
-            let world = World.setEyeCenter3d Constants.Engine.EyeCenter3dDefault world
-            let world = World.setEyeRotation3d quatIdentity world
-            world
-
-    let private handleFormSelectEditMode (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let editModes = World.getEditModes world
-            match editModes.TryGetValue (form.editModeComboBox.SelectedItem :?> string) with
-            | (true, callback) ->
-                form.displayPanel.Focus () |> ignore
-                let world = Globals.pushPastWorld world
-                callback world
-            | (false, _) -> world
-
-    let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match tryReloadAssetGraph form world with
-            | (Right assetGraph, world) ->
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                let assetGraphPretty = PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter
-                form.assetGraphTextBox.Text <- assetGraphPretty.Replace ("\n", "\r\n")
-                world
-            | (Left error, world) ->
-                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
-    let private handleFormReloadCode form (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let world = Globals.pushPastWorld world
-            clearSelections form // keep old type information from sticking around in re-painting property editors
+    let private tryReloadCode () =
+        if World.getAllowCodeReload world then
+            snapshot ()
+            let oldWorld = world
+            selectEntityOpt None // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
             let workingDirPath = targetDir + "/../../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
-                | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'."); world
+                | [||] -> Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'.")
                 | fsprojFilePaths ->
-                    let buildName =
-#if DEBUG
-                        "Debug"
-#else
-                        "Release"
-#endif
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
@@ -1395,9 +675,9 @@ module Gaia =
                         Array.map (fun line -> line.Replace ("\\", "/")) |>
                         Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
-                        ["#r \"../../../../../Nu/Nu.Math/bin/" + buildName + "/netstandard2.0/Nu.Math.dll\""
-                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + buildName + "/net7.0/Nu.Pipe.dll\""
-                         "#r \"../../../../../Nu/Nu/bin/" + buildName + "/net7.0/Nu.dll\""]
+                        ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Editor.BuildName + "/netstandard2.0/Nu.Math.dll\""
+                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Editor.BuildName + "/net7.0/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Editor.BuildName + "/net7.0/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
@@ -1428,500 +708,33 @@ module Gaia =
                         then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + error)
                         else Log.info "Code compiled with no warnings."
                         Log.info "Updating code..."
-                        let world = World.updateLateBindings session.DynamicAssemblies world
+                        world <- World.updateLateBindings session.DynamicAssemblies world
                         Log.info "Code updated."
-                        world
                     with _ ->
                         let error = string errorStream
                         Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
-                        World.choose world
+                        world <- World.choose oldWorld
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
-                World.choose world
+                world <- World.choose oldWorld
+        else messageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
-    let private handleFormReloadAll (form : GaiaForm) (args : EventArgs) =
-        handleFormReloadAssets form args
-        handleFormReloadCode form args
+    let private tryReloadAll () =
+        tryReloadAssets ()
+        tryReloadCode ()
 
-    let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            deselectEntity form world
-            refreshEntityPropertyGrid form world
-            refreshGroupPropertyGrid form world
-            world
+    let private resetEye () =
+        world <- World.setEyeCenter2d v2Zero world
+        world <- World.setEyeCenter3d Constants.Engine.EyeCenter3dDefault world
+        world <- World.setEyeRotation3d quatIdentity world
 
-    let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let selectedGroup' =
-                let groupTabControl = form.groupTabControl
-                let groupTab = groupTabControl.SelectedTab
-                selectedScreen / groupTab.Text
-            selectedGroup <- selectedGroup'
-            refreshEntityPropertyGrid form world
-            refreshHierarchyTreeView form world
-            selectGroup selectedGroup' form world
-            world
+    let private toggleAdvancing () =
+        let advancing = World.getAdvancing world
+        if not advancing then snapshot ()
+        world <- World.setAdvancing (not advancing) world
 
-    let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let eventTracerOpt =
-                if form.traceEventsCheckBox.Checked
-                then Some (Log.remark "Event")
-                else None
-            World.setEventTracerOpt eventTracerOpt world
-
-    let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let oldWorld = world
-            try let eventFilter = scvalue<EventFilter> form.eventFilterTextBox.Text
-                let world = World.setEventFilter eventFilter world
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-                let eventFilterPretty = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
-                form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
-                world
-            with exn ->
-                let world = World.choose oldWorld
-                MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid Event Filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
-    let private handleRefreshEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let eventFilter = World.getEventFilter world
-            let eventFilterStr = scstring eventFilter
-            let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-            let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
-            form.eventFilterTextBox.Text <- eventFilterPretty.Replace ("\n", "\r\n")
-            world
-
-    let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match trySavePrelude form world with
-            | (true, world) ->
-                match tryReloadPrelude form world with
-                | (Right _, world) -> world
-                | (Left error, world) ->
-                    MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | (false, world) -> world
-
-    let private handleLoadPreludeClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match tryReloadPrelude form world with
-            | (Right preludeStr, world) ->
-                form.preludeTextBox.Text <- preludeStr.Replace ("\n", "\r\n")
-                world
-            | (Left error, world) ->
-                MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to Load Prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
-
-    let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match trySaveAssetGraph form world with
-            | (true, world) ->
-                match tryReloadAssetGraph form world with
-                | (Right _, world) -> world
-                | (Left error, world) ->
-                    MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | (false, world) -> world
-
-    let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            tryLoadAssetGraph form world
-
-    let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            match trySaveOverlayer form world with
-            | (true, world) ->
-                match tryReloadOverlayer form world with
-                | (Right _, world) -> world
-                | (Left error, world) ->
-                    MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer Reload Error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-            | (false, world) -> world
-
-    let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            tryLoadOverlayer form world
-
-    let private handleEvalClick (form : GaiaForm) (_ : EventArgs) =
-        Globals.nextPreUpdate $ fun world ->
-            let exprsStr =
-                if String.notEmpty form.evalInputTextBox.SelectedText
-                then form.evalInputTextBox.SelectedText
-                else form.evalInputTextBox.Text
-            let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
-            try let exprs = scvalue<Scripting.Expr array> exprsStr
-                let group = selectedGroup
-                let (selectedSimulant, localFrame) =
-                    match form.entityPropertyGrid.SelectedObject with
-                    | :?
-                        EntityTypeDescriptorSource as entityTds when
-                        form.propertyTabControl.SelectedTab <> form.groupTabPage ->
-                        let entity = entityTds.DescribedEntity
-                        (entity :> Simulant, entity.GetScriptFrame world)
-                    | _ -> (group :> Simulant, group.GetScriptFrame world)
-                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Scripting.Expr>).PrettyPrinter
-                let struct (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
-                let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
-                let evaledsStr = String.concat "\n" evaledStrs
-                form.evalOutputTextBox.ReadOnly <- false
-                form.evalOutputTextBox.Text <-
-                    if String.notEmpty form.evalOutputTextBox.Text
-                    then form.evalOutputTextBox.Text + evaledsStr.Replace ("\n", "\r\n")
-                    else evaledsStr.Replace ("\n", "\r\n")
-                form.evalOutputTextBox.ReadOnly <- true
-                world
-            with exn -> Log.debug ("Could not evaluate input due to: " + scstring exn); world
-
-    let private handleClearOutputClick (form : GaiaForm) (_ : EventArgs) =
-        form.evalOutputTextBox.Text <- String.Empty
-
-    let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
-        form.overlayComboBox.SelectedIndex <- 0
-
-    let private handleKeyboardInput key (form : GaiaForm) world =
-        if Form.ActiveForm = (form :> Form) then
-            if Keys.Enter = key then
-                if  form.createEntityComboBox.Focused &&
-                    not form.createEntityComboBox.DroppedDown then
-                    handleFormCreateEntity false false None form (EventArgs ())
-            if Keys.Escape = key then
-                if form.FocusedControl = form.displayPanel then deselectEntity form world
-                form.displayPanel.Focus () |> ignore<bool>
-            if Keys.F5 = key then form.runButton.PerformClick ()
-            if Keys.D3 = key && Keys.None = Control.ModifierKeys then form.snap3dButton.Checked <- form.snap3dButton.Checked
-            if Keys.Q = key && Keys.Control = Control.ModifierKeys then handleFormQuickSize form (EventArgs ())
-            if Keys.N = key && Keys.Control = Control.ModifierKeys then handleFormNew form (EventArgs ())
-            if Keys.O = key && Keys.Control = Control.ModifierKeys then handleFormOpen form (EventArgs ())
-            if Keys.S = key && Keys.Control = Control.ModifierKeys then handleFormSave false form (EventArgs ())
-            if (Keys.A = key || Keys.Enter = key) && Keys.Alt = Control.ModifierKeys then
-                match form.rolloutTabControl.SelectedTab.Name with
-                | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
-                | "preludeTabPage" -> form.applyPreludeButton.PerformClick ()
-                | "assetGraphTabPage" -> form.applyAssetGraphButton.PerformClick ()
-                | "overlayerTabPage" -> form.applyOverlayerButton.PerformClick ()
-                | "eventTracingTabPage" -> form.applyEventFilterButton.PerformClick ()
-                | _ -> ()
-            if Keys.D = key && Keys.Alt = Control.ModifierKeys then
-                match form.rolloutTabControl.SelectedTab.Name with
-                | "propertyEditorTabPage" -> form.discardPropertyButton.PerformClick ()
-                | "preludeTabPage" -> form.discardPreludeButton.PerformClick ()
-                | "assetGraphTabPage" -> form.discardAssetGraphButton.PerformClick ()
-                | "overlayerTabPage" -> form.discardOverlayerButton.PerformClick ()
-                | "eventTracingTabPage" -> form.discardEventFilterButton.PerformClick ()
-                | _ -> ()
-            if (Keys.P = key || Keys.Enter = key) && Keys.Alt = Control.ModifierKeys then (form.rolloutTabControl.SelectTab "propertyEditorTabPage"; form.propertyValueTextBox.Select (); form.propertyValueTextBox.SelectAll ())
-            if Keys.E = key && Keys.Alt = Control.ModifierKeys then (form.rolloutTabControl.SelectTab "evaluatorTabPage"; form.evalInputTextBox.Select ())
-            if Keys.K = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
-            if Keys.T = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
-            if Keys.V = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
-            if Keys.L = key && Keys.Alt = Control.ModifierKeys && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
-            match form.FocusedControl  with
-            | :? ToolStripDropDown | :? TextBox -> ()
-            // | :? ToolStripComboBox -> () // doesn't implement Control... not sure how to match.
-            | _ ->
-                if Keys.X = key && Keys.None = Control.ModifierKeys then form.constrainXButton.Checked <- not form.constrainXButton.Checked
-                if Keys.Y = key && Keys.None = Control.ModifierKeys then form.constrainYButton.Checked <- not form.constrainYButton.Checked
-                if Keys.Z = key && Keys.None = Control.ModifierKeys then form.constrainZButton.Checked <- not form.constrainZButton.Checked
-                if Keys.C = key && Keys.None = Control.ModifierKeys then
-                    form.constrainXButton.Checked <- false
-                    form.constrainYButton.Checked <- false
-                    form.constrainZButton.Checked <- false
-                if Keys.A = key && Keys.Control = Control.ModifierKeys then handleFormSave true form (EventArgs ())
-                if Keys.Z = key && Keys.Control = Control.ModifierKeys then handleFormUndo form (EventArgs ())
-                if Keys.Y = key && Keys.Control = Control.ModifierKeys then handleFormRedo form (EventArgs ())
-                if Keys.E = key && Keys.Control = Control.ModifierKeys then handleFormCreateEntity false false None form (EventArgs ())
-                if Keys.D = key && Keys.Control = Control.ModifierKeys then handleFormDeleteEntity form (EventArgs ())
-                if Keys.X = key && Keys.Control = Control.ModifierKeys then handleFormCut form (EventArgs ())
-                if Keys.C = key && Keys.Control = Control.ModifierKeys then handleFormCopy form (EventArgs ())
-                if Keys.V = key && Keys.Control = Control.ModifierKeys then handleFormPaste false form (EventArgs ())
-                if Keys.Delete = key then handleFormDeleteEntity form (EventArgs ())
-
-    let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
-        match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
-        | DialogResult.Cancel -> args.Cancel <- true
-        | _ -> ()
-
-    let private updateEntityDrag (form : GaiaForm) world =
-
-        if not (canEditWithMouse form world) then
-            match dragEntityState with
-            | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
-                let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
-                    let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
-                    let entityPositionSnapped =
-                        if not form.snap3dButton.Checked
-                        then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition.V3
-                        else entityPosition.V3
-                    let entityPosition = entity.GetPosition world
-                    let entityPositionDelta = entityPositionSnapped - entityPosition
-                    let entityPositionConstrained =
-                        match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                        | (true, false, _) -> entityPosition + entityPositionDelta * v3Right
-                        | (false, true, _) -> entityPosition + entityPositionDelta * v3Up
-                        | (_, _, _) -> entityPosition + entityPositionDelta
-                    let world =
-                        match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                        | Some parent ->
-                            let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
-                            entity.SetPositionLocal entityPositionLocal world
-                        | None ->
-                            entity.SetPosition entityPositionConstrained world
-                    let world =
-                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                            let world = entity.SetLinearVelocity v3Zero world
-                            let world = entity.SetAngularVelocity v3Zero world
-                            world
-                        else world
-                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                    // form.entityPropertyGrid.Refresh ()
-                    world
-                else world
-
-            | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
-                let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
-                    let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
-                    let entityDegreeSnapped =
-                        if not form.snap3dButton.Checked
-                        then Math.snapF (Triple.snd (getSnaps form)) entityDegree
-                        else entityDegree
-                    let entityDegree = (entity.GetDegreesLocal world).Z
-                    let world =
-                        if entity.MountExists world then
-                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                            let entityDegreeLocal = entityDegree + entityDegreeDelta
-                            entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) world
-                        else
-                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                            let entityDegree = entityDegree + entityDegreeDelta
-                            entity.SetDegrees (v3 0.0f 0.0f entityDegree) world
-                    let world =
-                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                            let world = entity.SetLinearVelocity v3Zero world
-                            let world = entity.SetAngularVelocity v3Zero world
-                            world
-                        else world
-                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                    // form.entityPropertyGrid.Refresh ()
-                    world
-                else world
-
-            | DragEntityPosition3d (time, entityDragOffset, entityPlane, entity) ->
-                let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mouseRayWorld = World.getMouseRay3dWorld (entity.GetAbsolute world) world
-                    let intersectionOpt = mouseRayWorld.Intersection entityPlane
-                    if intersectionOpt.HasValue then
-                        let entityPosition = intersectionOpt.Value - entityDragOffset
-                        let entityPositionSnapped =
-                            if form.snap3dButton.Checked
-                            then Math.snapF3d (Triple.fst (getSnaps form)) entityPosition
-                            else entityPosition
-                        let entityPosition = entity.GetPosition world
-                        let entityPositionDelta = entityPositionSnapped - entityPosition
-                        let entityPositionConstrained =
-                            match (form.constrainXButton.Checked, form.constrainYButton.Checked, form.constrainZButton.Checked) with
-                            | (true, false, false) -> entityPosition + entityPositionDelta * v3Right
-                            | (false, true, false) -> entityPosition + entityPositionDelta * v3Up
-                            | (false, false, true) -> entityPosition + entityPositionDelta * v3Back
-                            | (true, true, false) -> entityPosition + entityPositionDelta * (v3Right + v3Up)
-                            | (false, true, true) -> entityPosition + entityPositionDelta * (v3Up + v3Back)
-                            | (_, _, _) -> entityPosition + entityPositionDelta
-                        let world =
-                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                            | Some parent ->
-                                let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
-                                entity.SetPositionLocal entityPositionLocal world
-                            | None ->
-                                entity.SetPosition entityPositionConstrained world
-                        let world =
-                            if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                                Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                                let world = entity.SetLinearVelocity v3Zero world
-                                let world = entity.SetAngularVelocity v3Zero world
-                                world
-                            else world
-                        // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                        // form.entityPropertyGrid.Refresh ()
-                        world
-                    else world
-                else world
-
-            | DragEntityRotation3d (time, mousePositionWorldOriginal, entityDragOffset, entityDragAxis, entity) ->
-                let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
-                    let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
-                    let entityDegreeSnapped =
-                        if form.snap3dButton.Checked
-                        then Math.snapF (Triple.snd (getSnaps form)) entityDegree
-                        else entityDegree
-                    let world =
-                        if entity.MountExists world then
-                            let entityDegreesLocal = entity.GetDegreesLocal world
-                            let entityDegreeLocal = (entityDegreesLocal * entityDragAxis).Magnitude
-                            let entityDegreeLocalDelta = entityDegreeSnapped - entityDegreeLocal
-                            let entityDegreeLocal = entityDegreeLocal + entityDegreeLocalDelta
-                            let entityDegreesLocal = entityDegreeLocal * entityDragAxis + entityDegreesLocal * (v3One - entityDragAxis)
-                            entity.SetDegreesLocal entityDegreesLocal world
-                        else
-                            let entityDegrees = entity.GetDegrees world
-                            let entityDegree = (entityDegrees * entityDragAxis).Magnitude
-                            let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                            let entityDegree = entityDegree + entityDegreeDelta
-                            let entityDegrees = entityDegree * entityDragAxis + entityDegrees * (v3One - entityDragAxis)
-                            entity.SetDegrees entityDegrees world
-                    let world =
-                        if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                            Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                            let world = entity.SetLinearVelocity v3Zero world
-                            let world = entity.SetAngularVelocity v3Zero world
-                            world
-                        else world
-                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                    // form.entityPropertyGrid.Refresh ()
-                    world
-                else world
-            | DragEntityInactive -> world
-        else world
-
-    let private updateEyeDrag (_ : GaiaForm) world =
-        match dragEyeState with
-        | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
-            let mousePositionScreen = World.getMousePosition2dScreen world
-            let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
-            let world = World.setEyeCenter2d eyeCenter world
-            dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
-            world
-        | DragEyeInactive -> world
-
-    let private updateUndoButton (form : GaiaForm) world =
-        if form.undoToolStripMenuItem.Enabled then
-            if not (Globals.canUndo ()) then
-                form.undoToolStripMenuItem.Enabled <- false
-        elif Globals.canUndo () then
-            form.undoToolStripMenuItem.Enabled <- not (World.getImperative world)
-
-    let private updateRedoButton (form : GaiaForm) world =
-        if form.redoToolStripMenuItem.Enabled then
-            if not (Globals.canRedo ()) then
-                form.redoToolStripMenuItem.Enabled <- false
-        elif Globals.canRedo () then
-            form.redoToolStripMenuItem.Enabled <- not (World.getImperative world)
-
-    let private preUpdateEditorWorld (form : GaiaForm) world =
-        let world = Globals.processPreUpdaters world
-        let world =
-            if refreshHierarchyViewRequested
-            then refreshHierarchyTreeViewImmediate form world
-            else world
-        let world = updateEntityDrag form world
-        let world = updateEyeDrag form world
-        if  Form.ActiveForm = (form :> Form) &&
-            not form.propertyValueTextBox.Focused &&
-            not form.applyPropertyButton.Focused &&
-            not form.IsClosing then
-            refreshPropertyEditor form
-        if form.IsDisposed
-        then World.exit world
-        else world
-
-    let private perUpdateEditorWorld (form : GaiaForm) world =
-        let world = Globals.processUpdaters world
-        let world =
-            if refreshHierarchyViewRequested
-            then refreshHierarchyTreeViewImmediate form world
-            else world
-        updateUndoButton form world
-        updateRedoButton form world
-        if  Form.ActiveForm = (form :> Form) &&
-            not form.propertyValueTextBox.Focused &&
-            not form.applyPropertyButton.Focused &&
-            not form.IsClosing then
-            refreshPropertyEditor form
-        if form.IsDisposed
-        then World.exit world
-        else world
-
-    let private postUpdateEditorWorld (_ : GaiaForm) world =
-        Application.DoEvents ()
-        world
-
-    let rec private tryRun sdlDeps (form : GaiaForm) =
-        try World.runWithoutCleanUp
-                tautology
-                (fun world -> let world = preUpdateEditorWorld form world in (Globals.World <- world; world))
-                (fun world -> let world = perUpdateEditorWorld form world in (Globals.World <- world; world))
-                (fun world -> let world = postUpdateEditorWorld form world in (Globals.World <- world; world))
-                sdlDeps Live true Globals.World |>
-                ignore
-        with exn ->
-            match MessageBox.Show
-                ("Unexpected exception due to: " + scstring exn + "\nWould you like to undo the last operation to try to keep Gaia running?",
-                 "Unexpected Exception",
-                 MessageBoxButtons.YesNo,
-                 MessageBoxIcon.Error) with
-            | DialogResult.Yes ->
-                form.undoToolStripMenuItem.PerformClick ()
-                Globals.World <- World.choose Globals.World
-                tryRun sdlDeps form
-            | _ -> Globals.World <- World.choose Globals.World
-
-    let private refreshCreateContextMenuItemChildren atMouse inHierarchy (createContextMenuItem : ToolStripMenuItem) (form : GaiaForm) world =
-        createContextMenuItem.DropDownItems.Clear ()
-        let item = createContextMenuItem.DropDownItems.Add "Selected"
-        item.Click.Add (handleFormCreateEntity atMouse inHierarchy None form)
-        createContextMenuItem.DropDownItems.Add "-" |> ignore
-        for dispatcherKvp in World.getEntityDispatchers world do
-            let dispatcherName = dispatcherKvp.Key
-            let item = createContextMenuItem.DropDownItems.Add dispatcherName
-            item.Click.Add (handleFormCreateEntity atMouse inHierarchy (Some dispatcherName) form)
-
-    let private run4 editModeOpt sdlDeps screen (form : GaiaForm) =
-        Globals.World <- World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEyeDragBegin form) Events.MouseCenterDown Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEyeDragEnd form) Events.MouseCenterUp Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuUpdate form) Events.Update Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuRender form) Events.Render Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuEntityLifeCycle form) (Events.LifeCycle (nameof Entity)) Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuGroupLifeCycle form) (Events.LifeCycle (nameof Group)) Simulants.Game Globals.World
-        Globals.World <- World.subscribe (handleNuSelectedScreenOptChange form) Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game Globals.World
-        Globals.World <- World.setMasterSongVolume 0.0f Globals.World // no song playback in editor by default
-        refreshEditModes form Globals.World
-        refreshOverlayComboBox form Globals.World
-        refreshCreateComboBox form Globals.World
-        refreshCreateContextMenuItemChildren true false form.createContextMenuItem form Globals.World
-        refreshCreateContextMenuItemChildren false true form.createInHierarchyContextMenuItem form Globals.World
-        refreshGroupTabs form Globals.World
-        refreshHierarchyTreeView form Globals.World
-        selectGroup selectedGroup form Globals.World
-        match editModeOpt with Some editMode -> form.editModeComboBox.SelectedItem <- editMode | None -> ()
-        form.screenPropertyGrid.SelectedObject <- { DescribedScreen = screen; Form = form }
-        form.gamePropertyGrid.SelectedObject <- { DescribedGame = Simulants.Game; Form = form }
-        form.runButton.CheckState <- CheckState.Unchecked
-        form.songPlaybackButton.CheckState <- if World.getMasterSongVolume Globals.World = 0.0f then CheckState.Unchecked else CheckState.Checked
-        form.editModeComboBox.SelectedIndexChanged.Add (handleFormSelectEditMode form) // this event is hooked up later than normal to avoid invocation when edit mode is initially selected
-        form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
-        form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
-            let WM_KEYDOWN = 0x0100
-            let WM_SYSKEYDOWN = 0x0104
-            if nCode >= 0 && (wParam = IntPtr WM_KEYDOWN || wParam = IntPtr WM_SYSKEYDOWN) then
-                let key = lParam |> Marshal.ReadInt32 |> enum<Keys>
-                handleKeyboardInput key form Globals.World
-            GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
-        tryRun sdlDeps (form : GaiaForm)
-
-    /// Attempt to select a target directory for the desired plugin and its assets from the give file path.
-    let trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
+    let private trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
+        let gaiaDir = Directory.GetCurrentDirectory ()
         let filePathAndDirNameAndTypesOpt =
             if not (String.IsNullOrWhiteSpace filePathOpt) then
                 let filePath = filePathOpt
@@ -1932,7 +745,9 @@ module Gaia =
                     with _ ->
                         let assembly = Assembly.LoadFrom filePath
                         Right (Some (filePath, dirName, assembly.GetTypes ()))
-                with _ -> Left ()
+                with _ ->
+                    Directory.SetCurrentDirectory gaiaDir
+                    Left ()
             else Right None
         match filePathAndDirNameAndTypesOpt with
         | Right (Some (filePath, dirName, types)) ->
@@ -1941,193 +756,1113 @@ module Gaia =
             | Some ty ->
                 let plugin = Activator.CreateInstance ty :?> NuPlugin
                 Right (Some (filePath, dirName, plugin))
-            | None -> Left ()
+            | None ->
+                Directory.SetCurrentDirectory gaiaDir
+                Left ()
         | Right None -> Right None
         | Left () -> Left ()
 
-    /// Select a target directory for the desired plugin and its assets.
-    let selectNuPlugin gaiaPlugin =
+    let private selectNuPlugin gaiaPlugin =
         let savedState =
             try if File.Exists Constants.Editor.SavedStateFilePath
                 then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
                 else SavedState.defaultState
             with _ -> SavedState.defaultState
-        let savedStateDirectory = Directory.GetCurrentDirectory ()
-        use startForm = new StartForm ()
-        startForm.binaryFilePathText.TextChanged.Add (fun _ ->
-            match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
-            | Right (Some (_, _, plugin)) ->
-                startForm.modeComboBox.Items.Clear ()
-                for kvp in plugin.EditModes do
-                   startForm.modeComboBox.Items.Add (kvp.Key) |> ignore
-                if startForm.modeComboBox.Items.Count <> 0 then
-                    startForm.modeComboBox.SelectedIndex <- 0
-                    startForm.modeComboBox.Enabled <- true
-                else startForm.modeComboBox.Enabled <- false
-            | Right None | Left () ->
-                startForm.modeComboBox.Items.Clear ()
-                startForm.modeComboBox.Enabled <- false
-                Directory.SetCurrentDirectory AppContext.BaseDirectory)
-        startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
-        match savedState.EditModeOpt with
-        | Some mode ->
-            for i in 0 .. startForm.modeComboBox.Items.Count - 1 do
-                if startForm.modeComboBox.Items.[i] = box mode then
-                    startForm.modeComboBox.SelectedIndex <- i
-        | None -> ()
-        startForm.useImperativeExecutionCheckBox.Checked <- savedState.UseImperativeExecution
-        if startForm.ShowDialog () = DialogResult.OK then
-            let savedState =
-                { BinaryFilePath = startForm.binaryFilePathText.Text
-                  EditModeOpt = if String.IsNullOrWhiteSpace startForm.modeComboBox.Text then None else Some startForm.modeComboBox.Text
-                  UseImperativeExecution = startForm.useImperativeExecutionCheckBox.Checked }
-            let (targetDir, plugin) =
-                match trySelectTargetDirAndMakeNuPluginFromFilePathOpt startForm.binaryFilePathText.Text with
-                | Right (Some (filePath, targetDir, plugin)) ->
-                    Constants.Override.fromAppConfig filePath
-                    try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                    with _ -> Log.info "Could not save editor state."
-                    (targetDir, plugin)
-                | Right None ->
-                    try File.WriteAllText (savedStateDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                    with _ -> Log.info "Could not save editor state."
-                    (".", gaiaPlugin)
-                | Left () ->
-                    if not (String.IsNullOrWhiteSpace startForm.binaryFilePathText.Text) then
-                        Log.trace ("Invalid Nu Assembly: " + startForm.binaryFilePathText.Text)
-                    (".", gaiaPlugin)
+        let gaiaDirectory = Directory.GetCurrentDirectory ()
+        match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectFilePath with
+        | Right (Some (filePath, targetDir, plugin)) ->
+            Constants.Override.fromAppConfig filePath
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+            with _ -> Log.info "Could not save editor state."
             (savedState, targetDir, plugin)
-        else
-            Directory.SetCurrentDirectory savedStateDirectory
+        | Right None ->
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+            with _ -> Log.info "Could not save editor state."
+            (savedState, ".", gaiaPlugin)
+        | Left () ->
+            if not (String.IsNullOrWhiteSpace savedState.ProjectFilePath) then
+                Log.trace ("Invalid Nu Assembly: " + savedState.ProjectFilePath)
             (SavedState.defaultState, ".", gaiaPlugin)
 
-    /// Create a Gaia form.
-    let createForm () =
+    (* ImGui Callback Functions *)
 
-        // create form
-        let form = new GaiaForm ()
+    let private updateEyeDrag () =
+        match dragEyeState with
+        | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
+            let mousePositionScreen = World.getMousePosition2dScreen world
+            let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
+            world <- World.setEyeCenter2d eyeCenter world
+            dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
+        | DragEyeInactive -> ()
 
-        // configure controls
-        form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.Position2dSnapDefault
-        form.degreesSnapTextBox.Text <- scstring Constants.Editor.Degrees2dSnapDefault
-        form.scaleSnapTextBox.Text <- scstring Constants.Editor.Scale2dSnapDefault
-        form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
-        form.propertyTabControl.SelectTab 3
+    let private updateEntityDrag () =
+        if canEditWithMouse () then
+            match dragEntityState with
+            | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                let localTime = DateTimeOffset.Now - time
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                    let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
+                    let entityPositionSnapped =
+                        if snaps2dSelected
+                        then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition.V3
+                        else entityPosition.V3
+                    let entityPosition = entity.GetPosition world
+                    let entityPositionDelta = entityPositionSnapped - entityPosition
+                    let entityPositionConstrained = entityPosition + entityPositionDelta
+                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                    | Some parent ->
+                        let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
+                        world <- entity.SetPositionLocal entityPositionLocal world
+                    | None ->
+                        world <- entity.SetPosition entityPositionConstrained world
+                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                        Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
+                        world <- entity.SetLinearVelocity v3Zero world
+                        world <- entity.SetAngularVelocity v3Zero world
+            | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                let localTime = DateTimeOffset.Now - time
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                    let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
+                    let entityDegreeSnapped =
+                        if snaps2dSelected
+                        then Math.snapF (Triple.snd (getSnaps ())) entityDegree
+                        else entityDegree
+                    let entityDegree = (entity.GetDegreesLocal world).Z
+                    if entity.MountExists world then
+                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                        let entityDegreeLocal = entityDegree + entityDegreeDelta
+                        world <- entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) world
+                    else
+                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                        let entityDegree = entityDegree + entityDegreeDelta
+                        world <- entity.SetDegrees (v3 0.0f 0.0f entityDegree) world
+                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                        Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
+                        world <- entity.SetLinearVelocity v3Zero world
+                        world <- entity.SetAngularVelocity v3Zero world
+            | DragEntityInactive -> ()
 
-        // same for hierarchy tree view...
-        form.hierarchyTreeView.NodeMouseClick.Add (fun (args : TreeNodeMouseClickEventArgs) ->
-            Globals.nextPreUpdate $ fun world ->
-                if args.Button = MouseButtons.Right then
-                    let nodeKey = args.Node.Name
-                    let address = Address.makeFromString nodeKey
-                    let entity = Entity (selectedGroup.GroupAddress <-- atoa address)
-                    if entity.Exists world then
-                        selectEntity entity form world
-                        form.hierarchyContextMenuStrip.Show ()
-                world)
-        form.hierarchyTreeView.KeyDown.Add (fun args ->
-            if uint args.Modifiers &&& uint Keys.Alt <> 0u && (args.KeyCode = Keys.Up || args.KeyCode = Keys.Down) then
-                args.Handled <- true
-                Globals.nextPreUpdate $ fun world ->
-                    match form.entityPropertyGrid.SelectedObject with
-                    | :? EntityTypeDescriptorSource as entityTds ->
-                        let entity = entityTds.DescribedEntity
-                        let peerOpt =
-                            if args.KeyCode = Keys.Up then World.tryGetPreviousEntity entity world
-                            elif args.KeyCode = Keys.Down then World.tryGetNextEntity entity world
-                            else None
-                        match peerOpt with
-                        | Some peer ->
-                            if not (entity.GetProtected world) && not (peer.GetProtected world) then
-                                let world = World.swapEntityOrders entity peer world
-                                refreshHierarchyTreeView form world
-                                world
-                            else
-                                MessageBox.Show ("Cannot reorder a protected simulant (such as an entity created by the Elmish API).", "Protected Elmish Simulant", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                                world
-                        | None -> world
-                    | _ -> world)
+    let private updateHotkeys () =
+        let io = ImGui.GetIO ()
+        if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
+        if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
+        if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
+        if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlPressed () then tryQuickSizeSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlPressed () then showNewGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.D && ImGui.IsCtrlPressed () then tryDeleteSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false
+        if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity true
+        if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity false
+        if not (io.WantCaptureKeyboard) then
+            if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
 
-        // set up events handlers
-        form.exitToolStripMenuItem.Click.Add (handleFormExit form)
-        form.createElevationPlusButton.Click.Add (handleFormCreateElevationPlusClick form)
-        form.createElevationMinusButton.Click.Add (handleFormCreateElevationMinusClick form)
-        form.entityPropertyGrid.SelectedObjectsChanged.Add (handleFormEntityPropertyGridSelectedObjectsChanged form)
-        form.entityPropertyGrid.SelectedGridItemChanged.Add (handleFormEntityPropertyGridSelectedGridItemChanged form)
-        form.groupPropertyGrid.SelectedObjectsChanged.Add (handleFormGroupPropertyGridSelectedObjectsChanged form)
-        form.groupPropertyGrid.SelectedGridItemChanged.Add (handleFormGroupPropertyGridSelectedGridItemChanged form)
-        form.screenPropertyGrid.SelectedObjectsChanged.Add (handleFormScreenPropertyGridSelectedObjectsChanged form)
-        form.screenPropertyGrid.SelectedGridItemChanged.Add (handleFormScreenPropertyGridSelectedGridItemChanged form)
-        form.gamePropertyGrid.SelectedObjectsChanged.Add (handleFormGamePropertyGridSelectedObjectsChanged form)
-        form.gamePropertyGrid.SelectedGridItemChanged.Add (handleFormGamePropertyGridSelectedGridItemChanged form)
-        form.propertyTabControl.SelectedIndexChanged.Add (handlePropertyTabControlSelectedIndexChanged form)
-        form.discardPropertyButton.Click.Add (handleFormPropertyRefreshClick form)
-        form.applyPropertyButton.Click.Add (handleFormPropertyApplyClick form)
-        form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)
-        form.applyEventFilterButton.Click.Add (handleApplyEventFilterClick form)
-        form.discardEventFilterButton.Click.Add (handleRefreshEventFilterClick form)
-        form.applyPreludeButton.Click.Add (handleSavePreludeClick form)
-        form.discardPreludeButton.Click.Add (handleLoadPreludeClick form)
-        form.applyAssetGraphButton.Click.Add (handleSaveAssetGraphClick form)
-        form.discardAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
-        form.applyOverlayerButton.Click.Add (handleSaveOverlayerClick form)
-        form.discardOverlayerButton.Click.Add (handleLoadOverlayerClick form)
-        form.hierarchySelectButton.Click.Add (handleFormSelectInHierarchy form)
-        form.hierarchyCollapseButton.Click.Add (handleFormHierarchyTreeViewCollapseClick form)
-        form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
-        form.hierarchyTreeView.NodeMouseClick.Add (handleFormHierarchyTreeViewClick form)
-        form.hierarchyTreeView.DoubleClick.Add (handleFormHierarchyTreeViewDoubleClick form)
-        form.hierarchyTreeView.ItemDrag.Add (handleFormHierarchyTreeViewItemDrag form)
-        form.hierarchyTreeView.DragEnter.Add (handleFormHierarchyTreeViewDragEnter form)
-        form.hierarchyTreeView.DragDrop.Add (handleFormHierarchyTreeViewDragDrop form)
-        form.createEntityButton.Click.Add (handleFormCreateEntity false false None form)
-        form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false false None form)
-        form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
-        form.startStopAdvancingToolStripMenuItem.Click.Add (fun _ -> form.runButton.PerformClick ())
-        form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
-        form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
-        form.deleteInHierachyContextMenuItem.Click.Add (handleFormDeleteEntity form)
-        form.selectInHierarchyContextMenuItem.Click.Add (handleFormSelectInHierarchy form)
-        form.newGroupToolStripMenuItem.Click.Add (handleFormNew form)
-        form.saveGroupToolStripMenuItem.Click.Add (handleFormSave false form)
-        form.saveGroupAsToolStripMenuItem.Click.Add (handleFormSave true form)
-        form.openGroupToolStripMenuItem.Click.Add (handleFormOpen form)
-        form.closeGroupToolStripMenuItem.Click.Add (handleFormClose form)
-        form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
-        form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
-        form.runButton.Click.Add (handleFormRunButtonClick form)
-        form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
-        form.cutToolStripMenuItem.Click.Add (handleFormCut form)
-        form.cutContextMenuItem.Click.Add (handleFormCut form)
-        form.copyToolStripMenuItem.Click.Add (handleFormCopy form)
-        form.copyContextMenuItem.Click.Add (handleFormCopy form)
-        form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form)
-        form.pasteContextMenuItem.Click.Add (handleFormPaste true form)
-        form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
-        form.snap3dButton.Click.Add (handleFormSnap3d form)
-        form.resetEyeButton.Click.Add (handleFormResetEye form)
-        form.editModeComboBox.KeyDown.Add (fun evt -> evt.Handled <- true) // disable key events for edit mode combo box
-        form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
-        form.reloadCodeButton.Click.Add (handleFormReloadCode form)
-        form.reloadAllButton.Click.Add (handleFormReloadAll form)
-        form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
-        form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
-        form.evalButton.Click.Add (handleEvalClick form)
-        form.clearOutputButton.Click.Add (handleClearOutputClick form)
-        form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
-        form.Closing.Add (handleFormClosing form)
+    let rec private imGuiEntityHierarchy (entity : Entity) =
+        let children = world |> entity.GetChildren |> Seq.toArray
+        let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
+        let treeNodeFlags =
+            (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
+            (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
+            ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+        let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
+        if showSelectedEntity && selectedEntityOpt = Some entity then
+            ImGui.SetScrollHereY ()
+            showSelectedEntity <- false
+        if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+            selectEntityOpt (Some entity)
+        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+            if not (entity.GetAbsolute world) then
+                if entity.GetIs2d world then
+                    world <- World.setEyeCenter2d (entity.GetCenter world).V2 world
+                else
+                    let eyeRotation = World.getEyeRotation3d world
+                    let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
+                    world <- World.setEyeCenter3d (entity.GetPosition world + eyeCenterOffset) world
+        if ImGui.BeginPopupContextItem () then
+            selectEntityOpt (Some entity)
+            if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
+            ImGui.Separator ()
+            if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+            ImGui.EndPopup ()
+        if ImGui.BeginDragDropSource () then
+            let entityAddressStr = scstring entity.EntityAddress
+            dragDropPayloadOpt <- Some entityAddressStr
+            ImGui.Text entity.Name
+            ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
+            ImGui.EndDragDropSource ()
+        if ImGui.BeginDragDropTarget () then
+            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                match dragDropPayloadOpt with
+                | Some payload ->
+                    let sourceEntityAddressStr = payload
+                    let sourceEntity = Entity sourceEntityAddressStr
+                    if not (sourceEntity.GetProtected world) then
+                        if ImGui.IsAltPressed () then
+                            let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                            let previousOpt = World.tryGetPreviousEntity next world
+                            let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
+                            let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                            let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
+                            world <- World.insertEntityOrder sourceEntity previousOpt next world
+                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                            world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                            selectEntityOpt (Some sourceEntity')
+                            showSelectedEntity <- true
+                        else
+                            let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
+                            let mount = Relation.makeParent ()
+                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                            world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
+                            selectEntityOpt (Some sourceEntity')
+                            showSelectedEntity <- true
+                    else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."
+                | None -> ()
+        if expanded then
+            for child in children do imGuiEntityHierarchy child
+            ImGui.TreePop ()
 
-        // populate rollout tab text boxes
-        populateAssetGraphTextBox form
-        populateOverlayerTextBox form
-        populatePreludeTextBox form
-        populateEventFilterTextBox form
+    let private imGuiEditProperties (simulant : Simulant) =
+        let mutable simulant = simulant
+        let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
+        let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
+        for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
+            if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                let propertyDescriptorsSorted = Array.sortBy (fun pd -> pd.PropertyName) propertyDescriptors
+                for propertyDescriptor in propertyDescriptorsSorted do
+                    if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then
+                        match simulant with
+                        | :? Entity as entity ->
+                            // NOTE: name edit properties can't be replaced.
+                            let mutable name = entity.Name
+                            let flags = if entity.GetProtected world then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None
+                            if ImGui.InputText ("Name", &name, 4096u, flags) then
+                                setProperty name propertyDescriptor simulant
+                                let entity' = Entity (Array.add name entity.Parent.SimulantAddress.Names)
+                                selectEntityOpt (Some entity')
+                                simulant <- entity'
+                        | :? Group as group ->
+                            // NOTE: only edit entities names for now.
+                            let mutable name = group.Name
+                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        | :? Screen as screen ->
+                            // NOTE: only edit entities names for now.
+                            let mutable name = screen.Name
+                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        | _ -> ()
+                        // NOTE: don't edit names in property editor for now.
+                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- None
+                    else
+                        let mutable replaced = false
+                        let replaceProperty =
+                            ReplaceProperty
+                                { Snapshot = fun world -> snapshot (); world
+                                  IndicateReplaced = fun world -> replaced <- true; world
+                                  PropertyDescriptor = propertyDescriptor }
+                        world <- World.edit replaceProperty simulant world
+                        if not replaced then
+                            let ty = propertyDescriptor.PropertyType
+                            let converter = SymbolicConverter ty
+                            let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                            let value = SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
+                            let valueStr = converter.ConvertToString value
+                            match value with
+                            | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then setProperty b' propertyDescriptor simulant
+                            | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int8 i') propertyDescriptor simulant
+                            | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint8 i') propertyDescriptor simulant
+                            | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int16 i') propertyDescriptor simulant
+                            | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint16 i') propertyDescriptor simulant
+                            | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int32 i') propertyDescriptor simulant
+                            | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint32 i') propertyDescriptor simulant
+                            | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int64 i') propertyDescriptor simulant
+                            | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint64 i') propertyDescriptor simulant
+                            | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then setProperty (single f') propertyDescriptor simulant
+                            | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (propertyDescriptor.PropertyName, &f') then setProperty (double f') propertyDescriptor simulant
+                            | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (propertyDescriptor.PropertyName, &v') then setProperty v' propertyDescriptor simulant
+                            | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (propertyDescriptor.PropertyName, &v') then setProperty v' propertyDescriptor simulant
+                            | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v') then setProperty v' propertyDescriptor simulant
+                            | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (propertyDescriptor.PropertyName, &v'.X) then setProperty v' propertyDescriptor simulant
+                            | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (propertyDescriptor.PropertyName, &v'.X) then setProperty v' propertyDescriptor simulant
+                            | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (propertyDescriptor.PropertyName, &v'.X) then setProperty v' propertyDescriptor simulant
+                            | :? Box2 as b ->
+                                ImGui.Text propertyDescriptor.PropertyName
+                                let mutable min = v2 b.Min.X b.Min.Y
+                                let mutable size = v2 b.Size.X b.Size.Y
+                                ImGui.Indent ()
+                                if  ImGui.InputFloat2 ("Min", &min) ||
+                                    ImGui.InputFloat2 ("Size", &size) then
+                                    let b' = box2 min size
+                                    setProperty b' propertyDescriptor simulant
+                                ImGui.Unindent ()
+                            | :? Box3 as b ->
+                                ImGui.Text propertyDescriptor.PropertyName
+                                let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
+                                let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
+                                ImGui.Indent ()
+                                if  ImGui.InputFloat3 ("Min", &min) ||
+                                    ImGui.InputFloat3 ("Size", &size) then
+                                    let b' = box3 min size
+                                    setProperty b' propertyDescriptor simulant
+                                ImGui.Unindent ()
+                            | :? Box2i as b ->
+                                ImGui.Text propertyDescriptor.PropertyName
+                                let mutable min = v2i b.Min.X b.Min.Y
+                                let mutable size = v2i b.Size.X b.Size.Y
+                                ImGui.Indent ()
+                                if  ImGui.InputInt2 ("Min", &min.X) ||
+                                    ImGui.InputInt2 ("Size", &size.X) then
+                                    let b' = box2i min size
+                                    setProperty b' propertyDescriptor simulant
+                                ImGui.Unindent ()
+                            | :? Quaternion as q ->
+                                let mutable v = v4 q.X q.Y q.Z q.W
+                                if ImGui.InputFloat4 (propertyDescriptor.PropertyName, &v) then
+                                    let q' = quat v.X v.Y v.Z v.W
+                                    setProperty q' propertyDescriptor simulant
+                            | :? Color as c ->
+                                let mutable v = v4 c.R c.G c.B c.A
+                                if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
+                                    let c' = color v.X v.Y v.Z v.W
+                                    setProperty c' propertyDescriptor simulant
+                            | _ when isPropertyAssetTag ->
+                                let mutable valueStr' = valueStr
+                                if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
+                                    try let value' = converter.ConvertFromString valueStr'
+                                        setProperty value' propertyDescriptor simulant
+                                    with
+                                    | :? ParseException // TODO: use ParseException once Prime is updated.
+                                    | :? ConversionException -> ()
+                                if ImGui.BeginDragDropTarget () then
+                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                        match dragDropPayloadOpt with
+                                        | Some payload ->
+                                            try let propertyValueEscaped = payload
+                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                setProperty propertyValue propertyDescriptor simulant
+                                            with
+                                            | :? ParseException // TODO: use ParseException once Prime is updated.
+                                            | :? ConversionException -> ()
+                                        | None -> ()
+                                    ImGui.EndDragDropTarget ()
+                            | _ ->
+                                let mutable combo = false
+                                if FSharpType.IsUnion ty then
+                                    let cases = FSharpType.GetUnionCases ty
+                                    if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                                        combo <- true
+                                        let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                                        let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                                        let mutable tag = unionCaseInfo.Tag
+                                        if ImGui.Combo (propertyDescriptor.PropertyName, &tag, caseNames, caseNames.Length) then
+                                            let value' = FSharpValue.MakeUnion (cases.[tag], [||])
+                                            setProperty value' propertyDescriptor simulant
+                                if not combo then
+                                    let mutable valueStr' = valueStr
+                                    if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
+                                        try let value' = converter.ConvertFromString valueStr'
+                                            setProperty value' propertyDescriptor simulant
+                                        with
+                                        | :? ParseException // TODO: use ParseException once Prime is updated.
+                                        | :? ConversionException -> ()
+                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+        world <- World.edit AppendProperties simulant world
 
-        // finally, show and activate form
-        form.Show ()
-        form.Activate ()
-        form
+    let private imGuiProcess wtemp =
+
+        // transfer to world mutation mode
+        world <- wtemp
+
+        // enable global docking
+        ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
+
+        // attempt to proceed with normal operation
+        match recoverableExceptionOpt with
+        | None ->
+
+            // use a generalized exception process
+            try
+
+                // process non-widget specific input
+                updateEyeDrag ()
+                updateEntityDrag ()
+                updateHotkeys ()
+
+                // viewport interaction
+                let io = ImGui.GetIO ()
+                ImGui.SetNextWindowPos v2Zero
+                ImGui.SetNextWindowSize io.DisplaySize
+                if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
+                    match selectedEntityOpt with
+                    | Some entity when entity.Exists world && entity.GetIs3d world ->
+                        let viewport = Constants.Render.Viewport
+                        let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
+                        let view = viewMatrix.ToArray ()
+                        let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
+                        let projection = projectionMatrix.ToArray ()
+                        let affineMatrix = entity.GetAffineMatrix world
+                        let affine = affineMatrix.ToArray ()
+                        ImGuizmo.SetOrthographic false
+                        ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                        ImGuizmo.SetDrawlist () // NOTE: I guess this goes right before Manipulate?
+                        if not manipulationActive then
+                            if ImGui.IsShiftPressed () then manipulationOperation <- OPERATION.SCALE
+                            elif ImGui.IsAltPressed () then manipulationOperation <- OPERATION.ROTATE
+                            else manipulationOperation <- OPERATION.TRANSLATE
+                        if ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0]) then
+                            if not manipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
+                                snapshot ()
+                                manipulationActive <- true
+                            let affine' = Matrix4x4.CreateFromArray affine
+                            let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
+                            if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
+                                let (p, _, s) = if not snaps2dSelected then snaps3d else (0.0f, 0.0f, 0.0f)
+                                scale <- Math.snapF3d s scale
+                                if scale.X < 0.01f then scale.X <- 0.01f
+                                if scale.Y < 0.01f then scale.Y <- 0.01f
+                                if scale.Z < 0.01f then scale.Z <- 0.01f
+                                position <- Math.snapF3d p position
+                                match manipulationOperation with
+                                | OPERATION.SCALE -> world <- entity.SetScale scale world
+                                | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
+                                | OPERATION.TRANSLATE -> world <- entity.SetPosition position world
+                                | _ -> () // nothing to do
+                            world <- entity.SetLinearVelocity v3Zero world
+                            world <- entity.SetAngularVelocity v3Zero world
+                        let operation =
+                            OverlayViewport
+                                { Snapshot = fun world -> snapshot (); world
+                                  ViewportView = viewMatrix
+                                  ViewportProjection = projectionMatrix
+                                  ViewportBounds = box2 v2Zero io.DisplaySize }
+                        world <- World.editEntity operation entity world
+                        if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
+                    | Some _ | None -> ()
+                    ImGui.End ()
+
+                // show all windows when out in full-screen mode
+                if not fullScreen then
+
+                    // main menu window
+                    if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
+                        if ImGui.BeginMenuBar () then
+                            if ImGui.BeginMenu "File" then
+                                if ImGui.MenuItem ("New Project") then
+                                    showNewProjectDialog <- true
+                                if ImGui.MenuItem ("Open Project") then
+                                    showOpenProjectDialog <- true
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("New Group", "Ctrl+N") then
+                                    showNewGroupDialog <- true
+                                if ImGui.MenuItem ("Open Group", "Ctrl+O") then
+                                    showOpenGroupDialog <- true
+                                if ImGui.MenuItem ("Save Group", "Ctrl+S") then
+                                    match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
+                                    | Some groupFilePath -> trySaveSelectedGroup groupFilePath |> ignore<bool>
+                                    | None -> showSaveGroupDialog <- true
+                                if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then
+                                    match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
+                                    | Some filePath -> groupFilePath <- filePath
+                                    | None -> groupFilePath <- ""
+                                    showSaveGroupDialog <- true
+                                if ImGui.MenuItem "Close Group" then
+                                    let groups = world |> World.getGroups selectedScreen |> Set.ofSeq
+                                    if not (selectedGroup.GetProtected world) && Set.count groups > 1 then
+                                        snapshot ()
+                                        let groupsRemaining = Set.remove selectedGroup groups
+                                        selectEntityOpt None
+                                        world <- World.destroyGroupImmediate selectedGroup world
+                                        groupFilePaths <- Map.remove selectedGroup.GroupAddress groupFilePaths
+                                        selectGroup (Seq.head groupsRemaining)
+                                ImGui.Separator ()
+                                if ImGui.MenuItem "Exit" then world <- World.exit world
+                                ImGui.EndMenu ()
+                            if ImGui.BeginMenu "Edit" then
+                                if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
+                                if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("Cut", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Copy", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Paste", "Ctrl+V") then tryPaste false |> ignore<bool>
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("Create", "Ctrl+Enter") then createEntity false false
+                                if ImGui.MenuItem ("Delete", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
+                                ImGui.EndMenu ()
+                            ImGui.EndMenuBar ()
+                        if ImGui.Button "Create" then createEntity false false
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 200.0f
+                        if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
+                            for dispatcherName in (World.getEntityDispatchers world).Keys do
+                                if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
+                                    newEntityDispatcherName <- dispatcherName
+                            ImGui.EndCombo ()
+                        ImGui.SameLine ()
+                        ImGui.Text "w/ Overlay"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 150.0f
+                        let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays world |> Map.toKeyArray)
+                        if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
+                            for overlayName in overlayNames do
+                                if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
+                                    newEntityDispatcherName <- overlayName
+                            ImGui.EndCombo ()
+                        ImGui.SameLine ()
+                        ImGui.Text "@ Elevation"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 50.0f
+                        ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.05f, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.SameLine ()
+                        if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
+                        ImGui.SameLine ()
+                        if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+                        ImGui.SameLine ()
+                        ImGui.Text "|"
+                        ImGui.SameLine ()
+                        if World.getHalted world then
+                            if ImGui.Button "*Run*" then
+                                snapshot ()
+                                world <- World.setAdvancing true world
+                        else
+                            if ImGui.Button "Pause" then
+                                world <- World.setAdvancing false world
+                            ImGui.SameLine ()
+                            ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
+                        ImGui.SameLine ()
+                        ImGui.Text "|"
+                        ImGui.SameLine ()
+                        ImGui.Text "Snap:"
+                        ImGui.SameLine ()
+                        ImGui.Text "2d"
+                        ImGui.SameLine ()
+                        ImGui.Checkbox ("##snaps2dSelected", &snaps2dSelected) |> ignore<bool>
+                        ImGui.SameLine ()
+                        let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
+                        ImGui.Text "Pos"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 36.0f
+                        ImGui.DragFloat ("##p", &p, (if snaps2dSelected then 0.1f else 0.01f), 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.SameLine ()
+                        ImGui.Text "Deg"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 36.0f
+                        if snaps2dSelected
+                        then ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        else ImGui.DragFloat ("##d", &d, 0.0f, 0.0f, 0.0f, "%2.2f") |> ignore<bool> // unchangable 3d rotation
+                        ImGui.SameLine ()
+                        ImGui.Text "Scl"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 36.0f
+                        ImGui.DragFloat ("##s", &s, 0.01f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.SameLine ()
+                        if snaps2dSelected then snaps2d <- (p, d, s) else snaps3d <- (p, d, s)
+                        ImGui.SameLine ()
+                        ImGui.Text "|"
+                        ImGui.SameLine ()
+                        ImGui.Text "Eye:"
+                        ImGui.SameLine ()
+                        if ImGui.Button "Reset" then resetEye ()
+                        ImGui.SameLine ()
+                        ImGui.Text "|"
+                        ImGui.SameLine ()
+                        ImGui.Text "Reload:"
+                        ImGui.SameLine ()
+                        if ImGui.Button "Assets" then tryReloadAssets ()
+                        ImGui.SameLine ()
+                        if ImGui.Button "Code" then tryReloadCode ()
+                        ImGui.SameLine ()
+                        if ImGui.Button "All" then tryReloadAll ()
+                        ImGui.SameLine ()
+                        ImGui.Text "|"
+                        ImGui.SameLine ()
+                        ImGui.Text "Mode:"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 150.0f
+                        if ImGui.BeginCombo ("##projectEditMode", projectEditMode) then
+                            let editModes = World.getEditModes world
+                            for editMode in editModes do
+                                if ImGui.Selectable (editMode.Key, strEq editMode.Key projectEditMode) then
+                                    projectEditMode <- editMode.Key
+                                    snapshot () // snapshot before mode change
+                                    selectEntityOpt None
+                                    world <- editMode.Value world
+                                    snapshot () // snapshot before after change
+                            ImGui.EndCombo ()
+                        ImGui.SameLine ()
+                        ImGui.Text "Full (F11)"
+                        ImGui.SameLine ()
+                        ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                        ImGui.End ()
+
+                    // asset viewer window
+                    if ImGui.Begin "Asset Viewer" then
+                        ImGui.SetNextItemWidth -1.0f
+                        ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
+                        let assets = Metadata.getDiscoveredAssets ()
+                        for package in assets do
+                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                            if ImGui.TreeNodeEx (package.Key, flags) then
+                                for assetName in package.Value do
+                                    if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
+                                        ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
+                                        if ImGui.BeginDragDropSource () then
+                                            let assetTagStr = "[" + package.Key + " " + assetName + "]"
+                                            dragDropPayloadOpt <- Some assetTagStr
+                                            ImGui.Text assetTagStr
+                                            ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
+                                            ImGui.EndDragDropSource ()
+                                        ImGui.TreePop ()
+                                ImGui.TreePop ()
+                        ImGui.End ()
+
+                    // entity hierarchy window
+                    if ImGui.Begin "Entity Hierarchy" then
+                        if ImGui.Button "Show Selected" then showSelectedEntity <- true
+                        let groups = World.getGroups selectedScreen world
+                        let mutable selectedGroupName = selectedGroup.Name
+                        ImGui.SetNextItemWidth -1.0f
+                        if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName) then
+                            for group in groups do
+                                if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
+                                    selectEntityOpt None
+                                    selectGroup group
+                            ImGui.EndCombo ()
+                        if ImGui.BeginDragDropTarget () then
+                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                                match dragDropPayloadOpt with
+                                | Some payload ->
+                                    let sourceEntityAddressStr = payload
+                                    let sourceEntity = Entity sourceEntityAddressStr
+                                    if not (sourceEntity.GetProtected world) then
+                                        let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
+                                        world <- sourceEntity.SetMountOptWithAdjustment None world
+                                        world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                        selectEntityOpt (Some sourceEntity')
+                                        showSelectedEntity <- true
+                                | None -> ()
+                        let entities =
+                            World.getEntitiesSovereign selectedGroup world |> // TODO: P1: see if we can optimize entity hierarchy queries!
+                            Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
+                            Array.ofSeq |>
+                            Array.sortBy fst |>
+                            Array.map snd
+                        for entity in entities do
+                            imGuiEntityHierarchy entity
+                        ImGui.End ()
+
+                    // game properties window
+                    if ImGui.Begin "Game Properties" then
+                        imGuiEditProperties Simulants.Game
+                        ImGui.End ()
+
+                    // screen properties window
+                    if ImGui.Begin "Screen Properties" then
+                        imGuiEditProperties selectedScreen
+                        ImGui.End ()
+
+                    // group properties window
+                    if ImGui.Begin "Group Properties" then
+                        imGuiEditProperties selectedGroup
+                        ImGui.End ()
+
+                    // entity properties window
+                    if ImGui.Begin "Entity Properties" then
+                        match selectedEntityOpt with
+                        | Some entity when entity.Exists world -> imGuiEditProperties entity
+                        | Some _ | None -> ()
+                        ImGui.End ()
+
+                    // property editor window
+                    if ImGui.Begin "Property Editor" then
+                        match propertyDescriptorFocusedOpt with
+                        | Some (propertyDescriptor, simulant) when
+                            World.getExists simulant world &&
+                            propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                            let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                            match getProperty propertyDescriptor simulant with
+                            | null -> ()
+                            | propertyValue ->
+                                ImGui.Text propertyDescriptor.PropertyName
+                                ImGui.SameLine ()
+                                ImGui.Text ":"
+                                ImGui.SameLine ()
+                                ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
+                                let propertyValueUnescaped = converter.ConvertToString propertyValue
+                                let propertyValueEscaped = String.escape propertyValueUnescaped
+                                let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                                if isPropertyAssetTag then
+                                    ImGui.SameLine ()
+                                    if ImGui.Button "Pick" then showAssetPickerDialog <- true
+                                let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                                if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                                    try let propertyValueEscaped = propertyValuePretty
+                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                        setProperty propertyValue propertyDescriptor simulant
+                                    with
+                                    | :? ParseException // TODO: use ParseException once Prime is updated.
+                                    | :? ConversionException -> ()
+                                if isPropertyAssetTag then
+                                    if ImGui.BeginDragDropTarget () then
+                                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                            match dragDropPayloadOpt with
+                                            | Some payload ->
+                                                try let propertyValueEscaped = payload
+                                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                    setProperty propertyValue propertyDescriptor simulant
+                                                with
+                                                | :? ParseException // TODO: use ParseException once Prime is updated.
+                                                | :? ConversionException -> ()
+                                            | None -> ()
+                                        ImGui.EndDragDropTarget ()
+                        | Some _ | None -> ()
+                        ImGui.End ()
+
+                    // asset graph window
+                    if ImGui.Begin "Asset Graph" then
+                        if ImGui.Button "Save" then
+                            let assetSourceDir = targetDir + "/../../.."
+                            let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                            try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                                File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
+                            with exn ->messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                        ImGui.SameLine ()
+                        if ImGui.Button "Load" then
+                            match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+                            | Right assetGraph ->
+                                let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                                assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+                            | Left error ->messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
+                        ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                        ImGui.End ()
+
+                    // overlayer window
+                    if ImGui.Begin "Overlayer" then
+                        if ImGui.Button "Save" then
+                            let overlayerSourceDir = targetDir + "/../../.."
+                            let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                            try let overlays = scvalue<Overlay list> overlayerStr
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                                File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
+                            with exn ->messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                        ImGui.SameLine ()
+                        if ImGui.Button "Load" then
+                            let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
+                            match Overlayer.tryMakeFromFile [] overlayerFilePath with
+                            | Right overlayer ->
+                                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                                overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+                            | Left error ->messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
+                        ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                        ImGui.End ()
+
+                    // event tracing window
+                    if ImGui.Begin "Event Tracing" then
+                        let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
+                        if ImGui.Checkbox ("Trace Events", &traceEvents) then
+                            world <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) world
+                        let eventFilter = World.getEventFilter world
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
+                        let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+                        if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
+                            try let eventFilter = scvalue<EventFilter> eventFilterStr
+                                world <- World.setEventFilter eventFilter world
+                            with _ -> ()
+                        ImGui.End ()
+
+                    // audio player window
+                    if ImGui.Begin "Audio Player" then
+                        ImGui.Text "Master Sound Volume"
+                        let mutable masterSoundVolume = World.getMasterSoundVolume world
+                        if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then world <- World.setMasterSoundVolume masterSoundVolume world
+                        ImGui.SameLine ()
+                        ImGui.Text (string masterSoundVolume)
+                        ImGui.Text "Master Song Volume"
+                        let mutable masterSongVolume = World.getMasterSongVolume world
+                        if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then world <- World.setMasterSongVolume masterSongVolume world
+                        ImGui.SameLine ()
+                        ImGui.Text (string masterSongVolume)
+                        ImGui.End ()
+
+                    // renderer window
+                    if ImGui.Begin "Renderer" then
+                        ImGui.Text "Light-Mapping (local light mapping)"
+                        let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
+                        ImGui.Checkbox ("Light-Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
+                        lightMappingConfig <- { LightMappingEnabled = lightMappingEnabled }
+                        world <- World.enqueueRenderMessage3d (ConfigureLightMapping lightMappingConfig) world
+                        ImGui.Text "Ssao (screen-space ambient occlusion)"
+                        let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
+                        let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
+                        let mutable ssaoBias = ssaoConfig.SsaoBias
+                        let mutable ssaoRadius = ssaoConfig.SsaoRadius
+                        let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
+                        ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
+                        if ssaoEnabled then
+                            ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
+                            ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
+                            ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
+                            ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, 256) |> ignore<bool>
+                        ssaoConfig <-
+                            { SsaoEnabled = ssaoEnabled
+                              SsaoIntensity = ssaoIntensity
+                              SsaoBias = ssaoBias
+                              SsaoRadius = ssaoRadius
+                              SsaoSampleCount = ssaoSampleCount }
+                        world <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
+                        ImGui.End ()
+
+                // in full-screen mode, just show full-screen short cut window
+                else
+                    if ImGui.Begin "Full Screen Enabled" then
+                        ImGui.Text "Full Screen (F11)"
+                        ImGui.SameLine ()
+                        ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                        ImGui.End ()
+
+                // entity context menu
+                if showEntityContextMenu then
+                    ImGui.SetNextWindowPos rightClickPosition
+                    ImGui.SetNextWindowSize (v2 250.0f 135.0f)
+                    if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar) then
+                        if ImGui.Button "Create" then createEntity true false; showEntityContextMenu <- false
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth -1.0f
+                        if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
+                            for dispatcherName in (World.getEntityDispatchers world).Keys do
+                                if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
+                                    newEntityDispatcherName <- dispatcherName
+                                    createEntity true false
+                                    showEntityContextMenu <- false
+                            ImGui.EndCombo ()
+                        if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
+                        if  ImGui.IsMouseClicked ImGuiMouseButton.Right ||
+                            ImGui.IsKeyPressed ImGuiKey.Escape then
+                            showEntityContextMenu <- false
+                        ImGui.Separator ()
+                        if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showEntityContextMenu <- false
+                        ImGui.End ()
+
+                // asset picker dialog
+                if showAssetPickerDialog then
+                    let title = "Choose an Asset..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showAssetPickerDialog) then
+                        ImGui.SetNextItemWidth -1.0f
+                        ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
+                        let assets = Metadata.getDiscoveredAssets ()
+                        for package in assets do
+                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                            if ImGui.TreeNodeEx (package.Key, flags) then
+                                for assetName in package.Value do
+                                    if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
+                                        if ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) then
+                                            if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+                                                match propertyDescriptorFocusedOpt with
+                                                | Some (propertyDescriptor, simulant) when
+                                                    World.getExists simulant world &&
+                                                    propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                                                    let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                                                    let propertyValueStr = "[" + package.Key + " " + assetName + "]"
+                                                    let propertyValue = converter.ConvertFromString propertyValueStr
+                                                    setProperty propertyValue propertyDescriptor simulant
+                                                | Some _ | None -> ()
+                                                showAssetPickerDialog <- false
+                                            ImGui.TreePop ()
+                                ImGui.TreePop ()
+                        ImGui.EndPopup ()
+                    if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
+
+                // new project dialog
+                if showNewProjectDialog then
+
+                    // ensure template directory exists
+                    let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
+                    let slnDir = programDir + "/../../../../.." |> Path.Simplify
+                    let templateDir = programDir + "/../../../../Nu.Template" |> Path.Simplify
+                    if Directory.Exists templateDir then
+
+                        // prompt user to create new project
+                        if ImGui.Begin "Create Nu Project... *EDITOR RESTART REQUIRED!*" then
+                            ImGui.Text "Project Name"
+                            ImGui.SameLine ()
+                            ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
+                            newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
+                            let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
+                            let templateFileName = "Nu.Template.fsproj"
+                            let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
+                            let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
+                            let newProjectDll = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
+                            let newFileName = newProjectName + ".fsproj"
+                            let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
+                            let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
+                            if not validName then ImGui.Text "Invalid project name!"
+                            let validDirectory = not (Directory.Exists newProjectDir)
+                            if not validDirectory then ImGui.Text "Project already exists!"
+                            if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) then
+
+                                // attempt to create project files
+                                try Log.info ("Creating project '" + newProjectName + "' in '" + projectsDir + "'...")
+
+                                    // install nu template
+                                    Directory.SetCurrentDirectory templateDir
+                                    Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
+                                    Process.Start("dotnet", "new install ./").WaitForExit()
+
+                                    // instantiate nu template
+                                    Directory.SetCurrentDirectory projectsDir
+                                    Directory.CreateDirectory newProjectName |> ignore<DirectoryInfo>
+                                    Directory.SetCurrentDirectory newProjectDir
+                                    Process.Start("dotnet", "new nu-game --force").WaitForExit()
+
+                                    // rename project file
+                                    File.Copy (templateFileName, newFileName, true)
+                                    File.Delete templateFileName
+
+                                    // substitute project guid in project file
+                                    let projectGuid = Gen.id
+                                    let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
+                                    let newProjectStr = File.ReadAllText newProject
+                                    let newProjectStr = newProjectStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
+                                    File.WriteAllText (newProject, newProjectStr)
+
+                                    // add project to sln file
+                                    Directory.SetCurrentDirectory slnDir
+                                    let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
+                                    let insertionIndex = List.findIndexBack ((=) "\tEndProjectSection") slnLines
+                                    let slnLines = 
+                                        List.take insertionIndex slnLines @
+                                        ["\t\t{" + projectGuidStr + "} = {" + projectGuidStr + "}"] @
+                                        List.skip insertionIndex slnLines
+                                    let insertionIndex = List.findIndex ((=) "Global") slnLines
+                                    let slnLines =
+                                        List.take insertionIndex slnLines @
+                                        ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + newProjectName + "\", \"Projects\\" + newProjectName + "\\" + newProjectName + ".fsproj\", \"{" + projectGuidStr + "}\""
+                                         "EndProject"] @
+                                        List.skip insertionIndex slnLines
+                                    let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
+                                    let slnLines =
+                                        List.take insertionIndex slnLines @
+                                        ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
+                                         "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
+                                         "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
+                                         "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|x64"] @
+                                        List.skip insertionIndex slnLines
+                                    let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
+                                    let slnLines =
+                                        List.take insertionIndex slnLines @
+                                        ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
+                                        List.skip insertionIndex slnLines
+                                    File.WriteAllLines ("Nu.sln", List.toArray slnLines)
+                                    Log.info ("Project '" + newProjectName + "'" + "created.")
+
+                                    // configure editor to open new project then exit
+                                    let savedState =
+                                        { ProjectFilePath = newProjectDll
+                                          EditModeOpt = Some "Title"
+                                          UseImperativeExecution = projectImperativeExecution }
+                                    let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                                    let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                                    try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                        Directory.SetCurrentDirectory gaiaDirectory
+                                        world <- World.exit world
+                                    with _ -> Log.trace "Could not save editor state and open new project."
+
+                                    // close dialog
+                                    showNewProjectDialog <- false
+                                    newProjectName <- "MyGame"
+
+                                // log failure
+                                with exn -> Log.trace ("Failed to create new project '" + newProjectName + "' due to: " + scstring exn)
+
+                            // escape to cancel
+                            if ImGui.IsKeyPressed ImGuiKey.Escape then
+                                showNewProjectDialog <- false
+                                newProjectName <- "MyGame"
+
+                            // fin
+                            ImGui.End ()
+
+                    // template project missing
+                    else
+                        Log.trace "Template project is missing; new project cannot be generated."
+                        showNewProjectDialog <- false
+
+                // open project dialog
+                if showOpenProjectDialog then
+                    let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
+                        ImGui.Text "File Path:"
+                        ImGui.SameLine ()
+                        ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &projectFilePath, 4096u) |> ignore<bool>
+                        ImGui.Text "Edit Mode:"
+                        ImGui.SameLine ()
+                        ImGui.InputText ("##projectGameMode", &projectEditMode, 4096u) |> ignore<bool>
+                        ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &projectImperativeExecution) |> ignore<bool>
+                        if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
+                            String.notEmpty projectFilePath &&
+                            File.Exists projectFilePath then
+                            showOpenProjectDialog <- false
+                            let savedState =
+                                { ProjectFilePath = projectFilePath
+                                  EditModeOpt = Some projectEditMode
+                                  UseImperativeExecution = projectImperativeExecution }
+                            let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                            let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                Directory.SetCurrentDirectory gaiaDirectory
+                                world <- World.exit world
+                            with _ -> Log.info "Could not save editor state and open project."
+                        if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
+
+                // new group dialog
+                if showNewGroupDialog then
+                    let title = "Create a group..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showNewGroupDialog) then
+                        ImGui.Text "Group Name:"
+                        ImGui.SameLine ()
+                        ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
+                        if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
+                            for dispatcherName in (World.getGroupDispatchers world).Keys do
+                                if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
+                                    newGroupDispatcherName <- dispatcherName
+                            ImGui.EndCombo ()
+                        let newGroup = selectedScreen / newGroupName
+                        if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && not (newGroup.Exists world) then
+                            let oldWorld = world
+                            try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
+                                selectGroup newGroup
+                                showNewGroupDialog <- false
+                            with exn ->
+                                world <- World.choose oldWorld
+                                messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
+                        if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
+
+                // open group dialog
+                if showOpenGroupDialog then
+                    let title = "Choose a nugroup file..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showOpenGroupDialog) then
+                        ImGui.Text "File Path:"
+                        ImGui.SameLine ()
+                        ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
+                        if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
+                            String.notEmpty groupFilePath &&
+                            File.Exists groupFilePath then
+                            snapshot ()
+                            showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
+                        if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
+
+                // save group dialog
+                if showSaveGroupDialog then
+                    let title = "Save a nugroup file..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showSaveGroupDialog) then
+                        ImGui.Text "File Path:"
+                        ImGui.SameLine ()
+                        ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
+                        if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
+                            snapshot ()
+                            showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
+                    if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
+
+                // message box dialog
+                match messageBoxOpt with
+                | Some messageBox ->
+                    let title = "Message."
+                    let mutable showing = true
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showing) then
+                        ImGui.TextWrapped messageBox
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
+                        ImGui.EndPopup ()
+                    if not showing then messageBoxOpt <- None
+                | None -> ()
+
+                // imgui inspector window
+                if showInspector then
+                    ImGui.ShowStackToolWindow ()
+
+                // fin
+                world
+
+            // propagate exception to dialog
+            with exn ->
+                recoverableExceptionOpt <- Some (exn, wtemp)
+                world
+
+        // exception handling dialog
+        | Some (exn, oldWorld) ->
+            let title = "Unexpected Exception!"
+            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
+                ImGui.Text "Exception text:"
+                ImGui.TextWrapped (scstring exn)
+                ImGui.Text "How would you like to handle this exception?"
+                if ImGui.Button "Ignore exception and revert to old world." then
+                    world <- oldWorld
+                    recoverableExceptionOpt <- None
+                if ImGui.Button "Ignore exception and process with current world." then
+                    recoverableExceptionOpt <- None
+                if ImGui.Button "Exit the editor." then
+                    world <- World.exit world
+                ImGui.EndPopup ()
+            world
+
+    let rec private runWithCleanUp savedState targetDir' screen wtemp =
+        world <- wtemp
+        targetDir <- targetDir'
+        projectFilePath <- savedState.ProjectFilePath
+        projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
+        projectImperativeExecution <- savedState.UseImperativeExecution
+        selectScreen screen
+        selectGroup (Nu.World.getGroups screen world |> Seq.head)
+        newEntityDispatcherName <- Nu.World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
+        assetGraphStr <-
+            match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+            | Right assetGraph ->
+                let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+            | Left error ->
+                messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
+                ""
+        overlayerStr <-
+            let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
+            match Overlayer.tryMakeFromFile [] overlayerFilePath with
+            | Right overlayer ->
+                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+            | Left error ->
+                messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
+                ""
+        let result = World.runWithCleanUp tautology id id id imGuiProcess Live true world
+        world <- Unchecked.defaultof<_>
+        result
+
+    (* Public API *)
 
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
@@ -2177,26 +1912,17 @@ module Gaia =
         | Left error -> Left error
 
     /// Attempt to make Gaia's SDL dependencies.
-    let tryMakeSdlDeps (form : GaiaForm) =
-        let sdlConfig =
-            { ViewConfig = ExistingWindow form.displayPanel
-              ViewW = Constants.Render.ResolutionX
-              ViewH = Constants.Render.ResolutionY
-              AudioChunkSize = Constants.Audio.BufferSizeDefault }
+    let tryMakeSdlDeps () =
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
+        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
         match SdlDeps.tryMake sdlConfig with
         | Left msg -> Left msg
         | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
-    /// Initialize Gaia.
-    let init nuConfig =
-        Nu.init nuConfig
-        Globals.init selectEntity
-
     /// Run Gaia.
     let run nuConfig gaiaPlugin =
-        let (savedState, targetDir', plugin) = selectNuPlugin gaiaPlugin
-        use form = createForm ()
-        match tryMakeSdlDeps form with
+        let (savedState, targetDir, plugin) = selectNuPlugin gaiaPlugin
+        match tryMakeSdlDeps () with
         | Right (sdlConfig, sdlDeps) ->
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
@@ -2206,12 +1932,206 @@ module Gaia =
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right (screen, world) ->
-                Globals.Form <- form
-                Globals.World <- world
-                targetDir <- targetDir'
-                selectedScreen <- screen
-                selectedGroup <- Nu.World.getGroups screen world |> Seq.head
-                let _ = run4 savedState.EditModeOpt sdlDeps screen form
-                Constants.Engine.ExitCodeSuccess
+                let world = World.subscribe handleNuEntityContext Events.MouseRightUp Simulants.Game world
+                let world = World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game world
+                let world = World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game world
+                let world = World.subscribe handleNuEyeDragBegin Events.MouseMiddleDown Simulants.Game world
+                let world = World.subscribe handleNuEyeDragEnd Events.MouseMiddleUp Simulants.Game world
+                let world = World.subscribe handleNuUpdate Events.Update Simulants.Game world
+                let world = World.subscribe handleNuRender Events.Render Simulants.Game world
+                let world = World.subscribe handleNuSelectedScreenOptChange Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game world
+                let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
+                let imguiIniFilePath = targetDir + "/imgui.ini"
+                if not (File.Exists imguiIniFilePath) then
+                    let imguiIniFileStr = """
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
+[Window][DockSpaceViewport_11111111]
+Pos=0,0
+Size=1920,1080
+Collapsed=0
+
+[Window][Panel]
+Size=1920,1080
+Collapsed=0
+
+[Window][Gaia]
+Pos=0,0
+Size=1920,54
+Collapsed=0
+DockId=0x00000002,0
+
+[Window][Hierarchy]
+Pos=0,57
+Size=174,1023
+Collapsed=0
+DockId=0x0000000B,0
+
+[Window][Properties]
+Pos=1574,58
+Size=346,1022
+Collapsed=0
+DockId=0x00000006,0
+
+[Window][Property Editor]
+Pos=284,874
+Size=712,206
+Collapsed=0
+DockId=0x00000001,0
+
+[Window][Asset Viewer]
+Pos=0,56
+Size=282,1024
+Collapsed=0
+DockId=0x0000000C,1
+
+[Window][Asset Graph]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,2
+
+[Window][Overlayer]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,3
+
+[Window][Event Tracing]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,4
+
+[Window][Audio Player]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,0
+
+[Window][Renderer]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,1
+
+[Window][Choose a project .dll and configuration...]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Choose a project .dll... EDITOR RESTART REQUIRED!]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Create a group...]
+Pos=715,469
+Size=482,128
+Collapsed=0
+
+[Window][Full Screen Enabled]
+Pos=60,60
+Size=162,54
+Collapsed=0
+
+[Window][Choose a nugroup file...]
+Pos=756,500
+Size=403,84
+Collapsed=0
+
+[Window][Choose a project .dll... *MANUAL RESTART REQUIRED!*]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Message!]
+Pos=706,456
+Size=433,93
+Collapsed=0
+
+[Window][Viewport]
+Pos=0,0
+Size=1920,1080
+Collapsed=0
+
+[Window][Entity Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,3
+
+[Window][Group Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,2
+
+[Window][Screen Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,1
+
+[Window][Game Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,0
+
+[Window][Entity Hierarchy]
+Pos=0,56
+Size=282,1024
+Collapsed=0
+DockId=0x0000000C,0
+
+[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
+Pos=662,475
+Size=592,125
+Collapsed=0
+
+[Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
+Pos=661,488
+Size=621,105
+Collapsed=0
+
+[Window][Message.]
+Pos=934,140
+Size=360,182
+Collapsed=0
+
+[Window][Save a nugroup file...]
+Pos=665,470
+Size=598,134
+Collapsed=0
+
+[Window][Choose an Asset...]
+Pos=796,323
+Size=336,458
+Collapsed=0
+
+[Docking][Data]
+DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
+  DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
+  DockNode            ID=0x0000000F Parent=0x8B93E3BD SizeRef=1920,1024 Split=X
+    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1622,1080 Split=X
+      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=282,1080 Split=X Selected=0x29EABFBD
+        DockNode      ID=0x0000000B Parent=0x00000007 SizeRef=174,1022 Selected=0x29EABFBD
+        DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Selected=0xAE464409
+      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1338,1080 Split=X
+        DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
+          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,816 CentralNode=1
+          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,206 Split=X Selected=0xD4E24632
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=712,205 Selected=0x61D81DE4
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=624,205 Selected=0xD4E24632
+        DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
+    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
+
+"""
+                    File.WriteAllText (imguiIniFilePath, imguiIniFileStr)
+                runWithCleanUp savedState targetDir screen world
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
         | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure

@@ -597,16 +597,9 @@ module WorldModuleEntity =
             transform.CleanRotationMatrix () // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
             transform
 
-        static member internal getEntityMounters entity world =
-            match world.EntityMounts.TryGetValue entity with
-            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SList.ofSeq |> seq
-            | (false, _) -> Seq.empty
-
-        static member internal traverseEntityMounters effect (entity : Entity) (world : World) =
-            let mounters = World.getEntityMounters entity world
-            Seq.fold (fun world mounter -> effect entity mounter world) world mounters
-
-        static member internal getEntityChildren (entity : Entity) world =
+        /// Get all of the entities directly parented by an entity.
+        [<FunctionBinding>]
+        static member getEntityChildren (entity : Entity) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (entity :> Simulant) with
             | (true, entitiesOpt) ->
@@ -615,8 +608,23 @@ module WorldModuleEntity =
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
-        static member internal traverseEntityChildren effect (entity : Entity) (world : World) =
+        /// Traverse all of the entities directly parented by an entity.
+        [<FunctionBinding>]
+        static member traverseEntityChildren effect (entity : Entity) (world : World) =
             let mounters = World.getEntityChildren entity world
+            Seq.fold (fun world mounter -> effect entity mounter world) world mounters
+
+        /// Get all of the entities directly mounted on an entity.
+        [<FunctionBinding>]
+        static member getEntityMounters entity world =
+            match world.EntityMounts.TryGetValue entity with
+            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SList.ofSeq |> seq
+            | (false, _) -> Seq.empty
+
+        /// Traverse all of the entities directly mounted on an entity.
+        [<FunctionBinding>]
+        static member traverseEntityMounters effect (entity : Entity) (world : World) =
+            let mounters = World.getEntityMounters entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
         static member internal addEntityToMounts mountOpt entity world =
@@ -2456,10 +2464,6 @@ module WorldModuleEntity =
             | (Right _, world) -> world
             | (Left _, world) -> world
 
-        static member internal viewEntityProperties entity world =
-            let state = World.getEntityState entity world
-            World.viewSimulantStateProperties state
-
         static member internal updateEntityInEntityTree oldVisible oldStatic oldLight (oldPresence : Presence) oldBounds (entity : Entity) oldWorld world =
 
             // only do this when entity is selected
@@ -2508,6 +2512,10 @@ module WorldModuleEntity =
             // fin
             else world
 
+        static member internal viewEntityProperties entity world =
+            let state = World.getEntityState entity world
+            World.viewSimulantStateProperties state
+
         /// Clear the content of the clipboard.
         static member clearClipboard (_ : World) =
             Clipboard <- None
@@ -2542,7 +2550,7 @@ module WorldModuleEntity =
                         let position =
                             if atMouse
                             then (viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyeCenter, eyeSize)).V3
-                            else (viewport.MouseToWorld2d (entityState.Absolute, (World.getEyeSize2d world * 0.5f), eyeCenter, eyeSize)).V3
+                            else (viewport.MouseToWorld2d (entityState.Absolute, World.getEyeSize2d world, eyeCenter, eyeSize)).V3
                         match snapsEir with
                         | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Right _ -> (position, None)

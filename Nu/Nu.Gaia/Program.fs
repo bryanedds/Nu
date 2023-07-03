@@ -5,10 +5,10 @@ namespace Nu.Gaia
 open System
 open Prime
 open Nu
+open Nu.Gaia
 module Program =
 
-    // TODO: increase project warning level to 5.
     let [<EntryPoint; STAThread>] main _ =
         let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
-        Gaia.init nuConfig
+        Nu.init nuConfig
         Gaia.run nuConfig (GaiaPlugin ())

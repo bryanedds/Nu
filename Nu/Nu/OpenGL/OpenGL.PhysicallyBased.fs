@@ -1483,13 +1483,13 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown state
-        if not material.TwoSided then Gl.Disable EnableCap.CullFace
+        Gl.DepthFunc DepthFunction.Less
+        Gl.Disable EnableCap.DepthTest
         if blending then
             Gl.Disable EnableCap.Blend
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.BlendEquation BlendEquationMode.FuncAdd
-        Gl.Disable EnableCap.DepthTest
-        Gl.DepthFunc DepthFunction.Less
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw the light mapping pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightMappingSurface

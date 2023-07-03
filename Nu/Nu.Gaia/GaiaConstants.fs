@@ -15,7 +15,7 @@ module Constants =
         let [<Literal>] Position2dSnapDefault = 12.0f
         let [<Literal>] Position3dSnapDefault = 0.1f
         let [<Literal>] Degrees2dSnapDefault = 5.0f
-        let [<Literal>] Degrees3dSnapDefault = 5.0f
+        let [<Literal>] Degrees3dSnapDefault = 0.0f
         let [<Literal>] Scale2dSnapDefault = 0.1f
         let [<Literal>] Scale3dSnapDefault = 0.1f
         let [<Literal>] CreationElevationDefault = 0.0f
@@ -33,3 +33,9 @@ module Constants =
                  EventFilter.Pattern (Rexpr "Integration", [])
                  EventFilter.Pattern (Rexpr "BodyTransform", [])
                  EventFilter.Pattern (Rexpr "Mouse/Move", [])]
+        let [<Literal>] BuildName =
+#if DEBUG
+            "Debug"
+#else
+            "Release"
+#endif

@@ -33,12 +33,12 @@
   [LightDispatcher3d
    [[Position [0 5 2]]]]
   [StaticModelDispatcher
-   [[Name SphereLeft]
+   [[Name StaticModelLeft]
     [Position [-2 1.5 0]]
     [Scale [1 1 1]]
     [Size [3.833142 5.769598 5.354998]]]]
   [StaticModelDispatcher
-   [[Name SphereRight]
+   [[Name StaticModelRight]
     [Position [2 1.5 0]]
     [Scale [1 1 1]]
     [Size [3.833142 5.769598 5.354998]]]]]]

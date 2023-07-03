@@ -105,8 +105,6 @@ and Renderer2d =
     abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.SpriteBatchEnv option
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
-    /// Swap a rendered frame of the game.
-    abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -118,7 +116,6 @@ type [<ReferenceEquality>] MockRenderer2d =
     interface Renderer2d with
         member renderer.SpriteBatchEnvOpt = None
         member renderer.Render _ _ _ _ = ()
-        member renderer.Swap () = ()
         member renderer.CleanUp () = ()
 
     static member make () =
@@ -148,9 +145,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderPackages : Packages<RenderAsset, unit>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed.
           mutable RenderAssetCachedOpt : string * RenderAsset
-          RenderLayeredOperations : LayeredOperation2d List
-          RenderShouldBeginFrame : bool
-          RenderShouldEndFrame : bool }
+          RenderLayeredOperations : LayeredOperation2d List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -683,22 +678,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         OpenGL.Hl.Assert ()
 
     /// Make a GlRenderer2d.
-    static member make window config =
-
-        // initialize context if directed
-        if config.ShouldInitializeContext then
-
-            // create context
-            match window with
-            | SglWindow window ->
-                OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-                OpenGL.Hl.Assert ()
-            | WfglWindow window ->
-                window.CreateContext ()
-                OpenGL.Hl.Assert ()
-
-            // listen to debug messages
-            OpenGL.Hl.AttachDebugMessageCallback ()
+    static member make window =
 
         // create one-off sprite and text resources
         let spriteShader = OpenGL.Sprite.CreateSpriteShader ()
@@ -720,9 +700,7 @@ type [<ReferenceEquality>] GlRenderer2d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              RenderLayeredOperations = List ()
-              RenderShouldBeginFrame = config.ShouldBeginFrame
-              RenderShouldEndFrame = config.ShouldEndFrame }
+              RenderLayeredOperations = List () }
 
         // fin
         renderer
@@ -732,27 +710,9 @@ type [<ReferenceEquality>] GlRenderer2d =
         member renderer.SpriteBatchEnvOpt =
             Some renderer.RenderSpriteBatchEnv
 
-        member renderer.Render eyeCenter eyeSize windowSize renderMessages =
-
-            // begin frame
-            let viewportOffset = Constants.Render.ViewportOffset windowSize
-            if renderer.RenderShouldBeginFrame then
-                OpenGL.Hl.BeginFrame viewportOffset
-                OpenGL.Hl.Assert ()
-
-            // render only if there are messages
+        member renderer.Render eyeCenter eyeSize _ renderMessages =
             if renderMessages.Count > 0 then
                 GlRenderer2d.render eyeCenter eyeSize renderMessages renderer
-
-            // end frame
-            if renderer.RenderShouldEndFrame then
-                OpenGL.Hl.EndFrame ()
-                OpenGL.Hl.Assert ()
-
-        member renderer.Swap () =
-            match renderer.RenderWindow with
-            | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-            | WfglWindow window -> window.Swap ()
 
         member renderer.CleanUp () =
             OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.RenderSpriteBatchEnv

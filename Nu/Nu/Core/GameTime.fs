@@ -20,8 +20,12 @@ open Nu
 module GameTime =
 
     let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
-    let [<Literal>] DesiredFrameTimeMinimum = 0.001 // maximum frame rate of 1000 in all configurations.
     let [<Literal>] DesiredFrameTimeSlop = 0.0005
+    let [<Uniform>] DesiredFrameTimeMinimum =
+        match DesiredFrameRate with
+        | StaticFrameRate frameRate -> 1.0 / double frameRate - DesiredFrameTimeSlop
+        | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - DesiredFrameTimeSlop
+        | DynamicFrameRate None -> 1.0 / 300.0 - DesiredFrameTimeSlop
 
 namespace Nu
 open System

@@ -447,9 +447,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          RenderMessages : RenderMessage3d List
-          RenderShouldBeginFrame : bool
-          RenderShouldEndFrame : bool }
+          RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -1559,22 +1557,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
 
     /// Make a GlRenderer3d.
-    static member make window config =
-
-        // initialize context if directed
-        if config.ShouldInitializeContext then
-
-            // create context
-            match window with
-            | SglWindow window ->
-                OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-                OpenGL.Hl.Assert ()
-            | WfglWindow window ->
-                window.CreateContext ()
-                OpenGL.Hl.Assert ()
-
-            // listen to debug messages
-            OpenGL.Hl.AttachDebugMessageCallback ()
+    static member make window =
 
         // create sky box shader
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
@@ -1799,9 +1782,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              RenderMessages = List ()
-              RenderShouldBeginFrame = config.ShouldBeginFrame
-              RenderShouldEndFrame = config.ShouldEndFrame }
+              RenderMessages = List () }
 
         // fin
         renderer
@@ -1812,21 +1793,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.RenderPhysicallyBasedForwardShader
 
         member renderer.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter eyeRotation windowSize renderMessages =
-
-            // begin frame
-            let viewportOffset = Constants.Render.ViewportOffset windowSize
-            if renderer.RenderShouldBeginFrame then
-                OpenGL.Hl.BeginFrame viewportOffset
-                OpenGL.Hl.Assert ()
-
-            // render only if there are messages
             if renderMessages.Count > 0 then
                 GlRenderer3d.render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
-
-            // end frame
-            if renderer.RenderShouldEndFrame then
-                OpenGL.Hl.EndFrame ()
-                OpenGL.Hl.Assert ()
 
         member renderer.Swap () =
             match renderer.RenderWindow with

@@ -239,6 +239,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
         else
             let ghost = new GhostObject ()
+            ghost.CollisionShape <- shape
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
             ghost.UserObject <- bodyId
             ghost.UserIndex <- userIndex
