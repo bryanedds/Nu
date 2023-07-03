@@ -1976,44 +1976,44 @@ Collapsed=0
 DockId=0x00000006,0
 
 [Window][Property Editor]
-Pos=303,875
-Size=693,205
+Pos=284,874
+Size=712,206
 Collapsed=0
 DockId=0x00000001,0
 
 [Window][Asset Viewer]
-Pos=153,56
-Size=148,1024
+Pos=0,56
+Size=282,1024
 Collapsed=0
-DockId=0x00000010,0
+DockId=0x0000000C,1
 
 [Window][Asset Graph]
-Pos=998,875
-Size=619,205
+Pos=998,874
+Size=624,206
 Collapsed=0
 DockId=0x00000009,2
 
 [Window][Overlayer]
-Pos=998,875
-Size=619,205
+Pos=998,874
+Size=624,206
 Collapsed=0
 DockId=0x00000009,3
 
 [Window][Event Tracing]
-Pos=998,875
-Size=619,205
+Pos=998,874
+Size=624,206
 Collapsed=0
 DockId=0x00000009,4
 
 [Window][Audio Player]
-Pos=998,875
-Size=619,205
+Pos=998,874
+Size=624,206
 Collapsed=0
 DockId=0x00000009,0
 
 [Window][Renderer]
-Pos=998,875
-Size=619,205
+Pos=998,874
+Size=624,206
 Collapsed=0
 DockId=0x00000009,1
 
@@ -2028,8 +2028,8 @@ Size=411,123
 Collapsed=0
 
 [Window][Create a group...]
-Pos=899,490
-Size=407,124
+Pos=715,469
+Size=482,128
 Collapsed=0
 
 [Window][Full Screen Enabled]
@@ -2058,63 +2058,76 @@ Size=1920,1080
 Collapsed=0
 
 [Window][Entity Properties]
-Pos=1619,56
-Size=301,1024
+Pos=1624,56
+Size=296,1024
 Collapsed=0
 DockId=0x0000000E,3
 
 [Window][Group Properties]
-Pos=1619,56
-Size=301,1024
+Pos=1624,56
+Size=296,1024
 Collapsed=0
 DockId=0x0000000E,2
 
 [Window][Screen Properties]
-Pos=1619,56
-Size=301,1024
+Pos=1624,56
+Size=296,1024
 Collapsed=0
 DockId=0x0000000E,1
 
 [Window][Game Properties]
-Pos=1619,56
-Size=301,1024
+Pos=1624,56
+Size=296,1024
 Collapsed=0
 DockId=0x0000000E,0
 
 [Window][Entity Hierarchy]
 Pos=0,56
-Size=151,1024
+Size=282,1024
 Collapsed=0
-DockId=0x0000000A,0
+DockId=0x0000000C,0
 
 [Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
-Pos=741,382
-Size=411,123
+Pos=662,475
+Size=592,125
 Collapsed=0
 
 [Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
-Pos=769,372
-Size=642,129
+Pos=661,488
+Size=621,105
+Collapsed=0
+
+[Window][Message.]
+Pos=934,140
+Size=360,182
+Collapsed=0
+
+[Window][Save a nugroup file...]
+Pos=665,470
+Size=598,134
+Collapsed=0
+
+[Window][Choose an Asset...]
+Pos=796,323
+Size=336,458
 Collapsed=0
 
 [Docking][Data]
 DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
   DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
   DockNode            ID=0x0000000F Parent=0x8B93E3BD SizeRef=1920,1024 Split=X
-    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1617,1080 Split=X
-      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=301,1080 Split=X Selected=0x29EABFBD
+    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1622,1080 Split=X
+      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=282,1080 Split=X Selected=0x29EABFBD
         DockNode      ID=0x0000000B Parent=0x00000007 SizeRef=174,1022 Selected=0x29EABFBD
-        DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Split=X Selected=0xAE464409
-          DockNode    ID=0x0000000A Parent=0x0000000C SizeRef=151,1024 Selected=0xAE464409
-          DockNode    ID=0x00000010 Parent=0x0000000C SizeRef=148,1024 Selected=0xD92922EC
-      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1314,1080 Split=X
+        DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Selected=0xAE464409
+      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1338,1080 Split=X
         DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
-          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,817 CentralNode=1
-          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,205 Split=X Selected=0xD4E24632
-            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=693,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=619,205 Selected=0xF7114A64
+          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,816 CentralNode=1
+          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,206 Split=X Selected=0xD4E24632
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=712,205 Selected=0x61D81DE4
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=624,205 Selected=0x8C60D014
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
-    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=301,1080 Selected=0xD5116FF8
+    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
 """
                     File.WriteAllText (imguiIniFilePath, imguiIniFileStr)
