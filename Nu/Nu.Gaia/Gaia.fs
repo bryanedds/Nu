@@ -19,7 +19,6 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
-// Try to make group loading more sensible.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
 // Refresh all probes button.
@@ -27,7 +26,7 @@ open Nu.Gaia
 // View guizmo.
 // Paste in hierarchy.
 // Hierarchical Static toggle (similar to Unity).
-// Show Selected expand hierarchy as needed.
+// Show Selected expands hierarchy as needed.
 // Try to figure out how to snapshot only on first property interaction.
 // File explorer dialog.
 // Double-click in overlay selected and show entity in hierarchy.
@@ -414,6 +413,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Set.ofSeq
         generateEntityName3 dispatcherName existingEntityNames
 
+    let rec private generateGroupName3 existingGroupNames =
+        let mutable name = Gen.nameForEditor (nameof Group)
+        if Set.contains name existingGroupNames
+        then generateGroupName3 existingGroupNames
+        else name
+
+    let private generateGroupName () =
+        let existingGroupNames =
+            World.getGroups selectedScreen world |>
+            Seq.map (fun group -> group.Name) |>
+            Set.ofSeq
+        generateGroupName3 existingGroupNames
+
     let private tryMousePick mousePosition =
         let entities2d = getPickableEntities2d ()
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
@@ -725,8 +737,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match groupAndDescriptorOpt with
             | Right (group, groupDescriptor) ->
                 let oldWorld = world
-                try
-                    if group.Exists world then world <- World.destroyGroupImmediate selectedGroup world
+                try if group.Exists world then
+                        world <- World.destroyGroupImmediate selectedGroup world
                     let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
                     selectGroup group
                     match selectedEntityOpt with
