@@ -1515,10 +1515,10 @@ module EntityPropertyDescriptor =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Xtension Properties"
 
-    let getReadOnly propertyDescriptor =
+    let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        propertyName <> "Degrees" && propertyName <> "DegreesLocal" && // HACK: we allow degrees specifically for the editor.
-        Reflection.isPropertyNonPersistentByName propertyName
+        propertyName = "Degrees" || propertyName = "DegreesLocal" || // HACK: we allow degrees specifically for the editor.
+        not (Reflection.isPropertyNonPersistentByName propertyName)
 
     let getValue propertyDescriptor (entity : Entity) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor entity world with
@@ -1679,9 +1679,9 @@ module GroupPropertyDescriptor =
         elif propertyName = "Persistent" || propertyName = "Elevation" || propertyName = "Visible" then "Built-In Properties"
         else "Xtension Properties"
 
-    let getReadOnly propertyDescriptor =
+    let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        Reflection.isPropertyNonPersistentByName propertyName
+        not (Reflection.isPropertyNonPersistentByName propertyName)
 
     let getValue propertyDescriptor (group : Group) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor group world with
@@ -1809,9 +1809,9 @@ module ScreenPropertyDescriptor =
         elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
         else "Xtension Properties"
 
-    let getReadOnly propertyDescriptor =
+    let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        Reflection.isPropertyNonPersistentByName propertyName
+        not (Reflection.isPropertyNonPersistentByName propertyName)
 
     let getValue propertyDescriptor (screen : Screen) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor screen world with
@@ -1940,9 +1940,9 @@ module GamePropertyDescriptor =
              "Built-In Properties"
         else "Xtension Properties"
 
-    let getReadOnly propertyDescriptor =
+    let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        Reflection.isPropertyNonPersistentByName propertyName
+        not (Reflection.isPropertyNonPersistentByName propertyName)
 
     let getPropertyDescriptors (game : Game) world =
         PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
@@ -1989,12 +1989,12 @@ module SimulantPropertyDescriptor =
         | :? Game -> GamePropertyDescriptor.getCategory propertyDesciptor
         | _ -> failwithumf ()
 
-    let getReadOnly propertyDesciptor (simulant : Simulant) =
+    let getEditable propertyDesciptor (simulant : Simulant) =
         match simulant with
-        | :? Entity -> EntityPropertyDescriptor.getReadOnly propertyDesciptor
-        | :? Group -> GroupPropertyDescriptor.getReadOnly propertyDesciptor
-        | :? Screen -> ScreenPropertyDescriptor.getReadOnly propertyDesciptor
-        | :? Game -> GamePropertyDescriptor.getReadOnly propertyDesciptor
+        | :? Entity -> EntityPropertyDescriptor.getEditable propertyDesciptor
+        | :? Group -> GroupPropertyDescriptor.getEditable propertyDesciptor
+        | :? Screen -> ScreenPropertyDescriptor.getEditable propertyDesciptor
+        | :? Game -> GamePropertyDescriptor.getEditable propertyDesciptor
         | _ -> failwithumf ()
 
     let getValue propertyDescriptor (simulant : Simulant) world =

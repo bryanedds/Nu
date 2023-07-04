@@ -1123,8 +1123,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
         for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
             if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
-                let propertyDescriptorsSorted = Array.sortBy (fun pd -> pd.PropertyName) propertyDescriptors
-                for propertyDescriptor in propertyDescriptorsSorted do
+                let propertyDescriptors =
+                    propertyDescriptors |>
+                    Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
+                    Array.sortBy (fun pd -> pd.PropertyName)
+                for propertyDescriptor in propertyDescriptors do
                     if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then
                         match simulant with
                         | :? Entity as entity ->
@@ -1162,6 +1165,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let value = SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
                             let valueStr = converter.ConvertToString value
                             match value with
+                            | :? Frustum -> () // TODO: implement FrustumConverter.
                             | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (propertyDescriptor.PropertyName, &b') then setProperty b' propertyDescriptor simulant
                             | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (int8 i') propertyDescriptor simulant
                             | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (propertyDescriptor.PropertyName, &i') then setProperty (uint8 i') propertyDescriptor simulant
@@ -1232,7 +1236,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
                                         ImGui.SameLine ()
                                         if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setProperty { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
+                                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
+                                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
 
                                 let mutable isSome = ValueOption.isSome mp.MetallicOpt
                                 if ImGui.Checkbox ((if isSome then "##mpMetallicIsSome" else "MetallicOpt"), &isSome) then
@@ -1245,7 +1251,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let mutable metallic = metallic
                                         ImGui.SameLine ()
                                         if ImGui.DragFloat ("MetallicOpt", &metallic, 0.005f, 0.0f, 10.0f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
+                                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
+                                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
 
                                 let mutable isSome = ValueOption.isSome mp.RoughnessOpt
                                 if ImGui.Checkbox ((if isSome then "##mpRoughnessIsSome" else "RoughnessOpt"), &isSome) then
@@ -1258,7 +1266,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let mutable roughness = roughness
                                         ImGui.SameLine ()
                                         if ImGui.DragFloat ("RoughnessOpt", &roughness, 0.005f, 0.0f, 10.0f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
+                                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
 
                                 let mutable isSome = ValueOption.isSome mp.EmissionOpt
                                 if ImGui.Checkbox ((if isSome then "##mpEmissionIsSome" else "EmissionOpt"), &isSome) then
@@ -1271,7 +1281,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let mutable emission = emission
                                         ImGui.SameLine ()
                                         if ImGui.DragFloat ("EmissionOpt", &emission, 0.005f, 0.0f, 10.0f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
+                                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
+                                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
 
                                 let mutable isSome = ValueOption.isSome mp.HeightOpt
                                 if ImGui.Checkbox ((if isSome then "##mpHeightIsSome" else "HeightOpt"), &isSome) then
@@ -1284,7 +1296,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let mutable height = height
                                         ImGui.SameLine ()
                                         if ImGui.DragFloat ("HeightOpt", &height, 0.005f, 0.0f, 10.0f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
+                                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
+                                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
 
                                 let mutable isSome = ValueOption.isSome mp.InvertRoughnessOpt
                                 if ImGui.Checkbox ((if isSome then "##mpInvertRoughnessIsSome" else "InvertRoughnessOpt"), &isSome) then
@@ -1297,7 +1311,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let mutable invertRoughness = invertRoughness
                                         ImGui.SameLine ()
                                         if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setProperty { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
+                                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
+                                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
 
                             | _ when isPropertyAssetTag ->
                                 let mutable valueStr' = valueStr
