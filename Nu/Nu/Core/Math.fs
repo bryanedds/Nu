@@ -1358,11 +1358,11 @@ module Math =
         else value
 
     /// Snap a single value to an offset.
-    /// Has a minimum granularity of 0.01f.
+    /// Has a minimum granularity of 0.001f.
     let snapF (offset : single) (value : single) =
-        single ((snapI (int (offset * 100.0f)) (int (value * 100.0f)))) * 0.01f
+        single (snapI (int (round (offset * 1000.0f))) (int (round (value * 1000.0f)))) * 0.001f
 
     /// Snap a Vector3 value to an offset.
-    /// Has a minimum granularity of 0.01f.
+    /// Has a minimum granularity of 0.001f.
     let snapF3d offset (v3 : Vector3) =
         Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
