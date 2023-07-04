@@ -33,7 +33,7 @@ open Nu.Gaia
 //
 //  option & voption with custom checkbox header
 //  Enums
-//  AssetTag wtemp/ picking
+//  AssetTag w/ picking
 //  RenderStyle
 //  Substance
 //  SymbolicCompression
@@ -120,6 +120,197 @@ module Gaia =
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
     let mutable private showInspector = false
+
+    (* Initial imgui.ini File Content *)
+
+    let private ImGuiIniFileStr = """
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
+[Window][DockSpaceViewport_11111111]
+Pos=0,0
+Size=1920,1080
+Collapsed=0
+
+[Window][Panel]
+Size=1920,1080
+Collapsed=0
+
+[Window][Gaia]
+Pos=0,0
+Size=1920,54
+Collapsed=0
+DockId=0x00000002,0
+
+[Window][Hierarchy]
+Pos=0,57
+Size=174,1023
+Collapsed=0
+DockId=0x0000000B,0
+
+[Window][Properties]
+Pos=1574,58
+Size=346,1022
+Collapsed=0
+DockId=0x00000006,0
+
+[Window][Property Editor]
+Pos=284,874
+Size=712,206
+Collapsed=0
+DockId=0x00000001,0
+
+[Window][Asset Viewer]
+Pos=0,56
+Size=282,1024
+Collapsed=0
+DockId=0x0000000C,1
+
+[Window][Asset Graph]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,2
+
+[Window][Overlayer]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,3
+
+[Window][Event Tracing]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,4
+
+[Window][Audio Player]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,0
+
+[Window][Renderer]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,1
+
+[Window][Choose a project .dll and configuration...]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Choose a project .dll... EDITOR RESTART REQUIRED!]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Create a group...]
+Pos=715,469
+Size=482,128
+Collapsed=0
+
+[Window][Full Screen Enabled]
+Pos=60,60
+Size=162,54
+Collapsed=0
+
+[Window][Choose a nugroup file...]
+Pos=756,500
+Size=403,84
+Collapsed=0
+
+[Window][Choose a project .dll... *MANUAL RESTART REQUIRED!*]
+Pos=754,478
+Size=411,123
+Collapsed=0
+
+[Window][Message!]
+Pos=706,456
+Size=433,93
+Collapsed=0
+
+[Window][Viewport]
+Pos=0,0
+Size=1920,1080
+Collapsed=0
+
+[Window][Entity Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,3
+
+[Window][Group Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,2
+
+[Window][Screen Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,1
+
+[Window][Game Properties]
+Pos=1624,56
+Size=296,1024
+Collapsed=0
+DockId=0x0000000E,0
+
+[Window][Entity Hierarchy]
+Pos=0,56
+Size=282,1024
+Collapsed=0
+DockId=0x0000000C,0
+
+[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
+Pos=662,475
+Size=592,125
+Collapsed=0
+
+[Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
+Pos=661,488
+Size=621,105
+Collapsed=0
+
+[Window][Message.]
+Pos=934,140
+Size=360,182
+Collapsed=0
+
+[Window][Save a nugroup file...]
+Pos=665,470
+Size=598,134
+Collapsed=0
+
+[Window][Choose an Asset...]
+Pos=796,323
+Size=336,458
+Collapsed=0
+
+[Docking][Data]
+DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
+  DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
+  DockNode            ID=0x0000000F Parent=0x8B93E3BD SizeRef=1920,1024 Split=X
+    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1622,1080 Split=X
+      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=282,1080 Split=X Selected=0x29EABFBD
+        DockNode      ID=0x0000000B Parent=0x00000007 SizeRef=174,1022 Selected=0x29EABFBD
+        DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Selected=0xAE464409
+      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1338,1080 Split=X
+        DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
+          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,816 CentralNode=1
+          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,206 Split=X Selected=0xD4E24632
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=712,205 Selected=0x61D81DE4
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=624,205 Selected=0xD4E24632
+        DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
+    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
+
+"""
 
     (* Prelude Functions *)
 
@@ -2028,195 +2219,7 @@ module Gaia =
                 let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
                 let imguiIniFilePath = targetDir + "/imgui.ini"
                 if not (File.Exists imguiIniFilePath) then
-                    let imguiIniFileStr = """
-[Window][Debug##Default]
-Pos=60,60
-Size=400,400
-Collapsed=0
-
-[Window][DockSpaceViewport_11111111]
-Pos=0,0
-Size=1920,1080
-Collapsed=0
-
-[Window][Panel]
-Size=1920,1080
-Collapsed=0
-
-[Window][Gaia]
-Pos=0,0
-Size=1920,54
-Collapsed=0
-DockId=0x00000002,0
-
-[Window][Hierarchy]
-Pos=0,57
-Size=174,1023
-Collapsed=0
-DockId=0x0000000B,0
-
-[Window][Properties]
-Pos=1574,58
-Size=346,1022
-Collapsed=0
-DockId=0x00000006,0
-
-[Window][Property Editor]
-Pos=284,874
-Size=712,206
-Collapsed=0
-DockId=0x00000001,0
-
-[Window][Asset Viewer]
-Pos=0,56
-Size=282,1024
-Collapsed=0
-DockId=0x0000000C,1
-
-[Window][Asset Graph]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,2
-
-[Window][Overlayer]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,3
-
-[Window][Event Tracing]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,4
-
-[Window][Audio Player]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,0
-
-[Window][Renderer]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,1
-
-[Window][Choose a project .dll and configuration...]
-Pos=754,478
-Size=411,123
-Collapsed=0
-
-[Window][Choose a project .dll... EDITOR RESTART REQUIRED!]
-Pos=754,478
-Size=411,123
-Collapsed=0
-
-[Window][Create a group...]
-Pos=715,469
-Size=482,128
-Collapsed=0
-
-[Window][Full Screen Enabled]
-Pos=60,60
-Size=162,54
-Collapsed=0
-
-[Window][Choose a nugroup file...]
-Pos=756,500
-Size=403,84
-Collapsed=0
-
-[Window][Choose a project .dll... *MANUAL RESTART REQUIRED!*]
-Pos=754,478
-Size=411,123
-Collapsed=0
-
-[Window][Message!]
-Pos=706,456
-Size=433,93
-Collapsed=0
-
-[Window][Viewport]
-Pos=0,0
-Size=1920,1080
-Collapsed=0
-
-[Window][Entity Properties]
-Pos=1624,56
-Size=296,1024
-Collapsed=0
-DockId=0x0000000E,3
-
-[Window][Group Properties]
-Pos=1624,56
-Size=296,1024
-Collapsed=0
-DockId=0x0000000E,2
-
-[Window][Screen Properties]
-Pos=1624,56
-Size=296,1024
-Collapsed=0
-DockId=0x0000000E,1
-
-[Window][Game Properties]
-Pos=1624,56
-Size=296,1024
-Collapsed=0
-DockId=0x0000000E,0
-
-[Window][Entity Hierarchy]
-Pos=0,56
-Size=282,1024
-Collapsed=0
-DockId=0x0000000C,0
-
-[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
-Pos=662,475
-Size=592,125
-Collapsed=0
-
-[Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
-Pos=661,488
-Size=621,105
-Collapsed=0
-
-[Window][Message.]
-Pos=934,140
-Size=360,182
-Collapsed=0
-
-[Window][Save a nugroup file...]
-Pos=665,470
-Size=598,134
-Collapsed=0
-
-[Window][Choose an Asset...]
-Pos=796,323
-Size=336,458
-Collapsed=0
-
-[Docking][Data]
-DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
-  DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
-  DockNode            ID=0x0000000F Parent=0x8B93E3BD SizeRef=1920,1024 Split=X
-    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1622,1080 Split=X
-      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=282,1080 Split=X Selected=0x29EABFBD
-        DockNode      ID=0x0000000B Parent=0x00000007 SizeRef=174,1022 Selected=0x29EABFBD
-        DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Selected=0xAE464409
-      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1338,1080 Split=X
-        DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
-          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,816 CentralNode=1
-          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,206 Split=X Selected=0xD4E24632
-            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=712,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=624,205 Selected=0xD4E24632
-        DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
-    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
-
-"""
-                    File.WriteAllText (imguiIniFilePath, imguiIniFileStr)
+                    File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
                 runWithCleanUp savedState targetDir screen world
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
         | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
