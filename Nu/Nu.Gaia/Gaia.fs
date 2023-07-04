@@ -39,7 +39,6 @@ open Nu.Gaia
 //  SymbolicCompression
 //  TmxMap
 //  LightType
-//  MaterialProperties
 //
 //  Layout
 //  CollisionMask
@@ -438,13 +437,14 @@ module Gaia =
     let private getProperty propertyDescriptor simulant =
         SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
 
-    let private setProperty (value : obj) propertyDescriptor simulant =
-        match value with
-        | :? Color -> () // NOTE: color editor is draggable, which means it causes an unbounded number of snapshots currently.
-        | _ -> snapshot ()
+    let private setPropertyWithoutUndo (value : obj) propertyDescriptor simulant =
         match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
         | Right wtemp -> world <- wtemp
         | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
+
+    let private setProperty (value : obj) propertyDescriptor simulant =
+        snapshot ()
+        setPropertyWithoutUndo value propertyDescriptor simulant
 
     let private createEntity atMouse inHierarchy =
         snapshot ()
@@ -1033,7 +1033,87 @@ module Gaia =
                                 let mutable v = v4 c.R c.G c.B c.A
                                 if ImGui.ColorEdit4 (propertyDescriptor.PropertyName, &v) then
                                     let c' = color v.X v.Y v.Z v.W
-                                    setProperty c' propertyDescriptor simulant
+                                    setPropertyWithoutUndo c' propertyDescriptor simulant
+                            | :? MaterialProperties as mp ->
+
+                                let mutable isSome = ValueOption.isSome mp.AlbedoOpt
+                                if ImGui.Checkbox ((if isSome then "##mpAlbedoIsSome" else "AlbedoOpt"), &isSome) then
+                                    if isSome
+                                    then setProperty { mp with AlbedoOpt = ValueSome Constants.Render.AlbedoDefault } propertyDescriptor simulant
+                                    else setProperty { mp with AlbedoOpt = ValueNone } propertyDescriptor simulant
+                                else
+                                    match mp.AlbedoOpt with
+                                    | ValueSome albedo ->
+                                        let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
+                                        ImGui.SameLine ()
+                                        if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setProperty { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
+                                    | ValueNone -> ()
+
+                                let mutable isSome = ValueOption.isSome mp.MetallicOpt
+                                if ImGui.Checkbox ((if isSome then "##mpMetallicIsSome" else "MetallicOpt"), &isSome) then
+                                    if isSome
+                                    then setProperty { mp with MetallicOpt = ValueSome Constants.Render.MetallicDefault } propertyDescriptor simulant
+                                    else setProperty { mp with MetallicOpt = ValueNone } propertyDescriptor simulant
+                                else
+                                    match mp.MetallicOpt with
+                                    | ValueSome metallic ->
+                                        let mutable metallic = metallic
+                                        ImGui.SameLine ()
+                                        if ImGui.DragFloat ("MetallicOpt", &metallic, 0.005f, 0.0f, 10.0f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
+                                    | ValueNone -> ()
+
+                                let mutable isSome = ValueOption.isSome mp.RoughnessOpt
+                                if ImGui.Checkbox ((if isSome then "##mpRoughnessIsSome" else "RoughnessOpt"), &isSome) then
+                                    if isSome
+                                    then setProperty { mp with RoughnessOpt = ValueSome Constants.Render.RoughnessDefault } propertyDescriptor simulant
+                                    else setProperty { mp with RoughnessOpt = ValueNone } propertyDescriptor simulant
+                                else
+                                    match mp.RoughnessOpt with
+                                    | ValueSome roughness ->
+                                        let mutable roughness = roughness
+                                        ImGui.SameLine ()
+                                        if ImGui.DragFloat ("RoughnessOpt", &roughness, 0.005f, 0.0f, 10.0f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                                    | ValueNone -> ()
+
+                                let mutable isSome = ValueOption.isSome mp.EmissionOpt
+                                if ImGui.Checkbox ((if isSome then "##mpEmissionIsSome" else "EmissionOpt"), &isSome) then
+                                    if isSome
+                                    then setProperty { mp with EmissionOpt = ValueSome Constants.Render.EmissionDefault } propertyDescriptor simulant
+                                    else setProperty { mp with EmissionOpt = ValueNone } propertyDescriptor simulant
+                                else
+                                    match mp.EmissionOpt with
+                                    | ValueSome emission ->
+                                        let mutable emission = emission
+                                        ImGui.SameLine ()
+                                        if ImGui.DragFloat ("EmissionOpt", &emission, 0.005f, 0.0f, 10.0f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
+                                    | ValueNone -> ()
+
+                                let mutable isSome = ValueOption.isSome mp.HeightOpt
+                                if ImGui.Checkbox ((if isSome then "##mpHeightIsSome" else "HeightOpt"), &isSome) then
+                                    if isSome
+                                    then setProperty { mp with HeightOpt = ValueSome Constants.Render.HeightDefault } propertyDescriptor simulant
+                                    else setProperty { mp with HeightOpt = ValueNone } propertyDescriptor simulant
+                                else
+                                    match mp.HeightOpt with
+                                    | ValueSome height ->
+                                        let mutable height = height
+                                        ImGui.SameLine ()
+                                        if ImGui.DragFloat ("HeightOpt", &height, 0.005f, 0.0f, 10.0f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
+                                    | ValueNone -> ()
+
+                                let mutable isSome = ValueOption.isSome mp.InvertRoughnessOpt
+                                if ImGui.Checkbox ((if isSome then "##mpInvertRoughnessIsSome" else "InvertRoughnessOpt"), &isSome) then
+                                    if isSome
+                                    then setProperty { mp with InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault } propertyDescriptor simulant
+                                    else setProperty { mp with InvertRoughnessOpt = ValueNone } propertyDescriptor simulant
+                                else
+                                    match mp.InvertRoughnessOpt with
+                                    | ValueSome invertRoughness ->
+                                        let mutable invertRoughness = invertRoughness
+                                        ImGui.SameLine ()
+                                        if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setProperty { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
+                                    | ValueNone -> ()
+
                             | _ when isPropertyAssetTag ->
                                 let mutable valueStr' = valueStr
                                 if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
