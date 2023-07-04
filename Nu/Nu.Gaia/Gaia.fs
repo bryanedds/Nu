@@ -20,6 +20,7 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 // Try to make group loading more sensible.
+// Collapse / Expand all in Hierarchy and Assets.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
@@ -1320,9 +1321,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 4096u) then
                                     try let value' = converter.ConvertFromString valueStr'
                                         setProperty value' propertyDescriptor simulant
-                                    with
-                                    | :? ParseException // TODO: use ParseException once Prime is updated.
-                                    | :? ConversionException -> ()
+                                    with :? ParseException | :? ConversionException -> ()
                                 if ImGui.BeginDragDropTarget () then
                                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                         match dragDropPayloadOpt with
@@ -1331,9 +1330,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                                 setProperty propertyValue propertyDescriptor simulant
-                                            with
-                                            | :? ParseException // TODO: use ParseException once Prime is updated.
-                                            | :? ConversionException -> ()
+                                            with :? ParseException | :? ConversionException -> ()
                                         | None -> ()
                                     ImGui.EndDragDropTarget ()
                             | _ ->
@@ -1353,9 +1350,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if ImGui.InputText (propertyDescriptor.PropertyName, &valueStr', 131072u) then
                                         try let value' = converter.ConvertFromString valueStr'
                                             setProperty value' propertyDescriptor simulant
-                                        with
-                                        | :? ParseException // TODO: use ParseException once Prime is updated.
-                                        | :? ConversionException -> ()
+                                        with :? ParseException | :? ConversionException -> ()
                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
         world <- World.edit AppendProperties simulant world
 
@@ -1698,9 +1693,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let propertyValueUnescaped = String.unescape propertyValueEscaped
                                         let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                         setProperty propertyValue propertyDescriptor simulant
-                                    with
-                                    | :? ParseException // TODO: use ParseException once Prime is updated.
-                                    | :? ConversionException -> ()
+                                    with :? ParseException | :? ConversionException -> ()
                                 if isPropertyAssetTag then
                                     if ImGui.BeginDragDropTarget () then
                                         if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
@@ -1710,9 +1703,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                                     setProperty propertyValue propertyDescriptor simulant
-                                                with
-                                                | :? ParseException // TODO: use ParseException once Prime is updated.
-                                                | :? ConversionException -> ()
+                                                with :? ParseException | :? ConversionException -> ()
                                             | None -> ()
                                         ImGui.EndDragDropTarget ()
                         | Some _ | None -> ()
