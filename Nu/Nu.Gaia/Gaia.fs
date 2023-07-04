@@ -101,7 +101,7 @@ module Gaia =
     (* Project States *)
 
     let mutable private targetDir = "."
-    let mutable private projectFilePath = ""
+    let mutable private gameDllPath = ""
     let mutable private projectEditMode = "Title"
     let mutable private projectImperativeExecution = false
     let mutable private assetGraphStr = null // this will be initialized on start
@@ -1717,19 +1717,19 @@ module Gaia =
                     let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
                     if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                     if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
-                        ImGui.Text "File Path:"
+                        ImGui.Text "Game Assembly Path:"
                         ImGui.SameLine ()
-                        ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &projectFilePath, 4096u) |> ignore<bool>
+                        ImGui.InputTextWithHint ("##gameDllFilePath", "[enter game .dll path]", &gameDllPath, 4096u) |> ignore<bool>
                         ImGui.Text "Edit Mode:"
                         ImGui.SameLine ()
                         ImGui.InputText ("##projectGameMode", &projectEditMode, 4096u) |> ignore<bool>
                         ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &projectImperativeExecution) |> ignore<bool>
                         if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
-                            String.notEmpty projectFilePath &&
-                            File.Exists projectFilePath then
+                            String.notEmpty gameDllPath &&
+                            File.Exists gameDllPath then
                             showOpenProjectDialog <- false
                             let savedState =
-                                { ProjectFilePath = projectFilePath
+                                { ProjectFilePath = gameDllPath
                                   EditModeOpt = Some projectEditMode
                                   UseImperativeExecution = projectImperativeExecution }
                             let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
@@ -1838,7 +1838,7 @@ module Gaia =
     let rec private runWithCleanUp savedState targetDir' screen wtemp =
         world <- wtemp
         targetDir <- targetDir'
-        projectFilePath <- savedState.ProjectFilePath
+        gameDllPath <- savedState.ProjectFilePath
         projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
         projectImperativeExecution <- savedState.UseImperativeExecution
         selectScreen screen
