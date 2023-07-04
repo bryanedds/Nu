@@ -89,7 +89,7 @@ module Gaia =
     let mutable private newEntityDispatcherName = null // this will be initialized on start
     let mutable private newEntityOverlayName = "(Default Overlay)"
     let mutable private newEntityElevation = 0.0f
-    let mutable private newGroupName = nameof Group
+    let mutable private newGroupName = ""
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
     let mutable private lightMappingConfig = { LightMappingEnabled = true }
@@ -412,19 +412,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.map (fun entity -> entity.Name) |>
             Set.ofSeq
         generateEntityName3 dispatcherName existingEntityNames
-
-    let rec private generateGroupName3 existingGroupNames =
-        let mutable name = Gen.nameForEditor (nameof Group)
-        if Set.contains name existingGroupNames
-        then generateGroupName3 existingGroupNames
-        else name
-
-    let private generateGroupName () =
-        let existingGroupNames =
-            World.getGroups selectedScreen world |>
-            Seq.map (fun group -> group.Name) |>
-            Set.ofSeq
-        generateGroupName3 existingGroupNames
 
     let private tryMousePick mousePosition =
         let entities2d = getPickableEntities2d ()
@@ -2033,17 +2020,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "Group Name:"
                         ImGui.SameLine ()
                         ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
+                        let newGroup = selectedScreen / newGroupName
                         if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
                             for dispatcherName in (World.getGroupDispatchers world).Keys do
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
                                     newGroupDispatcherName <- dispatcherName
                             ImGui.EndCombo ()
-                        let newGroup = selectedScreen / newGroupName
                         if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && not (newGroup.Exists world) then
                             let oldWorld = world
                             try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
                                 selectGroup newGroup
                                 showNewGroupDialog <- false
+                                newGroupName <- ""
                             with exn ->
                                 world <- World.choose oldWorld
                                 messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
