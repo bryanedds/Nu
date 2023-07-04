@@ -20,7 +20,6 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 // Try to make group loading more sensible.
-// More custom property views.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
@@ -29,7 +28,7 @@ open Nu.Gaia
 // Double-click in overlay selected and show entity in hierarchy.
 // Multi-selection?
 //
-// Custom properties order of priority:
+// Custom properties in order of priority:
 //
 //  option & voption with custom checkbox header
 //  Enums
@@ -214,7 +213,7 @@ Size=482,128
 Collapsed=0
 
 [Window][Full Screen Enabled]
-Pos=60,60
+Pos=20,23
 Size=162,54
 Collapsed=0
 
@@ -229,8 +228,8 @@ Size=411,123
 Collapsed=0
 
 [Window][Message!]
-Pos=706,456
-Size=433,93
+Pos=827,398
+Size=360,182
 Collapsed=0
 
 [Window][Viewport]
@@ -276,11 +275,6 @@ Collapsed=0
 [Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
 Pos=661,488
 Size=621,105
-Collapsed=0
-
-[Window][Message!]
-Pos=827,398
-Size=360,182
 Collapsed=0
 
 [Window][Save a nugroup file...]
