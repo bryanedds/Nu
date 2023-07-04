@@ -19,8 +19,11 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
+// See if we can handle null case in property editor.
 // Try to make group loading more sensible.
 // Collapse / Expand all in Hierarchy and Assets.
+// Box3 viewport editing (w/ snapping).
+// Refresh all probes button.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
