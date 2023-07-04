@@ -278,8 +278,8 @@ Pos=661,488
 Size=621,105
 Collapsed=0
 
-[Window][Message.]
-Pos=934,140
+[Window][Message!]
+Pos=827,398
 Size=360,182
 Collapsed=0
 
@@ -2066,12 +2066,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // message box dialog
                 match messageBoxOpt with
                 | Some messageBox ->
-                    let title = "Message."
+                    let title = "Message!"
                     let mutable showing = true
                     if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                     if ImGui.BeginPopupModal (title, &showing) then
                         ImGui.TextWrapped messageBox
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
                         ImGui.EndPopup ()
                     if not showing then messageBoxOpt <- None
                 | None -> ()
