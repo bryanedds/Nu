@@ -19,7 +19,6 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
-// See if we can handle null case in property editor.
 // Try to make group loading more sensible.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
@@ -1677,39 +1676,37 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             World.getExists simulant world &&
                             propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
                             let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                            match getProperty propertyDescriptor simulant with
-                            | null -> ()
-                            | propertyValue ->
-                                ImGui.Text propertyDescriptor.PropertyName
+                            let propertyValue = getProperty propertyDescriptor simulant
+                            ImGui.Text propertyDescriptor.PropertyName
+                            ImGui.SameLine ()
+                            ImGui.Text ":"
+                            ImGui.SameLine ()
+                            ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
+                            let propertyValueUnescaped = converter.ConvertToString propertyValue
+                            let propertyValueEscaped = String.escape propertyValueUnescaped
+                            let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                            if isPropertyAssetTag then
                                 ImGui.SameLine ()
-                                ImGui.Text ":"
-                                ImGui.SameLine ()
-                                ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
-                                let propertyValueUnescaped = converter.ConvertToString propertyValue
-                                let propertyValueEscaped = String.escape propertyValueUnescaped
-                                let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                                if isPropertyAssetTag then
-                                    ImGui.SameLine ()
-                                    if ImGui.Button "Pick" then showAssetPickerDialog <- true
-                                let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
-                                if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
-                                    try let propertyValueEscaped = propertyValuePretty
-                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                        setProperty propertyValue propertyDescriptor simulant
-                                    with :? ParseException | :? ConversionException -> ()
-                                if isPropertyAssetTag then
-                                    if ImGui.BeginDragDropTarget () then
-                                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                            match dragDropPayloadOpt with
-                                            | Some payload ->
-                                                try let propertyValueEscaped = payload
-                                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                    setProperty propertyValue propertyDescriptor simulant
-                                                with :? ParseException | :? ConversionException -> ()
-                                            | None -> ()
-                                        ImGui.EndDragDropTarget ()
+                                if ImGui.Button "Pick" then showAssetPickerDialog <- true
+                            let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                            if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                                try let propertyValueEscaped = propertyValuePretty
+                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                    setProperty propertyValue propertyDescriptor simulant
+                                with :? ParseException | :? ConversionException -> ()
+                            if isPropertyAssetTag then
+                                if ImGui.BeginDragDropTarget () then
+                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                        match dragDropPayloadOpt with
+                                        | Some payload ->
+                                            try let propertyValueEscaped = payload
+                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                setProperty propertyValue propertyDescriptor simulant
+                                            with :? ParseException | :? ConversionException -> ()
+                                        | None -> ()
+                                    ImGui.EndDragDropTarget ()
                         | Some _ | None -> ()
                         ImGui.End ()
 
