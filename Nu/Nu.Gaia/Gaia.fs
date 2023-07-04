@@ -1046,7 +1046,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity true
         if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity false
         if not (io.WantCaptureKeyboard) then
-            if ImGui.IsKeyPressed ImGuiKey.A && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
             if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
@@ -1450,10 +1449,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Open Group", "Ctrl+O") then
                                     showOpenGroupDialog <- true
                                 if ImGui.MenuItem ("Save Group", "Ctrl+S") then
-                                    match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
-                                    | Some groupFilePath -> trySaveSelectedGroup groupFilePath |> ignore<bool>
-                                    | None -> showSaveGroupDialog <- true
-                                if ImGui.MenuItem ("Save Group as...", "Ctrl+A") then
                                     match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
                                     | Some filePath -> groupFilePath <- filePath
                                     | None -> groupFilePath <- ""
