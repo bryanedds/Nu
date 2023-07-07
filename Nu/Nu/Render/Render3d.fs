@@ -1217,7 +1217,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // sort lights for deferred rendering relative to eye center
         let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-            SortableLight.sortLightsIntoArrays Constants.Render.LightsMax eyeCenter renderer.RenderTasks.RenderLights
+            SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter renderer.RenderTasks.RenderLights
 
         // sort absolute forward surfaces from far to near
         let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderer.RenderTasks.RenderSurfacesForwardAbsolute
@@ -1394,6 +1394,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render surfaces w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
+                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
+                    SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward eyeCenter renderer.RenderTasks.RenderLights
                 let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
                 GlRenderer3d.renderPhysicallyBasedSurfaces
@@ -1405,6 +1407,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // forward render surfaces w/ relative transforms to filter buffer
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
+            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
+                SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward eyeCenter renderer.RenderTasks.RenderLights
             let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
             GlRenderer3d.renderPhysicallyBasedSurfaces
