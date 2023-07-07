@@ -141,7 +141,10 @@ module OpenGl =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
+    let [<Literal>] PostProcessSteps =
+        Assimp.PostProcessSteps.Triangulate |||
+        Assimp.PostProcessSteps.CalculateTangentSpace |||
+        Assimp.PostProcessSteps.GlobalScale
 
 [<RequireQualifiedAccess>]
 module Audio =

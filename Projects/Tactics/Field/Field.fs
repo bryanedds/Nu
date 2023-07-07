@@ -214,6 +214,8 @@ module Field =
 
         // make normals array
         let normals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
+        let tangents = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
+        let binormals = Array.zeroCreate<Vector3> (tileMapWidth * tileMapHeight * 6)
 
         // populate normals
         for i in 0 .. dec tileMapWidth do
@@ -223,13 +225,27 @@ module Field =
                 let a = positions.[u]
                 let b = positions.[u+1]
                 let c = positions.[u+5]
-                let normal = Vector3.Normalize (Vector3.Cross (b - a, c - a))
+                let normal = Math.computeNormal a b c
                 normals.[u] <- normal
                 normals.[u+1] <- normal
                 normals.[u+2] <- normal
                 normals.[u+3] <- normal
                 normals.[u+4] <- normal
                 normals.[u+5] <- normal
+                let tangent = Math.computeTangent a b c
+                tangents.[u] <- tangent
+                tangents.[u+1] <- tangent
+                tangents.[u+2] <- tangent
+                tangents.[u+3] <- tangent
+                tangents.[u+4] <- tangent
+                tangents.[u+5] <- tangent
+                let binormal = Math.computeBinormal a b c
+                binormals.[u] <- binormal
+                binormals.[u+1] <- binormal
+                binormals.[u+2] <- binormal
+                binormals.[u+3] <- binormal
+                binormals.[u+4] <- binormal
+                binormals.[u+5] <- binormal
 
         // create indices
         let indices = Array.init (tileMapWidth * tileMapHeight * 6) id;
@@ -254,6 +270,8 @@ module Field =
                   Positions = positions
                   TexCoordses = texCoordses
                   Normals = normals
+                  Tangents = tangents
+                  Binormals = binormals
                   Indices = indices
                   AffineMatrix = m4Identity
                   Bounds = bounds

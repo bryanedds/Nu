@@ -1366,3 +1366,22 @@ module Math =
     /// Has a minimum granularity of 0.001f.
     let snapF3d offset (v3 : Vector3) =
         Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
+
+    /// Compute the normal of a triangle composed of points a, b, and c.
+    let computeNormal (a : Vector3) (b : Vector3) (c : Vector3) =
+        Vector3.Normalize (Vector3.Cross (b - a, c - a))
+
+    /// Compute the tangent of a triangle composed of points a, b, and c.
+    let computeTangent (a : Vector3) (b : Vector3) (c : Vector3) =
+        let deltaPos1 = b - a
+        let deltaPos2 = c - a
+        let tangent = deltaPos1 - Vector3.Dot (deltaPos1, deltaPos2) * deltaPos2
+        Vector3.Normalize tangent
+
+    /// Compute the binormal of a triangle composed of points a, b, and c.
+    let computeBinormal (a : Vector3) (b : Vector3) (c : Vector3) =
+        let deltaPos1 = b - a
+        let deltaPos2 = c - a
+        let normal = Vector3.Cross (deltaPos1, deltaPos2)
+        let binormal = Vector3.Cross (normal, deltaPos1)
+        Vector3.Normalize binormal

@@ -27,16 +27,20 @@ uniform mat4 projection;
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in mat4 model;
-layout (location = 7) in vec4 texCoordsOffset;
-layout (location = 8) in vec4 albedo;
-layout (location = 9) in vec4 material;
-layout (location = 10) in float height;
-layout (location = 11) in int invertRoughness;
+layout (location = 3) in vec3 tangent;
+layout (location = 4) in vec3 binormal;
+layout (location = 5) in mat4 model;
+layout (location = 9) in vec4 texCoordsOffset;
+layout (location = 10) in vec4 albedo;
+layout (location = 11) in vec4 material;
+layout (location = 12) in float height;
+layout (location = 13) in int invertRoughness;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
+out vec3 tangentOut;
+out vec3 binormalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
@@ -52,6 +56,8 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = mat3(model) * normal;
+    tangentOut = mat3(model) * tangent;
+    binormalOut = mat3(model) * binormal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
     gl_Position = projection * view * positionOut;
@@ -103,6 +109,8 @@ uniform float lightConeOuters[LIGHTS_MAX];
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
+in vec3 tangentOut;
+in vec3 binormalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
@@ -174,15 +182,11 @@ void main()
     // compute basic fragment data
     vec3 position = positionOut.xyz;
     vec3 normal = normalize(normalOut);
+    vec3 tangent = normalize(tangentOut);
+    vec3 binormal = normalize(binormalOut);
     float distance = length(position - eyeCenter);
 
     // compute spatial converters
-    vec3 q1 = dFdx(position);
-    vec3 q2 = dFdy(position);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
