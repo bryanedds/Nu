@@ -27,16 +27,20 @@ uniform mat4 projection;
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in mat4 model;
-layout (location = 7) in vec4 texCoordsOffset;
-layout (location = 8) in vec4 albedo;
-layout (location = 9) in vec4 material;
-layout (location = 10) in float height;
-layout (location = 11) in int invertRoughness;
+layout (location = 3) in vec3 tangent;
+layout (location = 4) in vec3 bitangent;
+layout (location = 5) in mat4 model;
+layout (location = 9) in vec4 texCoordsOffset;
+layout (location = 10) in vec4 albedo;
+layout (location = 11) in vec4 material;
+layout (location = 12) in float height;
+layout (location = 13) in int invertRoughness;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
+out vec3 tangentOut;
+out vec3 bitangentOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
@@ -52,6 +56,8 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
+    tangentOut = transpose(inverse(mat3(model))) * tangent;
+    bitangentOut = transpose(inverse(mat3(model))) * bitangent;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
     gl_Position = projection * view * positionOut;
@@ -74,6 +80,8 @@ uniform sampler2D heightTexture;
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
+in vec3 tangentOut;
+in vec3 bitangentOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
@@ -90,14 +98,10 @@ void main()
     position = positionOut;
 
     // compute spatial converters
-    vec3 q1 = dFdx(positionOut.xyz);
-    vec3 q2 = dFdy(positionOut.xyz);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 n = normalize(normalOut);
-    vec3 t = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 b = -normalize(cross(n, t));
-    mat3 toWorld = mat3(t, b, n);
+    vec3 normal = normalize(normalOut);
+    vec3 tangent = normalize(tangentOut);
+    vec3 bitangent = normalize(bitangentOut);
+    mat3 toWorld = mat3(tangent, bitangent, normal);
     mat3 toTangent = transpose(toWorld);
 
     // compute tex coords in parallax space

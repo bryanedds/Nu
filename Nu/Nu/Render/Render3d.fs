@@ -44,6 +44,8 @@ and [<NoEquality; NoComparison>] SurfaceDescriptor =
     { Positions : Vector3 array
       TexCoordses : Vector2 array
       Normals : Vector3 array
+      Tangents : Vector3 array
+      Binormals : Vector3 array
       Indices : int array
       AffineMatrix : Matrix4x4
       Bounds : Box3
@@ -683,7 +685,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // create vertex data, truncating it when required
                 let vertexCount = surfaceDescriptor.Positions.Length
-                let elementCount = vertexCount * 8
+                let elementCount = vertexCount * 14
                 if  renderer.RenderUserDefinedStaticModelFields.Length < elementCount then
                     renderer.RenderUserDefinedStaticModelFields <- Array.zeroCreate elementCount // TODO: grow this by power of two.
                 let vertexData = renderer.RenderUserDefinedStaticModelFields.AsMemory (0, elementCount)
@@ -691,7 +693,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 try
                     let vertexData = vertexData.Span
                     while i < vertexCount do
-                        let u = i * 8
+                        let u = i * 14
                         vertexData.[u] <- surfaceDescriptor.Positions.[i].X
                         vertexData.[u+1] <- surfaceDescriptor.Positions.[i].Y
                         vertexData.[u+2] <- surfaceDescriptor.Positions.[i].Z
@@ -700,6 +702,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                         vertexData.[u+5] <- surfaceDescriptor.Normals.[i].X
                         vertexData.[u+6] <- surfaceDescriptor.Normals.[i].Y
                         vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
+                        vertexData.[u+8] <- surfaceDescriptor.Tangents.[i].X
+                        vertexData.[u+9] <- surfaceDescriptor.Tangents.[i].Y
+                        vertexData.[u+10] <- surfaceDescriptor.Tangents.[i].Z
+                        vertexData.[u+11] <- surfaceDescriptor.Binormals.[i].X
+                        vertexData.[u+12] <- surfaceDescriptor.Binormals.[i].Y
+                        vertexData.[u+13] <- surfaceDescriptor.Binormals.[i].Z
                         i <- inc i
                 with :? IndexOutOfRangeException ->
                     Log.debug "Vertex data truncated due to an unequal count among surface descriptor Positions, TexCoordses, and Normals."

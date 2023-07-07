@@ -484,20 +484,25 @@ module PhysicallyBased =
         // ensure required data is available
         if  mesh.HasVertices &&
             mesh.HasNormals &&
+            mesh.HasTangentBasis &&
             mesh.HasTextureCoords 0 then
 
             // attempt to populate geometry data
-            if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
+            if  mesh.Vertices.Count = mesh.Normals.Count &&
+                mesh.Vertices.Count = mesh.Tangents.Count &&
+                mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
 
                 // populate vertex data and bounds
-                let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
+                let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 14)
                 let mutable positionMin = v3Zero
                 let mutable positionMax = v3Zero
                 for i in 0 .. dec mesh.Vertices.Count do
-                    let v = i * 8
+                    let v = i * 14
                     let position = mesh.Vertices.[i]
                     let texCoords = mesh.TextureCoordinateChannels.[0].[i]
                     let normal = mesh.Normals.[i]
+                    let tangent = mesh.Tangents.[i]
+                    let binormal = Assimp.Vector3D.Cross (normal, tangent)
                     vertexData.[v] <- position.X
                     vertexData.[v+1] <- position.Y
                     vertexData.[v+2] <- position.Z
@@ -506,6 +511,12 @@ module PhysicallyBased =
                     vertexData.[v+5] <- normal.X
                     vertexData.[v+6] <- normal.Y
                     vertexData.[v+7] <- normal.Z
+                    vertexData.[v+8] <- tangent.X
+                    vertexData.[v+9] <- tangent.Y
+                    vertexData.[v+10] <- tangent.Z
+                    vertexData.[v+11] <- binormal.X
+                    vertexData.[v+12] <- binormal.Y
+                    vertexData.[v+13] <- binormal.Z
                     positionMin.X <- min positionMin.X position.X
                     positionMin.Y <- min positionMin.Y position.Y
                     positionMin.Z <- min positionMin.Z position.Z
@@ -539,13 +550,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (*   normals   *)
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
-                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f;  0.0f; 1.0f;  // top-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f;  0.0f; 1.0f;  // top-right
-                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;         0.0f;  0.0f; 1.0f;  // top-left
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
+                (*positions*)           (*tex coords*)  (*normals*)         (*tangents*)        (*binormals*)
+                -1.0f; -1.0f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-left
+                +1.0f; -1.0f; +0.0f;    1.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-right
+                +1.0f; +1.0f; +0.0f;    1.0f; 1.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-right
+                +1.0f; +1.0f; +0.0f;    1.0f; 1.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-right
+                -1.0f; +1.0f; +0.0f;    0.0f; 1.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-left
+                -1.0f; -1.0f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-left
             |]
 
         // make index data trivially
@@ -563,13 +574,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (*   normals   *)
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
-                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
-                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-left
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
+                (*positions*)           (*tex coords*)  (*normals*)         (*tangents*)        (*binormals*)
+                -0.5f; -0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-left 
+                +0.5f; -0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-right 
+                +0.5f; +0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-right 
+                +0.5f; +0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-right 
+                -0.5f; +0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-left 
+                -0.5f; -0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-left 
             |]
 
         // make index data trivially
@@ -587,13 +598,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (*   normals   *)
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
-                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // top-left
-                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f;  0.0f; 1.0f;  // bottom-left
+                (*positions*)           (*tex coords*)  (*normals*)         (*tangents*)        (*binormals*)
+                -0.5f; -0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-left
+                +0.5f; -0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-right
+                +0.5f; +0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-right
+                -0.5f; -0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-right
+                +0.5f; +0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // top-left
+                -0.5f; +0.5f; +0.0f;    0.0f; 0.0f;     0.0f;  0.0f; 1.0f;  1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f;  // bottom-left
             |]
 
         // make index data trivially
@@ -611,55 +622,56 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (*    normals    *)
-
+                (*positions*)           (*tex coords*)  (*normals*)             (*tangents*)        (*binormals *)
+    
                 // back face
-                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f;  0.0f; -1.0f; // bottom-left
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f;  0.0f; -1.0f; // top-right
-                +0.5f; -0.5f; -0.5f;        1.0f; 0.0f;          0.0f;  0.0f; -1.0f; // bottom-right         
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f;  0.0f; -1.0f; // top-right
-                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f;  0.0f; -1.0f; // bottom-left
-                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f;  0.0f; -1.0f; // top-left
-
+                -0.5f; -0.5f; -0.5f;    0.0f; 0.0f;      0.0f;  0.0f; -1.0f;    1.0f; 0.0f; 0.0f;   0.0f; 1.0f; 0.0f; // bottom-left
+                +0.5f; +0.5f; -0.5f;    1.0f; 1.0f;      0.0f;  0.0f; -1.0f;    1.0f; 0.0f; 0.0f;   0.0f; 1.0f; 0.0f; // top-right
+                +0.5f; -0.5f; -0.5f;    1.0f; 0.0f;      0.0f;  0.0f; -1.0f;    1.0f; 0.0f; 0.0f;   0.0f; 1.0f; 0.0f; // bottom-right         
+                +0.5f; +0.5f; -0.5f;    1.0f; 1.0f;      0.0f;  0.0f; -1.0f;    1.0f; 0.0f; 0.0f;   0.0f; 1.0f; 0.0f; // top-right
+                -0.5f; -0.5f; -0.5f;    0.0f; 0.0f;      0.0f;  0.0f; -1.0f;    1.0f; 0.0f; 0.0f;   0.0f; 1.0f; 0.0f; // bottom-left
+                -0.5f; +0.5f; -0.5f;    0.0f; 1.0f;      0.0f;  0.0f; -1.0f;    1.0f; 0.0f; 0.0f;   0.0f; 1.0f; 0.0f; // top-left
+    
                 // front face
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f;  0.0f; +1.0f; // bottom-left
-                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f;  0.0f; +1.0f; // bottom-right
-                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f;  0.0f; +1.0f; // top-right
-                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f;  0.0f; +1.0f; // top-right
-                -0.5f; +0.5f; +0.5f;        0.0f; 1.0f;          0.0f;  0.0f; +1.0f; // top-left
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f;  0.0f; +1.0f; // bottom-left
-
+                -0.5f; -0.5f; +0.5f;    0.0f; 0.0f;      0.0f;  0.0f; +1.0f;    1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f; // bottom-left
+                +0.5f; -0.5f; +0.5f;    1.0f; 0.0f;      0.0f;  0.0f; +1.0f;    1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f; // bottom-right
+                +0.5f; +0.5f; +0.5f;    1.0f; 1.0f;      0.0f;  0.0f; +1.0f;    1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f; // top-right
+                +0.5f; +0.5f; +0.5f;    1.0f; 1.0f;      0.0f;  0.0f; +1.0f;    1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f; // top-right
+                -0.5f; +0.5f; +0.5f;    0.0f; 1.0f;      0.0f;  0.0f; +1.0f;    1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f; // top-left
+                -0.5f; -0.5f; +0.5f;    0.0f; 0.0f;      0.0f;  0.0f; +1.0f;    1.0f; 0.0f; 0.0f;   0.0f; -1.0f; 0.0f; // bottom-left
+    
                 // left face
-                -0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         -1.0f;  0.0f;  0.0f; // top-right
-                -0.5f; +0.5f; -0.5f;        1.0f; 1.0f;         -1.0f;  0.0f;  0.0f; // top-left
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         -1.0f;  0.0f;  0.0f; // bottom-left
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         -1.0f;  0.0f;  0.0f; // bottom-left
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;         -1.0f;  0.0f;  0.0f; // bottom-right
-                -0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         -1.0f;  0.0f;  0.0f; // top-right
+                -0.5f; +0.5f; +0.5f;    1.0f; 0.0f;     -1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; -1.0f; // top-right
+                -0.5f; +0.5f; -0.5f;    1.0f; 1.0f;     -1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; -1.0f; // top-left
+                -0.5f; -0.5f; -0.5f;    0.0f; 1.0f;     -1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; -1.0f; // top-right
+                -0.5f; -0.5f; -0.5f;    0.0f; 1.0f;     -1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; -1.0f; // bottom-left
+                -0.5f; -0.5f; -0.5f;    0.0f; 1.0f;     -1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; -1.0f; // bottom-left
+                -0.5f; -0.5f; +0.5f;    0.0f; 0.0f;     -1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; -1.0f; // bottom-right
+                -0.5f; +0.5f; +0.5f;    1.0f; 0.0f;     -1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; -1.0f; // top-right
 
                 // right face
-                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         +1.0f;  0.0f;  0.0f; // top-left
-                +0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         +1.0f;  0.0f;  0.0f; // bottom-right
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;         +1.0f;  0.0f;  0.0f; // top-right         
-                +0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         +1.0f;  0.0f;  0.0f; // bottom-right
-                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         +1.0f;  0.0f;  0.0f; // top-left
-                +0.5f; -0.5f; +0.5f;        0.0f; 0.0f;         +1.0f;  0.0f;  0.0f; // bottom-left     
+                +0.5f; +0.5f; +0.5f;    1.0f; 0.0f;     +1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; +1.0f; // top-left
+                +0.5f; -0.5f; -0.5f;    0.0f; 1.0f;     +1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; +1.0f; // bottom-right
+                +0.5f; +0.5f; -0.5f;    1.0f; 1.0f;     +1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; +1.0f; // top-right         
+                +0.5f; -0.5f; -0.5f;    0.0f; 1.0f;     +1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; +1.0f; // bottom-right
+                +0.5f; +0.5f; +0.5f;    1.0f; 0.0f;     +1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; +1.0f; // top-left
+                +0.5f; -0.5f; +0.5f;    0.0f; 0.0f;     +1.0f;  0.0f;  0.0f;    0.0f; 1.0f; 0.0f;   0.0f; 0.0f; +1.0f; // bottom-left          
 
                 // bottom face
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f; -1.0f;  0.0f; // top-right
-                +0.5f; -0.5f; -0.5f;        1.0f; 1.0f;          0.0f; -1.0f;  0.0f; // top-left
-                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f; -1.0f;  0.0f; // bottom-left
-                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f; -1.0f;  0.0f; // bottom-left
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f; -1.0f;  0.0f; // bottom-right
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f; -1.0f;  0.0f; // top-right
+                -0.5f; -0.5f; -0.5f;    0.0f; 1.0f;      0.0f; -1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; -1.0f; // top-right
+                +0.5f; -0.5f; -0.5f;    1.0f; 1.0f;      0.0f; -1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; -1.0f; // top-left
+                +0.5f; -0.5f; +0.5f;    1.0f; 0.0f;      0.0f; -1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; -1.0f; // bottom-left
+                +0.5f; -0.5f; +0.5f;    1.0f; 0.0f;      0.0f; -1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; -1.0f; // bottom-left
+                -0.5f; -0.5f; +0.5f;    0.0f; 0.0f;      0.0f; -1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; -1.0f; // bottom-right
+                -0.5f; -0.5f; -0.5f;    0.0f; 1.0f;      0.0f; -1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; -1.0f; // top-right
 
                 // top face
-                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f; +1.0f;  0.0f; // top-left
-                +0.5f; +0.5f ;+0.5f;        1.0f; 0.0f;          0.0f; +1.0f;  0.0f; // bottom-right
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f; +1.0f;  0.0f; // top-right     
-                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;          0.0f; +1.0f;  0.0f; // bottom-right
-                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f; +1.0f;  0.0f; // top-left
-                -0.5f; +0.5f; +0.5f;        0.0f; 0.0f;          0.0f; +1.0f;  0.0f  // bottom-left     
+                -0.5f; +0.5f; -0.5f;    0.0f; 1.0f;      0.0f; +1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; +1.0f; // top-left
+                +0.5f; +0.5f ;+0.5f;    1.0f; 0.0f;      0.0f; +1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; +1.0f; // bottom-right
+                +0.5f; +0.5f; -0.5f;    1.0f; 1.0f;      0.0f; +1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; +1.0f; // top-right     
+                +0.5f; +0.5f; +0.5f;    1.0f; 0.0f;      0.0f; +1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; +1.0f; // bottom-right
+                -0.5f; +0.5f; -0.5f;    0.0f; 1.0f;      0.0f; +1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; +1.0f; // top-left
+                -0.5f; +0.5f; +0.5f;    0.0f; 0.0f;      0.0f; +1.0f;  0.0f;    1.0f; 0.0f; 0.0f;   0.0f; 0.0f; +1.0f; // bottom-left
             |]
 
         // make index data trivially
@@ -689,7 +701,9 @@ module PhysicallyBased =
                 let vertexBuffer = Gl.GenBuffer ()
                 let texCoordsOffset =   (3 (*position*)) * sizeof<single>
                 let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+                let tangentOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+                let binormalOffset =    (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tangent*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tangent*) + 3 (*binormal*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNInt = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
@@ -700,6 +714,10 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint texCoordsOffset)
                 Gl.EnableVertexAttribArray 2u
                 Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
+                Gl.EnableVertexAttribArray 3u
+                Gl.VertexAttribPointer (3u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint tangentOffset)
+                Gl.EnableVertexAttribArray 4u
+                Gl.VertexAttribPointer (4u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint binormalOffset)
                 Hl.Assert ()
 
                 // create model buffer
@@ -708,18 +726,18 @@ module PhysicallyBased =
                 let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally modelDataPtr.Free ()
-                Gl.EnableVertexAttribArray 3u
-                Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (3u, 1u)
-                Gl.EnableVertexAttribArray 4u
-                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
-                Gl.VertexAttribDivisor (4u, 1u)
                 Gl.EnableVertexAttribArray 5u
-                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint 0)
                 Gl.VertexAttribDivisor (5u, 1u)
                 Gl.EnableVertexAttribArray 6u
-                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
                 Gl.VertexAttribDivisor (6u, 1u)
+                Gl.EnableVertexAttribArray 7u
+                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                Gl.VertexAttribDivisor (7u, 1u)
+                Gl.EnableVertexAttribArray 8u
+                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                Gl.VertexAttribDivisor (8u, 1u)
                 Hl.Assert ()
 
                 // create texCoordsOffset buffer
@@ -728,9 +746,9 @@ module PhysicallyBased =
                 let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally texCoordsOffsetDataPtr.Free ()
-                Gl.EnableVertexAttribArray 7u
-                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (7u, 1u)
+                Gl.EnableVertexAttribArray 9u
+                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (9u, 1u)
                 Hl.Assert ()
 
                 // create albedo buffer
@@ -739,9 +757,9 @@ module PhysicallyBased =
                 let albedoDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedoDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally albedoDataPtr.Free ()
-                Gl.EnableVertexAttribArray 8u
-                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (8u, 1u)
+                Gl.EnableVertexAttribArray 10u
+                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (10u, 1u)
                 Hl.Assert ()
 
                 // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
@@ -750,9 +768,9 @@ module PhysicallyBased =
                 let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally materialDataPtr.Free ()
-                Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (9u, 1u)
+                Gl.EnableVertexAttribArray 11u
+                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (11u, 1u)
                 Hl.Assert ()
 
                 // create height buffer
@@ -761,9 +779,9 @@ module PhysicallyBased =
                 let heightDataPtr = GCHandle.Alloc ([|1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<single>), heightDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally heightDataPtr.Free ()
-                Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 1, VertexAttribPointerType.Float, false, sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (10u, 1u)
+                Gl.EnableVertexAttribArray 12u
+                Gl.VertexAttribPointer (12u, 1, VertexAttribPointerType.Float, false, sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (12u, 1u)
                 Hl.Assert ()
 
                 // create invert roughness buffer
@@ -772,9 +790,9 @@ module PhysicallyBased =
                 let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally invertRoughnessDataPtr.Free ()
-                Gl.EnableVertexAttribArray 11u
-                Gl.VertexAttribIPointer (11u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
-                Gl.VertexAttribDivisor (11u, 1u)
+                Gl.EnableVertexAttribArray 13u
+                Gl.VertexAttribIPointer (13u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
+                Gl.VertexAttribDivisor (13u, 1u)
                 Hl.Assert ()
 
                 // create index buffer
@@ -800,10 +818,10 @@ module PhysicallyBased =
             else
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 8)
+                let vertices = Array.zeroCreate (vertexData.Length / 14)
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 8
+                    let j = i * 14
                     let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
                     vertices.[i] <- vertex
 
@@ -1264,7 +1282,7 @@ module PhysicallyBased =
          materialsFields : single array,
          heightsFields : single array,
          invertRoughnessesFields : int array,
-         blending,
+         blending : bool,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
          brdfTexture : uint,
