@@ -68,7 +68,7 @@ const float OPAQUING_DISTANCE_END = 32.0;
 const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_BEGIN;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
-const int LIGHTS_MAX = 64;
+const int LIGHTS_MAX = 8;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;

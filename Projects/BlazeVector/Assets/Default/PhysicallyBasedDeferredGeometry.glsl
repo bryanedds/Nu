@@ -94,10 +94,10 @@ void main()
     vec3 q2 = dFdy(positionOut.xyz);
     vec2 st1 = dFdx(texCoordsOut);
     vec2 st2 = dFdy(texCoordsOut);
-    vec3 n = normalize(normalOut);
-    vec3 t = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 b = -normalize(cross(n, t));
-    mat3 toWorld = mat3(t, b, n);
+    vec3 normal = normalize(normalOut);
+    vec3 tangent = normalize(q1 * st2.tangent - q2 * st1.tangent);
+    vec3 binormal = -normalize(cross(normal, tangent));
+    mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
     // compute tex coords in parallax space
@@ -115,7 +115,7 @@ void main()
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).binormal * materialOut.binormal;
     vec4 roughnessSample = texture(roughnessTexture, texCoords);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
