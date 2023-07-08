@@ -19,6 +19,8 @@ open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
+//
+// Group renaming.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
 // Refresh all probes button.
