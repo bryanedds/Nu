@@ -33,8 +33,6 @@ module Reflection =
              ("Id", true)
              ("IdRef", true)
              ("ScriptFrame", true)
-             ("ScriptFrameOpt", true)
-             ("ScriptUnsubscriptions", true)
 
              // screen properties
              ("Ecs", true)
@@ -44,6 +42,7 @@ module Reflection =
 
              // entity properties
              ("Facets", true)
+             ("ScriptFrameOpt", true)
              ("Surnames", true)
              ("Center", true)
              ("Bottom", true)
