@@ -27,7 +27,8 @@ open Nu.Gaia
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
-// Added Prelude script.
+// Add Prelude script.
+// Scripting console window.
 // Hierarchical Static toggle (similar to Unity).
 // Show Selected expands hierarchy as needed.
 // Try to figure out how to snapshot only on first property interaction.
