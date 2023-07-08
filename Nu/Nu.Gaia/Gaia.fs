@@ -919,6 +919,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match selectedEntityOpt with
         | Some entity when entity.Exists world ->
 
+            World.writeEntityToFile templateFilePath entity world
+
+            (*
             let dispatcher = entity.GetDispatcher world
             let dispatcherName = getTypeName dispatcher
             let dispatcherStr = dispatcherName
@@ -932,7 +935,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if i = 0 then                       "            [typeof<" + name + ">"
                     elif i = dec facetNames.Length then "             typeof<" + name + ">]"
                     else                                "             typeof<" + name + ">") |>
-                String.join "\n"
+                String.join "\r\n"
 
             let initializeStr =
 
@@ -943,17 +946,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 propertyDescriptors |>
                 Array.mapi (fun i pd ->
-                    if i = 0 then                                   "            [Entity." + pd.PropertyName + " == scvalue \"" + scstring (EntityPropertyDescriptor.getValue pd entity world) + "\""
-                    elif i = dec propertyDescriptors.Length then    "             Entity." + pd.PropertyName + " == scvalue \"" + scstring (EntityPropertyDescriptor.getValue pd entity world) + "\"]"
-                    else                                            "             Entity." + pd.PropertyName + " == scvalue \"" + scstring (EntityPropertyDescriptor.getValue pd entity world) + "\"") |>
+                    let pvStr =
+                        EntityPropertyDescriptor.getValue pd entity world |>
+                        sprintf "%A" |>
+                        fun pvStr -> pvStr.Replace ("\n", "")
+                    if i = 0 then                                   "            [Entity." + pd.PropertyName + " == " + pvStr + ""
+                    elif i = dec propertyDescriptors.Length then    "             Entity." + pd.PropertyName + " == " + pvStr + "]"
+                    else                                            "             Entity." + pd.PropertyName + " == " + pvStr + "") |>
                 String.join "\n"
 
             let contentStr =
                 ""
 
-            let fileStr =
-                sprintf """
-namespace %3s
+            let templateStr = """
+namespace {2}
 open System
 open System.Numerics
 open Prime
@@ -961,51 +967,48 @@ open Nu
 open Nu.Declarative
 
 [<AutoOpen>]
-module %1sDispatcher =
+module {0}Dispatcher =
 
-    type %1s =
+    type {0} =
         unit
 
-    type %1sMessage =
+    type {0}Message =
         | Nil
         interface Message
 
-    type %1sCommand =
+    type {0}Command =
         | Nop
         interface Command
 
     type Entity with
-        member this.Get%1s world = this.GetModelGeneric<%1s> world
-        member this.Set%1s value world = this.SetModelGeneric<%1s> value world
-        member this.%1s = this.ModelGeneric<%1s> ()
+        member this.Get{0} world = this.GetModelGeneric<{0}> world
+        member this.Set{0} value world = this.SetModelGeneric<{0}> value world
+        member this.{0} = this.ModelGeneric<{0}> ()
 
-    type %1sDispatcher () =
-        inherit %5s<%1s, %1sMessage, %1sCommand> (true, ())
+    type {0}Dispatcher () =
+        inherit {4}<{0}, {0}Message, {0}Command> (true, ())
 
         static member Facets =
-            %4s
+{3}
 
-        override this.Initialize (%2s, entity) =
-            %6s
+        override this.Initialize ({1}, entity) =
+{5}
 
-        override this.Message (%2s, message, entity, world) =
+        override this.Message ({1}, message, entity, world) =
             match message with
-            | Nil -> just %2s
+            | Nil -> just {1}
 
-        override this.Command (%2s, command, entity, world) =
+        override this.Command ({1}, command, entity, world) =
             match command with
             | Nop -> just world
 
-        override this.Content (%2s, entity) =
-            %7s"""
-                    "MyTemplate"
-                    "myTemplate"
-                    "MyGame"
-                    facetsStr
-                    dispatcherStr
-                    initializeStr
-                    contentStr
+        override this.Content ({1}, entity) =
+{6}"""
+
+            let fileStr = String.Format (templateStr, "MyTemplate", "myTemplate", "MyGame", facetsStr, dispatcherStr, initializeStr, contentStr, "")
             
+            File.WriteAllText (templateFilePath, fileStr)*)
+
             true
 
         | Some _ | None -> false
@@ -2167,7 +2170,7 @@ module %1sDispatcher =
                         ImGui.Text "File Path:"
                         ImGui.SameLine ()
                         ImGui.InputTextWithHint ("##templateFilePath", "[enter file path]", &templateFilePath, 4096u) |> ignore<bool>
-                        if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
+                        if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty templateFilePath then
                             //snapshot ()
                             showCreateTemplateDialog <- not (tryCreateTemplate templateFilePath world)
                     if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
