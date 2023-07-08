@@ -110,6 +110,7 @@ module Gaia =
     let mutable private overlayerStr = null // this will be initialized on start
     let mutable private groupFilePaths = Map.empty<Group Address, string>
     let mutable private groupFilePath = ""
+    let mutable private templateFilePath = ""
 
     (* Modal Activity States *)
 
@@ -122,6 +123,7 @@ module Gaia =
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
+    let mutable private showCreateTemplateDialog = false
     let mutable private showInspector = false
 
     (* Initial imgui.ini File Content *)
@@ -911,6 +913,102 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private tryReloadAll () =
         tryReloadAssets ()
         tryReloadCode ()
+
+    let private tryCreateTemplate templateFilePath world =
+
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+
+            let dispatcher = entity.GetDispatcher world
+            let dispatcherName = getTypeName dispatcher
+            let dispatcherStr = dispatcherName
+
+            let facetNames =
+                Array.ofSeq (entity.GetFacetNames world)
+
+            let facetsStr =
+                facetNames |>
+                Array.mapi (fun i name ->
+                    if i = 0 then                       "            [typeof<" + name + ">"
+                    elif i = dec facetNames.Length then "             typeof<" + name + ">]"
+                    else                                "             typeof<" + name + ">") |>
+                String.join "\n"
+
+            let initializeStr =
+
+                let propertyDescriptors =
+                    EntityPropertyDescriptor.getPropertyDescriptors entity world |>
+                    Array.ofList |>
+                    Array.filter (fun pd -> World.getEntityPropertyChanged pd entity world)
+
+                propertyDescriptors |>
+                Array.mapi (fun i pd ->
+                    if i = 0 then                                   "            [Entity." + pd.PropertyName + " == scvalue \"" + scstring (EntityPropertyDescriptor.getValue pd entity world) + "\""
+                    elif i = dec propertyDescriptors.Length then    "             Entity." + pd.PropertyName + " == scvalue \"" + scstring (EntityPropertyDescriptor.getValue pd entity world) + "\"]"
+                    else                                            "             Entity." + pd.PropertyName + " == scvalue \"" + scstring (EntityPropertyDescriptor.getValue pd entity world) + "\"") |>
+                String.join "\n"
+
+            let contentStr =
+                ""
+
+            let fileStr =
+                sprintf """
+namespace %3s
+open System
+open System.Numerics
+open Prime
+open Nu
+open Nu.Declarative
+
+[<AutoOpen>]
+module %1sDispatcher =
+
+    type %1s =
+        unit
+
+    type %1sMessage =
+        | Nil
+        interface Message
+
+    type %1sCommand =
+        | Nop
+        interface Command
+
+    type Entity with
+        member this.Get%1s world = this.GetModelGeneric<%1s> world
+        member this.Set%1s value world = this.SetModelGeneric<%1s> value world
+        member this.%1s = this.ModelGeneric<%1s> ()
+
+    type %1sDispatcher () =
+        inherit %5s<%1s, %1sMessage, %1sCommand> (true, ())
+
+        static member Facets =
+            %4s
+
+        override this.Initialize (%2s, entity) =
+            %6s
+
+        override this.Message (%2s, message, entity, world) =
+            match message with
+            | Nil -> just %2s
+
+        override this.Command (%2s, command, entity, world) =
+            match command with
+            | Nop -> just world
+
+        override this.Content (%2s, entity) =
+            %7s"""
+                    "MyTemplate"
+                    "myTemplate"
+                    "MyGame"
+                    facetsStr
+                    dispatcherStr
+                    initializeStr
+                    contentStr
+            
+            true
+
+        | Some _ | None -> false
 
     let private resetEye () =
         world <- World.setEyeCenter2d v2Zero world
@@ -1832,6 +1930,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Convert to Template..." then showCreateTemplateDialog <- true; showEntityContextMenu <- false
                         ImGui.End ()
 
                 // asset picker dialog
@@ -2058,6 +2157,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
                             snapshot ()
                             showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
+                    if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
+
+                // create template dialog
+                if showCreateTemplateDialog then
+                    let title = "Create a template..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showCreateTemplateDialog) then
+                        ImGui.Text "File Path:"
+                        ImGui.SameLine ()
+                        ImGui.InputTextWithHint ("##templateFilePath", "[enter file path]", &templateFilePath, 4096u) |> ignore<bool>
+                        if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
+                            //snapshot ()
+                            showCreateTemplateDialog <- not (tryCreateTemplate templateFilePath world)
                     if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
 
                 // message box dialog
