@@ -20,6 +20,8 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
+// Put entity renaming in its own dialog.
+// Fixed exception handler not working (and shelve cached world?)
 // Group renaming.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
