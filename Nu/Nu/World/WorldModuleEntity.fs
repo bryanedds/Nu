@@ -184,6 +184,18 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Xtension |> Xtension.toSeq |> Seq.toList
 
+        static member getEntityPropertyChanged propertyDescriptor entity world =
+            let overlayer = World.getOverlayer world
+            let entityState = World.getEntityState entity world
+            let entityFacetNames = entityState.FacetNames
+            match entityState.OverlayNameOpt with
+            | Some overlayName ->
+                let overlaySymbols = Overlayer.getOverlaySymbols overlayName entityFacetNames overlayer
+                match Overlayer.getPropertyState propertyDescriptor.PropertyName propertyDescriptor.PropertyType entityState overlaySymbols with
+                | Altered | Bare -> true
+                | Overlaid | NonPersistent -> false
+            | None -> false
+
         static member private synchronizeEntityState (entityState : EntityState) (entity : Entity) world =
 
             // grab address
