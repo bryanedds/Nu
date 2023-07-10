@@ -1258,7 +1258,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     | ValueSome metallic ->
                                         let mutable metallic = metallic
                                         ImGui.SameLine ()
-                                        if ImGui.InputFloat ("MetallicOpt", &metallic, 0.005f, 0.0f, 10.0f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
+                                        if ImGui.InputFloat ("MetallicOpt", &metallic, 0.05f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
                                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
                                 if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
@@ -1273,7 +1273,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     | ValueSome roughness ->
                                         let mutable roughness = roughness
                                         ImGui.SameLine ()
-                                        if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.005f, 0.0f, 10.0f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                                        if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.05f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
                                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
                                 if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
@@ -1288,7 +1288,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     | ValueSome emission ->
                                         let mutable emission = emission
                                         ImGui.SameLine ()
-                                        if ImGui.InputFloat ("EmissionOpt", &emission, 0.005f, 0.0f, 10.0f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
+                                        if ImGui.InputFloat ("EmissionOpt", &emission, 0.05f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
                                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
                                 if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
@@ -1303,7 +1303,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     | ValueSome height ->
                                         let mutable height = height
                                         ImGui.SameLine ()
-                                        if ImGui.InputFloat ("HeightOpt", &height, 0.005f, 0.0f, 10.0f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
+                                        if ImGui.InputFloat ("HeightOpt", &height, 0.05f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
                                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
                                     | ValueNone -> ()
                                 if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
