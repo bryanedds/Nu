@@ -1797,7 +1797,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
-                            ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, 256) |> ignore<bool>
+                            ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) |> ignore<bool>
                         ssaoConfig <-
                             { SsaoEnabled = ssaoEnabled
                               SsaoIntensity = ssaoIntensity
