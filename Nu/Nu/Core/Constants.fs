@@ -115,6 +115,7 @@ module Render =
     let [<Literal>] SsaoIntensityDefault = 1.75f
     let [<Literal>] SsaoBiasDefault = 0.01f
     let [<Literal>] SsaoRadiusDefault = 0.25f
+    let [<Literal>] SsaoSampleCountMax = 128
     let [<Literal>] SsaoSampleCountDefault = 64
     let [<Literal>] FxaaEnabledDefault = true
     let [<Literal>] LightProbeSizeDefault = 16.0f
