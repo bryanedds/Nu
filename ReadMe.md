@@ -25,10 +25,13 @@ Wandering around the forest in OmniBlade.
 A critical battle with evil itself!
 
 ![image](https://user-images.githubusercontent.com/1625560/212570637-69cfd2c9-3b61-4d7a-82ce-933582f130e5.png)
-Live editing a cutscene.
+Live editing a cutscene in the old editor (now replaced with the new editor below).
 
-![image](https://user-images.githubusercontent.com/1625560/235414619-2042f3f4-054d-4eb8-9802-a0731079b97f.png)
-Editing a 3D scene imported from Unity in Nu's editor, Gaia.
+![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
+Directly editing the entire game state in the new editor.
+
+![image](https://github.com/bryanedds/Nu/assets/1625560/90f304e7-d2c8-4fc1-8548-2a9c81d05a66)
+Editing a 3D scene imported from Unity in the new editor.
 
 ![image](https://user-images.githubusercontent.com/1625560/232184477-dbb1102e-f4f5-4fd1-9008-57a07fe450f7.png)
 Efficient, detailed 3D with deferred physically-based rendering.
