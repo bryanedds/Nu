@@ -1395,7 +1395,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
                 let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-                    SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward eyeCenter renderer.RenderTasks.RenderLights
+                    SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
                 let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
                 GlRenderer3d.renderPhysicallyBasedSurfaces
@@ -1408,7 +1408,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render surfaces w/ relative transforms to filter buffer
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
             let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-                SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward eyeCenter renderer.RenderTasks.RenderLights
+                SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
             let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
             GlRenderer3d.renderPhysicallyBasedSurfaces
