@@ -106,7 +106,7 @@ void main()
     // compute materials
     float metallic = material.r;
     float roughness = material.g;
-    float ambientOcclusion = material.b;
+    float ambientOcclusion = material.b * ssao;
     vec3 emission = vec3(material.a);
 
     // compute lightAccum term
@@ -169,14 +169,14 @@ void main()
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 diffuse = irradiance * albedo * lightAmbientColor * lightAmbientBrightness;
+    vec3 diffuse = irradiance * albedo * lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
 
     // compute specular term
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness;
+    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness * ambientOcclusion * ambientOcclusion;
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion * ssao;
+    vec3 ambient = kD * diffuse + specular;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;
