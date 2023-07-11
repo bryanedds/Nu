@@ -125,5 +125,3 @@ module WorldInputModule =
         static member isKeyboardShiftUp world =
             ignore (world : World)
             KeyboardState.isShiftUp ()
-
-        // TODO: implement isKeyboardModifierActive.
