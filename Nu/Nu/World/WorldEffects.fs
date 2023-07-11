@@ -46,7 +46,7 @@ module Effect =
               RenderType_ : RenderType
               ParticleSystem_ : ParticleSystem
               HistoryMax_ : int
-              History_ : Effects.Slice Nito.Collections.Deque
+              History_ : Effects.Slice Deque
               Definitions_ : Definitions
               Tags_ : Map<string, Slice>
               Descriptor_ : EffectDescriptor }
@@ -243,7 +243,7 @@ module Effect =
 
     /// Make an effect.
     let make startTime offset transform renderType descriptor =
-        makePlus startTime true offset transform renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Nito.Collections.Deque ()) Map.empty descriptor
+        makePlus startTime true offset transform renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =

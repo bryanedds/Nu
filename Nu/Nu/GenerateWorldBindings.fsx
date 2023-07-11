@@ -2,11 +2,10 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 #I __SOURCE_DIRECTORY__
-#r "nuget: Aether.Physics2D, 1.5.0"
+#r "nuget: Aether.Physics2D, 1.7.0"
 #r "nuget: Csv, 1.0.58"
 #r "nuget: FParsec, 1.0.3"
-#r "nuget: Magick.NET-Q8-x64, 7.5.0.1"
-#r "nuget: Nito.Collections.Deque, 1.1.0"
+#r "nuget: Magick.NET-Q8-x64, 13.1.3"
 #r "nuget: Prime, 9.8.0"
 #r "nuget: Prime.Scripting, 9.5.0"
 #r "nuget: System.Configuration.ConfigurationManager, 7.0.0"

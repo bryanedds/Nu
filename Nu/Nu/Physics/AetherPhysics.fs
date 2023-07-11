@@ -12,6 +12,8 @@ open tainicom.Aether.Physics2D.Dynamics.Joints
 open Prime
 open Nu
 
+#nowarn "44" // ignore aether deprecation warnings
+
 /// Tracks Aether physics bodies by their BodyIds.
 type internal AetherBodyDictionary = OrderedDictionary<BodyId, Vector3 option * Dynamics.Body>
 
