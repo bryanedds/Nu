@@ -3,11 +3,9 @@
 
 namespace Nu.Gaia
 open System
-open System.Numerics
-open FSharp.Reflection
 open Prime
-open ImGuiNET
 open Nu
+open Nu.Gaia
 
 /// The default plugin used by Gaia when a plugin from a game is not utilized.
 type GaiaPlugin () =
