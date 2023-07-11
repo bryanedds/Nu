@@ -505,7 +505,7 @@ module EffectFacetModule =
         member this.GetEffectHistoryMax world : int = this.Get (nameof this.EffectHistoryMax) world
         member this.SetEffectHistoryMax (value : int) world = this.Set (nameof this.EffectHistoryMax) value world
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
-        member this.GetEffectHistory world : Effects.Slice Nito.Collections.Deque = this.Get (nameof this.EffectHistory) world
+        member this.GetEffectHistory world : Effects.Slice Deque = this.Get (nameof this.EffectHistory) world
         member this.EffectHistory = lensReadOnly (nameof this.EffectHistory) this this.GetEffectHistory
         member this.GetEffectTags world : Map<string, Effects.Slice> = this.Get (nameof this.EffectTags) world
         member this.SetEffectTags (value : Map<string, Effects.Slice>) world = this.Set (nameof this.EffectTags) value world
@@ -609,7 +609,7 @@ module EffectFacetModule =
              define Entity.EffectOffset v3Zero
              define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
-             variable Entity.EffectHistory (fun _ -> Nito.Collections.Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
+             variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
              nonPersistent Entity.EffectTags Map.empty]
 
         override this.Register (entity, world) =
