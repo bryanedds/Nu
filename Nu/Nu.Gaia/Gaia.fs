@@ -349,7 +349,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         selectedEntityOpt <- entityOpt
 
     let private snapshot () =
-        world <- Nu.World.shelve world
+        world <- Nu.World.shelveCurrent world
         worldsPast <- world :: worldsPast
         worldsFuture <- []
 
@@ -358,7 +358,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (if not (Nu.World.getImperative world) then
                 match worldsPast with
                 | worldPast :: worldsPast' ->
-                    let worldFuture = Nu.World.shelve world
+                    let worldFuture = Nu.World.shelveCurrent world
                     world <- Nu.World.unshelve worldPast
                     worldsPast <- worldsPast'
                     worldsFuture <- worldFuture :: worldsFuture
@@ -377,7 +377,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (if not (Nu.World.getImperative world) then
                 match worldsFuture with
                 | worldFuture :: worldsFuture' ->
-                    let worldPast = Nu.World.shelve world
+                    let worldPast = Nu.World.shelveCurrent world
                     world <- Nu.World.unshelve worldFuture
                     worldsPast <- worldPast :: worldsPast
                     worldsFuture <- worldsFuture'
@@ -2091,8 +2091,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // propagate exception to dialog
             with exn ->
-                let worldOld = World.shelve worldOld // shelving makes shelved world current...
-                world <- World.choose world // ...so re-choose current world
+                let worldOld = World.shelveNonCurrent worldOld
                 recoverableExceptionOpt <- Some (exn, worldOld)
                 world
 

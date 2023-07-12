@@ -277,9 +277,13 @@ module WorldModule =
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
-        /// Shelve the ambient state.
-        static member internal shelveAmbientState world =
-            World.choose { world with AmbientState = AmbientState.shelve world.AmbientState }
+        /// Shelve the ambient state of a non-current world.
+        static member internal shelveAmbientStateNonCurrent world =
+            { world with AmbientState = AmbientState.shelve world.AmbientState }
+
+        /// Shelve the ambient state of the current world.
+        static member internal shelveAmbientStateCurrent world =
+            World.choose (World.shelveAmbientStateNonCurrent world)
 
         /// Unshelve the ambient state.
         static member internal unshelveAmbientState world =
