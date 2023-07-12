@@ -308,6 +308,11 @@ Pos=608,366
 Size=694,406
 Collapsed=0
 
+[Window][Rename group...]
+Pos=734,514
+Size=444,94
+Collapsed=0
+
 [Window][Rename entity...]
 Pos=734,514
 Size=444,94
