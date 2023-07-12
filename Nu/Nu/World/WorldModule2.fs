@@ -553,9 +553,13 @@ module WorldModule2 =
             | (Right _, world) -> (true, world)
             | (Left _, world) -> (false, world)
 
-        /// Shelve the world for background storage (such as for an undo / redo system).
-        static member shelve world =
-            World.shelveAmbientState world
+        /// Shelve a non-current world for background storage (such as for an undo / redo system).
+        static member shelveNonCurrent world =
+            World.shelveAmbientStateNonCurrent world
+
+        /// Shelve the current world for background storage (such as for an undo / redo system).
+        static member shelveCurrent world =
+            World.shelveAmbientStateCurrent world
 
         /// Unshelve the world from background storage (such as for an undo / redo system).
         static member unshelve (world : World) =
