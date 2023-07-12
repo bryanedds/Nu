@@ -20,7 +20,6 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
-// Group renaming.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
 // Refresh all probes button.
@@ -1474,16 +1473,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     // main menu window
                     if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
                         if ImGui.BeginMenuBar () then
-                            if ImGui.BeginMenu "File" then
-                                if ImGui.MenuItem ("New Project") then
-                                    showNewProjectDialog <- true
-                                if ImGui.MenuItem ("Open Project") then
-                                    showOpenProjectDialog <- true
+                            if ImGui.BeginMenu "Project" then
+                                if ImGui.MenuItem ("New Project") then showNewProjectDialog <- true
+                                if ImGui.MenuItem ("Open Project") then showOpenProjectDialog <- true
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("New Group", "Ctrl+N") then
-                                    showNewGroupDialog <- true
-                                if ImGui.MenuItem ("Open Group", "Ctrl+O") then
-                                    showOpenGroupDialog <- true
+                                if ImGui.MenuItem "Exit" then world <- World.exit world
+                                ImGui.EndMenu ()
+                            if ImGui.BeginMenu "Group" then
+                                if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
+                                if ImGui.MenuItem ("Open Group", "Ctrl+O") then showOpenGroupDialog <- true
                                 if ImGui.MenuItem ("Save Group", "Ctrl+S") then
                                     match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
                                     | Some filePath -> groupFilePath <- filePath
@@ -1498,20 +1496,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         world <- World.destroyGroupImmediate selectedGroup world
                                         groupFilePaths <- Map.remove selectedGroup.GroupAddress groupFilePaths
                                         selectGroup (Seq.head groupsRemaining)
+                                    else messageBoxOpt <- Some "Cannot close protected or only group."
+                                ImGui.EndMenu ()
+                            if ImGui.BeginMenu "Entity" then
+                                if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste false |> ignore<bool>
                                 ImGui.Separator ()
-                                if ImGui.MenuItem "Exit" then world <- World.exit world
+                                if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
+                                if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Edit" then
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
                                 if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Cut", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Copy", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Paste", "Ctrl+V") then tryPaste false |> ignore<bool>
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Create", "Ctrl+Enter") then createEntity false false
-                                if ImGui.MenuItem ("Delete", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
                                 ImGui.EndMenu ()
