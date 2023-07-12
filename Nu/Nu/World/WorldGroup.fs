@@ -246,6 +246,30 @@ module WorldGroupModule =
         static member destroyGroups groups world =
             World.frame (World.destroyGroupsImmediate groups) Simulants.Game world
 
+        /// Rename a group. Note that since this destroys the renamed group immediately, you should not call this
+        /// inside an event handler that involves the reassigned group itself. Note this also renames all of its
+        /// descendents accordingly.
+        static member renameGroupImmediate source (destination : Group) world =
+            let groupStateOpt = World.getGroupStateOpt source world
+            match groupStateOpt with
+            | Some groupState ->
+                let groupState = { groupState with Id = Gen.id64; Name = destination.Name }
+                let children = World.getEntitiesSovereign source world
+                let world = World.addGroup false groupState destination world
+                let world =
+                    Seq.fold (fun world (child : Entity) ->
+                        let destination = destination / child.Name
+                        World.renameEntityImmediate child destination world)
+                        world children
+                let world = World.destroyGroupImmediate source world
+                world
+            | None -> world
+
+        /// Rename a group.
+        [<FunctionBinding>]
+        static member renameGroup source destination world =
+            World.frame (World.renameGroupImmediate source destination) Simulants.Game world
+
         /// Write a group to a group descriptor.
         static member writeGroup group (groupDescriptor : GroupDescriptor) world =
             let groupState = World.getGroupState group world
