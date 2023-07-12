@@ -1363,8 +1363,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiProcess wtemp =
 
+        // store old world
+        let worldOld = wtemp
+
         // transfer to world mutation mode
-        world <- wtemp
+        world <- worldOld
 
         // enable global docking
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
@@ -2088,21 +2091,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // propagate exception to dialog
             with exn ->
-                recoverableExceptionOpt <- Some (exn, wtemp)
+                let worldOld = World.shelve worldOld // shelving makes shelved world current...
+                world <- World.choose world // ...so re-choose current world
+                recoverableExceptionOpt <- Some (exn, worldOld)
                 world
 
         // exception handling dialog
         | Some (exn, oldWorld) ->
-            let title = "Unexpected Exception!"
+            let title = "Unhandled Exception!"
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-            if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
+            if ImGui.BeginPopupModal title then
                 ImGui.Text "Exception text:"
                 ImGui.TextWrapped (scstring exn)
                 ImGui.Text "How would you like to handle this exception?"
                 if ImGui.Button "Ignore exception and revert to old world." then
-                    world <- oldWorld
+                    world <- World.unshelve oldWorld
                     recoverableExceptionOpt <- None
-                if ImGui.Button "Ignore exception and process with current world." then
+                if ImGui.Button "Ignore exception and proceed with current world." then
                     recoverableExceptionOpt <- None
                 if ImGui.Button "Exit the editor." then
                     world <- World.exit world
