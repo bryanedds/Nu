@@ -86,7 +86,8 @@ module Gaia =
     let mutable private newEntityOverlayName = "(Default Overlay)"
     let mutable private newEntityElevation = 0.0f
     let mutable private newGroupName = ""
-    let mutable private entityName = ""
+    let mutable private groupRename = ""
+    let mutable private entityRename = ""
 
     (* Configuration States *)
 
@@ -127,6 +128,7 @@ module Gaia =
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
+    let mutable private showRenameGroupDialog = false
     let mutable private showRenameEntityDialog = false
     let mutable private showInspector = false
 
@@ -380,11 +382,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
+            if not (selectedGroup.Exists world) then
+                let group = Seq.head (World.getGroups selectedScreen world)
+                selectGroup group
             match selectedEntityOpt with
-            | Some entity when not (entity.Exists world) ->
-                selectEntityOpt None
-                true
-            | Some _ | None -> false
+            | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
+            | Some _ | None -> ()
+            true
         else false
 
     let private tryRedo () =
@@ -399,11 +403,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
+            if not (selectedGroup.Exists world) then
+                let group = Seq.head (World.getGroups selectedScreen world)
+                selectGroup group
             match selectedEntityOpt with
-            | Some entity when not (entity.Exists world) ->
-                selectEntityOpt None
-                true
-            | Some _ | None -> false
+            | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
+            | Some _ | None -> ()
+            true
         else false
 
     let private getSnaps () =
@@ -750,7 +756,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
                     selectGroup group
                     match selectedEntityOpt with
-                    | Some entity when not (entity.Exists world) -> selectEntityOpt None
+                    | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
                     | Some _ | None -> ()
                     groupFilePaths <- Map.add group.GroupAddress groupFilePath groupFilePaths
                     groupFilePath <- ""
@@ -1156,24 +1162,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Constants.Engine.MountOptPropertyName -> "!3" // put MountOpt third
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
-                    if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then
+                    if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
                         match simulant with
+                        | :? Screen as screen ->
+                            // NOTE: can't edit screen names for now.
+                            let mutable name = screen.Name
+                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        | :? Group as group ->
+                            let mutable name = group.Name
+                            ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            if not (group.GetProtected world) then
+                                ImGui.SameLine ()
+                                if ImGui.Button "Rename" then
+                                    showRenameGroupDialog <- true
                         | :? Entity as entity ->
-                            // NOTE: name edit properties can't be replaced.
                             let mutable name = entity.Name
                             ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                             if not (entity.GetProtected world) then
                                 ImGui.SameLine ()
                                 if ImGui.Button "Rename" then
                                     showRenameEntityDialog <- true
-                        | :? Group as group ->
-                            // NOTE: only edit entities names for now.
-                            let mutable name = group.Name
-                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                        | :? Screen as screen ->
-                            // NOTE: only edit entities names for now.
-                            let mutable name = screen.Name
-                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                         | _ -> ()
                         // NOTE: don't edit names in property editor for now.
                         if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- None
@@ -2052,6 +2060,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
                             let oldWorld = world
                             try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
+                                selectEntityOpt None
                                 selectGroup newGroup
                                 showNewGroupDialog <- false
                                 newGroupName <- ""
@@ -2088,6 +2097,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
                     if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
 
+                // rename group dialog
+                if showRenameGroupDialog then
+                    match selectedGroup with
+                    | group when group.Exists world ->
+                        let title = "Rename group..."
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showRenameGroupDialog) then
+                            ImGui.Text "Group Name:"
+                            ImGui.SameLine ()
+                            ImGui.InputTextWithHint ("##groupName", "[enter group name]", &groupRename, 4096u) |> ignore<bool>
+                            let group' = group.Screen / groupRename
+                            if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
+                                snapshot ()
+                                world <- World.renameGroupImmediate group group' world
+                                selectedGroup <- group'
+                                showRenameGroupDialog <- false
+                        if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameGroupDialog <- false
+                    | _ -> showRenameGroupDialog <- false
+
                 // rename entity dialog
                 if showRenameEntityDialog then
                     match selectedEntityOpt with
@@ -2097,9 +2125,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
                             ImGui.Text "Entity Name:"
                             ImGui.SameLine ()
-                            ImGui.InputTextWithHint ("##entityName", "[enter entity name]", &entityName, 4096u) |> ignore<bool>
-                            let entity' = Entity (Array.add entityName entity.Parent.SimulantAddress.Names)
-                            if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityName && Address.validName entityName && not (entity'.Exists world) then
+                            ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &entityRename, 4096u) |> ignore<bool>
+                            let entity' = Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
+                            if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
                                 snapshot ()
                                 world <- World.renameEntityImmediate entity entity' world
                                 selectedEntityOpt <- Some entity'

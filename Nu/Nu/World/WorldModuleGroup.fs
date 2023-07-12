@@ -77,7 +77,7 @@ module WorldModuleGroup =
             let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace group false false world
 
-        static member private getGroupStateOpt group world =
+        static member internal getGroupStateOpt group world =
             World.groupStateFinder group world
 
         static member internal getGroupState group world =

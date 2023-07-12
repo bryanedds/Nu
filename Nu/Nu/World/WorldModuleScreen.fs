@@ -76,7 +76,7 @@ module WorldModuleScreen =
             let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace screen false false world
 
-        static member private getScreenStateOpt screen world =
+        static member internal getScreenStateOpt screen world =
              World.screenStateFinder screen world
 
         static member internal getScreenState screen world =
