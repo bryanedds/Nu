@@ -104,7 +104,7 @@
 		<PackageReference Include="Csv" Version="1.0.58" />
 		<PackageReference Include="FParsec" Version="1.0.3" />
 		<PackageReference Include="Aether.Physics2D" Version="1.7.0" />
-		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.1.3" />
+		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
 		<PackageReference Include="Prime" Version="9.8.0" />
 		<PackageReference Include="Prime.Scripting" Version="9.5.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
