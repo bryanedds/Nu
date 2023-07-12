@@ -21,7 +21,6 @@ open Nu.Gaia
 // TODO:
 //
 // Put entity renaming in its own dialog.
-// Fixed exception handler not working (and shelve cached world?)
 // Group renaming.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
@@ -76,13 +75,18 @@ module Gaia =
     let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
     let mutable private propertyDescriptorFocusedOpt = None
-    let mutable private newProjectName = "MyGame"
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
+    let mutable private newProjectName = "MyGame"
+    let mutable private newGroupDispatcherName = nameof GroupDispatcher
+    let mutable private newEntityDispatcherName = null // this will be initialized on start
+    let mutable private newEntityOverlayName = "(Default Overlay)"
+    let mutable private newEntityElevation = 0.0f
+    let mutable private newGroupName = ""
 
     (* Configuration States *)
 
@@ -91,11 +95,6 @@ module Gaia =
     let mutable private snaps2dSelected = true
     let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
-    let mutable private newGroupDispatcherName = nameof GroupDispatcher
-    let mutable private newEntityDispatcherName = null // this will be initialized on start
-    let mutable private newEntityOverlayName = "(Default Overlay)"
-    let mutable private newEntityElevation = 0.0f
-    let mutable private newGroupName = ""
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
     let mutable private lightMappingConfig = { LightMappingEnabled = true }
@@ -295,6 +294,16 @@ Collapsed=0
 [Window][Choose an Asset...]
 Pos=796,323
 Size=336,458
+Collapsed=0
+
+[Window][ContextMenu]
+Pos=853,391
+Size=250,135
+Collapsed=0
+
+[Window][Unhandled Exception!]
+Pos=608,366
+Size=694,406
 Collapsed=0
 
 [Docking][Data]
