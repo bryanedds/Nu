@@ -1104,7 +1104,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
             ImGui.EndPopup ()
         if ImGui.BeginDragDropSource () then
-            let entityAddressStr = scstring entity.EntityAddress
+            let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
             dragDropPayloadOpt <- Some entityAddressStr
             ImGui.Text entity.Name
             ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
@@ -2049,7 +2049,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
                                     newGroupDispatcherName <- dispatcherName
                             ImGui.EndCombo ()
-                        if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && not (newGroup.Exists world) then
+                        if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
                             let oldWorld = world
                             try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
                                 selectGroup newGroup
@@ -2090,22 +2090,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 // rename entity dialog
                 if showRenameEntityDialog then
-                    let title = "Rename entity..."
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
-                        ImGui.Text "Entity Name:"
-                        ImGui.SameLine ()
-                        ImGui.InputTextWithHint ("##entityName", "[enter entity name]", &entityName, 4096u) |> ignore<bool>
-                        if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityName && not (entityName.Contains "/") then
-                            match selectedEntityOpt with
-                            | Some entity when entity.Exists world ->
+                    match selectedEntityOpt with
+                    | Some entity when entity.Exists world ->
+                        let title = "Rename entity..."
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
+                            ImGui.Text "Entity Name:"
+                            ImGui.SameLine ()
+                            ImGui.InputTextWithHint ("##entityName", "[enter entity name]", &entityName, 4096u) |> ignore<bool>
+                            let entity' = Entity (Array.add entityName entity.Parent.SimulantAddress.Names)
+                            if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityName && Address.validName entityName && not (entity'.Exists world) then
                                 snapshot ()
-                                let entity' = Entity (Array.add entityName entity.Parent.SimulantAddress.Names)
                                 world <- World.renameEntityImmediate entity entity' world
                                 selectedEntityOpt <- Some entity'
                                 showRenameEntityDialog <- false
-                            | Some _ | None -> showRenameEntityDialog <- false
-                    if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
+                        if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
+                    | Some _ | None -> showRenameEntityDialog <- false
 
                 // message box dialog
                 match messageBoxOpt with

@@ -146,7 +146,7 @@ module FieldDispatcher =
                 [Content.fps "Fps" [Entity.Position == v3 200.0f -250.0f 0.0f]
                  Content.skyBox "SkyBox" []
                  for (index, (vertices, _)) in (Field.getOccupants field).Pairs do
-                    Content.entity<CharacterDispatcher> ("Occupant+" + string index)
+                    Content.entity<CharacterDispatcher> ("Occupant+" + scstring index)
                         [Entity.Bottom := vertices.Center]]]
 
         override this.View (field, _, world) =
