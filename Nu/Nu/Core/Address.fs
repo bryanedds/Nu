@@ -294,6 +294,11 @@ module Address =
         let notEmpty address =
             Array.notEmpty address.Names
 
+        /// Check that a string represents a valid address name.
+        let validName (name : string) =
+            not (name.Contains "/") &&
+            not (name.Contains "\"")
+
 [<AutoOpen>]
 module AddressOperators =
 
