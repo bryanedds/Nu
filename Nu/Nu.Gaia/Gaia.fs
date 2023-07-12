@@ -20,9 +20,9 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
+// Refresh all probes button.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
-// Refresh all probes button.
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
@@ -415,6 +415,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Some _ | None -> ()
             true
         else false
+
+    let private markLightProbesStale () =
+        let groups = World.getGroups selectedScreen world
+        let lightProbes =
+            groups |>
+            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
+            Seq.concat |>
+            Seq.filter (fun entity -> entity.Has<LightProbeFacet3d> world)
+        world <-
+            Seq.fold (fun world (lightProbe : Entity) -> lightProbe.SetProbeStale true world) world lightProbes
 
     let private getSnaps () =
         if snaps2dSelected
@@ -1516,6 +1526,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
                                 if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
                                 ImGui.Separator ()
+                                if ImGui.MenuItem ("Mark Light Probes Stale", "Ctrl+L") then markLightProbesStale ()
+                                ImGui.Separator ()
                                 if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
@@ -1618,6 +1630,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     world <- editMode.Value world
                                     snapshot () // snapshot before after change
                             ImGui.EndCombo ()
+                        ImGui.SameLine ()
+                        if ImGui.Button "Reprobe" then markLightProbesStale ()
+                        if ImGui.IsItemHovered () then
+                            if ImGui.BeginTooltip () then
+                                ImGui.Text "Refresh Light Maps"
+                                ImGui.EndTooltip ()
                         ImGui.SameLine ()
                         ImGui.Text "Full (F11)"
                         ImGui.SameLine ()
