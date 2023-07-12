@@ -30,6 +30,7 @@ module Engine =
     let [<Literal>] TransformPropertyName = "Transform"
     let [<Literal>] ModelPropertyName = "Model"
     let [<Literal>] SurnamesPropertyName = "Surnames"
+    let [<Literal>] MountOptPropertyName = "MountOpt"
     let [<Literal>] OverlayNameOptPropertyName = "OverlayNameOpt"
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "Refinement"

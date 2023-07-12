@@ -20,7 +20,6 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
-// Put entity renaming in its own dialog.
 // Group renaming.
 // Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
@@ -87,6 +86,7 @@ module Gaia =
     let mutable private newEntityOverlayName = "(Default Overlay)"
     let mutable private newEntityElevation = 0.0f
     let mutable private newGroupName = ""
+    let mutable private entityName = ""
 
     (* Configuration States *)
 
@@ -127,6 +127,7 @@ module Gaia =
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
+    let mutable private showRenameEntityDialog = false
     let mutable private showInspector = false
 
     (* Initial imgui.ini File Content *)
@@ -304,6 +305,11 @@ Collapsed=0
 [Window][Unhandled Exception!]
 Pos=608,366
 Size=694,406
+Collapsed=0
+
+[Window][Rename entity...]
+Pos=734,514
+Size=444,94
 Collapsed=0
 
 [Docking][Data]
@@ -1143,19 +1149,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let propertyDescriptors =
                     propertyDescriptors |>
                     Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
-                    Array.sortBy (fun pd -> pd.PropertyName)
+                    Array.sortBy (fun pd ->
+                        match pd.PropertyName with
+                        | Constants.Engine.NamePropertyName -> "!" // put Name first
+                        | Constants.Engine.ModelPropertyName -> "!2" // put Model second
+                        | Constants.Engine.MountOptPropertyName -> "!3" // put MountOpt third
+                        | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then
                         match simulant with
                         | :? Entity as entity ->
                             // NOTE: name edit properties can't be replaced.
                             let mutable name = entity.Name
-                            let flags = if entity.GetProtected world then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None
-                            if ImGui.InputText ("Name", &name, 4096u, flags) then
-                                setProperty name propertyDescriptor simulant
-                                let entity' = Entity (Array.add name entity.Parent.SimulantAddress.Names)
-                                selectEntityOpt (Some entity')
-                                simulant <- entity'
+                            ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            if not (entity.GetProtected world) then
+                                ImGui.SameLine ()
+                                if ImGui.Button "Rename" then
+                                    showRenameEntityDialog <- true
                         | :? Group as group ->
                             // NOTE: only edit entities names for now.
                             let mutable name = group.Name
@@ -2077,6 +2087,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             snapshot ()
                             showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
                     if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
+
+                // rename entity dialog
+                if showRenameEntityDialog then
+                    let title = "Rename entity..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
+                        ImGui.Text "Entity Name:"
+                        ImGui.SameLine ()
+                        ImGui.InputTextWithHint ("##entityName", "[enter entity name]", &entityName, 4096u) |> ignore<bool>
+                        if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityName && not (entityName.Contains "/") then
+                            match selectedEntityOpt with
+                            | Some entity when entity.Exists world ->
+                                snapshot ()
+                                let entity' = Entity (Array.add entityName entity.Parent.SimulantAddress.Names)
+                                world <- World.renameEntityImmediate entity entity' world
+                                selectedEntityOpt <- Some entity'
+                                showRenameEntityDialog <- false
+                            | Some _ | None -> showRenameEntityDialog <- false
+                    if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
 
                 // message box dialog
                 match messageBoxOpt with
