@@ -1653,10 +1653,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     snapshot () // snapshot before after change
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
-                        if ImGui.Button "Reprobe" then markLightProbesStale ()
+                        if ImGui.Button "Relight" then markLightProbesStale ()
                         if ImGui.IsItemHovered () then
                             if ImGui.BeginTooltip () then
-                                ImGui.Text "Refresh Light Maps"
+                                ImGui.Text "Re-render all light maps."
                                 ImGui.EndTooltip ()
                         ImGui.SameLine ()
                         ImGui.Text "Full (F11)"
