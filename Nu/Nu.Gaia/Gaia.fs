@@ -1468,13 +1468,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SetNextWindowPos v2Zero
                 ImGui.SetNextWindowSize io.DisplaySize
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
+                    let viewport = Constants.Render.Viewport
+                    let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
+                    let projection = projectionMatrix.ToArray ()
                     match selectedEntityOpt with
                     | Some entity when entity.Exists world && entity.GetIs3d world ->
-                        let viewport = Constants.Render.Viewport
                         let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
                         let view = viewMatrix.ToArray ()
-                        let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
-                        let projection = projectionMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
                         ImGuizmo.SetOrthographic false
@@ -1518,6 +1518,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world <- World.editEntity operation entity world
                         if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
                     | Some _ | None -> ()
+                    (*let eyeCenter = (Matrix4x4.CreateTranslation (World.getEyeCenter3d world)).ToArray ()
+                    let eyeRotation = (Matrix4x4.CreateFromQuaternion (World.getEyeRotation3d world)).ToArray ()
+                    let eyeScale = m4Identity.ToArray ()
+                    let view = m4Identity.ToArray ()
+                    ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
+                    ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, 0u)
+                    ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
+                    world <- World.setEyeCenter3d (Matrix4x4.CreateFromArray eyeCenter).Translation world
+                    world <- World.setEyeRotation3d (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromArray eyeRotation)) world*)
                     ImGui.End ()
 
                 // show all windows when out in full-screen mode
