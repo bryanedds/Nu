@@ -24,12 +24,13 @@ open Nu.Gaia
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
-// Add Prelude script.
+// Add Prelude script window.
 // Scripting console window.
 // Log Output window.
 // Hierarchical Static toggle (similar to Unity).
 // Try to figure out how to snapshot only on first property interaction.
 // File explorer dialog.
+// Post-Close window.
 // Multi-selection?
 //
 // Custom properties in order of priority:
@@ -112,6 +113,7 @@ module Gaia =
     let mutable private projectImperativeExecution = false
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
+    let mutable private preludeStr = null // this will be initialized on start
     let mutable private groupFilePaths = Map.empty<Group Address, string>
     let mutable private groupFilePath = ""
 
@@ -1830,6 +1832,33 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             with _ -> ()
                         ImGui.End ()
 
+                    // prelude window
+                    if ImGui.Begin "Prelude" then
+                        let preludeSourceDir = targetDir + "/../../.."
+                        if ImGui.Button "Save" then
+                            let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
+                            try File.WriteAllText (preludeFilePath, preludeStr)
+                                match World.tryReloadPrelude preludeSourceDir targetDir world with
+                                | (Right preludeStr', wtemp) ->
+                                    world <- wtemp
+                                    preludeStr <- preludeStr'
+                                | (Left error, wtemp) ->
+                                    world <- wtemp
+                                    messageBoxOpt <- Some ("Prelude reload error due to: " + error + "'.")
+                            with exn -> messageBoxOpt <- Some ("Could not save prelude due to: " + scstring exn)
+                        ImGui.SameLine ()
+                        if ImGui.Button "Load" then
+                            try match World.tryReloadPrelude preludeSourceDir targetDir world with
+                                | (Right preludeStr', wtemp) ->
+                                    world <- wtemp
+                                    preludeStr <- preludeStr'
+                                | (Left error, wtemp) ->
+                                    world <- wtemp
+                                    messageBoxOpt <- Some ("Prelude load error due to: " + error + "'.")
+                            with exn -> messageBoxOpt <- Some ("Could not load prelude due to: " + scstring exn)
+                        ImGui.InputTextMultiline ("##preludeStr", &preludeStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                        ImGui.End ()
+
                     // audio player window
                     if ImGui.Begin "Audio Player" then
                         ImGui.Text "Master Sound Volume"
@@ -2243,6 +2272,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
+                ""
+        preludeStr <-
+            try match World.tryReadPrelude () with
+                | Right (preludeStr, _) -> preludeStr
+                | Left error ->
+                    messageBoxOpt <- Some ("Prelude reload error due to: " + error + "'.")
+                    ""
+            with exn ->
+                messageBoxOpt <- Some ("Could not save prelude due to: " + scstring exn)
                 ""
         let result = World.runWithCleanUp tautology id id id imGuiProcess Live true world
         world <- Unchecked.defaultof<_>
