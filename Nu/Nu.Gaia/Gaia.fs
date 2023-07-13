@@ -26,10 +26,10 @@ open Nu.Gaia
 // Paste in hierarchy.
 // Add Prelude script.
 // Scripting console window.
+// Log Output window.
 // Hierarchical Static toggle (similar to Unity).
 // Try to figure out how to snapshot only on first property interaction.
 // File explorer dialog.
-// Double-click in overlay selected and show entity in hierarchy.
 // Multi-selection?
 //
 // Custom properties in order of priority:
@@ -1883,8 +1883,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // entity context menu
                 if showEntityContextMenu then
                     ImGui.SetNextWindowPos rightClickPosition
-                    ImGui.SetNextWindowSize (v2 250.0f 135.0f)
-                    if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar) then
+                    ImGui.SetNextWindowSize (v2 250.0f 158.0f)
+                    if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoResize) then
                         if ImGui.Button "Create" then createEntity true false; showEntityContextMenu <- false
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth -1.0f
@@ -1903,6 +1903,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showEntityContextMenu <- false
+                        ImGui.Separator ()
+                        if ImGui.Button "Show in Hierarchy" then showSelectedEntity <- true; showEntityContextMenu <- false
                         ImGui.End ()
 
                 // asset picker dialog
