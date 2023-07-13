@@ -63,7 +63,7 @@ module Viewport =
             entityPosition - mouseWorld
 
         /// Compute the 3d absolute view matrix.
-        member this.View3dAbsolute (_ : Vector3, _ : Quaternion) =
+        member this.ViewAbsolute3d (_ : Vector3, _ : Quaternion) =
             m4Identity
 
         /// Compute the 3d relative view matrix.
@@ -74,7 +74,7 @@ module Viewport =
         /// Compute a 3d view matrix.
         member this.View3d (absolute, eyeCenter, eyeRotation) =
             if absolute
-            then this.View3dAbsolute (eyeCenter, eyeRotation)
+            then this.ViewAbsolute3d (eyeCenter, eyeRotation)
             else this.ViewRelative3d (eyeCenter, eyeRotation)
 
         /// Compute the 3d projection matrix.
