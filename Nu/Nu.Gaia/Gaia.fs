@@ -20,8 +20,6 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
-// Refresh all probes button.
-// Collapse / Expand all in Hierarchy and Assets.
 // Box3 viewport editing (w/ snapping).
 // Traditional close w/ Alt+F4 as well as confirmation dialog.
 // View guizmo.
@@ -70,6 +68,8 @@ module Gaia =
 
     let mutable private manipulationActive = false
     let mutable private manipulationOperation = OPERATION.TRANSLATE
+    let mutable private expandEntityHierarchy = false
+    let mutable private collapseEntityHierarchy = false
     let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
     let mutable private propertyDescriptorFocusedOpt = None
@@ -1100,8 +1100,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
-            (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
+            //(if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+        if expandEntityHierarchy then
+            ImGui.SetNextItemOpen (true, ImGuiCond.Always)
+        if collapseEntityHierarchy then
+            ImGui.SetNextItemOpen (false, ImGuiCond.Always)
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
         if showSelectedEntity && selectedEntityOpt = Some entity then
             ImGui.SetScrollHereY ()
@@ -1665,6 +1669,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
+                        if ImGui.Button "Collapse" then collapseEntityHierarchy <- true
+                        ImGui.SameLine ()
+                        if ImGui.Button "Expand" then expandEntityHierarchy <- true
+                        ImGui.SameLine ()
                         if ImGui.Button "Show Selected" then showSelectedEntity <- true
                         let groups = World.getGroups selectedScreen world
                         let mutable selectedGroupName = selectedGroup.Name
@@ -1697,6 +1705,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         for entity in entities do
                             imGuiEntityHierarchy entity
                         ImGui.End ()
+                    expandEntityHierarchy <- false
+                    collapseEntityHierarchy <- false
 
                     // game properties window
                     if ImGui.Begin "Game Properties" then
