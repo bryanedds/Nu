@@ -20,7 +20,6 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
-// Hierarchical Static toggle (similar to Unity).
 // Log Output window.
 // Box3 viewport editing (w/ snapping).
 // Traditional close w/ Alt+F4 and Close button as well as confirmation dialog.
@@ -872,6 +871,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         | None -> false
 
+    let private trySetSelectedEntityFamilyStatic static_ =
+        let rec setEntityFamilyStatic static_ (entity : Entity) =
+            world <- entity.SetStatic static_ world
+            for entity in entity.GetChildren world do
+                setEntityFamilyStatic static_ entity
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            snapshot ()
+            setEntityFamilyStatic static_ entity
+        | Some _ | None -> ()
+
     let private tryReloadAssets () =
         let assetSourceDir = targetDir + "/../../.."
         match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
@@ -1143,6 +1153,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
             ImGui.Separator ()
             if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+            ImGui.Separator ()
+            match selectedEntityOpt with
+            | Some entity when entity.Exists world ->
+                if entity.GetStatic world
+                then if ImGui.MenuItem "Make Entity Family Non-Static" then trySetSelectedEntityFamilyStatic false
+                else if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true
+            | Some _ | None -> ()
             ImGui.EndPopup ()
         if ImGui.BeginDragDropSource () then
             let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
