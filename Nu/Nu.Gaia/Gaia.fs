@@ -1876,14 +1876,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let eval = ImGui.Button "Eval (Ctrl+Enter)"
                         ImGui.SameLine ()
                         let clear = ImGui.Button "Clear (Shift+Esc)"
+                        ImGui.SameLine ()
+                        let (selectedSimulant, localFrame) =
+                            match selectedEntityOpt with
+                            | Some entity when entity.Exists world -> (entity :> Simulant, entity.GetScriptFrame world)
+                            | Some _ | None -> (Simulants.Game :> Simulant, Simulants.Game.GetScriptFrame world)
+                        let contextStr = match selectedSimulant with :? Game -> "(Game)" | _ -> scstring selectedSimulant
+                        ImGui.Text ("Context: " + contextStr)
                         ImGui.InputTextMultiline ("##consoleStr", &consoleStr, 131072u, v2 350.0f -1.0f) |> ignore<bool>
                         if eval || ImGui.IsItemFocused () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then
                             let exprsStr = Symbol.OpenSymbolsStr + "\n" + consoleStr + "\n" + Symbol.CloseSymbolsStr
                             try let exprs = scvalue<Scripting.Expr array> exprsStr
-                                let (selectedSimulant, localFrame) =
-                                    match selectedEntityOpt with
-                                    | Some entity when entity.Exists world -> (entity :> Simulant, entity.GetScriptFrame world)
-                                    | Some _ | None -> (Simulants.Game :> Simulant, Simulants.Game.GetScriptFrame world)
                                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Scripting.Expr>).PrettyPrinter
                                 let struct (evaleds, wtemp) = World.evalManyWithLogging exprs localFrame selectedSimulant world
                                 world <- wtemp
