@@ -1471,15 +1471,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let viewport = Constants.Render.Viewport
                     let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
                     let projection = projectionMatrix.ToArray ()
+                    ImGuizmo.SetOrthographic false
+                    ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
+                    ImGuizmo.SetDrawlist ()
                     match selectedEntityOpt with
                     | Some entity when entity.Exists world && entity.GetIs3d world ->
                         let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
-                        ImGuizmo.SetOrthographic false
-                        ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
-                        ImGuizmo.SetDrawlist () // NOTE: I guess this goes right before Manipulate?
                         if not manipulationActive then
                             if ImGui.IsShiftPressed () then manipulationOperation <- OPERATION.SCALE
                             elif ImGui.IsAltPressed () then manipulationOperation <- OPERATION.ROTATE
