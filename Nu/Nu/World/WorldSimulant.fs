@@ -204,7 +204,7 @@ module WorldSimulantModule =
         static member getChildren (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> enumerable<Simulant> (World.getEntityChildren entity world)
-            | :? Group as group -> enumerable<Simulant> (World.getEntities group world)
+            | :? Group as group -> enumerable<Simulant> (World.getEntitiesSovereign group world)
             | :? Screen as screen -> enumerable<Simulant> (World.getGroups screen world)
             | :? Game -> enumerable<Simulant> (World.getScreens world)
             | _ -> failwithumf ()

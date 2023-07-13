@@ -265,7 +265,7 @@ module Gameplay =
 
         static let createSectionFromFile filePath sectionName xShift screen world =
             let (section, world) = World.readGroupFromFile filePath (Some sectionName) screen world
-            let sectionEntities = World.getEntities section world
+            let sectionEntities = World.getEntitiesFlattened section world
             inductEntities xShift sectionEntities screen world
 
         override this.Initialize (_, _) =

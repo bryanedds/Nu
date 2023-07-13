@@ -634,7 +634,7 @@ module WorldEntityModule =
 
         /// Get all the entities directly parented by the group.
         [<FunctionBinding>]
-        static member getEntities (group : Group) world =
+        static member getEntitiesSovereign (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
             | (true, entitiesOpt) ->
@@ -642,12 +642,6 @@ module WorldEntityModule =
                 | Some entities -> entities |> Seq.map cast<Entity> |> seq
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
-
-        /// Get all the entities not mounting another entity in a group.
-        [<FunctionBinding>]
-        static member getEntitiesSovereign group world =
-            World.getEntitiesFlattened group world |>
-            Seq.filter (fun entity -> Option.isNone (entity.GetMountOpt world))
 
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]

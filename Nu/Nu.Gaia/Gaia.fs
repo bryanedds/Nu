@@ -27,7 +27,6 @@ open Nu.Gaia
 // Add Prelude script.
 // Scripting console window.
 // Hierarchical Static toggle (similar to Unity).
-// Show Selected expands hierarchy as needed.
 // Try to figure out how to snapshot only on first property interaction.
 // File explorer dialog.
 // Double-click in overlay selected and show entity in hierarchy.
