@@ -1102,12 +1102,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
             (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
-        if expandEntityHierarchy then
-            ImGui.SetNextItemOpen true
-        if collapseEntityHierarchy then
-            ImGui.SetNextItemOpen false
+        if expandEntityHierarchy then ImGui.SetNextItemOpen true
+        if collapseEntityHierarchy then ImGui.SetNextItemOpen false
+        match selectedEntityOpt with
+        | Some selectedEntity when showSelectedEntity ->
+            let relation = relate entity selectedEntity
+            if  Array.notExists (fun t -> t = Token.Parent || t = Token.Current) relation.Tokens &&
+                relation.Tokens.Length > 0 then
+                ImGui.SetNextItemOpen true
+        | Some _ | None -> ()
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
-        if showSelectedEntity && selectedEntityOpt = Some entity then
+        if showSelectedEntity && Some entity = selectedEntityOpt then
             ImGui.SetScrollHereY ()
             showSelectedEntity <- false
         if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
