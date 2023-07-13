@@ -488,7 +488,7 @@ module WorldModule2 =
                     let world = World.setOverlayRouter overlayRouter world
 
                     // apply overlays to all entities
-                    let entities = World.getEntities1 world
+                    let entities = World.getEntitiesFlattened1 world
                     let world = Seq.fold (World.applyEntityOverlay oldOverlayer overlayer) world entities
                     (Right overlayer, world)
 

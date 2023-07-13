@@ -220,7 +220,7 @@ module WorldGroupModule =
             let world = World.tryRemoveSimulantFromDestruction group world
             EventGraph.cleanEventAddressCache group.GroupAddress
             if World.getGroupExists group world then
-                let entities = World.getEntities group world
+                let entities = World.getEntitiesSovereign group world
                 let world = World.unregisterGroup group world
                 let world = World.removeTasklets group world
                 let world = World.destroyEntitiesImmediate entities world
@@ -277,7 +277,7 @@ module WorldGroupModule =
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
             let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
-            let entities = World.getEntities group world
+            let entities = World.getEntitiesFlattened group world
             { groupDescriptor with EntityDescriptors = World.writeEntities entities world }
 
         /// Write multiple groups to a screen descriptor.

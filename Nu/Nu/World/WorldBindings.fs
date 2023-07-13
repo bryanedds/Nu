@@ -43,7 +43,7 @@ module WorldBindings =
         "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
         "writeScreenToFile readScreenFromFile getGroups createGroup " +
         "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
-        "getEntitiesFlattened getEntities getEntitiesSovereign destroyEntity " +
+        "getEntitiesFlattened getEntitiesSovereign destroyEntity " +
         "destroyEntities tryPickEntity2d tryPickEntity3d writeEntityToFile " +
         "readEntityFromFile createEntity renameEntity trySetEntityOverlayNameOpt " +
         "trySetEntityFacetNames getEyeCenter2d setEyeCenter2d getEyeSize2d " +
@@ -1447,15 +1447,15 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isSelected' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let getEntities0 world =
+    let getEntitiesFlattened0 world =
         let oldWorld = world
         try
-            let result = World.getEntities1 world
+            let result = World.getEntitiesFlattened1 world
             let value = result
             let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities0' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesFlattened0' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getGroups0 world =
@@ -1812,27 +1812,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesFlattened' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
-
-    let getEntities group world =
-        let oldWorld = world
-        try
-            let struct (group, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal group world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getEntities group world
-            let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getEntitiesSovereign group world =
@@ -3949,12 +3928,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetEntities0Binding fnName exprs originOpt world =
+    let evalGetEntitiesFlattened0Binding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEntities0 world
+            | [||] -> getEntitiesFlattened0 world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4142,17 +4121,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|group|] -> getEntitiesFlattened group world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetEntitiesBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|group|] -> getEntities group world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5150,7 +5118,7 @@ module WorldBindings =
              ("getChildren", { Fn = evalGetChildrenBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getExists", { Fn = evalGetExistsBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("isSelected", { Fn = evalIsSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
-             ("getEntities0", { Fn = evalGetEntities0Binding; Pars = [||]; DocOpt = None })
+             ("getEntitiesFlattened0", { Fn = evalGetEntitiesFlattened0Binding; Pars = [||]; DocOpt = None })
              ("getGroups0", { Fn = evalGetGroups0Binding; Pars = [||]; DocOpt = None })
              ("writeGameToFile", { Fn = evalWriteGameToFileBinding; Pars = [|"filePath"|]; DocOpt = None })
              ("readGameFromFile", { Fn = evalReadGameFromFileBinding; Pars = [|"filePath"|]; DocOpt = None })
@@ -5168,7 +5136,6 @@ module WorldBindings =
              ("writeGroupToFile", { Fn = evalWriteGroupToFileBinding; Pars = [|"filePath"; "group"|]; DocOpt = None })
              ("readGroupFromFile", { Fn = evalReadGroupFromFileBinding; Pars = [|"filePath"; "nameOpt"; "screen"|]; DocOpt = None })
              ("getEntitiesFlattened", { Fn = evalGetEntitiesFlattenedBinding; Pars = [|"group"|]; DocOpt = None })
-             ("getEntities", { Fn = evalGetEntitiesBinding; Pars = [|"group"|]; DocOpt = None })
              ("getEntitiesSovereign", { Fn = evalGetEntitiesSovereignBinding; Pars = [|"group"|]; DocOpt = None })
              ("destroyEntity", { Fn = evalDestroyEntityBinding; Pars = [|"entity"|]; DocOpt = None })
              ("destroyEntities", { Fn = evalDestroyEntitiesBinding; Pars = [|"entities"|]; DocOpt = None })

@@ -205,8 +205,8 @@ module WorldGameModule =
             dispatcher.Edit (operation, game, world)
 
         /// Get all the entities in the world.
-        [<FunctionBinding "getEntities0">]
-        static member getEntities1 world =
+        [<FunctionBinding "getEntitiesFlattened0">]
+        static member getEntitiesFlattened1 world =
             World.getGroups1 world |>
             Seq.map (fun group -> World.getEntitiesFlattened group world) |>
             Seq.concat
