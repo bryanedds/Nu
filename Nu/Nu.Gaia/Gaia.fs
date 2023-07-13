@@ -20,16 +20,15 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
+// Hierarchical Static toggle (similar to Unity).
 // Log Output window.
 // Box3 viewport editing (w/ snapping).
-// Traditional close w/ Alt+F4 as well as confirmation dialog.
+// Traditional close w/ Alt+F4 and Close button as well as confirmation dialog.
 // View guizmo.
 // Paste in hierarchy.
-// Hierarchical Static toggle (similar to Unity).
 // Try to figure out how to snapshot only on first property interaction.
 // File explorer dialog.
-// Post-Close window.
-// Multi-selection?
+// Restart explanation window.
 //
 // Custom properties in order of priority:
 //
