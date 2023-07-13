@@ -714,6 +714,7 @@ module Quaternion =
 
     type Quaternion with
         member this.RollPitchYaw = MathHelper.RollPitchYaw &this
+        member this.Normalized = Quaternion.Normalize this
 
     let quatIdentity = Quaternion.Identity
     let inline quat x y z w = Quaternion (x, y, z, w)
