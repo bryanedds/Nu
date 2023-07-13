@@ -1518,7 +1518,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world <- World.editEntity operation entity world
                         if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
                     | Some _ | None -> ()
-                    (*let eyeCenter = (Matrix4x4.CreateTranslation (World.getEyeCenter3d world)).ToArray ()
+                    (* NOTE: failed attempt at integrating view manipulation widget.
+                    let eyeCenter = (Matrix4x4.CreateTranslation (World.getEyeCenter3d world)).ToArray ()
                     let eyeRotation = (Matrix4x4.CreateFromQuaternion (World.getEyeRotation3d world)).ToArray ()
                     let eyeScale = m4Identity.ToArray ()
                     let view = m4Identity.ToArray ()
