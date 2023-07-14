@@ -20,7 +20,6 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
-// Limit down and up look.
 // Log Output window.
 // Traditional close w/ Alt+F4 and Close button as well as confirmation dialog.
 // Paste in hierarchy.
@@ -1776,22 +1775,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     collapseEntityHierarchy <- false
 
                     // game properties window
-                    if ImGui.Begin "Game Properties" then
+                    if ImGui.Begin ("Game Properties", ImGuiWindowFlags.NoNav) then
                         imGuiEditProperties Simulants.Game
                         ImGui.End ()
 
                     // screen properties window
-                    if ImGui.Begin "Screen Properties" then
+                    if ImGui.Begin ("Screen Properties", ImGuiWindowFlags.NoNav) then
                         imGuiEditProperties selectedScreen
                         ImGui.End ()
 
                     // group properties window
-                    if ImGui.Begin "Group Properties" then
+                    if ImGui.Begin ("Group Properties", ImGuiWindowFlags.NoNav) then
                         imGuiEditProperties selectedGroup
                         ImGui.End ()
 
                     // entity properties window
-                    if ImGui.Begin "Entity Properties" then
+                    if ImGui.Begin ("Entity Properties", ImGuiWindowFlags.NoNav) then
                         match selectedEntityOpt with
                         | Some entity when entity.Exists world -> imGuiEditProperties entity
                         | Some _ | None -> ()
