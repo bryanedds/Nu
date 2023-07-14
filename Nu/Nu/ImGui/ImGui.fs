@@ -51,6 +51,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         io.DeltaTime <- 1.0f / 60.0f
 
         // configure key mappings
+        keyMap.[int ImGuiKey.Space] <- int KeyboardKey.Space
         keyMap.[int ImGuiKey.Tab] <- int KeyboardKey.Tab
         keyMap.[int ImGuiKey.LeftArrow] <- int KeyboardKey.Left
         keyMap.[int ImGuiKey.RightArrow] <- int KeyboardKey.Right
