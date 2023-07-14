@@ -549,11 +549,11 @@ module WorldModule3 =
                   RebuildOctree = World.rebuildOctree }
 
             // make the world's subsystems
-            let physicsEngine2d = MockPhysicsEngine.make ()
-            let physicsEngine3d = MockPhysicsEngine.make ()
+            let physicsEngine2d = StubPhysicsEngine.make ()
+            let physicsEngine3d = StubPhysicsEngine.make ()
             let rendererProcess = RendererInline () :> RendererProcess
-            rendererProcess.Start None None // params implicate mock renderers
-            let audioPlayer = MockAudioPlayer.make ()
+            rendererProcess.Start None None // params implicate stub renderers
+            let audioPlayer = StubAudioPlayer.make ()
             let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
 
             // make the world's scripting environment
@@ -656,7 +656,7 @@ module WorldModule3 =
                 let audioPlayer =
                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                     then SdlAudioPlayer.make () :> AudioPlayer
-                    else MockAudioPlayer.make () :> AudioPlayer
+                    else StubAudioPlayer.make () :> AudioPlayer
                 audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName) // enqueue default package hint
 
                 // attempt to make the overlayer

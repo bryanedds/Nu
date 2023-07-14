@@ -383,10 +383,10 @@ and Renderer3d =
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
-/// The mock implementation of Renderer3d.
-type [<ReferenceEquality>] MockRenderer3d =
+/// The stub implementation of Renderer3d.
+type [<ReferenceEquality>] StubRenderer3d =
     private
-        { MockRenderer3d : unit }
+        { StubRenderer3d : unit }
 
     interface Renderer3d with
         member renderer.PhysicallyBasedShader = Unchecked.defaultof<_>
@@ -395,7 +395,7 @@ type [<ReferenceEquality>] MockRenderer3d =
         member renderer.CleanUp () = ()
 
     static member make () =
-        { MockRenderer3d = () }
+        { StubRenderer3d = () }
 
 /// The internally used package state for the 3d OpenGL renderer.
 type [<ReferenceEquality>] private GlPackageState3d =

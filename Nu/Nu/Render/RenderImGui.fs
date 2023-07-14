@@ -13,19 +13,19 @@ type RendererImGui =
     abstract Render : ImDrawDataPtr -> unit
     abstract CleanUp : unit -> unit
 
-/// A mock imgui renderer.
-type MockRendererImGui () =
+/// A stub imgui renderer.
+type StubRendererImGui () =
     interface RendererImGui with
         member this.Initialize _ = ()
         member this.Render _ = ()
         member this.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
-module MockRendererImGui =
+module StubRendererImGui =
 
-    /// Make a mock imgui renderer.
+    /// Make a stub imgui renderer.
     let make () =
-        let rendererImGui = MockRendererImGui ()
+        let rendererImGui = StubRendererImGui ()
         (rendererImGui :> RendererImGui).Initialize Unchecked.defaultof<_> // NOTE: bit of a hack to deal with the odd initialization structure implcated by imgui.
         rendererImGui
 

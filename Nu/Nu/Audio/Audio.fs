@@ -58,10 +58,10 @@ type AudioPlayer =
     /// 'Play' the audio system. Must be called once per frame.
     abstract Play : AudioMessage List -> unit
 
-/// The mock implementation of AudioPlayer.
-type [<ReferenceEquality>] MockAudioPlayer =
+/// The stub implementation of AudioPlayer.
+type [<ReferenceEquality>] StubAudioPlayer =
     private
-        { MockAudioPlayer : unit }
+        { StubAudioPlayer : unit }
     
     interface AudioPlayer with
         member audioPlayer.PopMessages () = List ()
@@ -75,7 +75,7 @@ type [<ReferenceEquality>] MockAudioPlayer =
         member audioPlayer.MasterSongVolume with get () = 1.0f and set _ = ()
 
     static member make () =
-        { MockAudioPlayer = () }
+        { StubAudioPlayer = () }
 
 /// The SDL implementation of AudioPlayer.
 type [<ReferenceEquality>] SdlAudioPlayer =
