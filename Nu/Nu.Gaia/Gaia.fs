@@ -1146,7 +1146,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if showSelectedEntity && Some entity = selectedEntityOpt then
             ImGui.SetScrollHereY ()
             showSelectedEntity <- false
-        if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsItemFocused () && ImGui.IsWindowFocused () then
+        if ImGui.IsKeyPressed ImGuiKey.Space && ImGui.IsItemFocused () && ImGui.IsWindowFocused () then
             selectEntityOpt (Some entity)
         if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             selectEntityOpt (Some entity)
