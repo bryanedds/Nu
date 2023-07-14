@@ -596,9 +596,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) world
             if World.isKeyboardKeyDown KeyboardKey.E world then
                 world <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) world
-            if World.isKeyboardKeyDown KeyboardKey.Up world then
+            if World.isKeyboardKeyDown KeyboardKey.Up world && World.isKeyboardAltUp world then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
-            if World.isKeyboardKeyDown KeyboardKey.Down world then
+            if World.isKeyboardKeyDown KeyboardKey.Down world && World.isKeyboardAltUp world then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
