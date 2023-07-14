@@ -2430,7 +2430,7 @@ module WorldModuleEntity =
             | (None, None) ->
                 (Right (), world)
             | (_, _) ->
-                (Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented.", world)
+                (Left "Could not set the entity's overlay name to None because doing so is currently not implemented.", world)
             
         /// Try to set the entity's facet names from script.
         [<FunctionBinding "trySetEntityOverlayNameOpt">]
