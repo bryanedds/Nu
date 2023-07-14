@@ -447,18 +447,18 @@ type PhysicsEngine =
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 
-/// The mock implementation of PhysicsEngine.
-type [<ReferenceEquality>] MockPhysicsEngine =
-    private { MockPhysicsEngine : unit }
-    static member make () = { MockPhysicsEngine = () }
+/// The stub implementation of PhysicsEngine.
+type [<ReferenceEquality>] StubPhysicsEngine =
+    private { StubPhysicsEngine : unit }
+    static member make () = { StubPhysicsEngine = () }
     interface PhysicsEngine with
         member physicsEngine.GetBodyExists _ = false
-        member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.GetBodyToGroundContactNormals _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in MockPhysicsEngine"
-        member physicsEngine.IsBodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyToGroundContactNormals _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.IsBodyOnGround _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine

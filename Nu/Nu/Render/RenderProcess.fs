@@ -81,17 +81,17 @@ type RendererInline () =
                     let rendererImGui =
                         match fontsOpt with
                         | Some fonts -> GlRendererImGui.make fonts :> RendererImGui
-                        | None -> MockRendererImGui.make () :> RendererImGui
+                        | None -> StubRendererImGui.make () :> RendererImGui
                     OpenGL.Hl.Assert ()
 
                     // fin
                     renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
 
-                // create mock renderers
+                // create stub renderers
                 | None ->
-                    let renderer3d = MockRenderer3d.make () :> Renderer3d
-                    let renderer2d = MockRenderer2d.make () :> Renderer2d
-                    let rendererImGui = MockRendererImGui.make () :> RendererImGui
+                    let renderer3d = StubRenderer3d.make () :> Renderer3d
+                    let renderer2d = StubRenderer2d.make () :> Renderer2d
+                    let rendererImGui = StubRendererImGui.make () :> RendererImGui
                     renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
                     OpenGL.Hl.Assert ()
 
@@ -257,16 +257,16 @@ type RendererThread () =
                 let rendererImGui =
                     match fontsOpt with
                     | Some fonts -> GlRendererImGui.make fonts :> RendererImGui
-                    | None -> MockRendererImGui.make () :> RendererImGui
+                    | None -> StubRendererImGui.make () :> RendererImGui
 
                 // fin
                 (renderer3d, renderer2d, rendererImGui)
 
-            // create mock renderers
+            // create stub renderers
             | None ->
-                let renderer3d = MockRenderer3d.make () :> Renderer3d
-                let renderer2d = MockRenderer2d.make () :> Renderer2d
-                let rendererImGui = MockRendererImGui.make () :> RendererImGui
+                let renderer3d = StubRenderer3d.make () :> Renderer3d
+                let renderer2d = StubRenderer2d.make () :> Renderer2d
+                let rendererImGui = StubRendererImGui.make () :> RendererImGui
                 (renderer3d, renderer2d, rendererImGui)
 
         // mark as started

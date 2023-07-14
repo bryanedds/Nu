@@ -108,10 +108,10 @@ and Renderer2d =
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
-/// The mock implementation of Renderer2d.
-type [<ReferenceEquality>] MockRenderer2d =
+/// The stub implementation of Renderer2d.
+type [<ReferenceEquality>] StubRenderer2d =
     private
-        { MockRenderer2d : unit }
+        { StubRenderer2d : unit }
 
     interface Renderer2d with
         member renderer.SpriteBatchEnvOpt = None
@@ -119,7 +119,7 @@ type [<ReferenceEquality>] MockRenderer2d =
         member renderer.CleanUp () = ()
 
     static member make () =
-        { MockRenderer2d = () }
+        { StubRenderer2d = () }
 
 /// Compares layered 2d operations.
 type LayeredOperation2dComparer () =
