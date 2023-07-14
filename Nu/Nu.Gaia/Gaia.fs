@@ -20,14 +20,14 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
+// Limit down and up look.
 // Log Output window.
-// Box3 viewport editing (w/ snapping).
 // Traditional close w/ Alt+F4 and Close button as well as confirmation dialog.
-// View guizmo.
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
-// File explorer dialog.
 // Restart explanation window.
+// Box3 viewport editing (w/ snapping).
+// File explorer dialog.
 //
 // Custom properties in order of priority:
 //
@@ -1458,15 +1458,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // use a generalized exception process
             try
 
+                // configure io based on alt key state
+                let io = ImGui.GetIO ()
+                if ImGui.IsAltPressed ()
+                then io.ConfigFlags <- io.ConfigFlags &&& ~~~ImGuiConfigFlags.NavEnableKeyboard
+                else io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.NavEnableKeyboard
+
                 // process non-widget specific input
                 updateEyeDrag ()
                 updateEntityDrag ()
                 updateHotkeys ()
 
                 // viewport interaction
-                let io = ImGui.GetIO ()
                 ImGui.SetNextWindowPos v2Zero
                 ImGui.SetNextWindowSize io.DisplaySize
+                if ImGui.IsKeyPressed ImGuiKey.Escape then ImGui.SetNextWindowFocus ()
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
                     let viewport = Constants.Render.Viewport
                     let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
