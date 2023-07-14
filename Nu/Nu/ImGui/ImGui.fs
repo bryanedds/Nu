@@ -7,7 +7,6 @@ open Prime
 open Nu
 
 /// Wraps ImGui context, state, and calls.
-/// TODO: Make ImGui a stubbable interface.
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port of a port.
 type ImGui (windowWidth : int, windowHeight : int) =
 
