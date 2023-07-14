@@ -21,7 +21,6 @@ open Nu.Gaia
 // TODO:
 //
 // Log Output window.
-// Traditional close w/ Alt+F4 and Close button as well as confirmation dialog.
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
 // Box3 viewport editing (w/ snapping).
@@ -126,6 +125,7 @@ module Gaia =
     let mutable private showSaveGroupDialog = false
     let mutable private showRenameGroupDialog = false
     let mutable private showRenameEntityDialog = false
+    let mutable private showConfirmExitDialog = false
     let mutable private showRestartDialog = false
     let mutable private showInspector = false
 
@@ -1107,6 +1107,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private updateHotkeys entityHierarchyFocused =
         let io = ImGui.GetIO ()
+        if ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltPressed () then showConfirmExitDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
         if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
         if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
@@ -1554,7 +1555,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("New Project") then showNewProjectDialog <- true
                                 if ImGui.MenuItem ("Open Project") then showOpenProjectDialog <- true
                                 ImGui.Separator ()
-                                if ImGui.MenuItem "Exit" then world <- World.exit world
+                                if ImGui.MenuItem "Exit" then showConfirmExitDialog <- true
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Group" then
                                 if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
@@ -2296,6 +2297,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
                     | Some _ | None -> showRenameEntityDialog <- false
 
+                // confirm exit dialog
+                if showConfirmExitDialog then
+                    let title = "Are you okay with exiting Gaia?"
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
+                        ImGui.Text "Any unsaved changes will be lost."
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                            world <- World.exit world
+                        ImGui.SameLine ()
+                        if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then
+                            showConfirmExitDialog <- false
+
                 // restart dialog
                 if showRestartDialog then
                     let title = "Editor restart required."
@@ -2350,7 +2363,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.Button "Ignore exception and proceed with current world." then
                     recoverableExceptionOpt <- None
                 if ImGui.Button "Exit the editor." then
-                    world <- World.exit world
+                    showConfirmExitDialog <- true
                 ImGui.EndPopup ()
             world
 
