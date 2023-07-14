@@ -46,7 +46,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
         // configure docking enabled
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
-        
+
         // configure imgui advance time to a constant speed regardless of frame-rate
         io.DeltaTime <- 1.0f / 60.0f
 
