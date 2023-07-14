@@ -593,9 +593,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if World.isKeyboardKeyDown KeyboardKey.D world then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
             if World.isKeyboardKeyDown KeyboardKey.Q world then
-                world <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)) world
+                let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+                let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
+                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
+                let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
+                let forward' = Vector3.Transform (v3Forward, rotationMatrix')
+                if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
             if World.isKeyboardKeyDown KeyboardKey.E world then
-                world <- World.setEyeRotation3d (rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)) world
+                let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+                let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
+                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
+                let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
+                let forward' = Vector3.Transform (v3Forward, rotationMatrix')
+                if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
             if World.isKeyboardKeyDown KeyboardKey.Up world && World.isKeyboardAltUp world then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
             if World.isKeyboardKeyDown KeyboardKey.Down world && World.isKeyboardAltUp world then
