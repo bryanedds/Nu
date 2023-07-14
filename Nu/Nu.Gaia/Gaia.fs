@@ -24,7 +24,6 @@ open Nu.Gaia
 // Traditional close w/ Alt+F4 and Close button as well as confirmation dialog.
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
-// Restart explanation window.
 // Box3 viewport editing (w/ snapping).
 // File explorer dialog.
 //
@@ -127,6 +126,7 @@ module Gaia =
     let mutable private showSaveGroupDialog = false
     let mutable private showRenameGroupDialog = false
     let mutable private showRenameEntityDialog = false
+    let mutable private showRestartDialog = false
     let mutable private showInspector = false
 
     (* Initial imgui.ini File Content *)
@@ -271,16 +271,16 @@ Collapsed=0
 DockId=0x0000000E,0
 
 [Window][Prelude]
-Pos=955,874
-Size=667,206
-Collapsed=0
-DockId=0x00000009,4
-
-[Window][Console]
-Pos=955,874
-Size=667,206
+Pos=998,874
+Size=624,206
 Collapsed=0
 DockId=0x00000009,5
+
+[Window][Console]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,6
 
 [Window][Entity Hierarchy]
 Pos=0,56
@@ -1481,7 +1481,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // viewport interaction
                 ImGui.SetNextWindowPos v2Zero
                 ImGui.SetNextWindowSize io.DisplaySize
-                if ImGui.IsKeyPressed ImGuiKey.Escape then ImGui.SetNextWindowFocus ()
+                if ImGui.IsKeyPressed ImGuiKey.Escape && not showRestartDialog then ImGui.SetNextWindowFocus ()
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
                     let viewport = Constants.Render.Viewport
                     let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
@@ -2153,7 +2153,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                     try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
                                         Directory.SetCurrentDirectory gaiaDirectory
-                                        world <- World.exit world
+                                        showRestartDialog <- true
                                     with _ -> Log.trace "Could not save editor state and open new project."
 
                                     // close dialog
@@ -2200,7 +2200,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                             try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
                                 Directory.SetCurrentDirectory gaiaDirectory
-                                world <- World.exit world
+                                showRestartDialog <- true
                             with _ -> Log.info "Could not save editor state and open project."
                         if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
 
@@ -2295,6 +2295,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 showRenameEntityDialog <- false
                         if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
                     | Some _ | None -> showRenameEntityDialog <- false
+
+                // restart dialog
+                if showRestartDialog then
+                    let title = "Editor restart required."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal title then
+                        ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                            world <- World.exit world
 
                 // message box dialog
                 match messageBoxOpt with
