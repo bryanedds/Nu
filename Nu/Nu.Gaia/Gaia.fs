@@ -1210,7 +1210,105 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             for child in children do imGuiEntityHierarchy child
             ImGui.TreePop ()
 
-    let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (editProperty : unit -> unit) propertyLabelPrefix (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
+    let private imGuiEditMaterialProperiesProperty mp propertyDescriptor simulant =
+
+        // edit albedo
+        let mutable isSome = ValueOption.isSome mp.AlbedoOpt
+        if ImGui.Checkbox ((if isSome then "##mpAlbedoIsSome" else "AlbedoOpt"), &isSome) then
+            if isSome
+            then setProperty { mp with AlbedoOpt = ValueSome Constants.Render.AlbedoDefault } propertyDescriptor simulant
+            else setProperty { mp with AlbedoOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.AlbedoOpt with
+            | ValueSome albedo ->
+                let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
+                ImGui.SameLine ()
+                if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setProperty { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+
+        // edit metallic
+        let mutable isSome = ValueOption.isSome mp.MetallicOpt
+        if ImGui.Checkbox ((if isSome then "##mpMetallicIsSome" else "MetallicOpt"), &isSome) then
+            if isSome
+            then setProperty { mp with MetallicOpt = ValueSome Constants.Render.MetallicDefault } propertyDescriptor simulant
+            else setProperty { mp with MetallicOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.MetallicOpt with
+            | ValueSome metallic ->
+                let mutable metallic = metallic
+                ImGui.SameLine ()
+                if ImGui.InputFloat ("MetallicOpt", &metallic, 0.05f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+
+        // edit roughness
+        let mutable isSome = ValueOption.isSome mp.RoughnessOpt
+        if ImGui.Checkbox ((if isSome then "##mpRoughnessIsSome" else "RoughnessOpt"), &isSome) then
+            if isSome
+            then setProperty { mp with RoughnessOpt = ValueSome Constants.Render.RoughnessDefault } propertyDescriptor simulant
+            else setProperty { mp with RoughnessOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.RoughnessOpt with
+            | ValueSome roughness ->
+                let mutable roughness = roughness
+                ImGui.SameLine ()
+                if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.05f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+
+        // edit emission
+        let mutable isSome = ValueOption.isSome mp.EmissionOpt
+        if ImGui.Checkbox ((if isSome then "##mpEmissionIsSome" else "EmissionOpt"), &isSome) then
+            if isSome
+            then setProperty { mp with EmissionOpt = ValueSome Constants.Render.EmissionDefault } propertyDescriptor simulant
+            else setProperty { mp with EmissionOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.EmissionOpt with
+            | ValueSome emission ->
+                let mutable emission = emission
+                ImGui.SameLine ()
+                if ImGui.InputFloat ("EmissionOpt", &emission, 0.05f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+
+        // edit height
+        let mutable isSome = ValueOption.isSome mp.HeightOpt
+        if ImGui.Checkbox ((if isSome then "##mpHeightIsSome" else "HeightOpt"), &isSome) then
+            if isSome
+            then setProperty { mp with HeightOpt = ValueSome Constants.Render.HeightDefault } propertyDescriptor simulant
+            else setProperty { mp with HeightOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.HeightOpt with
+            | ValueSome height ->
+                let mutable height = height
+                ImGui.SameLine ()
+                if ImGui.InputFloat ("HeightOpt", &height, 0.05f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+
+        // edit invert roughness
+        let mutable isSome = ValueOption.isSome mp.InvertRoughnessOpt
+        if ImGui.Checkbox ((if isSome then "##mpInvertRoughnessIsSome" else "InvertRoughnessOpt"), &isSome) then
+            if isSome
+            then setProperty { mp with InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault } propertyDescriptor simulant
+            else setProperty { mp with InvertRoughnessOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.InvertRoughnessOpt with
+            | ValueSome invertRoughness ->
+                let mutable invertRoughness = invertRoughness
+                ImGui.SameLine ()
+                if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setProperty { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+
+    let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (editProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName
         let converter = SymbolicConverter ty
@@ -1236,6 +1334,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (name, &v'.X) then setProperty v' propertyDescriptor simulant
         | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (name, &v'.X) then setProperty v' propertyDescriptor simulant
         | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (name, &v'.X) then setProperty v' propertyDescriptor simulant
+        | :? MaterialProperties as mp -> imGuiEditMaterialProperiesProperty mp propertyDescriptor simulant
         | :? Box2 as b ->
             ImGui.Text name
             let mutable min = v2 b.Min.X b.Min.Y
@@ -1282,98 +1381,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.ColorEdit4 (name, &v) then
                 let c' = color v.X v.Y v.Z v.W
                 setPropertyWithoutUndo c' propertyDescriptor simulant
-        | :? MaterialProperties as mp ->
-
-            let mutable isSome = ValueOption.isSome mp.AlbedoOpt
-            if ImGui.Checkbox ((if isSome then "##mpAlbedoIsSome" else "AlbedoOpt"), &isSome) then
-                if isSome
-                then setProperty { mp with AlbedoOpt = ValueSome Constants.Render.AlbedoDefault } propertyDescriptor simulant
-                else setProperty { mp with AlbedoOpt = ValueNone } propertyDescriptor simulant
-            else
-                match mp.AlbedoOpt with
-                | ValueSome albedo ->
-                    let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
-                    ImGui.SameLine ()
-                    if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setProperty { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-                | ValueNone -> ()
-            if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-
-            let mutable isSome = ValueOption.isSome mp.MetallicOpt
-            if ImGui.Checkbox ((if isSome then "##mpMetallicIsSome" else "MetallicOpt"), &isSome) then
-                if isSome
-                then setProperty { mp with MetallicOpt = ValueSome Constants.Render.MetallicDefault } propertyDescriptor simulant
-                else setProperty { mp with MetallicOpt = ValueNone } propertyDescriptor simulant
-            else
-                match mp.MetallicOpt with
-                | ValueSome metallic ->
-                    let mutable metallic = metallic
-                    ImGui.SameLine ()
-                    if ImGui.InputFloat ("MetallicOpt", &metallic, 0.05f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-                | ValueNone -> ()
-            if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-
-            let mutable isSome = ValueOption.isSome mp.RoughnessOpt
-            if ImGui.Checkbox ((if isSome then "##mpRoughnessIsSome" else "RoughnessOpt"), &isSome) then
-                if isSome
-                then setProperty { mp with RoughnessOpt = ValueSome Constants.Render.RoughnessDefault } propertyDescriptor simulant
-                else setProperty { mp with RoughnessOpt = ValueNone } propertyDescriptor simulant
-            else
-                match mp.RoughnessOpt with
-                | ValueSome roughness ->
-                    let mutable roughness = roughness
-                    ImGui.SameLine ()
-                    if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.05f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-                | ValueNone -> ()
-            if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-
-            let mutable isSome = ValueOption.isSome mp.EmissionOpt
-            if ImGui.Checkbox ((if isSome then "##mpEmissionIsSome" else "EmissionOpt"), &isSome) then
-                if isSome
-                then setProperty { mp with EmissionOpt = ValueSome Constants.Render.EmissionDefault } propertyDescriptor simulant
-                else setProperty { mp with EmissionOpt = ValueNone } propertyDescriptor simulant
-            else
-                match mp.EmissionOpt with
-                | ValueSome emission ->
-                    let mutable emission = emission
-                    ImGui.SameLine ()
-                    if ImGui.InputFloat ("EmissionOpt", &emission, 0.05f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-                | ValueNone -> ()
-            if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-
-            let mutable isSome = ValueOption.isSome mp.HeightOpt
-            if ImGui.Checkbox ((if isSome then "##mpHeightIsSome" else "HeightOpt"), &isSome) then
-                if isSome
-                then setProperty { mp with HeightOpt = ValueSome Constants.Render.HeightDefault } propertyDescriptor simulant
-                else setProperty { mp with HeightOpt = ValueNone } propertyDescriptor simulant
-            else
-                match mp.HeightOpt with
-                | ValueSome height ->
-                    let mutable height = height
-                    ImGui.SameLine ()
-                    if ImGui.InputFloat ("HeightOpt", &height, 0.05f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-                | ValueNone -> ()
-            if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-
-            let mutable isSome = ValueOption.isSome mp.InvertRoughnessOpt
-            if ImGui.Checkbox ((if isSome then "##mpInvertRoughnessIsSome" else "InvertRoughnessOpt"), &isSome) then
-                if isSome
-                then setProperty { mp with InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault } propertyDescriptor simulant
-                else setProperty { mp with InvertRoughnessOpt = ValueNone } propertyDescriptor simulant
-            else
-                match mp.InvertRoughnessOpt with
-                | ValueSome invertRoughness ->
-                    let mutable invertRoughness = invertRoughness
-                    ImGui.SameLine ()
-                    if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setProperty { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
-                    if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-                | ValueNone -> ()
-            if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
-
         | _ when isPropertyAssetTag ->
             let mutable valueStr' = valueStr
             if ImGui.InputText (name, &valueStr', 4096u) then
@@ -1599,6 +1606,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world <- World.editEntity operation entity world
                         if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
                     | Some _ | None -> ()
+                    // NOTE: this code is the current failed attempt to integrate ImGuizmo view manipulation as reported here - https://github.com/CedricGuillemet/ImGuizmo/issues/304
                     //let eyeCenter = (World.getEyeCenter3d world |> Matrix4x4.CreateTranslation).ToArray ()
                     //let eyeRotation = (World.getEyeRotation3d world |> Matrix4x4.CreateFromQuaternion).ToArray ()
                     //let eyeScale = m4Identity.ToArray ()
