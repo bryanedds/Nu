@@ -370,7 +370,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private selectEntityOpt entityOpt =
 
-        // HACK: in order to keep the property of one simulant from copied to another simulant when the selected
+        // HACK: in order to keep the property of one simulant from being copied to another when the selected
         // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
         // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
         // in it.
@@ -1473,7 +1473,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SetNextWindowPos v2Zero
                 ImGui.SetNextWindowSize io.DisplaySize
                 if ImGui.IsKeyPressed ImGuiKey.Escape then ImGui.SetNextWindowFocus ()
-                if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs) then
+                if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
                     let viewport = Constants.Render.Viewport
                     let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
                     let projection = projectionMatrix.ToArray ()
@@ -1524,23 +1524,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world <- World.editEntity operation entity world
                         if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
                     | Some _ | None -> ()
-                    (* NOTE: failed attempt at integrating view manipulation widget.
-                    let eyeCenter = (Matrix4x4.CreateTranslation (World.getEyeCenter3d world)).ToArray ()
-                    let eyeRotation = (Matrix4x4.CreateFromQuaternion (World.getEyeRotation3d world)).ToArray ()
-                    let eyeScale = m4Identity.ToArray ()
-                    let view = m4Identity.ToArray ()
-                    ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
-                    ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, 0u)
-                    ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
-                    world <- World.setEyeCenter3d (Matrix4x4.CreateFromArray eyeCenter).Translation world
-                    world <- World.setEyeRotation3d (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromArray eyeRotation)) world*)
+                    //let eyeCenter = (World.getEyeCenter3d world |> Matrix4x4.CreateTranslation).ToArray ()
+                    //let eyeRotation = (World.getEyeRotation3d world |> Matrix4x4.CreateFromQuaternion).ToArray ()
+                    //let eyeScale = m4Identity.ToArray ()
+                    //let view = m4Identity.ToArray ()
+                    //ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
+                    //ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, uint 0x10101010)
+                    //ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
+                    //world <- World.setEyeCenter3d (eyeCenter |> Matrix4x4.CreateFromArray).Translation world
+                    //world <- World.setEyeRotation3d (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix) world
                     ImGui.End ()
 
                 // show all windows when out in full-screen mode
                 if not fullScreen then
 
                     // main menu window
-                    if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
+                    if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar ||| ImGuiWindowFlags.NoNav) then
                         if ImGui.BeginMenuBar () then
                             if ImGui.BeginMenu "Project" then
                                 if ImGui.MenuItem ("New Project") then showNewProjectDialog <- true
@@ -1585,7 +1584,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
-                        if ImGui.Button "Create" then createEntity false false
+                        if ImGui.Button "Create" then
+                            createEntity false false
+                            ImGui.SetWindowFocus "Viewport"
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth 200.0f
                         if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
@@ -1719,11 +1720,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
-                        if ImGui.Button "Collapse" then collapseEntityHierarchy <- true
+                        if ImGui.Button "Collapse" then
+                            collapseEntityHierarchy <- true
+                            ImGui.SetWindowFocus "Viewport"
                         ImGui.SameLine ()
-                        if ImGui.Button "Expand" then expandEntityHierarchy <- true
+                        if ImGui.Button "Expand" then
+                            expandEntityHierarchy <- true
+                            ImGui.SetWindowFocus "Viewport"
                         ImGui.SameLine ()
-                        if ImGui.Button "Show Selected" then showSelectedEntity <- true
+                        if ImGui.Button "Show Selected" then
+                            showSelectedEntity <- true
+                            ImGui.SetWindowFocus "Viewport"
                         let groups = World.getGroups selectedScreen world
                         let mutable selectedGroupName = selectedGroup.Name
                         ImGui.SetNextItemWidth -1.0f
@@ -1781,7 +1788,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // property editor window
-                    if ImGui.Begin "Property Editor" then
+                    if ImGui.Begin ("Property Editor", ImGuiWindowFlags.NoNav) then
                         match propertyDescriptorFocusedOpt with
                         | Some (propertyDescriptor, simulant) when
                             World.getExists simulant world &&
@@ -1822,7 +1829,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // asset graph window
-                    if ImGui.Begin "Asset Graph" then
+                    if ImGui.Begin ("Asset Graph", ImGuiWindowFlags.NoNav) then
                         if ImGui.Button "Save" then
                             let assetSourceDir = targetDir + "/../../.."
                             let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
@@ -1842,7 +1849,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // overlayer window
-                    if ImGui.Begin "Overlayer" then
+                    if ImGui.Begin ("Overlayer", ImGuiWindowFlags.NoNav) then
                         if ImGui.Button "Save" then
                             let overlayerSourceDir = targetDir + "/../../.."
                             let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
@@ -1863,7 +1870,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // event tracing window
-                    if ImGui.Begin "Event Tracing" then
+                    if ImGui.Begin ("Event Tracing", ImGuiWindowFlags.NoNav) then
                         let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
                         if ImGui.Checkbox ("Trace Events", &traceEvents) then
                             world <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) world
@@ -1877,7 +1884,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // prelude window
-                    if ImGui.Begin "Prelude" then
+                    if ImGui.Begin ("Prelude", ImGuiWindowFlags.NoNav) then
                         let preludeSourceDir = targetDir + "/../../.."
                         if ImGui.Button "Save" then
                             let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
@@ -1904,7 +1911,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // console window
-                    if ImGui.Begin "Console" then
+                    if ImGui.Begin ("Console", ImGuiWindowFlags.NoNav) then
                         let eval = ImGui.Button "Eval (Ctrl+Enter)"
                         ImGui.SameLine ()
                         let clear = ImGui.Button "Clear (Shift+Esc)"
@@ -1933,7 +1940,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // audio player window
-                    if ImGui.Begin "Audio Player" then
+                    if ImGui.Begin ("Audio Player", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Master Sound Volume"
                         let mutable masterSoundVolume = World.getMasterSoundVolume world
                         if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then world <- World.setMasterSoundVolume masterSoundVolume world
@@ -1947,7 +1954,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // renderer window
-                    if ImGui.Begin "Renderer" then
+                    if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Light-Mapping (local light mapping)"
                         let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
                         ImGui.Checkbox ("Light-Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
@@ -1976,7 +1983,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 // in full-screen mode, just show full-screen short cut window
                 else
-                    if ImGui.Begin "Full Screen Enabled" then
+                    if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Full Screen (F11)"
                         ImGui.SameLine ()
                         ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
@@ -1987,7 +1994,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.SetNextWindowPos rightClickPosition
                     ImGui.SetNextWindowSize (v2 250.0f 158.0f)
                     if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoResize) then
-                        if ImGui.Button "Create" then createEntity true false; showEntityContextMenu <- false
+                        if ImGui.Button "Create" then
+                            createEntity true false
+                            ImGui.SetWindowFocus "Viewport"
+                            showEntityContextMenu <- false
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth -1.0f
                         if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
@@ -2049,6 +2059,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if Directory.Exists templateDir then
 
                         // prompt user to create new project
+                        // TODO: change this to popup?
                         if ImGui.Begin "Create Nu Project... *EDITOR RESTART REQUIRED!*" then
                             ImGui.Text "Project Name"
                             ImGui.SameLine ()
