@@ -61,7 +61,6 @@ module Gaia =
 
     (* Active Editing States *)
 
-    let mutable private entityHierarchyFocused = false
     let mutable private manipulationActive = false
     let mutable private manipulationOperation = OPERATION.TRANSLATE
     let mutable private expandEntityHierarchy = false
@@ -1106,7 +1105,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world <- entity.SetAngularVelocity v3Zero world
             | DragEntityInactive -> ()
 
-    let private updateHotkeys () =
+    let private updateHotkeys entityHierarchyFocused =
         let io = ImGui.GetIO ()
         if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
         if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
@@ -1468,16 +1467,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // use a generalized exception process
             try
 
-                // configure io based on alt key state
+                // track state for hot key input
+                let mutable entityHierarchyFocused = false
+
+                // configure keyboard navigation based on alt key state
                 let io = ImGui.GetIO ()
                 if ImGui.IsAltPressed ()
                 then io.ConfigFlags <- io.ConfigFlags &&& ~~~ImGuiConfigFlags.NavEnableKeyboard
                 else io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.NavEnableKeyboard
-
-                // process non-widget specific input
-                updateEyeDrag ()
-                updateEntityDrag ()
-                updateHotkeys ()
 
                 // viewport interaction
                 ImGui.SetNextWindowPos v2Zero
@@ -2313,6 +2310,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // imgui inspector window
                 if showInspector then
                     ImGui.ShowStackToolWindow ()
+
+                // process non-widget specific input
+                updateEyeDrag ()
+                updateEntityDrag ()
+                updateHotkeys entityHierarchyFocused
 
                 // fin
                 world
