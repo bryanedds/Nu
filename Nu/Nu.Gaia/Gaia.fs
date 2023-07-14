@@ -61,6 +61,7 @@ module Gaia =
 
     (* Active Editing States *)
 
+    let mutable private entityHierarchyFocused = false
     let mutable private manipulationActive = false
     let mutable private manipulationOperation = OPERATION.TRANSLATE
     let mutable private expandEntityHierarchy = false
@@ -1116,7 +1117,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity true
         if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity false
-        if not (io.WantCaptureKeyboard) then
+        if not (io.WantCaptureKeyboard) || entityHierarchyFocused then
             if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
@@ -1729,6 +1730,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
+                        entityHierarchyFocused <- ImGui.IsWindowFocused ()
                         if ImGui.Button "Collapse" then
                             collapseEntityHierarchy <- true
                             ImGui.SetWindowFocus "Viewport"
@@ -1771,6 +1773,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         for entity in entities do
                             imGuiEntityHierarchy entity
                         ImGui.End ()
+                    else entityHierarchyFocused <- false
                     expandEntityHierarchy <- false
                     collapseEntityHierarchy <- false
 
