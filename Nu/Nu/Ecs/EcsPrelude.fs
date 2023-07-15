@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
+open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open FSharp.Quotations
 open Prime
@@ -45,32 +46,66 @@ type Store =
         end
 
 /// Stores components for an Ecs.
-type Store<'c when 'c : struct and 'c :> 'c Component> (name) =
+type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
     let mutable arr = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve
     member this.Length = arr.Length
     member this.Name = name
     member this.Item i = &arr.[i]
     member this.SetItem index comp = arr.[index] <- comp
     member this.ZeroItem index = arr.[index] <- Unchecked.defaultof<'c>
-    member this.Grow () =
+
+    member this.Grow() =
         let length = int (single (max arr.Length 2) * 1.5f)
         let arr' = Array.zeroCreate<'c> length
-        Array.Copy (arr, arr', arr.Length)
+        Array.Copy(arr, arr', arr.Length)
         arr <- arr'
-    member this.Read index count (stream : FileStream) =
+
+    member this.Write(stream: FileStream) =
+        let ba: byte array = Unsafe.As &arr
+        stream.Write ba
+        stream.Flush()
+        stream.Close()
+
+    member this.OpenWrite(stream: FileStream) =
+        let ba: byte array = Unsafe.As &arr
+        stream.Write ba
+
+    member this.Read index count (stream: FileStream) =
         let compSize = sizeof<'c>
         let comp = Unchecked.defaultof<'c> :> obj
         let buffer = Array.zeroCreate<byte> compSize
-        let gch = GCHandle.Alloc (comp, GCHandleType.Pinned)
-        try 
+        let gch = GCHandle.Alloc(comp, GCHandleType.Pinned)
+
+        try
             let mutable index = index
+
             for _ in 0 .. dec count do
-                stream.Read (buffer, 0, compSize) |> ignore<int>
-                Marshal.Copy (buffer, 0, gch.AddrOfPinnedObject (), compSize)
-                if index = arr.Length then this.Grow ()
+                stream.Read(buffer, 0, compSize) |> ignore<int>
+                Marshal.Copy(buffer, 0, gch.AddrOfPinnedObject(), compSize)
+
+                if index = arr.Length then
+                    this.Grow()
+
                 arr.[index] <- comp :?> 'c
                 index <- inc index
-        finally gch.Free ()
+        finally
+            gch.Free()
+
+    member this.ReadFrom index count (stream: FileStream) =
+            let compSize = sizeof<'c>
+            let count = count / compSize
+            let buffer: byte array = GC.AllocateArray(compSize,true)
+            let mutable index = index
+
+            for _ = 0 to dec count do
+                stream.Read(buffer, 0, compSize) |> ignore<int>
+
+                if index = arr.Length then
+                    this.Grow()
+
+                arr.[index] <- Unsafe.As &buffer.[0]
+                index <-  inc index 
+                
     interface Store with
         member this.Length = this.Length
         member this.Name = this.Name
