@@ -1329,9 +1329,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable min = v2 b.Min.X b.Min.Y
             let mutable size = v2 b.Size.X b.Size.Y
             ImGui.Indent ()
-            let minChanged = ImGui.InputFloat2 (propertyLabelPrefix + "Min", &min)
+            let minChanged = ImGui.InputFloat2 (propertyLabelPrefix + "Min via " + name, &min)
             editProperty ()
-            let sizeChanged = ImGui.InputFloat2 (propertyLabelPrefix + "Size", &size)
+            let sizeChanged = ImGui.InputFloat2 (propertyLabelPrefix + "Size via " + name, &size)
             if minChanged || sizeChanged then
                 let b' = box2 min size
                 setProperty b' propertyDescriptor simulant
@@ -1341,9 +1341,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
             let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
             ImGui.Indent ()
-            let minChanged = ImGui.InputFloat3 (propertyLabelPrefix + "Min", &min)
+            let minChanged = ImGui.InputFloat3 (propertyLabelPrefix + "Min via " + name, &min)
             editProperty ()
-            let sizeChanged = ImGui.InputFloat3 (propertyLabelPrefix + "Size", &size)
+            let sizeChanged = ImGui.InputFloat3 (propertyLabelPrefix + "Size via " + name, &size)
             if minChanged || sizeChanged then
                 let b' = box3 min size
                 setProperty b' propertyDescriptor simulant
@@ -1353,9 +1353,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable min = v2i b.Min.X b.Min.Y
             let mutable size = v2i b.Size.X b.Size.Y
             ImGui.Indent ()
-            let minChanged = ImGui.InputInt2 (propertyLabelPrefix + "Min", &min.X)
+            let minChanged = ImGui.InputInt2 (propertyLabelPrefix + "Min via " + name, &min.X)
             editProperty ()
-            let sizeChanged = ImGui.InputInt2 (propertyLabelPrefix + "Size", &size.X)
+            let sizeChanged = ImGui.InputInt2 (propertyLabelPrefix + "Size via " + name, &size.X)
             if minChanged || sizeChanged then
                 let b' = box2i min size
                 setProperty b' propertyDescriptor simulant
