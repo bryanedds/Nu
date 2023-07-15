@@ -1437,13 +1437,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
                         imGuiEditProperty getProperty setProperty editProperty (name + ".") propertyDescriptor simulant
-                if  ty.IsGenericType &&
-                    ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                    ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
-                    ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                    (ty.GenericTypeArguments.[0].IsValueType ||
-                     ty.GenericTypeArguments.[0] = typeof<string> ||
-                     ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                elif    ty.IsGenericType &&
+                        ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
+                        ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
+                        ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                        (ty.GenericTypeArguments.[0].IsValueType ||
+                         ty.GenericTypeArguments.[0] = typeof<string> ||
+                         ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
                     if ImGui.Checkbox ((if isSome then "##" else "") + name, &isSome) then
                         if isSome then
