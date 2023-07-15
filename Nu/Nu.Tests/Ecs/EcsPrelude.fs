@@ -25,19 +25,19 @@ type Test =
 /// </summary>
 [<Test>]
 let ``Store.Read: write and load to file`` () =
-    let store: Test Store = Store "Name"
+    let mutable store: Test Store = Store "Name"
     let testingFileName = (currentDirectory, "ent.bin") |> Path.Combine
 
     let fact = Array.init 256 (fun i -> { Active = i % 2 = 0; X = i; Y = i * 2 })
     fact |> Array.iteri store.SetItem
 
-
-
     let fs = testingFileName |> File.OpenWrite
     store.Write fs
-
+    
+    store <- Store "Name"
+    
     let fso = testingFileName |> File.OpenRead
-    store.Read 0 255 fso
+    store.Read 0 256 fso
 
     let test =
         [| for i = 0 to 255 do
@@ -45,4 +45,4 @@ let ``Store.Read: write and load to file`` () =
         
     fso.Close()
     File.Delete testingFileName
-    Assert.AreEqual(test, fact)
+    Assert.AreEqual(fact , test)
