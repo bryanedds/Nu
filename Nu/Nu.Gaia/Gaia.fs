@@ -374,8 +374,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // HACK: in order to keep the property of one simulant from being copied to another when the selected
             // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
             // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
-            // in it.
+            // in it. Then if there is no entity selected, we'll select the viewport instead
             ImGui.SetWindowFocus "Entity Hierarchy"
+            if entityOpt.IsNone then ImGui.SetWindowFocus "Viewport"
 
         // actually set the selection
         selectedEntityOpt <- entityOpt
