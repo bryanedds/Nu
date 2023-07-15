@@ -68,10 +68,6 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
 
         stream.Flush()
         stream.Close()
-        
-    member this.OpenWrite(stream: FileStream) =
-        let ba: byte array = Unsafe.As &arr
-        stream.Write ba
 
     member this.Read index count (stream: FileStream) =
         let compSize = sizeof<'c>
