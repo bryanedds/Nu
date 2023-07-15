@@ -1,13 +1,15 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open ImGuiNET
 open ImGuizmoNET
 open Prime
 open Nu
 
 /// Wraps ImGui context, state, and calls.
-/// NOTE: API is object-oriented / mutation-based because it's ported from a port of a port.
+/// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port of a port.
+/// TODO: document the public API.
 type ImGui (windowWidth : int, windowHeight : int) =
 
     let charsPressed =
@@ -157,3 +159,17 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlPressed () && ImGui.IsKeyPressed key
+
+    static member PositionToWindow (modelViewProjection : Matrix4x4, position : Vector3) =
+        // NOTE: code mostly lifted from - https://github.com/CedricGuillemet/ImGuizmo/blob/822be7b44c37dbe98d328739ebe0d5a1ea87ecfc/ImGuizmo.cpp#L798-L810
+        let windowPosition = ImGui.GetWindowPos ()
+        let windowSize = ImGui.GetWindowSize ()
+        let mutable position = Vector4.Transform (Vector4 (position, 1.0f), modelViewProjection)
+        position <- position * (0.5f / position.W)
+        position <- position + v4 0.5f 0.5f 0.0f 0.0f
+        position.Y <- 1.0f - position.Y
+        position.X <- position.X * windowSize.X
+        position.Y <- position.Y * windowSize.Y
+        position.X <- position.X + windowPosition.X
+        position.Y <- position.Y + windowPosition.Y
+        v2 position.X position.Y

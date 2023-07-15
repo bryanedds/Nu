@@ -1616,6 +1616,35 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     //ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
                     //world <- World.setEyeCenter3d (eyeCenter |> Matrix4x4.CreateFromArray).Translation world
                     //world <- World.setEyeRotation3d (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix) world
+                    match propertyDescriptorFocusedOpt with
+                    | Some (propertyDescriptor, (:? Entity as entity)) when entity.Exists world ->
+                        if propertyDescriptor.PropertyType = typeof<Box3> then
+                            let drawList = ImGui.GetWindowDrawList ()
+                            let viewport = Constants.Render.Viewport
+                            let view = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
+                            let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
+                            let viewProjection = view * projection
+                            let box3 = getProperty propertyDescriptor entity :?> Box3
+                            let corners = Array.map (fun corner -> ImGui.PositionToWindow (viewProjection, corner)) box3.Corners
+                            let segments =
+                                [|(corners.[0], corners.[1])
+                                  (corners.[1], corners.[2])
+                                  (corners.[2], corners.[3])
+                                  (corners.[3], corners.[0])
+                                  (corners.[4], corners.[5])
+                                  (corners.[5], corners.[6])
+                                  (corners.[6], corners.[7])
+                                  (corners.[7], corners.[4])
+                                  (corners.[0], corners.[6])
+                                  (corners.[1], corners.[5])
+                                  (corners.[2], corners.[4])
+                                  (corners.[3], corners.[7])|]
+                            for (a, b) in segments do drawList.AddLine (a, b, uint 0xFF00CFCF)
+                            for corner in corners do
+                                if ImGui.IsMouseDown ImGuiMouseButton.Left && (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
+                                    drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
+                                else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
+                    | _ -> ()
                     ImGui.End ()
 
                 // show all windows when out in full-screen mode
