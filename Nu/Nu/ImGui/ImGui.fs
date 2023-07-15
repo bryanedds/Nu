@@ -7,9 +7,29 @@ open ImGuizmoNET
 open Prime
 open Nu
 
-/// Wraps ImGui context, state, and calls.
+// TODO: document this!
+
+[<AutoOpen>]
+module ImGuiIOPtr =
+
+    // HACK: allows manual tracking of mouse and keyboard event swallowing since Dead ImGui doesn't seem to yet have
+    // it worked out - https://github.com/ocornut/imgui/issues/3370
+    let mutable internal wantCaptureMousePlus = false
+    let mutable internal wantCaptureKeyboardPlus = false
+
+    let internal BeginFrame () =
+        wantCaptureMousePlus <- false
+        wantCaptureKeyboardPlus <- false
+
+    type ImGuiIOPtr with
+
+        member this.WantCaptureMousePlus = wantCaptureMousePlus || this.WantCaptureMouse
+        member this.WantCaptureKeyboardPlus = wantCaptureKeyboardPlus || this.WantCaptureKeyboard
+        member this.SwallowMouse () = wantCaptureMousePlus <- true
+        member this.SwallowKeyboard () = wantCaptureKeyboardPlus <- true
+
+/// Wraps ImGui context, state, and calls. Also extends the ImGui interface with static methods.
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port of a port.
-/// TODO: document the public API.
 type ImGui (windowWidth : int, windowHeight : int) =
 
     let charsPressed =
@@ -95,6 +115,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     member this.BeginFrame () =
         ImGui.NewFrame ()
+        ImGuiIOPtr.BeginFrame ()
         ImGuizmo.BeginFrame ()
 
     member this.EndFrame () =
@@ -139,26 +160,20 @@ type ImGui (windowWidth : int, windowHeight : int) =
         colors.[int ImGuiCol.TitleBg] <- v4 0.0f 0.0f 0.0f 0.5f
         colors.[int ImGuiCol.WindowBg] <- v4 0.0f 0.0f 0.0f 0.333f
 
-    static member IsCtrlPressed () =
-        // HACK: using modifier detection from sdl since it works better given how things have been configued.
-        KeyboardState.isCtrlDown ()
-        //ImGui.IsKeyPressed ImGuiKey.LeftCtrl ||
-        //ImGui.IsKeyPressed ImGuiKey.RightCtrl
+    static member IsCtrlDown () =
+        ImGui.IsKeyDown ImGuiKey.LeftCtrl ||
+        ImGui.IsKeyDown ImGuiKey.RightCtrl
 
-    static member IsAltPressed () =
-        // HACK: using modifier detection from sdl since it works better given how things have been configued.
-        KeyboardState.isAltDown ()
-        //ImGui.IsKeyPressed ImGuiKey.LeftAlt ||
-        //ImGui.IsKeyPressed ImGuiKey.RightAlt
+    static member IsAltDown () =
+        ImGui.IsKeyDown ImGuiKey.LeftAlt ||
+        ImGui.IsKeyDown ImGuiKey.RightAlt
 
-    static member IsShiftPressed () =
-        // HACK: using modifier detection from sdl since it works better given how things have been configued.
-        KeyboardState.isShiftDown ()
-        //ImGui.IsKeyPressed ImGuiKey.LeftShift ||
-        //ImGui.IsKeyPressed ImGuiKey.RightShift
+    static member IsShiftDown () =
+        ImGui.IsKeyDown ImGuiKey.LeftShift ||
+        ImGui.IsKeyDown ImGuiKey.RightShift
 
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
-        ImGui.IsCtrlPressed () && ImGui.IsKeyPressed key
+        ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
     static member PositionToWindow (modelViewProjection : Matrix4x4, position : Vector3) =
         // NOTE: code mostly lifted from - https://github.com/CedricGuillemet/ImGuizmo/blob/822be7b44c37dbe98d328739ebe0d5a1ea87ecfc/ImGuizmo.cpp#L798-L810

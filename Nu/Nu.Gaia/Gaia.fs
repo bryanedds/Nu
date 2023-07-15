@@ -351,11 +351,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private canEditWithMouse () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureMouse) && (World.getHalted world || editWhileAdvancing)
+        not (io.WantCaptureMousePlus) && (World.getHalted world || editWhileAdvancing)
 
     let private canEditWithKeyboard () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureKeyboard) && (World.getHalted world || editWhileAdvancing)
+        not (io.WantCaptureKeyboardPlus) && (World.getHalted world || editWhileAdvancing)
 
     let private selectScreen screen =
         if screen <> selectedScreen then
@@ -482,6 +482,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     (* Nu Event Handlers *)
 
+    let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) wtemp =
+        world <- wtemp
+        if canEditWithMouse ()
+        then (Resolve, world)
+        else (Cascade, world)
+
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) wtemp =
         world <- wtemp
         match evt.Data.Value :?> Screen option with
@@ -500,121 +506,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | None ->
             // just keep current group selection and screen if no screen selected
             (Cascade, world)
-
-    let private handleNuEntityContext (_ : Event<MouseButtonData, Game>) wtemp =
-        world <- wtemp
-        if canEditWithMouse () then
-            let handling = if World.getAdvancing world then Cascade else Resolve
-            let mousePosition = World.getMousePosition world
-            let _ = tryMousePick mousePosition
-            rightClickPosition <- mousePosition
-            showEntityContextMenu <- true
-            (handling, world)
-        else (Resolve, world)
-
-    let private handleNuEntityDragBegin (_ : Event<MouseButtonData, Game>) wtemp =
-        world <- wtemp
-        if canEditWithMouse () then
-            let handled = if World.getAdvancing world then Cascade else Resolve
-            let mousePosition = World.getMousePosition world
-            match tryMousePick mousePosition with
-            | Some (_, entity) ->
-                if entity.GetIs2d world then
-                    snapshot ()
-                    if World.isKeyboardShiftDown world then
-                        let viewport = World.getViewport world
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
-                        let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
-                        dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
-                        (handled, world)
-                    else
-                        let viewport = World.getViewport world
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
-                        let entityPosition = entity.GetPosition world
-                        dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
-                        (handled, world)
-                else (handled, world)
-            | None -> (handled, world)
-        else (Cascade, world)
-
-    let private handleNuEntityDragEnd (_ : Event<MouseButtonData, Game>) wtemp =
-        world <- wtemp
-        if canEditWithMouse () then
-            let handled = if World.getAdvancing world then Cascade else Resolve
-            match dragEntityState with
-            | DragEntityPosition2d _ | DragEntityRotation2d _ ->
-                dragEntityState <- DragEntityInactive
-                (handled, world)
-            | DragEntityInactive -> (Resolve, world)
-        else (Cascade, world)
-
-    let private handleNuEyeDragBegin (_ : Event<MouseButtonData, Game>) wtemp =
-        world <- wtemp
-        if canEditWithMouse () then
-            let mousePositionScreen = World.getMousePosition2dScreen world
-            let dragState = DragEyeCenter2d (World.getEyeCenter2d world + mousePositionScreen, mousePositionScreen)
-            dragEyeState <- dragState
-            (Resolve, world)
-        else (Resolve, world)
-
-    let private handleNuEyeDragEnd (_ : Event<MouseButtonData, Game>) wtemp =
-        world <- wtemp
-        if canEditWithMouse () then
-            match dragEyeState with
-            | DragEyeCenter2d _ ->
-                dragEyeState <- DragEyeInactive
-                (Resolve, world)
-            | DragEyeInactive -> (Resolve, world)
-        else (Resolve, world)
-
-    let private handleNuUpdate (_ : Event<unit, Game>) wtemp =
-        world <- wtemp
-        if canEditWithKeyboard () then
-            let position = World.getEyeCenter3d world
-            let rotation = World.getEyeRotation3d world
-            let moveSpeed =
-                if World.isKeyboardShiftDown world then 0.02f
-                elif World.isKeyboardKeyDown KeyboardKey.Return world then 0.5f
-                else 0.12f
-            let turnSpeed =
-                if World.isKeyboardShiftDown world then 0.025f
-                else 0.05f
-            if World.isKeyboardKeyDown KeyboardKey.W world then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
-            if World.isKeyboardKeyDown KeyboardKey.S world then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
-            if World.isKeyboardKeyDown KeyboardKey.A world then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
-            if World.isKeyboardKeyDown KeyboardKey.D world then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-            if World.isKeyboardKeyDown KeyboardKey.Q world then
-                let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
-                let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
-                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
-                let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
-                let forward' = Vector3.Transform (v3Forward, rotationMatrix')
-                if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
-            if World.isKeyboardKeyDown KeyboardKey.E world then
-                let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
-                let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
-                let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
-                let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
-                let forward' = Vector3.Transform (v3Forward, rotationMatrix')
-                if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
-            if World.isKeyboardKeyDown KeyboardKey.Up world && World.isKeyboardAltUp world then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
-            if World.isKeyboardKeyDown KeyboardKey.Down world && World.isKeyboardAltUp world then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
-            if World.isKeyboardKeyDown KeyboardKey.Left world then
-                world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
-            if World.isKeyboardKeyDown KeyboardKey.Right world then
-                world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
-            (Cascade, world)
-        else (Cascade, world)
 
     let private handleNuRender (_ : Event<unit, Game>) wtemp =
 
@@ -663,7 +554,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                       Emission = Color.Zero
                                       Flip = FlipNone }})
                         world
-            elif ImGui.IsCtrlPressed () then
+            elif ImGui.IsCtrlDown () then
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center
                 world <-
@@ -1047,7 +938,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     (* ImGui Callback Functions *)
 
+    let private updateEntityContext () =
+
+        if ImGui.IsMouseReleased ImGuiMouseButton.Right then
+            let mousePosition = World.getMousePosition world
+            let _ = tryMousePick mousePosition
+            rightClickPosition <- mousePosition
+            showEntityContextMenu <- true
+
     let private updateEyeDrag () =
+
+        if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
+            let mousePositionScreen = World.getMousePosition2dScreen world
+            let dragState = DragEyeCenter2d (World.getEyeCenter2d world + mousePositionScreen, mousePositionScreen)
+            dragEyeState <- dragState
+
+        if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
+            match dragEyeState with
+            | DragEyeCenter2d _ -> dragEyeState <- DragEyeInactive
+            | DragEyeInactive -> ()
+
         match dragEyeState with
         | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
             let mousePositionScreen = World.getMousePosition2dScreen world
@@ -1057,73 +967,151 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | DragEyeInactive -> ()
 
     let private updateEntityDrag () =
-        if canEditWithMouse () then
-            match dragEntityState with
-            | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
-                let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
-                    let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
-                    let entityPositionSnapped =
-                        if snaps2dSelected
-                        then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition.V3
-                        else entityPosition.V3
-                    let entityPosition = entity.GetPosition world
-                    let entityPositionDelta = entityPositionSnapped - entityPosition
-                    let entityPositionConstrained = entityPosition + entityPositionDelta
-                    match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
-                    | Some parent ->
-                        let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
-                        world <- entity.SetPositionLocal entityPositionLocal world
-                    | None ->
-                        world <- entity.SetPosition entityPositionConstrained world
-                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                        Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                        world <- entity.SetLinearVelocity v3Zero world
-                        world <- entity.SetAngularVelocity v3Zero world
-            | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
-                let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
-                    let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
-                    let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
-                    let entityDegreeSnapped =
-                        if snaps2dSelected
-                        then Math.snapF (Triple.snd (getSnaps ())) entityDegree
-                        else entityDegree
-                    let entityDegree = (entity.GetDegreesLocal world).Z
-                    if entity.MountExists world then
-                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                        let entityDegreeLocal = entityDegree + entityDegreeDelta
-                        world <- entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) world
+
+        if ImGui.IsMouseClicked ImGuiMouseButton.Left then
+            let mousePosition = World.getMousePosition world
+            match tryMousePick mousePosition with
+            | Some (_, entity) ->
+                if entity.GetIs2d world then
+                    snapshot ()
+                    if World.isKeyboardAltDown world then
+                        let viewport = World.getViewport world
+                        let eyeCenter = World.getEyeCenter2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                        let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
+                        dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                     else
-                        let entityDegreeDelta = entityDegreeSnapped - entityDegree
-                        let entityDegree = entityDegree + entityDegreeDelta
-                        world <- entity.SetDegrees (v3 0.0f 0.0f entityDegree) world
-                    if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
-                        Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
-                        world <- entity.SetLinearVelocity v3Zero world
-                        world <- entity.SetAngularVelocity v3Zero world
+                        let viewport = World.getViewport world
+                        let eyeCenter = World.getEyeCenter2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                        let entityPosition = entity.GetPosition world
+                        dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+            | None -> ()
+
+        if ImGui.IsMouseReleased ImGuiMouseButton.Left then
+            match dragEntityState with
+            | DragEntityPosition2d _ | DragEntityRotation2d _ -> dragEntityState <- DragEntityInactive
             | DragEntityInactive -> ()
+
+        match dragEntityState with
+        | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+            let localTime = DateTimeOffset.Now - time
+            if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
+                let entityPositionSnapped =
+                    if snaps2dSelected
+                    then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition.V3
+                    else entityPosition.V3
+                let entityPosition = entity.GetPosition world
+                let entityPositionDelta = entityPositionSnapped - entityPosition
+                let entityPositionConstrained = entityPosition + entityPositionDelta
+                match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                | Some parent ->
+                    let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
+                    world <- entity.SetPositionLocal entityPositionLocal world
+                | None ->
+                    world <- entity.SetPosition entityPositionConstrained world
+                if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                    Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
+                    world <- entity.SetLinearVelocity v3Zero world
+                    world <- entity.SetAngularVelocity v3Zero world
+        | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
+            let localTime = DateTimeOffset.Now - time
+            if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
+                let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
+                let entityDegreeSnapped =
+                    if snaps2dSelected
+                    then Math.snapF (Triple.snd (getSnaps ())) entityDegree
+                    else entityDegree
+                let entityDegree = (entity.GetDegreesLocal world).Z
+                if entity.MountExists world then
+                    let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                    let entityDegreeLocal = entityDegree + entityDegreeDelta
+                    world <- entity.SetDegreesLocal (v3 0.0f 0.0f entityDegreeLocal) world
+                else
+                    let entityDegreeDelta = entityDegreeSnapped - entityDegree
+                    let entityDegree = entityDegree + entityDegreeDelta
+                    world <- entity.SetDegrees (v3 0.0f 0.0f entityDegree) world
+                if  Option.isSome (entity.TryGetProperty "LinearVelocity" world) &&
+                    Option.isSome (entity.TryGetProperty "AngularVelocity" world) then
+                    world <- entity.SetLinearVelocity v3Zero world
+                    world <- entity.SetAngularVelocity v3Zero world
+        | DragEntityInactive -> ()
+
+    let private updateMouseInput () =
+        if canEditWithMouse () then
+            updateEntityContext ()
+            updateEntityDrag ()
+            updateEyeDrag ()
+
+    let private updateEyeTravel () =
+        let position = World.getEyeCenter3d world
+        let rotation = World.getEyeRotation3d world
+        let moveSpeed =
+            if ImGui.IsShiftDown () then 0.02f
+            elif ImGui.IsKeyDown ImGuiKey.Enter then 0.5f
+            else 0.12f
+        let turnSpeed =
+            if ImGui.IsShiftDown () then 0.025f
+            else 0.05f
+        if ImGui.IsKeyDown ImGuiKey.W then
+            world <- World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+        if ImGui.IsKeyDown ImGuiKey.S then
+            world <- World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+        if ImGui.IsKeyDown ImGuiKey.A then
+            world <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+        if ImGui.IsKeyDown ImGuiKey.D then
+            world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+        if ImGui.IsKeyDown ImGuiKey.Q then
+            let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+            let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
+            let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
+            let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
+            let forward' = Vector3.Transform (v3Forward, rotationMatrix')
+            if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
+        if ImGui.IsKeyDown ImGuiKey.E then
+            let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+            let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
+            let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
+            let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
+            let forward' = Vector3.Transform (v3Forward, rotationMatrix')
+            if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
+        if ImGui.IsKeyDown ImGuiKey.UpArrow && not (ImGui.IsAltDown ()) then
+            world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+        if ImGui.IsKeyDown ImGuiKey.DownArrow && not (ImGui.IsAltDown ()) then
+            world <- World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+        if ImGui.IsKeyDown ImGuiKey.LeftArrow then
+            world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
+        if ImGui.IsKeyDown ImGuiKey.RightArrow then
+            world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
+
+    let private updateKeyboardInput () =
+        if canEditWithKeyboard () then
+            updateEyeTravel ()
 
     let private updateHotkeys entityHierarchyFocused =
         let io = ImGui.GetIO ()
-        if ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltPressed () then showConfirmExitDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
         if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
         if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
         if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
-        if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlPressed () then tryQuickSizeSelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlPressed () then showNewGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlPressed () then showOpenGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlPressed () then showSaveGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity true
-        if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltPressed () then tryReorderSelectedEntity false
-        if not (io.WantCaptureKeyboard) || entityHierarchyFocused then
-            if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlPressed () then tryUndo () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlPressed () then tryRedo () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlPressed () then tryCutSelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlPressed () then tryCopySelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlPressed () then tryPaste false |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then createEntity false false
+        if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
+        if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
+        if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
+        if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
+        if not (io.WantCaptureKeyboardPlus) || entityHierarchyFocused then
+            if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
             if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
 
@@ -1186,7 +1174,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let sourceEntityAddressStr = payload
                     let sourceEntity = Entity sourceEntityAddressStr
                     if not (sourceEntity.GetProtected world) then
-                        if ImGui.IsAltPressed () then
+                        if ImGui.IsAltDown () then
                             let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let previousOpt = World.tryGetPreviousEntity next world
                             let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
@@ -1411,13 +1399,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let value' = FSharpValue.MakeUnion (cases.[tag], [||])
                         setProperty value' propertyDescriptor simulant
             if not combo then
-                if  ty.IsGenericType &&
-                    ty.GetGenericTypeDefinition () = typedefof<_ option> &&
-                    ty.GenericTypeArguments.[0] <> typedefof<_ option> &&
-                    ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                    (ty.GenericTypeArguments.[0].IsValueType ||
-                     ty.GenericTypeArguments.[0] = typeof<string> ||
-                     ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                if ty.IsGenericType &&
+                   ty.GetGenericTypeDefinition () = typedefof<_ option> &&
+                   ty.GenericTypeArguments.[0] <> typedefof<_ option> &&
+                   ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                   (ty.GenericTypeArguments.[0].IsValueType ||
+                    ty.GenericTypeArguments.[0] = typeof<string> ||
+                    ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
                     if ImGui.Checkbox ((if isSome then "##" else "") + name, &isSome) then
                         if isSome then
@@ -1437,13 +1425,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
                         imGuiEditProperty getProperty setProperty editProperty (name + ".") propertyDescriptor simulant
-                elif    ty.IsGenericType &&
-                        ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                        ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
-                        ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                        (ty.GenericTypeArguments.[0].IsValueType ||
-                         ty.GenericTypeArguments.[0] = typeof<string> ||
-                         ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                elif ty.IsGenericType &&
+                     ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
+                     ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
+                     ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                     (ty.GenericTypeArguments.[0].IsValueType ||
+                      ty.GenericTypeArguments.[0] = typeof<string> ||
+                      ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
                     if ImGui.Checkbox ((if isSome then "##" else "") + name, &isSome) then
                         if isSome then
@@ -1547,7 +1535,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 // configure keyboard navigation based on alt key state
                 let io = ImGui.GetIO ()
-                if ImGui.IsAltPressed ()
+                if ImGui.IsAltDown ()
                 then io.ConfigFlags <- io.ConfigFlags &&& ~~~ImGuiConfigFlags.NavEnableKeyboard
                 else io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.NavEnableKeyboard
 
@@ -1569,8 +1557,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
                         if not manipulationActive then
-                            if ImGui.IsShiftPressed () then manipulationOperation <- OPERATION.SCALE
-                            elif ImGui.IsAltPressed () then manipulationOperation <- OPERATION.ROTATE
+                            if ImGui.IsShiftDown () then manipulationOperation <- OPERATION.SCALE
+                            elif ImGui.IsAltDown () then manipulationOperation <- OPERATION.ROTATE
                             else manipulationOperation <- OPERATION.TRANSLATE
                         if ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0]) then
                             if not manipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
@@ -1643,6 +1631,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             for corner in corners do
                                 if ImGui.IsMouseDown ImGuiMouseButton.Left && (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
                                     drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
+                                    io.SwallowMouse ()
                                 else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
                     | _ -> ()
                     ImGui.End ()
@@ -2037,7 +2026,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let contextStr = match selectedSimulant with :? Game -> "(Game)" | _ -> scstring selectedSimulant
                         ImGui.Text ("Context: " + contextStr)
                         ImGui.InputTextMultiline ("##consoleStr", &consoleStr, 131072u, v2 350.0f -1.0f) |> ignore<bool>
-                        if eval || ImGui.IsItemFocused () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlPressed () then
+                        if eval || ImGui.IsItemFocused () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then
                             let exprsStr = Symbol.OpenSymbolsStr + "\n" + consoleStr + "\n" + Symbol.CloseSymbolsStr
                             try let exprs = scvalue<Scripting.Expr array> exprsStr
                                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Scripting.Expr>).PrettyPrinter
@@ -2048,7 +2037,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 outputStr <- outputStr + String.concat "\n" evaledStrs + "\n"
                                 consoleStr <- ""
                             with exn -> messageBoxOpt <- Some ("Could not evaluate input due to: " + scstring exn)
-                        if clear || ImGui.IsKeyPressed ImGuiKey.Escape && ImGui.IsShiftPressed () then outputStr <- ""
+                        if clear || ImGui.IsKeyPressed ImGuiKey.Escape && ImGui.IsShiftDown () then outputStr <- ""
                         ImGui.SameLine ()
                         ImGui.InputTextMultiline ("##outputStr", &outputStr, 131072u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                         ImGui.End ()
@@ -2438,8 +2427,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.ShowStackToolWindow ()
 
                 // process non-widget specific input
-                updateEyeDrag ()
-                updateEntityDrag ()
+                updateMouseInput ()
+                updateKeyboardInput ()
                 updateHotkeys entityHierarchyFocused
 
                 // fin
@@ -2580,14 +2569,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right (screen, world) ->
-                let world = World.subscribe handleNuEntityContext Events.MouseRightUp Simulants.Game world
-                let world = World.subscribe handleNuEntityDragBegin Events.MouseLeftDown Simulants.Game world
-                let world = World.subscribe handleNuEntityDragEnd Events.MouseLeftUp Simulants.Game world
-                let world = World.subscribe handleNuEyeDragBegin Events.MouseMiddleDown Simulants.Game world
-                let world = World.subscribe handleNuEyeDragEnd Events.MouseMiddleUp Simulants.Game world
-                let world = World.subscribe handleNuUpdate Events.Update Simulants.Game world
-                let world = World.subscribe handleNuRender Events.Render Simulants.Game world
+                let world = World.subscribe handleNuMouseButton Events.MouseLeftDown Simulants.Game world
+                let world = World.subscribe handleNuMouseButton Events.MouseLeftUp Simulants.Game world
+                let world = World.subscribe handleNuMouseButton Events.MouseMiddleDown Simulants.Game world
+                let world = World.subscribe handleNuMouseButton Events.MouseMiddleUp Simulants.Game world
+                let world = World.subscribe handleNuMouseButton Events.MouseRightDown Simulants.Game world
+                let world = World.subscribe handleNuMouseButton Events.MouseRightUp Simulants.Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game world
+                let world = World.subscribe handleNuRender Events.Render Simulants.Game world
                 let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
                 let imguiIniFilePath = targetDir + "/imgui.ini"
                 if not (File.Exists imguiIniFilePath) then

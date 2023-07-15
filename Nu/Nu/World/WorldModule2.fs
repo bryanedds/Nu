@@ -645,7 +645,7 @@ module WorldModule2 =
                     World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureMouse) then
+                    if not (io.WantCaptureMousePlus) then
                         let mousePosition = World.getMousePosition world
                         let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                         let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
@@ -658,7 +658,7 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureMouse) then
+                    if not (io.WantCaptureMousePlus) then
                         let mousePosition = World.getMousePosition world
                         let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                         let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
@@ -681,7 +681,7 @@ module WorldModule2 =
                     world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureKeyboard) then
+                    if not (io.WantCaptureKeyboardPlus) then
                         let keyboard = evt.key
                         let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
@@ -692,7 +692,7 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureKeyboard) then
+                    if not (io.WantCaptureKeyboardPlus) then
                         let keyboard = evt.key
                         let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
