@@ -65,7 +65,7 @@ module Gaia =
     let mutable private collapseEntityHierarchy = false
     let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
-    let mutable private propertyDescriptorFocusedOpt = None
+    let mutable private focusedPropertyDescriptorOpt = None
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
@@ -369,11 +369,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private selectEntityOpt entityOpt =
 
-        // HACK: in order to keep the property of one simulant from being copied to another when the selected
-        // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
-        // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
-        // in it.
         if entityOpt <> selectedEntityOpt then
+            focusedPropertyDescriptorOpt <- None
+            // HACK: in order to keep the property of one simulant from being copied to another when the selected
+            // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
+            // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
+            // in it.
             ImGui.SetWindowFocus "Entity Hierarchy"
 
         // actually set the selection
@@ -1212,9 +1213,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
                 ImGui.SameLine ()
                 if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setProperty { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
-        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit metallic
         let mutable isSome = ValueOption.isSome mp.MetallicOpt
@@ -1228,9 +1229,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable metallic = metallic
                 ImGui.SameLine ()
                 if ImGui.InputFloat ("MetallicOpt", &metallic, 0.05f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
-        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit roughness
         let mutable isSome = ValueOption.isSome mp.RoughnessOpt
@@ -1244,9 +1245,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable roughness = roughness
                 ImGui.SameLine ()
                 if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.05f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
-        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit emission
         let mutable isSome = ValueOption.isSome mp.EmissionOpt
@@ -1260,9 +1261,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable emission = emission
                 ImGui.SameLine ()
                 if ImGui.InputFloat ("EmissionOpt", &emission, 0.05f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
-        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit height
         let mutable isSome = ValueOption.isSome mp.HeightOpt
@@ -1276,9 +1277,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable height = height
                 ImGui.SameLine ()
                 if ImGui.InputFloat ("HeightOpt", &height, 0.05f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
-        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit invert roughness
         let mutable isSome = ValueOption.isSome mp.InvertRoughnessOpt
@@ -1292,9 +1293,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable invertRoughness = invertRoughness
                 ImGui.SameLine ()
                 if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setProperty { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
-        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
     let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (editProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
         let ty = propertyDescriptor.PropertyType
@@ -1498,7 +1499,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     showRenameEntityDialog <- true
                             else ImGui.Text "Name"
                         | _ -> ()
-                        if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- None
+                        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
                     else
                         let mutable replaced = false
                         let replaceProperty =
@@ -1508,7 +1509,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                   PropertyDescriptor = propertyDescriptor }
                         world <- World.edit replaceProperty simulant world
                         if not replaced then
-                            let editProperty = fun () -> if ImGui.IsItemFocused () then propertyDescriptorFocusedOpt <- Some (propertyDescriptor, simulant)
+                            let editProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                             imGuiEditProperty getProperty setProperty editProperty "" propertyDescriptor simulant
         world <- World.edit AppendProperties simulant world
 
@@ -1604,7 +1605,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     //ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
                     //world <- World.setEyeCenter3d (eyeCenter |> Matrix4x4.CreateFromArray).Translation world
                     //world <- World.setEyeRotation3d (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix) world
-                    match propertyDescriptorFocusedOpt with
+                    match focusedPropertyDescriptorOpt with
                     | Some (propertyDescriptor, (:? Entity as entity)) when entity.Exists world ->
                         if propertyDescriptor.PropertyType = typeof<Box3> then
                             let drawList = ImGui.GetWindowDrawList ()
@@ -1892,7 +1893,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // property editor window
                     if ImGui.Begin ("Property Editor", ImGuiWindowFlags.NoNav) then
-                        match propertyDescriptorFocusedOpt with
+                        match focusedPropertyDescriptorOpt with
                         | Some (propertyDescriptor, simulant) when
                             World.getExists simulant world &&
                             propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
@@ -2137,7 +2138,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
                                         if ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) then
                                             if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                                                match propertyDescriptorFocusedOpt with
+                                                match focusedPropertyDescriptorOpt with
                                                 | Some (propertyDescriptor, simulant) when
                                                     World.getExists simulant world &&
                                                     propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
