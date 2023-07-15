@@ -412,14 +412,14 @@ namespace Nu
             {
                 Vector3 min = this.Min, max = this.Min + this.Size;
                 return new Vector3[] {
-                    new Vector3(min.X, max.Y, max.Z),
-                    new Vector3(max.X, max.Y, max.Z),
-                    new Vector3(max.X, min.Y, max.Z),
+                    new Vector3(min.X, min.Y, min.Z),
                     new Vector3(min.X, min.Y, max.Z),
+                    new Vector3(max.X, min.Y, max.Z),
+                    new Vector3(max.X, min.Y, min.Z),
+                    new Vector3(max.X, max.Y, max.Z),
+                    new Vector3(min.X, max.Y, max.Z),
                     new Vector3(min.X, max.Y, min.Z),
                     new Vector3(max.X, max.Y, min.Z),
-                    new Vector3(max.X, min.Y, min.Z),
-                    new Vector3(min.X, min.Y, min.Z)
                 };
             }
         }
