@@ -61,11 +61,14 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
         arr <- arr'
 
     member this.Write(stream: FileStream) =
-        let ba: byte array = Unsafe.As &arr
-        stream.Write ba
+        let arr = Branchless.reinterpret arr
+        for i = 0 to  this.Length * sizeof<'c> - 1 do
+            let b = Unsafe.ReadUnaligned(&Unsafe.Add(&MemoryMarshal.GetArrayDataReference arr, i )) 
+            stream.WriteByte b
+
         stream.Flush()
         stream.Close()
-
+        
     member this.OpenWrite(stream: FileStream) =
         let ba: byte array = Unsafe.As &arr
         stream.Write ba
@@ -90,21 +93,6 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
                 index <- inc index
         finally
             gch.Free()
-
-    member this.ReadFrom index count (stream: FileStream) =
-            let compSize = sizeof<'c>
-            let count = count / compSize
-            let buffer: byte array = GC.AllocateArray(compSize,true)
-            let mutable index = index
-
-            for _ = 0 to dec count do
-                stream.Read(buffer, 0, compSize) |> ignore<int>
-
-                if index = arr.Length then
-                    this.Grow()
-
-                arr.[index] <- Unsafe.As &buffer.[0]
-                index <-  inc index 
                 
     interface Store with
         member this.Length = this.Length
