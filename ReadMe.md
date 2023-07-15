@@ -54,3 +54,17 @@ Getting Started
 The best way to get started is to clone the repository with a git client, and to take a look at the following document -
 
 https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
+
+**Nu Game Engine would like to thank our public sponsors -**
+
+**[@reinux](https://github.com/reinux)**
+
+**[@raulcardeira](https://github.com/raulcardeira) at Ars Militaris - https://arsmilitaris.com**
+
+![image](https://github.com/bryanedds/Nu/assets/1625560/1b8fe1bb-18c1-4a1e-9888-4f566204490a)
+
+**[@pauloud](https://github.com/pauloud)**
+
+**[@creynolds138](https://github.com/creynolds138)**
+
+**And a huge thank you to all of you who donate privately to keep this project going!**
