@@ -20,6 +20,7 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
+// Open empty project option.
 // Log Output window.
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
@@ -606,14 +607,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let (entity, wtemp) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup world in world <- wtemp
         let (positionSnap, degreesSnap, scaleSnap) = getSnaps ()
         let viewport = World.getViewport world
-        let mousePosition = World.getMousePosition world
         let mutable entityTransform = entity.GetTransform world
         if entity.GetIs2d world then
             let eyeCenter = World.getEyeCenter2d world
             let eyeSize = World.getEyeSize2d world
             let entityPosition =
                 if atMouse
-                then viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                then viewport.MouseToWorld2d (entity.GetAbsolute world, rightClickPosition, eyeCenter, eyeSize)
                 else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world, eyeCenter, eyeSize)
             entityTransform.Position <- entityPosition.V3
             entityTransform.Size <- entity.GetQuickSize world
@@ -626,7 +626,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let eyeRotation = World.getEyeRotation3d world
             let entityPosition =
                 if atMouse then
-                    let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
+                    let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, rightClickPosition, eyeCenter, eyeRotation)
                     let forward = Vector3.Transform (v3Forward, eyeRotation)
                     let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
                     (ray.Intersection plane).Value
@@ -974,11 +974,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             dragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                 | None -> ()
 
-            if ImGui.IsMouseReleased ImGuiMouseButton.Left then
-                match dragEntityState with
-                | DragEntityPosition2d _ | DragEntityRotation2d _ -> dragEntityState <- DragEntityInactive
-                | DragEntityInactive -> ()
-
             match dragEntityState with
             | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
                 let localTime = DateTimeOffset.Now - time
@@ -1026,6 +1021,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world <- entity.SetAngularVelocity v3Zero world
             | DragEntityInactive -> ()
 
+        if ImGui.IsMouseReleased ImGuiMouseButton.Left then
+            match dragEntityState with
+            | DragEntityPosition2d _ | DragEntityRotation2d _ -> dragEntityState <- DragEntityInactive
+            | DragEntityInactive -> ()
+
     let private updateEyeDrag () =
 
         if canEditWithMouse () then
@@ -1035,17 +1035,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let dragState = DragEyeCenter2d (World.getEyeCenter2d world + mousePositionScreen, mousePositionScreen)
                 dragEyeState <- dragState
 
-            if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
-                match dragEyeState with
-                | DragEyeCenter2d _ -> dragEyeState <- DragEyeInactive
-                | DragEyeInactive -> ()
-
             match dragEyeState with
             | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
                 let mousePositionScreen = World.getMousePosition2dScreen world
                 let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
                 world <- World.setEyeCenter2d eyeCenter world
                 dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
+            | DragEyeInactive -> ()
+
+        if ImGui.IsMouseReleased ImGuiMouseButton.Middle then
+            match dragEyeState with
+            | DragEyeCenter2d _ -> dragEyeState <- DragEyeInactive
             | DragEyeInactive -> ()
 
     let private updateEyeTravel () =
@@ -1068,19 +1068,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.IsKeyDown ImGuiKey.D then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
             if ImGui.IsKeyDown ImGuiKey.Q then
-                let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
-                let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
-                let forward' = Vector3.Transform (v3Forward, rotationMatrix')
-                if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
+                if Vector3.Dot (-rotationMatrix'.Forward, v3Down) < 0.95f then
+                    world <- World.setEyeRotation3d rotation' world
             if ImGui.IsKeyDown ImGuiKey.E then
-                let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
-                let forwardOrtho = Vector3.Cross (v3Up, rotationMatrix.Right)
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
-                let forward' = Vector3.Transform (v3Forward, rotationMatrix')
-                if Vector3.Dot (forward', forwardOrtho) >= 0.0f then world <- World.setEyeRotation3d rotation' world
+                if Vector3.Dot (-rotationMatrix'.Forward, v3Up) < 0.95f then
+                    world <- World.setEyeRotation3d rotation' world
             if ImGui.IsKeyDown ImGuiKey.UpArrow && not (ImGui.IsAltDown ()) then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
             if ImGui.IsKeyDown ImGuiKey.DownArrow && not (ImGui.IsAltDown ()) then
