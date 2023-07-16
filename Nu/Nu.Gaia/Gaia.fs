@@ -1715,7 +1715,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     newEntityDispatcherName <- overlayName
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
-                        ImGui.Text "@ Elevation"
+                        ImGui.Text "@ Elev."
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth 50.0f
                         ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.05f, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
