@@ -64,7 +64,8 @@ module Hl =
     let CreateSglContext window =
         Gl.Initialize ()
         let glContext = SDL.SDL_GL_CreateContext window
-        SDL.SDL_GL_SetSwapInterval 1 |> ignore<int>
+        let swapInterval = if Constants.Render.Vsync then 1 else 0
+        SDL.SDL_GL_SetSwapInterval swapInterval |> ignore<int>
         Gl.BindAPI ()
         let version = Gl.GetString StringName.Version
         Log.info ("Initialized OpenGL " + version + ".")

@@ -44,6 +44,7 @@ module Override =
                 | nameof Engine.OctreeDepth -> Engine.OctreeDepth <- scvalue value
                 | nameof Engine.EventTracing -> Engine.EventTracing <- scvalue value
                 | nameof Engine.EventFilter -> Engine.EventFilter <- scvalue value
+                | nameof Render.Vsync -> Render.Vsync <- scvalue value
                 | _ -> ()
         with
         | :? ConfigurationErrorsException ->
