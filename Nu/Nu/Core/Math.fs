@@ -713,8 +713,30 @@ type Vector4iConverter () =
 module Quaternion =
 
     type Quaternion with
-        member this.RollPitchYaw = MathHelper.RollPitchYaw &this
-        member this.Normalized = Quaternion.Normalize this
+
+        /// The right vector of the quaternion.
+        member inline this.Right =
+            Vector3.Transform (v3Right, this)
+
+        /// The up vector of the quaternion.
+        member inline this.Up =
+            Vector3.Transform (v3Up, this)
+
+        /// The forward vector of the quaternion.
+        member inline this.Forward =
+            Vector3.Transform (v3Forward, this)
+
+        /// Right, up, and forward quaternion vectors.
+        member inline this.RightUpForward =
+            (this.Right, this.Up, this.Forward)
+
+        /// Decompose the quaternion into roll, pitch, and yaw angles.
+        member this.RollPitchYaw =
+            MathHelper.RollPitchYaw &this
+
+        /// Normalize the quaternion.
+        member this.Normalized =
+            Quaternion.Normalize this
 
     let quatIdentity = Quaternion.Identity
     let inline quat x y z w = Quaternion (x, y, z, w)
