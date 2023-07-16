@@ -1631,22 +1631,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 not (ImGuizmo.IsOver ()) &&
                                 ImGui.IsMouseDragging ImGuiMouseButton.Left &&
                                 (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
-
                                 drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
                                 io.SwallowMouse ()
-
-                                let (x, y) =
-                                    let eyeForward = eyeRotation.Forward
-                                    let dotXZ = eyeForward.Y * eyeForward.Y
-                                    let dotXY = eyeForward.Z * eyeForward.Z
-                                    let dotYZ = eyeForward.X * eyeForward.X
-                                    if dotXZ >= dotXY && dotXZ >= dotYZ then (v3Right, v3Forward)
-                                    elif dotXY >= dotXZ && dotXY >= dotYZ then (v3Right, v3Up)
-                                    else (v3Up, v3Forward)
-
-                                let delta = ImGui.GetMouseDragDelta ImGuiMouseButton.Left
-                                found <- true
-
                             else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
                     | _ -> ()
 
