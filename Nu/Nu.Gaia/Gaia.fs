@@ -436,8 +436,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.map (fun group -> World.getEntitiesFlattened group world) |>
             Seq.concat |>
             Seq.filter (fun entity -> entity.Has<LightProbeFacet3d> world)
-        world <-
-            Seq.fold (fun world (lightProbe : Entity) -> lightProbe.SetProbeStale true world) world lightProbes
+        for lightProbe in lightProbes do
+            world <- lightProbe.SetProbeStale true world
 
     let private getSnaps () =
         if snaps2dSelected
@@ -647,6 +647,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world <- entity.SetProbeBounds bounds world
         | Some _ | None -> ()
         selectEntityOpt (Some entity)
+        ImGui.SetWindowFocus "Viewport"
         showSelectedEntity <- true
 
     let private trySaveSelectedGroup filePath =
@@ -769,6 +770,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match entityOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
+            ImGui.SetWindowFocus "Viewport"
             showSelectedEntity <- true
             true
         | None -> false
@@ -1679,9 +1681,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
-                        if ImGui.Button "Create" then
-                            createEntity false false
-                            ImGui.SetWindowFocus "Viewport"
+                        if ImGui.Button "Create" then createEntity false false
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth 200.0f
                         if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
@@ -2093,7 +2093,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoResize) then
                         if ImGui.Button "Create" then
                             createEntity true false
-                            ImGui.SetWindowFocus "Viewport"
                             showEntityContextMenu <- false
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth -1.0f
@@ -2102,7 +2101,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
                                     newEntityDispatcherName <- dispatcherName
                                     createEntity true false
-                                    ImGui.SetWindowFocus "Viewport"
                                     showEntityContextMenu <- false
                             ImGui.EndCombo ()
                         if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
