@@ -65,15 +65,12 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
     /// Writes entities to the current stream
     /// </summary>
     /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> is out of range.</exception>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is greater than total number of entities stored.</exception>
     /// <param name="index">The offset in internal collection at which to begin storing the data read from the current stream.</param>
     /// <param name="count">The number of entities to be read from the current stream.</param>
     /// <param name="stream">Input stream to read data from</param>
     member this.Write index count (stream: FileStream) =
         if this.Length < index then 
             IndexOutOfRangeException() |> raise
-        if count > this.Length || count = 0 then
-            ArgumentOutOfRangeException() |> raise
         
         let arr = Branchless.reinterpret arr
         for i = 0 to  this.Length * sizeof<'c> - 1 do

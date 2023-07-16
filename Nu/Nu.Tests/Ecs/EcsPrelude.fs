@@ -63,19 +63,6 @@ let ``Store.Write: Should throw IndexOutOfRangeException`` () =
 
 
 /// <summary>
-/// Should throw ArgumentOutOfRangeException if count is greater than number of entities stored
-/// </summary>
-[<Test>]
-let ``Store.Write: Should throw ArgumentOutOfRangeException`` () =
-    try
-        let store: Test Store = Store "Name"
-        store.Write 0 257 null
-    with :? ArgumentOutOfRangeException as e ->
-        Assert.Pass()
-
-    Assert.Fail()
-
-/// <summary>
 /// Should throw EndOfStreamException if filestream did not read requested amount of entities
 /// </summary>
 [<Test>]
