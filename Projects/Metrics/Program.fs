@@ -182,7 +182,7 @@ type Message =
     interface Nu.Message
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 100) // 10,000 elmish entities (goal: steady 60FPS, current: unsteady 60FPS)
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 110) // 12,100 elmish entities (goal: steady 60FPS, current: steady 60FPS)
 
     override this.Initialize (_, _) =
         [Game.UpdateEvent => Inc]
