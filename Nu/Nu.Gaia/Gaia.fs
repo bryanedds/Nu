@@ -1547,7 +1547,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let projection = projectionMatrix.ToArray ()
                     ImGuizmo.SetOrthographic false
                     ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
-                    ImGuizmo.SetDrawlist ()
+                    ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
                     match selectedEntityOpt with
                     | Some entity when entity.Exists world && entity.GetIs3d world ->
                         let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
@@ -1602,7 +1602,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     match selectedEntityOpt with
                     | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world ->
                         let bounds = entity.GetProbeBounds world
-                        let drawList = ImGui.GetWindowDrawList ()
+                        //let drawList = ImGui.GetWindowDrawList ()
+                        let drawList = ImGui.GetBackgroundDrawList ()
                         let viewport = Constants.Render.Viewport
                         let view = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
                         let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
