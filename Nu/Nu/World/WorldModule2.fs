@@ -782,7 +782,7 @@ module WorldModule2 =
                     | _ -> world
             | Dead -> world
 
-        static member private getElements2dBy getElementsFromQuadree world =
+        static member private getElements2dBy (getElementsFromQuadree : Entity Quadtree -> Entity Quadelement seq) world =
             let quadtree = World.getQuadtree world
             let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
             let world = World.setQuadtree quadtreeCache world
@@ -834,7 +834,7 @@ module WorldModule2 =
         static member getEntities2d set world =
             World.getEntities2dBy (Quadtree.getElements set) world
 
-        static member private getElements3dBy getElementsFromOctree world =
+        static member private getElements3dBy (getElementsFromOctree : Entity Octree -> Entity Octelement seq) world =
             let octree = World.getOctree world
             let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
             let world = World.setOctree octreeCache world
