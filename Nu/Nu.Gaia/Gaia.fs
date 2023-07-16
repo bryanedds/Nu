@@ -20,7 +20,6 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
-// Open empty project option.
 // Log Output window.
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
@@ -121,6 +120,7 @@ module Gaia =
     let mutable private showAssetPickerDialog = false
     let mutable private showNewProjectDialog = false
     let mutable private showOpenProjectDialog = false
+    let mutable private showCloseProjectDialog = false
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
@@ -1641,6 +1641,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ImGui.BeginMenu "Project" then
                                 if ImGui.MenuItem ("New Project") then showNewProjectDialog <- true
                                 if ImGui.MenuItem ("Open Project") then showOpenProjectDialog <- true
+                                if ImGui.MenuItem ("Close Project") then showCloseProjectDialog <- true
                                 ImGui.Separator ()
                                 if ImGui.MenuItem "Exit" then showConfirmExitDialog <- true
                                 ImGui.EndMenu ()
@@ -2288,6 +2289,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 showRestartDialog <- true
                             with _ -> Log.info "Could not save editor state and open project."
                         if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
+
+                // close project dialog
+                if showCloseProjectDialog then
+                    let title = "Close project... *EDITOR RESTART REQUIRED!*"
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showCloseProjectDialog) then
+                        ImGui.Text "Close the project and use Gaia in its default state?"
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                            showCloseProjectDialog <- false
+                            let savedState = SavedState.defaultState
+                            let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                            let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                Directory.SetCurrentDirectory gaiaDirectory
+                                showRestartDialog <- true
+                            with _ -> Log.info "Could not clear editor state and close project."
+                        if ImGui.IsKeyPressed ImGuiKey.Escape then showCloseProjectDialog <- false
 
                 // new group dialog
                 if showNewGroupDialog then
