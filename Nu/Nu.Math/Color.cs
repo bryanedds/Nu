@@ -58,13 +58,22 @@ namespace Nu
         public Vector4 Vector4 => new Vector4(R, G, B, A);
 
         /// <summary>
-        /// The packed value.
+        /// The packed value in RGBA order.
         /// </summary>
-        public uint Packed =>
+        public uint Rgba =>
             ((uint)(R * 255.0f)) << 24 |
             ((uint)(G * 255.0f)) << 16 |
             ((uint)(B * 255.0f)) << 8 |
             ((uint)(A * 255.0f));
+
+        /// <summary>
+        /// The packed value in ABGR order.
+        /// </summary>
+        public uint Abgr =>
+            ((uint)(A * 255.0f)) << 24 |
+            ((uint)(B * 255.0f)) << 16 |
+            ((uint)(G * 255.0f)) << 8 |
+            ((uint)(R * 255.0f));
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Color"/> struct.
