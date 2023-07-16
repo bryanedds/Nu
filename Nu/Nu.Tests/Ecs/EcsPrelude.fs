@@ -74,3 +74,26 @@ let ``Store.Write: Should throw ArgumentOutOfRangeException`` () =
         Assert.Pass()
 
     Assert.Fail()
+
+/// <summary>
+/// Should throw EndOfStreamException if filestream did not read requested amount of entities
+/// </summary>
+[<Test>]
+let ``Store.Read: Should throw EndOfStreamException`` () =
+    let temp = (currentDirectory, "throwtest.bin") |> Path.Combine
+    use fs = File.OpenWrite temp
+    
+    fs.Flush()
+    fs.Close()
+    use fs = File.OpenRead temp
+    try
+        let store: Test Store = Store "Name"
+        store.Read 0 2 fs
+    with :? EndOfStreamException as e ->
+        fs.Close()
+        File.Delete temp
+        Assert.Pass()
+        
+    fs.Close()    
+    File.Delete temp
+    Assert.Fail()

@@ -3,6 +3,7 @@
 
 namespace Nu.Ecs
 open System
+open System.Buffers
 open System.Collections.Generic
 open System.IO
 open System.Numerics
@@ -61,7 +62,7 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
         arr <- arr'
 
     /// <summary>
-    /// Writes entities to the the current stream
+    /// Writes entities to the current stream
     /// </summary>
     /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> is out of range.</exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is greater than total number of entities stored.</exception>
@@ -71,7 +72,7 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
     member this.Write index count (stream: FileStream) =
         if this.Length < index then 
             IndexOutOfRangeException() |> raise
-        if count > this.Length then
+        if count > this.Length || count = 0 then
             ArgumentOutOfRangeException() |> raise
         
         let arr = Branchless.reinterpret arr
@@ -82,25 +83,40 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
         stream.Flush()
         stream.Close()
 
+    /// <summary>
+    /// Reads entities from the current stream
+    /// </summary>
+    /// <exception cref="EndOfStreamException"><paramref name="count"/> requested amount is greater than was stred in stream.</exception>
+    /// <param name="index">The offset in internal collection at which to begin storing the data read from the current stream.</param>
+    /// <param name="count">The number of entities to be read from the current stream.</param>
+    /// <param name="stream">Input stream to read data from</param>
     member this.Read index count (stream: FileStream) =
         let compSize = sizeof<'c>
         let comp = Unchecked.defaultof<'c> :> obj
-        let buffer = Array.zeroCreate<byte> compSize
+        let byteBuffer = ArrayPool.Shared.Rent compSize 
+        let entityBuffer = ArrayPool.Shared.Rent(compSize * count)
         let gch = GCHandle.Alloc(comp, GCHandleType.Pinned)
-
+        let mutable read = 0
         try
-            let mutable index = index
-
-            for _ in 0 .. dec count do
-                stream.Read(buffer, 0, compSize) |> ignore<int>
-                Marshal.Copy(buffer, 0, gch.AddrOfPinnedObject(), compSize)
-
-                if index = arr.Length then
+            let mutable i = index
+            while stream.Position < stream.Length && read < count do 
+                stream.Read(byteBuffer, 0, compSize) |> ignore<int>
+                Marshal.Copy(byteBuffer, 0, gch.AddrOfPinnedObject(), compSize)
+                
+                if i = arr.Length then
                     this.Grow()
 
-                arr.[index] <- comp :?> 'c
-                index <- inc index
+                entityBuffer.[i] <- comp :?> 'c
+                read <- inc read
+                i <- inc i
+                
+            if count > read then
+                 EndOfStreamException() |> raise
+                 
+            Array.Copy(entityBuffer, 0, arr, index, count)  
         finally
+            ArrayPool.Shared.Return byteBuffer
+            ArrayPool.Shared.Return entityBuffer
             gch.Free()
                 
     interface Store with
