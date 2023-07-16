@@ -1070,12 +1070,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.IsKeyDown ImGuiKey.Q then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
-                if Vector3.Dot (-rotationMatrix'.Forward, v3Down) < 0.95f then
+                if Vector3.Dot (-rotationMatrix'.Forward, v3Down) < 0.99f then
                     world <- World.setEyeRotation3d rotation' world
             if ImGui.IsKeyDown ImGuiKey.E then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 let rotationMatrix' = Matrix4x4.CreateFromQuaternion rotation'
-                if Vector3.Dot (-rotationMatrix'.Forward, v3Up) < 0.95f then
+                if Vector3.Dot (-rotationMatrix'.Forward, v3Up) < 0.99f then
                     world <- World.setEyeRotation3d rotation' world
             if ImGui.IsKeyDown ImGuiKey.UpArrow && not (ImGui.IsAltDown ()) then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
@@ -2106,6 +2106,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
                                     newEntityDispatcherName <- dispatcherName
                                     createEntity true false
+                                    ImGui.SetWindowFocus "Viewport"
                                     showEntityContextMenu <- false
                             ImGui.EndCombo ()
                         if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
