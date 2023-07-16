@@ -1602,7 +1602,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     match selectedEntityOpt with
                     | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world ->
                         let bounds = entity.GetProbeBounds world
-                        //let drawList = ImGui.GetWindowDrawList ()
                         let drawList = ImGui.GetBackgroundDrawList ()
                         let viewport = Constants.Render.Viewport
                         let view = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
@@ -1624,7 +1623,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                               (corners.[3], corners.[7])|]
                         for (a, b) in segments do drawList.AddLine (a, b, uint 0xFF00CFCF)
                         for corner in corners do
-                            if ImGui.IsMouseDown ImGuiMouseButton.Left && (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
+                            if  not (ImGuizmo.IsOver ()) &&
+                                ImGui.IsMouseDown ImGuiMouseButton.Left &&
+                                (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
                                 drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
                                 io.SwallowMouse ()
                             else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
