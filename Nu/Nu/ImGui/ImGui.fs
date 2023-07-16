@@ -176,15 +176,60 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
     static member PositionToWindow (modelViewProjection : Matrix4x4, position : Vector3) =
-        // NOTE: code mostly lifted from - https://github.com/CedricGuillemet/ImGuizmo/blob/822be7b44c37dbe98d328739ebe0d5a1ea87ecfc/ImGuizmo.cpp#L798-L810
+
+        // grab dependencies
         let windowPosition = ImGui.GetWindowPos ()
         let windowSize = ImGui.GetWindowSize ()
+
+        // transform the position from world coordinates to clip space coordinates
         let mutable position = Vector4.Transform (Vector4 (position, 1.0f), modelViewProjection)
         position <- position * (0.5f / position.W)
+
+        // transform the position from normalized device coordinates to window coordinates
         position <- position + v4 0.5f 0.5f 0.0f 0.0f
         position.Y <- 1.0f - position.Y
         position.X <- position.X * windowSize.X
         position.Y <- position.Y * windowSize.Y
+
+        // adjust the position to be relative to the window
         position.X <- position.X + windowPosition.X
         position.Y <- position.Y + windowPosition.Y
+
+        // fin
         v2 position.X position.Y
+
+    static member WindowToPosition (model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
+
+        // grab dependencies
+        let io = ImGui.GetIO ()
+        let windowPosition = ImGui.GetWindowPos ()
+        let windowSize = ImGui.GetWindowSize ()
+
+        // map mouse position from window coordinates to normalized device coordinates
+        let mouseXNdc = ((io.MousePos.X - windowPosition.X) / windowSize.X) * 2.0f - 1.0f
+        let mouseYNdc = (1.0f - ((io.MousePos.Y - windowPosition.Y) / windowSize.Y)) * 2.0f - 1.0f
+
+        // transform near and far positions of the clip space to world coordinates
+        let nearPos = Vector4.Transform (v4 0.0f 0.0f 1.0f 1.0f, projection)
+        let farPos = Vector4.Transform (v4 0.0f 0.0f 2.0f 1.0f, projection)
+
+        // determine if the near and far planes are reversed
+        let reversed = nearPos.Z / nearPos.W > farPos.Z / farPos.W
+
+        // set the near and far clip distances accordingly based on the reversed flag
+        let (zNear, zFar) = if reversed then (1.0f - 0.0001f, 0.0f) else (0.0f, 1.0f - 0.0001f)
+
+        // calculate the ray origin in world coordinates by transforming the normalized device coordinates
+        let modelViewProjectionInverse = (model * view * projection).Inverse
+        let mutable rayOrigin = Vector4.Transform (v4 mouseXNdc mouseYNdc zNear 1.0f, modelViewProjectionInverse)
+        rayOrigin <- rayOrigin * (1.0f / rayOrigin.W)
+
+        // calculate the ray end in world coordinates by transforming the normalized device coordinates
+        let mutable rayEnd = Vector4.Transform (v4 mouseXNdc mouseYNdc zFar 1.0f, modelViewProjectionInverse)
+        rayEnd <- rayEnd * (1.0f / rayEnd.W)
+
+        // calculate the ray direction by normalizing the vector between the ray end and ray origin
+        let rayDir = (rayEnd.V3 - rayOrigin.V3).Normalized
+
+        // fin
+        (rayOrigin.V3, rayDir)
