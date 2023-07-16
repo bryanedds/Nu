@@ -1,5 +1,6 @@
 module Nu.Tests
 
+open System
 open System.IO
 open NUnit.Framework
 open Nu.Ecs
@@ -32,17 +33,44 @@ let ``Store.Read: write and load to file`` () =
     fact |> Array.iteri store.SetItem
 
     let fs = testingFileName |> File.OpenWrite
-    store.Write fs
-    
+    store.Write 0 256 fs
+
     store <- Store "Name"
-    
+
     let fso = testingFileName |> File.OpenRead
     store.Read 0 256 fso
 
     let test =
         [| for i = 0 to 255 do
                store.Item i |]
-        
+
     fso.Close()
     File.Delete testingFileName
-    Assert.AreEqual(fact , test)
+    Assert.AreEqual(fact, test)
+
+/// <summary>
+/// Should throw IndexOutOfRangeException if count is greater that number of entities stored
+/// </summary>
+[<Test>]
+let ``Store.Write: Should throw IndexOutOfRangeException`` () =
+    try
+        let store: Test Store = Store "Name"
+        store.Write 257 0 null
+    with :? IndexOutOfRangeException as e ->
+        Assert.Pass()
+
+    Assert.Fail()
+
+
+/// <summary>
+/// Should throw ArgumentOutOfRangeException if count is greater than number of entities stored
+/// </summary>
+[<Test>]
+let ``Store.Write: Should throw ArgumentOutOfRangeException`` () =
+    try
+        let store: Test Store = Store "Name"
+        store.Write 0 257 null
+    with :? ArgumentOutOfRangeException as e ->
+        Assert.Pass()
+
+    Assert.Fail()

@@ -60,12 +60,25 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
         Array.Copy(arr, arr', arr.Length)
         arr <- arr'
 
-    member this.Write(stream: FileStream) =
+    /// <summary>
+    /// Writes entities to the the current stream
+    /// </summary>
+    /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> is out of range.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is greater than total number of entities stored.</exception>
+    /// <param name="index">The offset in internal collection at which to begin storing the data read from the current stream.</param>
+    /// <param name="count">The number of entities to be read from the current stream.</param>
+    /// <param name="stream">Input stream to read data from</param>
+    member this.Write index count (stream: FileStream) =
+        if this.Length < index then 
+            IndexOutOfRangeException() |> raise
+        if count > this.Length then
+            ArgumentOutOfRangeException() |> raise
+        
         let arr = Branchless.reinterpret arr
         for i = 0 to  this.Length * sizeof<'c> - 1 do
             let b = Unsafe.ReadUnaligned(&Unsafe.Add(&MemoryMarshal.GetArrayDataReference arr, i )) 
             stream.WriteByte b
-
+      
         stream.Flush()
         stream.Close()
 
