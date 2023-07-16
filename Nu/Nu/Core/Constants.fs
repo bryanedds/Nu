@@ -64,6 +64,7 @@ module Associations =
 [<RequireQualifiedAccess>]
 module Render =
 
+    let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | vsync -> scvalue<bool> vsync
     let [<Literal>] VirtualResolutionX = 960
     let [<Literal>] VirtualResolutionY = 540
     let [<Uniform>] VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
