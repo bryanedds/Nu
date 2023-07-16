@@ -1540,6 +1540,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SetNextWindowSize io.DisplaySize
                 if ImGui.IsKeyPressed ImGuiKey.Escape && not showRestartDialog then ImGui.SetNextWindowFocus ()
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
+
+                    // guizmo manipulation
                     let viewport = Constants.Render.Viewport
                     let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
                     let projection = projectionMatrix.ToArray ()
@@ -1581,15 +1583,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 match entity.TryGetProperty (nameof entity.AngularVelocity) world with
                                 | Some property when property.PropertyType = typeof<Vector3> -> world <- entity.SetAngularVelocity v3Zero world
                                 | Some _ | None -> ()
-                        let operation =
-                            OverlayViewport
-                                { Snapshot = fun world -> snapshot (); world
-                                  ViewportView = viewMatrix
-                                  ViewportProjection = projectionMatrix
-                                  ViewportBounds = box2 v2Zero io.DisplaySize }
-                        world <- World.editEntity operation entity world
                         if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
                     | Some _ | None -> ()
+
+                    // view manipulation
                     // NOTE: this code is the current failed attempt to integrate ImGuizmo view manipulation as reported here - https://github.com/CedricGuillemet/ImGuizmo/issues/304
                     //let eyeCenter = (World.getEyeCenter3d world |> Matrix4x4.CreateTranslation).ToArray ()
                     //let eyeRotation = (World.getEyeRotation3d world |> Matrix4x4.CreateFromQuaternion).ToArray ()
@@ -1600,36 +1597,53 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     //ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
                     //world <- World.setEyeCenter3d (eyeCenter |> Matrix4x4.CreateFromArray).Translation world
                     //world <- World.setEyeRotation3d (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix) world
-                    match focusedPropertyDescriptorOpt with
-                    | Some (propertyDescriptor, (:? Entity as entity)) when entity.Exists world ->
-                        if propertyDescriptor.PropertyType = typeof<Box3> then
-                            let drawList = ImGui.GetWindowDrawList ()
-                            let viewport = Constants.Render.Viewport
-                            let view = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
-                            let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
-                            let viewProjection = view * projection
-                            let box3 = getProperty propertyDescriptor entity :?> Box3
-                            let corners = Array.map (fun corner -> ImGui.PositionToWindow (viewProjection, corner)) box3.Corners
-                            let segments =
-                                [|(corners.[0], corners.[1])
-                                  (corners.[1], corners.[2])
-                                  (corners.[2], corners.[3])
-                                  (corners.[3], corners.[0])
-                                  (corners.[4], corners.[5])
-                                  (corners.[5], corners.[6])
-                                  (corners.[6], corners.[7])
-                                  (corners.[7], corners.[4])
-                                  (corners.[0], corners.[6])
-                                  (corners.[1], corners.[5])
-                                  (corners.[2], corners.[4])
-                                  (corners.[3], corners.[7])|]
-                            for (a, b) in segments do drawList.AddLine (a, b, uint 0xFF00CFCF)
-                            for corner in corners do
-                                if ImGui.IsMouseDown ImGuiMouseButton.Left && (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
-                                    drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
-                                    io.SwallowMouse ()
-                                else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
+
+                    // light probe bounds manipulation
+                    match selectedEntityOpt with
+                    | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world ->
+                        let bounds = entity.GetProbeBounds world
+                        let drawList = ImGui.GetWindowDrawList ()
+                        let viewport = Constants.Render.Viewport
+                        let view = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
+                        let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
+                        let viewProjection = view * projection
+                        let corners = Array.map (fun corner -> ImGui.PositionToWindow (viewProjection, corner)) bounds.Corners
+                        let segments =
+                            [|(corners.[0], corners.[1])
+                              (corners.[1], corners.[2])
+                              (corners.[2], corners.[3])
+                              (corners.[3], corners.[0])
+                              (corners.[4], corners.[5])
+                              (corners.[5], corners.[6])
+                              (corners.[6], corners.[7])
+                              (corners.[7], corners.[4])
+                              (corners.[0], corners.[6])
+                              (corners.[1], corners.[5])
+                              (corners.[2], corners.[4])
+                              (corners.[3], corners.[7])|]
+                        for (a, b) in segments do drawList.AddLine (a, b, uint 0xFF00CFCF)
+                        for corner in corners do
+                            if ImGui.IsMouseDown ImGuiMouseButton.Left && (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
+                                drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
+                                io.SwallowMouse ()
+                            else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
                     | _ -> ()
+
+                    // user-defined viewport manipulation
+                    match selectedEntityOpt with
+                    | Some entity when entity.Exists world && entity.GetIs3d world ->
+                        let viewMatrix =
+                            viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
+                        let operation =
+                            OverlayViewport
+                                { Snapshot = fun world -> snapshot (); world
+                                  ViewportView = viewMatrix
+                                  ViewportProjection = projectionMatrix
+                                  ViewportBounds = box2 v2Zero io.DisplaySize }
+                        world <- World.editEntity operation entity world
+                    | Some _ | None -> ()
+
+                    // fin
                     ImGui.End ()
 
                 // show all windows when out in full-screen mode

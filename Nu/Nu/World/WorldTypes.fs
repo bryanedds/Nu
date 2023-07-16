@@ -63,7 +63,7 @@ and [<ReferenceEquality>] OverlayViewport =
 
 /// Specifies an aspect of simulant editing to perform.
 and [<ReferenceEquality>] EditOperation =
-    | AppendProperties 
+    | AppendProperties
     | ReplaceProperty of ReplaceProperty
     | OverlayViewport of OverlayViewport
 
