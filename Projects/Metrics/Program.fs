@@ -137,7 +137,7 @@ type MyGameDispatcher () =
         let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let world = fps.SetPosition (v3 200.0f -250.0f 0.0f) world
 #if !ECS
-        let positions = // 30,000 entity positions (goal: 60FPS, current: 60FPS)
+        let positions = // 35,000 entity positions (goal: 60FPS, current: 60FPS)
             seq {
                 for i in 0 .. dec 50 do
                     for j in 0 .. dec 50 do
