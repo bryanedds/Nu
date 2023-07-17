@@ -6,6 +6,7 @@ open System
 open System.ComponentModel
 open System.Globalization
 open System.Numerics
+open FSharp.NativeInterop
 open Prime
 open Nu
 
@@ -922,22 +923,32 @@ module Box3 =
 
         member this.Transform (transformation : Matrix4x4) =
             if not transformation.IsIdentity then
-                let corners = this.Corners
+                let min = this.Min
+                let max = this.Min + this.Size
+                let corners = NativePtr.stackalloc<Vector3> 8 // OPTIMIZATION: computing corners on the stack.
+                NativePtr.set corners 0 (Vector3 (min.X, min.Y, min.Z))
+                NativePtr.set corners 1 (Vector3 (min.X, min.Y, max.Z))
+                NativePtr.set corners 2 (Vector3 (max.X, min.Y, max.Z))
+                NativePtr.set corners 3 (Vector3 (max.X, min.Y, min.Z))
+                NativePtr.set corners 4 (Vector3 (max.X, max.Y, max.Z))
+                NativePtr.set corners 5 (Vector3 (min.X, max.Y, max.Z))
+                NativePtr.set corners 6 (Vector3 (min.X, max.Y, min.Z))
+                NativePtr.set corners 7 (Vector3 (max.X, max.Y, min.Z))
                 let mutable minX = Single.MaxValue
                 let mutable minY = Single.MaxValue
                 let mutable minZ = Single.MaxValue
                 let mutable maxX = Single.MinValue
                 let mutable maxY = Single.MinValue
                 let mutable maxZ = Single.MinValue
-                for i in 0 .. corners.Length - 1 do
-                    let corner = &corners.[i]
+                for i in 0 .. 8 - 1 do
+                    let mutable corner = NativePtr.get corners i
                     corner <- Vector3.Transform (corner, transformation)
-                    minX <- min minX corner.X
-                    minY <- min minY corner.Y
-                    minZ <- min minZ corner.Z
-                    maxX <- max maxX corner.X
-                    maxY <- max maxY corner.Y
-                    maxZ <- max maxZ corner.Z
+                    minX <- Operators.min minX corner.X
+                    minY <- Operators.min minY corner.Y
+                    minZ <- Operators.min minZ corner.Z
+                    maxX <- Operators.max maxX corner.X
+                    maxY <- Operators.max maxY corner.Y
+                    maxZ <- Operators.max maxZ corner.Z
                 Box3 (minX, minY, minZ, maxX- minX, maxY - minY, maxZ - minZ)
             else this
 
