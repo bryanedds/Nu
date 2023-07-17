@@ -1320,7 +1320,7 @@ module Ray3 =
 type LightType =
     | PointLight
     | DirectionalLight
-    | SpotLight of single * single
+    | SpotLight of ConeInner : single * ConeOuter : single
 
 /// The input for a 2d ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCast2Input =
