@@ -30,3 +30,27 @@ module CoreOperators =
     /// Sequences two functions like Haskell ($).
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
+
+// TODO: remove after updating Prime.
+[<AutoOpen>]
+module Operators =
+
+    /// Inspect two options for equality.
+    let inline optEq aOpt bOpt =
+        match aOpt with
+        | Some a -> (match bOpt with Some b -> a = b | None -> false)
+        | None -> (match bOpt with Some _ -> false | None -> true)
+
+    /// Inspect two options for inequality.
+    let inline optNeq aOpt bOpt =
+        not (optEq aOpt bOpt)
+
+    /// Inspect two voptions for equality.
+    let inline voptEq aOpt bOpt =
+        match aOpt with
+        | ValueSome a -> (match bOpt with ValueSome b -> a = b | ValueNone -> false)
+        | ValueNone -> (match bOpt with ValueSome _ -> false | ValueNone -> true)
+
+    /// Inspect two voptions for inequality.
+    let inline voptNeq aOpt bOpt =
+        not (voptEq aOpt bOpt)

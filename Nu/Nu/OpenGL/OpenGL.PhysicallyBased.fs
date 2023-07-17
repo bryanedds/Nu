@@ -80,14 +80,8 @@ module PhysicallyBased =
             (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 22)
 
         static member inline equals left right =
-            (match (left.SurfaceMaterial.TextureMinFilterOpt, right.SurfaceMaterial.TextureMinFilterOpt) with // TODO: implement voptEq.
-             | (Some leftFilter, Some rightFilter) -> leftFilter = rightFilter
-             | (None, None) -> true
-             | (_, _) -> false) &&
-            (match (left.SurfaceMaterial.TextureMagFilterOpt, right.SurfaceMaterial.TextureMagFilterOpt) with
-             | (Some leftFilter, Some rightFilter) -> leftFilter = rightFilter
-             | (None, None) -> true
-             | (_, _) -> false) &&
+            optEq left.SurfaceMaterial.TextureMinFilterOpt right.SurfaceMaterial.TextureMinFilterOpt &&
+            optEq left.SurfaceMaterial.TextureMagFilterOpt right.SurfaceMaterial.TextureMagFilterOpt &&
             left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
             left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
             left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
