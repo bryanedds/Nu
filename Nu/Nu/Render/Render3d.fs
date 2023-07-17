@@ -1489,8 +1489,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderStaticModels rsms ->
                 for (modelMatrix, presence, insetOpt, properties) in rsms.StaticModels do
                     GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
-            | RenderCachedStaticModel rcsm ->
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rcsm.CachedStaticModelAbsolute, &rcsm.CachedStaticModelMatrix, rcsm.CachedStaticModelPresence, Option.ofValueOption rcsm.CachedStaticModelInsetOpt, &rcsm.CachedStaticModelMaterialProperties, rcsm.CachedStaticModelRenderType, rcsm.CachedStaticModel, renderer)
+            | RenderCachedStaticModel csmm ->
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, Option.ofValueOption csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModelRenderType, csmm.CachedStaticModel, renderer)
             | RenderUserDefinedStaticModel renderUdsm ->
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
