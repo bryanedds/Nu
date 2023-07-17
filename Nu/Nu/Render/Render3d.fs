@@ -789,13 +789,15 @@ type [<ReferenceEquality>] GlRenderer3d =
         match renderType with
         | DeferredRenderType ->
             if absolute then
-                match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue billboardSurface with
-                | (true, renderTasks) -> renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties) 
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
+                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                if renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue (billboardSurface, &renderTasks)
+                then renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties) 
+                else renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
             else
-                match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue billboardSurface with
-                | (true, renderTasks) -> renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
+                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                if renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue (billboardSurface, &renderTasks)
+                then renderTasks.Add struct (billboardMatrix, texCoordsOffset, properties)
+                else renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if absolute
             then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
@@ -824,13 +826,15 @@ type [<ReferenceEquality>] GlRenderer3d =
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
-                match renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue surface with
-                | (true, renderTasks) -> renderTasks.Add struct (modelMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
+                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                if renderer.RenderTasks.RenderSurfacesDeferredAbsolute.TryGetValue (surface, &renderTasks)
+                then renderTasks.Add struct (modelMatrix, texCoordsOffset, properties)
+                else renderer.RenderTasks.RenderSurfacesDeferredAbsolute.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
             else
-                match renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue surface with
-                | (true, renderTasks) -> renderTasks.Add struct (modelMatrix, texCoordsOffset, properties)
-                | (false, _) -> renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
+                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                if renderer.RenderTasks.RenderSurfacesDeferredRelative.TryGetValue (surface, &renderTasks)
+                then renderTasks.Add struct (modelMatrix, texCoordsOffset, properties)
+                else renderer.RenderTasks.RenderSurfacesDeferredRelative.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if modelAbsolute
             then renderer.RenderTasks.RenderSurfacesForwardAbsolute.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
