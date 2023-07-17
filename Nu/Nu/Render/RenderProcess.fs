@@ -356,14 +356,14 @@ type RendererThread () =
             | RenderStaticModel rsm ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
                 match cachedStaticModelMessage with
-                | RenderCachedStaticModel cachedDescriptor ->
-                    cachedDescriptor.CachedStaticModelAbsolute <- rsm.Absolute
-                    cachedDescriptor.CachedStaticModelMatrix <- rsm.ModelMatrix
-                    cachedDescriptor.CachedStaticModelPresence <- rsm.Presence
-                    cachedDescriptor.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
-                    cachedDescriptor.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
-                    cachedDescriptor.CachedStaticModelRenderType <- rsm.RenderType
-                    cachedDescriptor.CachedStaticModel <- rsm.StaticModel
+                | RenderCachedStaticModel cachedMessage ->
+                    cachedMessage.CachedStaticModelAbsolute <- rsm.Absolute
+                    cachedMessage.CachedStaticModelMatrix <- rsm.ModelMatrix
+                    cachedMessage.CachedStaticModelPresence <- rsm.Presence
+                    cachedMessage.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
+                    cachedMessage.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
+                    cachedMessage.CachedStaticModelRenderType <- rsm.RenderType
+                    cachedMessage.CachedStaticModel <- rsm.StaticModel
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
                 | _ -> failwithumf ()
             | _ -> messageBuffers3d.[messageBufferIndex].Add message
