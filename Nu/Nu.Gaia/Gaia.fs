@@ -30,8 +30,6 @@ open Nu.Gaia
 // Custom properties in order of priority:
 //
 //  Enums
-//  AssetTag w/ picking
-//  SymbolicCompression
 //  TmxMap
 //  LightType
 //
@@ -42,6 +40,7 @@ open Nu.Gaia
 //  BodyShape
 //  JointDevice
 //  DateTimeOffset?
+//  SymbolicCompression
 //  Flag Enums
 //
 ///////////////////////////////////
@@ -1286,7 +1285,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName
         let converter = SymbolicConverter ty
-        let isPropertyAssetTag = ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag>
         let value = getProperty propertyDescriptor simulant
         let valueStr = converter.ConvertToString value
         match value with
@@ -1388,23 +1386,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if changed then
                 let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
                 setProperty substance propertyDescriptor simulant
-        | _ when isPropertyAssetTag ->
-            let mutable valueStr' = valueStr
-            if ImGui.InputText (name, &valueStr', 4096u) then
-                try let value' = converter.ConvertFromString valueStr'
-                    setProperty value' propertyDescriptor simulant
-                with :? ParseException | :? ConversionException -> ()
-            if ImGui.BeginDragDropTarget () then
-                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                    match dragDropPayloadOpt with
-                    | Some payload ->
-                        try let propertyValueEscaped = payload
-                            let propertyValueUnescaped = String.unescape propertyValueEscaped
-                            let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                            setProperty propertyValue propertyDescriptor simulant
-                        with :? ParseException | :? ConversionException -> ()
-                    | None -> ()
-                ImGui.EndDragDropTarget ()
         | _ ->
             let mutable combo = false
             if FSharpType.IsUnion ty then
@@ -1470,6 +1451,31 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
                         imGuiEditProperty getProperty setProperty editProperty (name + ".") propertyDescriptor simulant
+                elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
+                    let mutable valueStr' = valueStr
+                    if ImGui.InputText ("##text" + name, &valueStr', 4096u) then
+                        try let value' = converter.ConvertFromString valueStr'
+                            setProperty value' propertyDescriptor simulant
+                        with :? ParseException | :? ConversionException -> ()
+                    editProperty ()
+                    if ImGui.BeginDragDropTarget () then
+                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                            match dragDropPayloadOpt with
+                            | Some payload ->
+                                try let propertyValueEscaped = payload
+                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                    setProperty propertyValue propertyDescriptor simulant
+                                with :? ParseException | :? ConversionException -> ()
+                            | None -> ()
+                        ImGui.EndDragDropTarget ()
+                    ImGui.SameLine ()
+                    ImGui.PushID ("##pickAsset" + name)
+                    if ImGui.Button ("V", v2Dup 19.0f) then showAssetPickerDialog <- true
+                    editProperty ()
+                    ImGui.PopID ()
+                    ImGui.SameLine ()
+                    ImGui.Text name
                 else
                     let mutable valueStr' = valueStr
                     if ImGui.InputText (name, &valueStr', 131072u) then
