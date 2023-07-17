@@ -63,20 +63,12 @@ module StaticSpriteFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let staticImage = entity.GetStaticImage world
-            World.enqueueLayeredOperation2d
-                { Elevation = transform.Elevation
-                  Horizon = transform.Horizon
-                  AssetTag = AssetTag.generalize staticImage
-                  RenderOperation2d =
-                    RenderSprite
-                        { Transform = transform
-                          InsetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-                          Image = staticImage
-                          Color = entity.GetColor world
-                          Blend = entity.GetBlend world
-                          Emission = entity.GetEmission world
-                          Flip = entity.GetFlip world }}
-                world
+            let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+            let color = entity.GetColor world
+            let blend = entity.GetBlend world
+            let emission = entity.GetEmission world
+            let flip = entity.GetFlip world
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, AssetTag.generalize staticImage, &transform, &insetOpt, staticImage, &color, blend, &emission, flip, world)
 
         override this.GetQuickSize (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -137,20 +129,12 @@ module AnimatedSpriteFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let animationSheet = entity.GetAnimationSheet world
-            World.enqueueLayeredOperation2d
-                { Elevation = transform.Elevation
-                  Horizon = transform.Horizon
-                  AssetTag = AssetTag.generalize animationSheet
-                  RenderOperation2d =
-                    RenderSprite
-                        { Transform = transform
-                          InsetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
-                          Image = animationSheet
-                          Color = entity.GetColor world
-                          Blend = entity.GetBlend world
-                          Emission = entity.GetEmission world
-                          Flip = entity.GetFlip world }}
-                world
+            let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+            let color = entity.GetColor world
+            let blend = entity.GetBlend world
+            let emission = entity.GetEmission world
+            let flip = entity.GetFlip world
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, AssetTag.generalize animationSheet, &transform, &insetOpt, animationSheet, &color, blend, &emission, flip, world)
 
         override this.GetQuickSize (entity, world) =
             (entity.GetCelSize world).V3

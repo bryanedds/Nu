@@ -20,6 +20,7 @@ type RendererProcess =
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         abstract RenderStaticModelFast : bool * Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * RenderType * StaticModel AssetTag -> unit
         abstract EnqueueMessage2d : RenderMessage2d -> unit
+        abstract RenderLayeredSpriteFast : single * single * obj AssetTag * Transform inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
         abstract ClearMessages : unit -> unit
         abstract SubmitMessages : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2 -> Vector2 -> Vector2i -> ImDrawDataPtr -> unit
         abstract Swap : unit -> unit
@@ -115,6 +116,11 @@ type RendererInline () =
         member this.EnqueueMessage2d message =
             match renderersOpt with
             | Some _ -> messages2d.Add message 
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
+        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, image, color, blend, emission, flip) =
+            match renderersOpt with
+            | Some _ -> messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite { Transform = transform; InsetOpt = insetOpt; Image = image; Color = color; Blend = blend; Emission = emission; Flip = flip }})
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.ClearMessages () =
@@ -415,6 +421,26 @@ type RendererThread () =
                     | _ -> failwithumf ()
                 | _ -> messageBuffers2d.[messageBufferIndex].Add message
             | _ -> messageBuffers2d.[messageBufferIndex].Add message
+
+        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, image, color, blend, emission, flip) =
+            let cachedSpriteMessage = allocSpriteMessage ()
+            match cachedSpriteMessage with
+            | LayeredOperation2d cachedOperation ->
+                match cachedOperation.RenderOperation2d with
+                | RenderCachedSprite descriptor ->
+                    cachedOperation.Elevation <- elevation
+                    cachedOperation.Horizon <- horizon
+                    cachedOperation.AssetTag <- assetTag
+                    descriptor.CachedSprite.Transform <- transform
+                    descriptor.CachedSprite.InsetOpt <- insetOpt
+                    descriptor.CachedSprite.Image <- image
+                    descriptor.CachedSprite.Color <- color
+                    descriptor.CachedSprite.Blend <- blend
+                    descriptor.CachedSprite.Emission <- emission
+                    descriptor.CachedSprite.Flip <- flip
+                    messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
+                | _ -> failwithumf ()
+            | _ -> failwithumf ()
 
         member this.ClearMessages () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
