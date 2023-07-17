@@ -39,7 +39,13 @@ module WorldRender =
             let rendererProcess = World.getRendererProcess world
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
             world
-            
+
+        /// Send a message to the render system to render a static model using a fast path.
+        [<FunctionBinding>]
+        static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
+            (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, image, &color, blend, &emission, flip)
+            world
+
         /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
         [<FunctionBinding>]
