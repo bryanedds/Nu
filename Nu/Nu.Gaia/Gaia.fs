@@ -515,19 +515,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // render lights of the selected group in play
         world <- wtemp
         let (entities, wtemp) = World.getLightsInPlay3d (HashSet ()) world in world <- wtemp
-        let lightsInGroup =
+        let lightModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetLight world) |>
-            Seq.toArray
-        for light in lightsInGroup do
+            Seq.map (fun light -> (light.GetAffineMatrix world, Prominent, None, MaterialProperties.defaultProperties)) |>
+            SList.ofSeq
             world <-
                 World.enqueueRenderMessage3d
-                    (RenderStaticModel
+                (RenderStaticModels
                         { Absolute = false
-                          ModelMatrix = light.GetAffineMatrix world
-                          Presence = Prominent
-                          InsetOpt = None
-                          MaterialProperties = MaterialProperties.defaultProperties
+                      StaticModels = lightModels
                           RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
                           StaticModel = Assets.Default.LightbulbModel })
                     world

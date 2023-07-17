@@ -18,6 +18,7 @@ type RendererProcess =
         abstract Terminated : bool
         abstract Start : ImFontAtlasPtr option -> Window option -> unit
         abstract EnqueueMessage3d : RenderMessage3d -> unit
+        abstract RenderStaticModelFast : bool * Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * RenderType * StaticModel AssetTag -> unit
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         abstract ClearMessages : unit -> unit
         abstract SubmitMessages : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2 -> Vector2 -> Vector2i -> ImDrawDataPtr -> unit
@@ -104,6 +105,11 @@ type RendererInline () =
         member this.EnqueueMessage3d message =
             match renderersOpt with
             | Some _ -> messages3d.Add message 
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
+        member this.RenderStaticModelFast (absolute, modelMatrix, presence, insetOpt, materialProperties, renderType, staticModel) =
+            match renderersOpt with
+            | Some _ -> messages3d.Add (RenderStaticModel { Absolute = absolute; ModelMatrix = modelMatrix; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; RenderType = renderType; StaticModel = staticModel })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.EnqueueMessage2d message =
@@ -367,6 +373,21 @@ type RendererThread () =
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
                 | _ -> failwithumf ()
             | _ -> messageBuffers3d.[messageBufferIndex].Add message
+
+        member this.RenderStaticModelFast (absolute, modelMatrix, presence, insetOpt, materialProperties, renderType, staticModel) =
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            let cachedStaticModelMessage = allocStaticModelMessage ()
+            match cachedStaticModelMessage with
+            | RenderCachedStaticModel cachedMessage ->
+                cachedMessage.CachedStaticModelAbsolute <- absolute
+                cachedMessage.CachedStaticModelMatrix <- modelMatrix
+                cachedMessage.CachedStaticModelPresence <- presence
+                cachedMessage.CachedStaticModelInsetOpt <- insetOpt
+                cachedMessage.CachedStaticModelMaterialProperties <- materialProperties
+                cachedMessage.CachedStaticModelRenderType <- renderType
+                cachedMessage.CachedStaticModel <- staticModel
+                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+            | _ -> failwithumf ()
 
         member this.EnqueueMessage2d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

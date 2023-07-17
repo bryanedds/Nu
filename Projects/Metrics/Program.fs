@@ -42,19 +42,13 @@ type MetricsEntityDispatcher () =
         entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
 #endif
 
-    override this.View (staticModel, entity, world) =
+    override this.Render (entity, world) =
+        let staticModel = entity.GetModelGeneric world
         let mutable transform = entity.GetTransform world
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
-        View.Render3d
-            (RenderStaticModel
-                { Absolute = false
-                  ModelMatrix = affineMatrix
-                  Presence = presence
-                  InsetOpt = None
-                  MaterialProperties = Unchecked.defaultof<_>
-                  RenderType = DeferredRenderType
-                  StaticModel = staticModel })
+        let properties = MaterialProperties.empty
+        World.renderStaticModelFast (false, &affineMatrix, presence, ValueNone, &properties, DeferredRenderType, staticModel, world)
 
     override this.GetQuickSize (entity, world) =
         let staticModel = entity.GetModelGeneric world
@@ -147,7 +141,7 @@ type MyGameDispatcher () =
             seq {
                 for i in 0 .. dec 50 do
                     for j in 0 .. dec 50 do
-                        for k in 0 .. dec 12 do
+                        for k in 0 .. dec 14 do
                             yield v3 (single i * 0.4f + single k * 0.05f) (single j * 0.4f + single k * 0.05f) -20.0f }
         let world =
             Seq.fold (fun world position ->
