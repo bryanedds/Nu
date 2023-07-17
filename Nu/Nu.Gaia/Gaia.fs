@@ -29,6 +29,7 @@ open Nu.Gaia
 //
 // Custom properties in order of priority:
 //
+//  FacetNames
 //  Enums
 //  Layout
 //  CollisionMask
