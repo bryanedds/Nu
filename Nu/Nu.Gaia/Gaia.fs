@@ -30,7 +30,6 @@ open Nu.Gaia
 // Custom properties in order of priority:
 //
 //  Enums
-//
 //  Layout
 //  CollisionMask
 //  CollisionCategories
@@ -577,6 +576,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
         | Right wtemp -> world <- wtemp
         | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
+
+    let private setPropertyIgnoreError (value : obj) propertyDescriptor simulant =
+        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
+        | Right wtemp -> world <- wtemp
+        | Left (_, wtemp) -> world <- wtemp
 
     let private setProperty (value : obj) propertyDescriptor simulant =
         snapshot ()
@@ -1499,6 +1503,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.PopID ()
                     ImGui.SameLine ()
                     ImGui.Text name
+                elif name = "FacetNames" && ty = typeof<string Set> then
+                    let mutable valueStr' = valueStr
+                    if ImGui.InputText (name, &valueStr', 131072u) then
+                        try let value' = converter.ConvertFromString valueStr'
+                            setPropertyIgnoreError value' propertyDescriptor simulant
+                        with :? ParseException | :? ConversionException -> ()
                 else
                     let mutable valueStr' = valueStr
                     if ImGui.InputText (name, &valueStr', 131072u) then
