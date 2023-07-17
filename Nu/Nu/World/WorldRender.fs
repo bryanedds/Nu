@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -68,7 +69,13 @@ module WorldRender =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage3d message
             world
-            
+
+        /// Send a message to the render system to render a static model using a fast path.
+        [<FunctionBinding>]
+        static member renderStaticModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, world) =
+            (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, renderType, staticModel)
+            world
+
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
         [<FunctionBinding>]
