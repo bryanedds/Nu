@@ -31,7 +31,6 @@ open Nu.Gaia
 //
 //  Enums
 //  AssetTag w/ picking
-//  RenderStyle
 //  Substance
 //  SymbolicCompression
 //  TmxMap
@@ -1357,6 +1356,27 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.ColorEdit4 (name, &v) then
                 let c' = color v.X v.Y v.Z v.W
                 setPropertyWithoutUndo c' propertyDescriptor simulant
+        | :? RenderStyle as style ->
+            let mutable index = match style with Deferred -> 0 | Forward _ -> 1
+            let (changed, style) =
+                if ImGui.Combo (name, &index, [|nameof Deferred; nameof Forward|], 2)
+                then (true, match index with 0 -> Deferred | 1 -> Forward (0.0f, 0.0f) | _ -> failwithumf ())
+                else (false, style)
+            let (changed, style) =
+                match index with
+                | 0 -> (changed, style)
+                | 1 ->
+                    match style with
+                    | Deferred -> failwithumf ()
+                    | Forward (subsort, sort) ->
+                        let mutable (subsort, sort) = (subsort, sort)
+                        ImGui.Indent ()
+                        let subsortChanged = ImGui.InputFloat ("Subsort via " + name, &subsort)
+                        let sortChanged = ImGui.InputFloat ("Sort via " + name, &sort)
+                        ImGui.Unindent ()
+                        (changed || subsortChanged || sortChanged, Forward (subsort, sort))
+                | _ -> failwithumf ()
+            if changed then setProperty style propertyDescriptor simulant
         | _ when isPropertyAssetTag ->
             let mutable valueStr' = valueStr
             if ImGui.InputText (name, &valueStr', 4096u) then
@@ -1630,6 +1650,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
                                 drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
                                 io.SwallowMouse ()
+                                // WIP
+                                //let (x, y) =
+                                //    let eyeForward = eyeRotation.Forward
+                                //    let dotXZ = eyeForward.Y * eyeForward.Y
+                                //    let dotXY = eyeForward.Z * eyeForward.Z
+                                //    let dotYZ = eyeForward.X * eyeForward.X
+                                //    if dotXZ >= dotXY && dotXZ >= dotYZ then (v3Right, v3Forward)
+                                //    elif dotXY >= dotXZ && dotXY >= dotYZ then (v3Right, v3Up)
+                                //    else (v3Up, v3Forward)
+                                //
+                                //let delta = ImGui.GetMouseDragDelta ImGuiMouseButton.Left
+                                //found <- true
                             else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
                     | _ -> ()
 
