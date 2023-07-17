@@ -31,7 +31,6 @@ open Nu.Gaia
 //
 //  Enums
 //  AssetTag w/ picking
-//  Substance
 //  SymbolicCompression
 //  TmxMap
 //  LightType
@@ -1362,6 +1361,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.Combo (name, &index, [|nameof Deferred; nameof Forward|], 2)
                 then (true, match index with 0 -> Deferred | 1 -> Forward (0.0f, 0.0f) | _ -> failwithumf ())
                 else (false, style)
+            editProperty ()
             let (changed, style) =
                 match index with
                 | 0 -> (changed, style)
@@ -1372,11 +1372,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let mutable (subsort, sort) = (subsort, sort)
                         ImGui.Indent ()
                         let subsortChanged = ImGui.InputFloat ("Subsort via " + name, &subsort)
+                        editProperty ()
                         let sortChanged = ImGui.InputFloat ("Sort via " + name, &sort)
                         ImGui.Unindent ()
                         (changed || subsortChanged || sortChanged, Forward (subsort, sort))
                 | _ -> failwithumf ()
             if changed then setProperty style propertyDescriptor simulant
+        | :? Substance as substance ->
+            let mutable scalar = match substance with Mass m -> m | Density d -> d
+            let changed = ImGui.InputFloat ("##scalar via " + name, &scalar)
+            editProperty ()
+            let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
+            ImGui.SameLine ()
+            let changed = ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || changed
+            if changed then
+                let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
+                setProperty substance propertyDescriptor simulant
         | _ when isPropertyAssetTag ->
             let mutable valueStr' = valueStr
             if ImGui.InputText (name, &valueStr', 4096u) then
