@@ -141,7 +141,7 @@ type MyGameDispatcher () =
             seq {
                 for i in 0 .. dec 50 do
                     for j in 0 .. dec 50 do
-                        for k in 0 .. dec 6 do
+                        for k in 0 .. dec 15 do
                             yield v3 (single i * 0.4f + single k * 0.05f) (single j * 0.4f + single k * 0.05f) -20.0f }
         let world =
             Seq.fold (fun world position ->
