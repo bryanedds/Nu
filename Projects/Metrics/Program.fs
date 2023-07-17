@@ -141,7 +141,7 @@ type MyGameDispatcher () =
             seq {
                 for i in 0 .. dec 50 do
                     for j in 0 .. dec 50 do
-                        for k in 0 .. dec 15 do
+                        for k in 0 .. dec 6 do
                             yield v3 (single i * 0.4f + single k * 0.05f) (single j * 0.4f + single k * 0.05f) -20.0f }
         let world =
             Seq.fold (fun world position ->
@@ -176,7 +176,7 @@ type Message =
     interface Nu.Message
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 110) // 12,100 elmish entities (goal: steady 60FPS, current: steady 60FPS)
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 elmish entities (goal: steady 60FPS, current: steady 60FPS)
 
     override this.Initialize (_, _) =
         [Game.UpdateEvent => Inc]
@@ -192,7 +192,7 @@ type ElmishGameDispatcher () =
                 Content.group (string i) []
                     [|for (j, int) in ints.Ints.Pairs' do
                         Content.entity<MetricsEntityDispatcher> (string j)
-                            [Entity.Position == v3 (single i * 5.0f - 250.0f) (single j * 2.5f - 125.0f) -250.0f
+                            [Entity.Position == v3 (single i * 4.25f - 250.0f) (single j * 2.25f - 125.0f) -250.0f
                              Entity.Scale := v3Dup (single (int % 10)) * 0.5f
                              Entity.Presence == Omnipresent]|]
               Content.group "Fps" []
