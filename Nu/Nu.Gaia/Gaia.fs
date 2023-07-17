@@ -520,14 +520,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetLight world) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Prominent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
-            world <-
-                World.enqueueRenderMessage3d
+        world <-
+            World.enqueueRenderMessage3d
                 (RenderStaticModels
-                        { Absolute = false
+                    { Absolute = false
                       StaticModels = lightModels
-                          RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
-                          StaticModel = Assets.Default.LightbulbModel })
-                    world
+                      RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
+                      StaticModel = Assets.Default.LightbulbModel })
+                world
 
         // render selection highlights
         match selectedEntityOpt with
