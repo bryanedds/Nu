@@ -951,7 +951,7 @@ module TmxMapFacetModule =
              define Entity.TileLayerClearance 2.0f
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
-             define Entity.TmxMap (TmxMap.makeDefault ())
+             nonPersistent Entity.TmxMap (TmxMap.makeDefault ())
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
         override this.Register (entity, world) =

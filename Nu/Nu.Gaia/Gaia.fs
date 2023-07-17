@@ -30,8 +30,6 @@ open Nu.Gaia
 // Custom properties in order of priority:
 //
 //  Enums
-//  TmxMap
-//  LightType
 //
 //  Layout
 //  CollisionMask
@@ -1376,6 +1374,31 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         (changed || subsortChanged || sortChanged, Forward (subsort, sort))
                 | _ -> failwithumf ()
             if changed then setProperty style propertyDescriptor simulant
+        | :? LightType as light ->
+            let mutable index = match light with PointLight -> 0 | DirectionalLight -> 1 | SpotLight _ -> 2
+            let (changed, light) =
+                if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
+                then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
+                else (false, light)
+            editProperty ()
+            let (changed, light) =
+                match index with
+                | 0 -> (changed, light)
+                | 1 -> (changed, light)
+                | 2 ->
+                    match light with
+                    | PointLight -> failwithumf ()
+                    | DirectionalLight -> failwithumf ()
+                    | SpotLight (innerCone, outerCone) ->
+                        let mutable (innerCone, outerCone) = (innerCone, outerCone)
+                        ImGui.Indent ()
+                        let innerConeChanged = ImGui.InputFloat ("InnerCone via " + name, &innerCone)
+                        editProperty ()
+                        let outerConeChanged = ImGui.InputFloat ("OuterCone via " + name, &outerCone)
+                        ImGui.Unindent ()
+                        (changed || innerConeChanged || outerConeChanged, SpotLight (innerCone, outerCone))
+                | _ -> failwithumf ()
+            if changed then setProperty light propertyDescriptor simulant
         | :? Substance as substance ->
             let mutable scalar = match substance with Mass m -> m | Density d -> d
             let changed = ImGui.InputFloat ("##scalar via " + name, &scalar)
