@@ -2442,20 +2442,24 @@ module WorldModuleEntity =
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
-            match World.trySetFacetNames facetNames entityState (Some entity) world with
-            | Right (entityState, world) ->
-                let oldWorld = world
-                let oldEntityState = entityState
-                let oldVisible = entityState.Visible
-                let oldStatic = oldEntityState.Static
-                let oldLight = oldEntityState.Light
-                let oldPresence = oldEntityState.Presence
-                let oldBounds = oldEntityState.Bounds
-                let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldVisible oldStatic oldLight oldPresence oldBounds entity oldWorld world
-                let world = World.publishEntityChanges entity world
-                (Right (), world)
-            | Left error -> (Left error, world)
+            let facetNamesOld = entityState.FacetNames
+            if facetNames <> facetNamesOld then
+                match World.trySetFacetNames facetNames entityState (Some entity) world with
+                | Right (entityState, world) ->
+                    let oldWorld = world
+                    let oldEntityState = entityState
+                    let oldVisible = entityState.Visible
+                    let oldStatic = oldEntityState.Static
+                    let oldLight = oldEntityState.Light
+                    let oldPresence = oldEntityState.Presence
+                    let oldBounds = oldEntityState.Bounds
+                    let world = World.setEntityState entityState entity world
+                    let world = World.updateEntityInEntityTree oldVisible oldStatic oldLight oldPresence oldBounds entity oldWorld world
+                    let world = World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
+                    let world = World.publishEntityChanges entity world
+                    (Right (), world)
+                | Left error -> (Left error, world)
+            else (Right (), world)
 
         /// Try to set the entity's facet names from script.
         [<FunctionBinding "trySetEntityFacetNames">]

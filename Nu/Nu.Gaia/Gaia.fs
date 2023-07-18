@@ -29,7 +29,6 @@ open Nu.Gaia
 //
 // Custom properties in order of priority:
 //
-//  FacetNames
 //  Enums
 //  Layout
 //  CollisionMask
@@ -570,22 +569,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     (* Editor Commands *)
 
-    let private getProperty propertyDescriptor simulant =
+    let private containsProperty propertyDescriptor simulant =
+        SimulantPropertyDescriptor.containsPropertyDescriptor propertyDescriptor simulant world
+
+    let private getPropertyValue propertyDescriptor simulant =
         SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
 
-    let private setPropertyWithoutUndo (value : obj) propertyDescriptor simulant =
+    let private setPropertyValueWithoutUndo (value : obj) propertyDescriptor simulant =
         match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
         | Right wtemp -> world <- wtemp
         | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
 
-    let private setPropertyIgnoreError (value : obj) propertyDescriptor simulant =
+    let private setPropertyValueIgnoreError (value : obj) propertyDescriptor simulant =
+        snapshot ()
         match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
         | Right wtemp -> world <- wtemp
         | Left (_, wtemp) -> world <- wtemp
 
-    let private setProperty (value : obj) propertyDescriptor simulant =
+    let private setPropertyValue (value : obj) propertyDescriptor simulant =
         snapshot ()
-        setPropertyWithoutUndo value propertyDescriptor simulant
+        setPropertyValueWithoutUndo value propertyDescriptor simulant
 
     let private createEntity atMouse inHierarchy =
         snapshot ()
@@ -1192,14 +1195,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let mutable isSome = ValueOption.isSome mp.AlbedoOpt
         if ImGui.Checkbox ((if isSome then "##mpAlbedoIsSome" else "AlbedoOpt"), &isSome) then
             if isSome
-            then setProperty { mp with AlbedoOpt = ValueSome Constants.Render.AlbedoDefault } propertyDescriptor simulant
-            else setProperty { mp with AlbedoOpt = ValueNone } propertyDescriptor simulant
+            then setPropertyValue { mp with AlbedoOpt = ValueSome Constants.Render.AlbedoDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with AlbedoOpt = ValueNone } propertyDescriptor simulant
         else
             match mp.AlbedoOpt with
             | ValueSome albedo ->
                 let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
                 ImGui.SameLine ()
-                if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setPropertyWithoutUndo { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
+                if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setPropertyValueWithoutUndo { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1208,14 +1211,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let mutable isSome = ValueOption.isSome mp.MetallicOpt
         if ImGui.Checkbox ((if isSome then "##mpMetallicIsSome" else "MetallicOpt"), &isSome) then
             if isSome
-            then setProperty { mp with MetallicOpt = ValueSome Constants.Render.MetallicDefault } propertyDescriptor simulant
-            else setProperty { mp with MetallicOpt = ValueNone } propertyDescriptor simulant
+            then setPropertyValue { mp with MetallicOpt = ValueSome Constants.Render.MetallicDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with MetallicOpt = ValueNone } propertyDescriptor simulant
         else
             match mp.MetallicOpt with
             | ValueSome metallic ->
                 let mutable metallic = metallic
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("MetallicOpt", &metallic, 0.05f) then setProperty { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
+                if ImGui.InputFloat ("MetallicOpt", &metallic, 0.05f) then setPropertyValue { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1224,14 +1227,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let mutable isSome = ValueOption.isSome mp.RoughnessOpt
         if ImGui.Checkbox ((if isSome then "##mpRoughnessIsSome" else "RoughnessOpt"), &isSome) then
             if isSome
-            then setProperty { mp with RoughnessOpt = ValueSome Constants.Render.RoughnessDefault } propertyDescriptor simulant
-            else setProperty { mp with RoughnessOpt = ValueNone } propertyDescriptor simulant
+            then setPropertyValue { mp with RoughnessOpt = ValueSome Constants.Render.RoughnessDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with RoughnessOpt = ValueNone } propertyDescriptor simulant
         else
             match mp.RoughnessOpt with
             | ValueSome roughness ->
                 let mutable roughness = roughness
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.05f) then setProperty { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.05f) then setPropertyValue { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1240,14 +1243,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let mutable isSome = ValueOption.isSome mp.EmissionOpt
         if ImGui.Checkbox ((if isSome then "##mpEmissionIsSome" else "EmissionOpt"), &isSome) then
             if isSome
-            then setProperty { mp with EmissionOpt = ValueSome Constants.Render.EmissionDefault } propertyDescriptor simulant
-            else setProperty { mp with EmissionOpt = ValueNone } propertyDescriptor simulant
+            then setPropertyValue { mp with EmissionOpt = ValueSome Constants.Render.EmissionDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with EmissionOpt = ValueNone } propertyDescriptor simulant
         else
             match mp.EmissionOpt with
             | ValueSome emission ->
                 let mutable emission = emission
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("EmissionOpt", &emission, 0.05f) then setProperty { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
+                if ImGui.InputFloat ("EmissionOpt", &emission, 0.05f) then setPropertyValue { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1256,14 +1259,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let mutable isSome = ValueOption.isSome mp.HeightOpt
         if ImGui.Checkbox ((if isSome then "##mpHeightIsSome" else "HeightOpt"), &isSome) then
             if isSome
-            then setProperty { mp with HeightOpt = ValueSome Constants.Render.HeightDefault } propertyDescriptor simulant
-            else setProperty { mp with HeightOpt = ValueNone } propertyDescriptor simulant
+            then setPropertyValue { mp with HeightOpt = ValueSome Constants.Render.HeightDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with HeightOpt = ValueNone } propertyDescriptor simulant
         else
             match mp.HeightOpt with
             | ValueSome height ->
                 let mutable height = height
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("HeightOpt", &height, 0.05f) then setProperty { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
+                if ImGui.InputFloat ("HeightOpt", &height, 0.05f) then setPropertyValue { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1272,14 +1275,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let mutable isSome = ValueOption.isSome mp.InvertRoughnessOpt
         if ImGui.Checkbox ((if isSome then "##mpInvertRoughnessIsSome" else "InvertRoughnessOpt"), &isSome) then
             if isSome
-            then setProperty { mp with InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault } propertyDescriptor simulant
-            else setProperty { mp with InvertRoughnessOpt = ValueNone } propertyDescriptor simulant
+            then setPropertyValue { mp with InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with InvertRoughnessOpt = ValueNone } propertyDescriptor simulant
         else
             match mp.InvertRoughnessOpt with
             | ValueSome invertRoughness ->
                 let mutable invertRoughness = invertRoughness
                 ImGui.SameLine ()
-                if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setProperty { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
+                if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setPropertyValue { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1355,7 +1358,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable v = v4 c.R c.G c.B c.A
             if ImGui.ColorEdit4 (name, &v) then
                 let c' = color v.X v.Y v.Z v.W
-                setPropertyWithoutUndo c' propertyDescriptor simulant
+                setPropertyValueWithoutUndo c' propertyDescriptor simulant
         | :? RenderStyle as style ->
             let mutable index = match style with Deferred -> 0 | Forward _ -> 1
             let (changed, style) =
@@ -1504,12 +1507,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.PopID ()
                     ImGui.SameLine ()
                     ImGui.Text name
-                elif name = "FacetNames" && ty = typeof<string Set> then
-                    let mutable valueStr' = valueStr
-                    if ImGui.InputText (name, &valueStr', 131072u) then
-                        try let value' = converter.ConvertFromString valueStr'
-                            setPropertyIgnoreError value' propertyDescriptor simulant
-                        with :? ParseException | :? ConversionException -> ()
+                elif name = Constants.Engine.FacetNamesPropertyName && ty = typeof<string Set> then
+                    let facetNamesAll = world |> World.getFacets |> Map.toKeyArray |> Array.append [|"(Empty)"|]
+                    let facetNames = scvalue<string Set> valueStr
+                    let mutable facetNames' = Set.empty
+                    let mutable changed = false
+                    ImGui.Indent ()
+                    for i in 0 .. facetNames.Count do
+                        let last = i = facetNames.Count
+                        let facetName = if not last then Seq.item i facetNames else "(Empty)"
+                        let mutable facetNameIndex = Seq.findIndex ((=) facetName) facetNamesAll
+                        changed <- ImGui.Combo ("##" + name + string i, &facetNameIndex, facetNamesAll, facetNamesAll.Length) || changed
+                        if not last then editProperty ()
+                        if facetNameIndex <> 0 then facetNames' <- Set.add (Seq.item facetNameIndex facetNamesAll) facetNames'
+                    ImGui.Unindent ()
+                    if changed then setPropertyValueIgnoreError facetNames' propertyDescriptor simulant
                 else
                     let mutable valueStr' = valueStr
                     if ImGui.InputText (name, &valueStr', 131072u) then
@@ -1532,43 +1544,45 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Constants.Engine.NamePropertyName -> "!" // put Name first
                         | Constants.Engine.ModelPropertyName -> "!2" // put Model second
                         | Constants.Engine.MountOptPropertyName -> "!3" // put MountOpt third
+                        | Constants.Engine.OverlayNameOptPropertyName -> "!4" // put OverlayNameOpt fourth
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
-                    if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
-                        match simulant with
-                        | :? Screen as screen ->
-                            // NOTE: can't edit screen names for now.
-                            let mutable name = screen.Name
-                            ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                        | :? Group as group ->
-                            let mutable name = group.Name
-                            ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            ImGui.SameLine ()
-                            if not (group.GetProtected world) then
-                                if ImGui.Button "Rename" then
-                                    showRenameGroupDialog <- true
-                            else ImGui.Text "Name"
-                        | :? Entity as entity ->
-                            let mutable name = entity.Name
-                            ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            ImGui.SameLine ()
-                            if not (entity.GetProtected world) then
-                                if ImGui.Button "Rename" then
-                                    showRenameEntityDialog <- true
-                            else ImGui.Text "Name"
-                        | _ -> ()
-                        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
-                    else
-                        let mutable replaced = false
-                        let replaceProperty =
-                            ReplaceProperty
-                                { Snapshot = fun world -> snapshot (); world
-                                  IndicateReplaced = fun world -> replaced <- true; world
-                                  PropertyDescriptor = propertyDescriptor }
-                        world <- World.edit replaceProperty simulant world
-                        if not replaced then
-                            let editProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-                            imGuiEditProperty getProperty setProperty editProperty "" propertyDescriptor simulant
+                    if containsProperty propertyDescriptor simulant then
+                        if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
+                            match simulant with
+                            | :? Screen as screen ->
+                                // NOTE: can't edit screen names for now.
+                                let mutable name = screen.Name
+                                ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            | :? Group as group ->
+                                let mutable name = group.Name
+                                ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                ImGui.SameLine ()
+                                if not (group.GetProtected world) then
+                                    if ImGui.Button "Rename" then
+                                        showRenameGroupDialog <- true
+                                else ImGui.Text "Name"
+                            | :? Entity as entity ->
+                                let mutable name = entity.Name
+                                ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                ImGui.SameLine ()
+                                if not (entity.GetProtected world) then
+                                    if ImGui.Button "Rename" then
+                                        showRenameEntityDialog <- true
+                                else ImGui.Text "Name"
+                            | _ -> ()
+                            if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
+                        else
+                            let mutable replaced = false
+                            let replaceProperty =
+                                ReplaceProperty
+                                    { Snapshot = fun world -> snapshot (); world
+                                      IndicateReplaced = fun world -> replaced <- true; world
+                                      PropertyDescriptor = propertyDescriptor }
+                            world <- World.edit replaceProperty simulant world
+                            if not replaced then
+                                let editProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                                imGuiEditProperty getPropertyValue setPropertyValue editProperty "" propertyDescriptor simulant
         world <- World.edit AppendProperties simulant world
 
     let private imGuiProcess wtemp =
@@ -1993,7 +2007,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             World.getExists simulant world &&
                             propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
                             let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                            let propertyValue = getProperty propertyDescriptor simulant
+                            let propertyValue = getPropertyValue propertyDescriptor simulant
                             ImGui.Text propertyDescriptor.PropertyName
                             ImGui.SameLine ()
                             ImGui.Text ":"
@@ -2010,7 +2024,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 try let propertyValueEscaped = propertyValuePretty
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                    setProperty propertyValue propertyDescriptor simulant
+                                    setPropertyValue propertyValue propertyDescriptor simulant
                                 with :? ParseException | :? ConversionException -> ()
                             if isPropertyAssetTag then
                                 if ImGui.BeginDragDropTarget () then
@@ -2020,7 +2034,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                             try let propertyValueEscaped = payload
                                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                setProperty propertyValue propertyDescriptor simulant
+                                                setPropertyValue propertyValue propertyDescriptor simulant
                                             with :? ParseException | :? ConversionException -> ()
                                         | None -> ()
                                     ImGui.EndDragDropTarget ()
@@ -2239,7 +2253,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                     let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
                                                     let propertyValueStr = "[" + package.Key + " " + assetName + "]"
                                                     let propertyValue = converter.ConvertFromString propertyValueStr
-                                                    setProperty propertyValue propertyDescriptor simulant
+                                                    setPropertyValue propertyValue propertyDescriptor simulant
                                                 | Some _ | None -> ()
                                                 showAssetPickerDialog <- false
                                             ImGui.TreePop ()

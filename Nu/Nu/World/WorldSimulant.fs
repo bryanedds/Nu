@@ -263,10 +263,25 @@ module WorldSimulantModule =
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
 
-    /// Check that an entity contains the given property.
-    let containsProperty<'s when 's :> Simulant> (property : PropertyInfo) =
+    /// Check that an entity contains the given property descriptor.
+    let containsPropertyDescriptor<'s when 's :> SimulantState> (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) world =
         let properties = typeof<'s>.GetProperties ()
-        Seq.exists (fun item -> item = property) properties
+        if Seq.exists (fun (property : PropertyInfo) ->
+            property.Name = propertyDescriptor.PropertyName &&
+            (property.PropertyType = propertyDescriptor.PropertyType || property.PropertyType = typeof<DesignerProperty>))
+            properties then true
+        else
+            let state = World.getState simulant world
+            let xtensionOpt =
+                properties |>
+                Array.tryFind (fun p -> p.Name = Constants.Engine.XtensionPropertyName && p.PropertyType = typeof<Xtension>) |>
+                Option.map (fun p -> p.GetValue state :?> Xtension)
+            match xtensionOpt with
+            | Some xtension ->
+                let mutable p = Unchecked.defaultof<Property>
+                Xtension.tryGetProperty (propertyDescriptor.PropertyName, xtension, &p) &&
+                p.PropertyType = propertyDescriptor.PropertyType
+            | None -> false
 
     /// Attempt to get the simulant's property value.
     let tryGetValue propertyDescriptor simulant world =

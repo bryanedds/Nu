@@ -570,8 +570,8 @@ module WorldModule =
         static member internal getEventGraph world =
             world.EventGraph
 
-        static member internal setEventGraph eventSystem world =
-            World.choose { world with EventGraph = eventSystem }
+        static member internal setEventGraph eventGraph world =
+            World.choose { world with EventGraph = eventGraph }
 
         static member internal updateEventGraph updater world =
             World.setEventGraph (updater world.EventGraph) world
@@ -768,15 +768,49 @@ module WorldModule =
                 let world = World.unsubscribe removalId world
                 let world = World.unsubscribe monitorId world
                 world
-            let callback' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
-            let unregisteringEventAddress = rtoa<obj> [|"Unregistering"; "Event"|] --> subscriber.SimulantAddress
-            let world = World.subscribePlus<obj, Simulant> removalId callback' unregisteringEventAddress subscriber world |> snd
+            let callback' = fun _ world -> (Cascade, unsubscribe world)
+            let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> subscriber.SimulantAddress
+            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> snd
             (unsubscribe, world)
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
             (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
             World.monitorPlus<'a, 's> callback eventAddress subscriber world |> snd
+
+        /// Keep active a subscription for the life span of an entity and a facet.
+        static member fastenPlus<'a>
+            (callback : Event<'a, Entity> -> World -> Handling * World)
+            (facetName : string)
+            (eventAddress : 'a Address)
+            (entity : Entity)
+            (world : World) =
+            let removalId = makeGuid ()
+            let monitorId = makeGuid ()
+            let fastenId = makeGuid ()
+            let world = World.subscribePlus<'a, Entity> monitorId callback eventAddress entity world |> snd
+            let unsubscribe = fun (world : World) ->
+                let world = World.unsubscribe removalId world
+                let world = World.unsubscribe monitorId world
+                let world = World.unsubscribe fastenId world
+                world
+            let callback' = fun _ world -> (Cascade, unsubscribe world)
+            let callback'' = fun changeEvent world ->
+                let previous = changeEvent.Data.Previous :?> string Set
+                let value = changeEvent.Data.Value :?> string Set
+                if previous.Contains facetName && not (value.Contains facetName)
+                then (Cascade, unsubscribe world)
+                else (Cascade, world)
+            let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
+            let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
+            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> snd
+            let world = World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> snd
+            (unsubscribe, world)
+
+        /// Keep active a subscription for the life span of a simulant.
+        static member fasten<'a>
+            (callback : Event<'a, Entity> -> World -> Handling * World) (facetName : string) (eventAddress : 'a Address) (subscriber : Entity) (world : World) =
+            World.fastenPlus<'a> callback facetName eventAddress subscriber world |> snd
 
     type World with // Scripting
 
