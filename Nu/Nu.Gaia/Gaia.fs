@@ -222,8 +222,8 @@ Size=162,54
 Collapsed=0
 
 [Window][Choose a nugroup file...]
-Pos=756,500
-Size=403,84
+Pos=602,352
+Size=677,399
 Collapsed=0
 
 [Window][Choose a project .dll... *MANUAL RESTART REQUIRED!*]
@@ -294,8 +294,8 @@ Size=621,105
 Collapsed=0
 
 [Window][Save a nugroup file...]
-Pos=665,470
-Size=598,134
+Pos=613,358
+Size=664,399
 Collapsed=0
 
 [Window][Choose an Asset...]
@@ -321,6 +321,11 @@ Collapsed=0
 [Window][Rename entity...]
 Pos=734,514
 Size=444,94
+Collapsed=0
+
+[Window][Are you okay with exiting Gaia?]
+Pos=836,504
+Size=248,72
 Collapsed=0
 
 [Docking][Data]
