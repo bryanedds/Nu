@@ -57,6 +57,8 @@
 		<Compile Include="Sdl\SdlInputBindings.fs" />
 		<Compile Include="Sdl\SdlInput.fs" />
 		<Compile Include="Sdl\Sdl.fs" />
+		<Compile Include="ImGui\ImGuiIOPtr.fs" />
+		<Compile Include="ImGui\ImGuiFileDialog.fs" />
 		<Compile Include="ImGui\ImGui.fs" />
 		<Compile Include="Reflection\Reflection.fs" />
 		<Compile Include="Reflection\Overlayer.fs" />

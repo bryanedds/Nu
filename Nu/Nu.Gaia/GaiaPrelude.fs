@@ -3,10 +3,7 @@
 
 namespace Nu.Gaia
 open System
-open System.Diagnostics
-open System.IO
 open System.Numerics
-open ImGuiNET
 open Prime
 open Nu
 open Nu.Gaia
