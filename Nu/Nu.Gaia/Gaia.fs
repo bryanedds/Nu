@@ -23,8 +23,8 @@ open Nu.Gaia
 // Log Output window.
 // Paste in hierarchy.
 // Try to figure out how to snapshot only on first property interaction.
+// Sense functions for Stream.
 // Box3 viewport editing (w/ snapping).
-// File explorer dialog.
 // Perhaps look up some-constructed default property values from overlayer.
 //
 // Custom properties in order of priority:
@@ -98,13 +98,13 @@ module Gaia =
     let mutable private gameDllPath = ""
     let mutable private projectEditMode = "Title"
     let mutable private projectImperativeExecution = false
+    let mutable private groupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
+    let mutable private groupFilePaths = Map.empty<Group Address, string>
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
     let mutable private preludeStr = null // this will be initialized on start
     let mutable private consoleStr = ""
     let mutable private outputStr = ""
-    let mutable private groupFilePaths = Map.empty<Group Address, string>
-    let mutable private groupFilePath = ""
 
     (* Modal Activity States *)
 
@@ -548,7 +548,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                       Emission = Color.Zero
                                       Flip = FlipNone }})
                         world
-            elif ImGui.IsCtrlDown () then
+            else
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center
                 world <-
@@ -652,7 +652,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup world
-            groupFilePaths <- Map.add selectedGroup.GroupAddress groupFilePath groupFilePaths
+            groupFilePaths <- Map.add selectedGroup.GroupAddress groupFileDialogState.FilePath groupFilePaths
             true
         with exn ->
             messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
@@ -686,8 +686,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     match selectedEntityOpt with
                     | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
                     | Some _ | None -> ()
-                    groupFilePaths <- Map.add group.GroupAddress groupFilePath groupFilePaths
-                    groupFilePath <- ""
+                    groupFilePaths <- Map.add group.GroupAddress groupFileDialogState.FilePath groupFilePaths
+                    groupFileDialogState.FilePath <- targetDir + "/../../.."
                     true
                 with exn ->
                     world <- World.choose oldWorld
@@ -1754,9 +1754,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar ||| ImGuiWindowFlags.NoNav) then
                         if ImGui.BeginMenuBar () then
                             if ImGui.BeginMenu "Project" then
-                                if ImGui.MenuItem ("New Project") then showNewProjectDialog <- true
-                                if ImGui.MenuItem ("Open Project") then showOpenProjectDialog <- true
-                                if ImGui.MenuItem ("Close Project") then showCloseProjectDialog <- true
+                                if ImGui.MenuItem "New Project" then showNewProjectDialog <- true
+                                if ImGui.MenuItem "Open Project" then showOpenProjectDialog <- true
+                                if ImGui.MenuItem "Close Project" then showCloseProjectDialog <- true
                                 ImGui.Separator ()
                                 if ImGui.MenuItem "Exit" then showConfirmExitDialog <- true
                                 ImGui.EndMenu ()
@@ -1765,8 +1765,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Open Group", "Ctrl+O") then showOpenGroupDialog <- true
                                 if ImGui.MenuItem ("Save Group", "Ctrl+S") then
                                     match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
-                                    | Some filePath -> groupFilePath <- filePath
-                                    | None -> groupFilePath <- ""
+                                    | Some filePath -> groupFileDialogState.FilePath <- filePath
+                                    | None -> groupFileDialogState.FilePath <- targetDir + "/../../.."
                                     showSaveGroupDialog <- true
                                 if ImGui.MenuItem "Close Group" then
                                     let groups = world |> World.getGroups selectedScreen |> Set.ofSeq
@@ -2261,8 +2261,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                 showAssetPickerDialog <- false
                                             ImGui.TreePop ()
                                 ImGui.TreePop ()
+                        if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
                         ImGui.EndPopup ()
-                    if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
 
                 // new project dialog
                 if showNewProjectDialog then
@@ -2275,7 +2275,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                         // prompt user to create new project
                         // TODO: change this to popup?
-                        if ImGui.Begin "Create Nu Project... *EDITOR RESTART REQUIRED!*" then
+                        let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showNewProjectDialog) then
                             ImGui.Text "Project Name"
                             ImGui.SameLine ()
                             ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
@@ -2373,7 +2375,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 newProjectName <- "MyGame"
 
                             // fin
-                            ImGui.End ()
+                            ImGui.EndPopup ()
 
                     // template project missing
                     else
@@ -2407,6 +2409,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 showRestartDialog <- true
                             with _ -> Log.info "Could not save editor state and open project."
                         if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
+                        ImGui.EndPopup ()
 
                 // close project dialog
                 if showCloseProjectDialog then
@@ -2424,6 +2427,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 showRestartDialog <- true
                             with _ -> Log.info "Could not clear editor state and close project."
                         if ImGui.IsKeyPressed ImGuiKey.Escape then showCloseProjectDialog <- false
+                        ImGui.EndPopup ()
 
                 // new group dialog
                 if showNewGroupDialog then
@@ -2450,34 +2454,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 world <- World.choose oldWorld
                                 messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
                         if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
+                        ImGui.EndPopup ()
 
                 // open group dialog
                 if showOpenGroupDialog then
-                    let title = "Choose a nugroup file..."
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showOpenGroupDialog) then
-                        ImGui.Text "File Path:"
-                        ImGui.SameLine ()
-                        ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
-                        if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
-                            String.notEmpty groupFilePath &&
-                            File.Exists groupFilePath then
-                            snapshot ()
-                            showOpenGroupDialog <- not (tryLoadSelectedGroup groupFilePath)
-                        if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenGroupDialog <- false
+                    groupFileDialogState.Title <- "Choose a nugroup file..."
+                    groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+                    if  ImGui.FileDialog (&showOpenGroupDialog, groupFileDialogState) then
+                        snapshot ()
+                        showOpenGroupDialog <- not (tryLoadSelectedGroup groupFileDialogState.FilePath)
 
                 // save group dialog
                 if showSaveGroupDialog then
-                    let title = "Save a nugroup file..."
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showSaveGroupDialog) then
-                        ImGui.Text "File Path:"
-                        ImGui.SameLine ()
-                        ImGui.InputTextWithHint ("##groupFilePath", "[enter file path]", &groupFilePath, 4096u) |> ignore<bool>
-                        if (ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupFilePath then
-                            snapshot ()
-                            showSaveGroupDialog <- not (trySaveSelectedGroup groupFilePath)
-                    if ImGui.IsKeyPressed ImGuiKey.Escape then showSaveGroupDialog <- false
+                    groupFileDialogState.Title <- "Save a nugroup file..."
+                    groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+                    if  ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
+                        snapshot ()
+                        showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
 
                 // rename group dialog
                 if showRenameGroupDialog then
@@ -2495,7 +2488,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 world <- World.renameGroupImmediate group group' world
                                 selectedGroup <- group'
                                 showRenameGroupDialog <- false
-                        if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameGroupDialog <- false
+                            if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameGroupDialog <- false
+                            ImGui.EndPopup ()
                     | _ -> showRenameGroupDialog <- false
 
                 // rename entity dialog
@@ -2514,7 +2508,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 world <- World.renameEntityImmediate entity entity' world
                                 selectedEntityOpt <- Some entity'
                                 showRenameEntityDialog <- false
-                        if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
+                            if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
+                            ImGui.EndPopup ()
                     | Some _ | None -> showRenameEntityDialog <- false
 
                 // confirm exit dialog
@@ -2523,11 +2518,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                     if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
                         ImGui.Text "Any unsaved changes will be lost."
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
-                            world <- World.exit world
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
                         ImGui.SameLine ()
-                        if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then
-                            showConfirmExitDialog <- false
+                        if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then showConfirmExitDialog <- false
+                        ImGui.EndPopup ()
 
                 // restart dialog
                 if showRestartDialog then
@@ -2535,8 +2529,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                     if ImGui.BeginPopupModal title then
                         ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
-                            world <- World.exit world
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
+                        ImGui.EndPopup ()
 
                 // message box dialog
                 match messageBoxOpt with
@@ -2547,8 +2541,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.BeginPopupModal (title, &showing) then
                         ImGui.TextWrapped messageBox
                         if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
+                        if not showing then messageBoxOpt <- None
                         ImGui.EndPopup ()
-                    if not showing then messageBoxOpt <- None
                 | None -> ()
 
                 // imgui inspector window
@@ -2580,10 +2574,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.Button "Ignore exception and revert to old world." then
                     world <- World.unshelve oldWorld
                     recoverableExceptionOpt <- None
-                if ImGui.Button "Ignore exception and proceed with current world." then
-                    recoverableExceptionOpt <- None
-                if ImGui.Button "Exit the editor." then
-                    showConfirmExitDialog <- true
+                if ImGui.Button "Ignore exception and proceed with current world." then recoverableExceptionOpt <- None
+                if ImGui.Button "Exit the editor." then showConfirmExitDialog <- true
                 ImGui.EndPopup ()
             world
 
@@ -2593,6 +2585,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         gameDllPath <- savedState.ProjectFilePath
         projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
         projectImperativeExecution <- savedState.UseImperativeExecution
+        groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
         selectGroup (Nu.World.getGroups screen world |> Seq.head)
         newEntityDispatcherName <- Nu.World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
