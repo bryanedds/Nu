@@ -778,7 +778,7 @@ module WorldModule =
             (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) (world : World) =
             World.monitorPlus<'a, 's> callback eventAddress subscriber world |> snd
 
-        /// Keep active a subscription for the life span of an entity and a facet.
+        /// Keep active a subscription for the life span of an entity and a given facet.
         static member fastenPlus<'a>
             (callback : Event<'a, Entity> -> World -> Handling * World)
             (facetName : string)
@@ -807,7 +807,7 @@ module WorldModule =
             let world = World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> snd
             (unsubscribe, world)
 
-        /// Keep active a subscription for the life span of a simulant.
+        /// Keep active a subscription for the life span of an entity and a given facet.
         static member fasten<'a>
             (callback : Event<'a, Entity> -> World -> Handling * World) (facetName : string) (eventAddress : 'a Address) (subscriber : Entity) (world : World) =
             World.fastenPlus<'a> callback facetName eventAddress subscriber world |> snd
