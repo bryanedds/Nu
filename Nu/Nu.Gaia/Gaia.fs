@@ -123,6 +123,21 @@ module Gaia =
     let mutable private showConfirmExitDialog = false
     let mutable private showRestartDialog = false
     let mutable private showInspector = false
+    let modal () =
+        messageBoxOpt.IsSome ||
+        recoverableExceptionOpt.IsSome ||
+        showEntityContextMenu ||
+        showAssetPickerDialog ||
+        showNewProjectDialog ||
+        showOpenProjectDialog ||
+        showCloseProjectDialog ||
+        showNewGroupDialog ||
+        showOpenGroupDialog ||
+        showSaveGroupDialog ||
+        showRenameGroupDialog ||
+        showRenameEntityDialog ||
+        showConfirmExitDialog ||
+        showRestartDialog
 
     (* Initial imgui.ini File Content *)
 
@@ -692,7 +707,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
                     | Some _ | None -> ()
                     groupFilePaths <- Map.add group.GroupAddress groupFileDialogState.FilePath groupFilePaths
-                    groupFileDialogState.FilePath <- targetDir + "/../../.."
+                    groupFileDialogState.FileName <- ""
                     true
                 with exn ->
                     world <- World.choose oldWorld
@@ -1090,26 +1105,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
 
     let private updateHotkeys entityHierarchyFocused =
-        let io = ImGui.GetIO ()
-        if ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
-        if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
-        if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
-        if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
-        if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
-        if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
-        if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
-        if not (io.WantCaptureKeyboardPlus) || entityHierarchyFocused then
-            if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
-            if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
+        if not (modal ()) then
+            if ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
+            if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
+            if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
+            if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
+            if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
+            if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
+            if not (ImGui.GetIO().WantCaptureKeyboardPlus) || entityHierarchyFocused then
+                if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo () |> ignore<bool>
+                if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
+                if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
+                if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
+                if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false |> ignore<bool>
+                if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
+                if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
+                if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
         let children = world |> entity.GetChildren |> Seq.toArray
@@ -1771,7 +1786,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Save Group", "Ctrl+S") then
                                     match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
                                     | Some filePath -> groupFileDialogState.FilePath <- filePath
-                                    | None -> groupFileDialogState.FilePath <- targetDir + "/../../.."
+                                    | None -> groupFileDialogState.FileName <- ""
                                     showSaveGroupDialog <- true
                                 if ImGui.MenuItem "Close Group" then
                                     let groups = world |> World.getGroups selectedScreen |> Set.ofSeq
