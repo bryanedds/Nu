@@ -27,9 +27,9 @@ type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
     member val DirectoryPath : DirectoryInfo = DirectoryInfo (if String.notEmpty directoryPath then directoryPath else ".") with get, set
     member val ResultPath : string = "" with get, set
     member val RefreshInfo : bool = false with get, set
-    member val CurrentIndex : UInt64 = 0UL with get, set
-    member val CurrentFiles : list<FileInfo> = [] with get, set
     member val CurrentDirectories : list<DirectoryInfo> = [] with get, set
+    member val CurrentFiles : list<FileInfo> = [] with get, set
+    member val CurrentIndex : UInt64 = 0UL with get, set
     member this.FilePath
         with get () = this.DirectoryPath.FullName + "\\" + this.FileName
         and set (value : string) =
@@ -53,9 +53,9 @@ module ImGui =
 
     let private refreshInfo (dialogInfo : ImGuiFileDialogState) =
         dialogInfo.RefreshInfo <- false
-        dialogInfo.CurrentIndex <- 0UL
-        dialogInfo.CurrentFiles <- []
         dialogInfo.CurrentDirectories <- []
+        dialogInfo.CurrentFiles <- []
+        dialogInfo.CurrentIndex <- 0UL
 
         let directory = DirectoryInfo dialogInfo.DirectoryPath.FullName
         dialogInfo.CurrentDirectories <- directory.GetDirectories () |> Seq.toList
@@ -292,9 +292,9 @@ module ImGui =
                     dateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                     dialogState.RefreshInfo <- false
-                    dialogState.CurrentIndex <- 0UL
-                    dialogState.CurrentFiles <- []
                     dialogState.CurrentDirectories <- []
+                    dialogState.CurrentFiles <- []
+                    dialogState.CurrentIndex <- 0UL
 
                     opened <- false
 
@@ -313,9 +313,9 @@ module ImGui =
                             dateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                             dialogState.RefreshInfo <- false
-                            dialogState.CurrentIndex <- 0UL
-                            dialogState.CurrentFiles <- []
                             dialogState.CurrentDirectories <- []
+                            dialogState.CurrentFiles <- []
+                            dialogState.CurrentIndex <- 0UL
 
                             complete <- true
                             opened <- false
@@ -332,9 +332,9 @@ module ImGui =
                             dateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                             dialogState.RefreshInfo <- false
-                            dialogState.CurrentIndex <- 0UL
-                            dialogState.CurrentFiles <- []
                             dialogState.CurrentDirectories <- []
+                            dialogState.CurrentFiles <- []
+                            dialogState.CurrentIndex <- 0UL
 
                             complete <- true
                             opened <- false
