@@ -2016,11 +2016,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let propertyValueUnescaped = converter.ConvertToString propertyValue
                             let propertyValueEscaped = String.escape propertyValueUnescaped
                             let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                            if isPropertyAssetTag then
+                            if  isPropertyAssetTag then
                                 ImGui.SameLine ()
                                 if ImGui.Button "Pick" then showAssetPickerDialog <- true
                             let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
-                            if ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                            if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
+                                propertyDescriptor.PropertyType = typeof<string Set> then
+                                ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
                                 try let propertyValueEscaped = propertyValuePretty
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
