@@ -20,16 +20,21 @@ type ImGuiFileDialogType =
     | Open = 0
     | Save = 1
 
-type ImGuiFileDialogState (title, fileDialogType, fileName, directoryPath) =
-    member val Title : string = title with get, set
-    member val FileDialogType : ImGuiFileDialogType = fileDialogType with get, set
-    member val FileName : string = fileName with get, set
-    member val DirectoryPath : DirectoryInfo = DirectoryInfo directoryPath with get, set
+type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
+    member val Title : string = "" with get, set
+    member val FileDialogType : ImGuiFileDialogType = ImGuiFileDialogType.Open with get, set
+    member val FileName : string = "" with get, set
+    member val DirectoryPath : DirectoryInfo = DirectoryInfo (if String.notEmpty directoryPath then directoryPath else ".") with get, set
     member val ResultPath : string = "" with get, set
     member val RefreshInfo : bool = false with get, set
     member val CurrentIndex : UInt64 = 0UL with get, set
     member val CurrentFiles : list<FileInfo> = [] with get, set
     member val CurrentDirectories : list<DirectoryInfo> = [] with get, set
+    member this.FilePath
+        with get () = this.DirectoryPath.FullName + "\\" + this.FileName
+        and set (value : string) =
+            this.FileName <- Path.GetFileName value
+            this.DirectoryPath <- DirectoryInfo (Path.GetDirectoryName value)
 
 [<RequireQualifiedAccess>]
 module ImGui =
@@ -120,7 +125,8 @@ module ImGui =
             ImGui.PushID (dialogState.GetHashCode ())
             ImGui.SetNextWindowSize (v2 740.0f 410.0f, ImGuiCond.FirstUseEver)
 
-            if ImGui.Begin (dialogState.Title, &opened, ImGuiWindowFlags.NoDocking) then
+            if not (ImGui.IsPopupOpen dialogState.Title) then ImGui.OpenPopup dialogState.Title
+            if ImGui.BeginPopupModal (dialogState.Title, &opened, ImGuiWindowFlags.NoDocking) then
 
                 if dialogState.CurrentFiles.IsEmpty && dialogState.CurrentDirectories.IsEmpty || dialogState.RefreshInfo then
                     refreshInfo dialogState
@@ -319,7 +325,7 @@ module ImGui =
 
                         dialogState.ResultPath <- Path.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
-                        if File.Exists dialogState.ResultPath then
+                        if dialogState.DirectoryPath.Exists && String.notEmpty (dialogState.FileName.Trim ()) then
                             fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
                             sizeSortOrder <- ImGuiFileSortOrder.Unsorted
                             typeSortOrder <- ImGuiFileSortOrder.Unsorted
@@ -335,7 +341,7 @@ module ImGui =
 
                 | _ -> ()
 
-            ImGui.End ()
+            ImGui.EndPopup ()
             ImGui.PopID ()
 
             complete
