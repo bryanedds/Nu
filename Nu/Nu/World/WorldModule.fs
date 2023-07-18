@@ -779,11 +779,11 @@ module WorldModule =
             World.monitorPlus<'a, 's> callback eventAddress subscriber world |> snd
 
         /// Keep active a subscription for the life span of an entity and a given facet.
-        static member fastenPlus<'a>
+        static member sensePlus<'a>
             (callback : Event<'a, Entity> -> World -> Handling * World)
-            (facetName : string)
             (eventAddress : 'a Address)
             (entity : Entity)
+            (facetName : string)
             (world : World) =
             let removalId = makeGuid ()
             let monitorId = makeGuid ()
@@ -808,9 +808,9 @@ module WorldModule =
             (unsubscribe, world)
 
         /// Keep active a subscription for the life span of an entity and a given facet.
-        static member fasten<'a>
-            (callback : Event<'a, Entity> -> World -> Handling * World) (facetName : string) (eventAddress : 'a Address) (subscriber : Entity) (world : World) =
-            World.fastenPlus<'a> callback facetName eventAddress subscriber world |> snd
+        static member sense<'a>
+            (callback : Event<'a, Entity> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
+            World.sensePlus callback eventAddress subscriber facetName world |> snd
 
     type World with // Scripting
 

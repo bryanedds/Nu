@@ -8,7 +8,7 @@ open ImGuiNET
 open Prime
 open Nu
 
-// This code was copied and converted from -
+// This code was converted from -
 // https://github.com/japajoe/ImGuiFileDialog/blob/04f4b7dbb690c26b7503c6c5a09202c35684b12e/ImGuiFileDialog.cs
 
 type internal ImGuiFileSortOrder =
