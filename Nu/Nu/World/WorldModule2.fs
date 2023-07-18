@@ -1503,6 +1503,10 @@ module EntityDispatcherModule2 =
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
+    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (entity : Entity) world =
+        propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName && propertyDescriptor.PropertyType = typeof<string> ||
+        PropertyDescriptor.containsPropertyDescriptor<EntityState> propertyDescriptor entity world
+
     let getPropertyDescriptors (entity : Entity) world =
         let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
         let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> (Some entity) world
@@ -1512,7 +1516,8 @@ module EntityPropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
-        if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "Ambient Properties"
+        if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" then "Ambient Properties"
+        elif propertyName = "FacetNames" then "Applied Facet Names"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Built-In Properties"
         elif propertyName = "MaterialProperties" then "Material Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
@@ -1672,6 +1677,9 @@ module GroupDispatcherModule =
 [<RequireQualifiedAccess>]
 module GroupPropertyDescriptor =
 
+    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (group : Group) world =
+        PropertyDescriptor.containsPropertyDescriptor<GroupState> propertyDescriptor group world
+
     let getPropertyDescriptors (group : Group) world =
         PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
 
@@ -1800,6 +1808,9 @@ module ScreenDispatcherModule =
 
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
+
+    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (screen : Screen) world =
+        PropertyDescriptor.containsPropertyDescriptor<ScreenState> propertyDescriptor screen world
 
     let getPropertyDescriptors (screen : Screen) world =
         PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
@@ -1931,6 +1942,12 @@ module GameDispatcherModule =
 [<RequireQualifiedAccess>]
 module GamePropertyDescriptor =
 
+    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (game : Game) world =
+        PropertyDescriptor.containsPropertyDescriptor<GameState> propertyDescriptor game world
+
+    let getPropertyDescriptors (game : Game) world =
+        PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
+
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
@@ -1943,9 +1960,6 @@ module GamePropertyDescriptor =
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         not (Reflection.isPropertyNonPersistentByName propertyName)
-
-    let getPropertyDescriptors (game : Game) world =
-        PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world
 
     let getValue propertyDescriptor (game : Game) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor game world with
@@ -1972,6 +1986,14 @@ module GamePropertyDescriptor =
 
 [<RequireQualifiedAccess>]
 module SimulantPropertyDescriptor =
+
+    let containsPropertyDescriptor propertyDescriptor (simulant : Simulant) world =
+        match simulant with
+        | :? Entity as entity -> EntityPropertyDescriptor.containsPropertyDescriptor propertyDescriptor entity world
+        | :? Group as group -> GroupPropertyDescriptor.containsPropertyDescriptor propertyDescriptor group world
+        | :? Screen as screen -> ScreenPropertyDescriptor.containsPropertyDescriptor propertyDescriptor screen world
+        | :? Game as game -> GamePropertyDescriptor.containsPropertyDescriptor propertyDescriptor game world
+        | _ -> failwithumf ()
 
     let getPropertyDescriptors (simulant : Simulant) world =
         match simulant with

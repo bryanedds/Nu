@@ -338,17 +338,17 @@ module BasicStaticSpriteEmitterFacetModule =
             let particleSystem = entity.GetParticleSystem world
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
-            let world = World.monitor handlePositionChange (entity.GetChangeEvent (nameof entity.Position)) entity world
-            let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
-            let world = World.monitor handleEmitterBlendChange (entity.GetChangeEvent (nameof entity.EmitterBlend)) entity world
-            let world = World.monitor handleEmitterImageChange (entity.GetChangeEvent (nameof entity.EmitterImage)) entity world
-            let world = World.monitor handleEmitterLifeTimeOptChange (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
-            let world = World.monitor handleParticleLifeTimeMaxOptChange (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
-            let world = World.monitor handleParticleRateChange (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
-            let world = World.monitor handleParticleMaxChange (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
-            let world = World.monitor handleBasicParticleSeedChange (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
-            let world = World.monitor handleEmitterConstraintChange (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
-            let world = World.monitor handleEmitterStyleChange (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
+            let world = World.fasten handlePositionChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.Position)) entity world
+            let world = World.fasten handleRotationChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.Rotation)) entity world
+            let world = World.fasten handleEmitterBlendChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterBlend)) entity world
+            let world = World.fasten handleEmitterImageChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterImage)) entity world
+            let world = World.fasten handleEmitterLifeTimeOptChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
+            let world = World.fasten handleParticleLifeTimeMaxOptChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
+            let world = World.fasten handleParticleRateChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
+            let world = World.fasten handleParticleMaxChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
+            let world = World.fasten handleBasicParticleSeedChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
+            let world = World.fasten handleEmitterConstraintChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
+            let world = World.fasten handleEmitterStyleChange (nameof BasicStaticSpriteEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
             world
 
         override this.Unregister (entity, world) =
@@ -599,14 +599,14 @@ module EffectFacetModule =
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue (World.getGameTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = World.monitor handleEffectDescriptorChange (entity.GetChangeEvent (nameof entity.EffectDescriptor)) entity world
-            let world = World.monitor handleEffectsChange (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
-            let world = World.monitor handleAssetsReload Events.AssetsReload entity world
+            let world = World.fasten handleEffectDescriptorChange (nameof EffectFacet) (entity.GetChangeEvent (nameof entity.EffectDescriptor)) entity world
+            let world = World.fasten handleEffectsChange (nameof EffectFacet) (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity world
+            let world = World.fasten handleAssetsReload (nameof EffectFacet) Events.AssetsReload entity world
 #if DISABLE_ENTITY_PRE_UPDATE
-            let world = World.monitor handlePreUpdate entity.Group.PreUpdateEvent entity world
+            let world = World.fasten handlePreUpdate (nameof EffectFacet) entity.Group.PreUpdateEvent entity world
 #endif
 #if DISABLE_ENTITY_POST_UPDATE
-            let world = World.monitor handlePostUpdate entity.Group.PostUpdateEvent entity world
+            let world = World.fasten handlePostUpdate (nameof EffectFacet) entity.Group.PostUpdateEvent entity world
 #endif
             world
 
@@ -757,7 +757,18 @@ module RigidBodyFacetModule =
             let (_, world) = World.subscribePlus subIds.[21] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world
             let (_, world) = World.subscribePlus subIds.[22] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Bullet)) entity world
             let (_, world) = World.subscribePlus subIds.[23] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world
-            World.monitor (fun _ world -> (Cascade, Array.fold (fun world subId -> World.unsubscribe subId world) world subIds)) entity.UnregisteringEvent entity world
+            let unsubscribe = fun world ->
+                Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
+            let callback = fun evt world ->
+                if  Set.contains (nameof RigidBodyFacet) (evt.Data.Previous :?> string Set) &&
+                    not (Set.contains (nameof RigidBodyFacet) (evt.Data.Value :?> string Set)) then
+                    (Cascade, unsubscribe world)
+                else (Cascade, world)
+            let callback2 = fun _ world ->
+                (Cascade, unsubscribe world)
+            let world = World.fasten callback (nameof RigidBodyFacet) entity.FacetNames.ChangeEvent entity world
+            let world = World.fasten callback2 (nameof RigidBodyFacet) entity.UnregisteringEvent entity world
+            world
 
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
@@ -808,8 +819,8 @@ module JointFacetModule =
              computed Entity.JointId (fun (entity : Entity) _ -> { JointSource = entity; JointIndex = Constants.Physics.InternalIndex }) None]
 
         override this.Register (entity, world) =
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.JointDevice)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof JointFacet) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof JointFacet) (entity.ChangeEvent (nameof entity.JointDevice)) entity world
             world
 
         override this.RegisterPhysics (entity, world) =
@@ -858,20 +869,21 @@ module TileMapFacetModule =
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileMap)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TileMapFacet) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TileMapFacet) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TileMapFacet) (entity.ChangeEvent (nameof entity.Friction)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TileMapFacet) (entity.ChangeEvent (nameof entity.Restitution)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TileMapFacet) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TileMapFacet) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TileMapFacet) (entity.ChangeEvent (nameof entity.TileMap)) entity world
             let world =
-                World.monitor (fun _ world ->
+                World.fasten (fun _ world ->
                     let quickSize = entity.GetQuickSize world
                     let mutable transform = entity.GetTransform world
                     transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
+                    (nameof TileMapFacet)
                     (entity.ChangeEvent (nameof entity.TileMap))
                     entity
                     world
@@ -956,20 +968,21 @@ module TmxMapFacetModule =
 
         override this.Register (entity, world) =
             let world = entity.SetSize (entity.GetQuickSize world) world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TmxMap)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TmxMapFacet) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TmxMapFacet) (entity.ChangeEvent (nameof entity.Transform)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TmxMapFacet) (entity.ChangeEvent (nameof entity.Friction)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TmxMapFacet) (entity.ChangeEvent (nameof entity.Restitution)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TmxMapFacet) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TmxMapFacet) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
+            let world = World.fasten (fun _ world -> (Cascade, entity.PropagatePhysics world)) (nameof TmxMapFacet) (entity.ChangeEvent (nameof entity.TmxMap)) entity world
             let world =
-                World.monitor (fun _ world ->
+                World.fasten (fun _ world ->
                     let quickSize = entity.GetQuickSize world
                     let mutable transform = entity.GetTransform world
                     transform.Size <- quickSize
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
+                    (nameof TmxMapFacet)
                     (entity.ChangeEvent (nameof entity.TmxMap))
                     entity
                     world
@@ -1223,18 +1236,19 @@ module LayoutFacetModule =
         static let handleMount evt world =
             let entity = evt.Subscriber : Entity
             let mounter = evt.Data.Mounter
-            let (orderChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.Order.ChangeEvent --> mounter) entity world
-            let (layoutOrderChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.LayoutOrder.ChangeEvent --> mounter) entity world
-            let (dockTypeChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.DockType.ChangeEvent --> mounter) entity world
-            let (gridPositionChangeUnsub, world) = World.monitorPlus (fun _ world -> (Cascade, performLayout entity world)) (Entity.GridPosition.ChangeEvent --> mounter) entity world
+            let (orderChangeUnsub, world) = World.fastenPlus (fun _ world -> (Cascade, performLayout entity world)) (nameof LayoutFacet) (Entity.Order.ChangeEvent --> mounter) entity world
+            let (layoutOrderChangeUnsub, world) = World.fastenPlus (fun _ world -> (Cascade, performLayout entity world)) (nameof LayoutFacet) (Entity.LayoutOrder.ChangeEvent --> mounter) entity world
+            let (dockTypeChangeUnsub, world) = World.fastenPlus (fun _ world -> (Cascade, performLayout entity world)) (nameof LayoutFacet) (Entity.DockType.ChangeEvent --> mounter) entity world
+            let (gridPositionChangeUnsub, world) = World.fastenPlus (fun _ world -> (Cascade, performLayout entity world)) (nameof LayoutFacet) (Entity.GridPosition.ChangeEvent --> mounter) entity world
             let world =
-                World.monitor (fun evt world ->
+                World.fasten (fun evt world ->
                     let world =
                         if evt.Data.Mounter = mounter then
                             let world = world |> orderChangeUnsub |> layoutOrderChangeUnsub |> dockTypeChangeUnsub |> gridPositionChangeUnsub
                             performLayout entity world
                         else world
                     (Cascade, world))
+                    (nameof LayoutFacet)
                     (Events.Unmount --> entity)
                     entity
                     world
@@ -1250,10 +1264,10 @@ module LayoutFacetModule =
 
         override this.Register (entity, world) =
             let world = performLayout entity world
-            let world = World.monitor handleMount (Events.Mount --> entity) entity world
-            let world = World.monitor handleLayout entity.Transform.ChangeEvent entity world
-            let world = World.monitor handleLayout entity.Layout.ChangeEvent entity world
-            let world = World.monitor handleLayout entity.LayoutMargin.ChangeEvent entity world
+            let world = World.fasten handleMount (nameof LayoutFacet) (Events.Mount --> entity) entity world
+            let world = World.fasten handleLayout (nameof LayoutFacet) entity.Transform.ChangeEvent entity world
+            let world = World.fasten handleLayout (nameof LayoutFacet) entity.Layout.ChangeEvent entity world
+            let world = World.fasten handleLayout (nameof LayoutFacet) entity.LayoutMargin.ChangeEvent entity world
             world
 
 [<AutoOpen>]
@@ -1323,7 +1337,7 @@ module LightProbeFacet3dModule =
              define Entity.ProbeStale false]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleProbeStaleChange (entity.GetChangeEvent (nameof entity.ProbeStale)) entity world
+            let world = World.fasten handleProbeStaleChange (nameof LightProbeFacet3d) (entity.GetChangeEvent (nameof entity.ProbeStale)) entity world
             entity.SetProbeStale true world
             
         override this.Render (entity, world) =
@@ -1761,26 +1775,26 @@ module BasicStaticBillboardEmitterFacetModule =
             let particleSystem = entity.GetParticleSystem world
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
-            let world = World.monitor handlePositionChange (entity.GetChangeEvent (nameof entity.Position)) entity world
-            let world = World.monitor handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity world
-            let world = World.monitor handleEmitterMaterialPropertiesChange (entity.GetChangeEvent (nameof entity.EmitterMaterialProperties)) entity world
-            let world = World.monitor handleEmitterAlbedoImageChange (entity.GetChangeEvent (nameof entity.EmitterAlbedoImage)) entity world
-            let world = World.monitor handleEmitterMetallicImageChange (entity.GetChangeEvent (nameof entity.EmitterMetallicImage)) entity world
-            let world = World.monitor handleEmitterRoughnessImageChange (entity.GetChangeEvent (nameof entity.EmitterRoughnessImage)) entity world
-            let world = World.monitor handleEmitterAmbientOcclusionImageChange (entity.GetChangeEvent (nameof entity.EmitterAmbientOcclusionImage)) entity world
-            let world = World.monitor handleEmitterEmissionImageChange (entity.GetChangeEvent (nameof entity.EmitterEmissionImage)) entity world
-            let world = World.monitor handleEmitterNormalImageChange (entity.GetChangeEvent (nameof entity.EmitterNormalImage)) entity world
-            let world = World.monitor handleEmitterHeightImageChange (entity.GetChangeEvent (nameof entity.EmitterHeightImage)) entity world
-            let world = World.monitor handleEmitterMinFilterOptChange (entity.GetChangeEvent (nameof entity.EmitterMinFilterOpt)) entity world
-            let world = World.monitor handleEmitterMagFilterOptChange (entity.GetChangeEvent (nameof entity.EmitterMagFilterOpt)) entity world
-            let world = World.monitor handleEmitterRenderTypeChange (entity.GetChangeEvent (nameof entity.EmitterRenderType)) entity world
-            let world = World.monitor handleEmitterLifeTimeOptChange (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
-            let world = World.monitor handleParticleLifeTimeMaxOptChange (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
-            let world = World.monitor handleParticleRateChange (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
-            let world = World.monitor handleParticleMaxChange (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
-            let world = World.monitor handleBasicParticleSeedChange (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
-            let world = World.monitor handleEmitterConstraintChange (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
-            let world = World.monitor handleEmitterStyleChange (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
+            let world = World.fasten handlePositionChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.Position)) entity world
+            let world = World.fasten handleRotationChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.Rotation)) entity world
+            let world = World.fasten handleEmitterMaterialPropertiesChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterMaterialProperties)) entity world
+            let world = World.fasten handleEmitterAlbedoImageChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterAlbedoImage)) entity world
+            let world = World.fasten handleEmitterMetallicImageChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterMetallicImage)) entity world
+            let world = World.fasten handleEmitterRoughnessImageChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterRoughnessImage)) entity world
+            let world = World.fasten handleEmitterAmbientOcclusionImageChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterAmbientOcclusionImage)) entity world
+            let world = World.fasten handleEmitterEmissionImageChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterEmissionImage)) entity world
+            let world = World.fasten handleEmitterNormalImageChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterNormalImage)) entity world
+            let world = World.fasten handleEmitterHeightImageChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterHeightImage)) entity world
+            let world = World.fasten handleEmitterMinFilterOptChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterMinFilterOpt)) entity world
+            let world = World.fasten handleEmitterMagFilterOptChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterMagFilterOpt)) entity world
+            let world = World.fasten handleEmitterRenderTypeChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterRenderType)) entity world
+            let world = World.fasten handleEmitterLifeTimeOptChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterLifeTimeOpt)) entity world
+            let world = World.fasten handleParticleLifeTimeMaxOptChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.ParticleLifeTimeMaxOpt)) entity world
+            let world = World.fasten handleParticleRateChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.ParticleRate)) entity world
+            let world = World.fasten handleParticleMaxChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.ParticleMax)) entity world
+            let world = World.fasten handleBasicParticleSeedChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.BasicParticleSeed)) entity world
+            let world = World.fasten handleEmitterConstraintChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterConstraint)) entity world
+            let world = World.fasten handleEmitterStyleChange (nameof BasicStaticBillboardEmitterFacet) (entity.GetChangeEvent (nameof entity.EmitterStyle)) entity world
             world
 
         override this.Unregister (entity, world) =
