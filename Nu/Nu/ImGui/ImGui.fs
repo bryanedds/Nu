@@ -14,6 +14,12 @@ open Nu
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port of a port.
 type ImGui (windowWidth : int, windowHeight : int) =
 
+    static let mutable mouseDraggingStarted =
+        [|false; false; false|]
+
+    static let mutable mouseDraggingContinued =
+        [|false; false; false|]
+
     let charsPressed =
         List<char> ()
 
@@ -99,6 +105,13 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.NewFrame ()
         ImGuiIOPtr.BeginFrame ()
         ImGuizmo.BeginFrame ()
+        for i in 0 .. dec 3 do
+            if ImGui.IsMouseDragging (LanguagePrimitives.EnumOfValue i) then
+                if not mouseDraggingStarted.[i] then mouseDraggingStarted.[i] <- true
+                else mouseDraggingContinued.[i] <- true
+            else
+                mouseDraggingStarted.[i] <- false
+                mouseDraggingContinued.[i] <- false
 
     member this.EndFrame () =
         () // nothing to do
@@ -142,17 +155,29 @@ type ImGui (windowWidth : int, windowHeight : int) =
         colors.[int ImGuiCol.TitleBg] <- v4 0.0f 0.0f 0.0f 0.5f
         colors.[int ImGuiCol.WindowBg] <- v4 0.0f 0.0f 0.0f 0.333f
 
+    static member IsMouseDraggingContinued (mouseButton : ImGuiMouseButton) =
+        mouseDraggingContinued.[int mouseButton]
+
     static member IsCtrlDown () =
         ImGui.IsKeyDown ImGuiKey.LeftCtrl ||
         ImGui.IsKeyDown ImGuiKey.RightCtrl
+
+    static member IsCtrlReleased () =
+        not (ImGui.IsCtrlDown ())
 
     static member IsAltDown () =
         ImGui.IsKeyDown ImGuiKey.LeftAlt ||
         ImGui.IsKeyDown ImGuiKey.RightAlt
 
+    static member IsAltReleased () =
+        not (ImGui.IsAltDown ())
+
     static member IsShiftDown () =
         ImGui.IsKeyDown ImGuiKey.LeftShift ||
         ImGui.IsKeyDown ImGuiKey.RightShift
+
+    static member IsShiftReleased () =
+        not (ImGui.IsShiftDown ())
 
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
