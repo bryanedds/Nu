@@ -82,6 +82,7 @@ module Gaia =
     let mutable private snaps2dSelected = true
     let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private snapDrag = 0.1f
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
     let mutable private lightMappingConfig = { LightMappingEnabled = true }
@@ -607,7 +608,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Left (_, wtemp) -> world <- wtemp
 
     let private setPropertyValue (value : obj) propertyDescriptor simulant =
-        snapshot ()
+        if  not (ImGui.IsMouseDragging ImGuiMouseButton.Left) ||
+            not (ImGui.IsMouseDraggingContinued ImGuiMouseButton.Left) then
+            snapshot ()
         setPropertyValueWithoutUndo value propertyDescriptor simulant
 
     let private createEntity atMouse inHierarchy =
@@ -638,7 +641,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             entityTransform.Position <- entityPosition.V3
             entityTransform.Size <- entity.GetQuickSize world
             entityTransform.Elevation <- newEntityElevation
-            if snaps2dSelected
+            if snaps2dSelected && ImGui.IsCtrlReleased ()
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
         else
@@ -653,7 +656,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
             entityTransform.Position <- entityPosition
             entityTransform.Size <- entity.GetQuickSize world
-            if not snaps2dSelected
+            if not snaps2dSelected && ImGui.IsCtrlReleased ()
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
         if inHierarchy then
@@ -1003,7 +1006,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
-                        if snaps2dSelected
+                        if snaps2dSelected && ImGui.IsCtrlReleased ()
                         then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition.V3
                         else entityPosition.V3
                     let entityPosition = entity.GetPosition world
@@ -1025,7 +1028,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
-                        if snaps2dSelected
+                        if snaps2dSelected && ImGui.IsCtrlReleased ()
                         then Math.snapF (Triple.snd (getSnaps ())) entityDegree
                         else entityDegree
                     let entityDegree = (entity.GetDegreesLocal world).Z
@@ -1081,27 +1084,27 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let turnSpeed =
                 if ImGui.IsShiftDown () then 0.025f
                 else 0.05f
-            if ImGui.IsKeyDown ImGuiKey.W then
+            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.S then
+            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.A then
+            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.D then
+            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.Q then
+            if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Up) < 0.999f then world <- World.setEyeRotation3d rotation' world
-            if ImGui.IsKeyDown ImGuiKey.E then
+            if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Down) < 0.999f then world <- World.setEyeRotation3d rotation' world
-            if ImGui.IsKeyDown ImGuiKey.UpArrow && not (ImGui.IsAltDown ()) then
+            if ImGui.IsKeyDown ImGuiKey.UpArrow && ImGui.IsAltReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.DownArrow && not (ImGui.IsAltDown ()) then
+            if ImGui.IsKeyDown ImGuiKey.DownArrow && ImGui.IsAltReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.LeftArrow then
+            if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltReleased () then
                 world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
-            if ImGui.IsKeyDown ImGuiKey.RightArrow then
+            if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltReleased () then
                 world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
 
     let private updateHotkeys entityHierarchyFocused =
@@ -1222,7 +1225,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome albedo ->
                 let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
                 ImGui.SameLine ()
-                if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setPropertyValueWithoutUndo { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
+                if ImGui.ColorEdit4 ("AlbedoOpt", &v) then setPropertyValue { mp with AlbedoOpt = ValueSome (color v.X v.Y v.Z v.W) } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1238,7 +1241,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome metallic ->
                 let mutable metallic = metallic
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("MetallicOpt", &metallic, 0.05f) then setPropertyValue { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
+                if ImGui.DragFloat ("MetallicOpt", &metallic, snapDrag) then setPropertyValue { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1254,7 +1257,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome roughness ->
                 let mutable roughness = roughness
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("RoughnessOpt", &roughness, 0.05f) then setPropertyValue { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                if ImGui.DragFloat ("RoughnessOpt", &roughness, snapDrag) then setPropertyValue { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1270,7 +1273,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome emission ->
                 let mutable emission = emission
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("EmissionOpt", &emission, 0.05f) then setPropertyValue { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
+                if ImGui.DragFloat ("EmissionOpt", &emission, snapDrag) then setPropertyValue { mp with EmissionOpt = ValueSome emission } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1286,7 +1289,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome height ->
                 let mutable height = height
                 ImGui.SameLine ()
-                if ImGui.InputFloat ("HeightOpt", &height, 0.05f) then setPropertyValue { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
+                if ImGui.DragFloat ("HeightOpt", &height, snapDrag) then setPropertyValue { mp with HeightOpt = ValueSome height } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1316,31 +1319,31 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match value with
         | :? Frustum -> () // TODO: implement FrustumConverter.
         | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (name, &b') then setProperty b' propertyDescriptor simulant
-        | :? int8 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (int8 i') propertyDescriptor simulant
-        | :? uint8 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (uint8 i') propertyDescriptor simulant
-        | :? int16 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (int16 i') propertyDescriptor simulant
-        | :? uint16 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (uint16 i') propertyDescriptor simulant
-        | :? int32 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (int32 i') propertyDescriptor simulant
-        | :? uint32 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (uint32 i') propertyDescriptor simulant
-        | :? int64 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (int64 i') propertyDescriptor simulant
-        | :? uint64 as i -> let mutable i' = int32 i in if ImGui.InputInt (name, &i') then setProperty (uint64 i') propertyDescriptor simulant
-        | :? single as f -> let mutable f' = single f in if ImGui.InputFloat (name, &f') then setProperty (single f') propertyDescriptor simulant
-        | :? double as f -> let mutable f' = single f in if ImGui.InputFloat (name, &f') then setProperty (double f') propertyDescriptor simulant
-        | :? Vector2 as v -> let mutable v' = v in if ImGui.InputFloat2 (name, &v') then setProperty v' propertyDescriptor simulant
-        | :? Vector3 as v -> let mutable v' = v in if ImGui.InputFloat3 (name, &v') then setProperty v' propertyDescriptor simulant
-        | :? Vector4 as v -> let mutable v' = v in if ImGui.InputFloat4 (name, &v') then setProperty v' propertyDescriptor simulant
-        | :? Vector2i as v -> let mutable v' = v in if ImGui.InputInt2 (name, &v'.X) then setProperty v' propertyDescriptor simulant
-        | :? Vector3i as v -> let mutable v' = v in if ImGui.InputInt3 (name, &v'.X) then setProperty v' propertyDescriptor simulant
-        | :? Vector4i as v -> let mutable v' = v in if ImGui.InputInt4 (name, &v'.X) then setProperty v' propertyDescriptor simulant
+        | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int8 i') propertyDescriptor simulant
+        | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint8 i') propertyDescriptor simulant
+        | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int16 i') propertyDescriptor simulant
+        | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint16 i') propertyDescriptor simulant
+        | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int32 i') propertyDescriptor simulant
+        | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint32 i') propertyDescriptor simulant
+        | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int64 i') propertyDescriptor simulant
+        | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint64 i') propertyDescriptor simulant
+        | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (name, &f', snapDrag) then setProperty (single f') propertyDescriptor simulant
+        | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (name, &f', snapDrag) then setProperty (double f') propertyDescriptor simulant
+        | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (name, &v', snapDrag) then setProperty v' propertyDescriptor simulant
+        | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (name, &v', snapDrag) then setProperty v' propertyDescriptor simulant
+        | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (name, &v', snapDrag) then setProperty v' propertyDescriptor simulant
+        | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (name, &v'.X, snapDrag) then setProperty v' propertyDescriptor simulant
+        | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (name, &v'.X, snapDrag) then setProperty v' propertyDescriptor simulant
+        | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (name, &v'.X, snapDrag) then setProperty v' propertyDescriptor simulant
         | :? MaterialProperties as mp -> imGuiEditMaterialProperiesProperty mp propertyDescriptor simulant
         | :? Box2 as b ->
             ImGui.Text name
             let mutable min = v2 b.Min.X b.Min.Y
             let mutable size = v2 b.Size.X b.Size.Y
             ImGui.Indent ()
-            let minChanged = ImGui.InputFloat2 (propertyLabelPrefix + "Min via " + name, &min)
+            let minChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Min via " + name, &min, snapDrag)
             editProperty ()
-            let sizeChanged = ImGui.InputFloat2 (propertyLabelPrefix + "Size via " + name, &size)
+            let sizeChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Size via " + name, &size, snapDrag)
             if minChanged || sizeChanged then
                 let b' = box2 min size
                 setProperty b' propertyDescriptor simulant
@@ -1350,9 +1353,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
             let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
             ImGui.Indent ()
-            let minChanged = ImGui.InputFloat3 (propertyLabelPrefix + "Min via " + name, &min)
+            let minChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Min via " + name, &min, snapDrag)
             editProperty ()
-            let sizeChanged = ImGui.InputFloat3 (propertyLabelPrefix + "Size via " + name, &size)
+            let sizeChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Size via " + name, &size, snapDrag)
             if minChanged || sizeChanged then
                 let b' = box3 min size
                 setProperty b' propertyDescriptor simulant
@@ -1362,23 +1365,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable min = v2i b.Min.X b.Min.Y
             let mutable size = v2i b.Size.X b.Size.Y
             ImGui.Indent ()
-            let minChanged = ImGui.InputInt2 (propertyLabelPrefix + "Min via " + name, &min.X)
+            let minChanged = ImGui.DragInt2 (propertyLabelPrefix + "Min via " + name, &min.X, snapDrag)
             editProperty ()
-            let sizeChanged = ImGui.InputInt2 (propertyLabelPrefix + "Size via " + name, &size.X)
+            let sizeChanged = ImGui.DragInt2 (propertyLabelPrefix + "Size via " + name, &size.X, snapDrag)
             if minChanged || sizeChanged then
                 let b' = box2i min size
                 setProperty b' propertyDescriptor simulant
             ImGui.Unindent ()
         | :? Quaternion as q ->
             let mutable v = v4 q.X q.Y q.Z q.W
-            if ImGui.InputFloat4 (name, &v) then
+            if ImGui.DragFloat4 (name, &v, snapDrag) then
                 let q' = quat v.X v.Y v.Z v.W
                 setProperty q' propertyDescriptor simulant
         | :? Color as c ->
             let mutable v = v4 c.R c.G c.B c.A
             if ImGui.ColorEdit4 (name, &v) then
                 let c' = color v.X v.Y v.Z v.W
-                setPropertyValueWithoutUndo c' propertyDescriptor simulant
+                setPropertyValue c' propertyDescriptor simulant
         | :? RenderStyle as style ->
             let mutable index = match style with Deferred -> 0 | Forward _ -> 1
             let (changed, style) =
@@ -1395,9 +1398,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | Forward (subsort, sort) ->
                         let mutable (subsort, sort) = (subsort, sort)
                         ImGui.Indent ()
-                        let subsortChanged = ImGui.InputFloat ("Subsort via " + name, &subsort)
+                        let subsortChanged = ImGui.DragFloat ("Subsort via " + name, &subsort, snapDrag)
                         editProperty ()
-                        let sortChanged = ImGui.InputFloat ("Sort via " + name, &sort)
+                        let sortChanged = ImGui.DragFloat ("Sort via " + name, &sort, snapDrag)
                         ImGui.Unindent ()
                         (changed || subsortChanged || sortChanged, Forward (subsort, sort))
                 | _ -> failwithumf ()
@@ -1420,16 +1423,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | SpotLight (innerCone, outerCone) ->
                         let mutable (innerCone, outerCone) = (innerCone, outerCone)
                         ImGui.Indent ()
-                        let innerConeChanged = ImGui.InputFloat ("InnerCone via " + name, &innerCone)
+                        let innerConeChanged = ImGui.DragFloat ("InnerCone via " + name, &innerCone, snapDrag)
                         editProperty ()
-                        let outerConeChanged = ImGui.InputFloat ("OuterCone via " + name, &outerCone)
+                        let outerConeChanged = ImGui.DragFloat ("OuterCone via " + name, &outerCone, snapDrag)
                         ImGui.Unindent ()
                         (changed || innerConeChanged || outerConeChanged, SpotLight (innerCone, outerCone))
                 | _ -> failwithumf ()
             if changed then setProperty light propertyDescriptor simulant
         | :? Substance as substance ->
             let mutable scalar = match substance with Mass m -> m | Density d -> d
-            let changed = ImGui.InputFloat ("##scalar via " + name, &scalar)
+            let changed = ImGui.DragFloat ("##scalar via " + name, &scalar, snapDrag)
             editProperty ()
             let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
             ImGui.SameLine ()
@@ -1667,7 +1670,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let affine' = Matrix4x4.CreateFromArray affine
                             let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
-                                let (p, _, s) = if not snaps2dSelected then snaps3d else (0.0f, 0.0f, 0.0f)
+                                let (p, _, s) =
+                                    if  not snaps2dSelected &&
+                                        ImGui.IsCtrlReleased () then
+                                        snaps3d else (0.0f, 0.0f, 0.0f)
                                 scale <- Math.snapF3d s scale
                                 if scale.X < 0.01f then scale.X <- 0.01f
                                 if scale.Y < 0.01f then scale.Y <- 0.01f
@@ -1839,7 +1845,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "@ Elev."
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth 50.0f
-                        ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, 0.05f, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, snapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
                         ImGui.SameLine ()
                         if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
                         ImGui.SameLine ()
@@ -2180,10 +2186,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "Master Sound Volume"
                         let mutable masterSoundVolume = World.getMasterSoundVolume world
                         if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then world <- World.setMasterSoundVolume masterSoundVolume world
+                        if ImGui.IsCtrlReleased () then masterSoundVolume <- Math.snapF 0.01f masterSoundVolume
                         ImGui.SameLine ()
                         ImGui.Text (string masterSoundVolume)
                         ImGui.Text "Master Song Volume"
                         let mutable masterSongVolume = World.getMasterSongVolume world
+                        if ImGui.IsCtrlReleased () then masterSongVolume <- Math.snapF 0.01f masterSongVolume
                         if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then world <- World.setMasterSongVolume masterSongVolume world
                         ImGui.SameLine ()
                         ImGui.Text (string masterSongVolume)
@@ -2205,6 +2213,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
                         if ssaoEnabled then
                             ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
+                            if ImGui.IsCtrlReleased () then ssaoIntensity <- Math.snapF 0.05f ssaoIntensity
                             ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
                             ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) |> ignore<bool>
@@ -2294,7 +2303,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if Directory.Exists templateDir then
 
                         // prompt user to create new project
-                        // TODO: change this to popup?
                         let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal (title, &showNewProjectDialog) then
