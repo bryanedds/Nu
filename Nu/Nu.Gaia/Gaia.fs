@@ -1638,10 +1638,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.NavEnableKeyboard
 
                 // viewport interaction
-                let io = ImGui.GetIO ()
                 ImGui.SetNextWindowPos v2Zero
                 ImGui.SetNextWindowSize io.DisplaySize
-                if ImGui.IsKeyPressed ImGuiKey.Escape && not showRestartDialog then ImGui.SetNextWindowFocus ()
+                if ImGui.IsKeyPressed ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
 
                     // guizmo manipulation
@@ -2486,7 +2485,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if showOpenGroupDialog then
                     groupFileDialogState.Title <- "Choose a nugroup file..."
                     groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
-                    if  ImGui.FileDialog (&showOpenGroupDialog, groupFileDialogState) then
+                    if ImGui.FileDialog (&showOpenGroupDialog, groupFileDialogState) then
                         snapshot ()
                         showOpenGroupDialog <- not (tryLoadSelectedGroup groupFileDialogState.FilePath)
 
@@ -2494,7 +2493,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if showSaveGroupDialog then
                     groupFileDialogState.Title <- "Save a nugroup file..."
                     groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
-                    if  ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
+                    if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
                         snapshot ()
                         showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
 
