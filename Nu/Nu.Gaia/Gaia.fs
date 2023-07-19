@@ -20,11 +20,9 @@ open Nu.Gaia
 ///////////////////////////////////
 // TODO:
 //
-// Log Output window.
 // Paste in hierarchy.
-// Try to figure out how to snapshot only on first property interaction.
+// Log Output window.
 // Sense functions for Stream.
-// Box3 viewport editing (w/ snapping).
 // Perhaps look up some-constructed default property values from overlayer.
 //
 // Custom properties in order of priority:
