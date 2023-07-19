@@ -287,7 +287,7 @@ module ImGui =
 
                 match dialogState.FileDialogType with
                 | ImGuiFileDialogType.Open ->
-                    if ImGui.Button "Open" then
+                    if ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter then
 
                         dialogState.ResultPath <- Path.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
@@ -306,7 +306,7 @@ module ImGui =
                             opened <- false
 
                 | ImGuiFileDialogType.Save ->
-                    if ImGui.Button "Save" then
+                    if ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter then
 
                         dialogState.ResultPath <- Path.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
@@ -328,7 +328,7 @@ module ImGui =
 
                 ImGui.SameLine()
 
-                if ImGui.Button "Cancel" then
+                if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then
                     fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
                     sizeSortOrder <- ImGuiFileSortOrder.Unsorted
                     typeSortOrder <- ImGuiFileSortOrder.Unsorted
