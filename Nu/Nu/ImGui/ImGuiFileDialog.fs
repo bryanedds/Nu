@@ -285,21 +285,6 @@ module ImGui =
                     dialogState.FileName <- fileNameBuffer
                     dialogState.CurrentIndex <- 0UL
 
-                if ImGui.Button "Cancel" then
-                    fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
-                    sizeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    typeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    dateSortOrder <- ImGuiFileSortOrder.Unsorted
-
-                    dialogState.RefreshInfo <- false
-                    dialogState.CurrentDirectories <- []
-                    dialogState.CurrentFiles <- []
-                    dialogState.CurrentIndex <- 0UL
-
-                    opened <- false
-
-                ImGui.SameLine()
-
                 match dialogState.FileDialogType with
                 | ImGuiFileDialogType.Open ->
                     if ImGui.Button "Open" then
@@ -340,6 +325,21 @@ module ImGui =
                             opened <- false
 
                 | _ -> ()
+
+                ImGui.SameLine()
+
+                if ImGui.Button "Cancel" then
+                    fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
+                    sizeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    typeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    dateSortOrder <- ImGuiFileSortOrder.Unsorted
+
+                    dialogState.RefreshInfo <- false
+                    dialogState.CurrentDirectories <- []
+                    dialogState.CurrentFiles <- []
+                    dialogState.CurrentIndex <- 0UL
+
+                    opened <- false
 
             ImGui.EndPopup ()
             ImGui.PopID ()
