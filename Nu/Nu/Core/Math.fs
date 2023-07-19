@@ -1392,14 +1392,14 @@ module Math =
     let snapI offset (value : int) =
         if offset <> 0 then
             let (div, rem) = Math.DivRem (value, offset)
-            let rem = if rem < offset / 2 then 0 else offset
+            let rem = if single rem < single offset * 0.5f then 0 else offset
             div * offset + rem
         else value
 
     /// Snap a single value to an offset.
     /// Has a minimum granularity of 0.01f.
     let snapF (offset : single) (value : single) =
-        single (snapI (int (round (offset * 100.0f))) (int (round (value * 100.0f)))) * 0.01f
+        single (snapI (int (round (offset * 100.0f))) (int (round (value * 100.0f)))) / 100.0f
 
     /// Snap a Vector3 value to an offset.
     /// Has a minimum granularity of 0.001f.

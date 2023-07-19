@@ -2183,12 +2183,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "Master Sound Volume"
                         let mutable masterSoundVolume = World.getMasterSoundVolume world
                         if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then world <- World.setMasterSoundVolume masterSoundVolume world
-                        masterSoundVolume <- Math.snapF 0.01f masterSoundVolume
                         ImGui.SameLine ()
                         ImGui.Text (string masterSoundVolume)
                         ImGui.Text "Master Song Volume"
                         let mutable masterSongVolume = World.getMasterSongVolume world
-                        masterSongVolume <- Math.snapF 0.01f masterSongVolume
                         if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then world <- World.setMasterSongVolume masterSongVolume world
                         ImGui.SameLine ()
                         ImGui.Text (string masterSongVolume)
@@ -2210,7 +2208,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
                         if ssaoEnabled then
                             ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
-                            ssaoIntensity <- Math.snapF 0.05f ssaoIntensity
                             ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
                             ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) |> ignore<bool>
