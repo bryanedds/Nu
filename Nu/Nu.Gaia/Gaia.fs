@@ -1308,7 +1308,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
-    let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (editProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
+    let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (focusProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName
         let converter = SymbolicConverter ty
@@ -1340,7 +1340,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable size = v2 b.Size.X b.Size.Y
             ImGui.Indent ()
             let minChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Min via " + name, &min, snapDrag)
-            editProperty ()
+            focusProperty ()
             let sizeChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Size via " + name, &size, snapDrag)
             if minChanged || sizeChanged then
                 let b' = box2 min size
@@ -1352,7 +1352,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
             ImGui.Indent ()
             let minChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Min via " + name, &min, snapDrag)
-            editProperty ()
+            focusProperty ()
             let sizeChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Size via " + name, &size, snapDrag)
             if minChanged || sizeChanged then
                 let b' = box3 min size
@@ -1364,7 +1364,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable size = v2i b.Size.X b.Size.Y
             ImGui.Indent ()
             let minChanged = ImGui.DragInt2 (propertyLabelPrefix + "Min via " + name, &min.X, snapDrag)
-            editProperty ()
+            focusProperty ()
             let sizeChanged = ImGui.DragInt2 (propertyLabelPrefix + "Size via " + name, &size.X, snapDrag)
             if minChanged || sizeChanged then
                 let b' = box2i min size
@@ -1386,7 +1386,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.Combo (name, &index, [|nameof Deferred; nameof Forward|], 2)
                 then (true, match index with 0 -> Deferred | 1 -> Forward (0.0f, 0.0f) | _ -> failwithumf ())
                 else (false, style)
-            editProperty ()
+            focusProperty ()
             let (changed, style) =
                 match index with
                 | 0 -> (changed, style)
@@ -1397,7 +1397,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let mutable (subsort, sort) = (subsort, sort)
                         ImGui.Indent ()
                         let subsortChanged = ImGui.DragFloat ("Subsort via " + name, &subsort, snapDrag)
-                        editProperty ()
+                        focusProperty ()
                         let sortChanged = ImGui.DragFloat ("Sort via " + name, &sort, snapDrag)
                         ImGui.Unindent ()
                         (changed || subsortChanged || sortChanged, Forward (subsort, sort))
@@ -1409,7 +1409,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
                 then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
                 else (false, light)
-            editProperty ()
+            focusProperty ()
             let (changed, light) =
                 match index with
                 | 0 -> (changed, light)
@@ -1422,7 +1422,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let mutable (innerCone, outerCone) = (innerCone, outerCone)
                         ImGui.Indent ()
                         let innerConeChanged = ImGui.DragFloat ("InnerCone via " + name, &innerCone, snapDrag)
-                        editProperty ()
+                        focusProperty ()
                         let outerConeChanged = ImGui.DragFloat ("OuterCone via " + name, &outerCone, snapDrag)
                         ImGui.Unindent ()
                         (changed || innerConeChanged || outerConeChanged, SpotLight (innerCone, outerCone))
@@ -1431,7 +1431,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | :? Substance as substance ->
             let mutable scalar = match substance with Mass m -> m | Density d -> d
             let changed = ImGui.DragFloat ("##scalar via " + name, &scalar, snapDrag)
-            editProperty ()
+            focusProperty ()
             let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
             ImGui.SameLine ()
             let changed = ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || changed
@@ -1470,13 +1470,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             else
                                 () // TODO: look up default values from overlayer if they are some
                         else setProperty None propertyDescriptor simulant
-                    editProperty ()
+                    focusProperty ()
                     if isSome then
                         ImGui.SameLine ()
                         let getProperty = fun _ simulant -> let opt = getProperty propertyDescriptor simulant in ty.GetProperty("Value").GetValue(opt, [||])
                         let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
-                        imGuiEditProperty getProperty setProperty editProperty (name + ".") propertyDescriptor simulant
+                        imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant
                 elif ty.IsGenericType &&
                      ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
                      ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
@@ -1496,20 +1496,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             else
                                 failwithumf ()
                         else setProperty ValueNone propertyDescriptor simulant
-                    editProperty ()
+                    focusProperty ()
                     if isSome then
                         ImGui.SameLine ()
                         let getProperty = fun _ simulant -> let opt = getProperty propertyDescriptor simulant in ty.GetProperty("Value").GetValue(opt, [||])
                         let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
-                        imGuiEditProperty getProperty setProperty editProperty (name + ".") propertyDescriptor simulant
+                        imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant
                 elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
                     let mutable valueStr' = valueStr
                     if ImGui.InputText ("##text" + name, &valueStr', 4096u) then
                         try let value' = converter.ConvertFromString valueStr'
                             setProperty value' propertyDescriptor simulant
                         with :? ParseException | :? ConversionException -> ()
-                    editProperty ()
+                    focusProperty ()
                     if ImGui.BeginDragDropTarget () then
                         if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                             match dragDropPayloadOpt with
@@ -1524,7 +1524,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.SameLine ()
                     ImGui.PushID ("##pickAsset" + name)
                     if ImGui.Button ("V", v2Dup 19.0f) then showAssetPickerDialog <- true
-                    editProperty ()
+                    focusProperty ()
                     ImGui.PopID ()
                     ImGui.SameLine ()
                     ImGui.Text name
@@ -1539,7 +1539,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let facetName = if not last then Seq.item i facetNames else "(Empty)"
                         let mutable facetNameIndex = Seq.findIndex ((=) facetName) facetNamesAll
                         changed <- ImGui.Combo ("##" + name + string i, &facetNameIndex, facetNamesAll, facetNamesAll.Length) || changed
-                        if not last then editProperty ()
+                        if not last then focusProperty ()
                         if facetNameIndex <> 0 then facetNames' <- Set.add (Seq.item facetNameIndex facetNamesAll) facetNames'
                     ImGui.Unindent ()
                     if changed then setPropertyValueIgnoreError facetNames' propertyDescriptor simulant
@@ -1549,7 +1549,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         try let value' = converter.ConvertFromString valueStr'
                             setProperty value' propertyDescriptor simulant
                         with :? ParseException | :? ConversionException -> ()
-        editProperty ()
+        focusProperty ()
 
     let private imGuiEditProperties (simulant : Simulant) =
         let mutable simulant = simulant
@@ -1594,17 +1594,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             | _ -> ()
                             if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
                         else
+                            let focusProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                             let mutable replaced = false
                             let replaceProperty =
                                 ReplaceProperty
                                     { Snapshot = fun world -> snapshot (); world
+                                      FocusProperty = fun world -> focusProperty (); world
                                       IndicateReplaced = fun world -> replaced <- true; world
                                       PropertyDescriptor = propertyDescriptor }
                             world <- World.edit replaceProperty simulant world
                             if not replaced then
-                                let editProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-                                imGuiEditProperty getPropertyValue setPropertyValue editProperty "" propertyDescriptor simulant
-        world <- World.edit AppendProperties simulant world
+                                imGuiEditProperty getPropertyValue setPropertyValue focusProperty "" propertyDescriptor simulant
+        let appendProperties =
+            { Snapshot = fun world -> snapshot (); world
+              UnfocusProperty = fun world -> focusedPropertyDescriptorOpt <- None; world }
+        world <- World.edit (AppendProperties appendProperties) simulant world
 
     let private imGuiProcess wtemp =
 

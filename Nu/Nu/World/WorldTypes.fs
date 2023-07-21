@@ -45,12 +45,14 @@ and Unsubscription = World -> World
 
 /// Details additional editing behavior for an simulant's properties.
 and AppendProperties =
-    { PushPastWorld : World -> World }
+    { Snapshot : World -> World
+      UnfocusProperty : World -> World }
 
 /// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
 /// replaced.
 and [<ReferenceEquality>] ReplaceProperty =
     { Snapshot : World -> World
+      FocusProperty : World -> World
       IndicateReplaced : World -> World
       PropertyDescriptor : PropertyDescriptor }
 
@@ -63,7 +65,7 @@ and [<ReferenceEquality>] OverlayViewport =
 
 /// Specifies an aspect of simulant editing to perform.
 and [<ReferenceEquality>] EditOperation =
-    | AppendProperties
+    | AppendProperties of AppendProperties
     | ReplaceProperty of ReplaceProperty
     | OverlayViewport of OverlayViewport
 
