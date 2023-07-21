@@ -63,8 +63,8 @@ module LightMap =
               (v3Forward, v3Down)|] // (-z) front
 
         // construct projections
-        let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, geometryViewport.NearDistance, geometryViewport.FarDistance)
-        let rasterProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, rasterViewport.AspectRatio, rasterViewport.NearDistance, rasterViewport.FarDistance)
+        let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.NearDistance, geometryViewport.FarDistance)
+        let rasterProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, rasterViewport.AspectRatio, rasterViewport.NearDistance, rasterViewport.FarDistance)
 
         // render reflection cube map faces
         for i in 0 .. dec 6 do
@@ -154,7 +154,7 @@ module LightMap =
               (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
-        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
+        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)).ToArray ()
 
         // mutate viewport
         Gl.Viewport (0, 0, resolution, resolution)
@@ -310,7 +310,7 @@ module LightMap =
               (Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)).ToArray ()
               (Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)).ToArray ()|]
-        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathHelper.PiOver2, 1.0f, 0.1f, 10.0f)).ToArray ()
+        let projection = (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)).ToArray ()
 
         // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do

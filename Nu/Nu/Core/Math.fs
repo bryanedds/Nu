@@ -141,7 +141,7 @@ module Vector3 =
         member this.WithX x = Vector3 (x, this.Y, this.Z)
         member this.WithY y = Vector3 (this.X, y, this.Z)
         member this.WithZ z = Vector3 (this.X, this.Y, z)
-        member this.RollPitchYaw = MathHelper.RollPitchYaw &this
+        member this.RollPitchYaw = Math.RollPitchYaw &this
 
         member this.AngleBetween (that : Vector3) =
             let a = Vector3.Normalize this
@@ -733,7 +733,7 @@ module Quaternion =
 
         /// Decompose the quaternion into roll, pitch, and yaw angles.
         member this.RollPitchYaw =
-            MathHelper.RollPitchYaw &this
+            Math.RollPitchYaw &this
 
         /// Normalize the quaternion.
         member this.Normalized =

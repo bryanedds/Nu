@@ -310,13 +310,13 @@ namespace Nu
         public static Box3 Enclose(Vector3 point, Vector3 point2)
 		{
             var min = new Vector3(
-                Math.Min(point.X, point2.X),
-                Math.Min(point.Y, point2.Y),
-                Math.Min(point.Z, point2.Z));
+                System.Math.Min(point.X, point2.X),
+                System.Math.Min(point.Y, point2.Y),
+                System.Math.Min(point.Z, point2.Z));
             var min2 = new Vector3(
-                Math.Max(point.X, point2.X),
-                Math.Max(point.Y, point2.Y),
-                Math.Max(point.Z, point2.Z));
+                System.Math.Max(point.X, point2.X),
+                System.Math.Max(point.Y, point2.Y),
+                System.Math.Max(point.Z, point2.Z));
             return new Box3(min, min2 - min);
         }
 
@@ -392,12 +392,12 @@ namespace Nu
                 var max2 = -min;
                 var min3 = new Vector3();
                 var max3 = new Vector3();
-                min3.X = Math.Min(min.X, min2.X);
-                min3.Y = Math.Min(min.Y, min2.Y);
-                min3.Z = Math.Min(min.Z, min2.Z);
-                max3.X = Math.Max(max.X, max2.X);
-                max3.Y = Math.Max(max.Y, max2.Y);
-                max3.Z = Math.Max(max.Z, max2.Z);
+                min3.X = System.Math.Min(min.X, min2.X);
+                min3.Y = System.Math.Min(min.Y, min2.Y);
+                min3.Z = System.Math.Min(min.Z, min2.Z);
+                max3.X = System.Math.Max(max.X, max2.X);
+                max3.Y = System.Math.Max(max.Y, max2.Y);
+                max3.Z = System.Math.Max(max.Z, max2.Z);
                 return new Box3(min3, max3 - min3);
             }
         }
@@ -435,12 +435,12 @@ namespace Nu
             var max = min + Size;
             var min2 = new Vector3();
             var max2 = new Vector3();
-            min2.X = Math.Min(min.X, point.X);
-            min2.Y = Math.Min(min.Y, point.Y);
-            min2.Z = Math.Min(min.Z, point.Z);
-            max2.X = Math.Max(max.X, point.X);
-            max2.Y = Math.Max(max.Y, point.Y);
-            max2.Z = Math.Max(max.Z, point.Z);
+            min2.X = System.Math.Min(min.X, point.X);
+            min2.Y = System.Math.Min(min.Y, point.Y);
+            min2.Z = System.Math.Min(min.Z, point.Z);
+            max2.X = System.Math.Max(max.X, point.X);
+            max2.Y = System.Math.Max(max.Y, point.Y);
+            max2.Z = System.Math.Max(max.Z, point.Z);
             return new Box3(min2, max2 - min2);
         }
 
@@ -457,12 +457,12 @@ namespace Nu
             var max2 = min2 + box.Size;
             var min3 = new Vector3();
             var max3 = new Vector3();
-            min3.X = Math.Min(min.X, min2.X);
-            min3.Y = Math.Min(min.Y, min2.Y);
-            min3.Z = Math.Min(min.Z, min2.Z);
-            max3.X = Math.Max(max.X, max2.X);
-            max3.Y = Math.Max(max.Y, max2.Y);
-            max3.Z = Math.Max(max.Z, max2.Z);
+            min3.X = System.Math.Min(min.X, min2.X);
+            min3.Y = System.Math.Min(min.Y, min2.Y);
+            min3.Z = System.Math.Min(min.Z, min2.Z);
+            max3.X = System.Math.Max(max.X, max2.X);
+            max3.Y = System.Math.Max(max.Y, max2.Y);
+            max3.Z = System.Math.Max(max.Z, max2.Z);
             return new Box3(min3, max3 - min3);
         }
 

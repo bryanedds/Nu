@@ -321,8 +321,8 @@ module Quadtree =
         tree.Depth
 
     let make<'e when 'e : equality> depth (size : Vector2) =
-        if  not (MathHelper.IsPowerOfTwo size.X) ||
-            not (MathHelper.IsPowerOfTwo size.Y) then
+        if  not (Math.IsPowerOfTwo size.X) ||
+            not (Math.IsPowerOfTwo size.Y) then
             failwith "Invalid size for Quadtree. Expected value whose components are a power of two."
         let leaves = dictPlus HashIdentity.Structural []
         let mutable leafSize = size
