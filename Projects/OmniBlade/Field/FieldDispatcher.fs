@@ -655,7 +655,7 @@ module FieldDispatcher =
 
             match command with
             | ProcessKeyInput ->
-                if  not (World.isSelectedScreenTransitioning world) &&
+                if  not (World.getSelectedScreenTransitioning world) &&
                     field.Menu.MenuState = MenuClosed &&
                     Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&
@@ -682,7 +682,7 @@ module FieldDispatcher =
                 else just world
 
             | ProcessTouchInput position ->
-                if  not (World.isSelectedScreenTransitioning world) &&
+                if  not (World.getSelectedScreenTransitioning world) &&
                     field.Menu.MenuState = MenuClosed &&
                     Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&

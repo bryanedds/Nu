@@ -165,29 +165,29 @@ module WorldModule2 =
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         [<FunctionBinding>]
-        static member tryGetIsSelectedScreenIdling world =
+        static member tryGetSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> Some (selectedScreen.IsIdling world)
             | None -> None
 
         /// Try to check that the selected screen is transitioning.
         [<FunctionBinding>]
-        static member tryGetIsSelectedScreenTransitioning world =
-            Option.map not (World.tryGetIsSelectedScreenIdling world)
+        static member tryGetSelectedScreenTransitioning world =
+            Option.map not (World.tryGetSelectedScreenIdling world)
 
         /// Check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen (failing with an exception if no screen is selected).
         [<FunctionBinding>]
-        static member isSelectedScreenIdling world =
-            match World.tryGetIsSelectedScreenIdling world with
+        static member getSelectedScreenIdling world =
+            match World.tryGetSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith "Cannot query state of non-existent selected screen."
 
         /// Check that the selected screen is transitioning (failing with an exception if no screen
         /// is selected).
         [<FunctionBinding>]
-        static member isSelectedScreenTransitioning world =
-            not (World.isSelectedScreenIdling world)
+        static member getSelectedScreenTransitioning world =
+            not (World.getSelectedScreenIdling world)
 
         /// Set screen transition state, enabling or disabling input events respectively.
         static member private setScreenTransitionStatePlus state (screen : Screen) world =
@@ -376,7 +376,7 @@ module WorldModule2 =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 if  selectedScreen <> destination &&
-                    not (World.isSelectedScreenTransitioning world) then
+                    not (World.getSelectedScreenTransitioning world) then
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
                     let world = World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     (true, world)
