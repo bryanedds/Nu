@@ -402,7 +402,7 @@ module WorldModuleGame =
 
         /// Check that the given bounds is within the 2d eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView2d (bounds : Box2) world =
+        static member boundsInView2d (bounds : Box2) world =
             let viewBounds = World.getViewBounds2d world
             bounds.Intersects viewBounds
 
@@ -416,7 +416,7 @@ module WorldModuleGame =
 
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView3d light presence (bounds : Box3) world =
+        static member boundsInView3d light presence (bounds : Box3) world =
             Presence.intersects3d
                 (World.getEyeFrustum3dEnclosed world)
                 (World.getEyeFrustum3dExposed world)
@@ -428,7 +428,7 @@ module WorldModuleGame =
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         [<FunctionBinding>]
-        static member isBoundsInPlay3d (bounds : Box3) world =
+        static member boundsInPlay3d (bounds : Box3) world =
             let struct (viewBox, viewFrustum) = World.getPlayBounds3d world
             if bounds.Intersects viewBox then true
             else
