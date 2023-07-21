@@ -164,7 +164,7 @@ module OmniBlade =
 
                 // update picks
                 let world =
-                    if Simulants.Pick.IsSelected world then
+                    if Simulants.Pick.Selected world then
                         let world = Simulants.PickGuiNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
                         let world = Simulants.PickGuiNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
                         let world = Simulants.PickGuiNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world

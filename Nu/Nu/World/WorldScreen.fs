@@ -96,10 +96,10 @@ module WorldScreenModule =
             World.setScreenXtensionProperty propertyName property this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
-        member this.IsIdling world = match this.GetTransitionState world with IdlingState _ -> true | _ -> false
+        member this.Idling world = match this.GetTransitionState world with IdlingState _ -> true | _ -> false
 
         /// Check that a screen is selected.
-        member this.IsSelected world =
+        member this.Selected world =
             let gameState = World.getGameState world
             match gameState.OmniScreenOpt with
             | Some omniScreen when Address.head this.ScreenAddress = Address.head omniScreen.ScreenAddress -> true

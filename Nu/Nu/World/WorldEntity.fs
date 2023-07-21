@@ -415,7 +415,7 @@ module WorldEntityModule =
         member this.GetInView3d world = World.getEntityInView3d this world
 
         /// Check that an entity is selected.
-        member this.IsSelected world =
+        member this.Selected world =
             let gameState = World.getGameState world
             match gameState.OmniScreenOpt with
             | Some omniScreen when Address.head this.EntityAddress = Address.head omniScreen.ScreenAddress -> true
@@ -525,7 +525,7 @@ module WorldEntityModule =
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
-            if WorldModule.isSelected this world
+            if WorldModule.getSelected this world
             then World.propagateEntityPhysics this world
             else world
 

@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.ComponentModel
 open System.Reflection
 open System.Runtime.CompilerServices
 open Prime
@@ -227,7 +226,7 @@ module WorldSimulantModule =
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
         /// Game is always considered 'selected' as well.
         [<FunctionBinding>]
-        static member isSelected (simulant : Simulant) world =
+        static member getSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
             | [||] -> true
             | names ->

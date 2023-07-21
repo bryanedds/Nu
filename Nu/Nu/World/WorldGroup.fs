@@ -81,7 +81,7 @@ module WorldGroupModule =
             World.setGroupXtensionProperty propertyName property this world
 
         /// Check that a group is selected.
-        member this.IsSelected world =
+        member this.Selected world =
             let gameState = World.getGameState world
             match gameState.OmniScreenOpt with
             | Some omniScreen when Address.head this.GroupAddress = Address.head omniScreen.ScreenAddress -> true

@@ -38,7 +38,7 @@ module WorldBindings =
         "isKeyboardKeyDown isKeyboardKeyUp isKeyboardAltDown isKeyboardAltUp " +
         "isKeyboardCtrlDown isKeyboardCtrlUp isKeyboardShiftDown isKeyboardShiftUp " +
         "destroyImmediate destroy tryGetParent getParent " +
-        "getChildren getExists isSelected getEntities0 " +
+        "getChildren getExists getSelected getEntities0 " +
         "getGroups0 writeGameToFile readGameFromFile getScreens " +
         "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
         "writeScreenToFile readScreenFromFile getGroups createGroup " +
@@ -1426,7 +1426,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getExists' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let isSelected simulant world =
+    let getSelected simulant world =
         let oldWorld = world
         try
             let struct (simulant, world) =
@@ -1439,12 +1439,12 @@ module WorldBindings =
                     struct (World.derive address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.isSelected simulant world
+            let result = World.getSelected simulant world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isSelected' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelected' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getEntitiesFlattened0 world =
@@ -3917,12 +3917,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalIsSelectedBinding fnName exprs originOpt world =
+    let evalGetSelectedBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|simulant|] -> isSelected simulant world
+            | [|simulant|] -> getSelected simulant world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5117,7 +5117,7 @@ module WorldBindings =
              ("getParent", { Fn = evalGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getChildren", { Fn = evalGetChildrenBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getExists", { Fn = evalGetExistsBinding; Pars = [|"simulant"|]; DocOpt = None })
-             ("isSelected", { Fn = evalIsSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("getSelected", { Fn = evalGetSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getEntitiesFlattened0", { Fn = evalGetEntitiesFlattened0Binding; Pars = [||]; DocOpt = None })
              ("getGroups0", { Fn = evalGetGroups0Binding; Pars = [||]; DocOpt = None })
              ("writeGameToFile", { Fn = evalWriteGameToFileBinding; Pars = [|"filePath"|]; DocOpt = None })

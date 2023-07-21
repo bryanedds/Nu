@@ -167,7 +167,7 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member tryGetSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> Some (selectedScreen.IsIdling world)
+            | Some selectedScreen -> Some (selectedScreen.Idling world)
             | None -> None
 
         /// Try to check that the selected screen is transitioning.
@@ -737,7 +737,7 @@ module WorldModule2 =
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match bodyCollisionMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.IsSelected world then
+                        if entity.Exists world && entity.Selected world then
                             let collisionData =
                                 { BodyShapeCollider = bodyCollisionMessage.BodyShapeSource
                                   BodyShapeCollidee = bodyCollisionMessage.BodyShapeSource2
@@ -750,7 +750,7 @@ module WorldModule2 =
                 | BodySeparationMessage bodySeparationMessage ->
                     match bodySeparationMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.IsSelected world then
+                        if entity.Exists world && entity.Selected world then
                             let explicit =
                                 { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
                                   BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
@@ -763,7 +763,7 @@ module WorldModule2 =
                     let bodyId = bodyTransformMessage.BodyId
                     match bodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.IsSelected world then
+                        if entity.Exists world && entity.Selected world then
                             let center = bodyTransformMessage.Center
                             let rotation = bodyTransformMessage.Rotation
                             let linearVelocity = bodyTransformMessage.LinearVelocity
