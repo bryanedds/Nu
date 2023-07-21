@@ -227,9 +227,9 @@ module Nu =
             WorldModule.unsubscribeSimulantScripts <- fun _ _ ->
                 failwithnie ()
 
-            // init isSelected F# reach-around
-            WorldModule.isSelected <- fun simulant world ->
-                World.isSelected simulant world
+            // init getSelected F# reach-around
+            WorldModule.getSelected <- fun simulant world ->
+                World.getSelected simulant world
 
             // init getScreenEcs F# reach-around
             WorldModule.getScreenEcs <- 

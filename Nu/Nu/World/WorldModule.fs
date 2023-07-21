@@ -65,7 +65,7 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for checking that a simulant is selected.
-    let mutable internal isSelected : Simulant -> World -> bool =
+    let mutable internal getSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
     /// F# reach-around for checking that a simulant is ignoring bindings.
@@ -670,7 +670,7 @@ module WorldModule =
                     if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Live -> true | Dead -> false) then
                         let subscriber = subscriptionEntry.SubscriptionSubscriber
-                        if not selectedOnly || isSelected subscriber world then
+                        if not selectedOnly || getSelected subscriber world then
                             let result =
                                 let namesLength = subscriber.SimulantAddress.Names.Length
                                 if namesLength >= 3
