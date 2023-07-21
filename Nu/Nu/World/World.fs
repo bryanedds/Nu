@@ -63,8 +63,8 @@ module Nu =
             WorldTypes.viewEntity <- fun entity world -> World.viewEntityProperties (entity :?> Entity) (world :?> World)
 
             // init handleSubscribeAndUnsubscribeEvent F# reach-around
-            WorldTypes.isSelectedScreenIdling <- fun worldObj -> World.isSelectedScreenIdling (worldObj :?> World)
-            WorldTypes.isSelectedScreenTransitioning <- fun worldObj -> World.isSelectedScreenTransitioning (worldObj :?> World)
+            WorldTypes.getSelectedScreenIdling <- fun worldObj -> World.getSelectedScreenIdling (worldObj :?> World)
+            WorldTypes.getSelectedScreenTransitioning <- fun worldObj -> World.getSelectedScreenTransitioning (worldObj :?> World)
             WorldTypes.handleSubscribeAndUnsubscribeEvent <- fun subscribing eventAddress _ worldObj ->
                 // here we need to update the event publish flags for entities based on whether there are subscriptions to
                 // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns

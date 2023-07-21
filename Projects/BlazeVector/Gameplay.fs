@@ -186,7 +186,7 @@ module Player =
             else (Cascade, world)
 
         static let handleJumpByKeyboardKey evt world =
-            if World.isSelectedScreenIdling world then
+            if World.getSelectedScreenIdling world then
                 match (evt.Data.KeyboardKey, evt.Data.Repeated) with
                 | (KeyboardKey.Space, false) -> handleJump evt world
                 | _ -> (Cascade, world)
@@ -319,7 +319,7 @@ module Gameplay =
                     else world
 
                 // update player fall
-                if Simulants.GameplayScenePlayer.HasFallen world && World.isSelectedScreenIdling world && gameplay.State = Playing then
+                if Simulants.GameplayScenePlayer.HasFallen world && World.getSelectedScreenIdling world && gameplay.State = Playing then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                     withSignal StartQutting world
                 else just world

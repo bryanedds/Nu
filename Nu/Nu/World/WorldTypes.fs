@@ -30,8 +30,8 @@ module internal WorldTypes =
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
 
     // EventGraph F# reach-arounds.
-    let mutable internal isSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
-    let mutable internal isSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
+    let mutable internal getSelectedScreenIdling : obj -> bool = Unchecked.defaultof<_>
+    let mutable internal getSelectedScreenTransitioning : obj -> bool = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     // Entity F# reach-arounds.

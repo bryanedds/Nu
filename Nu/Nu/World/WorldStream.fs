@@ -626,8 +626,8 @@ module Stream =
 
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream = filterEvent (fun _ -> WorldTypes.isSelectedScreenIdling) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenIdling stream = filterEvent (fun _ -> WorldTypes.getSelectedScreenIdling) stream
     
     /// Take events from a stream only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
-    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream = filterEvent (fun _ -> WorldTypes.isSelectedScreenTransitioning) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] whenSelectedScreenTransitioning stream = filterEvent (fun _ -> WorldTypes.getSelectedScreenTransitioning) stream
