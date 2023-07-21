@@ -141,37 +141,11 @@ module Gaia =
     (* Initial imgui.ini File Content *)
 
     let private ImGuiIniFileStr = """
-[Window][Debug##Default]
-Pos=60,60
-Size=400,400
-Collapsed=0
-
-[Window][DockSpaceViewport_11111111]
-Pos=0,0
-Size=1920,1080
-Collapsed=0
-
-[Window][Panel]
-Size=1920,1080
-Collapsed=0
-
 [Window][Gaia]
 Pos=0,0
 Size=1920,54
 Collapsed=0
 DockId=0x00000002,0
-
-[Window][Hierarchy]
-Pos=0,57
-Size=174,1023
-Collapsed=0
-DockId=0x0000000B,0
-
-[Window][Properties]
-Pos=1574,58
-Size=346,1022
-Collapsed=0
-DockId=0x00000006,0
 
 [Window][Property Editor]
 Pos=284,874
@@ -215,39 +189,29 @@ Size=624,206
 Collapsed=0
 DockId=0x00000009,1
 
-[Window][Choose a project .dll and configuration...]
-Pos=754,478
-Size=411,123
-Collapsed=0
-
-[Window][Choose a project .dll... EDITOR RESTART REQUIRED!]
-Pos=754,478
-Size=411,123
-Collapsed=0
-
-[Window][Create a group...]
-Pos=715,469
-Size=482,128
-Collapsed=0
-
 [Window][Full Screen Enabled]
 Pos=20,23
 Size=162,54
 Collapsed=0
 
-[Window][Choose a nugroup file...]
-Pos=602,352
-Size=677,399
-Collapsed=0
-
-[Window][Choose a project .dll... *MANUAL RESTART REQUIRED!*]
-Pos=754,478
-Size=411,123
-Collapsed=0
-
 [Window][Message!]
 Pos=827,398
 Size=360,182
+Collapsed=0
+
+[Window][Unhandled Exception!]
+Pos=608,366
+Size=694,406
+Collapsed=0
+
+[Window][Are you okay with exiting Gaia?]
+Pos=836,504
+Size=248,72
+Collapsed=0
+
+[Window][ContextMenu]
+Pos=853,391
+Size=250,135
 Collapsed=0
 
 [Window][Viewport]
@@ -297,14 +261,24 @@ Size=282,1024
 Collapsed=0
 DockId=0x0000000C,0
 
+[Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
+Pos=661,488
+Size=621,105
+Collapsed=0
+
 [Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
 Pos=662,475
 Size=592,125
 Collapsed=0
 
-[Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
-Pos=661,488
-Size=621,105
+[Window][Create a group...]
+Pos=715,469
+Size=482,128
+Collapsed=0
+
+[Window][Choose a nugroup file...]
+Pos=602,352
+Size=677,399
 Collapsed=0
 
 [Window][Save a nugroup file...]
@@ -317,16 +291,6 @@ Pos=796,323
 Size=336,458
 Collapsed=0
 
-[Window][ContextMenu]
-Pos=853,391
-Size=250,135
-Collapsed=0
-
-[Window][Unhandled Exception!]
-Pos=608,366
-Size=694,406
-Collapsed=0
-
 [Window][Rename group...]
 Pos=734,514
 Size=444,94
@@ -335,11 +299,6 @@ Collapsed=0
 [Window][Rename entity...]
 Pos=734,514
 Size=444,94
-Collapsed=0
-
-[Window][Are you okay with exiting Gaia?]
-Pos=836,504
-Size=248,72
 Collapsed=0
 
 [Docking][Data]
