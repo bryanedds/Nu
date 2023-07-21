@@ -155,7 +155,7 @@ module Player =
             (Cascade, world)
 
         static let getLastTimeOnGround (entity : Entity) world =
-            if not (World.isBodyOnGround (entity.GetBodyId world) world)
+            if not (World.getBodyGrounded (entity.GetBodyId world) world)
             then entity.GetLastTimeOnGround world
             else World.getUpdateTime world
 

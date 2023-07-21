@@ -153,7 +153,7 @@ module WorldPhysics =
 
         /// Check that the body with the given physics id is on the ground.
         [<FunctionBinding>]
-        static member isBodyOnGround bodyId world =
+        static member getBodyGrounded bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine3d.IsBodyOnGround bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
