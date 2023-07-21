@@ -74,7 +74,7 @@ namespace Nu
                     {
                         var (cycleFound2, depLevel) = Visit(dependency, getDependencies, sorted, visited);
                         if (cycleFound2) cycleFound = true;
-                        level = Math.Max(level, depLevel);
+                        level = System.Math.Max(level, depLevel);
                     }
                 }
 

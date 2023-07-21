@@ -151,11 +151,11 @@ namespace Nu
         public static Box2i Enclose(Vector2i point, Vector2i point2)
         {
             var min = new Vector2i(
-                Math.Min(point.X, point2.X),
-                Math.Min(point.Y, point2.Y));
+                System.Math.Min(point.X, point2.X),
+                System.Math.Min(point.Y, point2.Y));
             var min2 = new Vector2i(
-                Math.Max(point.X, point2.X),
-                Math.Max(point.Y, point2.Y));
+                System.Math.Max(point.X, point2.X),
+                System.Math.Max(point.Y, point2.Y));
             return new Box2i(min, min2 - min);
         }
 

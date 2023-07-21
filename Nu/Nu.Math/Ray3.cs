@@ -118,7 +118,7 @@ namespace Nu
             Vector3 min = box.Min, max = box.Min + box.Size;
             float? tMin = null, tMax = null;
 
-            if (Math.Abs(Direction.X) < Epsilon)
+            if (System.Math.Abs(Direction.X) < Epsilon)
             {
                 if (Origin.X < min.X || Origin.X > max.X)
                     return null;
@@ -136,7 +136,7 @@ namespace Nu
                 }
             }
 
-            if (Math.Abs(Direction.Y) < Epsilon)
+            if (System.Math.Abs(Direction.Y) < Epsilon)
             {
                 if (Origin.Y < min.Y || Origin.Y > max.Y)
                     return null;
@@ -160,7 +160,7 @@ namespace Nu
                 if (!tMax.HasValue || tMaxY < tMax) tMax = tMaxY;
             }
 
-            if (Math.Abs(Direction.Z) < Epsilon)
+            if (System.Math.Abs(Direction.Z) < Epsilon)
             {
                 if (Origin.Z < min.Z || Origin.Z > max.Z)
                     return null;
@@ -259,7 +259,7 @@ namespace Nu
         public void Intersects(in Plane3 plane, out float? result)
         {
             var den = Vector3.Dot(Direction, plane.Normal);
-            if (Math.Abs(den) < 0.00001f)
+            if (System.Math.Abs(den) < 0.00001f)
             {
                 result = null;
                 return;
@@ -318,7 +318,7 @@ namespace Nu
             // if x^2 + z^2 - y^2 < 0, we do not intersect
             float dist = sphereRadiusSquared + distanceAlongRay * distanceAlongRay - differenceLengthSquared;
 
-            result = (dist < 0) ? null : distanceAlongRay - (float?)Math.Sqrt(dist);
+            result = (dist < 0) ? null : distanceAlongRay - (float?)System.Math.Sqrt(dist);
         }
 
         /// <summary>

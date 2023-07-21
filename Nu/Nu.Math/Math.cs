@@ -12,62 +12,11 @@ using System.Numerics;
 namespace Nu
 {
     /// <summary>
-    /// Contains common mathematical functions and constants.
+    /// Contains common mathematical functions.
     /// Copied from - https://github.com/opentk/opentk/blob/3.x/src/OpenTK/Math/MathHelper.cs
-    /// Modified by BGE to add 
     /// </summary>
-    public static class MathHelper
+    public static class Math
     {
-        /// <summary>
-        /// Defines the value of Pi as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float Pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128481117450284102701938521105559644622948954930382f;
-
-        /// <summary>
-        /// Defines the value of Pi divided by two as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float PiOver2 = Pi / 2;
-
-        /// <summary>
-        /// Defines the value of Pi divided by three as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float PiOver3 = Pi / 3;
-
-        /// <summary>
-        /// Definesthe value of  Pi divided by four as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float PiOver4 = Pi / 4;
-
-        /// <summary>
-        /// Defines the value of Pi divided by six as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float PiOver6 = Pi / 6;
-
-        /// <summary>
-        /// Defines the value of Pi multiplied by two as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float TwoPi = 2 * Pi;
-
-        /// <summary>
-        /// Defines the value of Pi multiplied by 3 and divided by two as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float ThreePiOver2 = 3 * Pi / 2;
-
-        /// <summary>
-        /// Defines the value of E as a <see cref="System.Single"/>.
-        /// </summary>
-        public const float E = 2.71828182845904523536f;
-
-        /// <summary>
-        /// Defines the base-10 logarithm of E.
-        /// </summary>
-        public const float Log10E = 0.434294482f;
-
-        /// <summary>
-        /// Defines the base-2 logarithm of E.
-        /// </summary>
-        public const float Log2E = 1.442695041f;
-
         /// <summary>
         /// Returns the next power of two that is greater than or equal to the specified number.
         /// </summary>
@@ -205,7 +154,7 @@ namespace Nu
         /// <returns>min, if n is lower than min; max, if n is higher than max; n otherwise.</returns>
         public static int Clamp(int n, int min, int max)
         {
-            return Math.Max(Math.Min(n, max), min);
+            return System.Math.Max(System.Math.Min(n, max), min);
         }
 
         /// <summary>
@@ -217,7 +166,7 @@ namespace Nu
         /// <returns>min, if n is lower than min; max, if n is higher than max; n otherwise.</returns>
         public static float Clamp(float n, float min, float max)
         {
-            return Math.Max(Math.Min(n, max), min);
+            return System.Math.Max(System.Math.Min(n, max), min);
         }
 
         /// <summary>
@@ -229,7 +178,7 @@ namespace Nu
         /// <returns>min, if n is lower than min; max, if n is higher than max; n otherwise.</returns>
         public static double Clamp(double n, double min, double max)
         {
-            return Math.Max(Math.Min(n, max), min);
+            return System.Math.Max(System.Math.Min(n, max), min);
         }
 
         /// <summary>
@@ -242,7 +191,7 @@ namespace Nu
         /// <remarks>This method performs the linear interpolation based on the following formula:
         /// <code>value1 + (value2 - value1) * amount</code>.
         /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
-        /// See <see cref="MathHelper.LerpPrecise"/> for a less efficient version with more precision around edge cases.
+        /// See Math.LerpPrecise for a less efficient version with more precision around edge cases.
         /// </remarks>
         public static float Lerp(float value1, float value2, float amount)
         {
@@ -251,7 +200,24 @@ namespace Nu
 
         /// <summary>
         /// Linearly interpolates between two values.
-        /// This method is a less efficient, more precise version of <see cref="MathHelper.Lerp"/>.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Destination value.</param>
+        /// <param name="amount">Value between 0 and 1 indicating the weight of value2.</param>
+        /// <returns>Interpolated value.</returns> 
+        /// <remarks>This method performs the linear interpolation based on the following formula:
+        /// <code>value1 + (value2 - value1) * amount</code>.
+        /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
+        /// See Math.LerpPrecise for a less efficient version with more precision around edge cases.
+        /// </remarks>
+        public static double Lerp(double value1, double value2, double amount)
+        {
+            return value1 + (value2 - value1) * amount;
+        }
+
+        /// <summary>
+        /// Linearly interpolates between two values.
+        /// This method is a less efficient, more precise version of Math.Lerp.
         /// See remarks for more info.
         /// </summary>
         /// <param name="value1">Source value.</param>
@@ -261,15 +227,40 @@ namespace Nu
         /// <remarks>This method performs the linear interpolation based on the following formula:
         /// <code>((1 - amount) * value1) + (value2 * amount)</code>.
         /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
-        /// This method does not have the floating point precision issue that <see cref="MathHelper.Lerp"/> has.
+        /// This method does not have the floating point precision issue that Math.Lerp has.
         /// i.e. If there is a big gap between value1 and value2 in magnitude (e.g. value1=10000000000000000, value2=1),
-        /// right at the edge of the interpolation range (amount=1), <see cref="MathHelper.Lerp"/> will return 0 (whereas it should return 1).
+        /// right at the edge of the interpolation range (amount=1), Math.Lerp will return 0 (whereas it should return 1).
         /// This also holds for value1=10^17, value2=10; value1=10^18,value2=10^2... so on.
         /// For an in depth explanation of the issue, see below references:
         /// Relevant Wikipedia Article: https://en.wikipedia.org/wiki/Linear_interpolation#Programming_language_support
         /// Relevant StackOverflow Answer: http://stackoverflow.com/questions/4353525/floating-point-linear-interpolation#answer-23716956
         /// </remarks>
         public static float LerpPrecise(float value1, float value2, float amount)
+        {
+            return ((1 - amount) * value1) + (value2 * amount);
+        }
+
+        /// <summary>
+        /// Linearly interpolates between two values.
+        /// This method is a less efficient, more precise version of Math.Lerp.
+        /// See remarks for more info.
+        /// </summary>
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Destination value.</param>
+        /// <param name="amount">Value between 0 and 1 indicating the weight of value2.</param>
+        /// <returns>Interpolated value.</returns>
+        /// <remarks>This method performs the linear interpolation based on the following formula:
+        /// <code>((1 - amount) * value1) + (value2 * amount)</code>.
+        /// Passing amount a value of 0 will cause value1 to be returned, a value of 1 will cause value2 to be returned.
+        /// This method does not have the floating point precision issue that Math.Lerp has.
+        /// i.e. If there is a big gap between value1 and value2 in magnitude (e.g. value1=10000000000000000, value2=1),
+        /// right at the edge of the interpolation range (amount=1), Math.Lerp will return 0 (whereas it should return 1).
+        /// This also holds for value1=10^17, value2=10; value1=10^18,value2=10^2... so on.
+        /// For an in depth explanation of the issue, see below references:
+        /// Relevant Wikipedia Article: https://en.wikipedia.org/wiki/Linear_interpolation#Programming_language_support
+        /// Relevant StackOverflow Answer: http://stackoverflow.com/questions/4353525/floating-point-linear-interpolation#answer-23716956
+        /// </remarks>
+        public static double LerpPrecise(double value1, double value2, double amount)
         {
             return ((1 - amount) * value1) + (value2 * amount);
         }
@@ -304,6 +295,33 @@ namespace Nu
         }
 
         /// <summary>
+        /// Performs a Hermite spline interpolation.
+        /// </summary>
+        /// <param name="value1">Source position.</param>
+        /// <param name="tangent1">Source tangent.</param>
+        /// <param name="value2">Source position.</param>
+        /// <param name="tangent2">Source tangent.</param>
+        /// <param name="amount">Weighting factor.</param>
+        /// <returns>The result of the Hermite spline interpolation.</returns>
+        public static double Hermite(double value1, double tangent1, double value2, double tangent2, double amount)
+        {
+            double v1 = value1, v2 = value2, t1 = tangent1, t2 = tangent2, s = amount, result;
+            double sCubed = s * s * s;
+            double sSquared = s * s;
+
+            if (amount == 0.0)
+                result = value1;
+            else if (amount == 1.0)
+                result = value2;
+            else
+                result = (2 * v1 - 2 * v2 + t2 + t1) * sCubed +
+                    (3 * v2 - 3 * v1 - 2 * t1 - t2) * sSquared +
+                    t1 * s +
+                    v1;
+            return result;
+        }
+
+        /// <summary>
         /// Interpolates between two values using a cubic equation.
         /// </summary>
         /// <param name="value1">Source value.</param>
@@ -315,42 +333,28 @@ namespace Nu
             // It is expected that 0 < amount < 1
             // If amount < 0, return value1
             // If amount > 1, return value2
-            float result = MathHelper.Clamp(amount, 0f, 1f);
-            result = MathHelper.Hermite(value1, 0f, value2, 0f, result);
+            float result = Math.Clamp(amount, 0f, 1f);
+            result = Math.Hermite(value1, 0f, value2, 0f, result);
 
             return result;
         }
 
         /// <summary>
-        /// Approximates double-precision floating point equality by an epsilon (maximum error) value.
-        /// This method is designed as a "fits-all" solution and attempts to handle as many cases as possible.
+        /// Interpolates between two values using a cubic equation.
         /// </summary>
-        /// <param name="a">The first float.</param>
-        /// <param name="b">The second float.</param>
-        /// <param name="epsilon">The maximum error between the two.</param>
-        /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        public static bool ApproximatelyEqualEpsilon(double a, double b, double epsilon)
+        /// <param name="value1">Source value.</param>
+        /// <param name="value2">Source value.</param>
+        /// <param name="amount">Weighting value.</param>
+        /// <returns>Interpolated value.</returns>
+        public static double SmoothStep(double value1, double value2, double amount)
         {
-            const double doubleNormal = (1L << 52) * double.Epsilon;
-            double absA = Math.Abs(a);
-            double absB = Math.Abs(b);
-            double diff = Math.Abs(a - b);
+            // It is expected that 0 < amount < 1
+            // If amount < 0, return value1
+            // If amount > 1, return value2
+            double result = Math.Clamp(amount, 0.0, 1.0);
+            result = Math.Hermite(value1, 0.0, value2, 0.0, result);
 
-            if (a == b)
-            {
-                // Shortcut, handles infinities
-                return true;
-            }
-
-            if (a == 0.0f || b == 0.0f || diff < doubleNormal)
-            {
-                // a or b is zero, or both are extremely close to it.
-                // relative error is less meaningful here
-                return diff < (epsilon * doubleNormal);
-            }
-
-            // use relative error
-            return diff / Math.Min((absA + absB), double.MaxValue) < epsilon;
+            return result;
         }
 
         /// <summary>
@@ -364,9 +368,9 @@ namespace Nu
         public static bool ApproximatelyEqualEpsilon(float a, float b, float epsilon)
         {
             const float floatNormal = (1 << 23) * float.Epsilon;
-            float absA = Math.Abs(a);
-            float absB = Math.Abs(b);
-            float diff = Math.Abs(a - b);
+            float absA = System.Math.Abs(a);
+            float absB = System.Math.Abs(b);
+            float diff = System.Math.Abs(a - b);
 
             if (a == b)
             {
@@ -382,8 +386,40 @@ namespace Nu
             }
 
             // use relative error
-            float relativeError = diff / Math.Min((absA + absB), float.MaxValue);
+            float relativeError = diff / System.Math.Min((absA + absB), float.MaxValue);
             return relativeError < epsilon;
+        }
+
+        /// <summary>
+        /// Approximates double-precision floating point equality by an epsilon (maximum error) value.
+        /// This method is designed as a "fits-all" solution and attempts to handle as many cases as possible.
+        /// </summary>
+        /// <param name="a">The first float.</param>
+        /// <param name="b">The second float.</param>
+        /// <param name="epsilon">The maximum error between the two.</param>
+        /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
+        public static bool ApproximatelyEqualEpsilon(double a, double b, double epsilon)
+        {
+            const double doubleNormal = (1L << 52) * double.Epsilon;
+            double absA = System.Math.Abs(a);
+            double absB = System.Math.Abs(b);
+            double diff = System.Math.Abs(a - b);
+
+            if (a == b)
+            {
+                // Shortcut, handles infinities
+                return true;
+            }
+
+            if (a == 0.0f || b == 0.0f || diff < doubleNormal)
+            {
+                // a or b is zero, or both are extremely close to it.
+                // relative error is less meaningful here
+                return diff < (epsilon * doubleNormal);
+            }
+
+            // use relative error
+            return diff / System.Math.Min((absA + absB), double.MaxValue) < epsilon;
         }
 
         /// <summary>
@@ -404,7 +440,7 @@ namespace Nu
                 return true;
             }
 
-            float diff = Math.Abs(a - b);
+            float diff = System.Math.Abs(a - b);
             return diff <= tolerance;
         }
 
@@ -426,8 +462,16 @@ namespace Nu
                 return true;
             }
 
-            double diff = Math.Abs(a - b);
+            double diff = System.Math.Abs(a - b);
             return diff <= tolerance;
+        }
+
+        /// <summary>
+        /// Impose the sign of a number onto a value.
+        /// </summary>
+        public static double CopySign(float value, float sign)
+        {
+            return (IsNegative(value) == IsNegative(sign)) ? value : -value;
         }
 
         /// <summary>
@@ -452,9 +496,17 @@ namespace Nu
         /// <summary>
         /// Determine if a value is negative (includning NaN).
         /// </summary>
+        public static bool IsNegative(this float value)
+        {
+            return System.Math.Sign(value) == -1;
+        }
+
+        /// <summary>
+        /// Determine if a value is negative (includning NaN).
+        /// </summary>
         public static bool IsNegative(this double value)
         {
-            return Math.Sign(value) == -1;
+            return System.Math.Sign(value) == -1;
         }
 
         /// <summary>
@@ -464,7 +516,18 @@ namespace Nu
         /// <returns>The angle expressed in radians</returns>
         public static float ToRadians(this float degrees)
         {
-            const float degToRad = (float)System.Math.PI / 180.0f;
+            const float degToRad = MathF.PI / 180.0f;
+            return degrees * degToRad;
+        }
+
+        /// <summary>
+        /// Convert degrees to radians
+        /// </summary>
+        /// <param name="degrees">An angle in degrees</param>
+        /// <returns>The angle expressed in radians</returns>
+        public static double ToRadians(this double degrees)
+        {
+            const double degToRad = System.Math.PI / 180.0;
             return degrees * degToRad;
         }
 
@@ -477,17 +540,6 @@ namespace Nu
         {
             const float radToDeg = 180.0f / (float)System.Math.PI;
             return radians * radToDeg;
-        }
-
-        /// <summary>
-        /// Convert degrees to radians
-        /// </summary>
-        /// <param name="degrees">An angle in degrees</param>
-        /// <returns>The angle expressed in radians</returns>
-        public static double ToRadians(this double degrees)
-        {
-            const double degToRad = System.Math.PI / 180.0;
-            return degrees * degToRad;
         }
 
         /// <summary>
@@ -514,12 +566,12 @@ namespace Nu
             var yaw = angles.Z;
 
             // Abbreviations for the various angular functions
-            double cy = Math.Cos(yaw * 0.5);
-            double sy = Math.Sin(yaw * 0.5);
-            double cp = Math.Cos(pitch * 0.5);
-            double sp = Math.Sin(pitch * 0.5);
-            double cr = Math.Cos(roll * 0.5);
-            double sr = Math.Sin(roll * 0.5);
+            double cy = System.Math.Cos(yaw * 0.5);
+            double sy = System.Math.Sin(yaw * 0.5);
+            double cp = System.Math.Cos(pitch * 0.5);
+            double sp = System.Math.Sin(pitch * 0.5);
+            double cr = System.Math.Cos(roll * 0.5);
+            double sr = System.Math.Sin(roll * 0.5);
 
             Quaternion q;
             q.W = (float)(cr * cp * cy + sr * sp * sy);
@@ -543,19 +595,19 @@ namespace Nu
             // roll (x-axis rotation)
             var sinr_cosp = 2.0f * (rotation.W * rotation.X + rotation.Y * rotation.Z);
             var cosr_cosp = 1.0f - 2.0f * (rotation.X * rotation.X + rotation.Y * rotation.Y);
-            angles.X = (float)Math.Atan2(sinr_cosp, cosr_cosp);
+            angles.X = (float)System.Math.Atan2(sinr_cosp, cosr_cosp);
 
             // pitch (y-axis rotation)
             double sinp = 2.0f * (rotation.W * rotation.Y - rotation.Z * rotation.X);
-            if (Math.Abs(sinp) >= 1.0f)
-                angles.Y = (float)CopySign(Math.PI / 2.0f, sinp); // use 90 degrees if out of range
+            if (System.Math.Abs(sinp) >= 1.0f)
+                angles.Y = (float)CopySign(System.Math.PI / 2.0f, sinp); // use 90 degrees if out of range
             else
-                angles.Y = (float)Math.Asin(sinp);
+                angles.Y = (float)System.Math.Asin(sinp);
 
             // yaw (z-axis rotation)
             double siny_cosp = 2.0f * (rotation.W * rotation.Z + rotation.X * rotation.Y);
             double cosy_cosp = 1.0f - 2.0f * (rotation.Y * rotation.Y + rotation.Z * rotation.Z);
-            angles.Z = (float)Math.Atan2(siny_cosp, cosy_cosp);
+            angles.Z = (float)System.Math.Atan2(siny_cosp, cosy_cosp);
 
             return angles;
         }
@@ -717,12 +769,6 @@ namespace Nu
         public static float ClassifyPoint(in this Plane3 plane, in Vector3 point)
         {
             return point.X * plane.Normal.X + point.Y * plane.Normal.Y + point.Z * plane.Normal.Z + plane.D;
-        }
-
-        private static bool WithinEpsilon(float a, float b)
-        {
-            float num = a - b;
-            return ((-1.401298E-45f <= num) && (num <= float.Epsilon));
         }
     }
 }
