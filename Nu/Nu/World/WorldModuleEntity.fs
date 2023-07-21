@@ -1971,7 +1971,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.isBoundsInView2d transform.Bounds.Box2 world
+            presence.OmnipresentType || World.boundsInView2d transform.Bounds.Box2 world
 
         static member internal getEntityInPlay2d entity world =
             World.getEntityInView2d entity world // same meaning as in view for 2d
@@ -1980,13 +1980,13 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.isBoundsInPlay3d transform.Bounds world
+            presence.OmnipresentType || World.boundsInPlay3d transform.Bounds world
 
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.isBoundsInView3d transform.Light presence transform.Bounds world
+            presence.OmnipresentType || World.boundsInView3d transform.Light presence transform.Bounds world
 
         static member internal getEntityQuickSize (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world

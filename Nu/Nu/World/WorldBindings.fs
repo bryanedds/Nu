@@ -53,8 +53,8 @@ module WorldBindings =
         "getOmniScreen setOmniScreen constrainEyeBounds2d getSelectedScreenOpt " +
         "getSelectedScreen setSelectedScreen getDesiredScreen setDesiredScreen " +
         "getScreenTransitionDestinationOpt setScreenTransitionDestinationOpt getViewBounds2dAbsolute getPlayBounds2dAbsolute " +
-        "getViewBounds2d getPlayBounds2d isBoundsInView2d getPlayBounds3d " +
-        "isBoundsInView3d isBoundsInPlay3d tryGetTextureSize getTextureSize " +
+        "getViewBounds2d getPlayBounds2d boundsInView2d getPlayBounds3d " +
+        "boundsInView3d boundsInPlay3d tryGetTextureSize getTextureSize " +
         "tryGetTextureSizeF getTextureSizeF getImperative getAccompanied " +
         "getUnaccompanied getCollectionConfig getLiveness setAdvancing " +
         "getAdvancing getHalted getUpdateTime getClockDelta " +
@@ -2459,19 +2459,19 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBounds2d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let isBoundsInView2d bounds world =
+    let boundsInView2d bounds world =
         let oldWorld = world
         try
             let bounds =
                 match ScriptingSystem.tryExport typeof<Box2> bounds world with
                 | Some value -> value :?> Box2
                 | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Box2."
-            let result = World.isBoundsInView2d bounds world
+            let result = World.boundsInView2d bounds world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInView2d' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'boundsInView2d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let getPlayBounds3d world =
@@ -2485,7 +2485,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBounds3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let isBoundsInView3d light presence bounds world =
+    let boundsInView3d light presence bounds world =
         let oldWorld = world
         try
             let light =
@@ -2500,27 +2500,27 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<Box3> bounds world with
                 | Some value -> value :?> Box3
                 | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Box3."
-            let result = World.isBoundsInView3d light presence bounds world
+            let result = World.boundsInView3d light presence bounds world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInView3d' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'boundsInView3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let isBoundsInPlay3d bounds world =
+    let boundsInPlay3d bounds world =
         let oldWorld = world
         try
             let bounds =
                 match ScriptingSystem.tryExport typeof<Box3> bounds world with
                 | Some value -> value :?> Box3
                 | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Box3."
-            let result = World.isBoundsInPlay3d bounds world
+            let result = World.boundsInPlay3d bounds world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInPlay3d' due to: " + scstring exn, ValueNone)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'boundsInPlay3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
     let tryGetTextureSize assetTag world =
@@ -4566,12 +4566,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalIsBoundsInView2dBinding fnName exprs originOpt world =
+    let evalBoundsInView2dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|bounds|] -> isBoundsInView2d bounds world
+            | [|bounds|] -> boundsInView2d bounds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -4588,23 +4588,23 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalIsBoundsInView3dBinding fnName exprs originOpt world =
+    let evalBoundsInView3dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|light; presence; bounds|] -> isBoundsInView3d light presence bounds world
+            | [|light; presence; bounds|] -> boundsInView3d light presence bounds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalIsBoundsInPlay3dBinding fnName exprs originOpt world =
+    let evalBoundsInPlay3dBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|bounds|] -> isBoundsInPlay3d bounds world
+            | [|bounds|] -> boundsInPlay3d bounds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)
@@ -5176,10 +5176,10 @@ module WorldBindings =
              ("getPlayBounds2dAbsolute", { Fn = evalGetPlayBounds2dAbsoluteBinding; Pars = [||]; DocOpt = None })
              ("getViewBounds2d", { Fn = evalGetViewBounds2dBinding; Pars = [||]; DocOpt = None })
              ("getPlayBounds2d", { Fn = evalGetPlayBounds2dBinding; Pars = [||]; DocOpt = None })
-             ("isBoundsInView2d", { Fn = evalIsBoundsInView2dBinding; Pars = [|"bounds"|]; DocOpt = None })
+             ("boundsInView2d", { Fn = evalBoundsInView2dBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("getPlayBounds3d", { Fn = evalGetPlayBounds3dBinding; Pars = [||]; DocOpt = None })
-             ("isBoundsInView3d", { Fn = evalIsBoundsInView3dBinding; Pars = [|"light"; "presence"; "bounds"|]; DocOpt = None })
-             ("isBoundsInPlay3d", { Fn = evalIsBoundsInPlay3dBinding; Pars = [|"bounds"|]; DocOpt = None })
+             ("boundsInView3d", { Fn = evalBoundsInView3dBinding; Pars = [|"light"; "presence"; "bounds"|]; DocOpt = None })
+             ("boundsInPlay3d", { Fn = evalBoundsInPlay3dBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
