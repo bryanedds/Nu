@@ -471,10 +471,10 @@ module Octree =
         tree.Depth
 
     let make<'e when 'e : equality> (depth : int) (size : Vector3) =
-        if  not (MathHelper.PowerOfTwo size.X) ||
-            not (MathHelper.PowerOfTwo size.Y) ||
-            not (MathHelper.PowerOfTwo size.Z) then
-            failwith "Invalid size for Octtree. Expected value whose components are a power of two."
+        if  not (MathHelper.IsPowerOfTwo size.X) ||
+            not (MathHelper.IsPowerOfTwo size.Y) ||
+            not (MathHelper.IsPowerOfTwo size.Z) then
+            failwith "InvaliIsd size for Octtree. Expected value whose components are a power of two."
         let leafComparer = // OPTIMIZATION: avoid allocation on Equals calls.
             { new IEqualityComparer<Vector3> with
                 member this.Equals (left, right) = left.Equals right
