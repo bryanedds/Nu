@@ -894,7 +894,7 @@ module SideViewCharacterDispatcherModule =
             let animationDelay = entity.GetAnimationDelay world
             let mutable transform = entity.GetTransform world
             let struct (insetOpt, image) =
-                if not (World.isBodyOnGround bodyId world) then
+                if not (World.getBodyGrounded bodyId world) then
                     let image = entity.GetSideViewCharacterJumpImage world
                     struct (ValueNone, image)
                 elif velocity.X < 5.0f && velocity.X > -5.0f then
