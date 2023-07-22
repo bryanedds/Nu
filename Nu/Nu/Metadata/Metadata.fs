@@ -41,8 +41,8 @@ module Metadata =
             let platform = Environment.OSVersion.Platform
             let fileExtension = Path.GetExtension(asset.FilePath).ToLowerInvariant()
             if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
-                fileExtension <> ".tga" (* NOTE: System.Drawing.Image does not seem to support .tga loading. *) then
-                // NOTE: System.Drawing.Image is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
+                fileExtension <> ".tga" then // NOTE: System.Drawing.Image does not seem to support .tga loading.
+                // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a fast path here.
                 use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Drawing.Image.FromStream (fileStream, false, false)
                 Some (TextureMetadata (v2i image.Width image.Height))
