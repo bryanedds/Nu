@@ -9,6 +9,7 @@ open Nu
 [<AutoOpen>]
 module Viewport =
 
+    /// Viewport extensions.
     type Viewport with
 
         /// Compute the 2d absolute view matrix.

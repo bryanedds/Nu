@@ -6,12 +6,13 @@ open System
 #nowarn "42"
 
 /// Provides operators for branchless programming.
+/// NOTE: implemented in terms of a static class to enable overloading.
 /// TODO: consider moving into Prime.
 type [<AbstractClass; Sealed>] Branchless () =
 
     /// Reinterpret cast a value from 'a to 'b.
     /// Dangerous if used incorrectly.
-    /// In fact, try not to use it directly at all.
+    /// In fact, try not to use this directly at all.
     static member inline reinterpret<'a, 'b> (a : 'a) : 'b = (# "" a : 'b #)
 
     /// Convert a bool as an int without branching.

@@ -8,6 +8,8 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+// TODO: document Octree functions!
+
 /// Masks for Octelement flags.
 module OctelementMasks =
 
