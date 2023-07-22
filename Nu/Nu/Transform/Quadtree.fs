@@ -8,6 +8,8 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+// TODO: document Quadtree functions!
+
 /// Masks for Quadelement flags.
 module QuadelementMasks =
 
