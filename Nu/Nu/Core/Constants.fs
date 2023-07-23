@@ -54,14 +54,6 @@ module Engine =
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> Empty | filter -> scvalue<EventFilter> filter
 
 [<RequireQualifiedAccess>]
-module Associations =
-
-    let [<Literal>] Symbol = "Symbol"
-    let [<Literal>] Render2d = "Render2d"
-    let [<Literal>] Render3d = "Render3d"
-    let [<Literal>] Audio = "Audio"
-
-[<RequireQualifiedAccess>]
 module Render =
 
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | vsync -> scvalue<bool> vsync
@@ -170,6 +162,22 @@ module Physics =
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
+
+[<RequireQualifiedAccess>]
+module Lens =
+
+    let [<Literal>] ChangeName = "Change"
+    let [<Literal>] EventName = "Event"
+    let [<Uniform>] ChangeNameHash = hash ChangeName
+    let [<Uniform>] EventNameHash = hash EventName
+
+[<RequireQualifiedAccess>]
+module Associations =
+
+    let [<Literal>] Symbol = "Symbol"
+    let [<Literal>] Render2d = "Render2d"
+    let [<Literal>] Render3d = "Render3d"
+    let [<Literal>] Audio = "Audio"
 
 [<RequireQualifiedAccess>]
 module TileMap =

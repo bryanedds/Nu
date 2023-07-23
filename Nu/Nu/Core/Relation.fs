@@ -1,6 +1,18 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2023.
 
+namespace Nu.Constants
+open System
+open Nu
+
+[<RequireQualifiedAccess>]
+module Relation =
+    
+    let [<Literal>] Current = '~'
+    let [<Literal>] CurrentStr = "~"
+    let [<Literal>] Parent = '^'
+    let [<Literal>] ParentStr = "^"
+
 namespace Nu
 open System
 open System.ComponentModel
