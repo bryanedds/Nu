@@ -1,11 +1,22 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2023.
 
+namespace Nu.Constants
+open System
+open Nu
+
+[<RequireQualifiedAccess>]
+module Address =
+    
+    let [<Literal>] Separator = '/'
+    let [<Literal>] SeparatorStr = "/"
+
 namespace Nu
 open System
 open System.ComponentModel
 open System.Reflection
 open Prime
+open Nu
 
 /// Converts Address types.
 type AddressConverter (targetType : Type) =
