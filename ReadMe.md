@@ -16,7 +16,19 @@ This repository hosts several projects, including -
 - the game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade) available free for Windows and Linux here - https://github.com/bryanedds/Nu/releases/tag/v10.6.2
 - the Final Fantasy Tactics-like WIP game prototype ['Tactics'](https://github.com/bryanedds/Nu/tree/master/Projects/Tactics).
 
-Here is some media on the Nu Game Engine -
+Getting Started with Nu
+=======================
+
+Look here to get started with your own project in Nu -
+
+https://github.com/bryanedds/Nu/wiki/Getting-Started-with-Nu
+
+Also, the old documentation (which is currently being rewritten in the above wiki) is here -
+
+https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
+
+Some Media on the Nu Game Engine
+================================
 
 ![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
 Wandering around the forest in OmniBlade.
@@ -47,13 +59,6 @@ Another 3D scene screenshot from editor.
 
 ![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
 And another 3D scene screenshot from editor.
-
-Getting Started
-===============
-
-The best way to get started is to clone the repository with a git client, and to take a look at the following document -
-
-https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
 
 **Public Sponsors We Wish to Thank**
 ====================================
