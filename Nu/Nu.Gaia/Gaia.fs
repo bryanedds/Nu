@@ -632,6 +632,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup world
+            try let deploymentPath = Path.Combine (targetDir, (Path.GetRelativePath (targetDir, filePath)).Replace ("..\\", ""))
+                if Directory.Exists (Path.GetDirectoryName deploymentPath) then
+                    File.Copy (filePath, deploymentPath, true)
+            with _ -> ()
             groupFilePaths <- Map.add selectedGroup.GroupAddress groupFileDialogState.FilePath groupFilePaths
             true
         with exn ->
@@ -2191,6 +2195,318 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
                         ImGui.End ()
 
+                // if message box not shown, may show another popup
+                match messageBoxOpt with
+                | None ->
+
+                    // asset picker dialog
+                    if showAssetPickerDialog then
+                        let title = "Choose an Asset..."
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showAssetPickerDialog) then
+                            ImGui.SetNextItemWidth -1.0f
+                            ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
+                            let assets = Metadata.getDiscoveredAssets ()
+                            for package in assets do
+                                let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                                if ImGui.TreeNodeEx (package.Key, flags) then
+                                    for assetName in package.Value do
+                                        if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
+                                            if ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) then
+                                                if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+                                                    match focusedPropertyDescriptorOpt with
+                                                    | Some (propertyDescriptor, simulant) when
+                                                        World.getExists simulant world &&
+                                                        propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                                                        let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                                                        let propertyValueStr = "[" + package.Key + " " + assetName + "]"
+                                                        let propertyValue = converter.ConvertFromString propertyValueStr
+                                                        setPropertyValue propertyValue propertyDescriptor simulant
+                                                    | Some _ | None -> ()
+                                                    showAssetPickerDialog <- false
+                                                ImGui.TreePop ()
+                                    ImGui.TreePop ()
+                            if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
+                            ImGui.EndPopup ()
+
+                    // new project dialog
+                    if showNewProjectDialog then
+
+                        // ensure template directory exists
+                        let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
+                        let slnDir = programDir + "/../../../../.." |> Path.Simplify
+                        let templateDir = programDir + "/../../../../Nu.Template" |> Path.Simplify
+                        if Directory.Exists templateDir then
+
+                            // prompt user to create new project
+                            let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
+                            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                            if ImGui.BeginPopupModal (title, &showNewProjectDialog) then
+                                ImGui.Text "Project Name"
+                                ImGui.SameLine ()
+                                ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
+                                newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
+                                let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
+                                let templateFileName = "Nu.Template.fsproj"
+                                let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
+                                let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
+                                let newProjectDll = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
+                                let newFileName = newProjectName + ".fsproj"
+                                let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
+                                let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
+                                if not validName then ImGui.Text "Invalid project name!"
+                                let validDirectory = not (Directory.Exists newProjectDir)
+                                if not validDirectory then ImGui.Text "Project already exists!"
+                                if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) then
+
+                                    // attempt to create project files
+                                    try Log.info ("Creating project '" + newProjectName + "' in '" + projectsDir + "'...")
+
+                                        // install nu template
+                                        Directory.SetCurrentDirectory templateDir
+                                        Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
+                                        Process.Start("dotnet", "new install ./").WaitForExit()
+
+                                        // instantiate nu template
+                                        Directory.SetCurrentDirectory projectsDir
+                                        Directory.CreateDirectory newProjectName |> ignore<DirectoryInfo>
+                                        Directory.SetCurrentDirectory newProjectDir
+                                        Process.Start("dotnet", "new nu-game --force").WaitForExit()
+
+                                        // rename project file
+                                        File.Copy (templateFileName, newFileName, true)
+                                        File.Delete templateFileName
+
+                                        // substitute project guid in project file
+                                        let projectGuid = Gen.id
+                                        let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
+                                        let newProjectStr = File.ReadAllText newProject
+                                        let newProjectStr = newProjectStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
+                                        File.WriteAllText (newProject, newProjectStr)
+
+                                        // add project to sln file
+                                        Directory.SetCurrentDirectory slnDir
+                                        let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
+                                        let insertionIndex = List.findIndexBack ((=) "\tEndProjectSection") slnLines
+                                        let slnLines = 
+                                            List.take insertionIndex slnLines @
+                                            ["\t\t{" + projectGuidStr + "} = {" + projectGuidStr + "}"] @
+                                            List.skip insertionIndex slnLines
+                                        let insertionIndex = List.findIndex ((=) "Global") slnLines
+                                        let slnLines =
+                                            List.take insertionIndex slnLines @
+                                            ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + newProjectName + "\", \"Projects\\" + newProjectName + "\\" + newProjectName + ".fsproj\", \"{" + projectGuidStr + "}\""
+                                             "EndProject"] @
+                                            List.skip insertionIndex slnLines
+                                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
+                                        let slnLines =
+                                            List.take insertionIndex slnLines @
+                                            ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
+                                             "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
+                                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
+                                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|x64"] @
+                                            List.skip insertionIndex slnLines
+                                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
+                                        let slnLines =
+                                            List.take insertionIndex slnLines @
+                                            ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
+                                            List.skip insertionIndex slnLines
+                                        File.WriteAllLines ("Nu.sln", List.toArray slnLines)
+                                        Log.info ("Project '" + newProjectName + "'" + "created.")
+
+                                        // configure editor to open new project then exit
+                                        let savedState =
+                                            { ProjectFilePath = newProjectDll
+                                              EditModeOpt = Some "Title"
+                                              UseImperativeExecution = projectImperativeExecution }
+                                        let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                                        let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                                        try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                            Directory.SetCurrentDirectory gaiaDirectory
+                                            showRestartDialog <- true
+                                        with _ -> Log.trace "Could not save editor state and open new project."
+
+                                        // close dialog
+                                        showNewProjectDialog <- false
+                                        newProjectName <- "MyGame"
+
+                                    // log failure
+                                    with exn -> Log.trace ("Failed to create new project '" + newProjectName + "' due to: " + scstring exn)
+
+                                // escape to cancel
+                                if ImGui.IsKeyPressed ImGuiKey.Escape then
+                                    showNewProjectDialog <- false
+                                    newProjectName <- "MyGame"
+
+                                // fin
+                                ImGui.EndPopup ()
+
+                        // template project missing
+                        else
+                            Log.trace "Template project is missing; new project cannot be generated."
+                            showNewProjectDialog <- false
+
+                    // open project dialog
+                    if showOpenProjectDialog then
+                        let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
+                            ImGui.Text "Game Assembly Path:"
+                            ImGui.SameLine ()
+                            ImGui.InputTextWithHint ("##gameDllFilePath", "[enter game .dll path]", &gameDllPath, 4096u) |> ignore<bool>
+                            ImGui.Text "Edit Mode:"
+                            ImGui.SameLine ()
+                            ImGui.InputText ("##projectGameMode", &projectEditMode, 4096u) |> ignore<bool>
+                            ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &projectImperativeExecution) |> ignore<bool>
+                            if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
+                                String.notEmpty gameDllPath &&
+                                File.Exists gameDllPath then
+                                showOpenProjectDialog <- false
+                                let savedState =
+                                    { ProjectFilePath = gameDllPath
+                                      EditModeOpt = Some projectEditMode
+                                      UseImperativeExecution = projectImperativeExecution }
+                                let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                                let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                    Directory.SetCurrentDirectory gaiaDirectory
+                                    showRestartDialog <- true
+                                with _ -> Log.info "Could not save editor state and open project."
+                            if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
+                            ImGui.EndPopup ()
+
+                    // close project dialog
+                    if showCloseProjectDialog then
+                        let title = "Close project... *EDITOR RESTART REQUIRED!*"
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showCloseProjectDialog) then
+                            ImGui.Text "Close the project and use Gaia in its default state?"
+                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                                showCloseProjectDialog <- false
+                                let savedState = SavedState.defaultState
+                                let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                                let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                    Directory.SetCurrentDirectory gaiaDirectory
+                                    showRestartDialog <- true
+                                with _ -> Log.info "Could not clear editor state and close project."
+                            if ImGui.IsKeyPressed ImGuiKey.Escape then showCloseProjectDialog <- false
+                            ImGui.EndPopup ()
+
+                    // new group dialog
+                    if showNewGroupDialog then
+                        let title = "Create a group..."
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showNewGroupDialog) then
+                            ImGui.Text "Group Name:"
+                            ImGui.SameLine ()
+                            ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
+                            let newGroup = selectedScreen / newGroupName
+                            if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
+                                for dispatcherName in (World.getGroupDispatchers world).Keys do
+                                    if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
+                                        newGroupDispatcherName <- dispatcherName
+                                ImGui.EndCombo ()
+                            if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
+                                let oldWorld = world
+                                try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
+                                    selectEntityOpt None
+                                    selectGroup newGroup
+                                    showNewGroupDialog <- false
+                                    newGroupName <- ""
+                                with exn ->
+                                    world <- World.choose oldWorld
+                                    messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
+                            if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
+                            ImGui.EndPopup ()
+
+                    // open group dialog
+                    if showOpenGroupDialog then
+                        groupFileDialogState.Title <- "Choose a nugroup file..."
+                        groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+                        if ImGui.FileDialog (&showOpenGroupDialog, groupFileDialogState) then
+                            snapshot ()
+                            showOpenGroupDialog <- not (tryLoadSelectedGroup groupFileDialogState.FilePath)
+
+                    // save group dialog
+                    if showSaveGroupDialog then
+                        groupFileDialogState.Title <- "Save a nugroup file..."
+                        groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+                        if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
+                            snapshot ()
+                            showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
+
+                    // rename group dialog
+                    if showRenameGroupDialog then
+                        match selectedGroup with
+                        | group when group.Exists world ->
+                            let title = "Rename group..."
+                            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                            if ImGui.BeginPopupModal (title, &showRenameGroupDialog) then
+                                ImGui.Text "Group Name:"
+                                ImGui.SameLine ()
+                                ImGui.InputTextWithHint ("##groupName", "[enter group name]", &groupRename, 4096u) |> ignore<bool>
+                                let group' = group.Screen / groupRename
+                                if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
+                                    snapshot ()
+                                    world <- World.renameGroupImmediate group group' world
+                                    selectedGroup <- group'
+                                    showRenameGroupDialog <- false
+                                if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameGroupDialog <- false
+                                ImGui.EndPopup ()
+                        | _ -> showRenameGroupDialog <- false
+
+                    // rename entity dialog
+                    if showRenameEntityDialog then
+                        match selectedEntityOpt with
+                        | Some entity when entity.Exists world ->
+                            let title = "Rename entity..."
+                            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                            if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
+                                ImGui.Text "Entity Name:"
+                                ImGui.SameLine ()
+                                ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &entityRename, 4096u) |> ignore<bool>
+                                let entity' = Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
+                                if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
+                                    snapshot ()
+                                    world <- World.renameEntityImmediate entity entity' world
+                                    selectedEntityOpt <- Some entity'
+                                    showRenameEntityDialog <- false
+                                if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
+                                ImGui.EndPopup ()
+                        | Some _ | None -> showRenameEntityDialog <- false
+
+                    // confirm exit dialog
+                    if showConfirmExitDialog then
+                        let title = "Are you okay with exiting Gaia?"
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
+                            ImGui.Text "Any unsaved changes will be lost."
+                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
+                            ImGui.SameLine ()
+                            if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then showConfirmExitDialog <- false
+                            ImGui.EndPopup ()
+
+                    // restart dialog
+                    if showRestartDialog then
+                        let title = "Editor restart required."
+                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                        if ImGui.BeginPopupModal title then
+                            ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
+                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
+                            ImGui.EndPopup ()
+                
+                // message box dialog
+                | Some messageBox ->
+                    let title = "Message!"
+                    let mutable showing = true
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal (title, &showing) then
+                        ImGui.TextWrapped messageBox
+                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
+                        if not showing then messageBoxOpt <- None
+                        ImGui.EndPopup ()
+
                 // entity context menu
                 if showEntityContextMenu then
                     ImGui.SetNextWindowPos rightClickPosition
@@ -2219,316 +2535,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Separator ()
                         if ImGui.Button "Show in Hierarchy" then showSelectedEntity <- true; showEntityContextMenu <- false
                         ImGui.End ()
-
-                // asset picker dialog
-                if showAssetPickerDialog then
-                    let title = "Choose an Asset..."
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showAssetPickerDialog) then
-                        ImGui.SetNextItemWidth -1.0f
-                        ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
-                        let assets = Metadata.getDiscoveredAssets ()
-                        for package in assets do
-                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
-                            if ImGui.TreeNodeEx (package.Key, flags) then
-                                for assetName in package.Value do
-                                    if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
-                                        if ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) then
-                                            if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                                                match focusedPropertyDescriptorOpt with
-                                                | Some (propertyDescriptor, simulant) when
-                                                    World.getExists simulant world &&
-                                                    propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
-                                                    let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                                                    let propertyValueStr = "[" + package.Key + " " + assetName + "]"
-                                                    let propertyValue = converter.ConvertFromString propertyValueStr
-                                                    setPropertyValue propertyValue propertyDescriptor simulant
-                                                | Some _ | None -> ()
-                                                showAssetPickerDialog <- false
-                                            ImGui.TreePop ()
-                                ImGui.TreePop ()
-                        if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
-                        ImGui.EndPopup ()
-
-                // new project dialog
-                if showNewProjectDialog then
-
-                    // ensure template directory exists
-                    let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
-                    let slnDir = programDir + "/../../../../.." |> Path.Simplify
-                    let templateDir = programDir + "/../../../../Nu.Template" |> Path.Simplify
-                    if Directory.Exists templateDir then
-
-                        // prompt user to create new project
-                        let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
-                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                        if ImGui.BeginPopupModal (title, &showNewProjectDialog) then
-                            ImGui.Text "Project Name"
-                            ImGui.SameLine ()
-                            ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
-                            newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
-                            let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
-                            let templateFileName = "Nu.Template.fsproj"
-                            let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
-                            let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
-                            let newProjectDll = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
-                            let newFileName = newProjectName + ".fsproj"
-                            let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
-                            let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
-                            if not validName then ImGui.Text "Invalid project name!"
-                            let validDirectory = not (Directory.Exists newProjectDir)
-                            if not validDirectory then ImGui.Text "Project already exists!"
-                            if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) then
-
-                                // attempt to create project files
-                                try Log.info ("Creating project '" + newProjectName + "' in '" + projectsDir + "'...")
-
-                                    // install nu template
-                                    Directory.SetCurrentDirectory templateDir
-                                    Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
-                                    Process.Start("dotnet", "new install ./").WaitForExit()
-
-                                    // instantiate nu template
-                                    Directory.SetCurrentDirectory projectsDir
-                                    Directory.CreateDirectory newProjectName |> ignore<DirectoryInfo>
-                                    Directory.SetCurrentDirectory newProjectDir
-                                    Process.Start("dotnet", "new nu-game --force").WaitForExit()
-
-                                    // rename project file
-                                    File.Copy (templateFileName, newFileName, true)
-                                    File.Delete templateFileName
-
-                                    // substitute project guid in project file
-                                    let projectGuid = Gen.id
-                                    let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
-                                    let newProjectStr = File.ReadAllText newProject
-                                    let newProjectStr = newProjectStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
-                                    File.WriteAllText (newProject, newProjectStr)
-
-                                    // add project to sln file
-                                    Directory.SetCurrentDirectory slnDir
-                                    let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
-                                    let insertionIndex = List.findIndexBack ((=) "\tEndProjectSection") slnLines
-                                    let slnLines = 
-                                        List.take insertionIndex slnLines @
-                                        ["\t\t{" + projectGuidStr + "} = {" + projectGuidStr + "}"] @
-                                        List.skip insertionIndex slnLines
-                                    let insertionIndex = List.findIndex ((=) "Global") slnLines
-                                    let slnLines =
-                                        List.take insertionIndex slnLines @
-                                        ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + newProjectName + "\", \"Projects\\" + newProjectName + "\\" + newProjectName + ".fsproj\", \"{" + projectGuidStr + "}\""
-                                         "EndProject"] @
-                                        List.skip insertionIndex slnLines
-                                    let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
-                                    let slnLines =
-                                        List.take insertionIndex slnLines @
-                                        ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
-                                         "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
-                                         "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
-                                         "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|x64"] @
-                                        List.skip insertionIndex slnLines
-                                    let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
-                                    let slnLines =
-                                        List.take insertionIndex slnLines @
-                                        ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
-                                        List.skip insertionIndex slnLines
-                                    File.WriteAllLines ("Nu.sln", List.toArray slnLines)
-                                    Log.info ("Project '" + newProjectName + "'" + "created.")
-
-                                    // configure editor to open new project then exit
-                                    let savedState =
-                                        { ProjectFilePath = newProjectDll
-                                          EditModeOpt = Some "Title"
-                                          UseImperativeExecution = projectImperativeExecution }
-                                    let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                                    let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
-                                    try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                                        Directory.SetCurrentDirectory gaiaDirectory
-                                        showRestartDialog <- true
-                                    with _ -> Log.trace "Could not save editor state and open new project."
-
-                                    // close dialog
-                                    showNewProjectDialog <- false
-                                    newProjectName <- "MyGame"
-
-                                // log failure
-                                with exn -> Log.trace ("Failed to create new project '" + newProjectName + "' due to: " + scstring exn)
-
-                            // escape to cancel
-                            if ImGui.IsKeyPressed ImGuiKey.Escape then
-                                showNewProjectDialog <- false
-                                newProjectName <- "MyGame"
-
-                            // fin
-                            ImGui.EndPopup ()
-
-                    // template project missing
-                    else
-                        Log.trace "Template project is missing; new project cannot be generated."
-                        showNewProjectDialog <- false
-
-                // open project dialog
-                if showOpenProjectDialog then
-                    let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
-                        ImGui.Text "Game Assembly Path:"
-                        ImGui.SameLine ()
-                        ImGui.InputTextWithHint ("##gameDllFilePath", "[enter game .dll path]", &gameDllPath, 4096u) |> ignore<bool>
-                        ImGui.Text "Edit Mode:"
-                        ImGui.SameLine ()
-                        ImGui.InputText ("##projectGameMode", &projectEditMode, 4096u) |> ignore<bool>
-                        ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &projectImperativeExecution) |> ignore<bool>
-                        if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
-                            String.notEmpty gameDllPath &&
-                            File.Exists gameDllPath then
-                            showOpenProjectDialog <- false
-                            let savedState =
-                                { ProjectFilePath = gameDllPath
-                                  EditModeOpt = Some projectEditMode
-                                  UseImperativeExecution = projectImperativeExecution }
-                            let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                            let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
-                            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                                Directory.SetCurrentDirectory gaiaDirectory
-                                showRestartDialog <- true
-                            with _ -> Log.info "Could not save editor state and open project."
-                        if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
-                        ImGui.EndPopup ()
-
-                // close project dialog
-                if showCloseProjectDialog then
-                    let title = "Close project... *EDITOR RESTART REQUIRED!*"
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showCloseProjectDialog) then
-                        ImGui.Text "Close the project and use Gaia in its default state?"
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
-                            showCloseProjectDialog <- false
-                            let savedState = SavedState.defaultState
-                            let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                            let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
-                            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-                                Directory.SetCurrentDirectory gaiaDirectory
-                                showRestartDialog <- true
-                            with _ -> Log.info "Could not clear editor state and close project."
-                        if ImGui.IsKeyPressed ImGuiKey.Escape then showCloseProjectDialog <- false
-                        ImGui.EndPopup ()
-
-                // new group dialog
-                if showNewGroupDialog then
-                    let title = "Create a group..."
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showNewGroupDialog) then
-                        ImGui.Text "Group Name:"
-                        ImGui.SameLine ()
-                        ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
-                        let newGroup = selectedScreen / newGroupName
-                        if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
-                            for dispatcherName in (World.getGroupDispatchers world).Keys do
-                                if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
-                                    newGroupDispatcherName <- dispatcherName
-                            ImGui.EndCombo ()
-                        if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
-                            let oldWorld = world
-                            try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
-                                selectEntityOpt None
-                                selectGroup newGroup
-                                showNewGroupDialog <- false
-                                newGroupName <- ""
-                            with exn ->
-                                world <- World.choose oldWorld
-                                messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
-                        if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
-                        ImGui.EndPopup ()
-
-                // open group dialog
-                if showOpenGroupDialog then
-                    groupFileDialogState.Title <- "Choose a nugroup file..."
-                    groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
-                    if ImGui.FileDialog (&showOpenGroupDialog, groupFileDialogState) then
-                        snapshot ()
-                        showOpenGroupDialog <- not (tryLoadSelectedGroup groupFileDialogState.FilePath)
-
-                // save group dialog
-                if showSaveGroupDialog then
-                    groupFileDialogState.Title <- "Save a nugroup file..."
-                    groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
-                    if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
-                        snapshot ()
-                        showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
-
-                // rename group dialog
-                if showRenameGroupDialog then
-                    match selectedGroup with
-                    | group when group.Exists world ->
-                        let title = "Rename group..."
-                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                        if ImGui.BeginPopupModal (title, &showRenameGroupDialog) then
-                            ImGui.Text "Group Name:"
-                            ImGui.SameLine ()
-                            ImGui.InputTextWithHint ("##groupName", "[enter group name]", &groupRename, 4096u) |> ignore<bool>
-                            let group' = group.Screen / groupRename
-                            if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
-                                snapshot ()
-                                world <- World.renameGroupImmediate group group' world
-                                selectedGroup <- group'
-                                showRenameGroupDialog <- false
-                            if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameGroupDialog <- false
-                            ImGui.EndPopup ()
-                    | _ -> showRenameGroupDialog <- false
-
-                // rename entity dialog
-                if showRenameEntityDialog then
-                    match selectedEntityOpt with
-                    | Some entity when entity.Exists world ->
-                        let title = "Rename entity..."
-                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                        if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
-                            ImGui.Text "Entity Name:"
-                            ImGui.SameLine ()
-                            ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &entityRename, 4096u) |> ignore<bool>
-                            let entity' = Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
-                            if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
-                                snapshot ()
-                                world <- World.renameEntityImmediate entity entity' world
-                                selectedEntityOpt <- Some entity'
-                                showRenameEntityDialog <- false
-                            if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
-                            ImGui.EndPopup ()
-                    | Some _ | None -> showRenameEntityDialog <- false
-
-                // confirm exit dialog
-                if showConfirmExitDialog then
-                    let title = "Are you okay with exiting Gaia?"
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
-                        ImGui.Text "Any unsaved changes will be lost."
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
-                        ImGui.SameLine ()
-                        if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then showConfirmExitDialog <- false
-                        ImGui.EndPopup ()
-
-                // restart dialog
-                if showRestartDialog then
-                    let title = "Editor restart required."
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal title then
-                        ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
-                        ImGui.EndPopup ()
-
-                // message box dialog
-                match messageBoxOpt with
-                | Some messageBox ->
-                    let title = "Message!"
-                    let mutable showing = true
-                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                    if ImGui.BeginPopupModal (title, &showing) then
-                        ImGui.TextWrapped messageBox
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
-                        if not showing then messageBoxOpt <- None
-                        ImGui.EndPopup ()
-                | None -> ()
 
                 // imgui inspector window
                 if showInspector then
