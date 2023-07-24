@@ -635,7 +635,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             try let deploymentPath = Path.Combine (targetDir, (Path.GetRelativePath (targetDir, filePath)).Replace ("..\\", ""))
                 if Directory.Exists (Path.GetDirectoryName deploymentPath) then
                     File.Copy (filePath, deploymentPath, true)
-            with _ -> ()
+            with exn ->
+                messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
             groupFilePaths <- Map.add selectedGroup.GroupAddress groupFileDialogState.FilePath groupFilePaths
             true
         with exn ->
