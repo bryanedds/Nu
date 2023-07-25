@@ -40,6 +40,7 @@ module WorldConsole =
             SetForegroundWindow handle |> ignore
             true
 
+    /// Run the interactive console window.
     let rec run gameTitle world =
         if showWindowByTitle Console.Title then
             Console.Write "> "
@@ -60,6 +61,7 @@ module WorldConsole =
                     run gameTitle (World.choose world)
         else world
 
+    /// Attempt to hook-up the interactive console window.
     let tryHookUp world =
         match Environment.OSVersion.Platform with
         | PlatformID.Win32NT 
