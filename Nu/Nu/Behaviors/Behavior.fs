@@ -23,37 +23,52 @@ type 'a Behavior =
             mapper (a, b))
 
     /// Map equality over two behaviors.
-    static member (=.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a = b) right
+    static member (=.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a = b) right
+    
     /// Map inequality over two behaviors.
-    static member (<>.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <> b) right
+    static member (<>.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <> b) right
+    
     /// Map less-than over two behaviors.
-    static member (<.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a < b) right
+    static member (<.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a < b) right
+    
     /// Map less-than-or-equal over two behaviors.
-    static member (<=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <= b) right
+    static member (<=.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <= b) right
+    
     /// Map greater-than over two behaviors.
-    static member (>.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a > b) right
+    static member (>.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a > b) right
+    
     /// Map greater-than-or-equal over two behaviors.
-    static member (>=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >= b) right
+    static member (>=.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >= b) right
+    
     /// Map logical or over two behaviors.
-    static member (||.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a || b) right
+    static member (||.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a || b) right
+    
     /// Map logical and over two behaviors.
-    static member (&&.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a && b) right
+    static member (&&.) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a && b) right
+    
     /// Map addition over two behaviors.
-    static member (+)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a + b) right
+    static member (+) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a + b) right
+    
     /// Map subtraction over two behaviors.
-    static member (-)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a - b) right
+    static member (-) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a - b) right
+    
     /// Map multiplication over two behaviors.
-    static member (*)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a * b) right
+    static member (*) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a * b) right
+    
     /// Map division over two behaviors.
-    static member (/)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a / b) right
+    static member (/) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a / b) right
+    
     /// Map remainder over two behaviors.
-    static member (%)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a % b) right
+    static member (%) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a % b) right
+    
     /// Map right bitshift over two behaviors.
-    static member (>>>)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >>> b) right
+    static member (>>>) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >>> b) right
+    
     /// Map left bitshift over two behaviors.
-    static member (<<<)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <<< b) right
+    static member (<<<) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <<< b) right
+    
     /// Map logical xor over two behaviors.
-    static member (^^^)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a ^^^ b) right
+    static member (^^^) (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a ^^^ b) right
 
 [<RequireQualifiedAccess>]
 module Behavior =
@@ -193,25 +208,38 @@ module Behavior =
 
     (* Boot-Strapping Combinators *)
 
-    /// The do-nothing behavior.
+    /// Represents the do-nothing behavior, which does not emit any value over time.
     let unit : unit Behavior = Behavior (fun _ -> ())
 
-    /// The constant-emitting behavior.
-    let constant k : _ Behavior = Behavior (fun _ -> k)
+    /// A behavior that emits a constant value 'k' at all times.
+    /// The output behavior produces values of the same type as the provided constant value 'k'.
+    let constant k : 'a Behavior = Behavior (fun _ -> k)
 
-    /// The time-emitting behavior.
+    /// A behavior that emits the current 'GameTime' value at each time step.
     let time : GameTime Behavior = Behavior (fun (time : GameTime) -> time)
 
-    /// Time-emitting loop behavior.
+    /// A time-emitting loop behavior based on the specified 'stride' and 'bounce' parameters.
+    /// The 'stride' parameter represents the duration of each loop iteration.
+    /// The 'bounce' parameter indicates whether the loop will reverse its direction after each iteration.
+    /// The output behavior produces 'GameTime' values indicating the progress within each loop iteration.
     let timeLoopRaw stride bounce = loop stride bounce time
 
-    /// Time-slicing behavior.
+    /// A time-slicing behavior that emits 'GameTime' values within the specified time range.
+    /// The 'start' parameter represents the start time of the slice.
+    /// The 'length' parameter indicates the duration of the time slice.
+    /// The output behavior produces 'GameTime' values within the specified time range.
     let timeSliceRaw start length = slice start length time
 
-    /// Normalized time-emitting loop behavior.
+    /// A normalized time-emitting loop behavior based on the specified 'stride' and 'bounce' parameters.
+    /// The 'stride' parameter represents the duration of each loop iteration.
+    /// The 'bounce' parameter indicates whether the loop will reverse its direction after each iteration.
+    /// The output behavior produces normalized values (0.0f to 1.0f) indicating the progress within each loop iteration.
     let timeLoop stride bounce = let bhvr = timeLoopRaw stride bounce in normalize stride bhvr
 
-    /// Normalized time-slicing behavior.
+    /// A normalized time-slicing behavior that emits normalized values (0.0f to 1.0f) within the specified time range.
+    /// The 'start' parameter represents the start time of the slice.
+    /// The 'length' parameter indicates the duration of the time slice.
+    /// The output behavior produces normalized values (0.0f to 1.0f) indicating the progress within the specified time range.
     let timeSlice start length = let bhvr = timeSliceRaw start length in normalize length bhvr
 
     (* Advanced Combinators *)
@@ -253,21 +281,40 @@ module Behavior =
     let inline pow4i n bhvr = map (fun a -> Vector4i.Pow (a, n)) bhvr
     let inline powc n bhvr = map (fun a -> Color.Pow (a, n)) bhvr
     let inline pown n bhvr = map (fun a -> pown a n) bhvr
-    let inline step stride bhvr = map (fun p -> int (p / stride)) bhvr
-    let inline pulse stride bhvr = map (fun steps -> steps % 2 <> 0) (step stride bhvr)
 
+    /// A behavior that produces an integer value based on the input behavior's value divided by the given constant
+    /// value 'stride'.
+    let inline step stride bhvr =
+        map (fun p -> int (p / stride)) bhvr
+
+    /// A behavior that produces a boolean value indicating whether the input behavior's value corresponds to an odd
+    /// step of the given constant value 'stride'.
+    let inline pulse stride bhvr =
+        map (fun steps -> steps % 2 <> 0) (step stride bhvr)
+
+    /// A behavior that produces a value that remains constant (equal to 'a') regardless of the input behavior's value.
     let inline constantTween (a :'a) (_ :'a) bhvr =
         map (fun (_ : 'b) -> a) bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between the values 'a' and 'b' based on the input
+    /// behavior's value (interpreted as a normalized interpolation factor).
     let inline lerp a b bhvr =
         map (fun p -> a + p * (b - a)) bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function based on the input behavior's value. The custom scaling function 'scale' should take a pair
+    /// (difference, scalar) and return a value representing the interpolation factor. The output behavior produces
+    /// values of the same type as 'a' and 'b'.
     let inline ease (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
         map (fun (s : single) ->
             let scalar = single (Math.Pow (Math.Sin (Math.PI * double s * 0.5), 2.0))
             a + scale (b - a, scalar))
             bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and an "ease-in" effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline easeIn (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
         map (fun (s : single) ->
             let scaled = float s * Math.PI * 0.5
@@ -275,6 +322,10 @@ module Behavior =
             a + scale (b - a, scalar))
             bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and an "ease-out" effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline easeOut (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
         map (fun (s : single) ->
             let scaled = float s * Math.PI * 0.5
@@ -282,6 +333,10 @@ module Behavior =
             a + scale (b - a, scalar))
             bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a sinusoidal tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline sinTween (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
         map (fun (s : single) ->
             let scaled = float s * Math.PI * 2.0
@@ -289,6 +344,10 @@ module Behavior =
             a + scale (b - a, single scalar))
             bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a sinusoidal tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline sinTweenScaled (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) (scalar : single) bhvr : ^a Behavior =
         map (fun (s : single) ->
             let scaled = float s * Math.PI * 2.0 * float scalar
@@ -296,6 +355,10 @@ module Behavior =
             a + scale (b - a, single scalar))
             bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a cosine tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline cosTween (scale : (^a * single) -> ^a) (a : ^a) (b : ^a) bhvr : ^a Behavior =
         map (fun (s : single) ->
             let scaled = float s * Math.PI * 2.0
@@ -303,6 +366,10 @@ module Behavior =
             a + scale (b - a, single scalar))
             bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a cosine tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline cosTweenScaled (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) (scalar : single) bhvr : ^a Behavior =
         map (fun (progress : single) ->
             let scaled = float progress * Math.PI * 2.0 * float scalar
@@ -310,12 +377,46 @@ module Behavior =
             value + scale (value2 - value, single scalar))
             bhvr
 
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and an easing effect based on the input behavior's value. The custom scaling function 'scale' should
+    /// take a pair (difference, scalar) and return a value representing the interpolation factor. The output behavior
+    /// produces values of the same type as 'a' and 'b'.
     let inline easef a b bhvr = ease (fun (c, p) -> c * p) a b bhvr
+
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and an ease-in effect based on the input behavior's value. The custom scaling function 'scale' should
+    /// take a pair (difference, scalar) and return a value representing the interpolation factor. The output behavior
+    /// produces values of the same type as 'a' and 'b'.
     let inline easeInf a b bhvr = easeIn (fun (c, p) -> c * p) a b bhvr
+
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and an ease-out effect based on the input behavior's value. The custom scaling function 'scale' should
+    /// take a pair (difference, scalar) and return a value representing the interpolation factor. The output behavior
+    /// produces values of the same type as 'a' and 'b'.
     let inline easeOutf a b bhvr = easeOut (fun (c, p) -> c * p) a b bhvr
+
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a sinusoidal tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline sinTweenf a b bhvr = sinTween (fun (c, p) -> c * p) a b bhvr
+
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a sinusoidal tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline sinTweenScaledf a b scalar bhvr = sinTweenScaled (fun (c, p) -> c * p) a b scalar bhvr
+
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a cosine tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline cosTweenf a b bhvr = cosTween (fun (c, p) -> c * p) a b bhvr
+
+    /// A behavior that produces a value that is linearly interpolated between 'a' and 'b' using a custom scaling
+    /// function and a cosine tween effect based on the input behavior's value. The custom scaling function 'scale'
+    /// should take a pair (difference, scalar) and return a value representing the interpolation factor. The output
+    /// behavior produces values of the same type as 'a' and 'b'.
     let inline cosTweenScaledf a b scalar bhvr = cosTweenScaled (fun (c, p) -> c * p) a b scalar bhvr
 
 /// Builds behaviors.
@@ -324,7 +425,7 @@ type [<Sealed>] BehaviorBuilder () =
     /// Monadic return.
     member this.Return a = Behavior.returnB a
 
-    /// Monadic return!.
+    /// Monadic returnFrom.
     member this.ReturnFrom a = a
 
     /// Monadic bind.
