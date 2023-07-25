@@ -95,6 +95,7 @@ module Render =
     let [<Literal>] SpriteBorderTexelScalar = 0.01f
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
+    let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256
     let [<Literal>] GeometryBatchPrealloc = 1024
     let [<Literal>] LightMapsMaxDeferred = 27
     let [<Literal>] LightMapsMaxForward = 2

@@ -82,6 +82,12 @@ module WorldRender =
             (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, renderType, staticModel)
             world
 
+        /// Send a message to the render system to render a static model surface using a fast path.
+        [<FunctionBinding>]
+        static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, surfaceIndex, world) =
+            (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, insetOpt, &materialProperties, renderType, staticModel, surfaceIndex)
+            world
+
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
         [<FunctionBinding>]

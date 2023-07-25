@@ -22,8 +22,10 @@ type RendererProcess =
         abstract Start : ImFontAtlasPtr option -> Window option -> unit
         /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
-        /// Potential fast-path for rendering static model.
+        /// Potential fast-path for rendering static models.
         abstract RenderStaticModelFast : bool * Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * RenderType * StaticModel AssetTag -> unit
+        /// Potential fast-path for rendering static model surfaces.
+        abstract RenderStaticModelSurfaceFast : bool * Matrix4x4 inref * Box2 voption * MaterialProperties inref * RenderType * StaticModel AssetTag * int -> unit
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
@@ -124,6 +126,11 @@ type RendererInline () =
             | Some _ -> messages3d.Add (RenderStaticModel { Absolute = absolute; ModelMatrix = modelMatrix; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; RenderType = renderType; StaticModel = staticModel })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
+        member this.RenderStaticModelSurfaceFast (absolute, modelMatrix, insetOpt, materialProperties, renderType, staticModel, surfaceIndex) =
+            match renderersOpt with
+            | Some _ -> messages3d.Add (RenderStaticModelSurface { Absolute = absolute; ModelMatrix = modelMatrix; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; RenderType = renderType; StaticModel = staticModel; SurfaceIndex = surfaceIndex })
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
         member this.EnqueueMessage2d message =
             match renderersOpt with
             | Some _ -> messages2d.Add message 
@@ -201,6 +208,9 @@ type RendererThread () =
     let cachedStaticModelMessagesLock = obj ()
     let cachedStaticModelMessages = System.Collections.Generic.Queue ()
     let mutable cachedStaticModelMessagesCapacity = Constants.Render.StaticModelMessagesPrealloc
+    let cachedStaticModelSurfaceMessagesLock = obj ()
+    let cachedStaticModelSurfaceMessages = System.Collections.Generic.Queue ()
+    let mutable cachedStaticModelSurfaceMessagesCapacity = Constants.Render.StaticModelSurfaceMessagesPrealloc
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -220,11 +230,36 @@ type RendererThread () =
                 cachedStaticModelMessages.Dequeue ()
             else cachedStaticModelMessages.Dequeue ())
 
+    let allocStaticModelSurfaceMessage () =
+        lock cachedStaticModelSurfaceMessagesLock (fun () ->
+            if cachedStaticModelSurfaceMessages.Count = 0 then
+                for _ in 0 .. dec cachedStaticModelSurfaceMessagesCapacity do
+                    let staticModelSurfaceDescriptor =
+                        { CachedStaticModelSurfaceAbsolute = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceMatrix = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceInsetOpt = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceMaterialProperties = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceRenderType = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceModel = Unchecked.defaultof<_>
+                          CachedStaticModelSurfaceIndex = Unchecked.defaultof<_> }
+                    let cachedStaticModelSurfaceMessage = RenderCachedStaticModelSurface staticModelSurfaceDescriptor
+                    cachedStaticModelSurfaceMessages.Enqueue cachedStaticModelSurfaceMessage
+                cachedStaticModelSurfaceMessagesCapacity <- cachedStaticModelSurfaceMessagesCapacity * 2
+                cachedStaticModelSurfaceMessages.Dequeue ()
+            else cachedStaticModelSurfaceMessages.Dequeue ())
+
     let freeStaticModelMessages messages =
         lock cachedStaticModelMessagesLock (fun () ->
             for message in messages do
                 match message with
                 | RenderCachedStaticModel _ -> cachedStaticModelMessages.Enqueue message
+                | _ -> ())
+
+    let freeStaticModelSurfaceMessages messages =
+        lock cachedStaticModelSurfaceMessagesLock (fun () ->
+            for message in messages do
+                match message with
+                | RenderCachedStaticModelSurface _ -> cachedStaticModelSurfaceMessages.Enqueue message
                 | _ -> ())
 
     let allocSpriteMessage () =
@@ -316,6 +351,7 @@ type RendererThread () =
                 // render 3d
                 renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d windowSize messages3d
                 freeStaticModelMessages messages3d
+                freeStaticModelSurfaceMessages messages3d
                 OpenGL.Hl.Assert ()
 
                 // render 2d
@@ -389,6 +425,19 @@ type RendererThread () =
                     cachedMessage.CachedStaticModel <- rsm.StaticModel
                     messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
                 | _ -> failwithumf ()
+            | RenderStaticModelSurface rsms ->
+                let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
+                match cachedStaticModelSurfaceMessage with
+                | RenderCachedStaticModelSurface cachedMessage ->
+                    cachedMessage.CachedStaticModelSurfaceAbsolute <- rsms.Absolute
+                    cachedMessage.CachedStaticModelSurfaceMatrix <- rsms.ModelMatrix
+                    cachedMessage.CachedStaticModelSurfaceInsetOpt <- ValueOption.ofOption rsms.InsetOpt
+                    cachedMessage.CachedStaticModelSurfaceMaterialProperties <- rsms.MaterialProperties
+                    cachedMessage.CachedStaticModelSurfaceRenderType <- rsms.RenderType
+                    cachedMessage.CachedStaticModelSurfaceModel <- rsms.StaticModel
+                    cachedMessage.CachedStaticModelSurfaceIndex <- rsms.SurfaceIndex
+                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
+                | _ -> failwithumf ()
             | _ -> messageBuffers3d.[messageBufferIndex].Add message
 
         member this.RenderStaticModelFast (absolute, modelMatrix, presence, insetOpt, materialProperties, renderType, staticModel) =
@@ -404,6 +453,21 @@ type RendererThread () =
                 cachedMessage.CachedStaticModelRenderType <- renderType
                 cachedMessage.CachedStaticModel <- staticModel
                 messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+            | _ -> failwithumf ()
+
+        member this.RenderStaticModelSurfaceFast (absolute, modelMatrix, insetOpt, materialProperties, renderType, staticModel, surfaceIndex) =
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
+            match cachedStaticModelSurfaceMessage with
+            | RenderCachedStaticModelSurface cachedMessage ->
+                cachedMessage.CachedStaticModelSurfaceAbsolute <- absolute
+                cachedMessage.CachedStaticModelSurfaceMatrix <- modelMatrix
+                cachedMessage.CachedStaticModelSurfaceInsetOpt <- insetOpt
+                cachedMessage.CachedStaticModelSurfaceMaterialProperties <- materialProperties
+                cachedMessage.CachedStaticModelSurfaceRenderType <- renderType
+                cachedMessage.CachedStaticModelSurfaceModel <- staticModel
+                cachedMessage.CachedStaticModelSurfaceIndex <- surfaceIndex
+                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
         member this.EnqueueMessage2d message =

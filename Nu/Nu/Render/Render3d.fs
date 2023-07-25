@@ -127,7 +127,7 @@ and [<ReferenceEquality>] SsaoConfig =
       SsaoRadius : single
       SsaoSampleCount : int }
 
-/// An internally cached static model used to avoid GC promotion of static model messages.
+/// An internally cached static model used to reduce GC promotion or pressure.
 and [<NoEquality; NoComparison>] CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelMatrix : Matrix4x4
@@ -136,6 +136,16 @@ and [<NoEquality; NoComparison>] CachedStaticModelMessage =
       mutable CachedStaticModelMaterialProperties : MaterialProperties
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModel : StaticModel AssetTag }
+
+/// An internally cached static model surface used to reduce GC promotion or pressure.
+and [<NoEquality; NoComparison>] CachedStaticModelSurfaceMessage =
+    { mutable CachedStaticModelSurfaceAbsolute : bool
+      mutable CachedStaticModelSurfaceMatrix : Matrix4x4
+      mutable CachedStaticModelSurfaceInsetOpt : Box2 voption
+      mutable CachedStaticModelSurfaceMaterialProperties : MaterialProperties
+      mutable CachedStaticModelSurfaceRenderType : RenderType
+      mutable CachedStaticModelSurfaceModel : StaticModel AssetTag
+      mutable CachedStaticModelSurfaceIndex : int }
 
 and [<ReferenceEquality>] CreateUserDefinedStaticModel =
     { SurfaceDescriptors : SurfaceDescriptor array
@@ -263,6 +273,7 @@ and [<ReferenceEquality>] RenderMessage3d =
     | RenderStaticModel of RenderStaticModel
     | RenderStaticModels of RenderStaticModels
     | RenderCachedStaticModel of CachedStaticModelMessage
+    | RenderCachedStaticModelSurface of CachedStaticModelSurfaceMessage
     | RenderUserDefinedStaticModel of RenderUserDefinedStaticModel
     | RenderPostPass3d of RenderPassMessage3d
     | ConfigureLightMapping of LightMappingConfig
@@ -806,14 +817,14 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeStaticModelSurface
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 option,
+         insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
          renderType : RenderType,
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
          renderer) =
         let texCoordsOffset =
             match insetOpt with
-            | Some inset ->
+            | ValueSome inset ->
                 let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
                 let texelWidth = albedoMetadata.TextureTexelWidth
                 let texelHeight = albedoMetadata.TextureTexelHeight
@@ -822,7 +833,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sx = inset.Size.X * texelWidth
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
-            | None -> box2 v2Zero v2Zero
+            | ValueNone -> box2 v2Zero v2Zero
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
@@ -843,7 +854,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
          modelMatrix : Matrix4x4 inref,
-         insetOpt : Box2 option,
+         insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
          renderType : RenderType,
          staticModel : StaticModel AssetTag,
@@ -855,7 +866,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | StaticModelAsset (_, modelAsset) ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, insetOpt, &properties, renderType, surface, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &insetOpt, &properties, renderType, surface, renderer)
             | _ -> Log.trace "Cannot render static model surface with a non-model asset."
         | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring staticModel + "'.")
 
@@ -868,7 +879,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          modelAbsolute : bool,
          modelMatrix : Matrix4x4 inref,
          presence : Presence,
-         insetOpt : Box2 option,
+         insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
          renderType : RenderType,
          staticModel : StaticModel AssetTag,
@@ -898,7 +909,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
                     let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false surfaceBounds presence then
-                        GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, insetOpt, &properties, renderType, surface, renderer)
+                        GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, renderType, surface, renderer)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
 
@@ -1486,18 +1497,24 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
                     GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, false, rbps.MaterialProperties, rbps.RenderType, billboardSurface, renderer)
             | RenderStaticModelSurface rsms ->
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, rsms.InsetOpt, &rsms.MaterialProperties, rsms.RenderType, rsms.StaticModel, rsms.SurfaceIndex, renderer)
+                let insetOpt = Option.toValueOption rsms.InsetOpt
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, &insetOpt, &rsms.MaterialProperties, rsms.RenderType, rsms.StaticModel, rsms.SurfaceIndex, renderer)
             | RenderStaticModel rsm ->
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, rsm.InsetOpt, &rsm.MaterialProperties, rsm.RenderType, rsm.StaticModel,  renderer)
+                let insetOpt = Option.toValueOption rsm.InsetOpt
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.RenderType, rsm.StaticModel,  renderer)
             | RenderStaticModels rsms ->
                 for (modelMatrix, presence, insetOpt, properties) in rsms.StaticModels do
-                    GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
-            | RenderCachedStaticModel csmm ->
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, Option.ofValueOption csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModelRenderType, csmm.CachedStaticModel, renderer)
+                    let insetOpt = Option.toValueOption insetOpt
+                    GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, &insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
+            | RenderCachedStaticModel csm ->
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csm.CachedStaticModelAbsolute, &csm.CachedStaticModelMatrix, csm.CachedStaticModelPresence, &csm.CachedStaticModelInsetOpt, &csm.CachedStaticModelMaterialProperties, csm.CachedStaticModelRenderType, csm.CachedStaticModel, renderer)
+            | RenderCachedStaticModelSurface csms ->
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (csms.CachedStaticModelSurfaceAbsolute, &csms.CachedStaticModelSurfaceMatrix, &csms.CachedStaticModelSurfaceInsetOpt, &csms.CachedStaticModelSurfaceMaterialProperties, csms.CachedStaticModelSurfaceRenderType, csms.CachedStaticModelSurfaceModel, csms.CachedStaticModelSurfaceIndex, renderer)
             | RenderUserDefinedStaticModel renderUdsm ->
+                let insetOpt = Option.toValueOption renderUdsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.Presence, renderUdsm.InsetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.Presence, &insetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderPostPass3d rpp ->
                 postPasses.Add rpp |> ignore<bool>
