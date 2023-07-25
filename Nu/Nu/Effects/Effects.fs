@@ -8,7 +8,7 @@ open System.Numerics
 open Prime
 open Nu
 
-/// Represents different logical operations that can be applied.
+/// Logical operations that can be applied to an effect behavior.
 type [<StructuralEquality; StructuralComparison>] LogicApplicator =
     | Or
     | Nor
@@ -17,7 +17,7 @@ type [<StructuralEquality; StructuralComparison>] LogicApplicator =
     | Nand
     | Equal
 
-/// Represents different algorithms for tweening (interpolating) values.
+/// Algorithms for tweening (interpolating) effect behavior.
 type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
     | Constant
     | Linear
@@ -31,7 +31,7 @@ type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
     | Cos
     | CosScaled of single
 
-/// Represents different ways to apply tweening to values.
+/// The manners in which to apply tweening to effect values.
 type [<StructuralEquality; StructuralComparison>] TweenApplicator =
     | Sum
     | Delta
@@ -41,7 +41,7 @@ type [<StructuralEquality; StructuralComparison>] TweenApplicator =
     | Pow
     | Set
 
-/// Represents a set of properties for a slice.
+/// A snapshot of an active piece of effect content.
 type Slice =
     { Position : Vector3
       Scale : Vector3
@@ -63,98 +63,98 @@ type Slice =
       Enabled : bool
       Centered : bool }
 
-/// Represents a keyframe with abstract properties.
+/// An effect key frame with abstract properties.
 type KeyFrame =
     abstract KeyFrameLength : GameTime
 
-/// Represents a keyframe used for logic values.
+/// An effect key frame used for logic values.
 type LogicKeyFrame =
     { LogicValue : bool
       LogicLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.LogicLength
 
-/// Represents a keyframe used for tweening single values.
+/// An effect key frame used for tweening single values.
 type TweenKeyFrame =
     { TweenValue : single
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents a keyframe used for tweening Vector2 values.
+/// An effect key frame used for tweening Vector2 values.
 type Tween2KeyFrame =
     { TweenValue : Vector2
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents a keyframe used for tweening Vector3 values.
+/// An effect key frame used for tweening Vector3 values.
 type Tween3KeyFrame =
     { TweenValue : Vector3
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents a keyframe used for tweening Vector4 values.
+/// An effect key frame used for tweening Vector4 values.
 type Tween4KeyFrame =
     { TweenValue : Vector4
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents a keyframe used for tweening Box2 values.
+/// An effect key frame used for tweening Box2 values.
 type TweenBox2KeyFrame =
     { TweenValue : Box2
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents a keyframe used for tweening Color values.
+/// An effect key frame used for tweening Color values.
 type TweenCKeyFrame =
     { TweenValue : Color
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents a keyframe used for tweening integer values.
+/// An effect key frame used for tweening integer values.
 type TweenIKeyFrame =
     { TweenValue : int
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents a keyframe used for tweening Vector2i values.
+/// An effect key frame used for tweening Vector2i values.
 type Tween2IKeyFrame =
     { TweenValue : Vector2i
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents different playback modes for animations.
+/// Represents different playback modes for an effect behavior.
 type [<StructuralEquality; StructuralComparison>] Playback =
     | Once
     | Loop
     | Bounce
 
-/// Represents different repetition modes for animations.
+/// Represents different repetition modes for an effect behavior.
 type [<StructuralEquality; StructuralComparison>] Repetition =
     | Cycle of Cycles : int
     | Iterate of Iterations : int
 
-/// Represents a rate value used in animations.
+/// Represents a rate of progress for an effect behavior.
 type [<StructuralEquality; StructuralComparison>] Rate =
     Rate of single
 
-/// Represents a shift value used in animations.
+/// Represents a shift (offset) of an effect value.
 type [<StructuralEquality; StructuralComparison>] Shift =
     Shift of single
 
-/// Represents a resource used in the content.
+/// Represents a resource used in effect content.
 type Resource =
     | Resource of string * string
     | Expand of string * Argument array
 
-/// Represents an aspect (property) of a piece of content.
+/// An aspect (property) of a piece of effect content.
 and Aspect =
     | Enabled of bool
     | PositionAbsolute of Vector3
