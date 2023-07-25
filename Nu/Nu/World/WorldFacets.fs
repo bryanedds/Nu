@@ -49,6 +49,7 @@ module StaticSpriteFacetModule =
         member this.SetFlip (value : Flip) world = this.Set (nameof this.Flip) value world
         member this.Flip = lens (nameof this.Flip) this this.GetFlip this.SetFlip
 
+    /// Augments an entity with a static sprite.
     type StaticSpriteFacet () =
         inherit Facet (false)
 
@@ -95,6 +96,7 @@ module AnimatedSpriteFacetModule =
         member this.SetAnimationSheet (value : Image AssetTag) world = this.Set (nameof this.AnimationSheet) value world
         member this.AnimationSheet = lens (nameof this.AnimationSheet) this this.GetAnimationSheet this.SetAnimationSheet
 
+    /// Augments an entity with an animated sprite.
     type AnimatedSpriteFacet () =
         inherit Facet (false)
 
@@ -181,6 +183,7 @@ module BasicStaticSpriteEmitterFacetModule =
         member this.SetParticleSystem (value : Particles.ParticleSystem) world = this.Set (nameof this.ParticleSystem) value world
         member this.ParticleSystem = lens (nameof this.ParticleSystem) this this.GetParticleSystem this.SetParticleSystem
 
+    /// Augments an entity with a basic static sprite emitter.
     type BasicStaticSpriteEmitterFacet () =
         inherit Facet (false)
 
@@ -410,6 +413,7 @@ module TextFacetModule =
         member this.SetTextOffset (value : Vector2) world = this.Set (nameof this.TextOffset) value world
         member this.TextOffset = lens (nameof this.TextOffset) this this.GetTextOffset this.SetTextOffset
 
+    /// Augments an entity with text.
     type TextFacet () =
         inherit Facet (false)
 
@@ -453,6 +457,7 @@ module TextFacetModule =
 [<AutoOpen>]
 module EffectFacetModule =
 
+    /// The timing with which an effect should be evaluated in a frame.
     type RunMode =
         | RunEarly
         | RunLate
@@ -501,6 +506,7 @@ module EffectFacetModule =
             | Some effectStartTime -> effectStartTime
             | None -> GameTime.zero
 
+    /// Augments an entity with an effect.
     type EffectFacet () =
         inherit Facet (false)
 
@@ -699,6 +705,7 @@ module RigidBodyFacetModule =
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicit --> this
         member this.BodyTransformEvent = Events.BodyTransform --> this
 
+    /// Augments an entity with a physics-driven rigid body.
     type RigidBodyFacet () =
         inherit Facet (true)
 
@@ -811,6 +818,7 @@ module JointFacetModule =
         member this.GetJointId world : JointId = this.Get (nameof this.JointId) world
         member this.JointId = lensReadOnly (nameof this.JointId) this this.GetJointId
 
+    /// Augments an entity with a physics-driven joint.
     type JointFacet () =
         inherit Facet (true)
 
@@ -849,6 +857,7 @@ module TileMapFacetModule =
         member this.SetTileMap (value : TileMap AssetTag) world = this.Set (nameof this.TileMap) value world
         member this.TileMap = lens (nameof this.TileMap) this this.GetTileMap this.SetTileMap
 
+    /// Augments an entity with a asset-defined tile map.
     type TileMapFacet () =
         inherit Facet (true)
 
@@ -948,6 +957,7 @@ module TmxMapFacetModule =
         member this.SetTmxMap (value : TmxMap) world = this.Set (nameof this.TmxMap) value world
         member this.TmxMap = lens (nameof this.TmxMap) this this.GetTmxMap this.SetTmxMap
 
+    /// Augments an entity with a user-defined tile map.
     type TmxMapFacet () =
         inherit Facet (true)
 
@@ -1054,6 +1064,7 @@ module LayoutFacetModule =
         member this.SetGridPosition (value : Vector2i) world = this.Set (nameof this.GridPosition) value world
         member this.GridPosition = lens (nameof this.GridPosition) this this.GetGridPosition this.SetGridPosition
 
+    /// Augments an entity with the capability to perform layout transformations on its children.
     type LayoutFacet () =
         inherit Facet (false)
 
@@ -1287,6 +1298,7 @@ module SkyBoxFacetModule =
         member this.SetCubeMap (value : CubeMap AssetTag) world = this.Set (nameof this.CubeMap) value world
         member this.CubeMap = lens (nameof this.CubeMap) this this.GetCubeMap this.SetCubeMap
 
+    /// Augments an entity with sky box.
     type SkyBoxFacet () =
         inherit Facet (false)
 
@@ -1320,6 +1332,7 @@ module LightProbeFacet3dModule =
         member this.SetProbeStale (value : bool) world = this.Set (nameof this.ProbeStale) value world
         member this.ProbeStale = lens (nameof this.ProbeStale) this this.GetProbeStale this.SetProbeStale
 
+    /// Augments an entity with a 3d light probe.
     type LightProbeFacet3d () =
         inherit Facet (false)
 
@@ -1377,6 +1390,7 @@ module LightFacet3dModule =
         member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
 
+    /// Augments an entity with a 3d light.
     type LightFacet3d () =
         inherit Facet (false)
 
@@ -1426,6 +1440,7 @@ module LightFacet3dModule =
 [<AutoOpen>]
 module StaticBillboardFacetModule =
 
+    /// Determines the means by which an entity's surfaces are rendered.
     type [<StructuralEquality; StructuralComparison>] RenderStyle =
         | Deferred
         | Forward of Subsort : single * Sort : single
@@ -1466,6 +1481,7 @@ module StaticBillboardFacetModule =
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
 
+    /// Augments an entity with a static billboard.
     type StaticBillboardFacet () =
         inherit Facet (false)
 
@@ -1561,6 +1577,7 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.SetEmitterRenderType (value : RenderType) world = this.Set (nameof this.EmitterRenderType) value world
         member this.EmitterRenderType = lens (nameof this.EmitterRenderType) this this.GetEmitterRenderType this.SetEmitterRenderType
 
+    /// Augments an entity with basic static billboard emitter.
     type BasicStaticBillboardEmitterFacet () =
         inherit Facet (false)
 
@@ -1863,6 +1880,7 @@ module StaticModelFacetModule =
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof this.StaticModel) value world
         member this.StaticModel = lens (nameof this.StaticModel) this this.GetStaticModel this.SetStaticModel
 
+    /// Augments an entity with a static model.
     type StaticModelFacet () =
         inherit Facet (false)
 
@@ -1940,6 +1958,7 @@ module StaticModelSurfaceFacetModule =
         member this.SetSurfaceIndex (value : int) world = this.Set (nameof this.SurfaceIndex) value world
         member this.SurfaceIndex = lens (nameof this.SurfaceIndex) this this.GetSurfaceIndex this.SetSurfaceIndex
 
+    /// Augments an entity with an indexed static model surface.
     type StaticModelSurfaceFacet () =
         inherit Facet (false)
 
