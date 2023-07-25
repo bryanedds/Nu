@@ -8,8 +8,6 @@ open FSharp.Core
 open Prime
 open Nu
 
-// TODO: document this!
-
 /// Provides for time-driven behavior.
 type 'a Behavior =
     | Behavior of (GameTime -> 'a)
@@ -24,53 +22,76 @@ type 'a Behavior =
             let b = that.Run time
             mapper (a, b))
 
+    /// Map equality over two behaviors.
     static member (=.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a = b) right
+    /// Map inequality over two behaviors.
     static member (<>.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <> b) right
+    /// Map less-than over two behaviors.
     static member (<.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a < b) right
+    /// Map less-than-or-equal over two behaviors.
     static member (<=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <= b) right
+    /// Map greater-than over two behaviors.
     static member (>.)   (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a > b) right
+    /// Map greater-than-or-equal over two behaviors.
     static member (>=.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >= b) right
+    /// Map logical or over two behaviors.
     static member (||.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a || b) right
+    /// Map logical and over two behaviors.
     static member (&&.)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a && b) right
+    /// Map addition over two behaviors.
     static member (+)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a + b) right
+    /// Map subtraction over two behaviors.
     static member (-)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a - b) right
+    /// Map multiplication over two behaviors.
     static member (*)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a * b) right
+    /// Map division over two behaviors.
     static member (/)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a / b) right
+    /// Map remainder over two behaviors.
     static member (%)    (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a % b) right
+    /// Map right bitshift over two behaviors.
     static member (>>>)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a >>> b) right
+    /// Map left bitshift over two behaviors.
     static member (<<<)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a <<< b) right
+    /// Map logical xor over two behaviors.
     static member (^^^)  (left : _ Behavior, right : _ Behavior) : _ Behavior = left.Map2 (fun (a, b) -> a ^^^ b) right
 
 [<RequireQualifiedAccess>]
 module Behavior =
 
+    /// Run a behavior monad.
     let run a (bhvr : 'a Behavior) =
         bhvr.Run a
 
+    /// Monadic return.
     let returnB (a : 'a): 'a Behavior =
         Behavior (fun _ -> a)
 
+    /// Functor map.
     let map<'a, 'b> mapper (bhvr : 'a Behavior) : 'b Behavior =
         Behavior (match bhvr with Behavior bhvr -> bhvr >> mapper)
 
+    /// Applicative apply.
     let apply (bhvrF : ('a -> 'b) Behavior) (bhvrA : 'a Behavior) : 'b Behavior =
         Behavior (fun time ->
             let a = run time bhvrA
             let f = run time bhvrF
             f a)
 
+    /// Monadic bind.
     let bind (bhvr : 'a Behavior) (f : 'a -> 'b Behavior) : 'b Behavior =
         Behavior (fun time ->
             let a = run time bhvr
             let b = f a
             run time b)
 
+    /// Applicative lift 1.
     let lift1<'a, 'b>
         (op : 'a -> 'b)
         (bhvr : 'a Behavior) :
         Behavior<'b> =
         map op bhvr
 
+    /// Applicative lift 2.
     let lift2<'a, 'b, 'c>
         (op : 'a -> 'b -> 'c)
         (bhvr : 'a Behavior)
@@ -81,6 +102,7 @@ module Behavior =
             let b = run time bhvr2
             op a b)
 
+    /// Applicative lift 3.
     let lift3<'a, 'b, 'c, 'd>
         (op : 'a -> 'b -> 'c -> 'd)
         (bhvr : 'a Behavior)
@@ -93,6 +115,7 @@ module Behavior =
             let c = run time bhvr3
             op a b c)
 
+    /// Applicative lift 4.
     let lift4<'a, 'b, 'c, 'd, 'e>
         (op : 'a -> 'b -> 'c -> 'd -> 'e)
         (bhvr : 'a Behavior)
@@ -107,6 +130,7 @@ module Behavior =
             let d = run time bhvr4
             op a b c d)
 
+    /// Applicative lift 5.
     let lift5<'a, 'b, 'c, 'd, 'e, 'f>
         (op : 'a -> 'b -> 'c -> 'd -> 'e -> 'f)
         (bhvr : 'a Behavior)
@@ -123,6 +147,7 @@ module Behavior =
             let e = run time bhvr5
             op a b c d e)
 
+    /// Loop over a behavior.
     let inline loop stride bounce bhvr =
         map (fun a ->
             let local = a % stride
@@ -133,6 +158,7 @@ module Behavior =
             else local)
             bhvr
 
+    /// Slice a portion of behavior.
     let inline slice start length bhvr =
         map (fun a ->
             let local = a - start
@@ -141,6 +167,7 @@ module Behavior =
             else local)
             bhvr
 
+    /// Normalize the execution of a behavior over the given length of time.
     let inline normalize (length : GameTime) bhvr =
         map (fun (time : GameTime) ->
             let length = length.Seconds
@@ -165,13 +192,27 @@ module Behavior =
     let swap bhvr = map (fun (a, b) -> (b, a)) bhvr
 
     (* Boot-Strapping Combinators *)
+
+    /// The do-nothing behavior.
     let unit : unit Behavior = Behavior (fun _ -> ())
+
+    /// The constant-emitting behavior.
     let constant k : _ Behavior = Behavior (fun _ -> k)
+
+    /// The time-emitting behavior.
     let time : GameTime Behavior = Behavior (fun (time : GameTime) -> time)
+
+    /// Time-emitting loop behavior.
     let timeLoopRaw stride bounce = loop stride bounce time
+
+    /// Time-slicing behavior.
     let timeSliceRaw start length = slice start length time
+
+    /// Normalized time-emitting loop behavior.
     let timeLoop stride bounce = let bhvr = timeLoopRaw stride bounce in normalize stride bhvr
-    let timeSlice start length = let bhvr = timeSliceRaw start length in  normalize length bhvr
+
+    /// Normalized time-slicing behavior.
+    let timeSlice start length = let bhvr = timeSliceRaw start length in normalize length bhvr
 
     (* Advanced Combinators *)
     let inline eq b bhvr = map (fun a -> a = b) bhvr
@@ -279,8 +320,14 @@ module Behavior =
 
 /// Builds behaviors.
 type [<Sealed>] BehaviorBuilder () =
+
+    /// Monadic return.
     member this.Return a = Behavior.returnB a
+
+    /// Monadic return!.
     member this.ReturnFrom a = a
+
+    /// Monadic bind.
     member this.Bind (a, f) = Behavior.bind a f
 
 [<AutoOpen>]
