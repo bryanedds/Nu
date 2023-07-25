@@ -30,6 +30,7 @@ module SpriteBatch =
         static member defaultState =
             SpriteBatchState.make false BlendingFactor.SrcAlpha BlendingFactor.OneMinusSrcAlpha BlendEquationMode.FuncAdd 0u
 
+    /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
         private
             { mutable SpriteIndex : int
@@ -196,14 +197,17 @@ module SpriteBatch =
         Hl.Assert (EndSpriteBatch env)
         BeginSpriteBatch state env
 
+    /// Beging a new sprite batch frame3.
     let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
         BeginSpriteBatch SpriteBatchState.defaultState env
 
+    /// End the current sprite batch frame, if any.
     let EndSpriteBatchFrame env =
         EndSpriteBatch env
 
+    /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
     let InterruptSpriteBatchFrame fn env =
         let state = env.State
         Hl.Assert (EndSpriteBatch env)
@@ -236,6 +240,7 @@ module SpriteBatch =
         env.Colors.[colorOffset + 2] <- color.B
         env.Colors.[colorOffset + 3] <- color.A
 
+    /// Submit a sprite to the appropriate sprite batch.
     let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
 
         // adjust to potential sprite batch state changes
@@ -251,6 +256,7 @@ module SpriteBatch =
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
 
+    /// Destroy the given sprite batch environment.
     let CreateSpriteBatchEnv () =
 
         // create vao
@@ -274,5 +280,6 @@ module SpriteBatch =
           Vao = vao
           State = SpriteBatchState.defaultState }
 
+    /// Destroy the given sprite batch environment.
     let DestroySpriteBatchEnv env =
         env.SpriteIndex <- 0
