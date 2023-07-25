@@ -1360,11 +1360,11 @@ module EntityDispatcherModule2 =
 
     /// The elmish / MMCC dispatcher for entities.
     and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command>
-        (is2d, isGui, centered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher (is2d, isGui, centered, physical)
+        (is2d, centered, physical, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, centered, physical)
 
-        new (is2d, isGui, centered, physical, initial : 'model) =
-            EntityDispatcher<'model, 'message, 'command> (is2d, isGui, centered, physical, fun _ -> initial)
+        new (is2d, centered, physical, initial : 'model) =
+            EntityDispatcher<'model, 'message, 'command> (is2d, centered, physical, fun _ -> initial)
 
         /// Get the entity's model.
         member this.GetModel (entity : Entity) world : 'model =
@@ -1447,7 +1447,7 @@ module EntityDispatcherModule2 =
         default this.Edit (model, _, _, _) = just model
 
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, false, centered, physical, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
 
         new (centered, physical, initial : 'model) =
             EntityDispatcher2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
@@ -1485,7 +1485,7 @@ module EntityDispatcherModule2 =
              define Entity.GridPosition v2iZero]
 
     and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, false, centered, physical, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
 
         new (centered, physical, initial : 'model) =
             EntityDispatcher3d<'model, 'message, 'command> (centered, physical, fun _ -> initial)

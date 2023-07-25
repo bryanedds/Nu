@@ -72,7 +72,6 @@ module Reflection =
              ("PublishRenders", true)
              ("Mounted", true)
              ("Is2d", true)
-             ("IsGui", true)
              ("Is3d", true)
              ("Physical", true)
              ("Optimized", true)]
