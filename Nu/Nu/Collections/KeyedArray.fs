@@ -18,7 +18,7 @@ module KeyedArray =
               Indices_ : Dictionary<'k, int>
               mutable Values_ : struct (bool * 'k * 'v) array
               mutable Current_ : int
-              mutable Removed_ : single // single to elide unecessary conversions
+              mutable Removed_ : single // single to elide unnecessary conversions
               mutable Threshold_ : single }
 
         /// The keyed array values.
