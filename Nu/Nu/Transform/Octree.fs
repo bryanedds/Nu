@@ -8,8 +8,6 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
-// TODO: document Octree functions!
-
 /// Masks for Octelement flags.
 module OctelementMasks =
 
@@ -70,7 +68,7 @@ type OctelementEqualityComparer<'e when 'e : equality> () =
 [<RequireQualifiedAccess>]
 module internal Octnode =
 
-    type [<Struct>] Octnode<'e when 'e : equality> =
+    type [<Struct>] internal Octnode<'e when 'e : equality> =
         private
             { Id_ : uint64
               Depth_ : int
@@ -368,9 +366,9 @@ module Octree =
         | (true, leaf) when Octnode.containsBox bounds &leaf -> leaf
         | (_, _) -> tree.Node
 
-    let addElement bounds (element : 'e Octelement) tree =
+    /// Add an element with the given presence and bounds to the tree.
+    let addElement (presence : Presence) bounds (element : 'e Octelement) tree =
         tree.ElementsModified <- true
-        let presence = element.Presence
         if presence.OmnipresentType then
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
@@ -383,9 +381,9 @@ module Octree =
                 let node = findNode bounds tree
                 Octnode.addElement bounds &element &node
 
-    let removeElement bounds (element : 'e Octelement) tree =
+    /// Remove an element with the given presence and bounds from the tree.
+    let removeElement (presence : Presence) bounds (element : 'e Octelement) tree =
         tree.ElementsModified <- true
-        let presence = element.Presence
         if presence.OmnipresentType then 
             tree.Omnipresent.Remove element |> ignore
         else
@@ -396,6 +394,7 @@ module Octree =
                 let node = findNode bounds tree
                 Octnode.removeElement bounds &element &node
 
+    /// Update an existing element in the tree.
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         tree.ElementsModified <- true
         let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds &tree.Node
@@ -420,11 +419,13 @@ module Octree =
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
 
+    /// Get all of the omnipresent elements in a tree.
     let getElementsOmnipresent (set : _ HashSet) tree =
         if tree.ElementsModified
         then new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by the given point.
     let getElementsAtPoint point (set : _ HashSet) tree =
         if tree.ElementsModified then
             let node = findNode (box3 point v3Zero) tree
@@ -432,36 +433,42 @@ module Octree =
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInBounds bounds (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInBox bounds set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by the given frustum.
     let getElementsInFrustum frustum (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInFrustum frustum set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by one of the given frustums or light box depending on its attributes.
     let getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by one of the given box or frustum depending on its attributes.
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInPlay playBox playFrustum set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree.
     let getElements (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElements set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get all of the light elements in the given light box.
     let getLightsInPlay lightBox (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getLightsInBox lightBox set &tree.Node
@@ -469,9 +476,20 @@ module Octree =
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
+    /// Get the size of the tree's leaves.
+    let getLeafSize tree =
+        tree.LeafSize
+
+    /// Get the depth of the tree.
     let getDepth tree =
         tree.Depth
 
+    /// Get the bounds of the tree.
+    let getBounds tree =
+        tree.Bounds
+
+    /// Create an Octree with the given depth and overall size.
+    /// Size dimensions must be a power of two.
     let make<'e when 'e : equality> (depth : int) (size : Vector3) =
         if  not (Math.IsPowerOfTwo size.X) ||
             not (Math.IsPowerOfTwo size.Y) ||

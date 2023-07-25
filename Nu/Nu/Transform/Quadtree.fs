@@ -8,8 +8,6 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
-// TODO: document Quadtree functions!
-
 /// Masks for Quadelement flags.
 module QuadelementMasks =
 
@@ -50,7 +48,7 @@ type QuadelementEqualityComparer<'e when 'e : equality> () =
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 
-    type [<Struct>] Quadnode<'e when 'e : equality> =
+    type [<Struct>] internal Quadnode<'e when 'e : equality> =
         private
             { Id_ : uint64
               Depth_ : int
@@ -213,7 +211,7 @@ module Quadtree =
             member this.GetEnumerator () = enr :> 'e Quadelement IEnumerator
             member this.GetEnumerator () = enr :> IEnumerator
 
-    /// A spatial structure that organizes elements on a 2d plane. TODO: document this.
+    /// A spatial structure that organizes elements on a 2d plane.
     type [<ReferenceEquality>] Quadtree<'e when 'e : equality> =
         private
             { mutable ElementsModified : bool // OPTIMIZATION: short-circuit queries if tree has never had its elements modified.
@@ -233,6 +231,7 @@ module Quadtree =
         | (true, leaf) when Quadnode.containsBounds bounds &leaf -> leaf
         | (_, _) -> tree.Node
 
+    /// Add an element with the given presence and bounds to the tree.
     let addElement (presence : Presence) bounds element tree =
         tree.ElementsModified <- true
         if presence.OmnipresentType then
@@ -247,6 +246,7 @@ module Quadtree =
                 let node = findNode bounds tree
                 Quadnode.addElement bounds &element &node
 
+    /// Remove an element with the given presence and bounds from the tree.
     let removeElement (presence : Presence) bounds element tree =
         tree.ElementsModified <- true
         if presence.OmnipresentType then 
@@ -259,6 +259,7 @@ module Quadtree =
                 let node = findNode bounds tree
                 Quadnode.removeElement bounds &element &node
 
+    /// Update an existing element in the tree.
     let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
         tree.ElementsModified <- true
         let wasInNode = not oldPresence.OmnipresentType && Quadnode.isIntersectingBounds oldBounds &tree.Node
@@ -283,11 +284,13 @@ module Quadtree =
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
 
+    /// Get all of the omnipresent elements in a tree.
     let getElementsOmnipresent set tree =
         if tree.ElementsModified then
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by the given point.
     let getElementsAtPoint point set tree =
         if tree.ElementsModified then
             let node = findNode (box2 point v2Zero) tree
@@ -295,33 +298,48 @@ module Quadtree =
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInBounds bounds set tree =
         if tree.ElementsModified then
             Quadnode.getElementsInBounds bounds set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInView bounds set tree =
         if tree.ElementsModified then
             Quadnode.getElementsInBounds bounds set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInPlay bounds set tree =
         if tree.ElementsModified then
             Quadnode.getElementsInBounds bounds set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
+    /// Get all of the elements in a tree.
     let getElements (set : _ HashSet) tree =
         if tree.ElementsModified then
             Quadnode.getElements set &tree.Node
             new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
+    /// Get the size of the tree's leaves.
+    let getLeafSize tree =
+        tree.LeafSize
+
+    /// Get the depth of the tree.
     let getDepth tree =
         tree.Depth
 
+    /// Get the bounds of the tree.
+    let getBounds tree =
+        tree.Bounds
+
+    /// Create a Quadtree with the given depth and overall size.
+    /// Size dimensions must be a power of two.
     let make<'e when 'e : equality> depth (size : Vector2) =
         if  not (Math.IsPowerOfTwo size.X) ||
             not (Math.IsPowerOfTwo size.Y) then
@@ -340,5 +358,5 @@ module Quadtree =
           Depth = depth
           Bounds = bounds }
 
-/// A spatial structure that organizes elements on a 2d plane. TODO: document this.
+/// A spatial structure that organizes elements on a 2d plane.
 type Quadtree<'e when 'e : equality> = Quadtree.Quadtree<'e>
