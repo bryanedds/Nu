@@ -1965,9 +1965,9 @@ module StaticModelSurfaceFacetModule =
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
-             define Entity.SurfaceIndex 0
+             define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.RenderStyle Deferred]
+             define Entity.SurfaceIndex 0]
 
         override this.Render (entity, world) =
             match entity.GetSurfaceIndex world with
@@ -1976,23 +1976,14 @@ module StaticModelSurfaceFacetModule =
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
-                let insetOpt = entity.GetInsetOpt world
+                let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                 let staticModel = entity.GetStaticModel world
-                World.enqueueRenderMessage3d
-                    (RenderStaticModelSurface
-                        { Absolute = absolute
-                          ModelMatrix = affineMatrix
-                          InsetOpt = insetOpt
-                          MaterialProperties = properties
-                          RenderType = renderType
-                          StaticModel = staticModel
-                          SurfaceIndex = surfaceIndex })
-                    world
+                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
 
         override this.GetQuickSize (entity, world) =
             let staticModel = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
