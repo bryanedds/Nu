@@ -12,11 +12,11 @@ open Nu.Declarative
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d (isGui, centered, physical) =
-        inherit EntityDispatcher (true, isGui, centered, physical)
+    type EntityDispatcher2d (centered, physical) =
+        inherit EntityDispatcher (true, centered, physical)
 
         new (physical) =
-            EntityDispatcher2d (false, Constants.Engine.EntityCentered2dDefault, physical)
+            EntityDispatcher2d (Constants.Engine.EntityCentered2dDefault, physical)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize2dDefault
@@ -24,7 +24,7 @@ module EntityDispatcherModule =
 
     /// A 3d entity dispatcher.
     type EntityDispatcher3d (centered, physical) =
-        inherit EntityDispatcher (false, false, centered, physical)
+        inherit EntityDispatcher (false, centered, physical)
 
         new (physical) =
             EntityDispatcher3d (Constants.Engine.EntityCentered3dDefault, physical)
@@ -87,7 +87,7 @@ module GuiDispatcherModule =
 
     /// Gives an entity the base behavior of gui control.
     type GuiDispatcher () =
-        inherit EntityDispatcher2d (true, Constants.Engine.EntityCenteredGuiDefault, false)
+        inherit EntityDispatcher2d (Constants.Engine.EntityCenteredGuiDefault, false)
 
         static member Facets =
             [typeof<LayoutFacet>]
@@ -790,7 +790,7 @@ module BasicStaticSpriteEmitterDispatcherModule =
 
     /// Gives an entity the base behavior of basic static sprite emitter.
     type BasicStaticSpriteEmitterDispatcher () =
-        inherit EntityDispatcher2d (false, true, false)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<BasicStaticSpriteEmitterFacet>]
@@ -803,7 +803,7 @@ module EffectDispatcher2dModule =
 
     /// Gives an entity the base behavior of a 2d effect.
     type EffectDispatcher2d () =
-        inherit EntityDispatcher2d (false, true, false)
+        inherit EntityDispatcher2d (true, false)
 
         static member Facets =
             [typeof<EffectFacet>]

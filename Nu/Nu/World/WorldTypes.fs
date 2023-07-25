@@ -438,7 +438,7 @@ and GroupDispatcher () =
     default this.Edit (_, _, world) = world
 
 /// The default dispatcher for entities.
-and EntityDispatcher (is2d, isGui : bool, centered, physical) =
+and EntityDispatcher (is2d, centered, physical) =
     inherit SimulantDispatcher ()
 
     static member Properties =
@@ -547,9 +547,6 @@ and EntityDispatcher (is2d, isGui : bool, centered, physical) =
 
     /// Whether the dispatcher has a 2-dimensional transform interpretation.
     member this.Is2d = is2d
-
-    /// Whether the dispatcher is a gui dispatcher.
-    member this.IsGui = isGui
 
     /// Whether the dispatcher has a 3-dimensional transform interpretation.
     member this.Is3d = not is2d
@@ -1124,7 +1121,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
     member this.Is2d with get () = this.Dispatcher.Is2d
-    member this.IsGui with get () = this.Dispatcher.IsGui
     member this.Is3d with get () = this.Dispatcher.Is3d
     member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
     member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
