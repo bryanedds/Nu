@@ -14,16 +14,27 @@ open Nu
 /// A renderer process that may or may not be threaded.
 type RendererProcess =
     interface
+        /// Whether the rendering process has started.
         abstract Started : bool
+        /// Whether the rendering process has been terminated.
         abstract Terminated : bool
+        /// Start the rendering process.
         abstract Start : ImFontAtlasPtr option -> Window option -> unit
+        /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
+        /// Potential fast-path for rendering static model.
         abstract RenderStaticModelFast : bool * Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * RenderType * StaticModel AssetTag -> unit
+        /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
+        /// Potential fast-path for rendering layered sprite.
         abstract RenderLayeredSpriteFast : single * single * obj AssetTag * Transform inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
+        /// Clear enqueued render messages.
         abstract ClearMessages : unit -> unit
+        /// Submit enqueued render messages for processing.
         abstract SubmitMessages : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2 -> Vector2 -> Vector2i -> ImDrawDataPtr -> unit
+        /// Request to swap the underlying render buffer.
         abstract Swap : unit -> unit
+        /// Terminate the rendering process, blocking until termination is complete.
         abstract Terminate : unit -> unit
         end
 
