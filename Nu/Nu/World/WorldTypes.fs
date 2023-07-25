@@ -78,17 +78,24 @@ and ChangeData =
 /// A generalized simulant lens.
 and Lens =
     interface
+        /// The name of the property accessed by the lens.
         abstract Name : string
+        /// The simulant whose property is accessed by the lens.
         abstract This : Simulant
+        /// Get the value of the property accessed by the lens.
         abstract Get : World -> obj
+        /// Get an optional setter function that updates the property accessed by the lens.
         abstract SetOpt : (obj -> World -> World) voption
+        /// Attempt to set the lensed property to the given value.
         abstract TrySet : obj -> World -> World
+        /// The change event associated with the lensed property.
         abstract ChangeEvent : ChangeData Address
+        /// The type of the lensed property.
         abstract Type : Type
         end
 
-/// Describes a property of a simulant.
-/// Similar to a Haskell lens, but specialized to simulant properties.
+/// Provides access to the property of a simulant.
+/// Initially inspired by Haskell lenses, but highly specialized for simulant properties.
 and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     { Name : string
       This : 's
@@ -104,50 +111,65 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         member this.ChangeEvent = this.ChangeEvent
         member this.Type = typeof<'a>
 
+    /// Get the lensed value mapped by the `by` function.
     member this.GetBy by world =
         by (this.Get world)
 
+    /// Get the lensed value mapped by the `by` function that includes the world value in its input.
     member this.GetByWorld by world =
         by (this.Get world) world
 
+    /// Attempt to set the property in the world to the given value.
     member this.TrySet value world =
         match this.SetOpt with
         | ValueSome setter -> (true, setter value world)
         | ValueNone -> (false, world)
 
+    /// Set the lensed property to the given value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
     member this.Set value world =
         match this.TrySet value world with
         | (true, world) -> world
         | (false, _) -> failwith ("Lens for '" + this.Name + "' is readonly.")
 
+    /// Attempt to update the lensed property's value using the given updater function that also receives the world as input.
     member this.TryUpdateWorld (updater : 'a -> World -> 'a) world =
         let value = this.Get world
         let value' = updater value world
         this.TrySet value' world
 
+    /// Attempt to update the lensed property's value using the given updater function, optionally updating the world value in the process.
     member this.TryUpdateEffect (updater : 'a -> World -> ('a * World)) (world : World) =
         let value = this.Get world
         let (value', world) = updater value world
         this.TrySet value' world
 
+    /// Attempt to update the lensed property's value using the given updater function.
     member this.TryUpdate (updater : 'a -> 'a) world =
         this.TryUpdateWorld (fun value _ -> updater value) world
 
-    member this.UpdateEffect updater world =
-        match this.TryUpdateEffect updater world with
-        | (true, world) -> world
-        | (false, _) -> failwithumf ()
-
+    /// Update the lensed property's value using the given updater function that also receives the world as input.
+    /// Returns the updated world or throws an exception if the lens is readonly.
     member this.UpdateWorld updater world =
         match this.TryUpdateWorld updater world with
         | (true, world) -> world
         | (false, _) -> failwithumf ()
 
+    /// Update the lensed property's value using the given updater function, optionally updating the world value in the process.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    member this.UpdateEffect updater world =
+        match this.TryUpdateEffect updater world with
+        | (true, world) -> world
+        | (false, _) -> failwithumf ()
+
+    /// Update the lensed property's value using the given updater function.
+    /// Returns the updated world or throws an exception if the lens is readonly.
     member this.Update updater world =
         match this.TryUpdate updater world with
         | (true, world) -> world
         | (false, _) -> failwithumf ()
 
+    /// The change event associated with the lensed property.
     member this.ChangeEvent : ChangeData Address =
         let names = [|Constants.Lens.ChangeName; this.Name; Constants.Lens.EventName|]
         match box this.This with
@@ -158,27 +180,52 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
             changeEventAddress 
         | _ -> rtoa names --> this.This.SimulantAddress
 
-    member inline this.Type =
-        typeof<'a>
+    /// The type of the lensed property.
+    member inline this.Type = typeof<'a>
 
-    (* Lensing Operators *)
+    /// Adds the specified value to the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
     static member inline ( += ) (lens : Lens<_, _>, value) =  lens.Update (flip (+) value)
-    static member inline ( -= ) (lens : Lens<_, _>, value) =  lens.Update (flip (-) value)
-    static member inline ( *= ) (lens : Lens<_, _>, value) =  lens.Update (flip (*) value)
-    static member inline ( /= ) (lens : Lens<_, _>, value) =  lens.Update (flip (/) value)
-    static member inline ( %= ) (lens : Lens<_, _>, value) =  lens.Update (flip (%) value)
-    static member inline ( ~+ ) (lens : Lens<_, _>) =         lens.Update (~+)
-    static member inline ( ~- ) (lens : Lens<_, _>) =         lens.Update (~-)
-    static member inline ( !+ ) (lens : Lens<_, _>) =         lens.Update inc
-    static member inline ( !- ) (lens : Lens<_, _>) =         lens.Update dec
 
-    /// Set a lensed property.
+    /// Subtracts the specified value from the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( -= ) (lens : Lens<_, _>, value) =  lens.Update (flip (-) value)
+
+    /// Multiplies the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( *= ) (lens : Lens<_, _>, value) =  lens.Update (flip (*) value)
+
+    /// Divides the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( /= ) (lens : Lens<_, _>, value) =  lens.Update (flip (/) value)
+
+    /// Computes the modulus of the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( %= ) (lens : Lens<_, _>, value) =  lens.Update (flip (%) value)
+
+    /// Negates the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( ~+ ) (lens : Lens<_, _>) =  lens.Update (~+)
+
+    /// Negates the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( ~- ) (lens : Lens<_, _>) =  lens.Update (~-)
+
+    /// Increments the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( !+ ) (lens : Lens<_, _>) =  lens.Update inc
+
+    /// Decrements the lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
+    static member inline ( !- ) (lens : Lens<_, _>) =  lens.Update dec
+
+    /// Set a lensed property's value.
+    /// Returns the updated world or throws an exception if the lens is readonly.
     static member inline (<--) (lens : Lens<_, _>, value) = lens.Set value
 
-    /// Get a lensed property.
+    /// Get a lensed property's value.
     /// TODO: see if this operator is actually useful / understandable.
-    static member inline (!.) (lens : Lens<_, _>) =
-        fun world -> lens.Get world
+    static member inline (!.) (lens : Lens<_, _>) = fun world -> lens.Get world
 
 /// A model-message-command-content (MMCC) signal tag type.
 and Signal = interface end
