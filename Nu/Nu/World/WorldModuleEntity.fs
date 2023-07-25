@@ -2159,7 +2159,7 @@ module WorldModuleEntity =
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
                                         let element = Octelement.make entityState.Visible entityState.Static entityState.Light entityState.Presence entityState.Bounds entity
-                                        Octree.addElement entityState.Bounds element entityTree
+                                        Octree.addElement entityState.Presence entityState.Bounds element entityTree
                                         entityTree)
                                     (World.getOctree world)
                             World.setOctree octree world
@@ -2217,7 +2217,7 @@ module WorldModuleEntity =
                                     (fun octree ->
                                         let entityState = World.getEntityState entity oldWorld
                                         let element = Octelement.make entityState.Visible entityState.Static entityState.Light entityState.Presence entityState.Bounds entity
-                                        Octree.removeElement entityState.Bounds element octree
+                                        Octree.removeElement entityState.Presence entityState.Bounds element octree
                                         octree)
                                     (World.getOctree world)
                             World.setOctree octree world

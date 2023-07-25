@@ -272,7 +272,7 @@ module Nu =
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
                                 let element = Octelement.make entityState.Visible entityState.Static entityState.Light entityState.Presence entityState.Bounds entity
-                                Octree.addElement entityState.Bounds element octree
+                                Octree.addElement entityState.Presence entityState.Bounds element octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world
@@ -301,7 +301,7 @@ module Nu =
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
                                 let element = Octelement.make entityState.Visible entityState.Static entityState.Light entityState.Presence entityState.Bounds entity
-                                Octree.removeElement entityState.Bounds element octree
+                                Octree.removeElement entityState.Presence entityState.Bounds element octree
                             octree)
                         (World.getOctree world)
                 let world = World.setOctree octree world

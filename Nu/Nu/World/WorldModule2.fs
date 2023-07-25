@@ -115,7 +115,7 @@ module WorldModule2 =
                 let presence = entity.GetPresence world
                 if entity.GetIs3d world then
                     let element = Octelement.make visible static_ light presence bounds entity
-                    Octree.addElement bounds element octree
+                    Octree.addElement presence bounds element octree
             octree
 
         /// Resolve a relation to an address in the current script context.
