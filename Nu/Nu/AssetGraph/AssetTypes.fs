@@ -37,6 +37,12 @@ exception TileSetPropertyNotFoundException of string
 module TmxExtensions =
 
     type TmxTileset with
+
+        /// Get the associated image asset for the given TmxTileset in the specified package.
+        /// If the TmxTileset object has a custom property named "Image" with an asset value like "[PackageName AssetName]",
+        /// it will be parsed to retrieve the image asset. If the custom property is missing, the image asset will be
+        /// inferred from the tile set's image source filename. Throws a TileSetPropertyNotFoundException if the custom
+        /// property "Image" is missing and the tile set's image source filename cannot be inferred.
         member this.GetImageAsset tileMapPackage =
             let imageAsset =
                 match this.Properties.TryGetValue "Image" with
@@ -54,6 +60,8 @@ module TmxExtensions =
             imageAsset
 
     type TmxMap with
+
+        /// Get each of the map's tilesets paired with their associated image assets (per the given package).
         member this.GetImageAssets tileMapPackage =
             this.Tilesets |>
             Array.ofSeq |>
