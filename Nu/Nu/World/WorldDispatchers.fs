@@ -43,6 +43,7 @@ module EntityDispatcherModule =
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
 
+    /// Gives an entity the base behavior of a static sprite.
     type StaticSpriteDispatcher () =
         inherit EntityDispatcher2d (false)
 
@@ -59,6 +60,7 @@ module StaticSpriteDispatcherModule =
 [<AutoOpen>]
 module AnimatedSpriteDispatcherModule =
 
+    /// Gives an entity the base behavior of an animated sprite.
     type AnimatedSpriteDispatcher () =
         inherit EntityDispatcher2d (false)
 
@@ -83,7 +85,7 @@ module GuiDispatcherModule =
         member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
         member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
 
-    /// A gui entity dispatcher.
+    /// Gives an entity the base behavior of gui control.
     type GuiDispatcher () =
         inherit EntityDispatcher2d (true, Constants.Engine.EntityCenteredGuiDefault, false)
 
@@ -129,6 +131,7 @@ module ButtonDispatcherModule =
         member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
 
+    /// Gives an entity the base behavior of a gui button.
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
 
@@ -221,6 +224,7 @@ module LabelDispatcherModule =
         member this.SetLabelImage (value : Image AssetTag) world = this.Set (nameof this.LabelImage) value world
         member this.LabelImage = lens (nameof this.LabelImage) this this.GetLabelImage this.SetLabelImage
 
+    /// Gives an entity the base behavior of a gui label.
     type LabelDispatcher () =
         inherit GuiDispatcher ()
 
@@ -259,6 +263,7 @@ module TextDispatcherModule =
         member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackgroundImageOpt) value world
         member this.BackgroundImageOpt = lens (nameof this.BackgroundImageOpt) this this.GetBackgroundImageOpt this.SetBackgroundImageOpt
 
+    /// Gives an entity the base behavior of a gui text control.
     type TextDispatcher () =
         inherit GuiDispatcher ()
 
@@ -330,6 +335,7 @@ module ToggleButtonDispatcherModule =
         member this.ToggledEvent = Events.Toggled --> this
         member this.UntoggledEvent = Events.Untoggled --> this
 
+    /// Gives an entity the base behavior of gui toggle button.
     type ToggleButtonDispatcher () =
         inherit GuiDispatcher ()
         
@@ -451,6 +457,7 @@ module RadioButtonDispatcherModule =
         member this.DialedEvent = Events.Dialed --> this
         member this.UndialedEvent = Events.Undialed --> this
 
+    /// Gives an entity the base behavior of a gui radio button.
     type RadioButtonDispatcher () =
         inherit GuiDispatcher ()
 
@@ -558,6 +565,7 @@ module FpsDispatcherModule =
         member this.SetStartDateTime (value : DateTimeOffset) world = this.Set (nameof this.StartDateTime) value world
         member this.StartDateTime = lens (nameof this.StartDateTime) this this.GetStartDateTime this.SetStartDateTime
 
+    /// Gives an entity the base behavior of a gui FPS counter.
     type FpsDispatcher () =
         inherit TextDispatcher ()
 
@@ -599,6 +607,7 @@ module FeelerDispatcherModule =
         member this.TouchingEvent = Events.Touching --> this
         member this.UntouchEvent = Events.Untouch --> this
 
+    /// Gives an entity the base behavior of gui feeler (an invisible control that only takes mouse input).
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
 
@@ -694,6 +703,7 @@ module FillBarDispatcherModule =
         member this.SetBorderImage (value : Image AssetTag) world = this.Set (nameof this.BorderImage) value world
         member this.BorderImage = lens (nameof this.BorderImage) this this.GetBorderImage this.SetBorderImage
 
+    /// Gives an entity the base behavior of gui fill bar.
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
 
@@ -778,6 +788,7 @@ module FillBarDispatcherModule =
 [<AutoOpen>]
 module BasicStaticSpriteEmitterDispatcherModule =
 
+    /// Gives an entity the base behavior of basic static sprite emitter.
     type BasicStaticSpriteEmitterDispatcher () =
         inherit EntityDispatcher2d (false, true, false)
 
@@ -790,6 +801,7 @@ module BasicStaticSpriteEmitterDispatcherModule =
 [<AutoOpen>]
 module EffectDispatcher2dModule =
 
+    /// Gives an entity the base behavior of a 2d effect.
     type EffectDispatcher2d () =
         inherit EntityDispatcher2d (false, true, false)
 
@@ -803,6 +815,7 @@ module EffectDispatcher2dModule =
 [<AutoOpen>]
 module BlockDispatcher2dModule =
 
+    /// Gives an entity the base behavior of a rigid 2d block using static physics.
     type BlockDispatcher2d () =
         inherit EntityDispatcher2d (true)
 
@@ -817,6 +830,7 @@ module BlockDispatcher2dModule =
 [<AutoOpen>]
 module BoxDispatcher2dModule =
 
+    /// Gives an entity the base behavior of a rigid 2d box using dynamic physics.
     type BoxDispatcher2d () =
         inherit EntityDispatcher2d (true)
 
@@ -844,6 +858,7 @@ module SideViewCharacterDispatcherModule =
         member this.SetSideViewCharacterFacingLeft (value : bool) world = this.Set (nameof this.SideViewCharacterFacingLeft) value world
         member this.SideViewCharacterFacingLeft = lens (nameof this.SideViewCharacterFacingLeft) this this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft
 
+    /// Gives an entity the base behavior of 2d physics-driven character in a platformer.
     type SideViewCharacterDispatcher () =
         inherit EntityDispatcher2d (true)
 
@@ -921,6 +936,7 @@ module SideViewCharacterDispatcherModule =
 [<AutoOpen>]
 module TileMapDispatcherModule =
 
+    /// Gives an entity the base behavior of an asset-defined tile map.
     type TileMapDispatcher () =
         inherit EntityDispatcher2d (true)
 
@@ -944,6 +960,7 @@ module TileMapDispatcherModule =
 [<AutoOpen>]
 module TmxMapDispatcherModule =
 
+    /// Gives an entity the base behavior of a user-defined tile map.
     type TmxMapDispatcher () =
         inherit EntityDispatcher2d (true)
 
@@ -965,6 +982,7 @@ module TmxMapDispatcherModule =
 [<AutoOpen>]
 module SkyBoxDispatcherModule =
 
+    /// Gives an entity the base behavior of sky box.
     type SkyBoxDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -979,6 +997,7 @@ module SkyBoxDispatcherModule =
 [<AutoOpen>]
 module LightProbeDispatcher3dModule =
 
+    /// Gives an entity the base behavior of a 3d light probe.
     type LightProbeDispatcher3d () =
         inherit EntityDispatcher3d (true, false)
 
@@ -997,6 +1016,7 @@ module LightProbeDispatcher3dModule =
 [<AutoOpen>]
 module LightDispatcher3dModule =
 
+    /// Gives an entity the base behavior of a 3d light.
     type LightDispatcher3d () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1017,6 +1037,7 @@ module LightDispatcher3dModule =
 [<AutoOpen>]
 module StaticBillboardDispatcherModule =
 
+    /// Gives an entity the base behavior of a static billboard.
     type StaticBillboardDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1042,6 +1063,7 @@ module StaticBillboardDispatcherModule =
 [<AutoOpen>]
 module StaticModelDispatcherModule =
 
+    /// Gives an entity the base behavior of a static model.
     type StaticModelDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1056,6 +1078,7 @@ module StaticModelDispatcherModule =
 [<AutoOpen>]
 module RigidModelDispatcherModule =
 
+    /// Gives an entity the base behavior of physics-driven rigid model.
     type RigidModelDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1088,6 +1111,7 @@ module RigidModelDispatcherModule =
 [<AutoOpen>]
 module StaticModelSurfaceDispatcherModule =
 
+    /// Gives an entity the base behavior of an indexed static model.
     type StaticModelSurfaceDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1103,6 +1127,7 @@ module StaticModelSurfaceDispatcherModule =
 [<AutoOpen>]
 module RigidModelSurfaceDispatcherModule =
 
+    /// Gives an entity the base behavior of an indexed, physics-driven rigid model.
     type RigidModelSurfaceDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1243,6 +1268,7 @@ module StaticModelHierarchyDispatcherModule =
         member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
         member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
 
+    /// Gives an entity the base behavior of hierarchy of indexed static models.
     type StaticModelHierarchyDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1276,6 +1302,7 @@ module StaticModelHierarchyDispatcherModule =
 [<AutoOpen>]
 module RigidModelHierarchyDispatcherModule =
 
+    /// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
     type RigidModelHierarchyDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1309,6 +1336,7 @@ module RigidModelHierarchyDispatcherModule =
 [<AutoOpen>]
 module BasicStaticBillboardEmitterDispatcherModule =
 
+    /// Gives an entity the base behavior of basic static billboard emitter.
     type BasicStaticBillboardEmitterDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1321,6 +1349,7 @@ module BasicStaticBillboardEmitterDispatcherModule =
 [<AutoOpen>]
 module EffectDispatcher3dModule =
 
+    /// Gives an entity the base behavior of a 3d effect.
     type EffectDispatcher3d () =
         inherit EntityDispatcher3d (true, false)
 
@@ -1334,6 +1363,7 @@ module EffectDispatcher3dModule =
 [<AutoOpen>]
 module BlockDispatcher3dModule =
 
+    /// Gives an entity the base behavior of a rigid 3d block using static physics.
     type BlockDispatcher3d () =
         inherit EntityDispatcher3d (true)
 
@@ -1348,6 +1378,7 @@ module BlockDispatcher3dModule =
 [<AutoOpen>]
 module BoxDispatcher3dModule =
 
+    /// Gives an entity the base behavior of a rigid 3d box using dynamic physics.
     type BoxDispatcher3d () =
         inherit EntityDispatcher3d (true)
 
