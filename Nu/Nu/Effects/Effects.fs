@@ -8,8 +8,7 @@ open System.Numerics
 open Prime
 open Nu
 
-// TODO: document all this!
-
+/// Represents different logical operations that can be applied.
 type [<StructuralEquality; StructuralComparison>] LogicApplicator =
     | Or
     | Nor
@@ -18,6 +17,7 @@ type [<StructuralEquality; StructuralComparison>] LogicApplicator =
     | Nand
     | Equal
 
+/// Represents different algorithms for tweening (interpolating) values.
 type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
     | Constant
     | Linear
@@ -31,6 +31,7 @@ type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
     | Cos
     | CosScaled of single
 
+/// Represents different ways to apply tweening to values.
 type [<StructuralEquality; StructuralComparison>] TweenApplicator =
     | Sum
     | Delta
@@ -40,6 +41,7 @@ type [<StructuralEquality; StructuralComparison>] TweenApplicator =
     | Pow
     | Set
 
+/// Represents a set of properties for a slice.
 type Slice =
     { Position : Vector3
       Scale : Vector3
@@ -61,82 +63,98 @@ type Slice =
       Enabled : bool
       Centered : bool }
 
+/// Represents a keyframe with abstract properties.
 type KeyFrame =
     abstract KeyFrameLength : GameTime
 
+/// Represents a keyframe used for logic values.
 type LogicKeyFrame =
     { LogicValue : bool
       LogicLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.LogicLength
 
+/// Represents a keyframe used for tweening single values.
 type TweenKeyFrame =
     { TweenValue : single
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents a keyframe used for tweening Vector2 values.
 type Tween2KeyFrame =
     { TweenValue : Vector2
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents a keyframe used for tweening Vector3 values.
 type Tween3KeyFrame =
     { TweenValue : Vector3
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents a keyframe used for tweening Vector4 values.
 type Tween4KeyFrame =
     { TweenValue : Vector4
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents a keyframe used for tweening Box2 values.
 type TweenBox2KeyFrame =
     { TweenValue : Box2
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents a keyframe used for tweening Color values.
 type TweenCKeyFrame =
     { TweenValue : Color
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents a keyframe used for tweening integer values.
 type TweenIKeyFrame =
     { TweenValue : int
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents a keyframe used for tweening Vector2i values.
 type Tween2IKeyFrame =
     { TweenValue : Vector2i
       TweenLength : GameTime }
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
+/// Represents different playback modes for animations.
 type [<StructuralEquality; StructuralComparison>] Playback =
     | Once
     | Loop
     | Bounce
 
+/// Represents different repetition modes for animations.
 type [<StructuralEquality; StructuralComparison>] Repetition =
     | Cycle of Cycles : int
     | Iterate of Iterations : int
 
+/// Represents a rate value used in animations.
 type [<StructuralEquality; StructuralComparison>] Rate =
     Rate of single
 
+/// Represents a shift value used in animations.
 type [<StructuralEquality; StructuralComparison>] Shift =
     Shift of single
 
+/// Represents a resource used in the content.
 type Resource =
     | Resource of string * string
     | Expand of string * Argument array
 
+/// Represents an aspect (property) of a piece of content.
 and Aspect =
     | Enabled of bool
     | PositionAbsolute of Vector3
@@ -176,6 +194,7 @@ and Aspect =
     | Expand of string * Argument array
     | Aspects of Aspect array
 
+/// Represents types of content used in an effect.
 and Content =
     | Nil // first to make default value when missing
     | StaticSprite of Resource * Aspect array * Content
@@ -194,13 +213,16 @@ and Content =
     | Expand of string * Argument array
     | Contents of Shift * Content array
 
+/// Represents an argument used in content definitions.
 and Argument =
     SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
+/// Represents a definition for content elements.
 type Definition =
     { DefinitionParams : string array
       DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
+/// Represents a collection of content variables.
 type Definitions =
     Map<string, Definition>
 
@@ -385,7 +407,7 @@ module EffectSystem =
         let celSize = Vector2 (single celSize.X, single celSize.Y)
         Box2 (celPosition, celSize)
 
-    let evalArgument (argument : Argument) : Definition =
+    let private evalArgument (argument : Argument) : Definition =
         match argument with
         | SymbolicCompressionA resource ->
             { DefinitionParams = [||]; DefinitionBody = SymbolicCompressionA resource }
@@ -394,7 +416,7 @@ module EffectSystem =
         | SymbolicCompressionB (SymbolicCompressionB content) ->
             { DefinitionParams = [||]; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
 
-    let rec evalResource resource effectSystem : obj AssetTag =
+    let rec private evalResource resource effectSystem : obj AssetTag =
         match resource with
         | Resource (packageName, assetName) -> AssetTag.make<obj> packageName assetName
         | Resource.Expand (definitionName, _) ->
@@ -948,6 +970,14 @@ module EffectSystem =
         let effectSystem = { effectSystem with EffectViews = List<View> () }
         (views, effectSystem)
 
+    /// Evaluates an EffectDescriptor, applying the effect if it is still alive, with the following parameters:
+    ///   - descriptor: The EffectDescriptor to be evaluated.
+    ///   - slice: The Slice to apply the effect on.
+    ///   - history: A history of the effect's previous states.
+    ///   - effectSystem: The current state of the effect system.
+    /// The function evaluates the EffectDescriptor to determine if the effect is still alive.
+    /// If the effect is alive, it modifies the effectSystem to apply the effect to the given slice.
+    /// If the effect is not alive, it simply releases the effectSystem without applying the effect.
     let eval descriptor slice history effectSystem =
         let alive =
             match descriptor.LifeTimeOpt with
@@ -963,7 +993,14 @@ module EffectSystem =
                 Log.debug ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
                 release effectSystem
         else release effectSystem
-
+    
+    /// Creates a new EffectSystem with the following parameters -
+    ///   - localTime: The local time of the effect.
+    ///   - delta: The delta time for the effect.
+    ///   - absolute: A flag indicating if the effect is absolute.
+    ///   - presence: The presence of the effect.
+    ///   - renderType: The render type of the effect.
+    ///   - globalEnv: The global environment for the effect.
     let make localTime delta absolute presence renderType globalEnv =
         { EffectLocalTime = localTime
           EffectDelta = delta
