@@ -30,10 +30,3 @@ module CoreOperators =
     /// Sequences two functions like Haskell ($).
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
-
-// TODO: remove after updating Prime.namespace System.IO
-[<RequireQualifiedAccess>]
-module Path =
-
-    /// Simplify a path.
-    let Simplify (path : string) = Uri(Uri("http://example.com/"), path).AbsolutePath |> Uri.UnescapeDataString

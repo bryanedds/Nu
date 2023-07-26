@@ -73,12 +73,12 @@ module CubeMap =
 
         // memoize cube map
         let cubeMapKey =
-            (Path.Simplify faceRightFilePath,
-             Path.Simplify faceLeftFilePath,
-             Path.Simplify faceTopFilePath,
-             Path.Simplify faceBottomFilePath,
-             Path.Simplify faceBackFilePath,
-             Path.Simplify faceFrontFilePath)
+            (Path.GetFullPath faceRightFilePath,
+             Path.GetFullPath faceLeftFilePath,
+             Path.GetFullPath faceTopFilePath,
+             Path.GetFullPath faceBottomFilePath,
+             Path.GetFullPath faceBackFilePath,
+             Path.GetFullPath faceFrontFilePath)
         match cubeMapMemo.CubeMaps.TryGetValue cubeMapKey with
         | (false, _) ->
 
