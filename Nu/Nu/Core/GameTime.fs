@@ -8,7 +8,7 @@ open Nu
 /// The desired frame rate.
 type FrameRate =
     | StaticFrameRate of int64
-    | DynamicFrameRate of int64 option
+    | DynamicFrameRate of int64
 
 namespace Nu.Constants
 open System
@@ -24,8 +24,7 @@ module GameTime =
     let [<Uniform>] DesiredFrameTimeMinimum =
         match DesiredFrameRate with
         | StaticFrameRate frameRate -> 1.0 / double frameRate - DesiredFrameTimeSlop
-        | DynamicFrameRate (Some frameRate) -> 1.0 / double frameRate - DesiredFrameTimeSlop
-        | DynamicFrameRate None -> 1.0 / 300.0 - DesiredFrameTimeSlop
+        | DynamicFrameRate frameRate -> 1.0 / double frameRate - DesiredFrameTimeSlop
 
 namespace Nu
 open System
@@ -97,8 +96,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member ofUpdates updates =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime updates
-        | DynamicFrameRate (Some frameRate) -> ClockTime (1.0f / single frameRate * single updates)
-        | DynamicFrameRate None -> failwith "Cannot construct GameTime from updates with uncapped dynamic frame rate."
+        | DynamicFrameRate frameRate -> ClockTime (1.0f / single frameRate * single updates)
 
     static member ofSeconds seconds =
         match Constants.GameTime.DesiredFrameRate with
@@ -108,7 +106,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member toUpdates time =
         match (Constants.GameTime.DesiredFrameRate, time) with
         | (_, UpdateTime time) -> time
-        | (DynamicFrameRate (Some frameRate), ClockTime time) -> int64 (time / (1.0f / single frameRate))
+        | (DynamicFrameRate frameRate, ClockTime time) -> int64 (time / (1.0f / single frameRate))
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     static member toSeconds time =

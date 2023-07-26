@@ -443,7 +443,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                     match gravityOverride with
                     | Some gravity -> AetherPhysicsEngine.toPhysicsV2 gravity
                     | None -> physicsEngine.PhysicsContext.Gravity
-                body.LinearVelocity <- body.LinearVelocity + physicsStepAmount * gravity
+                body.LinearVelocity <- body.LinearVelocity + gravity * physicsStepAmount
 
     /// Make a physics engine.
     static member make imperative gravity =
