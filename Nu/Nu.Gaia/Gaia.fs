@@ -2235,8 +2235,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                         // ensure template directory exists
                         let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
-                        let slnDir = programDir + "/../../../../.." |> Path.Simplify
-                        let templateDir = programDir + "/../../../../Nu.Template" |> Path.Simplify
+                        let slnDir = programDir + "/../../../../.." |> Path.GetFullPath
+                        let templateDir = programDir + "/../../../../Nu.Template" |> Path.GetFullPath
                         if Directory.Exists templateDir then
 
                             // prompt user to create new project
@@ -2249,11 +2249,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
                                 let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
                                 let templateFileName = "Nu.Template.fsproj"
-                                let projectsDir = programDir + "/../../../../../Projects" |> Path.Simplify
-                                let newProjectDir = projectsDir + "/" + newProjectName |> Path.Simplify
+                                let projectsDir = programDir + "/../../../../../Projects" |> Path.GetFullPath
+                                let newProjectDir = projectsDir + "/" + newProjectName |> Path.GetFullPath
                                 let newProjectDll = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
                                 let newFileName = newProjectName + ".fsproj"
-                                let newProject = newProjectDir + "/" + newFileName |> Path.Simplify
+                                let newProject = newProjectDir + "/" + newFileName |> Path.GetFullPath
                                 let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
                                 if not validName then ImGui.Text "Invalid project name!"
                                 let validDirectory = not (Directory.Exists newProjectDir)
