@@ -23,10 +23,6 @@ Look here to get started with your own project in Nu -
 
 [https://github.com/bryanedds/Nu/wiki/Getting-Started-with-Nu](https://github.com/bryanedds/Nu/wiki#introductory-material-starting-from-the-beginning)
 
-Also, the old documentation (which is currently being rewritten in the above wiki) is here -
-
-https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
-
 Some Media on the Nu Game Engine
 ================================
 

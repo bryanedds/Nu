@@ -504,7 +504,7 @@ and EntityDispatcher (is2d, centered, physical) =
     abstract Render : Entity * World -> World
     default this.Render (_, world) = world
 
-    /// Apply physics changes to an entity.
+    /// Apply physics changes from a physics engine to an entity.
     abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
     default this.ApplyPhysics (_, _, _, _, _, world) = world
 
