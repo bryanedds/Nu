@@ -73,7 +73,7 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
             IndexOutOfRangeException() |> raise
         
         let arr = Branchless.reinterpret arr
-        for i = 0 to  this.Length * sizeof<'c> - 1 do
+        for i = 0 to  count * sizeof<'c> - 1 do
             let b = Unsafe.ReadUnaligned(&Unsafe.Add(&MemoryMarshal.GetArrayDataReference arr, i )) 
             stream.WriteByte b
       
