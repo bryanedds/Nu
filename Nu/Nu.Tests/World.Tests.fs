@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2020.
+// Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu.Tests
 open System

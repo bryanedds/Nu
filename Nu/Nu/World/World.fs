@@ -549,12 +549,12 @@ module WorldModule3 =
                   RebuildOctree = World.rebuildOctree }
 
             // make the world's subsystems
+            let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
             let rendererProcess = RendererInline () :> RendererProcess
-            rendererProcess.Start None None // params implicate stub renderers
+            rendererProcess.Start imGui.Fonts None // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
-            let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
 
             // make the world's scripting environment
             let scriptingEnv = Scripting.Env.make ()
@@ -642,7 +642,7 @@ module WorldModule3 =
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
                 let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault staticModelsMetadata
                 let rendererProcess = RendererThread () :> RendererProcess
-                rendererProcess.Start (Some imGui.Fonts) (SdlDeps.getWindowOpt sdlDeps)
+                rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                 let audioPlayer =
                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
