@@ -8,14 +8,6 @@ open Prime
 open Nu
 module WorldTests =
 
-    let TestValueKey = Gen.id
-    let TestFilePath = "TestFile.nugame"
-    let StringEvent = stoa<string> "String/Event"
-    let Screen = Simulants.Game / "Screen"
-    let Group = Screen / "Group"
-    let Jim = Group / "Jim"
-    let Bob = Group / "Bob"
-
     let [<Test>] runOneEmptyFrameThenCleanUp () =
         let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
         Nu.init nuConfig
