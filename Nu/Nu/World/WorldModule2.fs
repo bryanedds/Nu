@@ -1136,7 +1136,7 @@ module WorldModule2 =
                     result <- World.processInput2 polledEvent (snd result)
                 let (liveness, world) = result
                 match liveness with Dead -> World.exit world | Live -> world
-            else World.exit world
+            else world
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world

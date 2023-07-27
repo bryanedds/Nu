@@ -50,7 +50,7 @@ module WorldModuleGame =
                         let content = World.getGameContent world
                         let desiredScreen =
                             match Seq.tryHead content.ScreenContents with
-                            | Some screen -> Desire (Nu.Screen screen.Key)
+                            | Some screen -> Desire (Simulants.Game / screen.Key)
                             | None -> DesireNone
                         World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world
@@ -85,7 +85,7 @@ module WorldModuleGame =
                         let content = World.getGameContent world
                         let desiredScreen =
                             match Seq.tryHead content.ScreenContents with
-                            | Some screen -> Desire (Nu.Screen screen.Key)
+                            | Some screen -> Desire (Simulants.Game / screen.Key)
                             | None -> DesireNone
                         World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world
