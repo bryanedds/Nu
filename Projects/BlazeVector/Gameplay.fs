@@ -34,7 +34,6 @@ module Bullet =
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
              define Entity.GravityOverride (Some v3Zero)
-             define Entity.Bullet true
              define Entity.BodyShape (BodySphere { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
 

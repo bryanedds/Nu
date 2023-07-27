@@ -689,9 +689,6 @@ module RigidBodyFacetModule =
         member this.GetBodyShape world : BodyShape = this.Get (nameof this.BodyShape) world
         member this.SetBodyShape (value : BodyShape) world = this.Set (nameof this.BodyShape) value world
         member this.BodyShape = lens (nameof this.BodyShape) this this.GetBodyShape this.SetBodyShape
-        member this.GetBullet world : bool = this.Get (nameof this.Bullet) world
-        member this.SetBullet (value : bool) world = this.Set (nameof this.Bullet) value world
-        member this.Bullet = lens (nameof this.Bullet) this this.GetBullet this.SetBullet
         member this.GetSensor world : bool = this.Get (nameof this.Sensor) world
         member this.SetSensor (value : bool) world = this.Set (nameof this.Sensor) value world
         member this.Sensor = lens (nameof this.Sensor) this this.GetSensor this.SetSensor
@@ -731,7 +728,6 @@ module RigidBodyFacetModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask Constants.Engine.WildcardName
              define Entity.BodyShape (BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None })
-             define Entity.Bullet false
              define Entity.Sensor false
              define Entity.ModelDriven false
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalIndex }) None]
@@ -762,7 +758,6 @@ module RigidBodyFacetModule =
             let (_, world) = World.subscribePlus subIds.[19] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
             let (_, world) = World.subscribePlus subIds.[20] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
             let (_, world) = World.subscribePlus subIds.[21] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world
-            let (_, world) = World.subscribePlus subIds.[22] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Bullet)) entity world
             let (_, world) = World.subscribePlus subIds.[23] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world
             let unsubscribe = fun world ->
                 Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
@@ -799,7 +794,6 @@ module RigidBodyFacetModule =
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
-                  Bullet = entity.GetBullet world
                   Sensor = entity.GetSensor world }
             let world = World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
             let world = World.updateBodyObservable false entity world
