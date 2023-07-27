@@ -8,17 +8,15 @@ open Prime
 open Nu
 module WorldTests =
 
+    let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
+    do Nu.init nuConfig
+
     let [<Test>] runOneEmptyFrameThenCleanUp () =
-        let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
-        Nu.init nuConfig
-        let worldConfig = { WorldConfig.defaultConfig with NuConfig = nuConfig }
-        let world = World.makeEmpty worldConfig (TestPlugin ())
+        let world = World.makeEmpty { WorldConfig.defaultConfig with NuConfig = nuConfig } (TestPlugin ())
         let result = World.runWithCleanUp (fun world -> World.getUpdateTime world < 1L) id id id id Live true world
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
 
     let [<Test; Category "Integration">] runOneIntegrationFrameThenCleanUp () =
-        let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
-        Nu.init nuConfig
         let worldConfig = { WorldConfig.defaultConfig with NuConfig = nuConfig }
         match SdlDeps.tryMake worldConfig.SdlConfig with
         | Right sdlDeps ->
