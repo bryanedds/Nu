@@ -577,15 +577,6 @@ module WorldModule3 =
             // finally, register the game
             World.registerGame world
 
-        /// Make a default world with a default screen, group, and entity, such as for testing.
-        static member makeDefault plugin =
-            let worldConfig = WorldConfig.defaultConfig
-            let world = World.makeEmpty worldConfig plugin
-            let (screen, world) = World.createScreen (Some (nameof Screen)) world
-            let (group, world) = World.createGroup (Some (nameof Group)) screen world
-            let world = World.createEntity DefaultOverlay (Some [|nameof Entity|]) group world |> snd
-            world
-
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
         static member tryMake sdlDeps config (plugin : NuPlugin) =

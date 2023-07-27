@@ -1150,6 +1150,9 @@ and Game (gameAddress) =
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
     member private this.View = WorldTypes.viewGame WorldTypes.Chosen
 
+    /// Derive a screen from the game.
+    static member (/) (game : Game, screenName) = let _ = game in Screen (ntoa screenName)
+
     /// Concatenate an address with a game's address, forcing the type of first address.
     static member (-->) (address : 'a Address, _ : Game) =
         // NOTE: nothing to do since game address is always [||].
