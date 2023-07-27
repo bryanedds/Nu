@@ -21,8 +21,8 @@ type StubRendererImGui () =
             let mutable fontTextureWidth = 0
             let mutable fontTextureHeight = 0
             let mutable bytesPerPixel = Unchecked.defaultof<_>
-            //fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
-            //fonts.ClearTexData ()
+            fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
+            fonts.ClearTexData ()
         member this.Render _ = ()
         member this.CleanUp () = ()
 
