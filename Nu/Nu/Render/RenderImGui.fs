@@ -16,7 +16,13 @@ type RendererImGui =
 /// A stub imgui renderer.
 type StubRendererImGui () =
     interface RendererImGui with
-        member this.Initialize _ = ()
+        member this.Initialize fonts =
+            let mutable pixels = Unchecked.defaultof<nativeint>
+            let mutable fontTextureWidth = 0
+            let mutable fontTextureHeight = 0
+            let mutable bytesPerPixel = Unchecked.defaultof<_>
+            //fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
+            //fonts.ClearTexData ()
         member this.Render _ = ()
         member this.CleanUp () = ()
 
@@ -24,9 +30,9 @@ type StubRendererImGui () =
 module StubRendererImGui =
 
     /// Make a stub imgui renderer.
-    let make () =
+    let make fonts =
         let rendererImGui = StubRendererImGui ()
-        (rendererImGui :> RendererImGui).Initialize Unchecked.defaultof<_> // NOTE: bit of a hack to deal with the odd initialization structure implcated by imgui.
+        (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui
 
 /// Renders an imgui view via OpenGL.

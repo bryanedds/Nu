@@ -19,7 +19,7 @@ type RendererProcess =
         /// Whether the rendering process has been terminated.
         abstract Terminated : bool
         /// Start the rendering process.
-        abstract Start : ImFontAtlasPtr option -> Window option -> unit
+        abstract Start : ImFontAtlasPtr -> Window option -> unit
         /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         /// Potential fast-path for rendering static models.
@@ -58,7 +58,7 @@ type RendererInline () =
         member this.Terminated =
             terminated
 
-        member this.Start fontsOpt windowOpt_ =
+        member this.Start fonts windowOpt_ =
 
             // assign windowOpt
             windowOpt <- windowOpt_
@@ -93,10 +93,7 @@ type RendererInline () =
                     OpenGL.Hl.Assert ()
 
                     // create imgui renderer
-                    let rendererImGui =
-                        match fontsOpt with
-                        | Some fonts -> GlRendererImGui.make fonts :> RendererImGui
-                        | None -> StubRendererImGui.make () :> RendererImGui
+                    let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
                     OpenGL.Hl.Assert ()
 
                     // fin
@@ -106,7 +103,7 @@ type RendererInline () =
                 | None ->
                     let renderer3d = StubRenderer3d.make () :> Renderer3d
                     let renderer2d = StubRenderer2d.make () :> Renderer2d
-                    let rendererImGui = StubRendererImGui.make () :> RendererImGui
+                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
                     renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
                     OpenGL.Hl.Assert ()
 
@@ -283,7 +280,7 @@ type RendererThread () =
                     | _ -> ()
                 | _ -> ())
 
-    member private this.Run fontsOpt windowOpt =
+    member private this.Run fonts windowOpt =
 
         // create renderers
         let (renderer3d, renderer2d, rendererImGui) =
@@ -312,10 +309,7 @@ type RendererThread () =
                 OpenGL.Hl.Assert ()
 
                 // create imgui renderer
-                let rendererImGui =
-                    match fontsOpt with
-                    | Some fonts -> GlRendererImGui.make fonts :> RendererImGui
-                    | None -> StubRendererImGui.make () :> RendererImGui
+                let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
 
                 // fin
                 (renderer3d, renderer2d, rendererImGui)
@@ -324,7 +318,7 @@ type RendererThread () =
             | None ->
                 let renderer3d = StubRenderer3d.make () :> Renderer3d
                 let renderer2d = StubRenderer2d.make () :> Renderer2d
-                let rendererImGui = StubRendererImGui.make () :> RendererImGui
+                let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
                 (renderer3d, renderer2d, rendererImGui)
 
         // mark as started
@@ -395,13 +389,13 @@ type RendererThread () =
         member this.Terminated =
             terminated
 
-        member this.Start fontsOpt windowOpt =
+        member this.Start fonts windowOpt =
 
             // validate state
             if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
 
             // start thread
-            let thread = Thread (ThreadStart (fun () -> this.Run fontsOpt windowOpt))
+            let thread = Thread (ThreadStart (fun () -> this.Run fonts windowOpt))
             threadOpt <- Some thread
             thread.IsBackground <- true
             thread.Start ()
