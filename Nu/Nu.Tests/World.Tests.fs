@@ -9,6 +9,8 @@ open Nu
 module WorldTests =
 
     let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
+    Constants.Engine.OctnodeSize <- 128.0f // NOTE: reducing construction cost of octrees to speed up world construction for unit test.
+    Constants.Engine.OctreeDepth <- 3
     do Nu.init nuConfig
 
     let [<Test>] runOneEmptyFrameThenCleanUp () =
