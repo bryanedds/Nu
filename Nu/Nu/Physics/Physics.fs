@@ -179,7 +179,6 @@ type BodyProperties =
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int
-      Bullet : bool
       Sensor : bool }
 
 type JointAngle =
