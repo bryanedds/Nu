@@ -99,6 +99,7 @@ uniform float lightCutoffs[LIGHTS_MAX];
 uniform int lightDirectionals[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
+uniform int lightsCount;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -215,7 +216,7 @@ void main()
     vec3 v = normalize(eyeCenter - position);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccum = vec3(0.0);
-    for (int i = 0; i < LIGHTS_MAX; ++i)
+    for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
         vec3 d = lightOrigins[i] - position;
