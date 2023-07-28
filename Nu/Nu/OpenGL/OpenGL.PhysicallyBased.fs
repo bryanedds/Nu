@@ -182,6 +182,7 @@ module PhysicallyBased =
           LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
+          LightsCountUniform : int
           PhysicallyBasedShader : uint }
 
     /// Describes a light mapping pass of a deferred physically-based shader that's loaded into GPU.
@@ -251,6 +252,7 @@ module PhysicallyBased =
           LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
+          LightsCountUniform : int
           PhysicallyBasedDeferredLightingShader : uint }
 
     /// Describes an fxaa pass of a physically-based shader that's loaded into GPU.
@@ -1031,6 +1033,7 @@ module PhysicallyBased =
         let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
+        let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
 
         // make shader record
         { ViewUniform = viewUniform
@@ -1064,6 +1067,7 @@ module PhysicallyBased =
           LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
+          LightsCountUniform = lightsCountUniform
           PhysicallyBasedShader = shader }
 
     /// Create a physically-based shader for the light mapping pass of deferred rendering.
@@ -1198,6 +1202,7 @@ module PhysicallyBased =
         let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
+        let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
@@ -1221,6 +1226,7 @@ module PhysicallyBased =
           LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
+          LightsCountUniform = lightsCountUniform
           PhysicallyBasedDeferredLightingShader = shader }
 
     /// Create a physically-based shader for the fxaa pass of rendering.
@@ -1280,6 +1286,7 @@ module PhysicallyBased =
          lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
+         lightsCount : int,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -1329,6 +1336,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+        Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         Hl.Assert ()
 
         // setup textures
@@ -1754,6 +1762,7 @@ module PhysicallyBased =
          lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
+         lightsCount : int,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredLightingShader) =
 
@@ -1780,6 +1789,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+        Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         Hl.Assert ()
 
         // setup textures
