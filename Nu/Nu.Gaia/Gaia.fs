@@ -416,12 +416,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         then snaps2d
         else snaps3d
 
-    let private getPickableEntities2d () =
+    let private getPickCandidates2d () =
         let (entities, wtemp) = World.getEntitiesInView2d (HashSet ()) world in world <- wtemp
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         entitiesInGroup
 
-    let private getPickableEntities3d () =
+    let private getPickCandidates3d () =
         let (entities, wtemp) = World.getEntitiesInView3d (HashSet ()) world in world <- wtemp
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         entitiesInGroup
@@ -440,14 +440,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         generateEntityName3 dispatcherName existingEntityNames
 
     let private tryMousePick mousePosition =
-        let entities2d = getPickableEntities2d ()
+        let entities2d = getPickCandidates2d ()
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
         match pickedOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
             Some (0.0f, entity)
         | None ->
-            let entities3d = getPickableEntities3d ()
+            let entities3d = getPickCandidates3d ()
             let pickedOpt = World.tryPickEntity3d mousePosition entities3d world
             match pickedOpt with
             | Some (intersection, entity) ->

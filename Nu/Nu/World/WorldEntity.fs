@@ -56,6 +56,7 @@ module WorldEntityModule =
         let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Visible = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable VisibleLocal = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable Pickable = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Protected = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity>>
@@ -199,6 +200,9 @@ module WorldEntityModule =
         member this.GetVisibleLocal world = World.getEntityVisibleLocal this world
         member this.SetVisibleLocal value world = World.setEntityVisibleLocal value this world |> snd'
         member this.VisibleLocal = if notNull (this :> obj) then lens (nameof this.VisibleLocal) this this.GetVisibleLocal this.SetVisibleLocal else Cached.VisibleLocal
+        member this.GetPickable world = World.getEntityPickable this world
+        member this.SetPickable value world = World.setEntityPickable value this world |> snd'
+        member this.Pickable = if notNull (this :> obj) then lens (nameof this.Pickable) this this.GetPickable this.SetPickable else Cached.Pickable
         member this.GetAlwaysUpdate world = World.getEntityAlwaysUpdate this world
         member this.SetAlwaysUpdate value world = World.setEntityAlwaysUpdate value this world |> snd'
         member this.AlwaysUpdate = if notNull (this :> obj) then lens (nameof this.AlwaysUpdate) this this.GetAlwaysUpdate this.SetAlwaysUpdate else Cached.AlwaysUpdate
@@ -672,32 +676,34 @@ module WorldEntityModule =
         [<FunctionBinding>]
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
-            Array.tryFind
-                (fun (entity : Entity) ->
-                    let viewport = World.getViewport world
-                    let eyeCenter = World.getEyeCenter2d world
-                    let eyeSize = World.getEyeSize2d world
+            let viewport = World.getViewport world
+            let eyeCenter = World.getEyeCenter2d world
+            let eyeSize = World.getEyeSize2d world
+            Array.tryFind (fun (entity : Entity) ->
+                if entity.GetPickable world then
                     let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyeCenter, eyeSize)
                     let perimeterOriented = (entity.GetPerimeterOriented world).Box2
-                    perimeterOriented.Intersects positionWorld)
+                    perimeterOriented.Intersects positionWorld
+                else false)
                 entitiesSorted
 
         /// Attempt to pick a 3d entity with the given ray.
         [<FunctionBinding>]
         static member tryPickEntity3d position entities world =
+            let viewport = World.getViewport world
+            let eyeCenter = World.getEyeCenter3d world
+            let eyeRotation = World.getEyeRotation3d world
             let intersectionses =
-                Seq.map
-                    (fun (entity : Entity) ->
-                        let viewport = World.getViewport world
-                        let eyeCenter = World.getEyeCenter3d world
-                        let eyeRotation = World.getEyeRotation3d world
+                Seq.map (fun (entity : Entity) ->
+                    if entity.GetPickable world then
                         let rayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, position, eyeCenter, eyeRotation)
                         let entityBounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects entityBounds
                         if intersectionOpt.HasValue then
                             let intersections = entity.RayCast rayWorld world
                             Array.map (fun intersection -> (intersection, entity)) intersections
-                        else [||])
+                        else [||]
+                    else [||])
                     entities
             let intersections = intersectionses |> Seq.concat |> Seq.toArray
             let sorted = Array.sortBy fst intersections
