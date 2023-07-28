@@ -192,6 +192,7 @@ module PhysicallyBased =
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
           LightMapSizesUniform : int
+          LightMapsCountUniform : int
           PhysicallyBasedDeferredLightMappingShader : uint }
 
     /// Describes an irradiance pass of a deferred physically-based shader that's loaded into GPU.
@@ -1079,6 +1080,7 @@ module PhysicallyBased =
         let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
         let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
         let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
+        let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
 
         // make shader record
         { PositionTextureUniform = positionTextureUniform
@@ -1087,6 +1089,7 @@ module PhysicallyBased =
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
           LightMapSizesUniform = lightMapSizesUniform
+          LightMapsCountUniform = lightMapsCountUniform
           PhysicallyBasedDeferredLightMappingShader = shader }
 
     /// Create a physically-based shader for the irradiance pass of deferred rendering.
@@ -1493,6 +1496,7 @@ module PhysicallyBased =
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
+         lightMapsCount : int,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredLightMappingShader) =
 
@@ -1504,6 +1508,7 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
+        Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
         Hl.Assert ()
 
         // setup textures

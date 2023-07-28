@@ -1287,9 +1287,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
                 // deferred render light mapping quad
+                let lightMapsCount = min lightMaps.Length Constants.Render.LightMapsMaxDeferred
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightMappingSurface
                     (positionTexture, normalAndHeightTexture,
-                     lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes,
+                     lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                      renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredLightMappingShader)
                 OpenGL.Hl.Assert ()
                 lightMappingTexture
@@ -1408,10 +1409,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render surfaces w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
-                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-                    SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
                 let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
+                let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
+                    SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                     lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
@@ -1421,10 +1422,10 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // forward render surfaces w/ relative transforms to filter buffer
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
-            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
-                SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
             let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
+            let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
+                SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                 lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
