@@ -302,7 +302,6 @@ and [<ReferenceEquality>] SortableLightMap =
     /// Sort light maps into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
     static member sortLightMapsIntoArrays lightMapsMax position lightMaps =
-        let lightMapEnableds = Array.zeroCreate<int> lightMapsMax
         let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
@@ -315,7 +314,6 @@ and [<ReferenceEquality>] SortableLightMap =
             if i < lightMapsSorted.Length then
                 let i3 = i * 3
                 let lightMap = lightMapsSorted.[i]
-                lightMapEnableds.[i] <- if lightMap.SortableLightMapEnabled then 1 else 0
                 lightMapOrigins.[i3] <- lightMap.SortableLightMapOrigin.X
                 lightMapOrigins.[i3+1] <- lightMap.SortableLightMapOrigin.Y
                 lightMapOrigins.[i3+2] <- lightMap.SortableLightMapOrigin.Z
@@ -327,7 +325,7 @@ and [<ReferenceEquality>] SortableLightMap =
                 lightMapSizes.[i3+2] <- lightMap.SortableLightMapBounds.Size.Z
                 lightMapIrradianceMaps.[i] <- lightMap.SortableLightMapIrradianceMap
                 lightMapEnvironmentFilterMaps.[i] <- lightMap.SortableLightMapEnvironmentFilterMap
-        (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps)
+        (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps)
 
 /// A sortable light.
 /// OPTIMIZATION: mutable field for caching distance squared.
@@ -939,7 +937,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
-        lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
+        lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
@@ -1012,7 +1010,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedSurfaces
                 (viewArray, projectionArray, eyeCenter, parameters.Length,
                  renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
-                 lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes,
+                 lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1219,15 +1217,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightMaps =
             renderer.RenderTasks.RenderLightMaps |>
             Array.ofSeq |>
-            Array.filter (fun lightMap ->
-                lightMap.SortableLightMapEnabled &&
-                geometryFrustum.Intersects lightMap.SortableLightMapBounds)
+            Array.filter (fun lightMap -> lightMap.SortableLightMapEnabled && geometryFrustum.Intersects lightMap.SortableLightMapBounds)
+
+        // compute light maps count for shaders
+        let lightMapsCount = min lightMaps.Length Constants.Render.LightMapsMaxDeferred
 
         // sort light maps for deferred rendering relative to eye center
-        let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+        let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
             if topLevelRender
             then SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxDeferred eyeCenter lightMaps
-            else (Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred)
+            else (Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred)
 
         // sort lights for deferred rendering relative to eye center
         let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
@@ -1257,7 +1256,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray geometryProjectionArray eyeCenter entry.Value false
-                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
+                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                     entry.Key renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
                 OpenGL.Hl.Assert ()
@@ -1266,7 +1265,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderer.RenderTasks.RenderSurfacesDeferredRelative do
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray geometryProjectionArray eyeCenter entry.Value false
-                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
+                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                 entry.Key renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
             OpenGL.Hl.Assert ()
@@ -1287,10 +1286,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
                 // deferred render light mapping quad
-                let lightMapsCount = min lightMaps.Length Constants.Render.LightMapsMaxDeferred
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightMappingSurface
                     (positionTexture, normalAndHeightTexture,
-                     lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
+                     lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                      renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredLightMappingShader)
                 OpenGL.Hl.Assert ()
                 lightMappingTexture
@@ -1409,26 +1407,26 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render surfaces w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted do
-                let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+                let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
                 let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
                     SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
-                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
+                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                     surface renderer.RenderPhysicallyBasedForwardShader renderer
                 OpenGL.Hl.Assert ()
 
         // forward render surfaces w/ relative transforms to filter buffer
         for (model, texCoordsOffset, properties, surface) in renderer.RenderTasks.RenderSurfacesForwardRelativeSorted do
-            let (lightMapEnableds, lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+            let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
             let (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters) =
                 SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderer.RenderTasks.RenderLights
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
-                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapEnableds lightMapOrigins lightMapMins lightMapSizes
+                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters
                 surface renderer.RenderPhysicallyBasedForwardShader renderer
             OpenGL.Hl.Assert ()
