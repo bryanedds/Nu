@@ -73,10 +73,10 @@ module Hl =
         glContext
 
     /// Begin an OpenGL frame.
-    let BeginFrame (viewport : Viewport) =
+    let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =
 
-        // set viewport
-        Gl.Viewport (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
+        // set viewport to window
+        Gl.Viewport (0, 0, windowSize.X, windowSize.Y)
         Assert ()
 
         // bind buffers
@@ -84,16 +84,20 @@ module Hl =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Assert ()
 
-        // clear inner viewport
-        Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-        Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit ||| ClearBufferMask.StencilBufferBit)
-        Assert ()
-
-        // clear drawing target
-        Gl.Enable EnableCap.ScissorTest
-        Gl.Scissor (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, viewport.Bounds.Size.X, viewport.Bounds.Size.Y)
+        // clear window to designated clear color
         Gl.ClearColor (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         Gl.Clear ClearBufferMask.ColorBufferBit
+        Assert ()
+
+        // set viewport to offset
+        Gl.Viewport (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
+        Assert ()
+
+        // clear offset viewport to designated clear color
+        Gl.Enable EnableCap.ScissorTest
+        Gl.Scissor (viewportOffset.Bounds.Min.X, viewportOffset.Bounds.Min.Y, viewportOffset.Bounds.Size.X, viewportOffset.Bounds.Size.Y)
+        Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit ||| ClearBufferMask.StencilBufferBit)
         Gl.Disable EnableCap.ScissorTest
 
     /// End an OpenGL frame.
