@@ -89,6 +89,9 @@ module AnimatedSpriteFacetModule =
         member this.GetCelCount world : int = this.Get (nameof this.CelCount) world
         member this.SetCelCount (value : int) world = this.Set (nameof this.CelCount) value world
         member this.CelCount = lens (nameof this.CelCount) this this.GetCelCount this.SetCelCount
+        member this.GetAnimationStride world : int = this.Get (nameof this.AnimationStride) world
+        member this.SetAnimationStride (value : int) world = this.Set (nameof this.AnimationStride) value world
+        member this.AnimationStride = lens (nameof this.AnimationStride) this this.GetAnimationStride this.SetAnimationStride
         member this.GetAnimationDelay world : GameTime = this.Get (nameof this.AnimationDelay) world
         member this.SetAnimationDelay (value : GameTime) world = this.Set (nameof this.AnimationDelay) value world
         member this.AnimationDelay = lens (nameof this.AnimationDelay) this this.GetAnimationDelay this.SetAnimationDelay
@@ -106,8 +109,8 @@ module AnimatedSpriteFacetModule =
             if celCount <> 0 && celRun <> 0 then
                 let cel =
                     match entity.GetAnimationDelay world with
-                    | UpdateTime delay -> int (world.UpdateTime / delay) % celCount
-                    | ClockTime delay -> int (world.ClockTime / delay) % celCount
+                    | UpdateTime delay -> int (world.UpdateTime / delay) % celCount * entity.GetAnimationStride world
+                    | ClockTime delay -> int (world.ClockTime / delay) % celCount * entity.GetAnimationStride world
                 let celSize = entity.GetCelSize world
                 let celI = cel % celRun
                 let celJ = cel / celRun
@@ -122,6 +125,7 @@ module AnimatedSpriteFacetModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
+             define Entity.AnimationStride 1
              define Entity.AnimationSheet Assets.Default.Block
              define Entity.Color Color.One
              define Entity.Blend Transparent
