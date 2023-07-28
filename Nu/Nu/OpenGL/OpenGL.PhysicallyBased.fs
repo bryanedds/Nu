@@ -168,10 +168,10 @@ module PhysicallyBased =
           EnvironmentFilterMapUniform : int
           IrradianceMapsUniforms : int array
           EnvironmentFilterMapsUniforms : int array
-          LightMapEnabledsUniform : int
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
           LightMapSizesUniform : int
+          LightMapsCountUniform : int
           LightOriginsUniform : int
           LightDirectionsUniform : int
           LightColorsUniform : int
@@ -188,7 +188,6 @@ module PhysicallyBased =
     type PhysicallyBasedDeferredLightMappingShader =
         { PositionTextureUniform : int
           NormalAndHeightTextureUniform : int
-          LightMapEnabledsUniform : int
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
           LightMapSizesUniform : int
@@ -1018,10 +1017,10 @@ module PhysicallyBased =
         let environmentFilterMapsUniforms =
             Array.init Constants.Render.LightMapsMaxForward $ fun i ->
                 Gl.GetUniformLocation (shader, "environmentFilterMaps[" + string i + "]")
-        let lightMapEnabledsUniform = Gl.GetUniformLocation (shader, "lightMapEnableds")
         let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
         let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
         let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
+        let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
@@ -1051,10 +1050,10 @@ module PhysicallyBased =
           EnvironmentFilterMapUniform = environmentFilterMapUniform
           IrradianceMapsUniforms = irradianceMapsUniforms
           EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
-          LightMapEnabledsUniform = lightMapEnabledsUniform
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
           LightMapSizesUniform = lightMapSizesUniform
+          LightMapsCountUniform = lightMapsCountUniform
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
@@ -1076,7 +1075,6 @@ module PhysicallyBased =
         // retrieve uniforms
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
-        let lightMapEnabledsUniform = Gl.GetUniformLocation (shader, "lightMapEnableds")
         let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
         let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
         let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
@@ -1085,7 +1083,6 @@ module PhysicallyBased =
         // make shader record
         { PositionTextureUniform = positionTextureUniform
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
-          LightMapEnabledsUniform = lightMapEnabledsUniform
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
           LightMapSizesUniform = lightMapSizesUniform
@@ -1269,10 +1266,10 @@ module PhysicallyBased =
          environmentFilterMap : uint,
          irradianceMaps : uint array,
          environmentFilterMaps : uint array,
-         lightMapEnableds : int array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
+         lightMapsCount : int,
          lightOrigins : single array,
          lightDirections : single array,
          lightColors : single array,
@@ -1318,10 +1315,10 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 10)
         for i in 0 .. dec Constants.Render.LightMapsMaxForward do
             Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward)
-        Gl.Uniform1 (shader.LightMapEnabledsUniform, lightMapEnableds)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
+        Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -1492,7 +1489,6 @@ module PhysicallyBased =
     let DrawPhysicallyBasedDeferredLightMappingSurface
         (positionTexture : uint,
          normalAndHeightTexture : uint,
-         lightMapEnableds : int array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
@@ -1504,7 +1500,6 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedDeferredLightMappingShader
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 1)
-        Gl.Uniform1 (shader.LightMapEnabledsUniform, lightMapEnableds)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
