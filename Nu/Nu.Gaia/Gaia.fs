@@ -484,12 +484,29 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private handleNuRender (_ : Event<unit, Game>) wtemp =
 
+        // render light probes of the selected group in play
+        world <- wtemp
+        let (entities, wtemp) = World.getLightProbesInPlay3d (HashSet ()) world in world <- wtemp
+        let lightProbeModels =
+            entities |>
+            Seq.filter (fun entity -> entity.Group = selectedGroup) |>
+            Seq.map (fun light -> (light.GetAffineMatrix world, Prominent, None, MaterialProperties.defaultProperties)) |>
+            SList.ofSeq
+        world <-
+            World.enqueueRenderMessage3d
+                (RenderStaticModels
+                    { Absolute = false
+                      StaticModels = lightProbeModels
+                      RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
+                      StaticModel = Assets.Default.LightbulbModel })
+                world
+
         // render lights of the selected group in play
         world <- wtemp
         let (entities, wtemp) = World.getLightsInPlay3d (HashSet ()) world in world <- wtemp
         let lightModels =
             entities |>
-            Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetLight world) |>
+            Seq.filter (fun entity -> entity.Group = selectedGroup) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Prominent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         world <-

@@ -416,12 +416,13 @@ module WorldModuleGame =
 
         /// Check that the given bounds is within the 3d eye's sight.
         [<FunctionBinding>]
-        static member boundsInView3d light presence (bounds : Box3) world =
+        static member boundsInView3d lightProbe light presence (bounds : Box3) world =
             Presence.intersects3d
                 (World.getEyeFrustum3dEnclosed world)
                 (World.getEyeFrustum3dExposed world)
                 (World.getEyeFrustum3dImposter world)
                 (World.getLightBox3d world)
+                lightProbe
                 light
                 bounds
                 presence
