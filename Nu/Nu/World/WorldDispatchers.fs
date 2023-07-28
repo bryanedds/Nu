@@ -1005,7 +1005,7 @@ module LightProbeDispatcher3dModule =
             [typeof<LightProbeFacet3d>]
 
         static member Properties =
-            [define Entity.Light true
+            [define Entity.LightProbe true
              define Entity.Presence Omnipresent
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
              define Entity.ProbeStale false]

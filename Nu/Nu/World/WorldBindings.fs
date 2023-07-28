@@ -2485,9 +2485,13 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBounds3d' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
-    let boundsInView3d light presence bounds world =
+    let boundsInView3d lightProbe light presence bounds world =
         let oldWorld = world
         try
+            let lightProbe =
+                match ScriptingSystem.tryExport typeof<Boolean> lightProbe world with
+                | Some value -> value :?> Boolean
+                | None -> failwith "Invalid argument type for 'lightProbe'; expecting a value convertable to Boolean."
             let light =
                 match ScriptingSystem.tryExport typeof<Boolean> light world with
                 | Some value -> value :?> Boolean
@@ -2500,7 +2504,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<Box3> bounds world with
                 | Some value -> value :?> Box3
                 | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Box3."
-            let result = World.boundsInView3d light presence bounds world
+            let result = World.boundsInView3d lightProbe light presence bounds world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
@@ -4593,7 +4597,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|light; presence; bounds|] -> boundsInView3d light presence bounds world
+            | [|lightProbe; light; presence; bounds|] -> boundsInView3d lightProbe light presence bounds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
                 struct (violation, world)

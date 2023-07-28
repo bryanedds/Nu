@@ -469,6 +469,7 @@ and EntityDispatcher (is2d, centered, physical) =
          Define? Pickable true
          Define? Centered true
          Define? Static false
+         Define? LightProbe false
          Define? Light false
          Define? AlwaysUpdate false
          Define? PublishPreUpdates false
@@ -1127,6 +1128,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
     member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
+    member this.LightProbe with get () = this.Transform.LightProbe and set value = this.Transform.LightProbe <- value
     member this.Light with get () = this.Transform.Light and set value = this.Transform.Light <- value
     member this.Optimized with get () = this.Transform.Optimized
 
@@ -1501,7 +1503,7 @@ and [<ReferenceEquality>] Dispatchers =
       ScreenDispatchers : Map<string, ScreenDispatcher>
       GameDispatchers : Map<string, GameDispatcher>
       TryGetExtrinsic : string -> World ScriptingTrinsic option
-      UpdateEntityInEntityTree : bool -> bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
+      UpdateEntityInEntityTree : bool -> bool -> bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
       RebuildQuadtree : World -> Entity Quadtree
       RebuildOctree : World -> Entity Octree }
 

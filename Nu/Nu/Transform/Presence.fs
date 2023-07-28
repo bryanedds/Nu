@@ -33,8 +33,10 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
-    static member intersects3d (frustumEnclosed : Frustum) (frustumExposed : Frustum) (frustumImposter : Frustum) (lightBox : Box3) (light : bool) (bounds : Box3) presence =
-        if not light then
+    static member intersects3d (frustumEnclosed : Frustum) (frustumExposed : Frustum) (frustumImposter : Frustum) (lightBox : Box3) (lightProbe : bool) (light : bool) (bounds : Box3) presence =
+        if lightProbe then
+            true
+        elif not light then
             match presence with
             | Enclosed -> frustumEnclosed.Intersects bounds
             | Exposed -> frustumExposed.Intersects bounds || frustumEnclosed.Intersects bounds

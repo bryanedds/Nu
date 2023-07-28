@@ -889,7 +889,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for light in modelAsset.Lights do
                     let lightMatrix = light.LightMatrix * modelMatrix
                     let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
-                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox true lightBounds presence then
+                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false true lightBounds presence then
                         let light =
                             { SortableLightOrigin = lightMatrix.Translation
                               SortableLightDirection = Vector3.Transform (v3Forward, lightMatrix.Rotation)
@@ -906,7 +906,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for surface in modelAsset.Surfaces do
                     let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
                     let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
-                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false surfaceBounds presence then
+                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence then
                         GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, renderType, surface, renderer)
             | _ -> Log.trace "Cannot render static model with a non-model asset."
         | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")

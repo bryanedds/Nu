@@ -64,6 +64,7 @@ module WorldEntityModule =
         let mutable Is3d = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Centered = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Static = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable LightProbe = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Light = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Physical = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Optimized = Unchecked.defaultof<Lens<bool, Entity>>
@@ -221,6 +222,9 @@ module WorldEntityModule =
         member this.GetStatic world = World.getEntityStatic this world
         member this.SetStatic value world = World.setEntityStatic value this world |> snd'
         member this.Static = if notNull (this :> obj) then lens (nameof this.Static) this this.GetStatic this.SetStatic else Cached.Static
+        member this.GetLightProbe world = World.getEntityLightProbe this world
+        member this.SetLightProbe value world = World.setEntityLightProbe value this world |> snd'
+        member this.LightProbe = if notNull (this :> obj) then lens (nameof this.LightProbe) this this.GetLightProbe this.SetLightProbe else Cached.LightProbe
         member this.GetLight world = World.getEntityLight this world
         member this.SetLight value world = World.setEntityLight value this world |> snd'
         member this.Light = if notNull (this :> obj) then lens (nameof this.Light) this this.GetLight this.SetLight else Cached.Light
@@ -290,6 +294,7 @@ module WorldEntityModule =
             Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Centered <- lens (nameof Cached.Centered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Static <- lens (nameof Cached.Static) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.LightProbe <- lens (nameof Cached.LightProbe) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Light <- lens (nameof Cached.Light) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Physical <- lensReadOnly (nameof Cached.Physical) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Optimized <- lensReadOnly (nameof Cached.Optimized) Unchecked.defaultof<_> Unchecked.defaultof<_>

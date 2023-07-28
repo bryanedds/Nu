@@ -111,10 +111,11 @@ module WorldModule2 =
                 let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world
                 let static_ = entity.GetStatic world
+                let lightProbe = entity.GetLightProbe world
                 let light = entity.GetLight world
                 let presence = entity.GetPresence world
                 if entity.GetIs3d world then
-                    let element = Octelement.make visible static_ light presence bounds entity
+                    let element = Octelement.make visible static_ lightProbe light presence bounds entity
                     Octree.addElement presence bounds element octree
             octree
 
@@ -887,6 +888,11 @@ module WorldModule2 =
             let frustumImposter = World.getEyeFrustum3dImposter world
             let lightBox = World.getLightBox3d world
             World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
+        static member getLightProbesInPlay3d set world =
+            let lightBox = World.getLightBox3d world
+            World.getEntities3dBy (Octree.getLightProbesInPlay lightBox set) world
 
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
         static member getLightsInPlay3d set world =

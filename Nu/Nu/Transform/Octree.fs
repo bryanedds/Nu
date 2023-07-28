@@ -12,9 +12,10 @@ open Prime
 module OctelementMasks =
 
     // OPTIMIZATION: Octelement flag bit-masks for performance.
-    let [<Literal>] VisibleMask =   0b00000001u
-    let [<Literal>] StaticMask =    0b00000010u
-    let [<Literal>] LightMask =     0b00000100u
+    let [<Literal>] VisibleMask =       0b00000001u
+    let [<Literal>] StaticMask =        0b00000010u
+    let [<Literal>] LightProbeMask =    0b00000100u
+    let [<Literal>] LightMask =         0b00001000u
 
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks
@@ -33,6 +34,7 @@ module Octelement =
               Entry_ : 'e }
         member this.Visible = this.Flags_ &&& VisibleMask <> 0u
         member this.Static = this.Flags_ &&& StaticMask <> 0u
+        member this.LightProbe = this.Flags_ &&& LightProbeMask <> 0u
         member this.Light = this.Flags_ &&& LightMask <> 0u
         member this.Enclosed = this.Presence_.EnclosedType
         member this.Exposed = this.Presence_.ExposedType
@@ -46,13 +48,14 @@ module Octelement =
         override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
 
     let intersects frustumEnclosed frustumExposed frustumImposter lightBox (element : _ Octelement) =
-        Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox element.Light element.Bounds_ element.Presence_
+        Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox element.LightProbe element.Light element.Bounds_ element.Presence_
 
-    let make visible static_ light presence bounds (entry : 'e) =
+    let make visible static_ lightProbe light presence bounds (entry : 'e) =
         let hashCode = entry.GetHashCode ()
         let flags =
             (if visible then VisibleMask else 0u) |||
             (if static_ then StaticMask else 0u) |||
+            (if lightProbe then LightProbeMask else 0u) |||
             (if light then LightMask else 0u)
         { HashCode_ = hashCode; Flags_ = flags; Presence_ = presence; Bounds_ = bounds; Entry_ = entry }
 
@@ -466,6 +469,14 @@ module Octree =
         if tree.ElementsModified then
             Octnode.getElements set &tree.Node
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        else Seq.empty
+
+    /// Get all of the light probe elements in the given light box.
+    let getLightProbesInPlay lightBox (set : _ HashSet) tree =
+        if tree.ElementsModified then
+            Octnode.getLightsInBox lightBox set &tree.Node
+            let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.LightProbe)
+            new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
     /// Get all of the light elements in the given light box.
