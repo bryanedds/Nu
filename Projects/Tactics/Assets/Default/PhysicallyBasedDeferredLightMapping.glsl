@@ -25,6 +25,7 @@ uniform int lightMapEnableds[LIGHT_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
+uniform int lightMapsCount;
 
 in vec2 texCoordsOut;
 
@@ -51,7 +52,7 @@ void main()
     int lm2 = -1;
     float lm1DistanceSquared = FLOAT_MAX;
     float lm2DistanceSquared = FLOAT_MAX;
-    for (int i = 0; i < LIGHT_MAPS_MAX; ++i)
+    for (int i = 0; i < lightMapsCount; ++i)
     {
         if (lightMapEnableds[i] != 0 && inBounds(position, lightMapMins[i], lightMapSizes[i]))
         {
