@@ -112,7 +112,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia = box.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Option.defaultValue m4Identity bodyBox.TransformOpt, box)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, box)
         (center, mass, inertia) :: centerMassInertias
 
     static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) centerMassInertias =
@@ -132,7 +132,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia = sphere.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Option.defaultValue m4Identity bodySphere.TransformOpt, sphere)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, sphere)
         (center, mass, inertia) :: centerMassInertias
 
     static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) centerMassInertias =
@@ -152,7 +152,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia = capsule.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Option.defaultValue m4Identity bodyCapsule.TransformOpt, capsule)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, capsule)
         (center, mass, inertia) :: centerMassInertias
 
     static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) centerMassInertias =
@@ -172,11 +172,11 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let mutable min = v3Zero
         let mutable max = v3Zero
         hull.GetAabb (m4Identity, &min, &max)
+        let hullOffset = v3Zero // (min + max) * -0.5f
         let center =
-            let centerUntransformed = (min + max) * 0.5f
             match bodyConvexHull.TransformOpt with
-            | Some transform -> Vector3.Transform (centerUntransformed, transform)
-            | None -> centerUntransformed
+            | Some transform -> transform.Translation + hullOffset
+            | None -> hullOffset
         let box = box3 min max
         let mass =
             match bodyProperties.Substance with
@@ -185,7 +185,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 volume * density
             | Mass mass -> mass
         let inertia = hull.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Option.defaultValue m4Identity bodyConvexHull.TransformOpt, hull)
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia) :: centerMassInertias
 
     // TODO: add some error logging.
