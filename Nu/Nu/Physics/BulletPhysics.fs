@@ -95,141 +95,160 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
         body.Gravity <- match bodyProperties.GravityOverride with Some gravityOverride -> gravityOverride | None -> gravity
 
-    static member private attachBodyBox bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) mass inertia =
+    static member private attachBodyBox bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) centerMassInertias =
         let box = new BoxShape (bodyBox.Size * 0.5f)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
         box.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        let mass' =
+        let center =
+            match bodyBox.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let mass =
             match bodyProperties.Substance with
             | Density density ->
                 let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
                 volume * density
             | Mass mass -> mass
-        let inertia' = box.CalculateLocalInertia mass'
+        let inertia = box.CalculateLocalInertia mass
         compoundShape.AddChildShape (Option.defaultValue m4Identity bodyBox.TransformOpt, box)
-        (mass + mass', inertia + inertia')
+        (center, mass, inertia) :: centerMassInertias
 
-    static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) mass inertia =
+    static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) centerMassInertias =
         let sphere = new SphereShape (bodySphere.Radius)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
         sphere.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        let mass' =
+        let center =
+            match bodySphere.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let mass =
             match bodyProperties.Substance with
             | Density density ->
                 let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
                 volume * density
             | Mass mass -> mass
-        let inertia' = sphere.CalculateLocalInertia mass'
+        let inertia = sphere.CalculateLocalInertia mass
         compoundShape.AddChildShape (Option.defaultValue m4Identity bodySphere.TransformOpt, sphere)
-        (mass + mass', inertia + inertia')
+        (center, mass, inertia) :: centerMassInertias
 
-    static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) mass inertia =
+    static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) centerMassInertias =
         let capsule = new CapsuleShape (bodyCapsule.Radius, bodyCapsule.Height)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
         capsule.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        let mass' =
+        let center =
+            match bodyCapsule.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let mass =
             match bodyProperties.Substance with
             | Density density ->
                 let volume = MathF.PI * pown bodyCapsule.Radius 2 * (4.0f / 3.0f * bodyCapsule.Radius * bodyCapsule.Height)
                 volume * density
             | Mass mass -> mass
-        let inertia' = capsule.CalculateLocalInertia mass'
+        let inertia = capsule.CalculateLocalInertia mass
         compoundShape.AddChildShape (Option.defaultValue m4Identity bodyCapsule.TransformOpt, capsule)
-        (mass + mass', inertia + inertia')
+        (center, mass, inertia) :: centerMassInertias
 
-    static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) mass inertia =
+    static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) centerMassInertias =
         Log.debugOnce "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
         let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape mass inertia
+        BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertias
 
-    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) mass inertia =
+    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) centerMassInertias =
         let hull = new ConvexHullShape (bodyConvexHull.Vertices)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
         hull.OptimizeConvexHull () // TODO: instead of always optimizing hull, instead consider caching hull.UnscaledPoints after optimizing the first time and reusing that.
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        let mass' =
+        // NOTE: we approximate volume with the volume of a bounding box.
+        // TODO: use a more accurate volume calculation.
+        let mutable min = v3Zero
+        let mutable max = v3Zero
+        hull.GetAabb (m4Identity, &min, &max)
+        let center =
+            let centerUntransformed = (min + max) * 0.5f
+            match bodyConvexHull.TransformOpt with
+            | Some transform -> Vector3.Transform (centerUntransformed, transform)
+            | None -> centerUntransformed
+        let box = box3 min max
+        let mass =
             match bodyProperties.Substance with
             | Density density ->
-                // NOTE: we approximate volume with the volume of a bounding box.
-                // TODO: use a more accurate volume calculation.
-                let mutable min = v3Zero
-                let mutable max = v3Zero
-                hull.GetAabb (m4Identity, &min, &max)
-                let box = box3 min max
                 let volume = box.Width * box.Height * box.Depth
                 volume * density
             | Mass mass -> mass
-        let inertia' = hull.CalculateLocalInertia mass'
+        let inertia = hull.CalculateLocalInertia mass
         compoundShape.AddChildShape (Option.defaultValue m4Identity bodyConvexHull.TransformOpt, hull)
-        (mass + mass', inertia + inertia')
+        (center, mass, inertia) :: centerMassInertias
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) mass inertia physicsEngine =
+    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) centerMassInertias physicsEngine =
         match physicsEngine.StaticModels.TryGetValue bodyStaticModel.StaticModel with
         | (true, staticModel) ->
-            Seq.fold (fun (mass, inertia) i ->
+            Seq.fold (fun centerMassInertias i ->
                 let surface = staticModel.Surfaces.[i]
                 let transform =
                     match bodyStaticModel.TransformOpt with
                     | Some transform -> transform * surface.SurfaceMatrix
                     | None -> surface.SurfaceMatrix
                 let bodyStaticModelSurface = { SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
-                let (mass', inertia') = BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape mass inertia physicsEngine
-                (mass + mass', inertia + inertia'))
-                (mass, inertia)
+                BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertias physicsEngine)
+                centerMassInertias
                 [0 .. dec staticModel.Surfaces.Length]
-        | (false, _) -> (mass, inertia)
+        | (false, _) -> centerMassInertias
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) mass inertia physicsEngine =
+    static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) centerMassInertias physicsEngine =
         match physicsEngine.StaticModels.TryGetValue bodyStaticModelSurface.StaticModel with
         | (true, staticModel) ->
             if  bodyStaticModelSurface.SurfaceIndex > -1 &&
                 bodyStaticModelSurface.SurfaceIndex < staticModel.Surfaces.Length then
                 let geometry = staticModel.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
                 let bodyConvexHull = { Vertices = geometry.Vertices; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
-                let (mass', inertia') = BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape mass inertia
-                (mass + mass', inertia + inertia')
-            else (mass, inertia)
-        | (false, _) -> (mass, inertia)
+                BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertias
+            else centerMassInertias
+        | (false, _) -> centerMassInertias
 
-    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape mass inertia physicsEngine =
-        List.fold (fun (mass, inertia) bodyShape ->
-            let (mass', inertia') = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape mass inertia physicsEngine
-            (mass + mass', inertia + inertia'))
-            (mass, inertia)
+    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine =
+        List.fold (fun centerMassInertias bodyShape ->
+            let centerMassInertias' = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape centerMassInertias physicsEngine
+            centerMassInertias' @ centerMassInertias)
+            centerMassInertias
             bodyShapes
 
-    static member private attachBodyShape bodySource bodyProperties bodyShape compoundShape masses inertia physicsEngine =
+    static member private attachBodyShape bodySource bodyProperties bodyShape compoundShape centerMassInertias physicsEngine =
         match bodyShape with
-        | BodyEmpty -> (masses, inertia)
-        | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape masses inertia
-        | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere bodySource bodyProperties bodySphere compoundShape masses inertia
-        | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape masses inertia
-        | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape masses inertia
-        | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape masses inertia
-        | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape masses inertia physicsEngine
-        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape masses inertia physicsEngine
-        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses inertia physicsEngine
+        | BodyEmpty -> centerMassInertias
+        | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertias
+        | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertias
+        | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertias
+        | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertias
+        | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertias
+        | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertias physicsEngine
+        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertias physicsEngine
+        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
-        let (shape, mass, inertia) =
+        let (shape, centerMassInertias) =
             let compoundShape = new CompoundShape ()
-            let (mass, inertia) = attachBodyShape bodyProperties compoundShape 0.0f v3Zero
-            (compoundShape, mass, inertia)
+            let centerMassInertias = attachBodyShape bodyProperties compoundShape []
+            (compoundShape, centerMassInertias)
         let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalIndex then -1 else 1
         if not bodyProperties.Sensor then
-            let motionState = new DefaultMotionState (Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One))
-            let constructionInfo = new RigidBodyConstructionInfo (mass, motionState, shape, inertia)
+            let (center, mass, inertia) =
+                // TODO: make this more accurate by making each c weighted proportionately to its respective m.
+                List.reduce (fun (c, m, i) (c', m', i') -> (c + c', m + m', i + i')) centerMassInertias
+            let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
+            body.CenterOfMassTransform <- Matrix4x4.CreateTranslation center
+            body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
             body.UserObject <- bodyId
             body.UserIndex <- userIndex
             BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
@@ -250,8 +269,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
-        BulletPhysicsEngine.createBody3 (fun ps cs mass inertia ->
-            BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs mass inertia physicsEngine)
+        BulletPhysicsEngine.createBody3 (fun ps cs cmas ->
+            BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs cmas physicsEngine)
             bodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
