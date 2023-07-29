@@ -84,7 +84,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body
-        body.MotionState.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
+        body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
         if bodyProperties.SleepingAllowed // TODO: see if we can find a more reliable way to disable sleeping.
         then body.SetSleepingThresholds (Constants.Physics.SleepingThresholdLinear, Constants.Physics.SleepingThresholdAngular)
         else body.SetSleepingThresholds (0.0f, 0.0f)
@@ -242,12 +242,11 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             (compoundShape, centerMassInertias)
         let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalIndex then -1 else 1
         if not bodyProperties.Sensor then
-            let (center, mass, inertia) =
+            let (_, mass, inertia) =
                 // TODO: make this more accurate by making each c weighted proportionately to its respective m.
                 List.reduce (fun (c, m, i) (c', m', i') -> (c + c', m + m', i + i')) centerMassInertias
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
-            body.CenterOfMassTransform <- Matrix4x4.CreateTranslation center
             body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
             body.UserObject <- bodyId
             body.UserIndex <- userIndex
@@ -319,7 +318,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let hinge = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
                 hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor, jointAngle.RelaxationFactor)
                 hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
-                physicsEngine.PhysicsContext.AddConstraint hinge
+                physicsEngine.PhysicsContext.AddConstraint (hinge, false)
                 if physicsEngine.Constraints.TryAdd (jointId, hinge)
                 then () // nothing to do
                 else Log.debug ("Could not add joint via '" + scstring createJointMessage + "'.")
@@ -496,8 +495,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodyId = body.UserObject :?> BodyId
-                          Center = body.MotionState.WorldTransform.Translation
-                          Rotation = body.MotionState.WorldTransform.Rotation
+                          Center = body.WorldTransform.Translation
+                          Rotation = body.WorldTransform.Rotation
                           LinearVelocity = body.LinearVelocity
                           AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
