@@ -244,7 +244,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         if not bodyProperties.Sensor then
             let (_, mass, inertia) =
                 // TODO: make this more accurate by making each c weighted proportionately to its respective m.
-                List.reduce (fun (c, m, i) (c', m', i') -> (c + c', m + m', i + i')) centerMassInertias
+                List.fold (fun (c, m, i) (c', m', i') -> (c + c', m + m', i + i')) (v3Zero, 0.0f, v3Zero) centerMassInertias
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
             body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
