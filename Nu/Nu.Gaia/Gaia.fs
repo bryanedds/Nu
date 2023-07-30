@@ -993,7 +993,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let entityPositionConstrained = entityPosition + entityPositionDelta
                     match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
                     | Some parent ->
-                        let entityPositionLocal = Vector3.Transform (entityPositionConstrained, parent.GetAffineMatrix world |> Matrix4x4.Inverse)
+                        let entityPositionLocal = Vector3.Transform (entityPositionConstrained, (parent.GetAffineMatrix world).Inverted)
                         world <- entity.SetPositionLocal entityPositionLocal world
                     | None ->
                         world <- entity.SetPosition entityPositionConstrained world
