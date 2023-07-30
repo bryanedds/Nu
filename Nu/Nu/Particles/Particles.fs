@@ -884,6 +884,7 @@ module BasicStaticSpriteEmitter =
 
     /// Resize the emitter.
     let resize particleMax (emitter : BasicStaticSpriteEmitter) =
+        let particleMax = max 1 particleMax
         (emitter :> Emitter).Resize particleMax :?> BasicStaticSpriteEmitter
 
     /// Make a basic static sprite particle emitter.
@@ -1068,6 +1069,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
         time body absolute materialProperties albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage
         minFilterOpt magFilterOpt renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
+        let particleMax = max 1 particleMax
         { Body = body
           Absolute = absolute
           MaterialProperties = materialProperties
@@ -1105,6 +1107,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
         member this.ToParticlesDescriptor time =
             BillboardParticlesDescriptor (this.ToParticlesDescriptor time this)
         member this.Resize particleMax =
+            let particleMax = max 1 particleMax
             if  this.ParticleRing.Length <> particleMax then
                 this.ParticleIndex <- 0
                 this.ParticleWatermark <- 0
