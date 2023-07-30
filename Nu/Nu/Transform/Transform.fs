@@ -142,6 +142,9 @@ type [<NoEquality; NoComparison>] Transform =
         this.RotationMatrixOpt_.Value
 
     member this.AffineMatrix =
+        let scale = this.Scale_
+        let sizeScaled = this.Size_ * scale
+        let positionUnscaledOffset = if not this.Centered then this.Offset_ + v3UncenteredOffset else this.Offset_
         let mutable affineMatrix = this.RotationMatrix
         affineMatrix.M11 <- affineMatrix.M11 * this.Scale_.X
         affineMatrix.M12 <- affineMatrix.M12 * this.Scale_.X
@@ -152,7 +155,7 @@ type [<NoEquality; NoComparison>] Transform =
         affineMatrix.M31 <- affineMatrix.M31 * this.Scale_.Z
         affineMatrix.M32 <- affineMatrix.M32 * this.Scale_.Z
         affineMatrix.M33 <- affineMatrix.M33 * this.Scale_.Z
-        affineMatrix.Translation <- this.Position_
+        affineMatrix.Translation <- this.Position_ + positionUnscaledOffset * sizeScaled
         affineMatrix
 
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
