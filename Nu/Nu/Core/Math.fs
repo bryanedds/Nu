@@ -1094,7 +1094,7 @@ module Matrix4x4 =
             if Matrix4x4.Decompose (this, &scale, &rotation, &position) then rotation
             else quatIdentity
 
-        member inline this.Inverse =
+        member inline this.Inverted =
             let mutable result = Unchecked.defaultof<_>
             if not (Matrix4x4.Invert (this, &result)) then failwith "Failed to invert matrix."
             result
@@ -1147,12 +1147,6 @@ module Matrix4x4 =
         trs.M33 <- trs.M33 * scale.Z
         trs.Translation <- translation
         trs
-
-    /// Compute the inverse of a matrix.
-    let Inverse (m : Matrix4x4) =
-        let mutable inverse = Unchecked.defaultof<Matrix4x4>
-        Matrix4x4.Invert (m, &inverse) |> ignore<bool>
-        inverse
 
 [<AutoOpen>]
 module Color =

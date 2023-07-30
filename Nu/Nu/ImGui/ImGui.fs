@@ -227,7 +227,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         let (zNear, zFar) = if reversed then (1.0f - 0.0001f, 0.0f) else (0.0f, 1.0f - 0.0001f)
 
         // calculate the ray origin in world coordinates by transforming the normalized device coordinates
-        let modelViewProjectionInverse = (model * view * projection).Inverse
+        let modelViewProjectionInverse = (model * view * projection).Inverted
         let mutable rayOrigin = Vector4.Transform (v4 mouseXNdc mouseYNdc zNear 1.0f, modelViewProjectionInverse)
         rayOrigin <- rayOrigin * (1.0f / rayOrigin.W)
 

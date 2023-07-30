@@ -450,7 +450,7 @@ module WorldEntityModule =
                 if mountOld.Exists world && mountNew.Exists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
-                    let affineMatrixLocal = affineMatrixMounter * Matrix4x4.Inverse affineMatrixMount
+                    let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
                     let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
                     let rotationLocal = affineMatrixLocal.Rotation
                     let scaleLocal = affineMatrixLocal.Scale
@@ -487,7 +487,7 @@ module WorldEntityModule =
                 if mountNew.Exists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
-                    let affineMatrixLocal = affineMatrixMounter * Matrix4x4.Inverse affineMatrixMount
+                    let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
                     let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
                     let rotationLocal = affineMatrixLocal.Rotation
                     let scaleLocal = affineMatrixLocal.Scale
