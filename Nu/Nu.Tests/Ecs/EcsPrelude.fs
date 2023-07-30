@@ -11,12 +11,23 @@ let Setup () = ()
 let currentDirectory = Directory.GetCurrentDirectory()
 
 [<StructuralEquality; NoComparison; Struct>]
-type Test =
+type StructTest =
     { mutable Active: bool
-      mutable X: int
-      mutable Y: int }
+      X: int
+      Y: int }
 
-    interface Test Component with
+    interface StructTest Component with
+        member this.Active
+            with get () = this.Active
+            and set value = this.Active <- value
+
+[<StructuralEquality; NoComparison; Struct>]
+type ReferenceTest =
+    { mutable Active: bool
+      A: string
+      B: int }
+
+    interface ReferenceTest Component with
         member this.Active
             with get () = this.Active
             and set value = this.Active <- value
@@ -26,7 +37,7 @@ type Test =
 /// </summary>
 [<Test>]
 let ``Store.Read: write and load to file`` () =
-    let mutable store: Test Store = Store "Name"
+    let mutable store: StructTest Store = Store "Name"
     let testingFileName = (currentDirectory, "ent.bin") |> Path.Combine
 
     let fact = Array.init 256 (fun i -> { Active = i % 2 = 0; X = i; Y = i * 2 })
@@ -54,7 +65,7 @@ let ``Store.Read: write and load to file`` () =
 [<Test>]
 let ``Store.Write: Should throw IndexOutOfRangeException`` () =
     try
-        let store: Test Store = Store "Name"
+        let store: StructTest Store = Store "Name"
         store.Write 257 0 null
     with :? IndexOutOfRangeException as e ->
         Assert.Pass()
@@ -69,18 +80,35 @@ let ``Store.Write: Should throw IndexOutOfRangeException`` () =
 let ``Store.Read: Should throw EndOfStreamException`` () =
     let temp = (currentDirectory, "throwtest.bin") |> Path.Combine
     use fs = File.OpenWrite temp
-    
+
     fs.Flush()
     fs.Close()
     use fs = File.OpenRead temp
+
     try
-        let store: Test Store = Store "Name"
+        let store: StructTest Store = Store "Name"
         store.Read 0 2 fs
     with :? EndOfStreamException as e ->
         fs.Close()
         File.Delete temp
         Assert.Pass()
-        
-    fs.Close()    
+
+    fs.Close()
     File.Delete temp
+    Assert.Fail()
+
+/// <summary>
+/// Should throw InvalidOperationException if not struct or contains references
+/// </summary>
+[<Test>]
+let ``Store.Write: Should throw InvalidOperationException`` () =
+    try
+        let store: ReferenceTest Store = Store "Name"
+        let fact = Array.init 256 (fun i -> { Active = i % 2 = 0; A = ""; B = i * 2 })
+        fact |> Array.iteri store.SetItem
+        
+        store.Write 0 0 null
+    with :? InvalidOperationException as e ->
+        Assert.Pass()
+
     Assert.Fail()

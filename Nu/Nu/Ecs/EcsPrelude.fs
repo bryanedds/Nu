@@ -55,6 +55,7 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
     member this.SetItem index comp = arr.[index] <- comp
     member this.ZeroItem index = arr.[index] <- Unchecked.defaultof<'c>
 
+   
     member this.Grow() =
         let length = int (single (max arr.Length 2) * 1.5f)
         let arr' = Array.zeroCreate<'c> length
@@ -62,15 +63,17 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
         arr <- arr'
 
     /// <summary>
-    /// Writes entities to the current stream
+    /// Writes entities as binary data to the current stream without serialization
+    /// For unmanaged struct only. 
     /// </summary>
     /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> is out of range.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="index"/> value is not value type or contain references.</exception>
     /// <param name="index">The offset in internal collection at which to begin storing the data read from the current stream.</param>
     /// <param name="count">The number of entities to be read from the current stream.</param>
     /// <param name="stream">Input stream to read data from</param>
     member this.Write index count (stream: FileStream) =
-        if this.Length < index then 
-            IndexOutOfRangeException() |> raise
+        if RuntimeHelpers.IsReferenceOrContainsReferences<'c> () then InvalidOperationException () |> raise
+        if this.Length < index then IndexOutOfRangeException() |> raise
         
         let arr = Branchless.reinterpret arr
         for i = 0 to  count * sizeof<'c> - 1 do
@@ -81,7 +84,8 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
         stream.Close()
 
     /// <summary>
-    /// Reads entities from the current stream
+    /// Reads entities as binary data from the current stream.
+    /// For unmanaged struct only.
     /// </summary>
     /// <exception cref="EndOfStreamException"><paramref name="count"/> requested amount is greater than was stred in stream.</exception>
     /// <param name="index">The offset in internal collection at which to begin storing the data read from the current stream.</param>
