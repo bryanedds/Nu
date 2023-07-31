@@ -506,125 +506,202 @@ type SpiritType =
         | NormalSpirit -> Color (byte 255, byte 191, byte 191, byte 127)
         | StrongSpirit -> Color (byte 255, byte 127, byte 127, byte 127)
 
-type CueTarget =
-    | AvatarTarget // (field only)
-    | CharacterTarget of CharacterType // (field only)
-    | NpcTarget of NpcType // (field only)
-    | ShopkeepTarget of ShopkeepType // (field only)
-    | CharacterIndexTarget of CharacterIndex // (battle only)
-    | SpriteTarget of string
+module CueSystem =
 
-type CuePredicate =
-    | Gold of int
-    | Item of ItemType
-    | Items of ItemType list
-    | Advent of Advent
-    | Advents of Advent Set
+    type CueTarget =
+        | AvatarTarget // (field only)
+        | CharacterTarget of CharacterType // (field only)
+        | NpcTarget of NpcType // (field only)
+        | ShopkeepTarget of ShopkeepType // (field only)
+        | CharacterIndexTarget of CharacterIndex // (battle only)
+        | SpriteTarget of string
 
-type CueWait =
-    | Wait
-    | Timed of int64
-    | NoWait
+    type CuePredicate =
+        | Gold of int
+        | Item of ItemType
+        | Items of ItemType list
+        | Advent of Advent
+        | Advents of Advent Set
 
-type MoveType =
-    | Walk
-    | Run
-    | Mosey
-    | Instant
+    type CueWait =
+        | Wait
+        | Timed of int64
+        | NoWait
 
-    member this.MoveSpeedOpt =
-        match this with
-        | Walk -> Some Constants.Gameplay.CueWalkSpeed
-        | Run -> Some Constants.Gameplay.CueRunSpeed
-        | Mosey -> Some Constants.Gameplay.CueMoseySpeed
-        | Instant -> None
+    type CueMovement =
+        | Walk
+        | Run
+        | Mosey
+        | Instant
 
-    static member computeStepAndStepCount (translation : Vector3) (moveType : MoveType) =
-        match moveType.MoveSpeedOpt with
-        | Some moveSpeed ->
-            let stepCount = translation.Magnitude / moveSpeed
-            let step = translation / stepCount
-            (step, int (ceil stepCount))
-        | None -> (translation, 1)
+        member this.MoveSpeedOpt =
+            match this with
+            | Walk -> Some Constants.Gameplay.CueWalkSpeed
+            | Run -> Some Constants.Gameplay.CueRunSpeed
+            | Mosey -> Some Constants.Gameplay.CueMoseySpeed
+            | Instant -> None
 
-[<Syntax
-    ("Fin PlaySound PlaySong FadeOutSong Face Recruit " +
-     "AddItem RemoveItem AddAdvent RemoveAdvent ReplaceAdvent " +
-     "Wait Fade Animate Move Warp Battle Dialog Prompt " +
-     "If Not Define Assign Expand Parallel Sequence",
-     "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DetailedThresholdMax)>]
-type Cue =
-    | Fin
-    | PlaySound of single * Sound AssetTag
-    | PlaySong of int64 * int64 * int64 * single * Song AssetTag
-    | FadeOutSong of int64
-    | Face of CueTarget * Direction
-    | ClearSpirits
-    | Recruit of AllyType
-    | AddItem of ItemType
-    | RemoveItem of ItemType
-    | AddAdvent of Advent
-    | RemoveAdvent of Advent
-    | ReplaceAdvent of Advent * Advent
-    | Wait of int64
-    | WaitState of int64
-    | Fade of CueTarget * int64 * bool
-    | FadeState of int64 * CueTarget * int64 * bool
-    | Animate of CueTarget * CharacterAnimationType * CueWait
-    | AnimateState of int64 * CueWait
-    | Move of CueTarget * Vector3 * MoveType
-    | MoveState of int64 * CueTarget * Vector3 * Vector3 * MoveType
-    | Warp of FieldType * Vector3 * Direction
-    | WarpState
-    | Battle of BattleType * Advent Set // TODO: consider using three Cues (start, end, post) in battle rather than advents directly...
-    | BattleState
-    | Dialog of string * bool
-    | DialogState
-    | Prompt of string * (string * Cue) * (string * Cue)
-    | PromptState
-    | If of CuePredicate * Cue * Cue
-    | Not of CuePredicate * Cue * Cue
-    | Define of string * Cue
-    | Assign of string * Cue
-    | Expand of string
-    | Parallel of Cue list
-    | Sequence of Cue list
-    static member isFin cue = match cue with Fin -> true | _ -> false
-    static member notFin cue = match cue with Fin -> false | _ -> true
-    static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
-        match cue with
-        | Fin | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
-        | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
-        | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
-        | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
-        | If (p, c, a) ->
-            match p with
-            | Gold gold -> if inventory.Gold >= gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Item itemType -> if Inventory.containsItem itemType inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Items itemTypes -> if Inventory.containsItems itemTypes inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Advent advent -> if advents.Contains advent then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Advents advents2 -> if advents.IsSupersetOf advents2 then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-        | Not (p, c, a) ->
-            match p with
-            | Gold gold -> if inventory.Gold < gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Item itemType -> if not (Inventory.containsItem itemType inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Items itemTypes -> if not (Inventory.containsItems itemTypes inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Advent advent -> if not (advents.Contains advent) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-            | Advents advents2 -> if not (advents.IsSupersetOf advents2) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
-        | Define (_, _) | Assign (_, _) -> false
-        | Expand _ -> true // NOTE: we just assume this expands into something interrupting to be safe.
-        | Parallel cues -> List.exists (Cue.isInterrupting inventory advents) cues
-        | Sequence cues -> List.exists (Cue.isInterrupting inventory advents) cues
-    static member notInterrupting inventory advents cue = not (Cue.isInterrupting inventory advents cue)
+        static member computeStepAndStepCount (translation : Vector3) (moveType : CueMovement) =
+            match moveType.MoveSpeedOpt with
+            | Some moveSpeed ->
+                let stepCount = translation.Magnitude / moveSpeed
+                let step = translation / stepCount
+                (step, int (ceil stepCount))
+            | None -> (translation, 1)
 
-type CueDefinitions =
-    Map<string, Cue>
+    [<Syntax
+        ("Fin PlaySound PlaySong FadeOutSong Face Recruit " +
+         "AddItem RemoveItem AddAdvent RemoveAdvent ReplaceAdvent " +
+         "Wait Fade Animate Move Warp Battle Dialog Prompt " +
+         "If Not Define Assign Expand Parallel Sequence",
+         "", "", "", "",
+         Constants.PrettyPrinter.DefaultThresholdMin,
+         Constants.PrettyPrinter.DetailedThresholdMax)>]
+    type Cue =
+        | Fin
+        | PlaySound of single * Sound AssetTag
+        | PlaySong of int64 * int64 * int64 * single * Song AssetTag
+        | FadeOutSong of int64
+        | Face of CueTarget * Direction
+        | ClearSpirits
+        | Recruit of AllyType
+        | AddItem of ItemType
+        | RemoveItem of ItemType
+        | AddAdvent of Advent
+        | RemoveAdvent of Advent
+        | ReplaceAdvent of Advent * Advent
+        | Wait of int64
+        | WaitState of int64
+        | Fade of CueTarget * int64 * bool
+        | FadeState of int64 * CueTarget * int64 * bool
+        | Animate of CueTarget * CharacterAnimationType * CueWait
+        | AnimateState of int64 * CueWait
+        | Move of CueTarget * Vector3 * CueMovement
+        | MoveState of int64 * CueTarget * Vector3 * Vector3 * CueMovement
+        | Warp of FieldType * Vector3 * Direction
+        | WarpState
+        | Battle of BattleType * Advent Set // TODO: consider using three Cues (start, end, post) in battle rather than advents directly...
+        | BattleState
+        | Dialog of string * bool
+        | DialogState
+        | Prompt of string * (string * Cue) * (string * Cue)
+        | PromptState
+        | If of CuePredicate * Cue * Cue
+        | Not of CuePredicate * Cue * Cue
+        | Define of string * Cue
+        | Assign of string * Cue
+        | Expand of string
+        | Parallel of Cue list
+        | Sequence of Cue list
+        static member isFin cue = match cue with Fin -> true | _ -> false
+        static member notFin cue = match cue with Fin -> false | _ -> true
+        static member isInterrupting (inventory : Inventory) (advents : Advent Set) cue =
+            match cue with
+            | Fin | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
+            | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
+            | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+            | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
+            | If (p, c, a) ->
+                match p with
+                | Gold gold -> if inventory.Gold >= gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Item itemType -> if Inventory.containsItem itemType inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Items itemTypes -> if Inventory.containsItems itemTypes inventory then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Advent advent -> if advents.Contains advent then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Advents advents2 -> if advents.IsSupersetOf advents2 then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Not (p, c, a) ->
+                match p with
+                | Gold gold -> if inventory.Gold < gold then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Item itemType -> if not (Inventory.containsItem itemType inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Items itemTypes -> if not (Inventory.containsItems itemTypes inventory) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Advent advent -> if not (advents.Contains advent) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+                | Advents advents2 -> if not (advents.IsSupersetOf advents2) then Cue.isInterrupting inventory advents c else Cue.isInterrupting inventory advents a
+            | Define (_, _) | Assign (_, _) -> false
+            | Expand _ -> true // NOTE: we just assume this expands into something interrupting to be safe.
+            | Parallel cues -> List.exists (Cue.isInterrupting inventory advents) cues
+            | Sequence cues -> List.exists (Cue.isInterrupting inventory advents) cues
+        static member notInterrupting inventory advents cue = not (Cue.isInterrupting inventory advents cue)
 
-type Branch =
-    { Cue : Cue
-      Requirements : Advent Set }
+    type CueDefinitions =
+        Map<string, Cue>
+
+    type CueBranch =
+        { Cue : Cue
+          Requirements : Advent Set }
+
+module BattleInteractionSystem =
+
+    type BattleTarget =
+        | Self
+        | Ally
+        | Enemy
+        | Any of BattleTarget list
+        | All of BattleTarget list
+
+    type BattleAffect =
+        | Physical
+        | Magical
+        | Elemental
+        | Item
+        | OrbEmptied
+        | OrbFilled
+        | Cancelled
+        | Debuffed
+        | Buffed
+        | HpLessThanOrEqual of single
+        | HpGreaterThanOrEqual of single
+        | MpLessThanOrEqual of single
+        | MpGreaterThanOrEqual of single
+        | Wound
+        | Any of BattleAffect list
+        | All of BattleAffect list
+
+    type BattleCondition =
+        | WhenOnlySurvivor
+        | WhenOnlyTypeSurviving
+        | WhenOnlyOneEnemySurviving
+        | WhenTargetAffectedEver of BattleTarget * BattleAffect
+        | WhenTargetAffectedImmediate of BattleTarget * BattleAffect
+        | Not of BattleCondition
+
+    type BattleVulnerabilityType =
+        | Physical
+        | Magical
+        | Elemental
+
+    type BattleVulnerabilityState =
+        | Vulnerable
+        | Resistant
+        | Invulnerable
+
+    type BattleConsequence =
+        | OrbAppears
+        | OrbDissappears
+        | OrbFills of single // may be negative to empty
+        | AddVulnerability of BattleVulnerabilityState * BattleVulnerabilityType
+        | RemoveVulnerability of BattleVulnerabilityState
+        | ApplyStatus of StatusType
+        | RemoveStatus of StatureType
+        | CounterAttack
+        | CounterTech of TechType
+        | CounterItem of ItemType
+        | PilferGold of int
+        | PilferItem of ItemType
+        | RetargetSelfToCurrentActingCharacter
+        | RetargetAlliesToCurrentActingCharacter
+        | RetargetAlliesToOwnCurrentTarget
+        | ChangeActionSelf of ActionType
+        | ChangeActionAllies of ActionType
+        | Duplicate
+        | Spawn of EnemyType * int
+        | Replace of EnemyType
+        | Dialog of string
+        // TODO: consider self-modifying interactions -
+        //| AddBattleInteraction of BattleInteraction
+        //| RemoveBattleInteraction of BattleInteraction
+
+    and BattleInteraction =
+        { BattleCondition : BattleCondition
+          BattleConsequences : BattleConsequence list }
 
 [<RequireQualifiedAccess>]
 module OmniSeedState =
@@ -791,15 +868,15 @@ type CharacterAnimationData =
 type PropData =
     | Sprite of string * Image AssetTag * Color * Blend * Color * Flip * bool
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
-    | Door of DoorType * KeyItemType option * Cue * Cue * Advent Set // for simplicity, we just have north / south doors
-    | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
-    | Switch of SwitchType * Cue * Cue * Advent Set
-    | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set
-    | Character of CharacterType * Direction * bool * bool * Cue * Advent Set
-    | Npc of NpcType * Direction option * Cue * Advent Set
-    | NpcBranching of NpcType * Direction option * Branch list * Advent Set
+    | Door of DoorType * KeyItemType option * CueSystem.Cue * CueSystem.Cue * Advent Set // for simplicity, we just have north / south doors
+    | Chest of ChestType * ItemType * Guid * BattleType option * CueSystem.Cue * Advent Set
+    | Switch of SwitchType * CueSystem.Cue * CueSystem.Cue * Advent Set
+    | Sensor of SensorType * BodyShape option * CueSystem.Cue * CueSystem.Cue * Advent Set
+    | Character of CharacterType * Direction * bool * bool * CueSystem.Cue * Advent Set
+    | Npc of NpcType * Direction option * CueSystem.Cue * Advent Set
+    | NpcBranching of NpcType * Direction option * CueSystem.CueBranch list * Advent Set
     | Shopkeep of ShopkeepType * Direction option * ShopType * Advent Set
-    | Seal of Color * Cue * Advent Set
+    | Seal of Color * CueSystem.Cue * Advent Set
     | Flame of FlameType * bool
     | SavePoint
     | ChestSpawn
@@ -828,7 +905,7 @@ type FieldData =
       ShowUnopenedChests : bool
       UseWindPortal : bool
       EncounterTypeOpt : EncounterType option
-      Definitions : CueDefinitions
+      Definitions : CueSystem.CueDefinitions
       Treasures : ItemType list }
 
 [<RequireQualifiedAccess>]
@@ -949,7 +1026,7 @@ module FieldData =
                     if probability < Constants.Field.TreasureProbability then
                         let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
                         let chestType = match fieldData.FieldType with Castle _ -> WoodenChest | _ -> SteelChest
-                        let chestSpawned = { chestSpawn with PropData = Chest (chestType, treasure, id, None, Cue.Fin, Set.empty) }
+                        let chestSpawned = { chestSpawn with PropData = Chest (chestType, treasure, id, None, CueSystem.Fin, Set.empty) }
 #if DEV
                         let mapSize =
                             v2 // TODO: implement TotalWidth and TotalHeight extension properties for TmxMap.
