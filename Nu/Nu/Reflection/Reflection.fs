@@ -60,6 +60,7 @@ module Reflection =
              ("Degrees", true)
              ("DegreesLocal", true)
              ("AffineMatrix", true)
+             ("AffineMatrixOffset", true)
              ("PerimeterUnscaled", true)
              ("Perimeter", true)
              ("PerimeterOriented", true)

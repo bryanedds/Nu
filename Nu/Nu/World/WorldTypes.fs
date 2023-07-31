@@ -1099,6 +1099,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.RotationMatrix with get () = this.Transform.RotationMatrix
     member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
     member this.AffineMatrix with get () = this.Transform.AffineMatrix
+    member this.AffineMatrixOffset with get () = this.Transform.AffineMatrixOffset
     member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
     member this.PerimeterOriented with get () = this.Transform.PerimeterOriented

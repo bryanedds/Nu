@@ -43,6 +43,7 @@ module WorldEntityModule =
         let mutable ElevationLocal = Unchecked.defaultof<Lens<single, Entity>>
         let mutable Overflow = Unchecked.defaultof<Lens<single, Entity>>
         let mutable AffineMatrix = Unchecked.defaultof<Lens<Matrix4x4, Entity>>
+        let mutable AffineMatrixOffset = Unchecked.defaultof<Lens<Matrix4x4, Entity>>
         let mutable AffineMatrixLocal = Unchecked.defaultof<Lens<Matrix4x4, Entity>>
         let mutable PerimeterUnscaled = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Perimeter = Unchecked.defaultof<Lens<Box3, Entity>>
@@ -165,6 +166,8 @@ module WorldEntityModule =
         member this.Overflow = if notNull (this :> obj) then lens (nameof this.Overflow) this this.GetOverflow this.SetOverflow else Cached.Overflow
         member this.GetAffineMatrix world = World.getEntityAffineMatrix this world
         member this.AffineMatrix = if notNull (this :> obj) then lensReadOnly (nameof this.AffineMatrix) this this.GetAffineMatrix else Cached.AffineMatrix
+        member this.GetAffineMatrixOffset world = World.getEntityAffineMatrixOffset this world
+        member this.AffineMatrixOffset = if notNull (this :> obj) then lensReadOnly (nameof this.AffineMatrixOffset) this this.GetAffineMatrixOffset else Cached.AffineMatrixOffset
         member this.GetAffineMatrixLocal world = World.getEntityAffineMatrixLocal this world
         member this.AffineMatrixLocal = if notNull (this :> obj) then lensReadOnly (nameof this.AffineMatrixLocal) this this.GetAffineMatrixLocal else Cached.AffineMatrixLocal
         member this.SetPerimeterUnscaled value world = World.setEntityPerimeterUnscaled value this world |> snd'
@@ -279,6 +282,7 @@ module WorldEntityModule =
             Cached.ElevationLocal <- lens (nameof Cached.ElevationLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Overflow <- lens (nameof Cached.Overflow) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AffineMatrix <- lensReadOnly (nameof Cached.AffineMatrix) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.AffineMatrixOffset <- lensReadOnly (nameof Cached.AffineMatrixOffset) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AffineMatrixLocal <- lensReadOnly (nameof Cached.AffineMatrixLocal) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Presence <- lens (nameof Cached.Presence) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Absolute <- lens (nameof Cached.Absolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>

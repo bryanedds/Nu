@@ -38,7 +38,7 @@ module CharacterDispatcher =
                 Render3d
                     (RenderBillboard
                         { Absolute = transform.Absolute
-                          ModelMatrix = transform.AffineMatrix
+                          ModelMatrix = transform.AffineMatrixOffset
                           InsetOpt = Some inset
                           MaterialProperties = properties
                           AlbedoImage = albedoImage
