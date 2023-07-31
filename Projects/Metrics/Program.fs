@@ -45,10 +45,10 @@ type MetricsEntityDispatcher () =
     override this.Render (entity, world) =
         let staticModel = entity.GetModelGeneric world
         let mutable transform = entity.GetTransform world
-        let affineMatrix = transform.AffineMatrix
+        let affineMatrixOffset = transform.AffineMatrixOffset
         let presence = transform.Presence
         let properties = MaterialProperties.empty
-        World.renderStaticModelFast (false, &affineMatrix, presence, ValueNone, &properties, DeferredRenderType, staticModel, world)
+        World.renderStaticModelFast (false, &affineMatrixOffset, presence, ValueNone, &properties, DeferredRenderType, staticModel, world)
 
     override this.GetQuickSize (entity, world) =
         let staticModel = entity.GetModelGeneric world

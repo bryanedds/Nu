@@ -1500,7 +1500,7 @@ module StaticBillboardFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
-            let affineMatrix = transform.AffineMatrix
+            let affineMatrixOffset = transform.AffineMatrixOffset
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
             let albedoImage = entity.GetAlbedoImage world
@@ -1518,7 +1518,7 @@ module StaticBillboardFacetModule =
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties
+                    { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties
                       AlbedoImage = albedoImage; MetallicImage = metallicImage; RoughnessImage = roughnessImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
                       MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
                 world
@@ -1891,7 +1891,7 @@ module StaticModelFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
-            let affineMatrix = transform.AffineMatrix
+            let affineMatrixOffset = transform.AffineMatrixOffset
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
@@ -1900,7 +1900,7 @@ module StaticModelFacetModule =
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             let staticModel = entity.GetStaticModel world
-            World.renderStaticModelFast (absolute, &affineMatrix, presence, insetOpt, &properties, renderType, staticModel, world)
+            World.renderStaticModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, renderType, staticModel, world)
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
@@ -1910,9 +1910,9 @@ module StaticModelFacetModule =
             boundsExtended.Size
 
         override this.RayCast (ray, entity, world) =
-            let affineMatrix = entity.GetAffineMatrix world
-            let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
-            let rayEntity = ray.Transform inverseMatrix
+            let affineMatrixOffset = entity.GetAffineMatrixOffset world
+            let inverseMatrixOffset = Matrix4x4.Invert affineMatrixOffset |> snd
+            let rayEntity = ray.Transform inverseMatrixOffset
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModel ->
                 let intersectionses =
@@ -1926,7 +1926,7 @@ module StaticModelFacetModule =
                             raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                             Seq.map snd' |>
                             Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrix)) |>
+                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrixOffset)) |>
                             Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
                             Seq.toArray
                         else [||])
@@ -1944,7 +1944,7 @@ module StaticModelFacetModule =
                     | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
                     | None -> boundsOpt <- Some bounds2
                 match boundsOpt with
-                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrix world))
+                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrixOffset world))
                 | None -> None
             | None -> None
 
@@ -1973,7 +1973,7 @@ module StaticModelSurfaceFacetModule =
             | surfaceIndex ->
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
-                let affineMatrix = transform.AffineMatrix
+                let affineMatrixOffset = transform.AffineMatrixOffset
                 let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
                 let renderType =
@@ -1981,7 +1981,7 @@ module StaticModelSurfaceFacetModule =
                     | Deferred -> DeferredRenderType
                     | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                 let staticModel = entity.GetStaticModel world
-                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
+                World.renderStaticModelSurfaceFast (absolute, &affineMatrixOffset, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
 
         override this.GetQuickSize (entity, world) =
             let staticModel = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
@@ -1993,7 +1993,7 @@ module StaticModelSurfaceFacetModule =
             else Constants.Engine.EntitySize3dDefault
 
         override this.RayCast (ray, entity, world) =
-            let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
+            let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrixOffset world) |> snd)
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModel ->
                 let surfaceIndex = entity.GetSurfaceIndex world
@@ -2016,6 +2016,6 @@ module StaticModelSurfaceFacetModule =
                 if surfaceIndex < staticModel.Surfaces.Length then
                     let surface = staticModel.Surfaces.[surfaceIndex]
                     let bounds = surface.PhysicallyBasedGeometry.Bounds
-                    Some (bounds.Transform (entity.GetAffineMatrix world))
+                    Some (bounds.Transform (entity.GetAffineMatrixOffset world))
                 else None
             | None -> None

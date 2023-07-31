@@ -490,7 +490,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let lightProbeModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, Prominent, None, MaterialProperties.defaultProperties)) |>
+            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Prominent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         world <-
             World.enqueueRenderMessage3d
@@ -507,7 +507,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let lightModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, Prominent, None, MaterialProperties.defaultProperties)) |>
+            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Prominent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         world <-
             World.enqueueRenderMessage3d

@@ -143,6 +143,21 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.AffineMatrix =
         let scale = this.Scale_
+        let mutable affineMatrix = this.RotationMatrix
+        affineMatrix.M11 <- affineMatrix.M11 * scale.X
+        affineMatrix.M12 <- affineMatrix.M12 * scale.X
+        affineMatrix.M13 <- affineMatrix.M13 * scale.X
+        affineMatrix.M21 <- affineMatrix.M21 * scale.Y
+        affineMatrix.M22 <- affineMatrix.M22 * scale.Y
+        affineMatrix.M23 <- affineMatrix.M23 * scale.Y
+        affineMatrix.M31 <- affineMatrix.M31 * scale.Z
+        affineMatrix.M32 <- affineMatrix.M32 * scale.Z
+        affineMatrix.M33 <- affineMatrix.M33 * scale.Z
+        affineMatrix.Translation <- this.Position_
+        affineMatrix
+
+    member this.AffineMatrixOffset =
+        let scale = this.Scale_
         let sizeScaled = this.Size_ * scale
         let positionUnscaledOffset = if not this.Centered then this.Offset_ + v3UncenteredOffset else this.Offset_
         let mutable affineMatrix = this.RotationMatrix
