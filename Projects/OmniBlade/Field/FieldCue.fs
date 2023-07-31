@@ -6,6 +6,7 @@ open System
 open Prime
 open Nu
 open OmniBlade
+open OmniBlade.CueSystem
 
 type FieldCueSignal =
     | TryBattle of BattleType * Advent Set
@@ -228,7 +229,7 @@ module FieldCue =
             | AvatarTarget ->
                 let time = field.UpdateTime
                 let localTime = time - startTime
-                let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
+                let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
                 let totalTime = int64 (dec stepCount)
                 if localTime < totalTime then
                     let field = Field.updateAvatar (Avatar.updateBottom ((+) step)) field
@@ -248,7 +249,7 @@ module FieldCue =
                     let time = field.UpdateTime
                     let prop = Field.getProp propId field
                     let localTime = time - startTime
-                    let (step, stepCount) = MoveType.computeStepAndStepCount translation moveType
+                    let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
                     let finishTime = int64 (dec stepCount)
                     if localTime < finishTime then
                         let bounds = prop.Perimeter.Translate step

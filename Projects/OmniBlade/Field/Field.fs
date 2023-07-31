@@ -50,9 +50,9 @@ module Field =
               Inventory_ : Inventory
               Options_ : Options
               Menu_ : Menu
-              Definitions_ : CueDefinitions
-              DefinitionsOriginal_ : CueDefinitions
-              Cue_ : Cue
+              Definitions_ : CueSystem.CueDefinitions
+              DefinitionsOriginal_ : CueSystem.CueDefinitions
+              Cue_ : CueSystem.Cue
               ScreenTransitioning_ : bool
               FieldTransitionOpt_ : FieldTransition option
               ShopOpt_ : Shop option
@@ -574,7 +574,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
-          Cue_ = Cue.Fin
+          Cue_ = CueSystem.Fin
           ScreenTransitioning_ = false
           FieldTransitionOpt_ = None
           ShopOpt_ = None
@@ -603,7 +603,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
-          Cue_ = Cue.Fin
+          Cue_ = CueSystem.Fin
           ScreenTransitioning_ = false
           FieldTransitionOpt_ = None
           ShopOpt_ = None

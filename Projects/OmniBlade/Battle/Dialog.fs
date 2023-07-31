@@ -15,7 +15,7 @@ type DialogForm =
 type [<SymbolicExpansion>] Dialog =
     { DialogForm : DialogForm
       DialogTokenized : string
-      DialogPromptOpt : ((string * Cue) * (string * Cue)) option
+      DialogPromptOpt : ((string * CueSystem.Cue) * (string * CueSystem.Cue)) option
       DialogBattleOpt : (BattleType * Advent Set) option
       DialogProgress : int
       DialogPage : int }

@@ -160,8 +160,8 @@ module FieldDispatcher =
         static let interactNpc branches requirements (prop : Prop) (field : Field) =
             if field.Advents.IsSupersetOf requirements then
                 let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
-                let branchesFiltered = branches |> List.choose (fun branch -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
-                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> Dialog ("...", false)
+                let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
+                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
                 let field = Field.updateCue (constant branchCue) field
                 withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
             else just field
@@ -211,7 +211,7 @@ module FieldDispatcher =
                 let fieldCueSignals = List.map cast cueSignals
                 let field =
                     match cue with
-                    | Cue.Fin -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
+                    | CueSystem.Fin -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
                     | _ -> Field.updateDefinitions (constant definitions) field
                 let field = Field.updateCue (constant cue) field
                 let signals =
@@ -274,7 +274,7 @@ module FieldDispatcher =
                 let (signals : Signal list, field) =
                     if  world.Advancing &&
                         field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                        CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
@@ -639,7 +639,7 @@ module FieldDispatcher =
                             | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
                             | Sensor _ -> just field
                             | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
-                            | Npc (_, _, cue, requirements) -> interactNpc [{ Cue = cue; Requirements = Set.empty }] requirements prop field
+                            | Npc (_, _, cue, requirements) -> interactNpc [{ CueSystem.Cue = cue; CueSystem.Requirements = Set.empty }] requirements prop field
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
                             | Seal (_, cue, _) -> interactSeal cue field
@@ -657,7 +657,7 @@ module FieldDispatcher =
             | ProcessKeyInput ->
                 if  not (World.getSelectedScreenTransitioning world) &&
                     field.Menu.MenuState = MenuClosed &&
-                    Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                    CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&
                     Option.isNone field.ShopOpt &&
                     Option.isNone field.FieldTransitionOpt &&
@@ -684,7 +684,7 @@ module FieldDispatcher =
             | ProcessTouchInput position ->
                 if  not (World.getSelectedScreenTransitioning world) &&
                     field.Menu.MenuState = MenuClosed &&
-                    Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                    CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&
                     Option.isNone field.ShopOpt &&
                     Option.isNone field.FieldTransitionOpt &&
@@ -808,7 +808,7 @@ module FieldDispatcher =
                         [Entity.PropPlus := PropPlus.make prop field.Advents field.Avatar.Bottom]
 
                  // spirit orb
-                 if Field.hasEncounters field && Cue.isFin field.Cue then
+                 if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue then
                     Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                         [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                          Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; ShowUnopenedChests = Field.getShowUnopenedChests field; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
@@ -897,7 +897,7 @@ module FieldDispatcher =
                      Entity.Text == "Menu"
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
-                        Cue.notInterrupting field.Inventory field.Advents field.Cue &&
+                        CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
@@ -911,7 +911,7 @@ module FieldDispatcher =
                      Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
-                        (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
+                        (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
@@ -928,7 +928,7 @@ module FieldDispatcher =
                      Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
-                        (Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
+                        (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
