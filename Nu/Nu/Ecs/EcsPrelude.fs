@@ -44,6 +44,7 @@ type Store =
         abstract ZeroItem : int -> unit
         abstract Grow : unit -> unit
         abstract Read : int -> int -> FileStream -> unit
+        abstract Write : int -> int -> FileStream -> unit
         end
 
 /// Stores components for an Ecs.
@@ -128,6 +129,7 @@ type Store<'c when 'c: struct and 'c :> 'c Component>(name) =
         member this.ZeroItem index = this.ZeroItem index
         member this.Grow () = this.Grow ()
         member this.Read index count stream = this.Read index count stream
+        member this.Write index count stream = this.Write index count stream
 
 /// A delegate for interfacing with Ecs components.
 type Statement<'c, 's when
