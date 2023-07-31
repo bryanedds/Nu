@@ -583,6 +583,9 @@ module WorldModuleEntity =
 
         static member inline internal getEntityAffineMatrix entity world =
             (World.getEntityState entity world).Transform.AffineMatrix
+
+        static member inline internal getEntityAffineMatrixOffset entity world =
+            (World.getEntityState entity world).Transform.AffineMatrixOffset
         
         static member internal getEntityAffineMatrixLocal entity world =
             let entityState = World.getEntityState entity world

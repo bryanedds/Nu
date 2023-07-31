@@ -45,7 +45,7 @@ and [<NoEquality; NoComparison>] SurfaceDescriptor =
       TexCoordses : Vector2 array
       Normals : Vector3 array
       Indices : int array
-      AffineMatrix : Matrix4x4
+      ModelMatrix : Matrix4x4
       Bounds : Box3
       MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
       AlbedoImage : Image AssetTag
@@ -720,7 +720,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, indexData, surfaceDescriptor.Bounds)
 
                 // create surface
-                let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.AffineMatrix, surfaceDescriptor.Bounds, material, geometry)
+                let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.ModelMatrix, surfaceDescriptor.Bounds, material, geometry)
                 surfaces.Add surface
 
             // create static model
@@ -766,7 +766,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeBillboardSurface
         (absolute,
          eyeRotation : Quaternion,
-         affineMatrix : Matrix4x4,
+         modelMatrix : Matrix4x4,
          insetOpt : Box2 option,
          albedoMetadata : OpenGL.Texture.TextureMetadata,
          orientUp,
@@ -791,10 +791,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
                 Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
             else Matrix4x4.CreateFromQuaternion -eyeRotation
-        let mutable affineRotation = affineMatrix
+        let mutable affineRotation = modelMatrix
         affineRotation.Translation <- v3Zero
-        let mutable billboardMatrix = affineMatrix * billboardRotation
-        billboardMatrix.Translation <- affineMatrix.Translation
+        let mutable billboardMatrix = modelMatrix * billboardRotation
+        billboardMatrix.Translation <- modelMatrix.Translation
         match renderType with
         | DeferredRenderType ->
             if absolute then
