@@ -7,6 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 open OmniBlade
+open OmniBlade.BattleInteractionSystem
 
 type BattleSpeed =
     | SwiftSpeed
@@ -422,7 +423,7 @@ module Battle =
                     | Defend -> RegularMenu
                     | Tech _ -> TechMenu
                     | Consume _ -> ItemMenu
-                    | Wound -> failwithumf ()
+                    | ActionType.Wound -> failwithumf ()
                 Character.updateCharacterInputState (constant inputState) character
             | None -> character)
             characterIndex
@@ -454,7 +455,7 @@ module Battle =
         if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
             let (x, y) = (Gen.random1 w, Gen.random1 h)
-            match Data.Value.Characters.TryFind (Enemy enemy) with
+            match Data.Value.Characters.TryFind (CharacterType.Enemy enemy) with
             | Some characterData ->
                 match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
                 | Some archetypeData ->
@@ -557,6 +558,98 @@ module Battle =
                 battle
                 spawn
         battle
+
+    let rec evalFightAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
+        match affectType with
+        | BattleAffectType.Physical -> true
+        | HpLessThanOrEqual ceiling -> single target.HitPointsMax / single target.HitPoints <= ceiling
+        | HpGreaterThanOrEqual floor -> single target.HitPointsMax / single target.HitPoints >= floor
+        | TpLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
+        | TpGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
+        | OneEnemyLeft ->
+            let enemies = if observer.Ally then getEnemies battle else getAllies battle
+            enemies.Count = 1
+        | Wound -> target.HitPoints <= 0
+        | Random chance -> Gen.randomf < chance
+        | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
+        | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
+        | _ -> false
+
+    let rec evalFightTargetType targetType (source : Character) (target : Character) (observer : Character) battle =
+        match targetType with
+        | Self ->
+            observer = target
+        | Other ->
+            observer <> target
+        | Ally ->
+            let allies = if observer.Ally then getAllies battle else getEnemies battle
+            Map.containsKey target.CharacterIndex allies
+        | OtherAlly ->
+            let allies = if observer.Ally then getAllies battle else getEnemies battle
+            observer <> target && Map.containsKey target.CharacterIndex allies
+        | OtherEnemy | Enemy ->
+            let enemies = if observer.Ally then getEnemies battle else getAllies battle
+            Map.containsKey target.CharacterIndex enemies
+        | BattleTargetType.Any targetTypes -> List.exists (fun targetType -> evalFightTargetType targetType source target observer battle) targetTypes
+        | BattleTargetType.All targetTypes -> List.forall (fun targetType -> evalFightTargetType targetType source target observer battle) targetTypes
+
+    let evalFightInteractions4 (source : Character) (target : Character) (observer : Character) battle =
+        List.fold (fun consequences interaction ->
+            let condition = interaction.BattleCondition
+            let consequences' = interaction.BattleConsequences
+            let satisfied =
+                match condition with
+                | WhenOnlySurvivor ->
+                    let allies = if target.Ally then getAllies battle else getEnemies battle
+                    observer = target && allies.Count < 2
+                | WhenOnlyTypeSurviving ->
+                    let allies = if target.Ally then getAllies battle else getEnemies battle
+                    observer = target &&
+                    Seq.filter (fun (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType && ally.HitPoints > 0) allies.Values |>
+                    Seq.length = 1
+                | WhenTargetAffected (affectType, targetType) ->
+                    evalFightAffectType affectType source target observer battle &&
+                    evalFightTargetType targetType source target observer battle
+            if satisfied then consequences' @ consequences else consequences)
+            [] target.Interactions
+
+    let evalFightInteractions (source : Character) (target : Character) battle =
+        let characters = getCharacters battle
+        Seq.fold (fun consequences observer ->
+            let consequences' = evalFightInteractions4 source target observer battle
+            (source, target, observer, consequences') :: consequences)
+            [] characters.Values
+
+    let evalConsequnce (source : Character) (target : Character) (observer : Character) consequence battle =
+        match consequence with
+        | OrbFills amount -> battle
+        | AddVulnerability vulnerabilityType -> battle
+        | RemoveVulnerability vulnerabilityState -> battle
+        | AddStatus statusType -> battle
+        | RemoveStatus statusType -> battle
+        | CounterAttack -> battle
+        | CounterTech techType -> battle
+        | CounterItem itemType -> battle
+        | PilferGold gold -> battle
+        | PilferItem item -> battle
+        | RetargetSelfToCurrentActingCharacter -> battle
+        | RetargetAlliesToCurrentActingCharacter -> battle
+        | RetargetAlliesToOwnCurrentTarget -> battle
+        | ChangeActionSelf action -> battle
+        | ChangeActionAllies action -> battle
+        | Duplicate -> battle
+        | Spawn (enemyType, enemyCount) -> battle
+        | Replace enemyType -> battle
+        | Dialog text -> battle
+        | AddBattleInteraction _ -> battle
+        | ClearBattleInteractions _ -> battle
+
+    let evalConsequences consequenceses battle =
+        List.fold (fun battle (source, target, observer, consequences) ->
+            List.fold (fun battle consequence ->
+                evalConsequnce source target observer consequence battle)
+                battle consequences)
+            battle consequenceses
 
     let makeFromParty inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData world =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies

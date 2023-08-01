@@ -127,9 +127,12 @@ module BattleDispatcher =
                                 let battle = Battle.finishCharacterAction sourceIndex battle
                                 let battle =
                                     if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                        Battle.shouldCounter sourceIndex targetIndex battle
-                                    then Battle.counterAttack sourceIndex targetIndex battle
-                                    else battle
+                                        Battle.shouldCounter sourceIndex targetIndex battle then
+                                        Battle.counterAttack sourceIndex targetIndex battle
+                                    else
+                                        let consequences = Battle.evalFightInteractions source target battle
+                                        let battle = Battle.evalConsequences consequences battle
+                                        battle
                                 just battle
                             else
                                 let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
