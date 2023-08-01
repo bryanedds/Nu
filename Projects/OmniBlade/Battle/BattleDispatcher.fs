@@ -8,6 +8,7 @@ open Prime
 open Nu
 open Nu.Declarative
 open OmniBlade
+open OmniBlade.BattleInteractionSystem
 
 [<AutoOpen>]
 module BattleDispatcher =
@@ -109,7 +110,7 @@ module BattleDispatcher =
                                 withSignal playHit battle
                             else just (Battle.abortCharacterAction time sourceIndex battle)
                         | 15L ->
-                            let damage = Battle.evalAttack Physical sourceIndex targetIndex battle
+                            let damage = Battle.evalAttack EffectType.Physical sourceIndex targetIndex battle
                             let battle = Battle.updateCharacterHitPoints false false -damage targetIndex battle
                             let battle = Battle.animateCharacter time DamageAnimation targetIndex battle
                             let battle =
@@ -126,7 +127,7 @@ module BattleDispatcher =
                                 let battle = Battle.animationCharacterPoise time targetIndex battle
                                 let battle = Battle.finishCharacterAction sourceIndex battle
                                 let battle =
-                                    if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
+                                    if  (match source.CharacterType with CharacterType.Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
                                         Battle.shouldCounter sourceIndex targetIndex battle then
                                         Battle.counterAttack sourceIndex targetIndex battle
                                     else
@@ -135,7 +136,7 @@ module BattleDispatcher =
                                         battle
                                 just battle
                             else
-                                let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
+                                let woundCommand = CurrentCommand.make time (ActionCommand.make ActionType.Wound sourceIndex (Some targetIndex) None)
                                 let battle = Battle.updateCurrentCommandOpt (constant (Some woundCommand)) battle
                                 let battle = Battle.animationCharacterPoise time sourceIndex battle
                                 let battle = Battle.finishCharacterAction sourceIndex battle
@@ -451,7 +452,7 @@ module BattleDispatcher =
                                             let sigs = if hitPointsChange <> 0 then signal (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs
                                             let (battle, sigs) =
                                                 if wounded then
-                                                    let woundCommand = ActionCommand.make Wound sourceIndex (Some characterIndex)
+                                                    let woundCommand = ActionCommand.make ActionType.Wound sourceIndex (Some characterIndex) None
                                                     let battle = Battle.prependActionCommand woundCommand battle
                                                     (battle, sigs)
                                                 else
@@ -480,6 +481,81 @@ module BattleDispatcher =
                     | (_, _) -> just (Battle.abortCharacterAction time sourceIndex battle)
                 | None -> just (Battle.abortCharacterAction time sourceIndex battle)
             | None -> just (Battle.abortCharacterAction time sourceIndex battle)
+
+        static let advanceConsequence source targetOpt observerOpt consequence time localTime battle =
+            match observerOpt with
+            | Some observer ->
+                match consequence with
+                | Charge chargeAmount ->
+                    let battle = Battle.tryChargeCharacter chargeAmount observer battle
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | AddVulnerability vulnerabilityType ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | RemoveVulnerability vulnerabilityState ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | AddStatus statusType ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | RemoveStatus statusType ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | CounterAttack ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | CounterTech techType ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | CounterItem itemType ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | PilferGold gold ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | PilferItem item ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | RetargetSelfToCurrentActingCharacter ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | RetargetAlliesToCurrentActingCharacter ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | RetargetAlliesToOwnCurrentTarget ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | ChangeAction action ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | ChangeAllyActions action ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | ChangeOtherAllyActions action ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | Duplicate ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | Spawn (enemyType, enemyCount) ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | Replace enemyType ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | Dialog text ->
+                    let dialog = Dialog.make DialogThin text
+                    let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | AddBattleInteraction interaction ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | ClearBattleInteractions ->
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+            | None -> battle |> Battle.updateCurrentCommandOpt (constant None) |> just
 
         static let rec advanceWound targetIndexOpt time battle =
             match targetIndexOpt with
@@ -561,25 +637,16 @@ module BattleDispatcher =
 
         and advanceCurrentCommand time currentCommand battle =
             let localTime = time - currentCommand.StartTime
+            let source = currentCommand.ActionCommand.Source
+            let targetOpt = currentCommand.ActionCommand.TargetOpt
+            let observerOpt = currentCommand.ActionCommand.ObserverOpt
             match currentCommand.ActionCommand.Action with
-            | Attack ->
-                let source = currentCommand.ActionCommand.Source
-                let targetOpt = currentCommand.ActionCommand.TargetOpt
-                advanceAttack source targetOpt time localTime battle
-            | Defend ->
-                let source = currentCommand.ActionCommand.Source
-                advanceDefend source time localTime battle
-            | Tech techType ->
-                let source = currentCommand.ActionCommand.Source
-                let targetOpt = currentCommand.ActionCommand.TargetOpt
-                advanceTech techType source targetOpt time localTime battle
-            | Consume consumable ->
-                let source = currentCommand.ActionCommand.Source
-                let targetOpt = currentCommand.ActionCommand.TargetOpt
-                advanceConsume consumable source targetOpt time localTime battle
-            | Wound ->
-                let targetOpt = currentCommand.ActionCommand.TargetOpt
-                advanceWound targetOpt time battle
+            | Attack -> advanceAttack source targetOpt time localTime battle
+            | Defend -> advanceDefend source time localTime battle
+            | Tech techType -> advanceTech techType source targetOpt time localTime battle
+            | Consume consumable -> advanceConsume consumable source targetOpt time localTime battle
+            | Consequence consequence -> advanceConsequence source targetOpt observerOpt consequence time localTime battle
+            | ActionType.Wound -> advanceWound targetOpt time battle
 
         and advanceNextCommand time nextCommand futureCommands battle =
             let command = CurrentCommand.make time nextCommand
@@ -612,8 +679,13 @@ module BattleDispatcher =
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         else battle
                     | (false, _) -> battle
-                | Wound ->
-                    Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                | Consequence _ ->
+                    if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
+                        let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                        Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                    else battle
+                | ActionType.Wound -> Battle.updateCurrentCommandOpt (constant (Some command)) battle
             let battle = Battle.updateActionCommands (constant futureCommands) battle
             advanceBattle time battle
 
@@ -637,8 +709,8 @@ module BattleDispatcher =
                             | Some autoBattle ->
                                 let actionCommand =
                                     match autoBattle.AutoTechOpt with
-                                    | Some tech -> { Action = Tech tech; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
-                                    | None -> { Action = Attack; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
+                                    | Some tech -> ActionCommand.make (Tech tech) enemyIndex (Some autoBattle.AutoTarget) None
+                                    | None -> ActionCommand.make Attack enemyIndex (Some autoBattle.AutoTarget) None
                                 Battle.appendActionCommand actionCommand battle
                             | None -> battle    
                         let battle = Battle.resetCharacterActionTime enemyIndex battle
@@ -833,7 +905,7 @@ module BattleDispatcher =
                         Battle.undefendCharacter characterIndex
                     | "Defend" ->
                         let battle = Battle.updateCharacterInputState (constant NoInput) characterIndex battle
-                        let command = ActionCommand.make Defend characterIndex None
+                        let command = ActionCommand.make Defend characterIndex None None
                         let battle = Battle.appendActionCommand command battle
                         battle
                     | "Tech" ->
