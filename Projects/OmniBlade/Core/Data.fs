@@ -133,6 +133,19 @@ type [<CustomEquality; CustomComparison>] StatusType =
     //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequel
     //| Provoke of CharacterIndex - maybe in the sequel
 
+    static member debuff this =
+        match this with
+        | Poison -> true
+        | Silence -> true
+        | Sleep -> true
+        | Confuse -> true
+        | Curse -> true
+        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> true
+        | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> false
+
+    static member buff this =
+        not (StatusType.debuff this)
+
     static member randomizeWeak this =
         match this with
         | Poison -> Gen.random1 2 = 0
@@ -673,16 +686,17 @@ module BattleInteractionSystem =
     type BattleAffectType =
         | Physical
         | Magical
-        | Affinity
+        | Affinity of AffinityType
         | Item
         | OrbEmptied
         | OrbFilled
         | Cancelled
+        | Uncancelled
         | Debuffed
         | Buffed
-        | OneEnemyLeft
-        | Wound
+        | Wounded
         | Random of single
+        | OneEnemyLeft
         | HpLessThanOrEqual of single
         | HpGreaterThanOrEqual of single
         | TpLessThanOrEqual of single
