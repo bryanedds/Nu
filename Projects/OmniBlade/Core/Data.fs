@@ -81,10 +81,6 @@ type CharacterIndex =
         | AllyIndex i -> "Ally+" + scstring i
         | EnemyIndex i -> "Enemy+" + scstring i
 
-type EffectType =
-    | Physical
-    | Magical
-
 type AffinityType =
     | Fire
     | Ice
@@ -191,6 +187,44 @@ type [<CustomEquality; CustomComparison>] StatusType =
 
     override this.GetHashCode () =
         StatusType.enumerate this
+
+type [<CustomEquality; CustomComparison>] VulnerabilityType =
+    | Physical of single
+    | Magical of single
+    | Affinity of single * AffinityType
+
+    static member enumerate this =
+        match this with
+        | Physical _ -> 0
+        | Magical _ -> 1
+        | Affinity (_, affinity)-> 2 &&& (hash affinity <<< 2)
+
+    static member compare this that =
+        compare
+            (VulnerabilityType.enumerate this)
+            (VulnerabilityType.enumerate that)
+
+    interface VulnerabilityType IComparable with
+        member this.CompareTo that =
+            VulnerabilityType.compare this that
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? VulnerabilityType as that -> (this :> VulnerabilityType IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+    override this.Equals that =
+        match that with
+        | :? VulnerabilityType as that -> VulnerabilityType.enumerate this = VulnerabilityType.enumerate that
+        | _ -> false
+
+    override this.GetHashCode () =
+        VulnerabilityType.enumerate this
+
+type EffectType =
+    | Physical
+    | Magical
 
 type AimType =
     | EnemyAim of bool // healthy (N/A)
@@ -630,57 +664,47 @@ module CueSystem =
 
 module BattleInteractionSystem =
 
-    type BattleTarget =
+    type BattleTargetType =
         | Self
+        | Other
         | Ally
+        | OtherAlly
         | Enemy
-        | Any of BattleTarget list
-        | All of BattleTarget list
+        | OtherEnemy // same as Enemy, but allows for typos when switching from other ally to enemy
+        | Any of BattleTargetType list
+        | All of BattleTargetType list
 
-    type BattleAffect =
+    type BattleAffectType =
         | Physical
         | Magical
-        | Elemental
+        | Affinity
         | Item
         | OrbEmptied
         | OrbFilled
         | Cancelled
         | Debuffed
         | Buffed
+        | OneEnemyLeft
+        | Wound
+        | Random of single
         | HpLessThanOrEqual of single
         | HpGreaterThanOrEqual of single
-        | MpLessThanOrEqual of single
-        | MpGreaterThanOrEqual of single
-        | Wound
-        | Any of BattleAffect list
-        | All of BattleAffect list
+        | TpLessThanOrEqual of single
+        | TpGreaterThanOrEqual of single
+        | Any of BattleAffectType list
+        | All of BattleAffectType list
 
     type BattleCondition =
         | WhenOnlySurvivor
         | WhenOnlyTypeSurviving
-        | WhenOnlyOneEnemySurviving
-        | WhenTargetAffectedEver of BattleTarget * BattleAffect
-        | WhenTargetAffectedImmediate of BattleTarget * BattleAffect
-        | Not of BattleCondition
-
-    type BattleVulnerabilityType =
-        | Physical
-        | Magical
-        | Elemental
-
-    type BattleVulnerabilityState =
-        | Vulnerable
-        | Resistant
-        | Invulnerable
+        | WhenTargetAffected of BattleAffectType * BattleTargetType
 
     type BattleConsequence =
-        | OrbAppears
-        | OrbDissappears
         | OrbFills of single // may be negative to empty
-        | AddVulnerability of BattleVulnerabilityState * BattleVulnerabilityType
-        | RemoveVulnerability of BattleVulnerabilityState
-        | ApplyStatus of StatusType
-        | RemoveStatus of StatureType
+        | AddVulnerability of VulnerabilityType
+        | RemoveVulnerability of VulnerabilityType
+        | AddStatus of StatusType
+        | RemoveStatus of StatusType
         | CounterAttack
         | CounterTech of TechType
         | CounterItem of ItemType
@@ -695,9 +719,8 @@ module BattleInteractionSystem =
         | Spawn of EnemyType * int
         | Replace of EnemyType
         | Dialog of string
-        // TODO: consider self-modifying interactions -
-        //| AddBattleInteraction of BattleInteraction
-        //| RemoveBattleInteraction of BattleInteraction
+        | AddBattleInteraction of BattleInteraction
+        | ClearBattleInteractions
 
     and BattleInteraction =
         { BattleCondition : BattleCondition
@@ -853,6 +876,8 @@ type CharacterData =
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list
       TechProbabilityOpt : single option
+      Vulnerabilities : VulnerabilityType Set
+      Interactions : BattleInteractionSystem.BattleInteraction list
       GoldScalar : single
       ExpScalar : single
       Description : string }

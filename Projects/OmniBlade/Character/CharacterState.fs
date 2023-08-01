@@ -25,6 +25,8 @@ type [<SymbolicExpansion>] CharacterState =
       Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
       Charging : bool
       TechProbabilityOpt : single option
+      Vulnerabilities : VulnerabilityType Set
+      Interactions : BattleInteractionSystem.BattleInteraction list
       GoldPrize : int
       ExpPrize : int
       ItemPrizeOpt : ItemType option }
@@ -97,6 +99,7 @@ type [<SymbolicExpansion>] CharacterState =
         let level = Algorithms.expPointsToLevel expPoints
         let enchantments = Algorithms.enchantments accessories archetypeType level
         let statuses = Map.ofSeqBy (fun status -> (status, Single.MaxValue)) enchantments
+        let vulnerabilities = characterData.Vulnerabilities
         let characterState =
             { ArchetypeType = archetypeType
               ExpPoints = expPoints
@@ -110,6 +113,8 @@ type [<SymbolicExpansion>] CharacterState =
               Defending = false
               Charging = false
               TechProbabilityOpt = characterData.TechProbabilityOpt
+              Vulnerabilities = vulnerabilities
+              Interactions = characterData.Interactions
               GoldPrize = Algorithms.goldPrize archetypeType characterData.GoldScalar level
               ExpPrize = Algorithms.expPrize archetypeType characterData.ExpScalar level
               ItemPrizeOpt = Algorithms.itemPrizeOpt archetypeType level }
@@ -129,6 +134,8 @@ type [<SymbolicExpansion>] CharacterState =
               Defending = false
               Charging = false
               TechProbabilityOpt = None
+              Vulnerabilities = Set.empty
+              Interactions = []
               GoldPrize = 0
               ExpPrize = 0
               ItemPrizeOpt = None }
