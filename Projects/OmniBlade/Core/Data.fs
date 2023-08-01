@@ -284,13 +284,6 @@ type TechType =
         | ConjureIfrit -> true
         | _ -> false
 
-type ActionType =
-    | Attack
-    | Defend
-    | Consume of ConsumableType
-    | Tech of TechType
-    | Wound
-
 type StatureType =
     | SmallStature
     | NormalStature
@@ -529,6 +522,9 @@ type SpawnType =
     { EnemyType : EnemyType
       SpawnEffectType : SpawnEffectType }
 
+type ChangeActionType =
+    | Swarm of CharacterIndex
+
 type SpiritType =
     | WeakSpirit
     | NormalSpirit
@@ -700,7 +696,7 @@ module BattleInteractionSystem =
         | WhenTargetAffected of BattleAffectType * BattleTargetType
 
     type BattleConsequence =
-        | OrbFills of single // may be negative to empty
+        | Charge of int // may be negative to reduce
         | AddVulnerability of VulnerabilityType
         | RemoveVulnerability of VulnerabilityType
         | AddStatus of StatusType
@@ -713,8 +709,9 @@ module BattleInteractionSystem =
         | RetargetSelfToCurrentActingCharacter
         | RetargetAlliesToCurrentActingCharacter
         | RetargetAlliesToOwnCurrentTarget
-        | ChangeActionSelf of ActionType
-        | ChangeActionAllies of ActionType
+        | ChangeAction of ChangeActionType
+        | ChangeAllyActions of ChangeActionType
+        | ChangeOtherAllyActions of ChangeActionType
         | Duplicate
         | Spawn of EnemyType * int
         | Replace of EnemyType
@@ -725,6 +722,14 @@ module BattleInteractionSystem =
     and BattleInteraction =
         { BattleCondition : BattleCondition
           BattleConsequences : BattleConsequence list }
+
+type ActionType =
+    | Attack
+    | Defend
+    | Consume of ConsumableType
+    | Tech of TechType
+    | Consequence of BattleInteractionSystem.BattleConsequence
+    | Wound
 
 [<RequireQualifiedAccess>]
 module OmniSeedState =

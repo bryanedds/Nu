@@ -24,12 +24,14 @@ type BattleState =
 type ActionCommand =
     { Action : ActionType
       Source : CharacterIndex
-      TargetOpt : CharacterIndex option }
+      TargetOpt : CharacterIndex option
+      ObserverOpt : CharacterIndex option }
 
-    static member make action source targetOpt =
+    static member make action source targetOpt observerOpt =
         { Action = action
           Source = source
-          TargetOpt = targetOpt }
+          TargetOpt = targetOpt
+          ObserverOpt = observerOpt }
 
 type CurrentCommand =
     { StartTime : int64
@@ -354,7 +356,7 @@ module Battle =
         { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
 
     let counterAttack sourceIndex targetIndex battle =
-        let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
+        let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex) None
         prependActionCommand attackCommand battle
 
     let advanceCharacterConjureCharge characterIndex battle =
@@ -394,6 +396,15 @@ module Battle =
             Triple.prepend techData.TechCost (Character.evalTech techData source target characters)
         | None -> (0, None, Map.empty)
 
+    let tryChargeCharacter chargeAmount characterIndex battle =
+        updateCharacter
+            (Character.updateTechChargeOpt
+                (function
+                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, max 0 (min Constants.Battle.ChargeMax (chargeAmount + chargeTime)), techType)
+                 | None -> None))
+            characterIndex
+            battle
+
     let tryRetargetIfNeeded affectingWounded targetIndexOpt battle =
         match targetIndexOpt with
         | Some targetIndex ->
@@ -423,7 +434,7 @@ module Battle =
                     | Defend -> RegularMenu
                     | Tech _ -> TechMenu
                     | Consume _ -> ItemMenu
-                    | ActionType.Wound -> failwithumf ()
+                    | Consequence _ | ActionType.Wound -> failwithumf ()
                 Character.updateCharacterInputState (constant inputState) character
             | None -> character)
             characterIndex
@@ -433,7 +444,7 @@ module Battle =
         let source = getCharacter sourceIndex battle
         match Character.getActionTypeOpt source with
         | Some actionType ->
-            let command = ActionCommand.make actionType sourceIndex (Some targetIndex)
+            let command = ActionCommand.make actionType sourceIndex (Some targetIndex) None
             appendActionCommand command battle
         | None -> battle
 
@@ -620,34 +631,13 @@ module Battle =
             (source, target, observer, consequences') :: consequences)
             [] characters.Values
 
-    let evalConsequnce (source : Character) (target : Character) (observer : Character) consequence battle =
-        match consequence with
-        | OrbFills amount -> battle
-        | AddVulnerability vulnerabilityType -> battle
-        | RemoveVulnerability vulnerabilityState -> battle
-        | AddStatus statusType -> battle
-        | RemoveStatus statusType -> battle
-        | CounterAttack -> battle
-        | CounterTech techType -> battle
-        | CounterItem itemType -> battle
-        | PilferGold gold -> battle
-        | PilferItem item -> battle
-        | RetargetSelfToCurrentActingCharacter -> battle
-        | RetargetAlliesToCurrentActingCharacter -> battle
-        | RetargetAlliesToOwnCurrentTarget -> battle
-        | ChangeActionSelf action -> battle
-        | ChangeActionAllies action -> battle
-        | Duplicate -> battle
-        | Spawn (enemyType, enemyCount) -> battle
-        | Replace enemyType -> battle
-        | Dialog text -> battle
-        | AddBattleInteraction _ -> battle
-        | ClearBattleInteractions _ -> battle
+    let evalConsequence (source : Character) (target : Character) (observer : Character) consequence battle =
+        appendActionCommand (ActionCommand.make (Consequence consequence) source.CharacterIndex (Some target.CharacterIndex) (Some observer.CharacterIndex)) battle
 
     let evalConsequences consequenceses battle =
         List.fold (fun battle (source, target, observer, consequences) ->
             List.fold (fun battle consequence ->
-                evalConsequnce source target observer consequence battle)
+                evalConsequence source target observer consequence battle)
                 battle consequences)
             battle consequenceses
 
