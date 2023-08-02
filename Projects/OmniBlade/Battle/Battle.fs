@@ -355,6 +355,15 @@ module Battle =
     let prependActionCommand command battle =
         { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
 
+    let chargeCharacter chargeAmount characterIndex battle =
+        updateCharacter
+            (Character.updateTechChargeOpt
+                (function
+                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, max 0 (min Constants.Battle.ChargeMax (chargeAmount + chargeTime)), techType)
+                 | None -> None))
+            characterIndex
+            battle
+
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex) None
         prependActionCommand attackCommand battle
@@ -395,15 +404,6 @@ module Battle =
             let characters = getCharacters battle
             Triple.prepend techData.TechCost (Character.evalTech techData source target characters)
         | None -> (0, None, Map.empty)
-
-    let tryChargeCharacter chargeAmount characterIndex battle =
-        updateCharacter
-            (Character.updateTechChargeOpt
-                (function
-                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, max 0 (min Constants.Battle.ChargeMax (chargeAmount + chargeTime)), techType)
-                 | None -> None))
-            characterIndex
-            battle
 
     let tryRetargetIfNeeded affectingWounded targetIndexOpt battle =
         match targetIndexOpt with

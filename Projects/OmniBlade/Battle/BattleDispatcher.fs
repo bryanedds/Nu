@@ -482,7 +482,7 @@ module BattleDispatcher =
             | Some observer ->
                 match consequence with
                 | Charge chargeAmount ->
-                    let battle = Battle.tryChargeCharacter chargeAmount observer battle
+                    let battle = Battle.chargeCharacter chargeAmount observer battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AddVulnerability vulnerabilityType ->
@@ -647,6 +647,7 @@ module BattleDispatcher =
             let command = CurrentCommand.make time nextCommand
             let sourceIndex = command.ActionCommand.Source
             let targetIndexOpt = command.ActionCommand.TargetOpt
+            let observerIndexOpt = command.ActionCommand.ObserverOpt
             let source = Battle.getCharacter sourceIndex battle
             let battle =
                 match command.ActionCommand.Action with
@@ -675,11 +676,14 @@ module BattleDispatcher =
                         else battle
                     | (false, _) -> battle
                 | Consequence _ ->
-                    if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
-                        let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
-                        let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
-                        Battle.updateCurrentCommandOpt (constant (Some command)) battle
-                    else battle
+                    match observerIndexOpt with
+                    | Some observerIndex ->
+                        match Battle.tryGetCharacter observerIndex battle with
+                        | Some observer when observer.Healthy && not (Map.containsKey Sleep observer.Statuses) ->
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            Battle.updateCurrentCommandOpt (constant (Some command)) battle
+                        | Some _ | None -> battle
+                    | None -> battle
                 | Wound -> Battle.updateCurrentCommandOpt (constant (Some command)) battle
             let battle = Battle.updateActionCommands (constant futureCommands) battle
             advanceBattle time battle
