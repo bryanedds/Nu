@@ -271,6 +271,18 @@ module Battle =
     let applyCharacterStatuses added removed characterIndex battle =
         updateCharacter (Character.applyStatusChanges added removed) characterIndex battle
 
+    let applyCharacterVulnerabilities added removed characterIndex battle =
+        updateCharacter (Character.applyVulnerabilityChanges added removed) characterIndex battle
+
+    let chargeCharacter chargeAmount characterIndex battle =
+        updateCharacter
+            (Character.updateTechChargeOpt
+                (function
+                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, max 0 (min Constants.Battle.ChargeMax (chargeAmount + chargeTime)), techType)
+                 | None -> None))
+            characterIndex
+            battle
+
     let defendCharacter characterIndex battle =
         updateCharacter Character.defend characterIndex battle
 
@@ -360,15 +372,6 @@ module Battle =
 
     let prependActionCommand command battle =
         { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
-
-    let chargeCharacter chargeAmount characterIndex battle =
-        updateCharacter
-            (Character.updateTechChargeOpt
-                (function
-                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, max 0 (min Constants.Battle.ChargeMax (chargeAmount + chargeTime)), techType)
-                 | None -> None))
-            characterIndex
-            battle
 
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex) None
@@ -542,7 +545,7 @@ module Battle =
             Array.toList
         enemies
 
-    let spawnEnemies time (spawn : SpawnType list) battle =
+    let spawnEnemies time spawnTypes battle =
         let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
         let tile = v2 48.0f 48.0f
         let (w, h) = (10, 8)
@@ -573,7 +576,7 @@ module Battle =
                     tries <- inc tries
                 battle)
                 battle
-                spawn
+                spawnTypes
         battle
 
     let rec private evalSingleTargetType targetType (source : Character) (target : Character) (observer : Character) battle =

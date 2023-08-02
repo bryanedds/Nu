@@ -82,7 +82,7 @@ module FieldCue =
                     | Peric -> PericRecruited
                 let field = Field.recruit allyType field
                 let field = Field.updateAdvents (Set.add advent) field
-                let field = Field.updateInventory (Inventory.updateGold (fun gold -> gold - fee)) field
+                let field = Field.updateInventory (Inventory.removeGold fee) field
                 (Cue.Fin, definitions, withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
             else advance (Parallel [Dialog ("You don't have enough...", false); Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
 

@@ -477,39 +477,57 @@ module BattleDispatcher =
                 | None -> just (Battle.abortCharacterAction time sourceIndex battle)
             | Some _ | None -> just (Battle.abortCharacterAction time sourceIndex battle)
 
-        static let advanceConsequence source targetOpt observerOpt consequence time localTime battle =
-            match observerOpt with
-            | Some observer ->
+        static let advanceConsequence sourceIndex targetIndexOpt observerIndexOpt consequence time localTime battle =
+            match (targetIndexOpt, observerIndexOpt) with
+            | (Some targetIndex, Some observerIndex) ->
                 match consequence with
                 | Charge chargeAmount ->
-                    let battle = Battle.chargeCharacter chargeAmount observer battle
+                    let battle = Battle.chargeCharacter chargeAmount observerIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AddVulnerability vulnerabilityType ->
+                    let battle = Battle.applyCharacterVulnerabilities (Set.singleton vulnerabilityType) Set.empty observerIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | RemoveVulnerability vulnerabilityState ->
+                | RemoveVulnerability vulnerabilityType ->
+                    let battle = Battle.applyCharacterVulnerabilities Set.empty (Set.singleton vulnerabilityType) observerIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AddStatus statusType ->
+                    let battle = Battle.applyCharacterStatuses (Set.singleton statusType) Set.empty observerIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | RemoveStatus statusType ->
+                    let battle = Battle.applyCharacterStatuses Set.empty (Set.singleton statusType) observerIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | CounterAttack ->
+                    let battle = Battle.prependActionCommand (ActionCommand.make Attack observerIndex (Some sourceIndex) None) battle
+                    let battle = Battle.counterAttack observerIndex sourceIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | CounterTech techType ->
+                    let battle = Battle.prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some sourceIndex) None) battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | CounterItem itemType ->
+                | CounterConsumable consumableType ->
+                    let battle = Battle.prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some sourceIndex) None) battle
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | AssistTech techType ->
+                    let battle = Battle.prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some targetIndex) None) battle
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | AssistConsumable consumableType ->
+                    let battle = Battle.prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some targetIndex) None) battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | PilferGold gold ->
+                    let battle = Battle.updateInventory (Inventory.removeGold gold) battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | PilferItem item ->
+                | PilferConsumable consumableType ->
+                    let battle = Battle.updateInventory (Inventory.tryRemoveItem (Consumable consumableType) >> snd) battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | RetargetSelfToCurrentActingCharacter ->
@@ -531,9 +549,15 @@ module BattleDispatcher =
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | Duplicate ->
-                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                    just battle
-                | Spawn (enemyType, enemyCount) ->
+                    let observer = Battle.getCharacter observerIndex battle
+                    match observer.CharacterType with
+                    | Enemy enemyType ->
+                        let battle = Battle.spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize }] battle
+                        let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                        just battle
+                    | Ally _ -> just battle
+                | Spawn spawnTypes ->
+                    let battle = Battle.spawnEnemies time spawnTypes battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | Replace enemyType ->
@@ -550,7 +574,7 @@ module BattleDispatcher =
                 | ClearBattleInteractions ->
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-            | None -> battle |> Battle.updateCurrentCommandOpt (constant None) |> just
+            | (_, _) -> battle |> Battle.updateCurrentCommandOpt (constant None) |> just
 
         static let rec advanceWound targetIndexOpt time battle =
             match targetIndexOpt with
@@ -632,16 +656,16 @@ module BattleDispatcher =
 
         and advanceCurrentCommand time currentCommand battle =
             let localTime = time - currentCommand.StartTime
-            let source = currentCommand.ActionCommand.SourceIndex
-            let targetOpt = currentCommand.ActionCommand.TargetIndexOpt
-            let observerOpt = currentCommand.ActionCommand.ObserverIndexOpt
+            let sourceIndex = currentCommand.ActionCommand.SourceIndex
+            let targetIndexOpt = currentCommand.ActionCommand.TargetIndexOpt
+            let observerIndexOpt = currentCommand.ActionCommand.ObserverIndexOpt
             match currentCommand.ActionCommand.Action with
-            | Attack -> advanceAttack source targetOpt time localTime battle
-            | Defend -> advanceDefend source time localTime battle
-            | Tech techType -> advanceTech techType source targetOpt time localTime battle
-            | Consume consumable -> advanceConsume consumable source targetOpt time localTime battle
-            | Consequence consequence -> advanceConsequence source targetOpt observerOpt consequence time localTime battle
-            | Wound -> advanceWound targetOpt time battle
+            | Attack -> advanceAttack sourceIndex targetIndexOpt time localTime battle
+            | Defend -> advanceDefend sourceIndex time localTime battle
+            | Tech techType -> advanceTech techType sourceIndex targetIndexOpt time localTime battle
+            | Consume consumable -> advanceConsume consumable sourceIndex targetIndexOpt time localTime battle
+            | Consequence consequence -> advanceConsequence sourceIndex targetIndexOpt observerIndexOpt consequence time localTime battle
+            | Wound -> advanceWound targetIndexOpt time battle
 
         and advanceNextCommand time nextCommand futureCommands battle =
             let command = CurrentCommand.make time nextCommand
