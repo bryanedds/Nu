@@ -583,6 +583,7 @@ module Battle =
     let rec evalFightAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
         | Physical -> true
+        | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Wounded -> target.HitPoints <= 0
         | Random chance -> Gen.randomf < chance
         | OneEnemyLeft -> let enemies = if observer.Ally then getEnemies battle else getAllies battle in enemies.Count = 1
@@ -592,7 +593,6 @@ module Battle =
         | TpGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
         | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
-        | _ -> false
 
     let evalFightInteractions4 (source : Character) (target : Character) (observer : Character) battle =
         List.fold (fun consequences interaction ->
@@ -623,6 +623,7 @@ module Battle =
 
     let rec evalItemAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
+        | Physical | Magical | Affinity _ | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Item -> true
         | Wounded -> target.HitPoints <= 0
         | Random chance -> Gen.randomf < chance
@@ -633,7 +634,6 @@ module Battle =
         | TpGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
         | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
-        | _ -> false
 
     let evalItemInteractions4 (source : Character) (target : Character) (observer : Character) battle =
         List.fold (fun consequences interaction ->

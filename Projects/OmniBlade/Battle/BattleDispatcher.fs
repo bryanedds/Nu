@@ -859,6 +859,7 @@ module BattleDispatcher =
                 let world = entity.SetEffectDescriptor descriptor world
                 world)
                 screen world
+
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateEye
