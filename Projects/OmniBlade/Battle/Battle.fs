@@ -23,15 +23,15 @@ type BattleState =
 
 type ActionCommand =
     { Action : ActionType
-      Source : CharacterIndex
-      TargetOpt : CharacterIndex option
-      ObserverOpt : CharacterIndex option }
+      SourceIndex : CharacterIndex
+      TargetIndexOpt : CharacterIndex option
+      ObserverIndexOpt : CharacterIndex option }
 
-    static member make action source targetOpt observerOpt =
+    static member make action sourceIndex targetIndexOpt observerIndexOpt =
         { Action = action
-          Source = source
-          TargetOpt = targetOpt
-          ObserverOpt = observerOpt }
+          SourceIndex = sourceIndex
+          TargetIndexOpt = targetIndexOpt
+          ObserverIndexOpt = observerIndexOpt }
 
 type CurrentCommand =
     { StartTime : int64
@@ -113,6 +113,12 @@ module Battle =
 
     let getEnemiesWounded battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.Wounding | _ -> false) |> Map.ofSeq
+
+    let getFriendlies ally battle =
+        if ally then getAllies battle else getEnemies battle
+
+    let getUnfriendlies ally battle =
+        if ally then getEnemies battle else getAllies battle
 
     let getTargets aimType battle =
         match aimType with
@@ -347,7 +353,7 @@ module Battle =
 
     let characterAppendedActionCommand characterIndex battle =
         seq battle.ActionCommands_ |>
-        Seq.exists (fun command -> command.Source = characterIndex)
+        Seq.exists (fun command -> command.SourceIndex = characterIndex)
 
     let appendActionCommand command battle =
         { battle with ActionCommands_ = Queue.conj command battle.ActionCommands_ }
@@ -570,17 +576,17 @@ module Battle =
                 spawn
         battle
 
-    let rec evalSingleTargetType targetType (source : Character) (target : Character) (observer : Character) battle =
+    let rec private evalSingleTargetType targetType (source : Character) (target : Character) (observer : Character) battle =
         match targetType with
         | Self -> observer = target
         | Other -> observer <> target
-        | SelfOrFriendly -> let allies = if observer.Ally then getAllies battle else getEnemies battle in Map.containsKey target.CharacterIndex allies
-        | Friendly -> let allies = if observer.Ally then getAllies battle else getEnemies battle in observer <> target && Map.containsKey target.CharacterIndex allies
-        | Unfriendly -> let enemies = if observer.Ally then getEnemies battle else getAllies battle in Map.containsKey target.CharacterIndex enemies
+        | SelfOrFriendly -> let friendlies = getFriendlies observer.Ally battle in Map.containsKey target.CharacterIndex friendlies
+        | Friendly -> let friendlies = getFriendlies observer.Ally battle in observer <> target && Map.containsKey target.CharacterIndex friendlies
+        | Unfriendly -> let unfriendlies = getUnfriendlies observer.Ally battle in Map.containsKey target.CharacterIndex unfriendlies
         | BattleTargetType.Any targetTypes -> List.exists (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
         | BattleTargetType.All targetTypes -> List.forall (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
 
-    let rec evalFightAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
+    let rec private evalFightAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
         | Physical -> true
         | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
@@ -594,7 +600,7 @@ module Battle =
         | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
 
-    let evalFightInteractions4 (source : Character) (target : Character) (observer : Character) battle =
+    let private evalFightInteractions4 (source : Character) (target : Character) (observer : Character) battle =
         List.fold (fun consequences interaction ->
             let condition = interaction.BattleCondition
             let consequences' = interaction.BattleConsequences
@@ -614,14 +620,16 @@ module Battle =
             if satisfied then consequences' @ consequences else consequences)
             [] target.Interactions
 
-    let evalFightInteractions (source : Character) (target : Character) battle =
+    let evalFightInteractions sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.fold (fun consequences observer ->
+        Seq.fold (fun consequences (observerIndex, observer) ->
             let consequences' = evalFightInteractions4 source target observer battle
-            (source, target, observer, consequences') :: consequences)
-            [] characters.Values
+            (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
+            [] characters.Pairs
 
-    let rec evalItemAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
+    let rec private evalItemAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
         | Physical | Magical | Affinity _ | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Item -> true
@@ -635,7 +643,7 @@ module Battle =
         | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
 
-    let evalItemInteractions4 (source : Character) (target : Character) (observer : Character) battle =
+    let private evalItemInteractions4 (source : Character) (target : Character) (observer : Character) battle =
         List.fold (fun consequences interaction ->
             let condition = interaction.BattleCondition
             let consequences' = interaction.BattleConsequences
@@ -655,14 +663,16 @@ module Battle =
             if satisfied then consequences' @ consequences else consequences)
             [] target.Interactions
 
-    let evalItemInteractions (source : Character) (target : Character) battle =
+    let evalItemInteractions sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.fold (fun consequences observer ->
+        Seq.fold (fun consequences (observerIndex, observer) ->
             let consequences' = evalItemInteractions4 source target observer battle
-            (source, target, observer, consequences') :: consequences)
-            [] characters.Values
+            (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
+            [] characters.Pairs
 
-    let rec evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved (source : Character) (target : Character) (observer : Character) (battle : Battle) =
+    let rec private evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved (source : Character) (target : Character) (observer : Character) (battle : Battle) =
         match Data.Value.Techs.TryGetValue techType with
         | (true, tech) ->
             match affectType with
@@ -687,7 +697,7 @@ module Battle =
             | All affectTypes -> List.forall (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
         | (false, _) -> false
 
-    let evalTechInteractions4
+    let private evalTechInteractions4
         (source : Character)
         (target : Character)
         (observer : Character)
@@ -720,20 +730,22 @@ module Battle =
             if satisfied then consequences' @ consequences else consequences)
             [] target.Interactions
 
-    let evalTechInteractions source target techType techResults battle =
+    let evalTechInteractions sourceIndex targetIndex techType techResults battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.fold (fun consequences observer ->
+        Seq.fold (fun consequences (observerIndex, observer) ->
             let consequences' = evalTechInteractions4 source target observer techType techResults battle
-            (source, target, observer, consequences') :: consequences)
-            [] characters.Values
+            (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
+            [] characters.Pairs
 
-    let evalConsequence (source : Character) (target : Character) (observer : Character) consequence battle =
-        appendActionCommand (ActionCommand.make (Consequence consequence) source.CharacterIndex (Some target.CharacterIndex) (Some observer.CharacterIndex)) battle
+    let evalConsequence sourceIndex targetIndex observerIndex consequence battle =
+        appendActionCommand (ActionCommand.make (Consequence consequence) sourceIndex (Some targetIndex) (Some observerIndex)) battle
 
     let evalConsequences consequenceses battle =
-        List.fold (fun battle (source, target, observer, consequences) ->
+        List.fold (fun battle (sourceIndex, targetIndex, observerIndex, consequences) ->
             List.fold (fun battle consequence ->
-                evalConsequence source target observer consequence battle)
+                evalConsequence sourceIndex targetIndex observerIndex consequence battle)
                 battle consequences)
             battle consequenceses
 
