@@ -466,7 +466,7 @@ module Battle =
         if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
             let (x, y) = (Gen.random1 w, Gen.random1 h)
-            match Data.Value.Characters.TryFind (CharacterType.Enemy enemy) with
+            match Data.Value.Characters.TryFind (Enemy enemy) with
             | Some characterData ->
                 match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
                 | Some archetypeData ->
@@ -574,9 +574,9 @@ module Battle =
         match targetType with
         | Self -> observer = target
         | Other -> observer <> target
-        | Ally -> let allies = if observer.Ally then getAllies battle else getEnemies battle in Map.containsKey target.CharacterIndex allies
-        | OtherAlly -> let allies = if observer.Ally then getAllies battle else getEnemies battle in observer <> target && Map.containsKey target.CharacterIndex allies
-        | OtherEnemy | Enemy -> let enemies = if observer.Ally then getEnemies battle else getAllies battle in Map.containsKey target.CharacterIndex enemies
+        | SelfOrFriendly -> let allies = if observer.Ally then getAllies battle else getEnemies battle in Map.containsKey target.CharacterIndex allies
+        | Friendly -> let allies = if observer.Ally then getAllies battle else getEnemies battle in observer <> target && Map.containsKey target.CharacterIndex allies
+        | Unfriendly -> let enemies = if observer.Ally then getEnemies battle else getAllies battle in Map.containsKey target.CharacterIndex enemies
         | BattleTargetType.Any targetTypes -> List.exists (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
         | BattleTargetType.All targetTypes -> List.forall (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
 

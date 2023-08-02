@@ -676,10 +676,9 @@ module BattleInteractionSystem =
     type BattleTargetType =
         | Self
         | Other
-        | Ally
-        | OtherAlly
-        | Enemy
-        | OtherEnemy // same as Enemy, but allows for typos when switching from other ally to enemy
+        | SelfOrFriendly
+        | Friendly
+        | Unfriendly
         | Any of BattleTargetType list
         | All of BattleTargetType list
 

@@ -112,7 +112,7 @@ module BattleDispatcher =
                                 let battle = Battle.animationCharacterPoise time targetIndex battle
                                 let battle = Battle.finishCharacterAction sourceIndex battle
                                 let battle =
-                                    if  (match source.CharacterType with CharacterType.Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
+                                    if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
                                         Battle.shouldCounter sourceIndex targetIndex battle then
                                         Battle.counterAttack sourceIndex targetIndex battle
                                     else
@@ -462,7 +462,7 @@ module BattleDispatcher =
                                             else battle
                                         let battle = Battle.finishCharacterAction sourceIndex battle
                                         let battle =
-                                            if  (match source.CharacterType with CharacterType.Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
+                                            if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
                                                 Battle.shouldCounter sourceIndex targetIndex battle then
                                                 Battle.counterAttack sourceIndex targetIndex battle
                                             else battle
