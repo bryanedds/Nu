@@ -116,7 +116,7 @@ module BattleDispatcher =
                                         Battle.shouldCounter sourceIndex targetIndex battle then
                                         Battle.counterAttack sourceIndex targetIndex battle
                                     else
-                                        let consequences = Battle.evalFightInteractions source target battle
+                                        let consequences = Battle.evalFightInteractions sourceIndex targetIndex battle
                                         let battle = Battle.evalConsequences consequences battle
                                         battle
                                 just battle
@@ -125,7 +125,7 @@ module BattleDispatcher =
                                 let battle = Battle.updateCurrentCommandOpt (constant (Some woundCommand)) battle
                                 let battle = Battle.animationCharacterPoise time sourceIndex battle
                                 let battle = Battle.finishCharacterAction sourceIndex battle
-                                let consequences = Battle.evalFightInteractions source target battle
+                                let consequences = Battle.evalFightInteractions sourceIndex targetIndex battle
                                 let battle = Battle.evalConsequences consequences battle
                                 just battle
                         | _ -> just battle
@@ -193,7 +193,7 @@ module BattleDispatcher =
                             let battle = Battle.animationCharacterPoise time sourceIndex battle
                             let battle = Battle.animationCharacterPoise time targetIndex battle
                             let battle = Battle.finishCharacterAction sourceIndex battle
-                            let consequences = Battle.evalItemInteractions source target battle
+                            let consequences = Battle.evalItemInteractions sourceIndex targetIndex battle
                             let battle = Battle.evalConsequences consequences battle
                             just battle
                         | _ -> just battle
@@ -466,7 +466,7 @@ module BattleDispatcher =
                                                 Battle.shouldCounter sourceIndex targetIndex battle then
                                                 Battle.counterAttack sourceIndex targetIndex battle
                                             else battle
-                                        let consequences = Battle.evalTechInteractions source target techType results battle
+                                        let consequences = Battle.evalTechInteractions sourceIndex targetIndex techType results battle
                                         let battle = Battle.evalConsequences consequences battle
                                         withSignals sigs battle
                                     else just battle
@@ -632,9 +632,9 @@ module BattleDispatcher =
 
         and advanceCurrentCommand time currentCommand battle =
             let localTime = time - currentCommand.StartTime
-            let source = currentCommand.ActionCommand.Source
-            let targetOpt = currentCommand.ActionCommand.TargetOpt
-            let observerOpt = currentCommand.ActionCommand.ObserverOpt
+            let source = currentCommand.ActionCommand.SourceIndex
+            let targetOpt = currentCommand.ActionCommand.TargetIndexOpt
+            let observerOpt = currentCommand.ActionCommand.ObserverIndexOpt
             match currentCommand.ActionCommand.Action with
             | Attack -> advanceAttack source targetOpt time localTime battle
             | Defend -> advanceDefend source time localTime battle
@@ -645,16 +645,16 @@ module BattleDispatcher =
 
         and advanceNextCommand time nextCommand futureCommands battle =
             let command = CurrentCommand.make time nextCommand
-            let sourceIndex = command.ActionCommand.Source
-            let targetIndexOpt = command.ActionCommand.TargetOpt
-            let observerIndexOpt = command.ActionCommand.ObserverOpt
+            let sourceIndex = command.ActionCommand.SourceIndex
+            let targetIndexOpt = command.ActionCommand.TargetIndexOpt
+            let observerIndexOpt = command.ActionCommand.ObserverIndexOpt
             let source = Battle.getCharacter sourceIndex battle
             let battle =
                 match command.ActionCommand.Action with
                 | Attack | Defend ->
                     if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
                         let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle
-                        let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         Battle.updateCurrentCommandOpt (constant (Some command)) battle
                     else battle
                 | Consume consumableType ->
@@ -662,7 +662,7 @@ module BattleDispatcher =
                     | (true, consumable) ->
                         if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
                             let targetIndexOpt = Battle.tryRetargetIfNeeded consumable.Revive targetIndexOpt battle
-                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         else battle
                     | (false, _) -> battle
@@ -671,7 +671,7 @@ module BattleDispatcher =
                     | (true, _) ->
                         if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
                             let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
-                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         else battle
                     | (false, _) -> battle
@@ -680,7 +680,7 @@ module BattleDispatcher =
                     | Some observerIndex ->
                         match Battle.tryGetCharacter observerIndex battle with
                         | Some observer when observer.Healthy && not (Map.containsKey Sleep observer.Statuses) ->
-                            let command = { command with ActionCommand = { command.ActionCommand with TargetOpt = targetIndexOpt }}
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         | Some _ | None -> battle
                     | None -> battle
@@ -892,7 +892,7 @@ module BattleDispatcher =
                 | Some tag ->
                     match battle.CurrentCommandOpt with
                     | Some command ->
-                        let character = command.ActionCommand.Source
+                        let character = command.ActionCommand.SourceIndex
                         let battle = Battle.updateCharacterBottom (constant tag.Position) character battle
                         just battle
                     | None -> just battle
