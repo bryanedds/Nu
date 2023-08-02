@@ -335,6 +335,10 @@ module Character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
         { character with CharacterState_ = characterState }
 
+    let updateVulnerabilities updater character =
+        let characterState = { character.CharacterState_ with Vulnerabilities = updater character.CharacterState_.Vulnerabilities }
+        { character with CharacterState_ = characterState }
+
     let updateHitPoints updater affectWounded alliesHealthy character =
         let (cancelled, characterState) =
             if character.CharacterState_.Healthy || affectWounded then
@@ -401,6 +405,13 @@ module Character =
                 else actionTime)
                 character
         else character
+
+    let applyVulnerabilityChanges vulnerabilitiesAdded vulnerabilitiesRemoved (character : Character) =
+        updateVulnerabilities (fun vulnerabilities ->
+            let vulnerabilities = Set.fold (fun vulnerabilities vulnerability -> Set.add vulnerability vulnerabilities) vulnerabilities vulnerabilitiesAdded
+            let vulnerabilities = Set.fold (fun vulnerabilities vulnerability -> Set.remove vulnerability vulnerabilities) vulnerabilities vulnerabilitiesRemoved
+            vulnerabilities)
+            character
 
     let resetConjureCharge character =
         updateConjureChargeOpt (Option.map (constant -Constants.Battle.ConjureChargeRate)) character

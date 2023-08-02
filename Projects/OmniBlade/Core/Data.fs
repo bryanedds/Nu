@@ -716,9 +716,11 @@ module BattleInteractionSystem =
         | RemoveStatus of StatusType
         | CounterAttack
         | CounterTech of TechType
-        | CounterItem of ItemType
+        | CounterConsumable of ConsumableType
+        | AssistTech of TechType
+        | AssistConsumable of ConsumableType
         | PilferGold of int
-        | PilferItem of ItemType
+        | PilferConsumable of ConsumableType
         | RetargetSelfToCurrentActingCharacter
         | RetargetAlliesToCurrentActingCharacter
         | RetargetAlliesToOwnCurrentTarget
@@ -726,7 +728,7 @@ module BattleInteractionSystem =
         | ChangeAllyActions of ChangeActionType
         | ChangeOtherAllyActions of ChangeActionType
         | Duplicate
-        | Spawn of EnemyType * int
+        | Spawn of SpawnType list
         | Replace of EnemyType
         | Dialog of string
         | AddBattleInteraction of BattleInteraction

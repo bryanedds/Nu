@@ -254,8 +254,11 @@ type [<SymbolicExpansion>] Inventory =
         | Some count -> count
         | None -> 0
 
-    static member updateGold updater (inventory : Inventory) =
-        { inventory with Gold = updater inventory.Gold }
+    static member addGold gold (inventory : Inventory) =
+        { inventory with Gold = max 0 (inventory.Gold + gold) }
+
+    static member removeGold gold (inventory : Inventory) =
+        { inventory with Gold = max 0 (inventory.Gold - gold) }
 
     static member empty =
         { Items = Map.empty; Gold = 0 }
