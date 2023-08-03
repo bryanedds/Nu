@@ -113,8 +113,8 @@ module BattleDispatcher =
                                 let battle = Battle.finishCharacterAction sourceIndex battle
                                 let battle =
                                     if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                        Battle.shouldCounter sourceIndex targetIndex battle then
-                                        Battle.counterAttack sourceIndex targetIndex battle
+                                        Battle.shouldCounter targetIndex sourceIndex battle then
+                                        Battle.counterAttack targetIndex sourceIndex battle
                                     else
                                         let consequences = Battle.evalFightInteractions sourceIndex targetIndex battle
                                         let battle = Battle.evalConsequences consequences battle
@@ -463,8 +463,8 @@ module BattleDispatcher =
                                         let battle = Battle.finishCharacterAction sourceIndex battle
                                         let battle =
                                             if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                                Battle.shouldCounter sourceIndex targetIndex battle then
-                                                Battle.counterAttack sourceIndex targetIndex battle
+                                                Battle.shouldCounter targetIndex sourceIndex battle then
+                                                Battle.counterAttack targetIndex sourceIndex battle
                                             else battle
                                         let consequences = Battle.evalTechInteractions sourceIndex targetIndex techType results battle
                                         let battle = Battle.evalConsequences consequences battle
@@ -479,100 +479,165 @@ module BattleDispatcher =
 
         static let advanceConsequence sourceIndex targetIndexOpt observerIndexOpt consequence time localTime battle =
             match (targetIndexOpt, observerIndexOpt) with
-            | (Some targetIndex, Some observerIndex) when
-                // NOTE: this may be too generous a requirement for all consequences.
-                Battle.containsCharacters [sourceIndex; targetIndex; observerIndex] battle ->
+            | (Some targetIndex, Some observerIndex) ->
                 match consequence with
                 | Charge chargeAmount ->
-                    let battle = Battle.chargeCharacter chargeAmount observerIndex battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then Battle.chargeCharacter chargeAmount observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AddVulnerability vulnerabilityType ->
-                    let battle = Battle.applyCharacterVulnerabilities (Set.singleton vulnerabilityType) Set.empty observerIndex battle
+                    let battle =
+                        if Battle.containsCharacter observerIndex battle
+                        then Battle.applyCharacterVulnerabilities (Set.singleton vulnerabilityType) Set.empty observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | RemoveVulnerability vulnerabilityType ->
-                    let battle = Battle.applyCharacterVulnerabilities Set.empty (Set.singleton vulnerabilityType) observerIndex battle
+                    let battle =
+                        if Battle.containsCharacter observerIndex battle
+                        then Battle.applyCharacterVulnerabilities Set.empty (Set.singleton vulnerabilityType) observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AddStatus statusType ->
-                    let battle = Battle.applyCharacterStatuses (Set.singleton statusType) Set.empty observerIndex battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then Battle.applyCharacterStatuses (Set.singleton statusType) Set.empty observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | RemoveStatus statusType ->
-                    let battle = Battle.applyCharacterStatuses Set.empty (Set.singleton statusType) observerIndex battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then Battle.applyCharacterStatuses Set.empty (Set.singleton statusType) observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | CounterAttack ->
-                    let battle = Battle.prependActionCommand (ActionCommand.make Attack observerIndex (Some sourceIndex) None) battle
-                    let battle = Battle.counterAttack observerIndex sourceIndex battle
+                    let battle =
+                        if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle
+                        then Battle.counterAttack sourceIndex observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | CounterTech techType ->
-                    let battle = Battle.prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some sourceIndex) None) battle
+                    let battle =
+                        if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle
+                        then Battle.prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some sourceIndex) None) battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | CounterConsumable consumableType ->
-                    let battle = Battle.prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some sourceIndex) None) battle
+                    let battle =
+                        if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle
+                        then Battle.prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some sourceIndex) None) battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AssistTech techType ->
-                    let battle = Battle.prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some targetIndex) None) battle
+                    let battle =
+                        if Battle.getCharacterHealthy targetIndex battle && Battle.getCharacterHealthy observerIndex battle
+                        then Battle.prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some targetIndex) None) battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AssistConsumable consumableType ->
-                    let battle = Battle.prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some targetIndex) None) battle
+                    let battle =
+                        if Battle.getCharacterHealthy targetIndex battle && Battle.getCharacterHealthy observerIndex battle
+                        then Battle.prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some targetIndex) None) battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | PilferGold gold ->
-                    let battle = Battle.updateInventory (Inventory.removeGold gold) battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then Battle.updateInventory (Inventory.removeGold gold) battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | PilferConsumable consumableType ->
-                    let battle = Battle.updateInventory (Inventory.tryRemoveItem (Consumable consumableType) >> snd) battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then Battle.updateInventory (Inventory.tryRemoveItem (Consumable consumableType) >> snd) battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | RetargetToSource ->
-                    let battle = Battle.retarget sourceIndex observerIndex battle
+                    let battle =
+                        if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle
+                        then Battle.retarget sourceIndex observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | RetargetFriendliesToSource ->
-                    let friendlies = Battle.getFriendlies sourceIndex.Ally battle
-                    let battle = Map.fold (fun battle friendlyIndex _ -> Battle.retarget sourceIndex friendlyIndex battle) battle friendlies
+                    let battle =
+                        if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle then 
+                            let friendlies = Battle.getFriendlies observerIndex.Ally battle
+                            Map.fold (fun battle friendlyIndex _ -> Battle.retarget sourceIndex friendlyIndex battle) battle friendlies
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | ChangeAction techTypeOpt ->
-                    let battle = Battle.changeAutoTechOpt techTypeOpt observerIndex battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then Battle.changeAutoTechOpt techTypeOpt observerIndex battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | ChangeFriendlyActions techTypeOpt ->
-                    let friendlies = Battle.getFriendlies sourceIndex.Ally battle
-                    let battle = Map.fold (fun battle friendlyIndex _ -> Battle.changeAutoTechOpt techTypeOpt friendlyIndex battle) battle friendlies
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle then 
+                            let friendlies = Battle.getFriendlies observerIndex.Ally battle
+                            Map.fold (fun battle friendlyIndex _ -> Battle.changeAutoTechOpt techTypeOpt friendlyIndex battle) battle friendlies
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | Duplicate ->
-                    match (Battle.getCharacter observerIndex battle).CharacterType with
-                    | Enemy enemyType ->
-                        let battle = Battle.spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize }] battle
-                        let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                        just battle
-                    | Ally _ -> just battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle then 
+                            match (Battle.getCharacter observerIndex battle).CharacterType with
+                            | Enemy enemyType -> Battle.spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize }] battle
+                            | Ally _ -> battle
+                        else battle
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
                 | Spawn spawnTypes ->
-                    let battle = Battle.spawnEnemies time spawnTypes battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then Battle.spawnEnemies time spawnTypes battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | Replace enemyType ->
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then battle // TODO: implement.
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | Dialog text ->
-                    let dialog = Dialog.make DialogThin text
-                    let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle then 
+                            let dialog = Dialog.make DialogThin text
+                            Battle.updateDialogOpt (constant (Some dialog)) battle
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | AddBattleInteraction interaction ->
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then battle // TODO: implement.
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | ClearBattleInteractions ->
+                    let battle =
+                        if Battle.getCharacterHealthy observerIndex battle
+                        then battle // TODO: implement.
+                        else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
             | (_, _) -> battle |> Battle.updateCurrentCommandOpt (constant None) |> just
