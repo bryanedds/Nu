@@ -227,7 +227,7 @@ module FieldDispatcher =
                 let field =
                     match field.DialogOpt with
                     | Some dialog ->
-                        let dialog = Dialog.advance (Field.detokenize field) dialog world
+                        let dialog = Dialog.advance (Field.detokenize field) (World.getUpdateTime world) dialog
                         Field.updateDialogOpt (constant (Some dialog)) field
                     | None -> field
 

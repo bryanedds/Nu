@@ -56,6 +56,7 @@ module Battle =
               BattleSpeed_ : BattleSpeed
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue
+              MessageOpt_ : (int64 * int64 * Dialog) option
               DialogOpt_ : Dialog option }
 
         (* Local Properties *)
@@ -71,6 +72,7 @@ module Battle =
         member this.BattleSpeed = this.BattleSpeed_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
+        member this.MessageOpt = this.MessageOpt_
         member this.DialogOpt = this.DialogOpt_
 
     let getCharacters battle =
@@ -363,6 +365,9 @@ module Battle =
 
     let updateActionCommands updater battle =
         { battle with ActionCommands_ = updater battle.ActionCommands_ }
+
+    let updateMessageOpt updater field =
+        { field with MessageOpt_ = updater field.MessageOpt_ }
 
     let updateDialogOpt updater field =
         { field with DialogOpt_ = updater field.DialogOpt_ }
@@ -839,6 +844,7 @@ module Battle =
               BattleSpeed_ = battleSpeed
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
+              MessageOpt_ = None
               DialogOpt_ = None }
         battle
 
@@ -856,6 +862,7 @@ module Battle =
               BattleSpeed_ = PacedSpeed
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
+              MessageOpt_ = None
               DialogOpt_ = None }
         | None -> failwith "Expected data for DebugBattle to be available."
 

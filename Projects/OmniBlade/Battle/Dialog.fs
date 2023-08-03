@@ -10,7 +10,7 @@ open OmniBlade
 type DialogForm =
     | DialogThin
     | DialogThick
-    | DialogNarration
+    | DialogNarration // TODO: rename to DialogFloating, along with all data using it.
 
 type [<SymbolicExpansion>] Dialog =
     { DialogForm : DialogForm
@@ -28,9 +28,9 @@ type [<SymbolicExpansion>] Dialog =
             | DialogNarration -> detokenized
         String.tryTake dialog.DialogProgress text
 
-    static member advance (detokenize : string -> string) dialog world =
+    static member advance (detokenize : string -> string) time dialog =
         let dialog =
-            if World.getUpdateTime world % 3L = 0L
+            if time % 3L = 0L
             then { dialog with DialogProgress = inc dialog.DialogProgress }
             else dialog
         let dialog =
