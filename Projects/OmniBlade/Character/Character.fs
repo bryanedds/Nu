@@ -76,7 +76,8 @@ module Character =
         member this.Interactions = this.CharacterState_.Interactions
         member this.Healthy = this.CharacterState_.Healthy
         member this.Wounded = this.CharacterState_.Wounded
-        member this.Wounding = match this.CharacterAnimationState_.CharacterAnimationType with WoundAnimation -> true | _ -> false
+        member this.Standing = match this.CharacterAnimationState_.CharacterAnimationType with WoundAnimation -> false | _ -> true
+        member this.Swooning = not this.Standing
         member this.Level = this.CharacterState_.Level
         member this.HitPointsMax = this.CharacterState_.HitPointsMax
         member this.TechPointsMax = this.CharacterState_.TechPointsMax
@@ -443,10 +444,10 @@ module Character =
              | None -> None)
             character
 
-    let autoBattle (alliesHealthy : Map<_, _>) alliesWounded enemiesHealthy enemiesWounded (source : Character) =
+    let autoBattle (alliesHealthy : Map<_, _>) alliesWounded enemiesStanding enemiesSwooning (source : Character) =
 
         // TODO: once techs have the ability to revive, check for that in the curative case.
-        ignore (enemiesWounded, alliesWounded)
+        ignore (alliesWounded, enemiesSwooning)
 
         // advance tech charge
         let source = advanceTechCharge source
@@ -477,7 +478,7 @@ module Character =
                             then Some alliesHealthy.[leadAlly]
                             else alliesHealthy |> Map.remove leadAlly |> Gen.randomValueOpt
                         else Gen.randomValueOpt alliesHealthy
-                    else Gen.randomValueOpt enemiesHealthy
+                    else Gen.randomValueOpt enemiesStanding
                 | (false, _) -> None
             | None -> Gen.randomValueOpt alliesHealthy
 

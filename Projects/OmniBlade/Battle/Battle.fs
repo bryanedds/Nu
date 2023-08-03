@@ -91,7 +91,7 @@ module Battle =
     let getCharactersHudded battle =
         getCharactersIf (fun _ (character : Character) ->
             character.Ally ||
-            (character.Enemy && not character.Wounding && not character.Materializing))
+            (character.Enemy && character.Standing && not character.Materializing))
             battle
 
     let getAllies battle =
@@ -109,19 +109,27 @@ module Battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
     let getEnemiesHealthy battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> not enemy.Wounding | _ -> false) |> Map.ofSeq
+        getEnemies battle |>
+        Map.filter (fun _ character -> character.Healthy)
 
     let getEnemiesWounded battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.Wounding | _ -> false) |> Map.ofSeq
+        getEnemies battle |>
+        Map.filter (fun _ character -> character.Wounded)
+
+    let getEnemiesStanding battle =
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.Standing | _ -> false) |> Map.ofSeq
+
+    let getEnemiesSwooning battle =
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.Swooning | _ -> false) |> Map.ofSeq
 
     let getFriendlies ally battle =
         if ally then getAllies battle else getEnemies battle
 
     let getFriendliesHealthy ally battle =
-        if ally then getAlliesHealthy battle else Map.filter (fun _ character -> character.Healthy) (getEnemies battle)
+        if ally then getAlliesHealthy battle else getEnemiesHealthy battle
 
     let getFriendliesWounded ally battle =
-        if ally then getAlliesWounded battle else Map.filter (fun _ character -> character.Wounded) (getEnemies battle)
+        if ally then getAlliesWounded battle else getEnemiesWounded battle
 
     let getUnfriendlies ally battle =
         if ally then getEnemies battle else getAllies battle
@@ -135,7 +143,7 @@ module Battle =
     let getTargets aimType battle =
         match aimType with
         | EnemyAim _ ->
-            getEnemiesHealthy battle
+            getEnemiesStanding battle
         | AllyAim healthy ->
             if healthy
             then getAlliesHealthy battle
@@ -147,8 +155,8 @@ module Battle =
                 else getAlliesWounded battle
             let enemies =
                 if healthy
-                then getEnemiesHealthy battle
-                else getEnemiesWounded battle
+                then getEnemiesStanding battle
+                else getEnemiesSwooning battle
             let characters = allies @@ enemies
             characters
         | NoAim -> Map.empty
@@ -448,14 +456,14 @@ module Battle =
                 | Some true | None ->
                     match targetIndex with
                     | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesWounded battle)))
-                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesWounded battle)))
+                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesSwooning battle)))
                 | Some false -> targetIndexOpt
             else
                 match tryGetCharacterBy (fun (target : Character) -> target.Wounded) targetIndex battle with
                 | Some true | None ->
                     match targetIndex with
                     | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))
-                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesHealthy battle)))
+                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesStanding battle)))
                 | Some false -> targetIndexOpt
         | None -> targetIndexOpt
 
@@ -501,9 +509,9 @@ module Battle =
     let autoBattleEnemies battle =
         let alliesHealthy = getAlliesHealthy battle
         let alliesWounded = getAlliesWounded battle
-        let enemiesHealthy = getEnemiesHealthy battle
-        let enemiesWounded = getEnemiesWounded battle
-        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesHealthy enemiesWounded) battle
+        let enemiesStanding = getEnemiesStanding battle
+        let enemiesSwooning = getEnemiesSwooning battle
+        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning) battle
 
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then

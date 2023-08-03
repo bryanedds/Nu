@@ -858,9 +858,9 @@ module BattleDispatcher =
                         if character.Healthy && Character.readyForAutoBattle character then
                             let alliesHealthy = Battle.getAlliesHealthy battle
                             let alliesWounded = Battle.getAlliesWounded battle
-                            let enemiesHealthy = Battle.getEnemiesHealthy battle
-                            let enemiesWounded = Battle.getEnemiesWounded battle
-                            Character.autoBattle alliesHealthy alliesWounded enemiesHealthy enemiesWounded character
+                            let enemiesStanding = Battle.getEnemiesStanding battle
+                            let enemiesSwooning = Battle.getEnemiesSwooning battle
+                            Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning character
                         else character
                     character)
                     battle
