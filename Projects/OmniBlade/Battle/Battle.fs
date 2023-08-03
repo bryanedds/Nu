@@ -195,6 +195,12 @@ module Battle =
     let updateEnemies updater battle =
         updateEnemiesIf tautology2 updater battle
 
+    let containsCharacter characterIndex battle =
+        Map.containsKey characterIndex battle.Characters_
+
+    let containsCharacters characterIndices battle =
+        Seq.forall (flip Map.containsKey battle.Characters_) characterIndices
+
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_
 
@@ -414,7 +420,18 @@ module Battle =
             Triple.prepend techData.TechCost (Character.evalTech techData source target characters)
         | None -> (0, None, Map.empty)
 
-    let tryRetargetIfNeeded affectingWounded targetIndexOpt battle =
+    let retarget targetIndex characterIndex battle =
+        match tryGetCharacter targetIndex battle with
+        | Some target when target.Healthy ->
+            tryUpdateCharacter (fun character ->
+                if character.Healthy
+                then Character.updateAutoBattleOpt (function Some autoBattle -> Some { autoBattle with AutoTarget = targetIndex } | None -> None) character
+                else character)
+                characterIndex
+                battle
+        | Some _ | None -> battle
+
+    let retargetIfNeeded affectingWounded targetIndexOpt battle =
         match targetIndexOpt with
         | Some targetIndex ->
             if affectingWounded then
@@ -432,6 +449,14 @@ module Battle =
                     | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesHealthy battle)))
                 | Some false -> targetIndexOpt
         | None -> targetIndexOpt
+
+    let changeAutoTechOpt techTypeOpt characterIndex battle =
+        updateCharacter (fun character ->
+            if character.Healthy
+            then Character.updateAutoBattleOpt (function Some autoBattle -> Some { autoBattle with AutoTechOpt = techTypeOpt; ChargeTech = techTypeOpt.IsSome } | None -> None) character
+            else character)
+            characterIndex
+            battle
 
     let cancelCharacterInput characterIndex battle =
         tryUpdateCharacter (fun character ->
