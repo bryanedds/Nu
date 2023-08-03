@@ -113,8 +113,8 @@ module BattleDispatcher =
                                 let battle = Battle.finishCharacterAction sourceIndex battle
                                 let battle =
                                     if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                        Battle.shouldCounter targetIndex sourceIndex battle then
-                                        Battle.counterAttack targetIndex sourceIndex battle
+                                        Battle.shouldCounter sourceIndex targetIndex battle then
+                                        Battle.counterAttack sourceIndex targetIndex battle
                                     else
                                         let consequences = Battle.evalFightInteractions sourceIndex targetIndex battle
                                         let battle = Battle.evalConsequences consequences battle
@@ -463,8 +463,8 @@ module BattleDispatcher =
                                         let battle = Battle.finishCharacterAction sourceIndex battle
                                         let battle =
                                             if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                                Battle.shouldCounter targetIndex sourceIndex battle then
-                                                Battle.counterAttack targetIndex sourceIndex battle
+                                                Battle.shouldCounter sourceIndex targetIndex battle then
+                                                Battle.counterAttack sourceIndex targetIndex battle
                                             else battle
                                         let consequences = Battle.evalTechInteractions sourceIndex targetIndex techType results battle
                                         let battle = Battle.evalConsequences consequences battle
@@ -519,7 +519,7 @@ module BattleDispatcher =
                 | CounterAttack ->
                     let battle =
                         if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle
-                        then Battle.counterAttack sourceIndex observerIndex battle
+                        then Battle.counterAttack observerIndex sourceIndex battle
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
