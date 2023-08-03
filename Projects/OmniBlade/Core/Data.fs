@@ -701,9 +701,11 @@ module BattleInteractionSystem =
         | All of BattleAffectType list
 
     type BattleCondition =
-        | WhenOnlySurvivor
-        | WhenOnlyTypeSurviving
-        | WhenTargetAffected of BattleAffectType * BattleTargetType
+        | LastSurviving
+        | LastTypeSurviving
+        | BecomeLastSurviving
+        | BecomeLastTypeSurviving
+        | AffectedTarget of BattleAffectType * BattleTargetType
 
     type BattleConsequence =
         | Charge of int // may be negative to reduce
