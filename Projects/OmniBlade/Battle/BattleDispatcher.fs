@@ -618,11 +618,12 @@ module BattleDispatcher =
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | Dialog text ->
+                | Message (text, lifeTime) ->
                     let battle =
                         if Battle.getCharacterHealthy observerIndex battle then 
+                            let lifeTime = if lifeTime <= 0L then 60L else lifeTime
                             let dialog = Dialog.make DialogThin text
-                            Battle.updateDialogOpt (constant (Some dialog)) battle
+                            Battle.updateMessageOpt (constant (Some (time, lifeTime, dialog))) battle
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
@@ -872,9 +873,11 @@ module BattleDispatcher =
             | Queue.Nil -> advanceNoNextCommand time battle
 
         and advanceRunning time (battle : Battle) =
-            match battle.CurrentCommandOpt with
-            | Some currentCommand -> advanceCurrentCommand time currentCommand battle
-            | None -> advanceNoCurrentCommand time battle
+            if battle.MessageOpt.IsNone then
+                match battle.CurrentCommandOpt with
+                | Some currentCommand -> advanceCurrentCommand time currentCommand battle
+                | None -> advanceNoCurrentCommand time battle
+            else just battle
 
         and advanceResults time startTime outcome (battle : Battle) =
             let localTime = time - startTime
@@ -961,18 +964,25 @@ module BattleDispatcher =
             | Update ->
 
                 // advance battle
+                let time = World.getUpdateTime world
                 let (signals, battle) = 
                     if World.getAdvancing world
-                    then advanceBattle (World.getUpdateTime world) battle
+                    then advanceBattle time battle
                     else just battle
+
+                // advance message
+                let battle =
+                    Battle.updateMessageOpt (function
+                        | Some (startTime, lifeTime, message) when time < startTime + lifeTime -> Some (startTime, lifeTime, Dialog.advance id time message)
+                        | Some _ | None -> None)
+                        battle
 
                 // advance dialog
                 let battle =
-                    match battle.DialogOpt with
-                    | Some dialog ->
-                        let dialog = Dialog.advance id dialog world
-                        Battle.updateDialogOpt (constant (Some dialog)) battle
-                    | None -> battle
+                    Battle.updateDialogOpt (function
+                        | Some dialog -> Some (Dialog.advance id time dialog)
+                        | None -> None)
+                        battle
 
                 // fin
                 (signals, battle)
@@ -1241,6 +1251,11 @@ module BattleDispatcher =
                      Entity.TileMap := battle.TileMap
                      Entity.TileIndexOffset := battle.TileIndexOffset
                      Entity.TileIndexOffsetRange := battle.TileIndexOffsetRange]
+
+                 // message
+                 yield! Content.dialog "Message"
+                    (Constants.Battle.GuiElevation + 2.0f) Nop Nop id
+                    (match battle.MessageOpt with Some (_, _, dialog) -> Some dialog | None -> None)
 
                  // dialog
                  yield! Content.dialog "Dialog"

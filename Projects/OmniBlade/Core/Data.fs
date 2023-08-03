@@ -727,7 +727,7 @@ module BattleInteractionSystem =
         | Duplicate
         | Spawn of SpawnType list
         | Replace of EnemyType
-        | Dialog of string
+        | Message of string * int64
         | AddBattleInteraction of BattleInteraction
         | ClearBattleInteractions
 
