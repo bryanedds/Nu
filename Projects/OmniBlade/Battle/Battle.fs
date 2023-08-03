@@ -109,21 +109,19 @@ module Battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
     let getEnemiesHealthy battle =
-        getEnemies battle |>
-        Map.filter (fun _ character -> character.Healthy)
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> not enemy.Wounding | _ -> false) |> Map.ofSeq
 
     let getEnemiesWounded battle =
-        getEnemies battle |>
-        Map.filter (fun _ character -> character.Wounded)
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, enemy) -> enemy.Wounding | _ -> false) |> Map.ofSeq
 
     let getFriendlies ally battle =
         if ally then getAllies battle else getEnemies battle
 
     let getFriendliesHealthy ally battle =
-        if ally then getAlliesHealthy battle else getEnemiesHealthy battle
+        if ally then getAlliesHealthy battle else Map.filter (fun _ character -> character.Healthy) (getEnemies battle)
 
     let getFriendliesWounded ally battle =
-        if ally then getAlliesWounded battle else getEnemiesWounded battle
+        if ally then getAlliesWounded battle else Map.filter (fun _ character -> character.Wounded) (getEnemies battle)
 
     let getUnfriendlies ally battle =
         if ally then getEnemies battle else getAllies battle
@@ -246,7 +244,7 @@ module Battle =
 
     let shouldCounter sourceIndex targetIndex battle =
         if CharacterIndex.unfriendly sourceIndex targetIndex
-        then getCharacterBy Character.shouldCounter targetIndex battle
+        then getCharacterBy Character.shouldCounter sourceIndex battle
         else false
 
     let private tryUpdateCharacter updater characterIndex battle =
