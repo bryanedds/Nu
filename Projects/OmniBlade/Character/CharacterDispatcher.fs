@@ -20,7 +20,7 @@ module CharacterDispatcher =
         inherit EntityDispatcher2d<Character, Message, Command> (true, Character.empty)
 
         static let getAfflictionInsetOpt (character : Character) world =
-            if not character.Wounding then
+            if character.Standing then
                 let statuses = character.Statuses
                 let celYOpt =
                     if character.Wounded then None
@@ -44,7 +44,7 @@ module CharacterDispatcher =
             else None
 
         static let getChargeOrbInsetOpt (character : Character) world =
-            if not character.Wounding then
+            if character.Standing then
                 let celXOpt =
                     match (character.ConjureChargeOpt, character.TechChargeOpt |> Option.map Triple.snd) with
                     | (Some chargeAmount, _)
