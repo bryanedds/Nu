@@ -198,9 +198,6 @@ module Battle =
     let containsCharacter characterIndex battle =
         Map.containsKey characterIndex battle.Characters_
 
-    let containsCharacters characterIndices battle =
-        Seq.forall (flip Map.containsKey battle.Characters_) characterIndices
-
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_
 
@@ -233,7 +230,7 @@ module Battle =
     let getCharacterArchetypeType characterIndex battle =
         (getCharacter characterIndex battle).ArchetypeType
 
-    let shouldCounter sourceIndex targetIndex battle =
+    let shouldCounter targetIndex sourceIndex battle =
         if CharacterIndex.unfriendly sourceIndex targetIndex
         then getCharacterBy Character.shouldCounter targetIndex battle
         else false
@@ -379,7 +376,7 @@ module Battle =
     let prependActionCommand command battle =
         { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
 
-    let counterAttack sourceIndex targetIndex battle =
+    let counterAttack targetIndex sourceIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex) None
         prependActionCommand attackCommand battle
 
