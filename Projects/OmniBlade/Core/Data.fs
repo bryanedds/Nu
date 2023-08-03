@@ -535,9 +535,6 @@ type SpawnType =
     { EnemyType : EnemyType
       SpawnEffectType : SpawnEffectType }
 
-type ChangeActionType =
-    | Swarm of CharacterIndex
-
 type SpiritType =
     | WeakSpirit
     | NormalSpirit
@@ -721,12 +718,10 @@ module BattleInteractionSystem =
         | AssistConsumable of ConsumableType
         | PilferGold of int
         | PilferConsumable of ConsumableType
-        | RetargetSelfToCurrentActingCharacter
-        | RetargetAlliesToCurrentActingCharacter
-        | RetargetAlliesToOwnCurrentTarget
-        | ChangeAction of ChangeActionType
-        | ChangeAllyActions of ChangeActionType
-        | ChangeOtherAllyActions of ChangeActionType
+        | RetargetToSource
+        | RetargetFriendliesToSource
+        | ChangeAction of TechType option
+        | ChangeFriendlyActions of TechType option
         | Duplicate
         | Spawn of SpawnType list
         | Replace of EnemyType

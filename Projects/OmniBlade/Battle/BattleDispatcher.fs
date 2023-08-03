@@ -479,7 +479,9 @@ module BattleDispatcher =
 
         static let advanceConsequence sourceIndex targetIndexOpt observerIndexOpt consequence time localTime battle =
             match (targetIndexOpt, observerIndexOpt) with
-            | (Some targetIndex, Some observerIndex) ->
+            | (Some targetIndex, Some observerIndex) when
+                // NOTE: this may be too generous a requirement for all consequences.
+                Battle.containsCharacters [sourceIndex; targetIndex; observerIndex] battle ->
                 match consequence with
                 | Charge chargeAmount ->
                     let battle = Battle.chargeCharacter chargeAmount observerIndex battle
@@ -530,27 +532,26 @@ module BattleDispatcher =
                     let battle = Battle.updateInventory (Inventory.tryRemoveItem (Consumable consumableType) >> snd) battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | RetargetSelfToCurrentActingCharacter ->
+                | RetargetToSource ->
+                    let battle = Battle.retarget sourceIndex observerIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | RetargetAlliesToCurrentActingCharacter ->
+                | RetargetFriendliesToSource ->
+                    let friendlies = Battle.getFriendlies sourceIndex.Ally battle
+                    let battle = Map.fold (fun battle friendlyIndex _ -> Battle.retarget sourceIndex friendlyIndex battle) battle friendlies
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | RetargetAlliesToOwnCurrentTarget ->
+                | ChangeAction techTypeOpt ->
+                    let battle = Battle.changeAutoTechOpt techTypeOpt observerIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
-                | ChangeAction action ->
-                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                    just battle
-                | ChangeAllyActions action ->
-                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                    just battle
-                | ChangeOtherAllyActions action ->
+                | ChangeFriendlyActions techTypeOpt ->
+                    let friendlies = Battle.getFriendlies sourceIndex.Ally battle
+                    let battle = Map.fold (fun battle friendlyIndex _ -> Battle.changeAutoTechOpt techTypeOpt friendlyIndex battle) battle friendlies
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | Duplicate ->
-                    let observer = Battle.getCharacter observerIndex battle
-                    match observer.CharacterType with
+                    match (Battle.getCharacter observerIndex battle).CharacterType with
                     | Enemy enemyType ->
                         let battle = Battle.spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize }] battle
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
@@ -677,7 +678,7 @@ module BattleDispatcher =
                 match command.ActionCommand.Action with
                 | Attack | Defend ->
                     if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
-                        let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle
+                        let targetIndexOpt = Battle.retargetIfNeeded false targetIndexOpt battle
                         let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         Battle.updateCurrentCommandOpt (constant (Some command)) battle
                     else battle
@@ -685,7 +686,7 @@ module BattleDispatcher =
                     match Data.Value.Consumables.TryGetValue consumableType with
                     | (true, consumable) ->
                         if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
-                            let targetIndexOpt = Battle.tryRetargetIfNeeded consumable.Revive targetIndexOpt battle
+                            let targetIndexOpt = Battle.retargetIfNeeded consumable.Revive targetIndexOpt battle
                             let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         else battle
@@ -694,7 +695,7 @@ module BattleDispatcher =
                     match Data.Value.Techs.TryGetValue techType with
                     | (true, _) ->
                         if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
-                            let targetIndexOpt = Battle.tryRetargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
+                            let targetIndexOpt = Battle.retargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
                             let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         else battle
