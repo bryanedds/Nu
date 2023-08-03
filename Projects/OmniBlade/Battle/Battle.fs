@@ -642,17 +642,17 @@ module Battle =
                 | WhenTargetAffected (affectType, targetType) ->
                     evalFightAffectType affectType source target observer battle &&
                     evalSingleTargetType targetType source target observer battle
-            if satisfied then consequences' @ consequences else consequences)
+            if satisfied then consequences @ consequences' else consequences)
             [] target.Interactions
 
     let evalFightInteractions sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.fold (fun consequences (observerIndex, observer) ->
+        Seq.foldBack (fun (observerIndex, observer) consequences ->
             let consequences' = evalFightInteractions4 source target observer battle
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
-            [] characters.Pairs
+            characters.Pairs []
 
     let rec private evalItemAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
@@ -685,17 +685,17 @@ module Battle =
                 | WhenTargetAffected (affectType, targetType) ->
                     evalItemAffectType affectType source target observer battle &&
                     evalSingleTargetType targetType source target observer battle
-            if satisfied then consequences' @ consequences else consequences)
+            if satisfied then consequences @ consequences' else consequences)
             [] target.Interactions
 
     let evalItemInteractions sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.fold (fun consequences (observerIndex, observer) ->
+        Seq.foldBack (fun (observerIndex, observer) consequences ->
             let consequences' = evalItemInteractions4 source target observer battle
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
-            [] characters.Pairs
+            characters.Pairs []
 
     let rec private evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved (source : Character) (target : Character) (observer : Character) (battle : Battle) =
         match Data.Value.Techs.TryGetValue techType with
@@ -752,27 +752,27 @@ module Battle =
                             evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle &&
                             evalSingleTargetType targetType source target observer battle
                         | None -> false)
-            if satisfied then consequences' @ consequences else consequences)
+            if satisfied then consequences @ consequences' else consequences)
             [] target.Interactions
 
     let evalTechInteractions sourceIndex targetIndex techType techResults battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.fold (fun consequences (observerIndex, observer) ->
+        Seq.foldBack (fun (observerIndex, observer) consequences ->
             let consequences' = evalTechInteractions4 source target observer techType techResults battle
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
-            [] characters.Pairs
+            characters.Pairs []
 
     let evalConsequence sourceIndex targetIndex observerIndex consequence battle =
         appendActionCommand (ActionCommand.make (Consequence consequence) sourceIndex (Some targetIndex) (Some observerIndex)) battle
 
-    let evalConsequences consequenceses battle =
+    let evalConsequences consequences battle =
         List.fold (fun battle (sourceIndex, targetIndex, observerIndex, consequences) ->
             List.fold (fun battle consequence ->
                 evalConsequence sourceIndex targetIndex observerIndex consequence battle)
                 battle consequences)
-            battle consequenceses
+            battle consequences
 
     let makeFromParty inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData world =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
