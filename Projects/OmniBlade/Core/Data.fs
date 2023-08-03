@@ -693,10 +693,10 @@ module BattleInteractionSystem =
         | Wounded
         | Random of single
         | OneEnemyLeft
-        | HpLessThanOrEqual of single
-        | HpGreaterThanOrEqual of single
-        | TpLessThanOrEqual of single
-        | TpGreaterThanOrEqual of single
+        | HitPointsLessThanOrEqual of single
+        | HitPointsGreaterThanOrEqual of single
+        | TechPointsLessThanOrEqual of single
+        | TechPointsGreaterThanOrEqual of single
         | Any of BattleAffectType list
         | All of BattleAffectType list
 

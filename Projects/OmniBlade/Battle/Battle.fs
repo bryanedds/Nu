@@ -117,8 +117,20 @@ module Battle =
     let getFriendlies ally battle =
         if ally then getAllies battle else getEnemies battle
 
+    let getFriendliesHealthy ally battle =
+        if ally then getAlliesHealthy battle else getEnemiesHealthy battle
+
+    let getFriendliesWounded ally battle =
+        if ally then getAlliesWounded battle else getEnemiesWounded battle
+
     let getUnfriendlies ally battle =
         if ally then getEnemies battle else getAllies battle
+
+    let getUnfriendliesHealthy ally battle =
+        if ally then getEnemiesHealthy battle else getAlliesHealthy battle
+
+    let getUnfriendliesWounded ally battle =
+        if ally then getEnemiesWounded battle else getAlliesWounded battle
 
     let getTargets aimType battle =
         match aimType with
@@ -615,13 +627,13 @@ module Battle =
         match affectType with
         | Physical -> true
         | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
-        | Wounded -> target.HitPoints <= 0
+        | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
-        | OneEnemyLeft -> let enemies = if observer.Ally then getEnemies battle else getAllies battle in enemies.Count = 1
-        | HpLessThanOrEqual ceiling -> single target.HitPointsMax / single target.HitPoints <= ceiling
-        | HpGreaterThanOrEqual floor -> single target.HitPointsMax / single target.HitPoints >= floor
-        | TpLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
-        | TpGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
+        | OneEnemyLeft -> let enemies = getFriendliesHealthy observer.Ally battle in enemies.Count = 1
+        | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
+        | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
+        | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
+        | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
         | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
 
@@ -658,13 +670,13 @@ module Battle =
         match affectType with
         | Physical | Magical | Affinity _ | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Item -> true
-        | Wounded -> target.HitPoints <= 0
+        | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
-        | OneEnemyLeft -> let enemies = if observer.Ally then getEnemies battle else getAllies battle in enemies.Count = 1
-        | HpLessThanOrEqual ceiling -> single target.HitPointsMax / single target.HitPoints <= ceiling
-        | HpGreaterThanOrEqual floor -> single target.HitPointsMax / single target.HitPoints >= floor
-        | TpLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
-        | TpGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
+        | OneEnemyLeft -> let enemies = getFriendliesHealthy observer.Ally battle in enemies.Count = 1
+        | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
+        | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
+        | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
+        | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
         | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
 
@@ -711,13 +723,13 @@ module Battle =
             | Uncancelled -> not cancelled && Option.isSome target.AutoBattleOpt
             | Debuffed -> Seq.exists StatusType.debuff statusesAdded
             | Buffed -> Seq.exists StatusType.buff statusesAdded
-            | Wounded -> target.HitPoints <= 0
+            | Wounded -> target.Wounded
             | Random chance -> Gen.randomf < chance
-            | OneEnemyLeft -> let enemies = if observer.Ally then getEnemies battle else getAllies battle in enemies.Count = 1
-            | HpLessThanOrEqual ceiling -> single target.HitPointsMax / single target.HitPoints <= ceiling
-            | HpGreaterThanOrEqual floor -> single target.HitPointsMax / single target.HitPoints >= floor
-            | TpLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
-            | TpGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
+            | OneEnemyLeft -> let enemies = getFriendliesHealthy observer.Ally battle in enemies.Count = 1
+            | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
+            | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
+            | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
+            | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
             | Any affectTypes -> List.exists (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
             | All affectTypes -> List.forall (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
         | (false, _) -> false
