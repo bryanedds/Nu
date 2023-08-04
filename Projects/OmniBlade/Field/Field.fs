@@ -29,12 +29,60 @@ type FieldTransition =
       FieldDirection : Direction
       FieldTransitionTime : int64 }
 
-type FieldSignal =
+type FieldMessage =
+    | Update
+    | UpdateFieldTransition
+    | UpdateAvatarBodyTracking
+    | AvatarBodyTransform of BodyTransformData
+    | AvatarBodyCollision of BodyCollisionData
+    | AvatarBodySeparationImplicit of BodySeparationImplicitData
+    | AvatarBodySeparationExplicit of BodySeparationExplicitData
+    | ScreenTransitioning of bool
+    | MenuTeamOpen
+    | MenuTeamAlly of int
+    | MenuInventoryOpen
+    | MenuInventoryPageUp
+    | MenuInventoryPageDown
+    | MenuInventorySelect of int * (ItemType * int Option)
+    | MenuInventoryUse of int
+    | MenuInventoryCancel
+    | MenuTechsOpen
+    | MenuTechsAlly of int
+    | MenuTechsSelect of int
+    | MenuKeyItemsOpen
+    | MenuKeyItemsPageUp
+    | MenuKeyItemsPageDown
+    | MenuKeyItemsSelect of int * (ItemType * int Option)
+    | MenuOptionsOpen
+    | MenuOptionsSelectBattleSpeed of BattleSpeed
+    | MenuClose
+    | ShopBuy
+    | ShopSell
+    | ShopPageUp
+    | ShopPageDown
+    | ShopSelect of int * (ItemType * int Option)
+    | ShopConfirmAccept
+    | ShopConfirmDecline
+    | ShopLeave
+    | PromptLeft
+    | PromptRight
     | TryBattle of BattleType * Advent Set
+    | Interact
+    interface Message
+
+type FieldCommand =
+    | ProcessKeyInput
+    | ProcessTouchInput of Vector2
+    | UpdateEye
+    | WarpAvatar of Vector3
+    | MoveAvatar of Vector3
+    | FaceAvatar of Direction
+    | PlayFieldSong
     | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
     | FadeOutSong of int64
-    interface Signal
+    | Nop
+    interface Command
 
 [<RequireQualifiedAccess>]
 module Field =
@@ -747,7 +795,7 @@ module Field =
                 let field = recruit allyType field
                 let field = updateAdvents (Set.add advent) field
                 let field = updateInventory (Inventory.removeGold fee) field
-                (Fin, definitions, withSignal (FieldSignal.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                (Fin, definitions, withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
             else
                 advanceCue
                     (Parallel
