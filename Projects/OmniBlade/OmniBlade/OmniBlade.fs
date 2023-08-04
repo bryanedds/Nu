@@ -108,7 +108,7 @@ module OmniBlade =
                 just (Gui (Intro slot))
 
             | TryLoad saveSlot ->
-                match Field.tryLoad saveSlot world with
+                match Field.tryLoad (World.getUpdateTime world) saveSlot with
                 | Some loaded -> just (Field loaded)
                 | None -> just model
 
@@ -134,7 +134,7 @@ module OmniBlade =
                         match gui with
                         | Intro slot ->
                             match Simulants.Intro5.GetTransitionState world with
-                            | OutgoingState _ -> Field (Field.initial slot world)
+                            | OutgoingState _ -> Field (Field.initial (World.getUpdateTime world) slot (World.getViewBounds2dAbsolute world) )
                             | _ -> model
                         | _ -> model
                     | Field field ->

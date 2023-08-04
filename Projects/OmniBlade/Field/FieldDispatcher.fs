@@ -73,7 +73,7 @@ module FieldDispatcher =
         member this.Field = this.ModelGeneric<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getUpdateTime world) (World.getViewBounds2dAbsolute world))
 
         static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) world =
             let collideeEntity = collidee.BodyId.BodySource :?> Entity
@@ -94,93 +94,6 @@ module FieldDispatcher =
                   | _ -> true) then
                 true
             else false
-
-        static let interactDialog dialog field =
-            match Dialog.tryAdvance (Field.detokenize field) dialog with
-            | (true, dialog) ->
-                let field = Field.updateDialogOpt (constant (Some dialog)) field
-                just field
-            | (false, dialog) ->
-                let field = Field.updateDialogOpt (constant None) field
-                match dialog.DialogBattleOpt with
-                | Some (battleType, consequence) -> withSignal (TryBattle (battleType, consequence)) field
-                | None -> just field
-
-        static let interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
-            if field.Advents.IsSupersetOf requirements then
-                let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                let field = Field.updateAdvents (Set.add (Opened chestId)) field
-                let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
-                let field =
-                    match battleTypeOpt with
-                    | Some battleType -> Field.updateDialogOpt (constant (Some (Dialog.makePlus DialogThin ("Found " + ItemType.getName itemType + "!^But something approaches!") None (Some (battleType, Set.empty))))) field
-                    | None -> Field.updateDialogOpt (constant (Some (Dialog.make DialogThin ("Found " + ItemType.getName itemType + "!")))) field
-                let field = Field.updateCue (constant cue) field
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
-            else
-                let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
-
-        static let interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
-            match prop.PropState with
-            | DoorState false ->
-                if  field.Advents.IsSupersetOf requirements &&
-                    Option.mapOrDefaultValue (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory.Items) true keyItemTypeOpt then
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                    let field = Field.updateCue (constant cue) field
-                    let field = Field.updatePropState (constant (DoorState true)) prop.PropId field
-                    withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
-                else
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                    let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
-                    withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
-            | _ -> failwithumf ()
-
-        static let interactSwitch cue cue2 requirements (prop : Prop) (field : Field) =
-            match prop.PropState with
-            | SwitchState on ->
-                if field.Advents.IsSupersetOf requirements then
-                    let on = not on
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                    let field = Field.updatePropState (constant (SwitchState on)) prop.PropId field
-                    let field = Field.updateCue (constant (if on then cue else cue2)) field
-                    withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
-                else
-                    let field = Field.updateAvatar (Avatar.lookAt prop.Center) field
-                    let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
-                    withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
-            | _ -> failwithumf ()
-
-        static let interactCharacter cue (prop : Prop) (field : Field) =
-            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
-            let field = Field.updateCue (constant cue) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
-        
-        static let interactNpc branches requirements (prop : Prop) (field : Field) =
-            if field.Advents.IsSupersetOf requirements then
-                let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
-                let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
-                let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
-                let field = Field.updateCue (constant branchCue) field
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
-            else just field
-
-        static let interactShopkeep shopType (prop : Prop) (field : Field) =
-            let field = Field.updateAvatar (Avatar.lookAt prop.BottomInset) field
-            let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
-            let field = Field.updateShopOpt (constant (Some shop)) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
-
-        static let interactSeal cue (field : Field) =
-            let field = Field.updateCue (constant cue) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
-
-        static let interactSavePoint (field : Field) =
-            let field = Field.restoreTeam field
-            Field.save field
-            let field = Field.updateDialogOpt (constant (Some (Dialog.make DialogThin "Recovered strength and saved game."))) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => ProcessKeyInput
@@ -206,22 +119,24 @@ module FieldDispatcher =
                 // advance field time
                 let field = Field.advanceUpdateTime field
 
-                // advance cue, reset cue definitions if finished, and convert its signals
-                let (cue, definitions, (cueSignals, field)) = FieldCue.advance field.Cue field.Definitions field
-                let fieldCueSignals = List.map cast cueSignals
+                // advance cue and convert its signals
+                let (cue, definitions, (cueSignals, field)) = Field.advanceCue field.Cue field.Definitions field
+                let fieldSignals = List.map cast cueSignals
+                let signals =
+                    List.map (fun fieldSignal ->
+                        match fieldSignal with
+                        | FieldSignal.TryBattle (battleType, consequents) -> TryBattle (battleType, consequents) |> signal
+                        | FieldSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound) |> signal
+                        | FieldSignal.PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) -> PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) |> signal
+                        | FieldSignal.FadeOutSong fadeOutTime -> FadeOutSong fadeOutTime |> signal)
+                        fieldSignals
+
+                // reset cue definitions if finished
                 let field =
                     match cue with
                     | CueSystem.Fin -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
                     | _ -> Field.updateDefinitions (constant definitions) field
                 let field = Field.updateCue (constant cue) field
-                let signals =
-                    List.map (fun fieldCueSignal ->
-                        match fieldCueSignal with
-                        | FieldCueSignal.TryBattle (battleType, consequents) -> TryBattle (battleType, consequents) |> signal
-                        | FieldCueSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound) |> signal
-                        | FieldCueSignal.PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) -> PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) |> signal
-                        | FieldCueSignal.FadeOutSong fadeOutTime -> FadeOutSong fadeOutTime |> signal)
-                        fieldCueSignals
 
                 // advance dialog
                 let field =
@@ -285,7 +200,7 @@ module FieldDispatcher =
                             let playTime = Option.defaultValue time field.FieldSongTimeOpt
                             let startTime = time - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                            let field = Field.enterBattle startTime prizePool battleData field world
+                            let field = Field.enterBattle (World.getUpdateTime world) startTime prizePool battleData field
                             let fade = FadeOutSong 60L
                             let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
                             (signal fade :: signal beastGrowl :: signals, field)
@@ -321,7 +236,7 @@ module FieldDispatcher =
                                 match destinationData.FieldType with // HACK: pre-generate fields.
                                 | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
                                 | _ -> ()
-                                let field = Field.updateFieldType (constant fieldTransition.FieldType) field world
+                                let field = Field.updateFieldType (World.getUpdateTime world) (constant fieldTransition.FieldType) field
                                 let field = Field.updateAvatar (Avatar.updateDirection (constant fieldTransition.FieldDirection)) field
                                 let warpAvatar = WarpAvatar fieldTransition.FieldDestination
                                 let songCmd =
@@ -619,37 +534,22 @@ module FieldDispatcher =
                     let playTime = Option.defaultValue time field.FieldSongTimeOpt
                     let startTime = time - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    let field = Field.enterBattle startTime prizePool battleData field world
+                    let field = Field.enterBattle (World.getUpdateTime world) startTime prizePool battleData field
                     withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 
             | Interact ->
-                match field.DialogOpt with
-                | None ->
-                    if Field.isTouchingSavePoint field then
-                        interactSavePoint field
-                    else
-                        match Field.tryGetFacingProp field with
-                        | Some prop ->
-                            match prop.PropData with
-                            | Sprite _ -> just field
-                            | Portal _ -> just field
-                            | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
-                            | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
-                            | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
-                            | Sensor _ -> just field
-                            | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
-                            | Npc (_, _, cue, requirements) -> interactNpc [{ CueSystem.Cue = cue; CueSystem.Requirements = Set.empty }] requirements prop field
-                            | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
-                            | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
-                            | Seal (_, cue, _) -> interactSeal cue field
-                            | Flame _ -> just field
-                            | SavePoint -> just field
-                            | ChestSpawn -> just field
-                            | EmptyProp -> just field
-                        | None -> just field
-                | Some dialog ->
-                    interactDialog dialog field
+                let (interactSignals, field) = Field.interact field
+                let fieldSignals = List.map cast interactSignals
+                let signals =
+                    List.map (fun fieldSignal ->
+                        match fieldSignal with
+                        | FieldSignal.TryBattle (battleType, consequents) -> TryBattle (battleType, consequents) |> signal
+                        | FieldSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound) |> signal
+                        | FieldSignal.PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) -> PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) |> signal
+                        | FieldSignal.FadeOutSong fadeOutTime -> FadeOutSong fadeOutTime |> signal)
+                        fieldSignals
+                (signals, field)
 
         override this.Command (field, command, screen, world) =
 
@@ -916,7 +816,7 @@ module FieldDispatcher =
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
-                        Field.isTouchingSavePoint field &&
+                        Field.touchingSavePoint field &&
                         not field.ScreenTransitioning &&
                         field.Team.Count > 2
                      Entity.Text == "Party"]
