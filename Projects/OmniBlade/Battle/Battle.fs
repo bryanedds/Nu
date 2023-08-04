@@ -632,6 +632,7 @@ module Battle =
                                 match spawnType.SpawnEffectType with
                                 | Materialize -> Character.materialize time enemy
                                 | Unearth -> Character.animate time UnearthAnimation enemy
+                                | Pop -> enemy
                             battle <- addCharacter enemyIndex enemy battle
                             spawned <- true
                         | None -> ()
