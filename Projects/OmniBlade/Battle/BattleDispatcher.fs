@@ -619,9 +619,9 @@ module BattleDispatcher =
                                 let battle = Battle.animateCharacter time ReadyAnimation observerIndex battle
                                 Battle.dematerializeCharacter time observerIndex battle
                             elif localTime = 120L then
-                                let observer = Battle.getCharacter observerIndex battle
+                                let spawnPosition = (Battle.getCharacterPerimeter observerIndex battle).BottomLeft
+                                let spawnType = { EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = Some spawnPosition; EnemyIndexOpt = Some observerIndex.Subindex }
                                 let battle = Battle.removeCharacter observerIndex battle
-                                let spawnType = { EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = Some observer.Perimeter.BottomLeft; EnemyIndexOpt = Some observerIndex.Subindex }
                                 let battle = Battle.spawnEnemy time spawnType battle
                                 let battle = Battle.animateCharacter time WalkAnimation observerIndex battle
                                 Battle.faceCharacter Downward observerIndex battle
