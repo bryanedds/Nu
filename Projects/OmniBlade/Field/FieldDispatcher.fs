@@ -12,61 +12,6 @@ open OmniBlade
 [<AutoOpen>]
 module FieldDispatcher =
 
-    type FieldMessage =
-        | Update
-        | UpdateFieldTransition
-        | UpdateAvatarBodyTracking
-        | AvatarBodyTransform of BodyTransformData
-        | AvatarBodyCollision of BodyCollisionData
-        | AvatarBodySeparationImplicit of BodySeparationImplicitData
-        | AvatarBodySeparationExplicit of BodySeparationExplicitData
-        | ScreenTransitioning of bool
-        | MenuTeamOpen
-        | MenuTeamAlly of int
-        | MenuInventoryOpen
-        | MenuInventoryPageUp
-        | MenuInventoryPageDown
-        | MenuInventorySelect of int * (ItemType * int Option)
-        | MenuInventoryUse of int
-        | MenuInventoryCancel
-        | MenuTechsOpen
-        | MenuTechsAlly of int
-        | MenuTechsSelect of int
-        | MenuKeyItemsOpen
-        | MenuKeyItemsPageUp
-        | MenuKeyItemsPageDown
-        | MenuKeyItemsSelect of int * (ItemType * int Option)
-        | MenuOptionsOpen
-        | MenuOptionsSelectBattleSpeed of BattleSpeed
-        | MenuClose
-        | ShopBuy
-        | ShopSell
-        | ShopPageUp
-        | ShopPageDown
-        | ShopSelect of int * (ItemType * int Option)
-        | ShopConfirmAccept
-        | ShopConfirmDecline
-        | ShopLeave
-        | PromptLeft
-        | PromptRight
-        | TryBattle of BattleType * Advent Set
-        | Interact
-        interface Message
-
-    type FieldCommand =
-        | ProcessKeyInput
-        | ProcessTouchInput of Vector2
-        | UpdateEye
-        | WarpAvatar of Vector3
-        | MoveAvatar of Vector3
-        | FaceAvatar of Direction
-        | PlayFieldSong
-        | PlaySound of int64 * single * Sound AssetTag
-        | PlaySong of int64 * int64 * int64 * single * Song AssetTag
-        | FadeOutSong of int64
-        | Nop
-        interface Command
-
     type Screen with
         member this.GetField world = this.GetModelGeneric<Field> world
         member this.SetField value world = this.SetModelGeneric<Field> value world
@@ -120,16 +65,7 @@ module FieldDispatcher =
                 let field = Field.advanceUpdateTime field
 
                 // advance cue and convert its signals
-                let (cue, definitions, (cueSignals, field)) = Field.advanceCue field.Cue field.Definitions field
-                let fieldSignals = List.map cast cueSignals
-                let signals =
-                    List.map (fun fieldSignal ->
-                        match fieldSignal with
-                        | FieldSignal.TryBattle (battleType, consequents) -> TryBattle (battleType, consequents) |> signal
-                        | FieldSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound) |> signal
-                        | FieldSignal.PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) -> PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) |> signal
-                        | FieldSignal.FadeOutSong fadeOutTime -> FadeOutSong fadeOutTime |> signal)
-                        fieldSignals
+                let (cue, definitions, (signals, field)) = Field.advanceCue field.Cue field.Definitions field
 
                 // reset cue definitions if finished
                 let field =
@@ -539,16 +475,7 @@ module FieldDispatcher =
                 | None -> just field
 
             | Interact ->
-                let (interactSignals, field) = Field.interact field
-                let fieldSignals = List.map cast interactSignals
-                let signals =
-                    List.map (fun fieldSignal ->
-                        match fieldSignal with
-                        | FieldSignal.TryBattle (battleType, consequents) -> TryBattle (battleType, consequents) |> signal
-                        | FieldSignal.PlaySound (delay, volume, sound) -> PlaySound (delay, volume, sound) |> signal
-                        | FieldSignal.PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) -> PlaySong (fadeInTime, fadeOutTime, songTime, volume, song) |> signal
-                        | FieldSignal.FadeOutSong fadeOutTime -> FadeOutSong fadeOutTime |> signal)
-                        fieldSignals
+                let (signals, field) = Field.interact field
                 (signals, field)
 
         override this.Command (field, command, screen, world) =
