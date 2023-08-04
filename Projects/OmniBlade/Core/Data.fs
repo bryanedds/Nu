@@ -530,6 +530,7 @@ type CharacterType =
 type SpawnEffectType =
     | Materialize
     | Unearth
+    | Pop
 
 type SpawnType =
     { EnemyType : EnemyType
