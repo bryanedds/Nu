@@ -113,8 +113,8 @@ module BattleDispatcher =
                                 let battle = Battle.finishCharacterAction sourceIndex battle
                                 let battle =
                                     if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                        Battle.shouldCounter targetIndex sourceIndex battle then
-                                        Battle.counterAttack targetIndex sourceIndex battle
+                                        Battle.shouldCharacterCounter targetIndex sourceIndex battle then
+                                        Battle.characterCounterAttack targetIndex sourceIndex battle
                                     else
                                         let consequences = Battle.evalFightInteractions sourceIndex targetIndex battle
                                         let battle = Battle.evalConsequences consequences battle
@@ -463,8 +463,8 @@ module BattleDispatcher =
                                         let battle = Battle.finishCharacterAction sourceIndex battle
                                         let battle =
                                             if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                                Battle.shouldCounter targetIndex sourceIndex battle then
-                                                Battle.counterAttack targetIndex sourceIndex battle
+                                                Battle.shouldCharacterCounter targetIndex sourceIndex battle then
+                                                Battle.characterCounterAttack targetIndex sourceIndex battle
                                             else battle
                                         let consequences = Battle.evalTechInteractions sourceIndex targetIndex techType results battle
                                         let battle = Battle.evalConsequences consequences battle
@@ -519,7 +519,7 @@ module BattleDispatcher =
                 | CounterAttack ->
                     let battle =
                         if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle
-                        then Battle.counterAttack observerIndex sourceIndex battle
+                        then Battle.characterCounterAttack observerIndex sourceIndex battle
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
@@ -568,7 +568,7 @@ module BattleDispatcher =
                 | RetargetToSource ->
                     let battle =
                         if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle
-                        then Battle.retarget sourceIndex observerIndex battle
+                        then Battle.retargetCharacter observerIndex sourceIndex battle
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
@@ -576,14 +576,14 @@ module BattleDispatcher =
                     let battle =
                         if Battle.getCharacterHealthy sourceIndex battle && Battle.getCharacterHealthy observerIndex battle then 
                             let friendlies = Battle.getFriendlies observerIndex.Ally battle
-                            Map.fold (fun battle friendlyIndex _ -> Battle.retarget sourceIndex friendlyIndex battle) battle friendlies
+                            Map.fold (fun battle friendlyIndex _ -> Battle.retargetCharacter friendlyIndex sourceIndex battle) battle friendlies
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | ChangeAction techTypeOpt ->
                     let battle =
                         if Battle.getCharacterHealthy observerIndex battle
-                        then Battle.changeAutoTechOpt techTypeOpt observerIndex battle
+                        then Battle.updateCharacterAutoTechOpt (constant techTypeOpt) observerIndex battle
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
@@ -591,7 +591,7 @@ module BattleDispatcher =
                     let battle =
                         if Battle.getCharacterHealthy observerIndex battle then 
                             let friendlies = Battle.getFriendlies observerIndex.Ally battle
-                            Map.fold (fun battle friendlyIndex _ -> Battle.changeAutoTechOpt techTypeOpt friendlyIndex battle) battle friendlies
+                            Map.fold (fun battle friendlyIndex _ -> Battle.updateCharacterAutoTechOpt (constant techTypeOpt) friendlyIndex battle) battle friendlies
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
@@ -729,7 +729,7 @@ module BattleDispatcher =
             elif localTime = 160L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
                 let battle = Battle.animateCharactersPoised time battle
-                let battle = Battle.populateAllyConjureCharges battle
+                let battle = Battle.populateAlliesConjureCharges battle
                 let battle = Battle.autoBattleEnemies battle
                 just battle
             else just battle
@@ -757,7 +757,7 @@ module BattleDispatcher =
                 match command.ActionCommand.Action with
                 | Attack | Defend ->
                     if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
-                        let targetIndexOpt = Battle.retargetIfNeeded false targetIndexOpt battle
+                        let targetIndexOpt = Battle.evalRetarget false targetIndexOpt battle
                         let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         Battle.updateCurrentCommandOpt (constant (Some command)) battle
                     else battle
@@ -765,7 +765,7 @@ module BattleDispatcher =
                     match Data.Value.Consumables.TryGetValue consumableType with
                     | (true, consumable) ->
                         if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
-                            let targetIndexOpt = Battle.retargetIfNeeded consumable.Revive targetIndexOpt battle
+                            let targetIndexOpt = Battle.evalRetarget consumable.Revive targetIndexOpt battle
                             let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         else battle
@@ -774,7 +774,7 @@ module BattleDispatcher =
                     match Data.Value.Techs.TryGetValue techType with
                     | (true, _) ->
                         if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
-                            let targetIndexOpt = Battle.retargetIfNeeded false targetIndexOpt battle // TODO: consider affecting wounded.
+                            let targetIndexOpt = Battle.evalRetarget false targetIndexOpt battle // TODO: consider affecting wounded.
                             let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                             Battle.updateCurrentCommandOpt (constant (Some command)) battle
                         else battle
@@ -806,7 +806,7 @@ module BattleDispatcher =
             let battle =
                 Map.fold (fun battle enemyIndex (enemy : Character) ->
                     if  enemy.ActionTime >= Constants.Battle.ActionTime &&
-                        not (Battle.characterAppendedActionCommand enemyIndex battle) then
+                        not (Battle.getCharacterAppendedActionCommand enemyIndex battle) then
                         let battle =
                             match enemy.AutoBattleOpt with
                             | Some autoBattle ->
