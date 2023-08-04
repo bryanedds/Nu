@@ -8,11 +8,15 @@ open Prime
 open Nu
 open OmniBlade
 
+type CharacterMaterialization =
+    | Materializing
+    | Dematerializing
+
 type [<SymbolicExpansion>] CharacterAnimationState =
     { StartTime : int64
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType
-      Materializing : bool // whether the character is fading in
+      MaterializationOpt : CharacterMaterialization option
       Direction : Direction }
 
     static member face direction (state : CharacterAnimationState) =
@@ -99,14 +103,20 @@ type [<SymbolicExpansion>] CharacterAnimationState =
         | Some progress -> progress = 1.0f
         | None -> true
 
-    static member materialize state =
-        { state with Materializing = true }
+    static member materialize time state =
+        { state with StartTime = time; MaterializationOpt = Some Materializing }
+
+    static member dematerialize time state =
+        { state with StartTime = time; MaterializationOpt = Some Dematerializing }
+
+    static member materialized time state =
+        { state with StartTime = time; MaterializationOpt = None }
 
     static member empty =
         { StartTime = 0L
           AnimationSheet = Assets.Field.JinnAnimationSheet
           CharacterAnimationType = IdleAnimation
-          Materializing = false
+          MaterializationOpt = None
           Direction = Downward }
 
     static member initial =

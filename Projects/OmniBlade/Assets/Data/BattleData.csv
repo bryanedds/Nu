@@ -1,6 +1,6 @@
 Type,BattleAllyPositions,BattleEnemies,BattleTileMap,BattleTileIndexOffset,BattleTileIndexOffsetRange,BattleSongOpt
 EmptyBattle,[],[],[Battle EmptyBattle],0,[0 0],None
-DebugBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[AraneaImplicitum BloodArmoros MadMinotaur BlueGoblin],[Battle DebugBattle],0,[0 0],[Some [Battle Battle]]
+DebugBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[DebugGoblin DebugGoblin DebugGoblin],[Battle DebugBattle],0,[0 0],[Some [Battle Battle]]
 CastleBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[DarkBat DarkBat DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle2,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]
 CastleBattle3,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BlueGoblin DarkBat DarkBat],[Castle CastleBattle],0,[0 1480],[Some [Castle CastleBattle]]

@@ -144,6 +144,7 @@ module Constants =
         let CharacterOffset = v3 -96.0f 0.0f 0.0f
         let CharacterPulseDuration = 60L
         let CharacterMaterializeDuration = 120L
+        let CharacterDematerializeDuration = 120L
         let RingMenuRadius = 84.0f
         let BackgroundElevation = -30.0f
         let GuiBackgroundElevation = -5.0f

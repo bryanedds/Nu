@@ -4,7 +4,7 @@ Type,ArchetypeType,LevelBase,AbsorbCreep,Boss,AnimationSheet,PortraitOpt,WeaponO
 [Ally Mael],Wizard,1,1,False,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,[],[],1,1,A dark wizard from the Caelia.
 [Ally Riain],Conjuror,1,1,False,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,[],[],1,1,A conjuror whose origin eludes all.
 [Ally Peric],Cleric,1,1,False,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,[],[],1,1,A cleric exiled from the Kingdom of Vorpa.
-[Enemy DebugGoblin],Goblin,4,1,False,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.5],[],"[[[AffectedTarget Physical Friendly] [[Message ""Counter!"" 30] CounterAttack]]]",1,1,An enemy for battle debugging.
+[Enemy DebugGoblin],Goblin,4,1,False,[Field DebugGoblin],None,None,[Some StoneHide],[],[Some 0.5],[],"[[[AffectedTarget Physical Friendly] [[Message ""RAWRRRR!"" 40] [Replace MadMinotaur]]]]",1,1,An enemy for battle debugging.
 [Enemy DarkBat],Bat,1,1,False,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.5],[],[],1,1,A bat from the darkest parts of the tomb.
 [Enemy BlueGoblin],Goblin,2,1,False,[Castle BlueGoblin],None,[Some Paws],[Some MicroFur],[],[Some 0.5],[],[],1,1.25,A minor goblin from the Golobogos Islands.
 [Enemy MadMinotaur],Minotaur,2,1,False,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.5],[],[],1,1.25,A minotaur gone mad with vengeance.

@@ -103,7 +103,7 @@ module Field =
                 { StartTime = time
                   AnimationSheet = animationSheet
                   CharacterAnimationType = IdleAnimation
-                  Materializing = false
+                  MaterializationOpt = None
                   Direction = direction }
             CharacterState (Color.One, characterAnimationState)
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState

@@ -93,7 +93,7 @@ module Battle =
     let getCharactersHudded battle =
         getCharactersIf (fun _ (character : Character) ->
             character.Ally ||
-            (character.Enemy && character.Standing && not character.Materializing))
+            (character.Enemy && character.Standing && character.MaterializationOpt.IsNone))
             battle
 
     let getAllies battle =
@@ -239,6 +239,12 @@ module Battle =
 
     let getCharacterWounded characterIndex battle =
         (getCharacter characterIndex battle).Wounded
+
+    let getCharacterStanding characterIndex battle =
+        (getCharacter characterIndex battle).Standing
+
+    let getCharacterSwooning characterIndex battle =
+        (getCharacter characterIndex battle).Swooning
 
     let getCharacterPerimeterOriginal characterIndex battle =
         (getCharacter characterIndex battle).PerimeterOriginal
@@ -442,6 +448,15 @@ module Battle =
             Triple.prepend techData.TechCost (Character.evalTech techData source target characters)
         | None -> (0, None, Map.empty)
 
+    let materializeCharacter time characterIndex battle =
+        updateCharacter (Character.materialize time) characterIndex battle
+
+    let dematerializeCharacter time characterIndex battle =
+        updateCharacter (Character.dematerialize time) characterIndex battle
+
+    let materializedCharacter time characterIndex battle =
+        updateCharacter (Character.materialized time) characterIndex battle
+
     let retarget targetIndex characterIndex battle =
         match tryGetCharacter targetIndex battle with
         | Some target when target.Healthy ->
@@ -489,7 +504,7 @@ module Battle =
                     | Attack -> RegularMenu
                     | Defend -> RegularMenu
                     | Tech _ -> TechMenu
-                    | Consume _ -> ItemMenu
+                    | ActionType.Consume _ -> ItemMenu
                     | Consequence _ | Wound -> failwithumf ()
                 Character.updateCharacterInputState (constant inputState) character
             | None -> character)
@@ -610,12 +625,12 @@ module Battle =
                     let notOnSides = i <> 0 && i <> w - 1
                     let notOverlapping = Array.notExists (fun position' -> Vector3.Distance (position, position') < tile.X * 2.0f) positions
                     if notOnSides && notOverlapping then
-                        let enemyIndex = nextEnemyIndex battle                        
-                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed { EnemyType = spawnType.EnemyType; EnemyPosition = position } with
+                        let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
+                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed { EnemyType = spawnType.EnemyType; EnemyPosition = Option.defaultValue position spawnType.PositionOpt } with
                         | Some enemy ->
                             let enemy =
                                 match spawnType.SpawnEffectType with
-                                | Materialize -> Character.materialize enemy
+                                | Materialize -> Character.materialize time enemy
                                 | Unearth -> Character.animate time UnearthAnimation enemy
                             battle <- addCharacter enemyIndex enemy battle
                             spawned <- true
@@ -625,6 +640,9 @@ module Battle =
                 battle
                 spawnTypes
         battle
+
+    let spawnEnemy time spawnType battle =
+        spawnEnemies time [spawnType] battle
 
     let rec private evalSingleTargetType targetType (source : Character) (target : Character) (observer : Character) battle =
         match targetType with

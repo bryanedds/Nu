@@ -72,7 +72,7 @@ module Avatar =
         updateCharacterAnimationState (fun state -> CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType state) avatar
 
     let make bounds animationSheet direction =
-        let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; Materializing = false; Direction = direction }
+        let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; MaterializationOpt = None; Direction = direction }
         { Perimeter_ = bounds
           CharacterAnimationState_ = characterAnimationState
           CelSize_ = Constants.Gameplay.CharacterCelSize }

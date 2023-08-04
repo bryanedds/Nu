@@ -599,7 +599,7 @@ module BattleDispatcher =
                     let battle =
                         if Battle.getCharacterHealthy observerIndex battle then 
                             match (Battle.getCharacter observerIndex battle).CharacterType with
-                            | Enemy enemyType -> Battle.spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize }] battle
+                            | Enemy enemyType -> Battle.spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = None; EnemyIndexOpt = None }] battle
                             | Ally _ -> battle
                         else battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
@@ -613,10 +613,23 @@ module BattleDispatcher =
                     just battle
                 | Replace enemyType ->
                     let battle =
-                        if Battle.getCharacterHealthy observerIndex battle
-                        then battle // TODO: implement.
-                        else battle
-                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                        if  Battle.containsCharacter observerIndex battle &&
+                            Battle.getCharacterHealthy observerIndex battle then
+                            if localTime = 0L then
+                                let battle = Battle.animateCharacter time ReadyAnimation observerIndex battle
+                                Battle.dematerializeCharacter time observerIndex battle
+                            elif localTime = 120L then
+                                let observer = Battle.getCharacter observerIndex battle
+                                let battle = Battle.removeCharacter observerIndex battle
+                                let spawnType = { EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = Some observer.Perimeter.BottomLeft; EnemyIndexOpt = Some observerIndex.Subindex }
+                                let battle = Battle.spawnEnemy time spawnType battle
+                                let battle = Battle.animateCharacter time WalkAnimation observerIndex battle
+                                Battle.faceCharacter Downward observerIndex battle
+                            elif localTime = 240L then
+                                let battle = Battle.materializedCharacter time observerIndex battle
+                                Battle.updateCurrentCommandOpt (constant None) battle
+                            else battle
+                        else Battle.updateCurrentCommandOpt (constant None) battle
                     just battle
                 | Message (text, lifeTime) ->
                     let battle =
