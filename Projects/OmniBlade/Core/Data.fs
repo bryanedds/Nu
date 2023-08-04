@@ -533,7 +533,9 @@ type SpawnEffectType =
 
 type SpawnType =
     { EnemyType : EnemyType
-      SpawnEffectType : SpawnEffectType }
+      SpawnEffectType : SpawnEffectType
+      PositionOpt : Vector3 option
+      EnemyIndexOpt : int option }
 
 type SpiritType =
     | WeakSpirit

@@ -96,7 +96,7 @@ module Character =
         member this.AnimationStartTime = this.CharacterAnimationState_.StartTime
         member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
         member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
-        member this.Materializing = this.CharacterAnimationState_.Materializing
+        member this.MaterializationOpt = this.CharacterAnimationState_.MaterializationOpt
         member this.Direction = this.CharacterAnimationState_.Direction
 
         (* Local Properties *)
@@ -274,32 +274,41 @@ module Character =
                 | None -> failwithumf ()
             else Color.One
         let color =
-            if character.Materializing then
-                let localTime = time - character.AnimationStartTime
-                let progress = single localTime / single Constants.Battle.CharacterMaterializeDuration
-                color.ScaleA progress
-            else color
+            match character.MaterializationOpt with
+            | Some materialization ->
+                match materialization with
+                | Materializing ->
+                    let localTime = time - character.AnimationStartTime
+                    let progress = single localTime / single Constants.Battle.CharacterMaterializeDuration
+                    color.ScaleA progress
+                | Dematerializing ->
+                    let localTime = time - character.AnimationStartTime
+                    let progress = 1.0f - (single localTime / single Constants.Battle.CharacterDematerializeDuration)
+                    color.ScaleA progress
+            | None -> color
         color
 
     let getAnimationEmission time (character : Character) =
-        let pulseTime = time % Constants.Battle.CharacterPulseDuration
-        let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseDuration
-        let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
-        let statuses = character.Statuses
-        if character.Wounded then Color.Zero
-        elif autoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
-        elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
-        elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
-        elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
-        elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
-        elif Map.containsKey Confuse statuses then Color (byte 191, byte 191, byte 255, pulseIntensity) // blue-green
-        elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
-        elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
-        elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
-        elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
-        elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
-        elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
-        elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark yellow
+        if character.MaterializationOpt.IsNone then
+            let pulseTime = time % Constants.Battle.CharacterPulseDuration
+            let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseDuration
+            let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
+            let statuses = character.Statuses
+            if character.Wounded then Color.Zero
+            elif autoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
+            elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
+            elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
+            elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
+            elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
+            elif Map.containsKey Confuse statuses then Color (byte 191, byte 191, byte 255, pulseIntensity) // blue-green
+            elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
+            elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
+            elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
+            elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
+            elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
+            elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
+            elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark yellow
+            else Color.Zero
         else Color.Zero
 
     let getAnimationFinished time character =
@@ -508,12 +517,18 @@ module Character =
     let animate time characterAnimationType character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
-    let materialize character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.materialize character.CharacterAnimationState_ }
+    let materialize time character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.materialize time character.CharacterAnimationState_ }
+
+    let dematerialize time character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.dematerialize time character.CharacterAnimationState_ }
+
+    let materialized time character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.materialized time character.CharacterAnimationState_ }
 
     let make bounds characterIndex characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
         let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation
-        let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Materializing = false; Direction = direction }
+        let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; MaterializationOpt = None; Direction = direction }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterIndex_ = characterIndex
@@ -558,7 +573,7 @@ module Character =
 
     let empty =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
-        let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Materializing = false; Direction = Downward }
+        let characterAnimationState = { StartTime = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; MaterializationOpt = None; Direction = Downward }
         { PerimeterOriginal_ = bounds
           Perimeter_ = bounds
           CharacterIndex_ = AllyIndex 0
