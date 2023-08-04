@@ -8,6 +8,7 @@ open System.Numerics
 open Prime
 open Nu
 open OmniBlade
+open OmniBlade.CueSystem
 
 type SaveSlot =
     | Slot1
@@ -27,6 +28,13 @@ type FieldTransition =
       FieldDestination : Vector3
       FieldDirection : Direction
       FieldTransitionTime : int64 }
+
+type FieldSignal =
+    | TryBattle of BattleType * Advent Set
+    | PlaySound of int64 * single * Sound AssetTag
+    | PlaySong of int64 * int64 * int64 * single * Song AssetTag
+    | FadeOutSong of int64
+    interface Signal
 
 [<RequireQualifiedAccess>]
 module Field =
@@ -89,6 +97,8 @@ module Field =
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
         member this.ViewBoundsAbsolute = this.ViewBoundsAbsolute_
 
+    (* Low-Level Operations *)
+
     let private makePropState time propDescriptor =
         match propDescriptor.PropData with
         | Sprite (_, image, color, blend, emission, flip, visible) -> SpriteState (image, color, blend, emission, flip, visible)
@@ -108,10 +118,9 @@ module Field =
             CharacterState (Color.One, characterAnimationState)
         | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
 
-    let private makeProps fieldType omniSeedState world =
+    let private makeProps time fieldType omniSeedState =
         match Map.tryFind fieldType Data.Value.Fields with
         | Some fieldData ->
-            let time = World.getUpdateTime world
             FieldData.getPropDescriptors omniSeedState fieldData |>
             Map.ofListBy (fun propDescriptor ->
                 let propState = makePropState time propDescriptor
@@ -119,7 +128,7 @@ module Field =
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
-    let private makeBattleFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData world =
+    let private makeBattleFromTeam time inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData =
         let party = team |> Map.toList |> List.tryTake 3
         let allyPositions =
             if List.length party < 3
@@ -146,7 +155,7 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = Battle.makeFromParty inventory prizePool party battleSpeed battleData world
+        let battle = Battle.makeFromParty time inventory prizePool party battleSpeed battleData
         battle
         
     let rec detokenize (field : Field) (text : string) =
@@ -220,7 +229,7 @@ module Field =
         | ChestSpawn -> None
         | EmptyProp -> None
 
-    let isFacingProp propId (field : Field) =
+    let facingProp propId (field : Field) =
         match field.Props_.TryGetValue propId with
         | (true, prop) ->
             let v = prop.Bottom - field.Avatar.Bottom
@@ -230,7 +239,7 @@ module Field =
 
     let getFacingProps (field : Field) =
         List.filter
-            (fun propId -> isFacingProp propId field)
+            (fun propId -> facingProp propId field)
             field.AvatarIntersectedPropIds
 
     let tryGetFacingProp (field : Field) =
@@ -245,7 +254,7 @@ module Field =
             predicate prop.PropData)
             field.Props_
 
-    let isTouchingSavePoint (field : Field) =
+    let touchingSavePoint (field : Field) =
         List.exists (fun propId ->
             match field.Props_.TryGetValue propId with
             | (true, prop) -> prop.PropData = SavePoint
@@ -262,7 +271,7 @@ module Field =
             then Some "Next"
             else None
         | None ->
-            if isTouchingSavePoint field then
+            if touchingSavePoint field then
                 Some "Save"
             else
                 match tryGetFacingProp field with
@@ -327,10 +336,10 @@ module Field =
         | (true, fieldData) -> Option.isSome fieldData.EncounterTypeOpt
         | (false, _) -> false
 
-    let updateFieldType updater field world =
+    let updateFieldType time updater field =
         let fieldType = updater field.FieldType_
         let spiritActivity = 0.0f
-        let props = makeProps fieldType field.OmniSeedState_ world
+        let props = makeProps time fieldType field.OmniSeedState_
         { field with
             FieldType_ = fieldType
             SpiritActivity_ = spiritActivity
@@ -415,11 +424,13 @@ module Field =
         let battleOpt = updater field.BattleOpt_
         { field with BattleOpt_ = battleOpt }
 
+    let updateFieldSongTimeOpt updater field =
+        { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
+
     let updateReference field =
         { field with FieldType_ = field.FieldType_ }
 
-    let updateFieldSongTimeOpt updater field =
-        { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
+    (* Mid-Level Operations *)
 
     let clearSpirits field =
         { field with SpiritActivity_ = 0.0f; Spirits_ = [||] }
@@ -433,6 +444,180 @@ module Field =
 
     let restoreTeam field =
         { field with Team_ = Map.map (fun _ -> Teammate.restore) field.Team_ }
+
+    let synchronizeTeamFromAllies allies field =
+        Map.foldi (fun i field _ (ally : Character) ->
+            updateTeam (fun team ->
+                match Map.tryFind i team with
+                | Some teammate ->
+                    let teammate =
+                        { teammate with
+                            HitPoints = ally.HitPoints
+                            TechPoints = ally.TechPoints
+                            ExpPoints = ally.ExpPoints }
+                    Map.add i teammate team
+                | None -> team)
+                field)
+            field
+            allies
+
+    let synchronizeFromBattle consequents battle field =
+        let allies = Battle.getAllies battle
+        let field = synchronizeTeamFromAllies allies field
+        let field = updateInventory (constant battle.Inventory) field
+        let field = updateAdvents (Set.union consequents) field
+        let field = updateAvatarIntersectedPropIds (constant []) field
+        field
+
+    let enterBattle time songTime prizePool battleData (field : Field) =
+        let battle = makeBattleFromTeam time field.Inventory prizePool field.Team field.Options.BattleSpeed battleData
+        let field = updateFieldSongTimeOpt (constant (Some songTime)) field
+        updateBattleOpt (constant (Some battle)) field
+
+    let exitBattle consequents battle field =
+        let field = synchronizeFromBattle consequents battle field
+        let field = clearSpirits field
+        field
+
+    let private toSymbolizable field =
+        { field with
+            UpdateTime_ = 0L
+            Avatar_ = field.Avatar_
+            AvatarCollidedPropIds_ = []
+            AvatarSeparatedPropIds_ = []
+            AvatarIntersectedPropIds_ = []
+            Props_ = Map.empty
+            FieldSongTimeOpt_ = None }
+
+    let save field =
+        let saveFilePath =
+            match field.SaveSlot_ with
+            | Slot1 -> Assets.Global.SaveFilePath1
+            | Slot2 -> Assets.Global.SaveFilePath2
+            | Slot3 -> Assets.Global.SaveFilePath3
+        let fieldSymbolizable = toSymbolizable field
+        let fieldSymbol = valueToSymbol fieldSymbolizable
+        let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
+        try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
+
+    (* Interaction Operations *)
+
+    let private interactDialog dialog field =
+        match Dialog.tryAdvance (detokenize field) dialog with
+        | (true, dialog) ->
+            let field = updateDialogOpt (constant (Some dialog)) field
+            just field
+        | (false, dialog) ->
+            let field = updateDialogOpt (constant None) field
+            match dialog.DialogBattleOpt with
+            | Some (battleType, consequence) -> withSignal (TryBattle (battleType, consequence)) field
+            | None -> just field
+
+    let private interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
+        if field.Advents_.IsSupersetOf requirements then
+            let field = updateAvatar (Avatar.lookAt prop.Center) field
+            let field = updateAdvents (Set.add (Opened chestId)) field
+            let field = updateInventory (Inventory.tryAddItem itemType >> snd) field
+            let field =
+                match battleTypeOpt with
+                | Some battleType -> updateDialogOpt (constant (Some (Dialog.makePlus DialogThin ("Found " + ItemType.getName itemType + "!^But something approaches!") None (Some (battleType, Set.empty))))) field
+                | None -> updateDialogOpt (constant (Some (Dialog.make DialogThin ("Found " + ItemType.getName itemType + "!")))) field
+            let field = updateCue (constant cue) field
+            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
+        else
+            let field = updateAvatar (Avatar.lookAt prop.Center) field
+            let field = updateDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
+            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
+
+    let private interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
+        match prop.PropState with
+        | DoorState false ->
+            if  field.Advents_.IsSupersetOf requirements &&
+                Option.mapOrDefaultValue (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory_.Items) true keyItemTypeOpt then
+                let field = updateAvatar (Avatar.lookAt prop.Center) field
+                let field = updateCue (constant cue) field
+                let field = updatePropState (constant (DoorState true)) prop.PropId field
+                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
+            else
+                let field = updateAvatar (Avatar.lookAt prop.Center) field
+                let field = updateDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
+                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
+        | _ -> failwithumf ()
+
+    let private interactSwitch cue cue2 requirements (prop : Prop) (field : Field) =
+        match prop.PropState with
+        | SwitchState on ->
+            if field.Advents_.IsSupersetOf requirements then
+                let on = not on
+                let field = updateAvatar (Avatar.lookAt prop.Center) field
+                let field = updatePropState (constant (SwitchState on)) prop.PropId field
+                let field = updateCue (constant (if on then cue else cue2)) field
+                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
+            else
+                let field = updateAvatar (Avatar.lookAt prop.Center) field
+                let field = updateDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
+                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
+        | _ -> failwithumf ()
+
+    let private interactCharacter cue (prop : Prop) (field : Field) =
+        let field = updateAvatar (Avatar.lookAt prop.BottomInset) field
+        let field = updateCue (constant cue) field
+        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+
+    let private interactNpc branches requirements (prop : Prop) (field : Field) =
+        if field.Advents_.IsSupersetOf requirements then
+            let field = updateAvatar (Avatar.lookAt prop.BottomInset) field
+            let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents_.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
+            let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
+            let field = updateCue (constant branchCue) field
+            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+        else just field
+
+    let private interactShopkeep shopType (prop : Prop) (field : Field) =
+        let field = updateAvatar (Avatar.lookAt prop.BottomInset) field
+        let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
+        let field = updateShopOpt (constant (Some shop)) field
+        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+
+    let private interactSeal cue (field : Field) =
+        let field = updateCue (constant cue) field
+        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
+
+    let private interactSavePoint (field : Field) =
+        let field = restoreTeam field
+        save field
+        let field = updateDialogOpt (constant (Some (Dialog.make DialogThin "Recovered strength and saved game."))) field
+        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
+
+    let interact (field : Field) =
+        match field.DialogOpt with
+        | None ->
+            if touchingSavePoint field then
+                interactSavePoint field
+            else
+                match tryGetFacingProp field with
+                | Some prop ->
+                    match prop.PropData with
+                    | Sprite _ -> just field
+                    | Portal _ -> just field
+                    | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
+                    | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
+                    | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
+                    | Sensor _ -> just field
+                    | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
+                    | Npc (_, _, cue, requirements) -> interactNpc [{ CueSystem.Cue = cue; CueSystem.Requirements = Set.empty }] requirements prop field
+                    | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
+                    | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
+                    | Seal (_, cue, _) -> interactSeal cue field
+                    | Flame _ -> just field
+                    | SavePoint -> just field
+                    | ChestSpawn -> just field
+                    | EmptyProp -> just field
+                | None -> just field
+        | Some dialog ->
+            interactDialog dialog field
+
+    (* High-Level Operations *)
 
     let advanceUpdateTime field =
         { field with UpdateTime_ = inc field.UpdateTime_ }
@@ -500,51 +685,377 @@ module Field =
             | None -> Right field
         | Some _ -> Right field
 
-    let synchronizeTeamFromAllies allies field =
-        Map.foldi (fun i field _ (ally : Character) ->
-            updateTeam (fun team ->
-                match Map.tryFind i team with
-                | Some teammate ->
-                    let teammate =
-                        { teammate with
-                            HitPoints = ally.HitPoints
-                            TechPoints = ally.TechPoints
-                            ExpPoints = ally.ExpPoints }
-                    Map.add i teammate team
-                | None -> team)
-                field)
-            field
-            allies
+    let rec advanceCue (cue : Cue) (definitions : CueDefinitions) (field : Field) :
+        Cue * CueDefinitions * (Signal list * Field) =
 
-    let synchronizeFromBattle consequents battle field =
-        let allies = Battle.getAllies battle
-        let field = synchronizeTeamFromAllies allies field
-        let field = updateInventory (constant battle.Inventory) field
-        let field = updateAdvents (Set.union consequents) field
-        let field = updateAvatarIntersectedPropIds (constant []) field
-        field
+        match cue with
+        | Fin ->
+            (cue, definitions, just field)
 
-    let enterBattle songTime prizePool battleData (field : Field) world =
-        let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData world
-        let field = updateFieldSongTimeOpt (constant (Some songTime)) field
-        updateBattleOpt (constant (Some battle)) field
+        | Cue.PlaySound (volume, sound) ->
+            (Fin, definitions, withSignal (PlaySound (0L, volume, sound)) field)
 
-    let exitBattle consequents battle field =
-        let field = synchronizeFromBattle consequents battle field
-        let field = clearSpirits field
-        field
+        | Cue.PlaySong (fadeIn, fadeOut, start, volume, song) ->
+            (Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, start, volume, song)) field)
 
-    let toSymbolizable field =
-        { field with
-            UpdateTime_ = 0L
-            Avatar_ = field.Avatar
-            AvatarCollidedPropIds_ = []
-            AvatarSeparatedPropIds_ = []
-            AvatarIntersectedPropIds_ = []
-            Props_ = Map.empty
-            FieldSongTimeOpt_ = None }
+        | Cue.FadeOutSong fade ->
+            (Fin, definitions, withSignal (FadeOutSong fade) field)
 
-    let make fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory world =
+        | Face (target, direction) ->
+            match target with
+            | AvatarTarget ->
+                let field = updateAvatar (Avatar.updateDirection (constant direction)) field
+                (Fin, definitions, just field)
+            | CharacterTarget characterType ->
+                let propIdOpt =
+                    tryGetPropIdByData
+                        (function
+                         | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents_.IsSupersetOf requirements
+                         | _ -> false)
+                        field
+                match propIdOpt with
+                | Some propId ->
+                    let field =
+                        updatePropState
+                            (function
+                             | CharacterState (color, animationState) ->
+                                let animationState = CharacterAnimationState.face direction animationState
+                                CharacterState (color, animationState)
+                             | propState -> propState)
+                            propId
+                            field
+                    (Fin, definitions, just field)
+                | None ->
+                    (Fin, definitions, just field)
+            | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                (Fin, definitions, just field)
+
+        | ClearSpirits ->
+            let field = clearSpirits field
+            (Fin, definitions, just field)
+
+        | Recruit allyType ->
+            let fee = getRecruitmentFee field
+            if field.Inventory_.Gold >= fee then
+                let advent =
+                    match allyType with
+                    | Jinn -> failwithumf ()
+                    | Shade -> ShadeRecruited
+                    | Mael -> MaelRecruited
+                    | Riain -> RiainRecruited
+                    | Peric -> PericRecruited
+                let field = recruit allyType field
+                let field = updateAdvents (Set.add advent) field
+                let field = updateInventory (Inventory.removeGold fee) field
+                (Fin, definitions, withSignal (FieldSignal.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+            else
+                advanceCue
+                    (Parallel
+                        [Cue.Dialog ("You don't have enough...", false)
+                         Cue.PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
+
+        | AddItem itemType ->
+            (Fin, definitions, just (updateInventory (Inventory.tryAddItem itemType >> snd) field))
+
+        | RemoveItem itemType ->
+            (Fin, definitions, just (updateInventory (Inventory.tryRemoveItem itemType >> snd) field))
+
+        | AddAdvent advent ->
+            (Fin, definitions, just (updateAdvents (Set.add advent) field))
+
+        | RemoveAdvent advent ->
+            (Fin, definitions, just (updateAdvents (Set.remove advent) field))
+
+        | ReplaceAdvent (remove, add) ->
+            (Fin, definitions, just (updateAdvents (Set.remove remove >> Set.add add) field))
+
+        | Wait time ->
+            (WaitState (field.UpdateTime_ + time), definitions, just field)
+
+        | WaitState time ->
+            if field.UpdateTime_ < time
+            then (cue, definitions, just field)
+            else (Fin, definitions, just field)
+
+        | Fade (target, length, fadeIn) ->
+            (FadeState (field.UpdateTime_, target, length, fadeIn), definitions, just field)
+
+        | FadeState (startTime, target, length, fadeIn) ->
+            let time = field.UpdateTime_
+            let localTime = time - startTime
+            let progress = single localTime / single length
+            let progress = if fadeIn then progress else 1.0f - progress
+            let field =
+                match target with
+                | CharacterTarget characterType ->
+                    let propIdOpt =
+                        tryGetPropIdByData
+                            (function
+                             | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents_.IsSupersetOf requirements
+                             | _ -> false)
+                            field
+                    match propIdOpt with
+                    | Some propId ->
+                        updatePropState
+                            (function
+                             | CharacterState (_, animationState) -> CharacterState (Color.One.MapA ((*) progress), animationState)
+                             | propState -> propState)
+                            propId
+                            field
+                    | None -> field
+                | SpriteTarget spriteName ->
+                    match tryGetPropIdByData (function Sprite (spriteName2, _, _, _, _, _, _) -> spriteName = spriteName2 | _ -> false) field with
+                    | Some propId ->
+                        updateProp
+                            (fun prop ->
+                                match prop.PropData with
+                                | Sprite (_, _, color, _, _, _, _) ->
+                                    Prop.updatePropState
+                                        (function
+                                         | SpriteState (image, _, blend, emission, flip, _) -> SpriteState (image, color.MapA ((*) progress), blend, emission, flip, true)
+                                         | propState -> propState)
+                                        prop
+                                | _ -> prop)
+                            propId
+                            field
+                    | None -> field
+                | _ -> field
+            if  fadeIn && progress >= 1.0f ||
+                not fadeIn && progress <= 0.0f then
+                (Fin, definitions, just field)
+            else (cue, definitions, just field)
+
+        | Animate (target, characterAnimationType, wait) ->
+            match target with
+            | AvatarTarget ->
+                let field = updateAvatar (Avatar.animate field.UpdateTime_ characterAnimationType) field
+                match wait with
+                | Timed 0L | NoWait -> (Fin, definitions, just field)
+                | CueWait.Wait | Timed _ -> (AnimateState (field.UpdateTime_, wait), definitions, just field)
+            | CharacterTarget characterType ->
+                let propIdOpt =
+                    tryGetPropIdByData
+                        (function
+                         | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents_.IsSupersetOf requirements
+                         | _ -> false)
+                        field
+                match propIdOpt with
+                | Some propId ->
+                    let field =
+                        updatePropState
+                            (function
+                             | CharacterState (color, animationState) ->
+                                let animationState = CharacterAnimationState.setCharacterAnimationType (Some field.UpdateTime_) characterAnimationType animationState
+                                CharacterState (color, animationState)
+                             | propState -> propState)
+                            propId
+                            field
+                    (Fin, definitions, just field)
+                | None ->
+                    (Fin, definitions, just field)
+            | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                (Fin, definitions, just field)
+
+        | AnimateState (startTime, wait) ->
+            let time = field.UpdateTime_
+            match wait with
+            | CueWait.Wait ->
+                if Avatar.getAnimationFinished time field.Avatar_
+                then (Fin, definitions, just field)
+                else (cue, definitions, just field)
+            | Timed waitTime ->
+                let localTime = time - startTime
+                if localTime < waitTime
+                then (cue, definitions, just field)
+                else (Fin, definitions, just field)
+            | NoWait ->
+                (Fin, definitions, just field)
+
+        | Move (target, destination, moveType) ->
+            match target with
+            | AvatarTarget ->
+                let cue = MoveState (field.UpdateTime_, target, field.Avatar_.Bottom, destination, moveType)
+                (cue, definitions, just field)
+            | CharacterTarget characterType ->
+                let propIdOpt =
+                    tryGetPropIdByData
+                        (function
+                         | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents_.IsSupersetOf requirements
+                         | _ -> false)
+                        field
+                match propIdOpt with
+                | Some propId ->
+                    let prop = getProp propId field
+                    let cue = MoveState (field.UpdateTime_, target, prop.Perimeter.Bottom, destination, moveType)
+                    (cue, definitions, just field)
+                | None -> (Fin, definitions, just field)
+            | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                (Fin, definitions, just field)
+
+        | MoveState (startTime, target, origin, translation, moveType) ->
+            match target with
+            | AvatarTarget ->
+                let time = field.UpdateTime_
+                let localTime = time - startTime
+                let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
+                let totalTime = int64 (dec stepCount)
+                if localTime < totalTime then
+                    let field = updateAvatar (Avatar.updateBottom ((+) step)) field
+                    (cue, definitions, just field)
+                else
+                    let field = updateAvatar (Avatar.updateBottom (constant (origin + translation))) field
+                    (Fin, definitions, just field)
+            | CharacterTarget characterType ->
+                let propIdOpt =
+                    tryGetPropIdByData
+                        (function
+                         | Character (characterType2, _, _, _, _, requirements) -> characterType = characterType2 && field.Advents_.IsSupersetOf requirements
+                         | _ -> false)
+                        field
+                match propIdOpt with
+                | Some propId ->
+                    let time = field.UpdateTime_
+                    let prop = getProp propId field
+                    let localTime = time - startTime
+                    let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
+                    let finishTime = int64 (dec stepCount)
+                    if localTime < finishTime then
+                        let bounds = prop.Perimeter.Translate step
+                        let field = updateProp (Prop.updatePerimeter (constant bounds)) propId field
+                        (cue, definitions, just field)
+                    else
+                        let bounds = prop.Perimeter.WithBottom (origin + translation)
+                        let field = updateProp (Prop.updatePerimeter (constant bounds)) propId field
+                        (Fin, definitions, just field)
+                | None -> (Fin, definitions, just field)
+            | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
+                (Fin, definitions, just field)
+
+        | Warp (fieldType, fieldDestination, fieldDirection) ->
+            match field.FieldTransitionOpt_ with
+            | Some _ ->
+                (cue, definitions, just field)
+            | None ->
+                let fieldTransition =
+                    { FieldType = fieldType
+                      FieldDestination = fieldDestination
+                      FieldDirection = fieldDirection
+                      FieldTransitionTime = field.UpdateTime_ + Constants.Field.TransitionTime }
+                let field = updateFieldTransitionOpt (constant (Some fieldTransition)) field
+                (WarpState, definitions, just field)
+
+        | WarpState ->
+            match field.FieldTransitionOpt_ with
+            | Some _ -> (cue, definitions, just field)
+            | None -> (Fin, definitions, just field)
+
+        | Battle (battleType, consequents) ->
+            match field.BattleOpt_ with
+            | Some _ -> (cue, definitions, just field)
+            | None -> (BattleState, definitions, withSignal (TryBattle (battleType, consequents)) field)
+
+        | BattleState ->
+            match field.BattleOpt_ with
+            | Some _ -> (cue, definitions, just field)
+            | None -> (Fin, definitions, just field)
+
+        | Dialog (text, isNarration) ->
+            match field.DialogOpt_ with
+            | Some _ ->
+                (cue, definitions, just field)
+            | None ->
+                let dialogForm = if isNarration then DialogNarration else DialogThick
+                let dialog = Dialog.make dialogForm text
+                let field = updateDialogOpt (constant (Some dialog)) field
+                (DialogState, definitions, just field)
+
+        | DialogState ->
+            match field.DialogOpt_ with
+            | None -> (Fin, definitions, just field)
+            | Some _ -> (cue, definitions, just field)
+
+        | Prompt (text, leftPrompt, rightPrompt) ->
+            match field.DialogOpt_ with
+            | Some _ ->
+                (cue, definitions, just field)
+            | None ->
+                let dialog = Dialog.makePrompt DialogThick text (leftPrompt, rightPrompt)
+                let field = updateDialogOpt (constant (Some dialog)) field
+                (PromptState, definitions, just field)
+
+        | PromptState ->
+            match field.DialogOpt_ with
+            | None -> (Fin, definitions, just field)
+            | Some _ -> (cue, definitions, just field)
+
+        | If (p, c, a) ->
+            match p with
+            | Gold gold -> if field.Inventory_.Gold >= gold then (c, definitions, just field) else (a, definitions, just field)
+            | Item itemType -> if Inventory.containsItem itemType field.Inventory_ then (c, definitions, just field) else (a, definitions, just field)
+            | Items itemTypes -> if Inventory.containsItems itemTypes field.Inventory_ then (c, definitions, just field) else (a, definitions, just field)
+            | Advent advent -> if field.Advents_.Contains advent then (c, definitions, just field) else (a, definitions, just field)
+            | Advents advents -> if field.Advents_.IsSupersetOf advents then (c, definitions, just field) else (a, definitions, just field)
+
+        | Not (p, c, a) ->
+            match p with
+            | Gold gold -> if field.Inventory_.Gold < gold then (c, definitions, just field) else (a, definitions, just field)
+            | Item itemType -> if not (Inventory.containsItem itemType field.Inventory_) then (c, definitions, just field) else (a, definitions, just field)
+            | Items itemTypes -> if not (Inventory.containsItems itemTypes field.Inventory_) then (c, definitions, just field) else (a, definitions, just field)
+            | Advent advent -> if not (field.Advents_.Contains advent) then (c, definitions, just field) else (a, definitions, just field)
+            | Advents advents -> if not (field.Advents_.IsSupersetOf advents) then (c, definitions, just field) else (a, definitions, just field)
+
+        | Define (name, body) ->
+            if not (Map.containsKey name definitions) then
+                (Fin, Map.add name body definitions, just field)
+            else
+                Log.debug ("Cue definition '" + name + "' already found.")
+                (Fin, definitions, just field)
+
+        | Assign (name, body) ->
+            if Map.containsKey name definitions then
+                (Fin, Map.add name body definitions, just field)
+            else
+                Log.debug ("Cue definition '" + name + "' not found.")
+                (Fin, definitions, just field)
+
+        | Expand name ->
+            match Map.tryFind name definitions with
+            | Some body ->
+                advanceCue body definitions field
+            | None ->
+                Log.debug ("Cue definition '" + name + "' not found.")
+                (Fin, definitions, ([], field))
+
+        | Parallel cues ->
+            let (cues, definitions, (signals, field)) =
+                List.fold (fun (cues, definitions, (signals, field)) cue ->
+                    let (cue, definitions, (signals2, field)) = advanceCue cue definitions field
+                    if Cue.isFin cue
+                    then (cues, definitions, (signals @ signals2, field))
+                    else (cues @ [cue], definitions, (signals @ signals2, field)))
+                    ([], definitions, ([], field))
+                    cues
+            match cues with
+            | _ :: _ -> (Parallel cues, definitions, (signals, field))
+            | [] -> (Fin, definitions, (signals, field))
+
+        | Sequence cues ->
+            let (_, haltedCues, definitions, (signals, field)) =
+                List.fold (fun (halted, haltedCues, definitions, (signals, field)) cue ->
+                    if halted
+                    then (halted, haltedCues @ [cue], definitions, (signals, field))
+                    else
+                        let (cue, definitions, (signals2, field)) = advanceCue cue definitions field
+                        if Cue.isFin cue
+                        then (false, [], definitions, (signals @ signals2, field))
+                        else (true, [cue], definitions, (signals @ signals2, field)))
+                    (false, [], definitions, ([], field))
+                    cues
+            match haltedCues with
+            | _ :: _ -> (Sequence haltedCues, definitions, (signals, field))
+            | [] -> (Fin, definitions, (signals, field))
+
+    let make time fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory viewBounds2dAbsolute =
         let (debugAdvents, debugKeyItems, definitions) =
             match Data.Value.Fields.TryGetValue fieldType with
             | (true, fieldData) -> (fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
@@ -554,7 +1065,7 @@ module Field =
             | DebugField -> (debugAdvents, snd (Inventory.tryAddItems (List.map KeyItem debugKeyItems) inventory))
             | _ -> (advents, inventory)
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
-        let props = makeProps fieldType omniSeedState world
+        let props = makeProps time fieldType omniSeedState
         { UpdateTime_ = 0L
           FieldType_ = fieldType
           FieldState_ = Playing
@@ -581,10 +1092,10 @@ module Field =
           DialogOpt_ = None
           BattleOpt_ = None
           FieldSongTimeOpt_ = None
-          ViewBoundsAbsolute_ = World.getViewBounds2dAbsolute world }
+          ViewBoundsAbsolute_ = viewBounds2dAbsolute }
 
-    let empty world =
-        { UpdateTime_ = 0L
+    let empty time viewBounds2dAbsolute =
+        { UpdateTime_ = time
           FieldType_ = EmptyField
           FieldState_ = Quit
           SaveSlot_ = Slot1
@@ -610,16 +1121,16 @@ module Field =
           DialogOpt_ = None
           BattleOpt_ = None
           FieldSongTimeOpt_ = None
-          ViewBoundsAbsolute_ = World.getViewBounds2dAbsolute world }
+          ViewBoundsAbsolute_ = viewBounds2dAbsolute }
 
-    let initial saveSlot world =
-        make TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
+    let initial time saveSlot viewBounds2dAbsolute =
+        make time TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial viewBounds2dAbsolute
 
-    let debug world =
-        make DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial world
+    let debug time viewBounds2dAbsolute =
+        make time DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial viewBounds2dAbsolute
 
-    let debugBattle world =
-        let field = debug world
+    let debugBattle time viewBounds2dAbsolute =
+        let field = debug time viewBounds2dAbsolute
         let battle =
             match Map.tryFind DebugBattle Data.Value.Battles with
             | Some battle ->
@@ -628,22 +1139,11 @@ module Field =
                     Map.singleton 0 (Teammate.make level 0 Jinn) |>
                     Map.add 1 (Teammate.make level 1 Mael) |>
                     Map.add 2 (Teammate.make level 2 Riain)
-                makeBattleFromTeam Inventory.initial PrizePool.empty team PacedSpeed battle world
+                makeBattleFromTeam time Inventory.initial PrizePool.empty team PacedSpeed battle
             | None -> Battle.empty
         updateBattleOpt (constant (Some battle)) field
 
-    let save field =
-        let saveFilePath =
-            match field.SaveSlot_ with
-            | Slot1 -> Assets.Global.SaveFilePath1
-            | Slot2 -> Assets.Global.SaveFilePath2
-            | Slot3 -> Assets.Global.SaveFilePath3
-        let fieldSymbolizable = toSymbolizable field
-        let fieldSymbol = valueToSymbol fieldSymbolizable
-        let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
-        try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
-
-    let tryLoad saveSlot world =
+    let tryLoad time saveSlot =
         try let saveFilePath =
                 match saveSlot with
                 | Slot1 -> Assets.Global.SaveFilePath1
@@ -651,13 +1151,13 @@ module Field =
                 | Slot3 -> Assets.Global.SaveFilePath3
             let fieldStr = File.ReadAllText saveFilePath
             let field = scvalue<Field> fieldStr
-            let props = makeProps field.FieldType_ field.OmniSeedState_ world
+            let props = makeProps time field.FieldType_ field.OmniSeedState_
             Some { field with Props_ = props }
         with _ -> None
 
-    let loadOrInitial saveSlot world =
-        match tryLoad saveSlot world with
+    let loadOrInitial time saveSlot viewBounds2dAbsolute =
+        match tryLoad time saveSlot with
         | Some field -> field
-        | None -> initial saveSlot world
+        | None -> initial time saveSlot viewBounds2dAbsolute
 
 type Field = Field.Field

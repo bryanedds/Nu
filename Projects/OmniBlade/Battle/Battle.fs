@@ -9,6 +9,10 @@ open Nu
 open OmniBlade
 open OmniBlade.BattleInteractionSystem
 
+type Hop =
+    { HopStart : Vector3
+      HopStop : Vector3 }
+
 type BattleSpeed =
     | SwiftSpeed
     | PacedSpeed
@@ -20,6 +24,37 @@ type BattleState =
     | BattleResult of int64 * bool
     | BattleQuitting of int64 * bool * Advent Set
     | BattleQuit
+
+type DisplayEffect =
+    | DisplayCancel of CharacterIndex
+    | DisplayHitPointsChange of CharacterIndex * int
+    | DisplayBolt of int64 * CharacterIndex
+    | DisplayCycloneBlur of int64 * CharacterIndex * single
+    | DisplayImpactSplash of int64 * CharacterIndex
+    | DisplayCut of int64 * bool * CharacterIndex
+    | DisplaySlashSpike of int64 * Vector3 * CharacterIndex
+    | DisplayArcaneCast of int64 * CharacterIndex
+    | DisplayFire of int64 * CharacterIndex * CharacterIndex
+    | DisplayFlame of int64 * CharacterIndex * CharacterIndex
+    | DisplayIce of int64 * CharacterIndex
+    | DisplaySnowball of int64 * CharacterIndex
+    | DisplayHolyCast of int64 * CharacterIndex
+    | DisplayPurify of int64 * CharacterIndex
+    | DisplayCure of int64 * CharacterIndex
+    | DisplayProtect of int64 * CharacterIndex
+    | DisplayDimensionalCast of int64 * CharacterIndex
+    | DisplayBuff of int64 * StatusType * CharacterIndex
+    | DisplayDebuff of int64 * StatusType * CharacterIndex
+    | DisplayConjureIfrit of int64
+    | DisplayHop of Hop
+    | DisplayCircle of Vector3 * single
+
+type BattleSignal =
+    | PlaySound of int64 * single * AssetTag<Sound>
+    | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
+    | FadeOutSong of GameTime
+    | DisplayEffect of DisplayEffect
+    interface Signal
 
 type ActionCommand =
     { Action : ActionType
@@ -851,7 +886,895 @@ module Battle =
     let spawnEnemy time spawnType battle =
         spawnEnemies time [spawnType] battle
 
-    let makeFromParty inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData world =
+    let private advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
+        match tryGetCharacter sourceIndex battle with
+        | Some source when source.Healthy ->
+            match targetIndexOpt with
+            | Some targetIndex ->
+                match tryGetCharacter targetIndex battle with
+                | Some target ->
+                    match localTime with
+                    | 0L ->
+                        if target.Healthy then
+                            let sourcePerimeter = getCharacterPerimeter sourceIndex battle
+                            let targetPerimeter = getCharacterPerimeter targetIndex battle
+                            let battle =
+                                if sourcePerimeter.Bottom.X < targetPerimeter.Bottom.X then faceCharacter Rightward sourceIndex battle
+                                elif sourcePerimeter.Bottom.X > targetPerimeter.Bottom.X then faceCharacter Leftward sourceIndex battle
+                                else battle
+                            let battle = animateCharacter time AttackAnimation sourceIndex battle
+                            let playHit = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                            withSignal playHit battle
+                        else just (abortCharacterAction time sourceIndex battle)
+                    | 15L ->
+                        let damage = evalAttack EffectType.Physical sourceIndex targetIndex battle
+                        let battle = updateCharacterHitPoints false false -damage targetIndex battle
+                        let battle = animateCharacter time DamageAnimation targetIndex battle
+                        let battle =
+                            if getCharacterWounded targetIndex battle then
+                                let battle = halveCharacterActionTime targetIndex battle
+                                resetCharacterInput targetIndex battle
+                            else battle
+                        withSignal (DisplayHitPointsChange (targetIndex, -damage) |> DisplayEffect) battle
+                    | _ when localTime > 15L && Character.getAnimationFinished time target ->
+                        let target = getCharacter targetIndex battle
+                        if target.Healthy then
+                            let battle = updateCurrentCommandOpt (constant None) battle
+                            let battle = animationCharacterPoise time sourceIndex battle
+                            let battle = animationCharacterPoise time targetIndex battle
+                            let battle = finishCharacterAction sourceIndex battle
+                            let battle =
+                                if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
+                                    shouldCharacterCounter targetIndex sourceIndex battle then
+                                    characterCounterAttack targetIndex sourceIndex battle
+                                else
+                                    let consequences = evalAttackInteractions sourceIndex targetIndex battle
+                                    let battle = evalConsequences consequences battle
+                                    battle
+                            just battle
+                        else
+                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex) None)
+                            let battle = updateCurrentCommandOpt (constant (Some woundCommand)) battle
+                            let battle = animationCharacterPoise time sourceIndex battle
+                            let battle = finishCharacterAction sourceIndex battle
+                            let consequences = evalAttackInteractions sourceIndex targetIndex battle
+                            let battle = evalConsequences consequences battle
+                            just battle
+                    | _ -> just battle
+                | None -> just (abortCharacterAction time sourceIndex battle)
+            | None -> just (abortCharacterAction time sourceIndex battle)
+        | Some _ | None -> just (abortCharacterAction time sourceIndex battle)
+
+    let private advanceDefend sourceIndex time localTime battle =
+        match tryGetCharacter sourceIndex battle with
+        | Some source when source.Healthy ->
+            match localTime with
+            | 0L ->
+                let battle =
+                    battle |>
+                    resetCharacterActionTime sourceIndex |>
+                    resetCharacterInput sourceIndex |>
+                    animateCharacter time (PoiseAnimation Defending) sourceIndex |>
+                    defendCharacter sourceIndex
+                let battle = updateCurrentCommandOpt (constant None) battle
+                let battle = finishCharacterAction sourceIndex battle
+                just battle
+            | _ -> just battle
+        | Some _ | None ->
+            let battle = updateCurrentCommandOpt (constant None) battle
+            just battle
+
+    let private advanceConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
+        match tryGetCharacter sourceIndex battle with
+        | Some source when source.Healthy ->
+            match targetIndexOpt with
+            | Some targetIndex ->
+                match tryGetCharacter targetIndex battle with
+                | Some target ->
+                    match localTime with
+                    | 0L ->
+                        if target.Healthy || consumable = Revive then // HACK: should really be checked ConsumableData.
+                            let sourcePerimeter = getCharacterPerimeter sourceIndex battle
+                            let targetPerimeter = getCharacterPerimeter targetIndex battle
+                            let battle =
+                                if sourcePerimeter.Bottom.X < targetPerimeter.Bottom.X then faceCharacter Rightward sourceIndex battle
+                                elif sourcePerimeter.Bottom.X > targetPerimeter.Bottom.X then faceCharacter Leftward sourceIndex battle
+                                else battle
+                            let battle = animateCharacter time CastAnimation sourceIndex battle
+                            let battle = updateInventory (Inventory.tryRemoveItem (Consumable consumable) >> snd) battle
+                            just battle
+                        else just (abortCharacterAction time sourceIndex battle)
+                    | 30L ->
+                        match Data.Value.Consumables.TryGetValue consumable with
+                        | (true, consumableData) ->
+                            if consumableData.Curative then
+                                let healing = int consumableData.Scalar
+                                let battle =
+                                    if consumableData.Techative
+                                    then updateCharacterTechPoints healing targetIndex battle
+                                    else updateCharacterHitPoints false consumableData.Revive healing targetIndex battle
+                                let battle = applyCharacterStatuses consumableData.StatusesAdded consumableData.StatusesRemoved targetIndex battle
+                                let battle = animateCharacter time SpinAnimation targetIndex battle
+                                let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing) |> DisplayEffect
+                                let playHealSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)
+                                withSignals [displayHitPointsChange; playHealSound] battle
+                            else just battle // TODO: non-curative case
+                        | (false, _) -> just battle
+                    | _ when localTime > 30L && Character.getAnimationFinished time target ->
+                        let battle = updateCurrentCommandOpt (constant None) battle
+                        let battle = animationCharacterPoise time sourceIndex battle
+                        let battle = animationCharacterPoise time targetIndex battle
+                        let battle = finishCharacterAction sourceIndex battle
+                        let consequences = evalItemInteractions sourceIndex targetIndex battle
+                        let battle = evalConsequences consequences battle
+                        just battle
+                    | _ -> just battle
+                | None -> just (abortCharacterAction time sourceIndex battle)
+            | None -> just (abortCharacterAction time sourceIndex battle)
+        | Some _ | None -> just (abortCharacterAction time sourceIndex battle)
+
+    let private advanceTech techType sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
+        match tryGetCharacter sourceIndex battle with
+        | Some source when source.Healthy ->
+            match targetIndexOpt with
+            | Some targetIndex ->
+                match tryGetCharacter targetIndex battle with
+                | Some target ->
+                    match (Map.tryFind techType Data.Value.Techs,  Map.tryFind techType Data.Value.TechAnimations) with
+                    | (Some techData, Some techAnimationData) ->
+                        ignore techData // TODO: check for target.IsWounded case if techData is affecting wounded...
+                        if target.Healthy then
+                            let (sigs, battle) =
+                                if localTime = techAnimationData.TechStart then
+                                    let sourcePerimeter = getCharacterPerimeter sourceIndex battle
+                                    let targetPerimeter = getCharacterPerimeter targetIndex battle
+                                    let battle =
+                                        if sourcePerimeter.Bottom.X < targetPerimeter.Bottom.X then faceCharacter Rightward sourceIndex battle
+                                        elif sourcePerimeter.Bottom.X > targetPerimeter.Bottom.X then faceCharacter Leftward sourceIndex battle
+                                        else battle
+                                    let effectOpt =
+                                        match techType with
+                                        | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
+                                            let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeter.Bottom.X) 0.0f 0.0f)
+                                            let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
+                                            Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = hopStop } |> DisplayEffect)
+                                        | Cyclone ->
+                                            Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3 } |> DisplayEffect)
+                                        | _ ->
+                                            match getCharacterArchetypeType sourceIndex battle with
+                                            | Cleric ->
+                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
+                                                let displayCast = DisplayHolyCast (0L, sourceIndex) |> DisplayEffect
+                                                Right [signal playCharge; signal displayCast]
+                                            | Wizard ->
+                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
+                                                let displayCast = DisplayArcaneCast (0L, sourceIndex) |> DisplayEffect
+                                                Right [playCharge; displayCast]
+                                            | _ ->
+                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
+                                                let displayCast = DisplayDimensionalCast (0L, sourceIndex) |> DisplayEffect
+                                                Right [playCharge; displayCast]
+                                    match effectOpt with
+                                    | Left hopEffect ->
+                                        let battle = animateCharacter time (PoiseAnimation Poising) sourceIndex battle
+                                        withSignal hopEffect battle
+                                    | Right chargeEffects ->
+                                        if getCharacterHealthy targetIndex battle then
+                                            let battle = animateCharacter time (PoiseAnimation Charging) sourceIndex battle
+                                            withSignals chargeEffects battle
+                                        else just (abortCharacterAction time sourceIndex battle)
+                                elif localTime = techAnimationData.TechingStart then
+                                    match techType with
+                                    | Critical ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let impactSplash = DisplayImpactSplash (30L, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; impactSplash] battle
+                                    | Cyclone ->
+                                        let radius = 64.0f
+                                        let perimeter = getCharacterPerimeter sourceIndex battle
+                                        let position = perimeter.Bottom
+                                        let playHits =
+                                            [PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
+                                             PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
+                                             PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
+                                             PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal]
+                                        let battle = animateCharacter time WhirlAnimation sourceIndex battle
+                                        let sigs =
+                                            signal (DisplayEffect (DisplayCircle (position, radius))) ::
+                                            signal (DisplayEffect (DisplayCycloneBlur (0L, sourceIndex, radius))) ::
+                                            playHits
+                                        withSignals sigs battle
+                                    | HeavyCritical ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let impactSplash = DisplayImpactSplash (30L, targetIndex) |> DisplayEffect // TODO: darker impact splash to represent element.
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; impactSplash] battle
+                                    | Slash ->
+                                        let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
+                                        let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let perimeter = getCharacterPerimeter sourceIndex battle
+                                        let slashSpike = DisplaySlashSpike (10L, perimeter.Bottom, targetIndex) |> DisplayEffect
+                                        let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> DisplayEffect |> signal)
+                                        let battle = animateCharacter time SlashAnimation sourceIndex battle
+                                        withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
+                                    | PowerCut ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let cut = DisplayCut (30L, false, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; cut] battle
+                                    | PoisonCut ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let cut = DisplayCut (30L, false, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; cut] battle
+                                    | DoubleCut ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let cut = DisplayCut (30L, false, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; cut] battle
+                                    | DispelCut ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let displayCut = DisplayCut (30L, true, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; displayCut] battle
+                                    | Fire ->
+                                        let playFire = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.FireSound)
+                                        let displayFire = DisplayFire (0L, sourceIndex, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        withSignals [playFire; displayFire] battle
+                                    | TechType.Flame ->
+                                        let playFlame = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.FlameSound)
+                                        let displayFlame = DisplayFlame (0L, sourceIndex, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        withSignals [playFlame; displayFlame] battle
+                                    | Ice ->
+                                        let playIce = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.IceSound)
+                                        let displayIce = DisplayIce (0L, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        withSignals [playIce; displayIce] battle
+                                    | Snowball ->
+                                        let playSnowball = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.SnowballSound)
+                                        let displaySnowball = DisplaySnowball (0L, targetIndex) |> DisplayEffect
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        withSignals [playSnowball; displaySnowball] battle
+                                    | Stone ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let displayIce = DisplayIce (0L, targetIndex) |> DisplayEffect
+                                        withSignal displayIce battle // TODO: use new sound and effect.
+                                    | Quake ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let displayBolt = DisplayBolt (0L, targetIndex) |> DisplayEffect
+                                        withSignal displayBolt battle // TODO: use new sound and effect.
+                                    | Cure ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
+                                        let displayCures = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> DisplayEffect |> signal)
+                                        withSignals (signal playCure :: displayCures) battle
+                                    | Empower ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
+                                        let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex) |> DisplayEffect
+                                        withSignals [playBuff; displayBuff] battle
+                                    | Aura ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
+                                        let displayCures = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> DisplayEffect |> signal)
+                                        withSignals (signal playCure :: displayCures) battle
+                                    | Enlighten ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
+                                        let displayBuff = DisplayBuff (0L, Magic (true, true), targetIndex) |> DisplayEffect
+                                        withSignals [playBuff; displayBuff] battle
+                                    | Protect ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
+                                        let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex) |> DisplayEffect
+                                        withSignals [playBuff; displayBuff] battle
+                                    | Muddle ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                                        let displayDebuff = DisplayDebuff (0L, Magic (false, false), targetIndex) |> DisplayEffect
+                                        withSignals [playDebuff; displayDebuff] battle
+                                    | Weaken ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                                        let displayDebuff = DisplayDebuff (0L, Power (false, false), targetIndex) |> DisplayEffect
+                                        withSignals [playDebuff; displayDebuff] battle
+                                    | Slow ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                                        let displayDebuff = DisplayDebuff (0L, Time false, targetIndex) |> DisplayEffect
+                                        withSignals [playDebuff; displayDebuff] battle
+                                    | Bolt ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)
+                                        let displayBolt = DisplayBolt (0L, targetIndex) |> DisplayEffect
+                                        withSignals [playSound; displayBolt] battle
+                                    | ConjureIfrit ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
+                                        let displayConjureIfrit = DisplayConjureIfrit 0L |> DisplayEffect
+                                        withSignals [playIfrit; displayConjureIfrit] battle
+                                    | Purify ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let displayPurify = DisplayPurify (0L, targetIndex) |> DisplayEffect
+                                        withSignal displayPurify battle // TODO: use new sound and effect.
+                                elif localTime = techAnimationData.AffectingStart then
+                                    let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
+                                    let (battle, sigs) =
+                                        Map.fold (fun (battle, sigs) characterIndex (cancelled, _, hitPointsChange, _, _) ->
+                                            if hitPointsChange < 0 && getCharacterHealthy characterIndex battle then
+                                                let battle = animateCharacter time DamageAnimation characterIndex battle
+                                                let displayCancel = DisplayCancel characterIndex |> DisplayEffect
+                                                let sigs = if cancelled then signal displayCancel :: sigs else sigs
+                                                (battle, sigs)
+                                            else (battle, sigs))
+                                            (battle, [])
+                                            results
+                                    let battle =
+                                        match spawnOpt with
+                                        | Some spawn -> spawnEnemies time spawn battle
+                                        | _ -> battle
+                                    withSignals sigs battle
+                                elif localTime = techAnimationData.AffectingStop then
+                                    let results = evalTech sourceIndex targetIndex techType battle |> Triple.thd
+                                    let (battle, sigs) =
+                                        Map.fold (fun (battle, sigs) _ (_, _, _, _, _) ->
+                                            // TODO: emission effect
+                                            (battle, sigs))
+                                            (battle, [])
+                                            results
+                                    withSignals sigs battle
+                                elif localTime = techAnimationData.TechingStop then
+                                    let sourcePerimeterOriginal = getCharacterPerimeterOriginal sourceIndex battle
+                                    let targetPerimeter = getCharacterPerimeter targetIndex battle
+                                    let hopOpt =
+                                        match techType with
+                                        | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
+                                            let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeterOriginal.Bottom.X) 0.0f 0.0f)
+                                            let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
+                                            Some
+                                                { HopStart = hopStart
+                                                  HopStop = sourcePerimeterOriginal.Bottom }
+                                        | Cyclone ->
+                                            Some
+                                                { HopStart = targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3
+                                                  HopStop = sourcePerimeterOriginal.Bottom }
+                                        | _ -> None
+                                    match hopOpt with
+                                    | Some hop -> withSignal (DisplayEffect (DisplayHop hop)) battle
+                                    | None -> just battle
+                                elif localTime > techAnimationData.TechStop then
+                                    let (techCost, _, results) = evalTech sourceIndex targetIndex techType battle
+                                    let (battle, sigs) =
+                                        Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
+                                            let battle = updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
+                                            let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong else StatusType.randomizeWeak
+                                            let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
+                                            let battle = applyCharacterStatuses added removed characterIndex battle
+                                            let wounded = getCharacterWounded characterIndex battle
+                                            let battle =
+                                                if wounded then
+                                                    let battle = halveCharacterActionTime characterIndex battle
+                                                    resetCharacterInput characterIndex battle
+                                                else battle
+                                            let sigs =
+                                                if hitPointsChange <> 0 then
+                                                    let displayHpc = DisplayHitPointsChange (characterIndex, hitPointsChange) |> DisplayEffect |> signal
+                                                    displayHpc :: sigs
+                                                else sigs
+                                            let (battle, sigs) =
+                                                if wounded then
+                                                    let woundCommand = ActionCommand.make Wound sourceIndex (Some characterIndex) None
+                                                    let battle = prependActionCommand woundCommand battle
+                                                    (battle, sigs)
+                                                else
+                                                    let battle = animationCharacterPoise time characterIndex battle
+                                                    (battle, sigs)
+                                            (battle, sigs))
+                                            (battle, [])
+                                            results
+                                    let battle = updateCharacterTechPoints -techCost sourceIndex battle
+                                    let battle = updateCurrentCommandOpt (constant None) battle
+                                    let battle = animationCharacterPoise time sourceIndex battle
+                                    let battle = resetCharacterTechCharge sourceIndex battle
+                                    let battle =
+                                        if techType.ConjureTech
+                                        then resetCharacterConjureCharge sourceIndex battle
+                                        else battle
+                                    let battle = finishCharacterAction sourceIndex battle
+                                    let battle =
+                                        if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
+                                            shouldCharacterCounter targetIndex sourceIndex battle then
+                                            characterCounterAttack targetIndex sourceIndex battle
+                                        else battle
+                                    let consequences = evalTechInteractions sourceIndex targetIndex techType results battle
+                                    let battle = evalConsequences consequences battle
+                                    withSignals sigs battle
+                                else just battle
+                            withSignals sigs battle
+                        else just (abortCharacterAction time sourceIndex battle)
+                    | (_, _) -> just (abortCharacterAction time sourceIndex battle)
+                | None -> just (abortCharacterAction time sourceIndex battle)
+            | None -> just (abortCharacterAction time sourceIndex battle)
+        | Some _ | None -> just (abortCharacterAction time sourceIndex battle)
+
+    let private advanceConsequence sourceIndex targetIndexOpt observerIndexOpt consequence time localTime battle =
+        match (targetIndexOpt, observerIndexOpt) with
+        | (Some targetIndex, Some observerIndex) ->
+            match consequence with
+            | Charge chargeAmount ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then chargeCharacter chargeAmount observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | AddVulnerability vulnerabilityType ->
+                let battle =
+                    if containsCharacter observerIndex battle
+                    then applyCharacterVulnerabilities (Set.singleton vulnerabilityType) Set.empty observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | RemoveVulnerability vulnerabilityType ->
+                let battle =
+                    if containsCharacter observerIndex battle
+                    then applyCharacterVulnerabilities Set.empty (Set.singleton vulnerabilityType) observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | AddStatus statusType ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then applyCharacterStatuses (Set.singleton statusType) Set.empty observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | RemoveStatus statusType ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then applyCharacterStatuses Set.empty (Set.singleton statusType) observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | CounterAttack ->
+                let battle =
+                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    then characterCounterAttack observerIndex sourceIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | CounterTech techType ->
+                let battle =
+                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    then prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some sourceIndex) None) battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | CounterConsumable consumableType ->
+                let battle =
+                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    then prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some sourceIndex) None) battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | AssistTech techType ->
+                let battle =
+                    if getCharacterHealthy targetIndex battle && getCharacterHealthy observerIndex battle
+                    then prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some targetIndex) None) battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | AssistConsumable consumableType ->
+                let battle =
+                    if getCharacterHealthy targetIndex battle && getCharacterHealthy observerIndex battle
+                    then prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some targetIndex) None) battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | PilferGold gold ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then updateInventory (Inventory.removeGold gold) battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | PilferConsumable consumableType ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then updateInventory (Inventory.tryRemoveItem (Consumable consumableType) >> snd) battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | RetargetToSource ->
+                let battle =
+                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    then retargetCharacter observerIndex sourceIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | RetargetFriendliesToSource ->
+                let battle =
+                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle then 
+                        let friendlies = getFriendlies observerIndex.Ally battle
+                        Map.fold (fun battle friendlyIndex _ -> retargetCharacter friendlyIndex sourceIndex battle) battle friendlies
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | ChangeAction techTypeOpt ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then updateCharacterAutoTechOpt (constant techTypeOpt) observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | ChangeFriendlyActions techTypeOpt ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle then 
+                        let friendlies = getFriendlies observerIndex.Ally battle
+                        Map.fold (fun battle friendlyIndex _ -> updateCharacterAutoTechOpt (constant techTypeOpt) friendlyIndex battle) battle friendlies
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | Duplicate ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle then 
+                        match (getCharacter observerIndex battle).CharacterType with
+                        | Enemy enemyType -> spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = None; EnemyIndexOpt = None }] battle
+                        | Ally _ -> battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | Spawn spawnTypes ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then spawnEnemies time spawnTypes battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | Replace enemyType ->
+                let battle =
+                    if  containsCharacter observerIndex battle &&
+                        getCharacterHealthy observerIndex battle then
+                        if localTime = 0L then
+                            let battle = animateCharacter time ReadyAnimation observerIndex battle
+                            dematerializeCharacter time observerIndex battle
+                        elif localTime = 120L then
+                            let spawnPosition = (getCharacterPerimeter observerIndex battle).BottomLeft
+                            let spawnType = { EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = Some spawnPosition; EnemyIndexOpt = Some observerIndex.Subindex }
+                            let battle = removeCharacter observerIndex battle
+                            let battle = spawnEnemy time spawnType battle
+                            let battle = animateCharacter time WalkAnimation observerIndex battle
+                            faceCharacter Downward observerIndex battle
+                        elif localTime = 240L then
+                            let battle = materializedCharacter time observerIndex battle
+                            updateCurrentCommandOpt (constant None) battle
+                        else battle
+                    else updateCurrentCommandOpt (constant None) battle
+                just battle
+            | Message (text, lifeTime) ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle then 
+                        let lifeTime = if lifeTime <= 0L then 60L else lifeTime
+                        let dialog = Dialog.make DialogThin text
+                        updateMessageOpt (constant (Some (time, lifeTime, dialog))) battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | AddBattleInteraction interaction ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then addCharacterInteraction interaction observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+            | ClearBattleInteractions ->
+                let battle =
+                    if getCharacterHealthy observerIndex battle
+                    then clearCharacterInteractions observerIndex battle
+                    else battle
+                let battle = updateCurrentCommandOpt (constant None) battle
+                just battle
+        | (_, _) -> battle |> updateCurrentCommandOpt (constant None) |> just
+
+    let rec private advanceWound targetIndexOpt time battle =
+        match targetIndexOpt with
+        | Some targetIndex ->
+            let character = getCharacter targetIndex battle
+            let (sigs, battle) =
+                if character.Ally then
+                    match character.CharacterAnimationType with
+                    | DamageAnimation ->
+                        if Character.getAnimationFinished time character then
+                            let battle = updateCurrentCommandOpt (constant None) battle
+                            let battle = animateCharacterWound time targetIndex battle
+                            just battle
+                        else just battle
+                    | PoiseAnimation _ -> // allies don't have a wound animation state but rather return to poise state
+                        let battle = updateCurrentCommandOpt (constant None) battle
+                        let battle = animateCharacterWound time targetIndex battle
+                        just battle
+                    | _ -> failwithumf ()
+                else
+                    match character.CharacterAnimationType with
+                    | DamageAnimation ->
+                        if Character.getAnimationFinished time character then
+                            let battle = animateCharacterWound time targetIndex battle
+                            let playDeathSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastDeathSound)
+                            withSignal playDeathSound battle
+                        else just battle
+                    | WoundAnimation ->
+                        if Character.getAnimationFinished time character then
+                            let battle = updateCurrentCommandOpt (constant None) battle
+                            let battle =
+                                if targetIndex.Enemy
+                                then removeCharacter targetIndex battle
+                                else battle
+                            just battle
+                        else just battle
+                    | _ -> failwithumf ()
+            let (sigs, battle) =
+                match battle.CurrentCommandOpt with
+                | None ->
+                    let allies = battle |> getAllies |> Map.toValueList
+                    let enemies = battle |> getEnemies |> Map.toValueList
+                    if List.forall (fun (character : Character) -> character.Wounded) allies then
+                        // lost battle
+                        let battle = animateCharactersCelebrate time false battle
+                        let battle = updateBattleState (constant (BattleQuitting (time, false, Set.empty))) battle
+                        let (sigs2, battle) = advance time battle
+                        (sigs @ sigs2, battle)
+                    elif List.isEmpty enemies then
+                        // won battle
+                        let battle = animateCharactersCelebrate time true battle
+                        let battle = updateBattleState (constant (BattleResult (time, true))) battle
+                        let (sigs2, battle) = advance time battle
+                        (sigs @ sigs2, battle)
+                    else (sigs, battle)
+                | Some _ -> (sigs, battle)
+            withSignals sigs battle
+        | None -> just battle
+
+    and advanceReady time startTime (battle : Battle) =
+        let localTime = time - startTime
+        let readyTime = localTime - 90L
+        if localTime = inc 63L then // first frame after transitioning in
+            match battle.BattleSongOpt with
+            | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, Constants.Audio.SongVolumeDefault, battleSong)) battle
+            | None -> just battle
+        elif localTime >= 90L && localTime < 160L then
+            let battle = animateCharactersReady time battle
+            if readyTime = 30L
+            then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
+            else just battle
+        elif localTime = 160L then
+            let battle = updateBattleState (constant BattleRunning) battle
+            let battle = animateCharactersPoised time battle
+            let battle = populateAlliesConjureCharges battle
+            let battle = autoBattleEnemies battle
+            just battle
+        else just battle
+
+    and advanceCurrentCommand time currentCommand battle =
+        let localTime = time - currentCommand.StartTime
+        let sourceIndex = currentCommand.ActionCommand.SourceIndex
+        let targetIndexOpt = currentCommand.ActionCommand.TargetIndexOpt
+        let observerIndexOpt = currentCommand.ActionCommand.ObserverIndexOpt
+        match currentCommand.ActionCommand.Action with
+        | Attack -> advanceAttack sourceIndex targetIndexOpt time localTime battle
+        | Defend -> advanceDefend sourceIndex time localTime battle
+        | Tech techType -> advanceTech techType sourceIndex targetIndexOpt time localTime battle
+        | Consume consumable -> advanceConsume consumable sourceIndex targetIndexOpt time localTime battle
+        | Consequence consequence -> advanceConsequence sourceIndex targetIndexOpt observerIndexOpt consequence time localTime battle
+        | Wound -> advanceWound targetIndexOpt time battle
+
+    and advanceNextCommand time nextCommand futureCommands battle =
+        let command = CurrentCommand.make time nextCommand
+        let sourceIndex = command.ActionCommand.SourceIndex
+        let targetIndexOpt = command.ActionCommand.TargetIndexOpt
+        let observerIndexOpt = command.ActionCommand.ObserverIndexOpt
+        let source = getCharacter sourceIndex battle
+        let battle =
+            match command.ActionCommand.Action with
+            | Attack | Defend ->
+                if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
+                    let targetIndexOpt = evalRetarget false targetIndexOpt battle
+                    let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                    updateCurrentCommandOpt (constant (Some command)) battle
+                else battle
+            | Consume consumableType ->
+                match Data.Value.Consumables.TryGetValue consumableType with
+                | (true, consumable) ->
+                    if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
+                        let targetIndexOpt = evalRetarget consumable.Revive targetIndexOpt battle
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                        updateCurrentCommandOpt (constant (Some command)) battle
+                    else battle
+                | (false, _) -> battle
+            | Tech techType ->
+                match Data.Value.Techs.TryGetValue techType with
+                | (true, _) ->
+                    if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
+                        let targetIndexOpt = evalRetarget false targetIndexOpt battle // TODO: consider affecting wounded.
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                        updateCurrentCommandOpt (constant (Some command)) battle
+                    else battle
+                | (false, _) -> battle
+            | Consequence _ ->
+                match observerIndexOpt with
+                | Some observerIndex ->
+                    match tryGetCharacter observerIndex battle with
+                    | Some observer when observer.Healthy && not (Map.containsKey Sleep observer.Statuses) ->
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                        updateCurrentCommandOpt (constant (Some command)) battle
+                    | Some _ | None -> battle
+                | None -> battle
+            | Wound -> updateCurrentCommandOpt (constant (Some command)) battle
+        let battle = updateActionCommands (constant futureCommands) battle
+        advance time battle
+
+    and advanceNoNextCommand (_ : int64) battle =
+        let (allySignalsRev, battle) =
+            Map.fold (fun (signals : Signal list, battle) allyIndex (ally : Character) ->
+                if  ally.ActionTime >= Constants.Battle.ActionTime &&
+                    ally.CharacterInputState = NoInput then
+                    let battle = updateCharacterInputState (constant RegularMenu) allyIndex battle
+                    let playReadySound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ReadySound)
+                    (signal playReadySound :: signals, battle)
+                else (signals, battle))
+                (just battle)
+                (getAllies battle)
+        let battle =
+            Map.fold (fun battle enemyIndex (enemy : Character) ->
+                if  enemy.ActionTime >= Constants.Battle.ActionTime &&
+                    not (getCharacterAppendedActionCommand enemyIndex battle) then
+                    let battle =
+                        match enemy.AutoBattleOpt with
+                        | Some autoBattle ->
+                            let actionCommand =
+                                match autoBattle.AutoTechOpt with
+                                | Some tech -> ActionCommand.make (Tech tech) enemyIndex (Some autoBattle.AutoTarget) None
+                                | None -> ActionCommand.make Attack enemyIndex (Some autoBattle.AutoTarget) None
+                            appendActionCommand actionCommand battle
+                        | None -> battle    
+                    let battle = resetCharacterActionTime enemyIndex battle
+                    let battle = resetCharacterInput enemyIndex battle
+                    battle
+                else battle)
+                battle
+                (getEnemies battle)
+        let battle =
+            updateCharacters (fun character ->
+                let actionTimeDelta =
+                    if character.Ally || battle.BattleSpeed = WaitSpeed
+                    then Constants.Battle.AllyActionTimeDelta
+                    else Constants.Battle.EnemyActionTimeDelta
+                let actionTimeDelta =
+                    if Map.containsKey (Time false) character.Statuses then
+                        let slowScalar =
+                            if character.Ally then Constants.Battle.ActionTimeSlowScalar
+                            elif character.Boss then Constants.Battle.ActionTimeSlowerScalar
+                            else Constants.Battle.ActionTimeSlowestScalar
+                        actionTimeDelta * slowScalar
+                    elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeHasteScalar
+                    else actionTimeDelta
+                let actionTimeDelta =
+                    let anyAlliesInputting = getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.CharacterInputState <> CharacterInputState.NoInput)
+                    if anyAlliesInputting then
+                        match battle.BattleSpeed with
+                        | SwiftSpeed -> actionTimeDelta * Constants.Battle.SwiftSpeedScalar
+                        | PacedSpeed -> actionTimeDelta * Constants.Battle.PacedSpeedScalar
+                        | WaitSpeed -> 0.0f
+                    else actionTimeDelta * 1.0f
+                let poisoning =
+                    let actionTime = character.ActionTime + actionTimeDelta
+                    Map.containsKey Poison character.Statuses &&
+                    character.ActionTime % 500.0f < 250.0f &&
+                    actionTime % 500.0f >= 250.0f
+                let character =
+                    if character.Healthy && not (Map.containsKey Sleep character.Statuses)
+                    then Character.updateActionTime ((+) actionTimeDelta) character
+                    else character
+                let character =
+                    if character.Healthy
+                    then Character.burndownStatuses actionTimeDelta character
+                    else character
+                let character =
+                    if character.Healthy && poisoning then
+                        let poisonDrainRate =
+                            if character.Ally then Constants.Battle.PoisonDrainRateMedium
+                            elif character.Boss then Constants.Battle.PoisonDrainRateSlow
+                            else Constants.Battle.PoisonDrainRateFast
+                        let damage = single character.HitPointsMax * poisonDrainRate |> max 1.0f |> int
+                        let alliesHealthy = getAlliesHealthy battle
+                        Character.updateHitPoints (fun hp -> (false, max 1 (hp - damage))) false alliesHealthy character
+                    else character
+                let character =
+                    if character.Healthy && Character.readyForAutoBattle character then
+                        let alliesHealthy = getAlliesHealthy battle
+                        let alliesWounded = getAlliesWounded battle
+                        let enemiesStanding = getEnemiesStanding battle
+                        let enemiesSwooning = getEnemiesSwooning battle
+                        Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning character
+                    else character
+                character)
+                battle
+        withSignals (List.rev allySignalsRev) battle
+
+    and advanceNoCurrentCommand time (battle : Battle) =
+        match battle.ActionCommands with
+        | Queue.Cons (nextCommand, futureCommands) -> advanceNextCommand time nextCommand futureCommands battle
+        | Queue.Nil -> advanceNoNextCommand time battle
+
+    and advanceRunning time (battle : Battle) =
+        if battle.MessageOpt.IsNone then
+            match battle.CurrentCommandOpt with
+            | Some currentCommand -> advanceCurrentCommand time currentCommand battle
+            | None -> advanceNoCurrentCommand time battle
+        else just battle
+
+    and advanceResults time startTime outcome (battle : Battle) =
+        let localTime = time - startTime
+        if localTime = 0L then
+            let alliesLevelingUp =
+                battle |> getAllies |> Map.toValueList |>
+                List.filter (fun ally -> ally.HitPoints > 0) |>
+                List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
+            let textA =
+                match alliesLevelingUp with
+                | _ :: _ -> "Level up for " + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + "!^"
+                | [] -> "Enemies defeated!^"
+            let textB =
+                alliesLevelingUp |>
+                List.choose (fun ally ->
+                    let techs = Algorithms.expPointsToTechs3 ally.ExpPoints battle.PrizePool.Exp ally.ArchetypeType
+                    if Set.notEmpty techs then Some (ally, techs) else None) |>
+                List.map (fun (ally, techs) ->
+                    let text = techs |> Set.toList |> List.map scstring |> String.join ", "
+                    ally.Name + " learned " + text + "!") |>
+                function
+                | _ :: _ as texts -> String.join "\n" texts + "^"
+                | [] -> ""
+            let textC = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
+            let textD =
+                match battle.PrizePool.Items with
+                | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> ItemType.getName i) |> String.join ", ") + "!"
+                | [] -> ""
+            let text = textA + textB + textC + textD
+            let dialog = Dialog.make DialogThick text
+            let battle = updateDialogOpt (constant (Some dialog)) battle
+            let (sigs, battle) =
+                if outcome then
+                    let battle = updateAllies (fun ally -> if ally.Healthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
+                    let battle = updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
+                    let battle = updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
+                    if List.notEmpty alliesLevelingUp
+                    then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound)) battle
+                    else just battle
+                else just battle
+            (signal (FadeOutSong 360L) :: sigs, battle)
+        else
+            match battle.DialogOpt with
+            | None -> just (updateBattleState (constant (BattleQuitting (time, outcome, battle.PrizePool.Consequents))) battle)
+            | Some _ -> just battle
+
+    and advanceCease time startTime battle =
+        let localTime = time - startTime
+        if localTime = 0L
+        then withSignal (FadeOutSong Constants.Audio.FadeOutTimeDefault) battle
+        else just battle
+
+    and advance time (battle : Battle) : Signal list * Battle =
+        match battle.BattleState with
+        | BattleReady startTime -> advanceReady time startTime battle
+        | BattleRunning -> advanceRunning time battle
+        | BattleResult (startTime, outcome) -> advanceResults time startTime outcome battle
+        | BattleQuitting (startTime, _, _) -> advanceCease time startTime battle
+        | BattleQuit -> just battle
+
+    let makeFromParty time inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
@@ -861,7 +1784,7 @@ module Battle =
         let tileIndexOffset = battleData.BattleTileIndexOffset
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         let battle =
-            { BattleState_ = BattleReady (World.getUpdateTime world)
+            { BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
               PrizePool_ = prizePool

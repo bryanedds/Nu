@@ -67,7 +67,6 @@
 		<Compile Include="Field\Menu.fs" />
 		<Compile Include="Field\Shop.fs" />
 		<Compile Include="Field\Field.fs" />
-		<Compile Include="Field\FieldCue.fs" />
 		<Compile Include="Field\FieldContent.fs" />
 		<Compile Include="Field\FieldDispatcher.fs" />
 		<Compile Include="OmniBlade\OmniBlade.fs" />
