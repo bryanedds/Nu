@@ -75,6 +75,22 @@ module Battle =
         member this.MessageOpt = this.MessageOpt_
         member this.DialogOpt = this.DialogOpt_
 
+    (* Command Operations *)
+
+    let updateCurrentCommandOpt updater battle =
+        { battle with CurrentCommandOpt_ = updater battle.CurrentCommandOpt_ }
+
+    let updateActionCommands updater battle =
+        { battle with ActionCommands_ = updater battle.ActionCommands_ }
+
+    let appendActionCommand command battle =
+        { battle with ActionCommands_ = Queue.conj command battle.ActionCommands_ }
+
+    let prependActionCommand command battle =
+        { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
+
+    (* Multi-Character Operations *)
+
     let getCharacters battle =
         battle.Characters_
 
@@ -187,12 +203,6 @@ module Battle =
         getAlliesWounded battle |>
         Map.toKeyList
 
-    let addCharacter index character (battle : Battle) =
-        { battle with Characters_ = Map.add index character battle.Characters_ }
-
-    let removeCharacter index (battle : Battle) =
-        { battle with Characters_ = Map.remove index battle.Characters_ }
-
     let updateCharactersIf predicate updater (battle : Battle) =
         { battle with Characters_ = Map.map (fun i c -> if predicate i c then updater c else c) battle.Characters_ }
 
@@ -216,6 +226,21 @@ module Battle =
 
     let updateEnemies updater battle =
         updateEnemiesIf tautology2 updater battle
+
+    let populateAlliesConjureCharges battle =
+        updateAllies (fun ally ->
+            if Character.hasConjureTechs ally
+            then Character.updateConjureChargeOpt (constant (Some 0)) ally
+            else ally)
+            battle
+
+    (* Individual Character Operations *)
+
+    let addCharacter index character (battle : Battle) =
+        { battle with Characters_ = Map.add index character battle.Characters_ }
+
+    let removeCharacter index (battle : Battle) =
+        { battle with Characters_ = Map.remove index battle.Characters_ }
 
     let containsCharacter characterIndex battle =
         Map.containsKey characterIndex battle.Characters_
@@ -258,7 +283,11 @@ module Battle =
     let getCharacterArchetypeType characterIndex battle =
         (getCharacter characterIndex battle).ArchetypeType
 
-    let shouldCounter sourceIndex targetIndex battle =
+    let getCharacterAppendedActionCommand characterIndex battle =
+        seq battle.ActionCommands_ |>
+        Seq.exists (fun command -> command.SourceIndex = characterIndex)
+
+    let shouldCharacterCounter sourceIndex targetIndex battle =
         if CharacterIndex.unfriendly sourceIndex targetIndex
         then getCharacterBy Character.shouldCounter sourceIndex battle
         else false
@@ -287,6 +316,13 @@ module Battle =
     let updateCharacterAutoBattleOpt updater characterIndex battle =
         updateCharacter (Character.updateAutoBattleOpt updater) characterIndex battle
 
+    let updateCharacterAutoTechOpt updater characterIndex battle =
+        updateCharacter (fun character ->
+            let techTypeOpt = updater character.AutoBattleOpt
+            Character.updateAutoBattleOpt (function Some autoBattle -> Some { autoBattle with AutoTechOpt = techTypeOpt; ChargeTech = techTypeOpt.IsSome } | None -> None) character)
+            characterIndex
+            battle
+
     let updateCharacterBottom updater characterIndex battle =
         updateCharacter (Character.updateBottom updater) characterIndex battle
 
@@ -305,6 +341,12 @@ module Battle =
     let applyCharacterVulnerabilities added removed characterIndex battle =
         updateCharacter (Character.applyVulnerabilityChanges added removed) characterIndex battle
 
+    let addCharacterInteraction interaction characterIndex battle =
+        updateCharacter (Character.addInteraction interaction) characterIndex battle
+
+    let clearCharacterInteractions characterIndex battle =
+        updateCharacter Character.clearInteractions characterIndex battle
+
     let chargeCharacter chargeAmount characterIndex battle =
         updateCharacter
             (Character.updateTechChargeOpt
@@ -319,6 +361,15 @@ module Battle =
 
     let undefendCharacter characterIndex battle =
         updateCharacter Character.undefend characterIndex battle
+
+    let materializeCharacter time characterIndex battle =
+        updateCharacter (Character.materialize time) characterIndex battle
+
+    let dematerializeCharacter time characterIndex battle =
+        updateCharacter (Character.dematerialize time) characterIndex battle
+
+    let materializedCharacter time characterIndex battle =
+        updateCharacter (Character.materialized time) characterIndex battle
 
     let faceCharacter direction characterIndex battle =
         updateCharacter (Character.face direction) characterIndex battle
@@ -360,23 +411,9 @@ module Battle =
             character)
             battle
 
-    let updateBattleState updater battle =
-        { battle with BattleState_ = updater battle.BattleState }
-
-    let updateInventory updater battle =
-        { battle with Inventory_ = updater battle.Inventory_ }
-
-    let updateCurrentCommandOpt updater battle =
-        { battle with CurrentCommandOpt_ = updater battle.CurrentCommandOpt_ }
-
-    let updateActionCommands updater battle =
-        { battle with ActionCommands_ = updater battle.ActionCommands_ }
-
-    let updateMessageOpt updater field =
-        { field with MessageOpt_ = updater field.MessageOpt_ }
-
-    let updateDialogOpt updater field =
-        { field with DialogOpt_ = updater field.DialogOpt_ }
+    let characterCounterAttack sourceIndex targetIndex battle =
+        let attackCommand = ActionCommand.make Attack sourceIndex (Some targetIndex) None
+        prependActionCommand attackCommand battle
 
     let halveCharacterActionTime characterIndex battle =
         updateCharacterActionTime (fun at -> min (at * 0.5f) (Constants.Battle.ActionTime * 0.5f)) characterIndex battle
@@ -397,20 +434,6 @@ module Battle =
     let resetCharacterConjureCharge characterIndex battle =
         updateCharacter Character.resetConjureCharge characterIndex battle
 
-    let characterAppendedActionCommand characterIndex battle =
-        seq battle.ActionCommands_ |>
-        Seq.exists (fun command -> command.SourceIndex = characterIndex)
-
-    let appendActionCommand command battle =
-        { battle with ActionCommands_ = Queue.conj command battle.ActionCommands_ }
-
-    let prependActionCommand command battle =
-        { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
-
-    let counterAttack sourceIndex targetIndex battle =
-        let attackCommand = ActionCommand.make Attack sourceIndex (Some targetIndex) None
-        prependActionCommand attackCommand battle
-
     let advanceCharacterConjureCharge characterIndex battle =
         updateCharacter Character.advanceConjureCharge characterIndex battle
 
@@ -428,72 +451,6 @@ module Battle =
     let finishCharacterAction characterIndex battle =
         let battle = advanceCharacterConjureCharge characterIndex battle
         battle
-
-    let evalAttack effectType sourceIndex targetIndex battle =
-        let source = getCharacter sourceIndex battle
-        let target = getCharacter targetIndex battle
-        Character.getAttackResult effectType source target
-
-    let evalTechUnary targetCount techData sourceIndex targetIndex battle =
-        let source = getCharacter sourceIndex battle
-        let target = getCharacter targetIndex battle
-        (techData.TechCost, Character.evalTechUnary targetCount techData source target)
-
-    let evalTech sourceIndex targetIndex techType battle =
-        match Map.tryFind techType Data.Value.Techs with
-        | Some techData ->
-            let source = getCharacter sourceIndex battle
-            let target = getCharacter targetIndex battle
-            let characters = getCharacters battle
-            Triple.prepend techData.TechCost (Character.evalTech techData source target characters)
-        | None -> (0, None, Map.empty)
-
-    let materializeCharacter time characterIndex battle =
-        updateCharacter (Character.materialize time) characterIndex battle
-
-    let dematerializeCharacter time characterIndex battle =
-        updateCharacter (Character.dematerialize time) characterIndex battle
-
-    let materializedCharacter time characterIndex battle =
-        updateCharacter (Character.materialized time) characterIndex battle
-
-    let retarget targetIndex characterIndex battle =
-        match tryGetCharacter targetIndex battle with
-        | Some target when target.Healthy ->
-            tryUpdateCharacter (fun character ->
-                if character.Healthy
-                then Character.updateAutoBattleOpt (function Some autoBattle -> Some { autoBattle with AutoTarget = targetIndex } | None -> None) character
-                else character)
-                characterIndex
-                battle
-        | Some _ | None -> battle
-
-    let retargetIfNeeded affectingWounded targetIndexOpt battle =
-        match targetIndexOpt with
-        | Some targetIndex ->
-            if affectingWounded then
-                match tryGetCharacterBy (fun (target : Character) -> target.Healthy) targetIndex battle with
-                | Some true | None ->
-                    match targetIndex with
-                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesWounded battle)))
-                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesSwooning battle)))
-                | Some false -> targetIndexOpt
-            else
-                match tryGetCharacterBy (fun (target : Character) -> target.Wounded) targetIndex battle with
-                | Some true | None ->
-                    match targetIndex with
-                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))
-                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesStanding battle)))
-                | Some false -> targetIndexOpt
-        | None -> targetIndexOpt
-
-    let changeAutoTechOpt techTypeOpt characterIndex battle =
-        updateCharacter (fun character ->
-            if character.Healthy
-            then Character.updateAutoBattleOpt (function Some autoBattle -> Some { autoBattle with AutoTechOpt = techTypeOpt; ChargeTech = techTypeOpt.IsSome } | None -> None) character
-            else character)
-            characterIndex
-            battle
 
     let cancelCharacterInput characterIndex battle =
         tryUpdateCharacter (fun character ->
@@ -519,131 +476,56 @@ module Battle =
             appendActionCommand command battle
         | None -> battle
 
-    let populateAllyConjureCharges battle =
-        updateAllies (fun ally ->
-            if Character.hasConjureTechs ally
-            then Character.updateConjureChargeOpt (constant (Some 0)) ally
-            else ally)
-            battle
-
-    let autoBattleEnemies battle =
-        let alliesHealthy = getAlliesHealthy battle
-        let alliesWounded = getAlliesWounded battle
-        let enemiesStanding = getEnemiesStanding battle
-        let enemiesSwooning = getEnemiesSwooning battle
-        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning) battle
-
-    let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
-        if attempts < 10000 then
-            let (w, h) = (layout.Length, layout.[0].Length)
-            let (x, y) = (Gen.random1 w, Gen.random1 h)
-            match Data.Value.Characters.TryFind (Enemy enemy) with
-            | Some characterData ->
-                match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
-                | Some archetypeData ->
-                    match archetypeData.Stature with
-                    | SmallStature | NormalStature | LargeStature ->
-                        if x > 0 && x < w - 1 && y < h - 1 then
-                            match
-                                (layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
-                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0]) with
-                            |   (Left (), Left (), Left (),
-                                 Left (), Left (), Left ()) ->
-                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
-                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None
-                            | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
-                        else tryRandomizeEnemy (inc attempts) index enemy layout
-                    | BossStature ->
-                        if x > 1 && x < w - 2 && y > 0 && y < h - 3 then 
-                            match
-                                (layout.[x-2].[y+3], layout.[x-1].[y+3], layout.[x+0].[y+3], layout.[x+1].[y+3], layout.[x+2].[y+3],
-                                 layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
-                                 layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
-                                 layout.[x-2].[y+0], layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0], layout.[x+2].[y+0],
-                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1]) with
-                            |   (Left (), Left (), Left (), Left (), Left (),
-                                 Left (), Left (), Left (), Left (), Left (),
-                                 Left (), Left (), Left (), Left (), Left (),
-                                 Left (), Left (), Left (), Left (), Left (),
-                                 Left (), Left (), Left (), Left (), Left ()) ->
-                                layout.[x-2].[y+3] <- Right None; layout.[x-1].[y+3] <- Right None; layout.[x+0].[y+3] <- Right None; layout.[x+1].[y+3] <- Right None; layout.[x+2].[y+3] <- Right None
-                                layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None; layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
-                                layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
-                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
-                                layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
-                            | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
-                        else tryRandomizeEnemy (inc attempts) index enemy layout
-                | None -> ()
-            | None -> ()
-        else Log.info ("No enemy fit found for '" + scstring enemy + "' in layout.")
-
-    let private randomizeEnemyLayout w h (enemies : EnemyType list) =
-        let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
-        layout.[0].[0] <- Left () // no one puts enemy in a corner
-        layout.[w-1].[0] <- Left ()
-        layout.[0].[h-1] <- Left ()
-        layout.[w-1].[h-1] <- Left ()
-        List.iteri (fun index enemy -> tryRandomizeEnemy 0 index enemy layout) enemies
-        layout
-
-    let private randomizeEnemies allyCount waitSpeed enemies =
-        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
-        let tile = v2 48.0f 48.0f
-        let (w, h) = (10, 8)
-        let layout = randomizeEnemyLayout w h enemies
-        let enemies =
-            layout |>
-            Array.mapi (fun x arr ->
-                Array.mapi (fun y enemyOpt ->
-                    match enemyOpt with
-                    | Left () -> None
-                    | Right None -> None
-                    | Right (Some (enemyIndex, enemy)) ->
-                        let position = v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
-                        Character.tryMakeEnemy allyCount enemyIndex waitSpeed { EnemyType = enemy; EnemyPosition = position })
-                    arr) |>
-            Array.concat |>
-            Array.definitize |>
-            Array.toList
-        enemies
-
-    let spawnEnemies time spawnTypes battle =
-        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
-        let tile = v2 48.0f 48.0f
-        let (w, h) = (10, 8)
-        let waitSpeed = battle.BattleSpeed_ = WaitSpeed
-        let allyCount = battle |> getAllies |> Map.count
-        let battle =
-            List.fold (fun battle (spawnType : SpawnType) ->
-                let mutable battle = battle
-                let mutable spawned = false
-                let mutable tries = 0
-                while not spawned && tries < 100 do
-                    let (i, j) = (Gen.random1 w, Gen.random1 h)
-                    let position = v3 (origin.X + single i * tile.X) (origin.Y + single j * tile.Y) 0.0f
-                    let positions = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> enemy.PerimeterOriginal.BottomLeft)
-                    let notOnSides = i <> 0 && i <> w - 1
-                    let notOverlapping = Array.notExists (fun position' -> Vector3.Distance (position, position') < tile.X * 2.0f) positions
-                    if notOnSides && notOverlapping then
-                        let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
-                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed { EnemyType = spawnType.EnemyType; EnemyPosition = Option.defaultValue position spawnType.PositionOpt } with
-                        | Some enemy ->
-                            let enemy =
-                                match spawnType.SpawnEffectType with
-                                | Materialize -> Character.materialize time enemy
-                                | Unearth -> Character.animate time UnearthAnimation enemy
-                                | Pop -> enemy
-                            battle <- addCharacter enemyIndex enemy battle
-                            spawned <- true
-                        | None -> ()
-                    tries <- inc tries
-                battle)
+    let retargetCharacter sourceIndex targetIndex battle =
+        match tryGetCharacter targetIndex battle with
+        | Some target when target.Healthy ->
+            tryUpdateCharacter (fun source ->
+                if source.Healthy
+                then Character.updateAutoBattleOpt (function Some autoBattle -> Some { autoBattle with AutoTarget = targetIndex } | None -> None) source
+                else source)
+                sourceIndex
                 battle
-                spawnTypes
-        battle
+        | Some _ | None -> battle
 
-    let spawnEnemy time spawnType battle =
-        spawnEnemies time [spawnType] battle
+    (* Evluation Operations *)
+
+    let evalRetarget affectingWounded targetIndexOpt battle =
+        match targetIndexOpt with
+        | Some targetIndex ->
+            if affectingWounded then
+                match tryGetCharacterBy (fun (target : Character) -> target.Healthy) targetIndex battle with
+                | Some true | None ->
+                    match targetIndex with
+                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesWounded battle)))
+                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesSwooning battle)))
+                | Some false -> targetIndexOpt
+            else
+                match tryGetCharacterBy (fun (target : Character) -> target.Wounded) targetIndex battle with
+                | Some true | None ->
+                    match targetIndex with
+                    | AllyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getAlliesHealthy battle)))
+                    | EnemyIndex _ -> Gen.randomItemOpt (Map.toKeyList (Map.remove targetIndex (getEnemiesStanding battle)))
+                | Some false -> targetIndexOpt
+        | None -> targetIndexOpt
+
+    let evalAttack effectType sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
+        Character.getAttackResult effectType source target
+
+    let evalTechUnary targetCount techData sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
+        (techData.TechCost, Character.evalTechUnary targetCount techData source target)
+
+    let evalTech sourceIndex targetIndex techType battle =
+        match Map.tryFind techType Data.Value.Techs with
+        | Some techData ->
+            let source = getCharacter sourceIndex battle
+            let target = getCharacter targetIndex battle
+            let characters = getCharacters battle
+            Triple.prepend techData.TechCost (Character.evalTech techData source target characters)
+        | None -> (0, None, Map.empty)
 
     let rec private evalSingleTargetType targetType (source : Character) (target : Character) (observer : Character) battle =
         match targetType with
@@ -782,13 +664,7 @@ module Battle =
             | All affectTypes -> List.forall (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
         | (false, _) -> false
 
-    let private evalTechInteractions4
-        (source : Character)
-        (target : Character)
-        (observer : Character)
-        (techType : TechType)
-        (techResults : Map<CharacterIndex, bool * bool * int * StatusType Set * StatusType Set>)
-        battle =
+    let private evalTechInteractions4 (source : Character) (target : Character) (observer : Character) (techType : TechType) (techResults : Map<CharacterIndex, bool * bool * int * StatusType Set * StatusType Set>) battle =
         List.fold (fun consequences interaction ->
             let condition = interaction.BattleCondition
             let consequences' = interaction.BattleConsequences
@@ -841,6 +717,139 @@ module Battle =
                 evalConsequence sourceIndex targetIndex observerIndex consequence battle)
                 battle consequences)
             battle consequences
+
+    (* High-Level Operations *)
+
+    let updateBattleState updater battle =
+        { battle with BattleState_ = updater battle.BattleState }
+
+    let updateInventory updater battle =
+        { battle with Inventory_ = updater battle.Inventory_ }
+
+    let updateMessageOpt updater field =
+        { field with MessageOpt_ = updater field.MessageOpt_ }
+
+    let updateDialogOpt updater field =
+        { field with DialogOpt_ = updater field.DialogOpt_ }
+
+    let autoBattleEnemies battle =
+        let alliesHealthy = getAlliesHealthy battle
+        let alliesWounded = getAlliesWounded battle
+        let enemiesStanding = getEnemiesStanding battle
+        let enemiesSwooning = getEnemiesSwooning battle
+        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning) battle
+
+    let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
+        if attempts < 10000 then
+            let (w, h) = (layout.Length, layout.[0].Length)
+            let (x, y) = (Gen.random1 w, Gen.random1 h)
+            match Data.Value.Characters.TryFind (Enemy enemy) with
+            | Some characterData ->
+                match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
+                | Some archetypeData ->
+                    match archetypeData.Stature with
+                    | SmallStature | NormalStature | LargeStature ->
+                        if x > 0 && x < w - 1 && y < h - 1 then
+                            match
+                                (layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
+                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0]) with
+                            |   (Left (), Left (), Left (),
+                                 Left (), Left (), Left ()) ->
+                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
+                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None
+                            | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
+                        else tryRandomizeEnemy (inc attempts) index enemy layout
+                    | BossStature ->
+                        if x > 1 && x < w - 2 && y > 0 && y < h - 3 then 
+                            match
+                                (layout.[x-2].[y+3], layout.[x-1].[y+3], layout.[x+0].[y+3], layout.[x+1].[y+3], layout.[x+2].[y+3],
+                                 layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
+                                 layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
+                                 layout.[x-2].[y+0], layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0], layout.[x+2].[y+0],
+                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1]) with
+                            |   (Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left ()) ->
+                                layout.[x-2].[y+3] <- Right None; layout.[x-1].[y+3] <- Right None; layout.[x+0].[y+3] <- Right None; layout.[x+1].[y+3] <- Right None; layout.[x+2].[y+3] <- Right None
+                                layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None; layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
+                                layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
+                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
+                                layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
+                            | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
+                        else tryRandomizeEnemy (inc attempts) index enemy layout
+                | None -> ()
+            | None -> ()
+        else Log.info ("No enemy fit found for '" + scstring enemy + "' in layout.")
+
+    let private randomizeEnemyLayout w h (enemies : EnemyType list) =
+        let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
+        layout.[0].[0] <- Left () // no one puts enemy in a corner
+        layout.[w-1].[0] <- Left ()
+        layout.[0].[h-1] <- Left ()
+        layout.[w-1].[h-1] <- Left ()
+        List.iteri (fun index enemy -> tryRandomizeEnemy 0 index enemy layout) enemies
+        layout
+
+    let private randomizeEnemies allyCount waitSpeed enemies =
+        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
+        let tile = v2 48.0f 48.0f
+        let (w, h) = (10, 8)
+        let layout = randomizeEnemyLayout w h enemies
+        let enemies =
+            layout |>
+            Array.mapi (fun x arr ->
+                Array.mapi (fun y enemyOpt ->
+                    match enemyOpt with
+                    | Left () -> None
+                    | Right None -> None
+                    | Right (Some (enemyIndex, enemy)) ->
+                        let position = v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
+                        Character.tryMakeEnemy allyCount enemyIndex waitSpeed { EnemyType = enemy; EnemyPosition = position })
+                    arr) |>
+            Array.concat |>
+            Array.definitize |>
+            Array.toList
+        enemies
+
+    let spawnEnemies time spawnTypes battle =
+        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
+        let tile = v2 48.0f 48.0f
+        let (w, h) = (10, 8)
+        let waitSpeed = battle.BattleSpeed_ = WaitSpeed
+        let allyCount = battle |> getAllies |> Map.count
+        let battle =
+            List.fold (fun battle (spawnType : SpawnType) ->
+                let mutable battle = battle
+                let mutable spawned = false
+                let mutable tries = 0
+                while not spawned && tries < 100 do
+                    let (i, j) = (Gen.random1 w, Gen.random1 h)
+                    let position = v3 (origin.X + single i * tile.X) (origin.Y + single j * tile.Y) 0.0f
+                    let positions = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> enemy.PerimeterOriginal.BottomLeft)
+                    let notOnSides = i <> 0 && i <> w - 1
+                    let notOverlapping = Array.notExists (fun position' -> Vector3.Distance (position, position') < tile.X * 2.0f) positions
+                    if notOnSides && notOverlapping then
+                        let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
+                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed { EnemyType = spawnType.EnemyType; EnemyPosition = Option.defaultValue position spawnType.PositionOpt } with
+                        | Some enemy ->
+                            let enemy =
+                                match spawnType.SpawnEffectType with
+                                | Materialize -> Character.materialize time enemy
+                                | Unearth -> Character.animate time UnearthAnimation enemy
+                                | Pop -> enemy
+                            battle <- addCharacter enemyIndex enemy battle
+                            spawned <- true
+                        | None -> ()
+                    tries <- inc tries
+                battle)
+                battle
+                spawnTypes
+        battle
+
+    let spawnEnemy time spawnType battle =
+        spawnEnemies time [spawnType] battle
 
     let makeFromParty inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData world =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies

@@ -511,12 +511,6 @@ module Character =
         let characterState = { characterState with Defending = false }
         { character with CharacterState_ = characterState }
 
-    let face direction character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.face direction character.CharacterAnimationState_ }
-
-    let animate time characterAnimationType character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
-
     let materialize time character =
         { character with CharacterAnimationState_ = CharacterAnimationState.materialize time character.CharacterAnimationState_ }
 
@@ -525,6 +519,22 @@ module Character =
 
     let materialized time character =
         { character with CharacterAnimationState_ = CharacterAnimationState.materialized time character.CharacterAnimationState_ }
+
+    let face direction character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.face direction character.CharacterAnimationState_ }
+
+    let animate time characterAnimationType character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
+
+    let addInteraction interaction character =
+        let characterState = character.CharacterState_
+        let characterState = { characterState with Interactions = characterState.Interactions @ [interaction] }
+        { character with CharacterState_ = characterState }
+
+    let clearInteractions character =
+        let characterState = character.CharacterState_
+        let characterState = { characterState with Interactions = [] }
+        { character with CharacterState_ = characterState }
 
     let make bounds characterIndex characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
         let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation
