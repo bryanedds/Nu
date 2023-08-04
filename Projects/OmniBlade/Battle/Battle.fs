@@ -537,7 +537,7 @@ module Battle =
         | BattleTargetType.Any targetTypes -> List.exists (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
         | BattleTargetType.All targetTypes -> List.forall (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
 
-    let rec private evalFightAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
+    let rec private evalAttackAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
         | Physical -> true
         | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
@@ -548,10 +548,10 @@ module Battle =
         | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
         | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
         | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
-        | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
-        | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
+        | Any affectTypes -> List.exists (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
+        | All affectTypes -> List.forall (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
 
-    let private evalFightInteractions4 (source : Character) (target : Character) (observer : Character) battle =
+    let private evalAttackInteractions4 (source : Character) (target : Character) (observer : Character) battle =
         List.fold (fun consequences interaction ->
             let condition = interaction.BattleCondition
             let consequences' = interaction.BattleConsequences
@@ -574,17 +574,17 @@ module Battle =
                     let friendliesHealthy = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType)
                     friendlies.Count > 1 && friendliesHealthy.Count = 1
                 | AffectedTarget (affectType, targetType) ->
-                    evalFightAffectType affectType source target observer battle &&
+                    evalAttackAffectType affectType source target observer battle &&
                     evalSingleTargetType targetType source target observer battle
             if satisfied then consequences @ consequences' else consequences)
             [] observer.Interactions
 
-    let evalFightInteractions sourceIndex targetIndex battle =
+    let evalAttackInteractions sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
         Seq.foldBack (fun (observerIndex, observer) consequences ->
-            let consequences' = evalFightInteractions4 source target observer battle
+            let consequences' = evalAttackInteractions4 source target observer battle
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
@@ -599,8 +599,8 @@ module Battle =
         | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
         | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
         | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
-        | Any affectTypes -> List.exists (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
-        | All affectTypes -> List.forall (fun affectType -> evalFightAffectType affectType source target observer battle) affectTypes
+        | Any affectTypes -> List.exists (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
+        | All affectTypes -> List.forall (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
 
     let private evalItemInteractions4 (source : Character) (target : Character) (observer : Character) battle =
         List.fold (fun consequences interaction ->

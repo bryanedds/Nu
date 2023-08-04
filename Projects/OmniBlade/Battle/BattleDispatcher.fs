@@ -116,7 +116,7 @@ module BattleDispatcher =
                                         Battle.shouldCharacterCounter targetIndex sourceIndex battle then
                                         Battle.characterCounterAttack targetIndex sourceIndex battle
                                     else
-                                        let consequences = Battle.evalFightInteractions sourceIndex targetIndex battle
+                                        let consequences = Battle.evalAttackInteractions sourceIndex targetIndex battle
                                         let battle = Battle.evalConsequences consequences battle
                                         battle
                                 just battle
@@ -125,7 +125,7 @@ module BattleDispatcher =
                                 let battle = Battle.updateCurrentCommandOpt (constant (Some woundCommand)) battle
                                 let battle = Battle.animationCharacterPoise time sourceIndex battle
                                 let battle = Battle.finishCharacterAction sourceIndex battle
-                                let consequences = Battle.evalFightInteractions sourceIndex targetIndex battle
+                                let consequences = Battle.evalAttackInteractions sourceIndex targetIndex battle
                                 let battle = Battle.evalConsequences consequences battle
                                 just battle
                         | _ -> just battle
