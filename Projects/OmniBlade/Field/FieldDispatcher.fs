@@ -61,90 +61,10 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // advance field time
-                let field = Field.advanceUpdateTime field
-
-                // advance cue and convert its signals
-                let (cue, definitions, (signals, field)) = Field.advanceCue field.Cue field.Definitions field
-
-                // reset cue definitions if finished
-                let field =
-                    match cue with
-                    | CueSystem.Fin -> Field.updateDefinitions (constant field.DefinitionsOriginal) field
-                    | _ -> Field.updateDefinitions (constant definitions) field
-                let field = Field.updateCue (constant cue) field
-
-                // advance dialog
-                let field =
-                    match field.DialogOpt with
-                    | Some dialog ->
-                        let dialog = Dialog.advance (Field.detokenize field) (World.getUpdateTime world) dialog
-                        Field.updateDialogOpt (constant (Some dialog)) field
-                    | None -> field
-
-                // advance portal
-                let (signals, field) =
-                    match field.FieldTransitionOpt with
-                    | None ->
-                        match Field.tryGetTouchingPortal field with
-                        | Some (fieldType, destination, direction, isWarp) ->
-                            if Option.isNone field.BattleOpt then // make sure we don't teleport if a battle is started earlier in the frame
-                                let transition =
-                                    { FieldType = fieldType
-                                      FieldDestination = destination
-                                      FieldDirection = direction
-                                      FieldTransitionTime = field.UpdateTime + Constants.Field.TransitionTime }
-                                let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
-                                let playSound =
-                                    if isWarp
-                                    then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
-                                    else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
-                                (signal playSound :: signals, field)
-                            else (signals, field)
-                        | None -> (signals, field)
-                    | Some _ -> (signals, field)
-
-                // advance sensor
-                let (signals, field) =
-                    match field.FieldTransitionOpt with
-                    | None ->
-                        let sensors = Field.getTouchedSensors field
-                        let results =
-                            List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
-                                if field.Advents.IsSupersetOf requirements then
-                                    let field = Field.updateCue (constant cue) field
-                                    match sensorType with
-                                    | AirSensor -> (signals, field)
-                                    | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
-                                else (signals, field))
-                                (signals, field) sensors
-                        results
-                    | Some _ -> (signals, field)
-
-                // advance spirits
-                let (signals : Signal list, field) =
-                    if  world.Advancing &&
-                        field.Menu.MenuState = MenuClosed &&
-                        CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
-                        Option.isNone field.DialogOpt &&
-                        Option.isNone field.BattleOpt &&
-                        Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt then
-                        match Field.advanceSpirits field world with
-                        | Left (battleData, field) ->
-                            let time = field.UpdateTime
-                            let playTime = Option.defaultValue time field.FieldSongTimeOpt
-                            let startTime = time - playTime
-                            let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                            let field = Field.enterBattle (World.getUpdateTime world) startTime prizePool battleData field
-                            let fade = FadeOutSong 60L
-                            let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
-                            (signal fade :: signal beastGrowl :: signals, field)
-                        | Right field -> (signals, field)
-                    else (signals, field)
-
-                // fin
-                (signals, field)
+                // advance field
+                if World.getAdvancing world
+                then Field.advance (World.getUpdateTime world) field
+                else just field
 
             | UpdateFieldTransition ->
 

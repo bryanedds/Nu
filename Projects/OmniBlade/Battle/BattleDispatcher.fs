@@ -44,27 +44,9 @@ module BattleDispatcher =
 
             match message with
             | Update ->
-
-                // advance battle and convert its signals
-                let time = World.getUpdateTime world
-                let (signals, battle) = if World.getAdvancing world then Battle.advance time battle else just battle
-
-                // advance message
-                let battle =
-                    Battle.updateMessageOpt (function
-                        | Some (startTime, lifeTime, message) when time < startTime + lifeTime -> Some (startTime, lifeTime, Dialog.advance id time message)
-                        | Some _ | None -> None)
-                        battle
-
-                // advance dialog
-                let battle =
-                    Battle.updateDialogOpt (function
-                        | Some dialog -> Some (Dialog.advance id time dialog)
-                        | None -> None)
-                        battle
-
-                // fin
-                (signals, battle)
+                if World.getAdvancing world
+                then Battle.advance (World.getUpdateTime world) battle
+                else just battle
 
             | UpdateRideTags tags ->
                 match Map.tryFind "Tag" tags with
