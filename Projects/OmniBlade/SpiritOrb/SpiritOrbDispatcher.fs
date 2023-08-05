@@ -11,18 +11,6 @@ open OmniBlade
 [<AutoOpen>]
 module SpiritOrbDispatcher =
 
-    type SpiritOrbInhabitant =
-        | ChestInhabitant of Chest
-        | PortalInhabitant of Portal
-        | SpiritInhabitant of Spirit
-
-    type [<ReferenceEquality>] SpiritOrb =
-        { AvatarLowerCenter : Vector3
-          ShowUnopenedChests : bool
-          Chests : Chest array
-          Portals : Portal array
-          Spirits : Spirit array }
-
     type Entity with
         member this.GetSpiritOrb world = this.GetModelGeneric<SpiritOrb> world
         member this.SetSpiritOrb value world = this.SetModelGeneric<SpiritOrb> value world

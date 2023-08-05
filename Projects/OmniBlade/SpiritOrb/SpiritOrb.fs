@@ -14,8 +14,9 @@ type SpiritOrbInhabitant =
     | SpiritInhabitant of Spirit
 
 // TODO: consider making this an algebraic data type.
-type [<ReferenceEquality; SymbolicExpansion>] SpiritOrb =
+type [<ReferenceEquality>] SpiritOrb =
     { AvatarLowerCenter : Vector3
+      ShowUnopenedChests : bool
       Chests : Chest array
       Portals : Portal array
       Spirits : Spirit array }
