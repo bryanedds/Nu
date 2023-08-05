@@ -540,7 +540,7 @@ module Battle =
                 battle
         | Some _ | None -> battle
 
-    (* Evluation Operations *)
+    (* Evaluation Operations *)
 
     let evalRetarget affectingWounded targetIndexOpt battle =
         match targetIndexOpt with
@@ -1555,7 +1555,7 @@ module Battle =
             withSignals sigs battle
         | None -> just battle
 
-    and advanceReady time startTime (battle : Battle) =
+    and private advanceReady time startTime (battle : Battle) =
         let localTime = time - startTime
         let readyTime = localTime - 90L
         if localTime = inc 63L then // first frame after transitioning in
@@ -1575,7 +1575,7 @@ module Battle =
             just battle
         else just battle
 
-    and advanceCurrentCommand time currentCommand battle =
+    and private advanceCurrentCommand time currentCommand battle =
         let localTime = time - currentCommand.StartTime
         let sourceIndex = currentCommand.ActionCommand.SourceIndex
         let targetIndexOpt = currentCommand.ActionCommand.TargetIndexOpt
@@ -1588,7 +1588,7 @@ module Battle =
         | Consequence consequence -> advanceConsequence sourceIndex targetIndexOpt observerIndexOpt consequence time localTime battle
         | Wound -> advanceWound targetIndexOpt time battle
 
-    and advanceNextCommand time nextCommand futureCommands battle =
+    and private advanceNextCommand time nextCommand futureCommands battle =
         let command = CurrentCommand.make time nextCommand
         let sourceIndex = command.ActionCommand.SourceIndex
         let targetIndexOpt = command.ActionCommand.TargetIndexOpt
@@ -1633,7 +1633,7 @@ module Battle =
         let battle = updateActionCommands (constant futureCommands) battle
         advance time battle
 
-    and advanceNoNextCommand (_ : int64) battle =
+    and private advanceNoNextCommand (_ : int64) battle =
         let (allySignalsRev, battle) =
             Map.fold (fun (signals : Signal list, battle) allyIndex (ally : Character) ->
                 if  ally.ActionTime >= Constants.Battle.ActionTime &&
@@ -1721,19 +1721,19 @@ module Battle =
                 battle
         withSignals (List.rev allySignalsRev) battle
 
-    and advanceNoCurrentCommand time (battle : Battle) =
+    and private advanceNoCurrentCommand time (battle : Battle) =
         match battle.ActionCommands with
         | Queue.Cons (nextCommand, futureCommands) -> advanceNextCommand time nextCommand futureCommands battle
         | Queue.Nil -> advanceNoNextCommand time battle
 
-    and advanceRunning time (battle : Battle) =
+    and private advanceRunning time (battle : Battle) =
         if battle.MessageOpt.IsNone then
             match battle.CurrentCommandOpt with
             | Some currentCommand -> advanceCurrentCommand time currentCommand battle
             | None -> advanceNoCurrentCommand time battle
         else just battle
 
-    and advanceResults time startTime outcome (battle : Battle) =
+    and private advanceResults time startTime outcome (battle : Battle) =
         let localTime = time - startTime
         if localTime = 0L then
             let alliesLevelingUp =
@@ -1778,19 +1778,39 @@ module Battle =
             | None -> just (updateBattleState (constant (BattleQuitting (time, outcome, battle.PrizePool.Consequents))) battle)
             | Some _ -> just battle
 
-    and advanceCease time startTime (battle : Battle) =
+    and private advanceCease time startTime (battle : Battle) =
         let localTime = time - startTime
         if localTime = 0L
         then withSignal (FadeOutSong Constants.Audio.FadeOutTimeDefault) battle
         else just battle
 
     and advance time (battle : Battle) : Signal list * Battle =
-        match battle.BattleState with
-        | BattleReady startTime -> advanceReady time startTime battle
-        | BattleRunning -> advanceRunning time battle
-        | BattleResult (startTime, outcome) -> advanceResults time startTime outcome battle
-        | BattleQuitting (startTime, _, _) -> advanceCease time startTime battle
-        | BattleQuit -> just battle
+
+        // advance battle state
+        let (signals, battle) =
+            match battle.BattleState with
+            | BattleReady startTime -> advanceReady time startTime battle
+            | BattleRunning -> advanceRunning time battle
+            | BattleResult (startTime, outcome) -> advanceResults time startTime outcome battle
+            | BattleQuitting (startTime, _, _) -> advanceCease time startTime battle
+            | BattleQuit -> just battle
+
+        // advance message
+        let battle =
+            updateMessageOpt (function
+                | Some (startTime, lifeTime, message) when time < startTime + lifeTime -> Some (startTime, lifeTime, Dialog.advance id time message)
+                | Some _ | None -> None)
+                battle
+
+        // advance dialog
+        let battle =
+            updateDialogOpt (function
+                | Some dialog -> Some (Dialog.advance id time dialog)
+                | None -> None)
+                battle
+
+        // fin
+        (signals, battle)
 
     let makeFromParty time inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies

@@ -667,73 +667,10 @@ module Field =
 
     (* High-Level Operations *)
 
-    let advanceUpdateTime field =
+    let private advanceUpdateTime field =
         { field with UpdateTime_ = inc field.UpdateTime_ }
 
-    let advanceSpirits (field : Field) world =
-        match field.FieldTransitionOpt with
-        | None ->
-            let field =
-                { field with
-                    SpiritActivity_ = inc field.SpiritActivity_ }
-            let field =
-                { field with
-                    Spirits_ =
-                        Array.map (Spirit.advance (World.getUpdateTime world) field.Avatar.Center) field.Spirits_ }
-            let field =
-                { field with
-                    Spirits_ =
-                        Array.filter (fun (spirit : Spirit) ->
-                            let delta = field.Avatar.Bottom - spirit.Center
-                            let distance = delta.Magnitude
-                            distance < Constants.Field.SpiritRadius * 1.25f)
-                            field.Spirits }
-            let field =
-                let spiritsNeeded = int (field.SpiritActivity_ / single Constants.Field.SpiritActivityThreshold)
-                let spiritsDeficient = spiritsNeeded - Array.length field.Spirits
-                let spiritsSpawned =
-                    match Data.Value.Fields.TryGetValue field.FieldType with
-                    | (true, fieldData) ->
-                        [|0 .. spiritsDeficient - 1|] |>
-                        Array.map (fun _ ->
-                            let spiritPattern =
-                                if spiritsNeeded >= Constants.Field.SpiritActivityAggressionThreshold
-                                then SpiritPattern.generate ()
-                                else SpiritPattern.Confused
-                            match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData with
-                            | Some spiritType ->
-                                let spiritMovement = SpiritPattern.toSpiritMovement spiritPattern
-                                let spirit = Spirit.spawn (World.getUpdateTime world) field.Avatar.Bottom spiritType spiritMovement
-                                Some spirit
-                            | None -> None) |>
-                        Array.definitize
-                    | (false, _) -> [||]
-                { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
-            let lowerPerimeter = field.Avatar.LowerPerimeter
-            match Array.tryFind (fun (spirit : Spirit) -> lowerPerimeter.Intersects spirit.Bottom) field.Spirits_ with
-            | Some spirit ->
-                match Data.Value.Fields.TryGetValue field.FieldType with
-                | (true, fieldData) ->
-                    match fieldData.EncounterTypeOpt with
-                    | Some encounterType ->
-                        match Data.Value.Encounters.TryGetValue encounterType with
-                        | (true, encounterData) ->
-                            let battleType =
-                                // TODO: toughen up this code.
-                                match spirit.SpiritType with
-                                | WeakSpirit -> encounterData.BattleTypes.[Gen.random2 0 3]
-                                | NormalSpirit -> encounterData.BattleTypes.[Gen.random2 3 6]
-                                | StrongSpirit -> encounterData.BattleTypes.[Gen.random2 6 9]
-                            match Data.Value.Battles.TryGetValue battleType with
-                            | (true, battleData) -> Left (battleData, field)
-                            | (false, _) -> Right field
-                        | (false, _) -> Right field
-                    | None -> Right field
-                | (false, _) -> Right field
-            | None -> Right field
-        | Some _ -> Right field
-
-    let rec advanceCue (cue : Cue) (definitions : CueDefinitions) (field : Field) :
+    let rec private advanceCue (cue : Cue) (definitions : CueDefinitions) (field : Field) :
         Cue * CueDefinitions * (Signal list * Field) =
 
         match cue with
@@ -1102,6 +1039,155 @@ module Field =
             match haltedCues with
             | _ :: _ -> (Sequence haltedCues, definitions, (signals, field))
             | [] -> (Fin, definitions, (signals, field))
+
+    let private advanceSpirits time (field : Field) =
+        match field.FieldTransitionOpt with
+        | None ->
+            let field =
+                { field with
+                    SpiritActivity_ = inc field.SpiritActivity_ }
+            let field =
+                { field with
+                    Spirits_ =
+                        Array.map (Spirit.advance time field.Avatar.Center) field.Spirits_ }
+            let field =
+                { field with
+                    Spirits_ =
+                        Array.filter (fun (spirit : Spirit) ->
+                            let delta = field.Avatar.Bottom - spirit.Center
+                            let distance = delta.Magnitude
+                            distance < Constants.Field.SpiritRadius * 1.25f)
+                            field.Spirits }
+            let field =
+                let spiritsNeeded = int (field.SpiritActivity_ / single Constants.Field.SpiritActivityThreshold)
+                let spiritsDeficient = spiritsNeeded - Array.length field.Spirits
+                let spiritsSpawned =
+                    match Data.Value.Fields.TryGetValue field.FieldType with
+                    | (true, fieldData) ->
+                        [|0 .. spiritsDeficient - 1|] |>
+                        Array.map (fun _ ->
+                            let spiritPattern =
+                                if spiritsNeeded >= Constants.Field.SpiritActivityAggressionThreshold
+                                then SpiritPattern.generate ()
+                                else SpiritPattern.Confused
+                            match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData with
+                            | Some spiritType ->
+                                let spiritMovement = SpiritPattern.toSpiritMovement spiritPattern
+                                let spirit = Spirit.spawn time field.Avatar.Bottom spiritType spiritMovement
+                                Some spirit
+                            | None -> None) |>
+                        Array.definitize
+                    | (false, _) -> [||]
+                { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
+            let lowerPerimeter = field.Avatar.LowerPerimeter
+            match Array.tryFind (fun (spirit : Spirit) -> lowerPerimeter.Intersects spirit.Bottom) field.Spirits_ with
+            | Some spirit ->
+                match Data.Value.Fields.TryGetValue field.FieldType with
+                | (true, fieldData) ->
+                    match fieldData.EncounterTypeOpt with
+                    | Some encounterType ->
+                        match Data.Value.Encounters.TryGetValue encounterType with
+                        | (true, encounterData) ->
+                            let battleType =
+                                // TODO: toughen up this code.
+                                match spirit.SpiritType with
+                                | WeakSpirit -> encounterData.BattleTypes.[Gen.random2 0 3]
+                                | NormalSpirit -> encounterData.BattleTypes.[Gen.random2 3 6]
+                                | StrongSpirit -> encounterData.BattleTypes.[Gen.random2 6 9]
+                            match Data.Value.Battles.TryGetValue battleType with
+                            | (true, battleData) -> Left (battleData, field)
+                            | (false, _) -> Right field
+                        | (false, _) -> Right field
+                    | None -> Right field
+                | (false, _) -> Right field
+            | None -> Right field
+        | Some _ -> Right field
+
+    let advance time (field : Field) =
+
+        // advance field time
+        let field = advanceUpdateTime field
+
+        // advance cue
+        let (cue, definitions, (signals, field)) = advanceCue field.Cue_ field.Definitions_ field
+
+        // reset cue definitions if finished
+        let field =
+            match cue with
+            | CueSystem.Fin -> updateDefinitions (constant field.DefinitionsOriginal_) field
+            | _ -> updateDefinitions (constant definitions) field
+        let field = updateCue (constant cue) field
+
+        // advance dialog
+        let field =
+            match field.DialogOpt_ with
+            | Some dialog ->
+                let dialog = Dialog.advance (detokenize field) time dialog
+                updateDialogOpt (constant (Some dialog)) field
+            | None -> field
+
+        // advance portal
+        let (signals, field) =
+            match field.FieldTransitionOpt_ with
+            | None ->
+                match tryGetTouchingPortal field with
+                | Some (fieldType, destination, direction, isWarp) ->
+                    if Option.isNone field.BattleOpt_ then // make sure we don't teleport if a battle is started earlier in the frame
+                        let transition =
+                            { FieldType = fieldType
+                              FieldDestination = destination
+                              FieldDirection = direction
+                              FieldTransitionTime = field.UpdateTime_ + Constants.Field.TransitionTime }
+                        let field = updateFieldTransitionOpt (constant (Some transition)) field
+                        let playSound =
+                            if isWarp
+                            then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
+                            else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
+                        (signal playSound :: signals, field)
+                    else (signals, field)
+                | None -> (signals, field)
+            | Some _ -> (signals, field)
+
+        // advance sensor
+        let (signals, field) =
+            match field.FieldTransitionOpt_ with
+            | None ->
+                let sensors = getTouchedSensors field
+                let results =
+                    List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
+                        if field.Advents_.IsSupersetOf requirements then
+                            let field = updateCue (constant cue) field
+                            match sensorType with
+                            | AirSensor -> (signals, field)
+                            | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                        else (signals, field))
+                        (signals, field) sensors
+                results
+            | Some _ -> (signals, field)
+
+        // advance spirits
+        let (signals : Signal list, field) =
+            if  field.Menu_.MenuState = MenuClosed &&
+                CueSystem.Cue.notInterrupting field.Inventory_ field.Advents_ field.Cue_ &&
+                Option.isNone field.DialogOpt_ &&
+                Option.isNone field.BattleOpt_ &&
+                Option.isNone field.ShopOpt_ &&
+                Option.isNone field.FieldTransitionOpt_ then
+                match advanceSpirits time field with
+                | Left (battleData, field) ->
+                    let fieldTime = field.UpdateTime_
+                    let playTime = Option.defaultValue fieldTime field.FieldSongTimeOpt_
+                    let startTime = fieldTime - playTime
+                    let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
+                    let field = enterBattle time startTime prizePool battleData field
+                    let fade = FadeOutSong 60L
+                    let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
+                    (signal fade :: signal beastGrowl :: signals, field)
+                | Right field -> (signals, field)
+            else (signals, field)
+
+        // fin
+        (signals, field)
 
     let make time fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory viewBounds2dAbsolute =
         let (debugAdvents, debugKeyItems, definitions) =
