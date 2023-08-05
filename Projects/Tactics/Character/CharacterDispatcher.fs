@@ -16,8 +16,8 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit EntityDispatcher3d<Character, Message, Command> (true, false, Character.empty)
 
-        static let getSpriteInset (character : Character) world =
-            Character.getAnimationInset (World.getUpdateTime world) character
+        static let getSpriteInset (character : Character) (world : World) =
+            Character.getAnimationInset world.UpdateTime character
 
         override this.Initialize (_, _) =
             [Entity.Presence == Omnipresent]

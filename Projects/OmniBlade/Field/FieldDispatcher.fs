@@ -18,7 +18,7 @@ module FieldDispatcher =
         member this.Field = this.ModelGeneric<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getUpdateTime world) (World.getViewBounds2dAbsolute world))
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty world.UpdateTime (World.getViewBounds2dAbsolute world))
 
         static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) world =
             let collideeEntity = collidee.BodyId.BodySource :?> Entity
@@ -62,8 +62,8 @@ module FieldDispatcher =
             | Update ->
 
                 // advance field
-                if World.getAdvancing world
-                then Field.advance (World.getUpdateTime world) field
+                if world.Advancing
+                then Field.advance world.UpdateTime field
                 else just field
 
             | UpdateFieldTransition ->
@@ -92,7 +92,7 @@ module FieldDispatcher =
                                 match destinationData.FieldType with // HACK: pre-generate fields.
                                 | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
                                 | _ -> ()
-                                let field = Field.updateFieldType (World.getUpdateTime world) (constant fieldTransition.FieldType) field
+                                let field = Field.updateFieldType world.UpdateTime (constant fieldTransition.FieldType) field
                                 let field = Field.updateAvatar (Avatar.updateDirection (constant fieldTransition.FieldDirection)) field
                                 let warpAvatar = WarpAvatar fieldTransition.FieldDestination
                                 let songCmd =
@@ -134,7 +134,7 @@ module FieldDispatcher =
             | AvatarBodyTransform transform ->
 
                 // update avatar from transform
-                let time = World.getUpdateTime world
+                let time = world.UpdateTime
                 let avatar = field.Avatar
                 let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
                 let avatar =
@@ -390,7 +390,7 @@ module FieldDispatcher =
                     let playTime = Option.defaultValue time field.FieldSongTimeOpt
                     let startTime = time - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    let field = Field.enterBattle (World.getUpdateTime world) startTime prizePool battleData field
+                    let field = Field.enterBattle world.UpdateTime startTime prizePool battleData field
                     withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 

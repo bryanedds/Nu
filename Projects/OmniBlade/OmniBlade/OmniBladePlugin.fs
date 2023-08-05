@@ -15,9 +15,9 @@ type OmniBladePlugin () =
             [("Title", fun world -> Simulants.Game.SetModel (Gui Title) world)
              ("Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world)
              ("Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world)
-             ("Field", fun world -> Simulants.Game.SetModel (Field (Field.initial (World.getUpdateTime world) Slot1 (World.getViewBounds2dAbsolute world))) world)
-             ("FieldDebug", fun world -> Simulants.Game.SetModel (Field (Field.debug (World.getUpdateTime world) (World.getViewBounds2dAbsolute world))) world)
-             ("BattleDebug", fun world -> Simulants.Game.SetModel (Field (Field.debugBattle (World.getUpdateTime world) (World.getViewBounds2dAbsolute world))) world)
-             ("Slot1", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial (World.getUpdateTime world) Slot1 (World.getViewBounds2dAbsolute world))) world)
-             ("Slot2", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial (World.getUpdateTime world) Slot2 (World.getViewBounds2dAbsolute world))) world)
-             ("Slot3", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial (World.getUpdateTime world) Slot3 (World.getViewBounds2dAbsolute world))) world)]
+             ("Field", fun world -> Simulants.Game.SetModel (Field (Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1)) world)
+             ("FieldDebug", fun world -> Simulants.Game.SetModel (Field (Field.debug world.UpdateTime (World.getViewBounds2dAbsolute world))) world)
+             ("BattleDebug", fun world -> Simulants.Game.SetModel (Field (Field.debugBattle world.UpdateTime (World.getViewBounds2dAbsolute world))) world)
+             ("Slot1", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1)) world)
+             ("Slot2", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot2)) world)
+             ("Slot3", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot3)) world)]

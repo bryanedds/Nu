@@ -41,7 +41,6 @@ module WorldRender =
             world
 
         /// Send a message to the render system to render a static model using a fast path.
-        [<FunctionBinding>]
         static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
             (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, image, &color, blend, &emission, flip)
             world
@@ -77,13 +76,11 @@ module WorldRender =
             world
 
         /// Send a message to the render system to render a static model using a fast path.
-        [<FunctionBinding>]
         static member renderStaticModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, world) =
             (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, renderType, staticModel)
             world
 
         /// Send a message to the render system to render a static model surface using a fast path.
-        [<FunctionBinding>]
         static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, surfaceIndex, world) =
             (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, insetOpt, &materialProperties, renderType, staticModel, surfaceIndex)
             world

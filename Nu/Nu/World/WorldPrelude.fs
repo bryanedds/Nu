@@ -206,9 +206,28 @@ module AmbientState =
               OverlayRouter : OverlayRouter
               UnculledRenderRequested : bool }
 
-    /// Get whether the engine is running imperatively.
+    /// Check that the world's state is advancing.
+    let getAdvancing state =
+        state.Advancing
+
+    /// Check that the world's state is advancing.
+    let getHalted state =
+        not state.Advancing
+
+    /// Set whether the world's state is advancing.
+    let setAdvancing advancing (state : _ AmbientState) =
+        if advancing <> state.Advancing then
+            if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
+            { state with Advancing = advancing }
+        else state
+
+    /// Check that the engine is executing with imperative semantics where applicable.
     let getImperative (_ : 'w AmbientState) =
         Imperative
+
+    /// Check that the engine is executing with functional semantics.
+    let getFunctional (_ : 'w AmbientState) =
+        not Imperative
 
     /// Get whether the engine is running accompanied, such as in an editor.
     let getAccompanied (_ : 'w AmbientState) =
@@ -225,21 +244,6 @@ module AmbientState =
     /// Get the the liveness state of the engine.
     let getLiveness state =
         state.Liveness
-
-    /// Check that the world's state is advancing.
-    let getAdvancing state =
-        state.Advancing
-
-    /// Set whether the world's state is advancing.
-    let setAdvancing advancing (state : _ AmbientState) =
-        if advancing <> state.Advancing then
-            if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
-            { state with Advancing = advancing }
-        else state
-
-    /// Check that the world's state is advancing.
-    let getHalted state =
-        not state.Advancing
 
     /// Get the update time.
     let getUpdateTime state =

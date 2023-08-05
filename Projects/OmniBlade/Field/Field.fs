@@ -90,6 +90,7 @@ module Field =
     type [<ReferenceEquality; SymbolicExpansion>] Field =
         private
             { UpdateTime_ : int64
+              ViewBoundsAbsolute_ : Box2
               FieldType_ : FieldType
               FieldState_ : FieldState
               SaveSlot_ : SaveSlot
@@ -114,11 +115,11 @@ module Field =
               ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               BattleOpt_ : Battle option
-              FieldSongTimeOpt_ : int64 option
-              ViewBoundsAbsolute_ : Box2 }
+              FieldSongTimeOpt_ : int64 option }
 
         (* Local Properties *)
         member this.UpdateTime = this.UpdateTime_
+        member this.ViewBoundsAbsolute = this.ViewBoundsAbsolute_
         member this.FieldType = this.FieldType_
         member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
@@ -143,7 +144,6 @@ module Field =
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
-        member this.ViewBoundsAbsolute = this.ViewBoundsAbsolute_
 
     (* Low-Level Operations *)
 
@@ -1187,7 +1187,7 @@ module Field =
         // fin
         (signals, field)
 
-    let make time fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory viewBounds2dAbsolute =
+    let make time viewBounds2dAbsolute fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory =
         let (debugAdvents, debugKeyItems, definitions) =
             match Data.Value.Fields.TryGetValue fieldType with
             | (true, fieldData) -> (fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
@@ -1228,6 +1228,7 @@ module Field =
 
     let empty time viewBounds2dAbsolute =
         { UpdateTime_ = time
+          ViewBoundsAbsolute_ = viewBounds2dAbsolute
           FieldType_ = EmptyField
           FieldState_ = Quit
           SaveSlot_ = Slot1
@@ -1252,14 +1253,13 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None
-          FieldSongTimeOpt_ = None
-          ViewBoundsAbsolute_ = viewBounds2dAbsolute }
+          FieldSongTimeOpt_ = None }
 
-    let initial time saveSlot viewBounds2dAbsolute =
-        make time TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial viewBounds2dAbsolute
+    let initial time viewBounds2dAbsolute saveSlot =
+        make time viewBounds2dAbsolute TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
 
     let debug time viewBounds2dAbsolute =
-        make time DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial viewBounds2dAbsolute
+        make time viewBounds2dAbsolute DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
 
     let debugBattle time viewBounds2dAbsolute =
         let field = debug time viewBounds2dAbsolute
@@ -1287,9 +1287,9 @@ module Field =
             Some { field with Props_ = props }
         with _ -> None
 
-    let loadOrInitial time saveSlot viewBounds2dAbsolute =
+    let loadOrInitial time viewBounds2dAbsolute saveSlot =
         match tryLoad time saveSlot with
         | Some field -> field
-        | None -> initial time saveSlot viewBounds2dAbsolute
+        | None -> initial time viewBounds2dAbsolute saveSlot
 
 type Field = Field.Field

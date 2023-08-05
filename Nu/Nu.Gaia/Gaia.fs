@@ -324,11 +324,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private canEditWithMouse () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureMousePlus) && (World.getHalted world || editWhileAdvancing)
+        not (io.WantCaptureMousePlus) && (world.Halted || editWhileAdvancing)
 
     let private canEditWithKeyboard () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureKeyboardPlus) && (World.getHalted world || editWhileAdvancing)
+        not (io.WantCaptureKeyboardPlus) && (world.Halted || editWhileAdvancing)
 
     let private selectScreen screen =
         if screen <> selectedScreen then
@@ -887,9 +887,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- World.setEyeRotation3d quatIdentity world
 
     let private toggleAdvancing () =
-        let advancing = World.getAdvancing world
-        if not advancing then snapshot ()
-        world <- World.setAdvancing (not advancing) world
+        if not world.Advancing then snapshot ()
+        world <- World.setAdvancing (not world.Advancing) world
 
     let private trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
         let gaiaDir = Directory.GetCurrentDirectory ()
@@ -1666,7 +1665,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
                                 | OPERATION.TRANSLATE -> world <- entity.SetPosition position world
                                 | _ -> () // nothing to do
-                            if World.getAdvancing world then
+                            if world.Advancing then
                                 match entity.TryGetProperty (nameof entity.LinearVelocity) world with
                                 | Some property when property.PropertyType = typeof<Vector3> -> world <- entity.SetLinearVelocity v3Zero world
                                 | Some _ | None -> ()
@@ -1835,7 +1834,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SameLine ()
                         ImGui.Text "|"
                         ImGui.SameLine ()
-                        if World.getHalted world then
+                        if world.Halted then
                             if ImGui.Button "*Run*" then
                                 snapshot ()
                                 world <- World.setAdvancing true world

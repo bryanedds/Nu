@@ -91,7 +91,7 @@ module PropDispatcher =
                             | AirPortal ->
                                 (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                             | WarpPortal ->
-                                let time = World.getUpdateTime world
+                                let time = world.UpdateTime
                                 let localTime = time / 10L
                                 let celSize = Constants.Gameplay.TileCelSize
                                 let celColumn = single (localTime % 4L)
@@ -110,7 +110,7 @@ module PropDispatcher =
                                     let offset = v2 offsetX offsetY
                                     (true, Assets.Field.StairsImage, Color.One, Transparent, Color.Zero, ValueSome (box2 offset Constants.Gameplay.TileCelSize), FlipNone)
                                 else
-                                    let time = World.getUpdateTime world
+                                    let time = world.UpdateTime
                                     let localTime = time / 10L
                                     let celSize = Constants.Gameplay.TileCelSize
                                     let celColumn = single (localTime % 4L)
@@ -162,7 +162,7 @@ module PropDispatcher =
                         | StepPlateSensor -> (true, Assets.Field.StepPlateImage, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Seal (color, _, requirements) ->
                         if prop.Advents.IsSupersetOf requirements then
-                            let time = World.getUpdateTime world
+                            let time = world.UpdateTime
                             let localTime = time / 20L
                             let celSize = v2 32.0f 32.0f // TODO: put this in Constants.
                             let celColumn = single (localTime % 4L)
@@ -173,7 +173,7 @@ module PropDispatcher =
                     | Character (_, _, isEcho, _, _, requirements) ->
                         match prop.Prop.PropState with
                         | CharacterState (characterColor, animationState) when prop.Advents.IsSupersetOf requirements->
-                            let time = World.getUpdateTime world
+                            let time = world.UpdateTime
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
                             let (color, emission) =
                                 if isEcho then
@@ -246,14 +246,14 @@ module PropDispatcher =
                         let image = Assets.Field.FlameImage
                         let column = match flameType with FatFlame -> 0 | SkinnyFlame -> 3 | SmallFlame -> 1 | LargeFlame -> 2
                         let row = if mirror then 4 else 0
-                        let cel = int (World.getUpdateTime world / 10L % 4L) // TODO: put this in Constants.
+                        let cel = int (world.UpdateTime / 10L % 4L) // TODO: put this in Constants.
                         let inset =
                             box2 // TODO: put the following hard-coded values in Constants.
                                 (v2 (single column * 16.0f) (single (row + cel) * 16.0f))
                                 (v2 16.0f 16.0f)
                         (false, image, Color.One, Transparent, Color.Zero, ValueSome inset, FlipNone)
                     | SavePoint ->
-                        let time = World.getUpdateTime world
+                        let time = world.UpdateTime
                         let image = Assets.Field.SavePointImage
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize

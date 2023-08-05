@@ -670,7 +670,7 @@ module WorldModuleEntity =
 
         static member internal propagateEntityAffineMatrix3 mount mounter world =
             let mounterState = World.getEntityState mounter world
-            if World.getHalted world || not mounterState.Physical then
+            if world.Halted || not mounterState.Physical then
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
                 let affineMatrix = affineMatrixLocal * affineMatrixWorld

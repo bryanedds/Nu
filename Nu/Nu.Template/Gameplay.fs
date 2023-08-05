@@ -72,13 +72,13 @@ module Gameplay =
                 just world
             | Jump ->
                 let bodyId = Simulants.GameplayScenePlayer.GetBodyId world
-                if World.getAdvancing world && World.getBodyGrounded bodyId world then
+                if world.Advancing && World.getBodyGrounded bodyId world then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                     let world = World.applyBodyLinearImpulse (v3 0.0f 2300.0f 0.0f) v3Zero bodyId world
                     just world
                 else just world
             | PostUpdateEye ->
-                if World.getAdvancing world then
+                if world.Advancing then
                     let characterCenter = Simulants.GameplayScenePlayer.GetCenter world
                     let world = World.setEyeCenter2d characterCenter.V2 world
                     just world

@@ -23,7 +23,7 @@ module AvatarDispatcher =
 
         static let getSpriteInset (entity : Entity) world =
             let avatar = entity.GetAvatar world
-            let inset = Avatar.getAnimationInset (World.getUpdateTime world) avatar
+            let inset = Avatar.getAnimationInset world.UpdateTime avatar
             inset
 
         static member Facets =
