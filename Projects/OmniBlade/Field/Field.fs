@@ -548,7 +548,7 @@ module Field =
         let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
-    (* Interaction Operations *)
+    (* High-Level Operations *)
 
     let private interactDialog dialog field =
         match Dialog.tryAdvance (detokenize field) dialog with
@@ -664,8 +664,6 @@ module Field =
                 | None -> just field
         | Some dialog ->
             interactDialog dialog field
-
-    (* High-Level Operations *)
 
     let private advanceUpdateTime field =
         { field with UpdateTime_ = inc field.UpdateTime_ }

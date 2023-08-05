@@ -128,7 +128,19 @@ module Battle =
         member this.MessageOpt = this.MessageOpt_
         member this.DialogOpt = this.DialogOpt_
 
-    (* Command Operations *)
+    (* Low-Level Operations *)
+
+    let private updateBattleState updater battle =
+        { battle with BattleState_ = updater battle.BattleState }
+
+    let private updateInventory updater battle =
+        { battle with Inventory_ = updater battle.Inventory_ }
+
+    let private updateMessageOpt updater field =
+        { field with MessageOpt_ = updater field.MessageOpt_ }
+
+    let updateDialogOpt updater field =
+        { field with DialogOpt_ = updater field.DialogOpt_ }
 
     let updateCurrentCommandOpt updater battle =
         { battle with CurrentCommandOpt_ = updater battle.CurrentCommandOpt_ }
@@ -280,12 +292,19 @@ module Battle =
     let updateEnemies updater battle =
         updateEnemiesIf tautology2 updater battle
 
-    let populateAlliesConjureCharges battle =
+    let private populateAlliesConjureCharges battle =
         updateAllies (fun ally ->
             if Character.hasConjureTechs ally
             then Character.updateConjureChargeOpt (constant (Some 0)) ally
             else ally)
             battle
+
+    let private autoBattleEnemies battle =
+        let alliesHealthy = getAlliesHealthy battle
+        let alliesWounded = getAlliesWounded battle
+        let enemiesStanding = getEnemiesStanding battle
+        let enemiesSwooning = getEnemiesSwooning battle
+        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning) battle
 
     (* Individual Character Operations *)
 
@@ -761,7 +780,7 @@ module Battle =
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
-    let evalConsequence sourceIndex targetIndex observerIndex consequence battle =
+    let private evalConsequence sourceIndex targetIndex observerIndex consequence battle =
         appendActionCommand (ActionCommand.make (Consequence consequence) sourceIndex (Some targetIndex) (Some observerIndex)) battle
 
     let evalConsequences consequences battle =
@@ -771,26 +790,7 @@ module Battle =
                 battle consequences)
             battle consequences
 
-    (* High-Level Operations *)
-
-    let updateBattleState updater battle =
-        { battle with BattleState_ = updater battle.BattleState }
-
-    let updateInventory updater battle =
-        { battle with Inventory_ = updater battle.Inventory_ }
-
-    let updateMessageOpt updater field =
-        { field with MessageOpt_ = updater field.MessageOpt_ }
-
-    let updateDialogOpt updater field =
-        { field with DialogOpt_ = updater field.DialogOpt_ }
-
-    let autoBattleEnemies battle =
-        let alliesHealthy = getAlliesHealthy battle
-        let alliesWounded = getAlliesWounded battle
-        let enemiesStanding = getEnemiesStanding battle
-        let enemiesSwooning = getEnemiesSwooning battle
-        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning) battle
+    (* Mid-Level Operations *)
 
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then
@@ -903,6 +903,8 @@ module Battle =
 
     let spawnEnemy time spawnType battle =
         spawnEnemies time [spawnType] battle
+
+    (* High-Level Operations *)
 
     let private advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
         match tryGetCharacter sourceIndex battle with
