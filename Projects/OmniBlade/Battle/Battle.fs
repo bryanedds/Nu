@@ -904,7 +904,7 @@ module Battle =
     let spawnEnemy time spawnType battle =
         spawnEnemies time [spawnType] battle
 
-    (* High-Level Operations *)
+    (* High-Level Operations (signal-producing) *)
 
     let private advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
         match tryGetCharacter sourceIndex battle with

@@ -548,7 +548,7 @@ module Field =
         let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
-    (* High-Level Operations *)
+    (* High-Level Operations (signal-producing) *)
 
     let private interactDialog dialog field =
         match Dialog.tryAdvance (detokenize field) dialog with
