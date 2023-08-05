@@ -51,7 +51,7 @@ type ElmarioDispatcher () =
             else just world
         | Jump ->
             let bodyId = Simulants.Elmario.GetBodyId world
-            if World.getAdvancing world && World.getBodyGrounded bodyId world then
+            if world.Advancing && World.getBodyGrounded bodyId world then
                 let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 let world = World.applyBodyLinearImpulse (v3 0.0f 2300.0f 0.0f) v3Zero bodyId world
                 just world

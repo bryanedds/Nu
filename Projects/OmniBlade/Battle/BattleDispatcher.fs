@@ -44,8 +44,8 @@ module BattleDispatcher =
 
             match message with
             | Update ->
-                if World.getAdvancing world
-                then Battle.advance (World.getUpdateTime world) battle
+                if world.Advancing
+                then Battle.advance world.UpdateTime battle
                 else just battle
 
             | UpdateRideTags tags ->

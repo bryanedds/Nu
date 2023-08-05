@@ -275,7 +275,7 @@ module WorldModule2 =
                     match Simulants.Game.GetDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if World.getUnaccompanied world || World.getAdvancing world then
+                            if world.Unaccompanied || world.Advancing then
                                 World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                             else World.setSelectedScreenOpt (Some desiredScreen) world // quick cut such as when halted in editor
                         else world
@@ -628,11 +628,11 @@ module WorldModule2 =
             if List.notEmpty (World.getDestructionListRev world) then World.destroySimulants world else world
 
         /// Process an input event from SDL and ultimately publish any related game events.
-        static member private processInput2 (evt : SDL.SDL_Event) world =
+        static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
             let world =
                 match evt.``type`` with
                 | SDL.SDL_EventType.SDL_QUIT ->
-                    if World.getUnaccompanied world
+                    if world.Unaccompanied
                     then World.exit world
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
@@ -935,7 +935,7 @@ module WorldModule2 =
 #if !DISABLE_ENTITY_PRE_UPDATE
             // pre-update entities
             PreUpdateEntitiesTimer.Start ()
-            let advancing = World.getAdvancing world
+            let advancing = world.Advancing
             let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.preUpdateEntity element.Entry world else world) world elements3d
             let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.preUpdateEntity element.Entry world else world) world elements2d
             PreUpdateEntitiesTimer.Stop ()
@@ -977,7 +977,7 @@ module WorldModule2 =
 
             // update entities
             UpdateEntitiesTimer.Start ()
-            let advancing = World.getAdvancing world
+            let advancing = world.Advancing
             let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements3d
             let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements2d
             UpdateEntitiesTimer.Stop ()
@@ -1021,7 +1021,7 @@ module WorldModule2 =
 #if !DISABLE_ENTITY_POST_UPDATE
             // post-update entities
             PostUpdateEntitiesTimer.Start ()
-            let advancing = World.getAdvancing world
+            let advancing = world.Advancing
             let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.postUpdateEntity element.Entry world else world) world elements3d
             let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.postUpdateEntity element.Entry world else world) world elements2d
             PostUpdateEntitiesTimer.Stop ()
@@ -1098,7 +1098,7 @@ module WorldModule2 =
             // render entities
             RenderEntitiesTimer.Start ()
             let world =
-                if World.getUnaccompanied world then
+                if world.Unaccompanied then
                     Seq.fold (fun world (element : Entity Octelement) ->
                         if element.Visible
                         then World.renderEntity element.Entry world
@@ -1111,7 +1111,7 @@ module WorldModule2 =
                         else world)
                         world elements3d
             let world =
-                if World.getUnaccompanied world then
+                if world.Unaccompanied then
                     Seq.fold (fun world (element : Entity Quadelement) ->
                         if element.Visible
                         then World.renderEntity element.Entry world

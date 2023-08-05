@@ -209,10 +209,30 @@ module WorldModule =
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
 
-        /// Get whether the engine is running imperatively.
+        /// Check that the update rate is non-zero.
+        [<FunctionBinding>]
+        static member getAdvancing world =
+            World.getAmbientStateBy AmbientState.getAdvancing world
+
+        /// Check that the update rate is zero.
+        [<FunctionBinding>]
+        static member getHalted world =
+            World.getAmbientStateBy AmbientState.getHalted world
+
+        /// Set whether the world state is advancing.
+        [<FunctionBinding>]
+        static member setAdvancing advancing world =
+            World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Simulants.Game world
+
+        /// Check that the world is executing with imperative semantics where applicable.
         [<FunctionBinding>]
         static member getImperative world =
             World.getAmbientStateBy AmbientState.getImperative world
+
+        /// Check that the world is executing with functional semantics.
+        [<FunctionBinding>]
+        static member getFunctional world =
+            World.getAmbientStateBy AmbientState.getFunctional world
 
         /// Get whether the engine is running accompanied, such as in an editor.
         [<FunctionBinding>]
@@ -236,21 +256,6 @@ module WorldModule =
 
         static member internal updateTime world =
             World.updateAmbientState AmbientState.updateTime world
-
-        /// Set whether the world state is advancing.
-        [<FunctionBinding>]
-        static member setAdvancing advancing world =
-            World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Simulants.Game world
-
-        /// Check that the update rate is non-zero.
-        [<FunctionBinding>]
-        static member getAdvancing world =
-            World.getAmbientStateBy AmbientState.getAdvancing world
-
-        /// Check that the update rate is zero.
-        [<FunctionBinding>]
-        static member getHalted world =
-            World.getAmbientStateBy AmbientState.getHalted world
 
         /// Get the world's update time.
         [<FunctionBinding>]

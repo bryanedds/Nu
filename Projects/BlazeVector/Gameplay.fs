@@ -15,10 +15,10 @@ module Bullet =
 
         static let [<Literal>] BulletLifeTime = 27L
 
-        static let handleBodyCollision evt world =
+        static let handleBodyCollision evt (world : World) =
             let bullet = evt.Subscriber : Entity
             let world =
-                if World.getAdvancing world
+                if world.Advancing
                 then World.destroyEntity bullet world
                 else world
             (Cascade, world)
@@ -69,10 +69,10 @@ module Enemy =
             let world = if enemy.GetHealth world <= 0 then die enemy world else world
             (Cascade, world)
 
-        static let handleBodyCollision evt world =
+        static let handleBodyCollision evt (world : World) =
             let enemy = evt.Subscriber : Entity
             let world =
-                if World.getAdvancing world then
+                if world.Advancing then
                     match evt.Data.BodyShapeCollidee.BodyId.BodySource with
                     | :? Entity as collidee when collidee.Is<BulletDispatcher> world ->
                         let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
@@ -141,12 +141,12 @@ module Player =
             let (bullet, world) = createBullet entity world
             propelBullet bullet world
 
-        static let handleSpawnBullet evt world =
+        static let handleSpawnBullet evt (world : World) =
             let player = evt.Subscriber : Entity
             let world =
-                if World.getAdvancing world then
+                if world.Advancing then
                     if not (player.HasFallen world) then
-                        if World.getUpdateTime world % 5L = 0L
+                        if world.UpdateTime % 5L = 0L
                         then shootBullet player world
                         else world
                     else world
@@ -156,7 +156,7 @@ module Player =
         static let getLastTimeOnGround (entity : Entity) world =
             if not (World.getBodyGrounded (entity.GetBodyId world) world)
             then entity.GetLastTimeOnGround world
-            else World.getUpdateTime world
+            else world.UpdateTime
 
         static let handleMovement evt world =
             let player = evt.Subscriber : Entity
@@ -173,9 +173,9 @@ module Player =
             let world = World.applyBodyForce force v3Zero bodyId world
             (Cascade, world)
 
-        static let handleJump evt world =
+        static let handleJump evt (world : World) =
             let player = evt.Subscriber : Entity
-            let time = World.getUpdateTime world
+            let time = world.UpdateTime
             if  time >= player.GetLastTimeJump world + 12L &&
                 time <= player.GetLastTimeOnGround world + 10L then
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
@@ -308,7 +308,7 @@ module Gameplay =
 
                 // update eye
                 let world =
-                    if World.getAdvancing world then
+                    if world.Advancing then
                         let playerPosition = Simulants.GameplayScenePlayer.GetPosition world
                         let playerSize = Simulants.GameplayScenePlayer.GetSize world
                         let eyeCenter = World.getEyeCenter2d world

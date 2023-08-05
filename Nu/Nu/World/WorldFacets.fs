@@ -191,9 +191,9 @@ module BasicStaticSpriteEmitterFacetModule =
     type BasicStaticSpriteEmitterFacet () =
         inherit Facet (false)
 
-        static let tryMakeEmitter (entity : Entity) world =
+        static let tryMakeEmitter (entity : Entity) (world : World) =
             World.tryMakeEmitter
-                (World.getGameTime world)
+                world.GameTime
                 (entity.GetEmitterLifeTimeOpt world)
                 (entity.GetParticleLifeTimeMaxOpt world)
                 (entity.GetParticleRate world)
@@ -222,7 +222,7 @@ module BasicStaticSpriteEmitterFacetModule =
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
                 Particles.BasicStaticSpriteEmitter.makeEmpty
-                    (World.getGameTime world)
+                    world.GameTime
                     (entity.GetEmitterLifeTimeOpt world)
                     (entity.GetParticleLifeTimeMaxOpt world)
                     (entity.GetParticleRate world)
@@ -374,7 +374,7 @@ module BasicStaticSpriteEmitterFacetModule =
             else world
 
         override this.Render (entity, world) =
-            let time = World.getGameTime world
+            let time = world.GameTime
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem |>
@@ -607,7 +607,7 @@ module EffectFacetModule =
              nonPersistent Entity.EffectTags Map.empty]
 
         override this.Register (entity, world) =
-            let effectStartTime = Option.defaultValue (World.getGameTime world) (entity.GetEffectStartTimeOpt world)
+            let effectStartTime = Option.defaultValue world.GameTime (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.sense handleEffectDescriptorChange (entity.GetChangeEvent (nameof entity.EffectDescriptor)) entity (nameof EffectFacet) world
             let world = World.sense handleEffectsChange (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity (nameof EffectFacet) world
@@ -1579,9 +1579,9 @@ module BasicStaticBillboardEmitterFacetModule =
     type BasicStaticBillboardEmitterFacet () =
         inherit Facet (false)
 
-        static let tryMakeEmitter (entity : Entity) world =
+        static let tryMakeEmitter (entity : Entity) (world : World) =
             World.tryMakeEmitter
-                (World.getGameTime world)
+                world.GameTime
                 (entity.GetEmitterLifeTimeOpt world)
                 (entity.GetParticleLifeTimeMaxOpt world)
                 (entity.GetParticleRate world)
@@ -1614,7 +1614,7 @@ module BasicStaticBillboardEmitterFacetModule =
                     Constraint = entity.GetEmitterConstraint world }
             | None ->
                 Particles.BasicStaticBillboardEmitter.makeEmpty
-                    (World.getGameTime world)
+                    world.GameTime
                     (entity.GetEmitterLifeTimeOpt world)
                     (entity.GetParticleLifeTimeMaxOpt world)
                     (entity.GetParticleRate world)
@@ -1828,7 +1828,7 @@ module BasicStaticBillboardEmitterFacetModule =
             else world
 
         override this.Render (entity, world) =
-            let time = World.getGameTime world
+            let time = world.GameTime
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem |>

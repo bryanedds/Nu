@@ -76,8 +76,8 @@ module Effect =
                 (effect, world)
                 outputs
 
-    let private liveness effect world =
-        let time = World.getGameTime world
+    let private liveness effect (world : World) =
+        let time = world.GameTime
         let particleSystem = effect.ParticleSystem_
         let effectDescriptor = effect.Descriptor_
         match effectDescriptor.LifeTimeOpt with

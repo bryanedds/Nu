@@ -574,7 +574,7 @@ module FpsDispatcherModule =
             let currentDateTime = DateTimeOffset.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
             if elapsedDateTime.TotalSeconds >= 5.0 then
-                let world = entity.SetStartUpdateTime (World.getUpdateTime world) world
+                let world = entity.SetStartUpdateTime world.UpdateTime world
                 entity.SetStartDateTime currentDateTime world
             else world
 
@@ -588,7 +588,7 @@ module FpsDispatcherModule =
                 let startDateTime = entity.GetStartDateTime world
                 let currentDateTime = DateTimeOffset.UtcNow
                 let elapsedDateTime = currentDateTime - startDateTime
-                let time = double (World.getUpdateTime world - entity.GetStartUpdateTime world)
+                let time = double (world.UpdateTime - entity.GetStartUpdateTime world)
                 let frames = time / elapsedDateTime.TotalSeconds
                 if not (Double.IsNaN frames) then
                     let framesStr = "FPS: " + String.Format ("{0:f2}", frames)

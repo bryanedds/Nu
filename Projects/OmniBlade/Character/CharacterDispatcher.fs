@@ -19,7 +19,7 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit EntityDispatcher2d<Character, Message, Command> (true, Character.empty)
 
-        static let getAfflictionInsetOpt (character : Character) world =
+        static let getAfflictionInsetOpt (character : Character) (world : World) =
             if character.Standing then
                 let statuses = character.Statuses
                 let celYOpt =
@@ -35,7 +35,7 @@ module CharacterDispatcher =
                     else None
                 match celYOpt with
                 | Some afflictionY ->
-                    let time = World.getUpdateTime world
+                    let time = world.UpdateTime
                     let afflictionX = time / 8L % 8L |> int
                     let afflictionPosition = v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y)
                     let inset = box2 afflictionPosition Constants.Battle.AfflictionCelSize
@@ -43,7 +43,7 @@ module CharacterDispatcher =
                 | None -> None
             else None
 
-        static let getChargeOrbInsetOpt (character : Character) world =
+        static let getChargeOrbInsetOpt (character : Character) (world : World) =
             if character.Standing then
                 let celXOpt =
                     match (character.ConjureChargeOpt, character.TechChargeOpt |> Option.map Triple.snd) with
@@ -53,7 +53,7 @@ module CharacterDispatcher =
                         elif chargeAmount < 6 then Some 1
                         elif chargeAmount < 9 then Some 2
                         elif chargeAmount < 12 then Some 3
-                        else World.getUpdateTime world / 12L % 4L + 4L |> int |> Some
+                        else world.UpdateTime / 12L % 4L + 4L |> int |> Some
                     | (None, None) -> None
                 match celXOpt with
                 | Some celX ->
@@ -70,7 +70,7 @@ module CharacterDispatcher =
 
         override this.View (character, entity, world) =
             if entity.GetVisible world then
-                let time = World.getUpdateTime world
+                let time = world.UpdateTime
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let characterView =

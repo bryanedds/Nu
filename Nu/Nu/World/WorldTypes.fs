@@ -1558,6 +1558,22 @@ and [<ReferenceEquality>] World =
     member this.SetAdvancing advancing =
         AmbientState.setAdvancing advancing this.AmbientState
 
+    /// Check that the world is executing with imperative semantics where applicable.
+    member this.Imperative =
+        AmbientState.getImperative this.AmbientState
+
+    /// Check that the world is executing with functional semantics.
+    member this.Functional =
+        AmbientState.getFunctional this.AmbientState
+
+    /// Check that the world is accompanied (such as by an editor program that controls it).
+    member this.Accompanied =
+        AmbientState.getAccompanied this.AmbientState
+
+    /// Check that the world is unaccompanied (such as being absent of an editor program that controls it).
+    member this.Unaccompanied =
+        AmbientState.getUnaccompanied this.AmbientState
+
     /// Get the number of updates that have transpired.
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState

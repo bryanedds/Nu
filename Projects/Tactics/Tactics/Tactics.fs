@@ -156,7 +156,7 @@ module TacticsGame =
 
             match command with
             | Exit ->
-                if World.getUnaccompanied world
+                if world.Unaccompanied
                 then just (World.exit world)
                 else just world
 
