@@ -204,7 +204,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
 type [<CustomEquality; CustomComparison>] VulnerabilityType =
     | Physical of single
     | Magical of single
-    | Affliction of single
+    | Buff of single
+    | Debuff of single
     | Affinity of single * AffinityType
     | Status of single * StatusType
 
