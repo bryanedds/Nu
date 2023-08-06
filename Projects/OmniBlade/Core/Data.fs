@@ -204,13 +204,17 @@ type [<CustomEquality; CustomComparison>] StatusType =
 type [<CustomEquality; CustomComparison>] VulnerabilityType =
     | Physical of single
     | Magical of single
+    | Affliction of single
     | Affinity of single * AffinityType
+    | Status of single * StatusType
 
     static member enumerate this =
         match this with
         | Physical _ -> 0
-        | Magical _ -> 1
-        | Affinity (_, affinity)-> 2 &&& (hash affinity <<< 2)
+        | Magical _ -> 1 <<< 0
+        | Affliction _ -> 1 <<< 1
+        | Affinity (_, affinity) -> 1 <<< 2 <<< hash affinity
+        | Status (_, status) -> 1 <<< 16 <<< hash status
 
     static member compare this that =
         compare
