@@ -1,4 +1,4 @@
-Type,TechCost,EffectType,Scalar,Split,Curative,Cancels,Absorb,ElementType,StatusesAdded,StatusesRemoved,SpawnOpt,TargetType,Description
+Type,TechCost,EffectType,Scalar,Split,Curative,Cancels,Absorb,AffinityType,StatusesAdded,StatusesRemoved,SpawnOpt,TargetType,Description
 Critical,1,Magical,1.45,False,False,True,0,[Some Wind],[],[],None,[SingleTarget [EnemyAim True]],
 Slash,2,Magical,1.45,False,False,False,0,[Some Wind],[],[],None,[LineTarget 66 [EnemyAim True]],
 HeavyCritical,3,Magical,1.9,False,False,True,0,[Some Wind],[],[],None,[SingleTarget [EnemyAim True]],
