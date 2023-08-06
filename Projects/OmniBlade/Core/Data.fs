@@ -213,8 +213,9 @@ type [<CustomEquality; CustomComparison>] VulnerabilityType =
         match this with
         | Physical _ -> 0
         | Magical _ -> 1 <<< 0
-        | Affliction _ -> 1 <<< 1
-        | Affinity (_, affinity) -> 1 <<< 2 <<< hash affinity
+        | Buff _ -> 1 <<< 1
+        | Debuff _ -> 1 <<< 2
+        | Affinity (_, affinity) -> 1 <<< 3 <<< hash affinity
         | Status (_, status) -> 1 <<< 16 <<< hash status
 
     static member compare this that =
