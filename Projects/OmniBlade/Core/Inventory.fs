@@ -20,12 +20,12 @@ type Advent =
     | AraneaImplicitumDefeated
     | TombSealed
     | ForestSealed
+    | SwampSealed
     | FactorySealed
     | MountainSealed
     | DeadSeaSealed
     | RuinsSealed
     | DesertSealed
-    | DarkCastleSealed
     | SeasonsSealed
     | VolcanoSealed
     | KylaAdvent of int
@@ -41,11 +41,11 @@ module Advents =
             [TombSealed
              ForestSealed
              FactorySealed
+             SwampSealed
              MountainSealed
              DeadSeaSealed
              RuinsSealed
              DesertSealed
-             DarkCastleSealed
              SeasonsSealed
              VolcanoSealed
              KylaAdvent 0]
