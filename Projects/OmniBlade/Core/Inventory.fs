@@ -20,8 +20,8 @@ type Advent =
     | AraneaImplicitumDefeated
     | TombSealed
     | ForestSealed
-    | SwampSealed
     | FactorySealed
+    | SwampSealed
     | MountainSealed
     | DeadSeaSealed
     | RuinsSealed
