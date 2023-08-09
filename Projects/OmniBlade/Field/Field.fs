@@ -100,6 +100,7 @@ module Field =
               AvatarSeparatedPropIds_ : int list
               AvatarIntersectedPropIds_ : int list
               Team_ : Map<int, Teammate>
+              SpiritRate_ : single
               SpiritActivity_ : single
               Spirits_ : Spirit array
               Advents_ : Advent Set
@@ -386,14 +387,16 @@ module Field =
 
     let updateFieldType time updater field =
         let fieldType = updater field.FieldType_
-        let spiritActivity = 0.0f
-        let props = makeProps time fieldType field.OmniSeedState_
-        { field with
-            FieldType_ = fieldType
-            SpiritActivity_ = spiritActivity
-            Spirits_ = [||]
-            Props_ = props
-            FieldSongTimeOpt_ = None }
+        match Map.tryFind fieldType Data.Value.Fields with
+        | Some fieldData ->
+            { field with
+                FieldType_ = fieldType
+                SpiritRate_ = fieldData.EncounterRate
+                SpiritActivity_ = 0.0f
+                Spirits_ = [||]
+                Props_ = makeProps time fieldType field.OmniSeedState_
+                FieldSongTimeOpt_ = None }
+        | None -> field
 
     let updateFieldState updater field =
         { field with FieldState_ = updater field.FieldState_ }
@@ -1043,7 +1046,7 @@ module Field =
         | None ->
             let field =
                 { field with
-                    SpiritActivity_ = inc field.SpiritActivity_ }
+                    SpiritActivity_ = field.SpiritActivity_ + field.SpiritRate_ }
             let field =
                 { field with
                     Spirits_ =
@@ -1188,10 +1191,10 @@ module Field =
         (signals, field)
 
     let make time viewBounds2dAbsolute fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory =
-        let (debugAdvents, debugKeyItems, definitions) =
+        let (spiritRate, debugAdvents, debugKeyItems, definitions) =
             match Data.Value.Fields.TryGetValue fieldType with
-            | (true, fieldData) -> (fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
-            | (false, _) -> (Set.empty, List.empty, Map.empty)
+            | (true, fieldData) -> (fieldData.EncounterRate, fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
+            | (false, _) -> (1.0f, Set.empty, List.empty, Map.empty)
         let (advents, inventory) =
             match fieldType with
             | DebugField -> (debugAdvents, snd (Inventory.tryAddItems (List.map KeyItem debugKeyItems) inventory))
@@ -1207,6 +1210,7 @@ module Field =
           AvatarCollidedPropIds_ = []
           AvatarSeparatedPropIds_ = []
           AvatarIntersectedPropIds_ = []
+          SpiritRate_ = spiritRate
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = team
@@ -1237,6 +1241,7 @@ module Field =
           AvatarCollidedPropIds_ = []
           AvatarSeparatedPropIds_ = []
           AvatarIntersectedPropIds_ = []
+          SpiritRate_ = 1.0f
           SpiritActivity_ = 0.0f
           Spirits_ = [||]
           Team_ = Map.empty
