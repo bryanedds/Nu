@@ -956,6 +956,7 @@ type FieldData =
       ShowUnopenedChests : bool
       UseWindPortal : bool
       EncounterTypeOpt : EncounterType option
+      EncounterRate : single
       Definitions : CueSystem.CueDefinitions
       Treasures : ItemType list }
 
