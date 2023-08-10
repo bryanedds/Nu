@@ -409,8 +409,8 @@ type PhysicsMessage =
     | SetBodyCenterMessage of SetBodyCenterMessage
     | SetBodyRotationMessage of SetBodyRotationMessage
     | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
-    | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
+    | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
