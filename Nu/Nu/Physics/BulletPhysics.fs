@@ -431,17 +431,18 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | SetBodyObservableMessage setBodyObservableMessage -> BulletPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
             physicsEngine.PhysicsContext.Gravity <- gravity
-            for (gravityOverride, body) in physicsEngine.Bodies.Values do
+            for bodyEntry in physicsEngine.Bodies do
+                let (gravityOverride, body) = bodyEntry.Value
                 match gravityOverride with
                 | Some gravity -> body.Gravity <- gravity
                 | None -> body.Gravity <- gravity
         | ClearPhysicsMessageInternal ->
-            for constrain in physicsEngine.Constraints.Values do physicsEngine.PhysicsContext.RemoveConstraint constrain
+            for constrainEntry in physicsEngine.Constraints do physicsEngine.PhysicsContext.RemoveConstraint constrainEntry.Value
             physicsEngine.Objects.Clear ()
             physicsEngine.Constraints.Clear ()
-            for ghost in physicsEngine.Ghosts.Values do physicsEngine.PhysicsContext.RemoveCollisionObject ghost
+            for ghostEntry in physicsEngine.Ghosts do physicsEngine.PhysicsContext.RemoveCollisionObject ghostEntry.Value
             physicsEngine.Ghosts.Clear ()
-            for (_, body) in physicsEngine.Bodies.Values do physicsEngine.PhysicsContext.RemoveRigidBody body
+            for bodyEntry in physicsEngine.Bodies do physicsEngine.PhysicsContext.RemoveRigidBody (snd bodyEntry.Value)
             physicsEngine.Bodies.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
@@ -493,7 +494,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 BulletPhysicsEngine.handleSeparation physicsEngine bodySourceB bodySourceA
 
         // create transform messages
-        for (_, body) in physicsEngine.Bodies.Values do
+        for bodyEntry in physicsEngine.Bodies do
+            let (_, body) = bodyEntry.Value
             if body.IsActive then
                 let bodyTransformMessage =
                     BodyTransformMessage
