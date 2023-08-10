@@ -334,17 +334,26 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
-        | (true, (_, body)) -> body.Position <- AetherPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
+        | (true, (_, body)) ->
+            body.Position <- AetherPhysicsEngine.toPhysicsV2 setBodyCenterMessage.Center
+            do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
         | (false, _) -> ()
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
-        | (true, (_, body)) -> body.Rotation <- setBodyRotationMessage.Rotation.RollPitchYaw.Z
+        | (true, (_, body)) ->
+            body.Rotation <- setBodyRotationMessage.Rotation.RollPitchYaw.Z
+            do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
         | (false, _) -> ()
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
         | (true, (_, body)) -> body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
+        | (false, _) -> ()
+
+    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.BodyId with
+        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity.X
         | (false, _) -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
@@ -353,11 +362,6 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             body.ApplyLinearImpulse
                 (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
                  AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.Offset)
-        | (false, _) -> ()
-
-    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.BodyId with
-        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity.X
         | (false, _) -> ()
 
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
@@ -402,8 +406,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | SetBodyCenterMessage setBodyCenterMessage -> AetherPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> AetherPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> AetherPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> AetherPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> AetherPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> AetherPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> AetherPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> AetherPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> AetherPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
@@ -425,7 +429,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         // Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
         // AwakeBodyList, but there are compilation errors that, when I tried to fix, broke the whole system.
         for body in physicsEngine.PhysicsContext.BodyList do
-            if body.Awake && body.BodyType <> Dynamics.BodyType.Static then
+            if body.Awake then
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodyId = body.Tag :?> BodyId

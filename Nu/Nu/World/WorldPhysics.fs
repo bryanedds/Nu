@@ -256,20 +256,20 @@ module WorldPhysics =
             let world = World.enqueuePhysicsMessage2d setBodyLinearVelocityMessage world
             world
 
-        /// Send a physics message to apply linear impulse to a body with the given physics id.
-        [<FunctionBinding>]
-        static member applyBodyLinearImpulse linearImpulse offset bodyId world =
-            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; Offset = offset }
-            let world = World.enqueuePhysicsMessage3d applyBodyLinearImpulseMessage world
-            let world = World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
-            world
-
         /// Send a physics message to set the angular velocity of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyAngularVelocity angularVelocity bodyId world =
             let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { BodyId = bodyId; AngularVelocity = angularVelocity }
             let world = World.enqueuePhysicsMessage3d setBodyAngularVelocityMessage world
             let world = World.enqueuePhysicsMessage2d setBodyAngularVelocityMessage world
+            world
+
+        /// Send a physics message to apply linear impulse to a body with the given physics id.
+        [<FunctionBinding>]
+        static member applyBodyLinearImpulse linearImpulse offset bodyId world =
+            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; Offset = offset }
+            let world = World.enqueuePhysicsMessage3d applyBodyLinearImpulseMessage world
+            let world = World.enqueuePhysicsMessage2d applyBodyLinearImpulseMessage world
             world
 
         /// Send a physics message to apply angular impulse to a body with the given physics id.
