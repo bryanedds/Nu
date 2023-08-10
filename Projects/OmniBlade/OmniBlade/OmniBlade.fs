@@ -45,12 +45,6 @@ module OmniBlade =
     type OmniBladeDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
 
-        override this.Register (game, world) =
-#if DEV
-            let world = World.setMasterSongVolume 0.0f world
-#endif
-            base.Register (game, world)
-
         override this.Initialize (model, _) =
             [Simulants.Game.DesiredScreen :=
                 match model with
