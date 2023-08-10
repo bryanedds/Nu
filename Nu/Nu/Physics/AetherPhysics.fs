@@ -423,13 +423,12 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         for physicsMessage in physicsMessages do
             AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
-    static member private createIntegrationMessages physicsEngine =
-        // NOTE: P1: We should really be querying these bodies from the physics engine's internally-maintained
-        // awake-body list for better performance. It's quite suboptimal to have to iterate through all bodies!
-        // Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
-        // AwakeBodyList, but there are compilation errors that, when I tried to fix, broke the whole system.
-        for body in physicsEngine.PhysicsContext.BodyList do
+    static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
+        for bodyEntry in physicsEngine.Bodies do
+            let (_, body) = bodyEntry.Value
             if body.Awake then
+
+                // append transform message
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodyId = body.Tag :?> BodyId
@@ -439,8 +438,12 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                           AngularVelocity = v3 body.AngularVelocity 0.0f 0.0f }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
+                // manually sleep static bodies since aether won't sleep them itself
+                if body.BodyType = Dynamics.BodyType.Static then body.Awake <- false
+
     static member private applyGravity physicsStepAmount physicsEngine =
-        for (gravityOverride, body) in physicsEngine.Bodies.Values do
+        for bodyEntry in physicsEngine.Bodies do
+            let (gravityOverride, body) = bodyEntry.Value
             if  body.BodyType = Dynamics.BodyType.Dynamic then
                 let gravity =
                     match gravityOverride with
@@ -530,7 +533,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                 | (_, _) -> failwithumf ()
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
-            AetherPhysicsEngine.createIntegrationMessages physicsEngine
+            AetherPhysicsEngine.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
             let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
