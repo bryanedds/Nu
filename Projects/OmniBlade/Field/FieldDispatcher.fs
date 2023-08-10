@@ -579,7 +579,7 @@ module FieldDispatcher =
                         | Some transition ->
                             let time = field.UpdateTime
                             let localTime = single transition.FieldTransitionTime - single time
-                            let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
+                            let halfTransitionTime = single (dec Constants.Field.TransitionTime) * 0.5f
                             let progress =
                                 if localTime < halfTransitionTime
                                 then localTime / halfTransitionTime
