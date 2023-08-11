@@ -478,9 +478,6 @@ module Field =
     let updateFieldSongTimeOpt updater field =
         { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
 
-    let updateReference field =
-        { field with FieldType_ = field.FieldType_ }
-
     (* Mid-Level Operations *)
 
     let clearSpirits field =
