@@ -304,9 +304,16 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v3 192.0f 192.0f 0.0f) (Bottom (target.Bottom - v3 0.0f 100.0f 0.0f)) EffectDescriptors.purify screen world |> just
                 | None -> just world
-
+                
             | DisplayConjureIfrit delay ->
                 displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) EffectDescriptors.conjureIfrit screen world |> just
+
+            | DisplayScatterBolt delay ->
+                let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
+                let tile = v2 48.0f 48.0f
+                let (w, h) = (10, 8)
+                let position = v3 (origin.X + single (Gen.random1 w) * tile.X) (origin.Y + single (Gen.random1 h) * tile.Y) 0.0f
+                displayEffect delay (v3 192.0f 758.0f 0.0f) (Bottom position) EffectDescriptors.bolt screen world |> just
 
         override this.Content (battle, _) =
 

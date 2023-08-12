@@ -1251,6 +1251,15 @@ module Battle =
                                         let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
                                         let displayConjureIfrit = DisplayConjureIfrit 0L
                                         withSignals [playIfrit; displayConjureIfrit] battle
+                                    | ConjureRamuh ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let playThunder = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ThunderSound)
+                                        let displayScatterBolts =
+                                            [DisplayScatterBolt 0L |> signal
+                                             DisplayScatterBolt 15L |> signal
+                                             DisplayScatterBolt 30L |> signal
+                                             DisplayScatterBolt 45L |> signal]
+                                        withSignals (playThunder :: displayScatterBolts) battle
                                 elif localTime = techAnimationData.AffectingStart then
                                     let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
