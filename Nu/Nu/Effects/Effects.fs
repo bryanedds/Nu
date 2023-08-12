@@ -177,41 +177,41 @@ and Aspect =
     | AttenuationQuadratic of single
     | Cutoff of single
     | Volume of single
-    | Enableds of LogicApplicator * Playback * LogicKeyFrame array
-    | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-    | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-    | Scales of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-    | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-    | Angleses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-    | Degreeses of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-    | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween3KeyFrame array
-    | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
-    | Insets of TweenApplicator * TweenAlgorithm * Playback * TweenBox2KeyFrame array
-    | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
-    | Emissions of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
-    | Heights of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
-    | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
-    | Expand of string * Argument array
-    | Aspects of Aspect array
+    | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
+    | Positions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | Translations of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | Scales of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | Offsets of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | Angleses of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | Degreeses of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | Sizes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | Elevations of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | Insets of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenBox2KeyFrame array
+    | Colors of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
+    | Emissions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
+    | Heights of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | Volumes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | Expand of Name : string * Args : Argument array
+    | Aspects of Aspects : Aspect array
 
 /// Represents types of content used in an effect.
 and Content =
     | Nil // first to make default value when missing
-    | StaticSprite of Resource * Aspect array * Content
-    | AnimatedSprite of Resource * Vector2i * int * int * GameTime * Playback * Aspect array * Content
-    | TextSprite of Resource * string * Aspect array * Content
-    | Billboard of Resource * Resource * Resource * Resource * Resource * Resource * Resource * OpenGL.TextureMinFilter option * OpenGL.TextureMagFilter option * Aspect array * Content
-    | StaticModel of Resource * Aspect array * Content
-    | Light3d of LightType * Aspect array * Content
-    | SoundEffect of Resource * Aspect array * Content
-    | Mount of Shift * Aspect array * Content
-    | Repeat of Shift * Repetition * Aspect array * Content
-    | Emit of Shift * Rate * Aspect array * Aspect array * Content
-    | Tag of string * Aspect array * Content
-    | Delay of GameTime * Content
-    | Segment of GameTime * GameTime * Content
-    | Expand of string * Argument array
-    | Contents of Shift * Content array
+    | StaticSprite of Image : Resource * Aspects : Aspect array * Content : Content
+    | AnimatedSprite of Image : Resource * Vector2i * CelRun : int * CelCount : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
+    | TextSprite of Font : Resource * Text : string * Aspects : Aspect array * Content : Content
+    | Billboard of Albedo : Resource * Metallic : Resource * Roughness : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * HeightMap : Resource * MinFilterOpt : OpenGL.TextureMinFilter option * MagFilterOpt : OpenGL.TextureMagFilter option * Aspects : Aspect array * Content : Content
+    | StaticModel of Resource * Aspects : Aspect array * Content : Content
+    | Light3d of LightType * Aspects : Aspect array * Content : Content
+    | SoundEffect of Resource * Aspects : Aspect array * Content : Content
+    | Mount of Shift : Shift * Aspects : Aspect array * Content : Content
+    | Repeat of Shift : Shift * Repetition * Aspects : Aspect array * Content : Content
+    | Emit of Shift : Shift * Rate : Rate * EmitterAspects : Aspect array * Aspects : Aspect array * Content : Content
+    | Tag of Name : string * Aspects : Aspect array * Content : Content
+    | Delay of Time : GameTime * Content : Content
+    | Segment of StartTime : GameTime * StopTime : GameTime * Content : Content
+    | Expand of Name : string * Args : Argument array
+    | Contents of Shift : Shift * Contents : Content array
 
 /// Represents an argument used in content definitions.
 and Argument =
@@ -703,16 +703,16 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard resourceAlbedo resourceMetallic resourceRoughness resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight minFilterOpt magFilterOpt aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard albedo metallic roughness ambientOcclusion emission normal height minFilterOpt magFilterOpt aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
-        let imageAlbedo = evalResource resourceAlbedo effectSystem
-        let imageMetallic = evalResource resourceMetallic effectSystem
-        let imageRoughness = evalResource resourceRoughness effectSystem
-        let imageAmbientOcclusion = evalResource resourceAmbientOcclusion effectSystem
-        let imageEmission = evalResource resourceEmission effectSystem
-        let imageNormal = evalResource resourceNormal effectSystem
-        let imageHeight = evalResource resourceHeight effectSystem
+        let imageAlbedo = evalResource albedo effectSystem
+        let imageMetallic = evalResource metallic effectSystem
+        let imageRoughness = evalResource roughness effectSystem
+        let imageAmbientOcclusion = evalResource ambientOcclusion effectSystem
+        let imageEmission = evalResource emission effectSystem
+        let imageNormal = evalResource normal effectSystem
+        let imageHeight = evalResource height effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
