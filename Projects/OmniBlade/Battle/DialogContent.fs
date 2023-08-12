@@ -20,19 +20,21 @@ module DialogContent =
                 Content.composite<TextDispatcher> name
                     [Entity.Perimeter :=
                         match dialog.DialogForm with
+                        | DialogShort -> box3 (v3 -324.0f 150.0f 0.0f) (v3 648.0f 90.0f 0.0f)
                         | DialogThin -> box3 (v3 -432.0f 150.0f 0.0f) (v3 864.0f 90.0f 0.0f)
                         | DialogThick -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
                         | DialogNarration -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
                      Entity.Elevation := elevation
                      Entity.BackgroundImageOpt :=
                         match dialog.DialogForm with
+                        | DialogShort -> Some Assets.Gui.DialogShortImage
                         | DialogThin -> Some Assets.Gui.DialogThinImage
                         | DialogThick -> Some Assets.Gui.DialogThickImage
                         | DialogNarration -> Some Assets.Default.ImageEmpty
                      Entity.Text := Dialog.getText detokenize dialog
                      Entity.Justification :=
                         match dialog.DialogForm with
-                        | DialogThin | DialogThick -> Unjustified true
+                        | DialogShort | DialogThin | DialogThick -> Unjustified true
                         | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
                      Entity.TextMargin == v2 30.0f 30.0f]
                     [Content.button "Left"

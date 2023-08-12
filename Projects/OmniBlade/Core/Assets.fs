@@ -40,6 +40,7 @@ module Assets =
         let Font = asset<Font> PackageName "Font" // TODO: P1: See if this is openly licensed (manaspace font).
         let Splash = asset<Image> PackageName "Splash"
         let HeaderImage = asset<Image> PackageName "Header"
+        let DialogShortImage = asset<Image> PackageName "DialogShort"
         let DialogThinImage = asset<Image> PackageName "DialogThin"
         let DialogThickImage = asset<Image> PackageName "DialogThick"
         let DialogFatImage = asset<Image> PackageName "DialogFat"

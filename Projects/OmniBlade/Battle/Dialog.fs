@@ -8,6 +8,7 @@ open Nu
 open OmniBlade
 
 type DialogForm =
+    | DialogShort
     | DialogThin
     | DialogThick
     | DialogNarration // TODO: rename to DialogFloating, along with all data using it.
@@ -24,7 +25,7 @@ type [<SymbolicExpansion>] Dialog =
         let detokenized = detokenize dialog.DialogTokenized
         let text =
             match dialog.DialogForm with
-            | DialogThin | DialogThick -> detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage] |> Dialog.wordWrap 48
+            | DialogShort | DialogThin | DialogThick -> detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage] |> Dialog.wordWrap 48
             | DialogNarration -> detokenized
         String.tryTake dialog.DialogProgress text
 
