@@ -56,6 +56,7 @@ type BattleCommand =
     | DisplayCancel of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
     | DisplayPoisonCut of int64 * CharacterIndex
+    | DisplayDispelCut of int64 * CharacterIndex
     | DisplaySlashSpike of int64 * Vector3 * CharacterIndex
     | DisplaySlashTwister of int64 * Vector3 * CharacterIndex
     | DisplayCycloneBlur of int64 * CharacterIndex * single
@@ -1157,20 +1158,21 @@ module Battle =
                                         withSignals [playHit; cut] battle
                                     | PoisonCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let cut = DisplayCut (30L, false, targetIndex)
+                                        let displayCut = DisplayCut (30L, false, targetIndex)
                                         let poisonCut = DisplayPoisonCut (25L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; cut; poisonCut] battle
+                                        withSignals [playHit; displayCut; poisonCut] battle
                                     | DoubleCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let cut = DisplayCut (30L, false, targetIndex)
+                                        let displayCut = DisplayCut (30L, false, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; cut] battle
+                                        withSignals [playHit; displayCut] battle
                                     | DispelCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (30L, true, targetIndex)
+                                        let dispelCut = DisplayDispelCut (25L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; displayCut] battle
+                                        withSignals [playHit; displayCut; dispelCut] battle
                                     | Fire ->
                                         let playFire = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.FireSound)
                                         let displayFire = DisplayFire (0L, sourceIndex, targetIndex)

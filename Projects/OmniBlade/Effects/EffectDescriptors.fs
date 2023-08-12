@@ -94,6 +94,17 @@ module EffectDescriptors =
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
 
+    let dispelCut =
+        { EffectName = "DispelCut"
+          LifeTimeOpt = Some 24L
+          Definitions = Map.empty
+          Content =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.DispelCutAnimationSheet),
+                 v2i 64 64, 8, 8, 3L, Once,
+                 [|Size (v3 192.0f 192.0f 0.0f)|],
+                 Nil) }
+
     let slashSpike position position2 =
         let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 32 32, 5, 5, 3L, Once, [||], Nil)
         let emit =
