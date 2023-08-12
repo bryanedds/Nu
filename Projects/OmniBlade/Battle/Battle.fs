@@ -1405,63 +1405,63 @@ module Battle =
                 just battle
             | CounterAttack ->
                 let battle =
-                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep)
                     then characterCounterAttack observerIndex sourceIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | CounterTech techType ->
                 let battle =
-                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) && not ((getCharacter observerIndex battle).Statuses.ContainsKey Silence)
                     then prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some sourceIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | CounterConsumable consumableType ->
                 let battle =
-                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep)
                     then prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some sourceIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | AssistTech techType ->
                 let battle =
-                    if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep)
                     then prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some targetIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | AssistConsumable consumableType ->
                 let battle =
-                    if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep)
                     then prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some targetIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | PilferGold gold ->
                 let battle =
-                    if containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep)
                     then updateInventory (Inventory.removeGold gold) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | PilferConsumable consumableType ->
                 let battle =
-                    if containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep)
                     then updateInventory (Inventory.tryRemoveItem (Consumable consumableType) >> snd) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | RetargetToSource ->
                 let battle =
-                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle 
                     then retargetCharacter observerIndex sourceIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | RetargetFriendliesToSource ->
                 let battle =
-                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle then 
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle then
                         let friendlies = getFriendlies observerIndex.Ally battle
                         Map.fold (fun battle friendlyIndex _ -> retargetCharacter friendlyIndex sourceIndex battle) battle friendlies
                     else battle
@@ -1469,14 +1469,14 @@ module Battle =
                 just battle
             | ChangeAction techTypeOpt ->
                 let battle =
-                    if containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle 
                     then updateCharacterAutoTechOpt (constant techTypeOpt) observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | ChangeFriendlyActions techTypeOpt ->
                 let battle =
-                    if containsCharacterHealthy observerIndex battle then 
+                    if containsCharacterHealthy observerIndex battle then
                         let friendlies = getFriendlies observerIndex.Ally battle
                         Map.fold (fun battle friendlyIndex _ -> updateCharacterAutoTechOpt (constant techTypeOpt) friendlyIndex battle) battle friendlies
                     else battle
@@ -1484,7 +1484,7 @@ module Battle =
                 just battle
             | Duplicate ->
                 let battle =
-                    if containsCharacterHealthy observerIndex battle then 
+                    if containsCharacterHealthy observerIndex battle then
                         match (getCharacter observerIndex battle).CharacterType with
                         | Enemy enemyType -> spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = None; EnemyIndexOpt = None }] battle
                         | Ally _ -> battle
@@ -1493,7 +1493,7 @@ module Battle =
                 just battle
             | Spawn spawnTypes ->
                 let battle =
-                    if containsCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle 
                     then spawnEnemies time spawnTypes battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
