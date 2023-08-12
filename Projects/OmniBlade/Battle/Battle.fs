@@ -1521,7 +1521,7 @@ module Battle =
                 let battle =
                     if containsCharacterHealthy observerIndex battle then 
                         let lifeTime = if lifeTime <= 0L then 60L else lifeTime
-                        let dialog = Dialog.make DialogThin text
+                        let dialog = Dialog.make DialogShort text
                         updateMessageOpt (constant (Some (time, lifeTime, dialog))) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
