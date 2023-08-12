@@ -121,7 +121,7 @@ module Character =
     let shouldCounter (character : Character) =
         // TODO: pull this from stats
         character.ArchetypeType = Fighter &&
-        Gen.random1 10 = 0
+        Gen.random1 12 = 0
 
     let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
@@ -194,7 +194,7 @@ module Character =
         let efficacy =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
-            | Magical -> source.CharacterState_.Magic (techData.AffinityOpt = Some Metal)
+            | Magical -> source.CharacterState_.Magic (techData.AffinityOpt = Some Wind || techData.AffinityOpt = Some Shadow)
         let affinityScalar =
             match (techData.AffinityOpt, target.AffinityOpt) with
             | (Some affinitySource, Some affinityTarget) -> AffinityType.getScalar affinitySource affinityTarget

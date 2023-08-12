@@ -50,28 +50,30 @@ type BattleCommand =
     | PlaySound of int64 * single * AssetTag<Sound>
     | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
     | FadeOutSong of GameTime
-    | DisplayCancel of CharacterIndex
+    | DisplayHop of Hop
+    | DisplayCircle of Vector3 * single
     | DisplayHitPointsChange of CharacterIndex * int
-    | DisplayBolt of int64 * CharacterIndex
-    | DisplayCycloneBlur of int64 * CharacterIndex * single
-    | DisplayImpactSplash of int64 * CharacterIndex
+    | DisplayCancel of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
     | DisplaySlashSpike of int64 * Vector3 * CharacterIndex
+    | DisplaySlashTwister of int64 * Vector3 * CharacterIndex
+    | DisplayCycloneBlur of int64 * CharacterIndex * single
+    | DisplayBuff of int64 * StatusType * CharacterIndex
+    | DisplayDebuff of int64 * StatusType * CharacterIndex
+    | DisplayImpactSplash of int64 * CharacterIndex
     | DisplayArcaneCast of int64 * CharacterIndex
+    | DisplayHolyCast of int64 * CharacterIndex
+    | DisplayDimensionalCast of int64 * CharacterIndex
     | DisplayFire of int64 * CharacterIndex * CharacterIndex
     | DisplayFlame of int64 * CharacterIndex * CharacterIndex
     | DisplayIce of int64 * CharacterIndex
     | DisplaySnowball of int64 * CharacterIndex
-    | DisplayHolyCast of int64 * CharacterIndex
-    | DisplayPurify of int64 * CharacterIndex
+    | DisplayBolt of int64 * CharacterIndex
     | DisplayCure of int64 * CharacterIndex
     | DisplayProtect of int64 * CharacterIndex
-    | DisplayDimensionalCast of int64 * CharacterIndex
-    | DisplayBuff of int64 * StatusType * CharacterIndex
-    | DisplayDebuff of int64 * StatusType * CharacterIndex
+    | DisplayPurify of int64 * CharacterIndex
     | DisplayConjureIfrit of int64
-    | DisplayHop of Hop
-    | DisplayCircle of Vector3 * single
+    | DisplayScatterBolt of int64
     interface Command
 
 type ActionCommand =
@@ -316,6 +318,26 @@ module Battle =
 
     let containsCharacter characterIndex battle =
         Map.containsKey characterIndex battle.Characters_
+
+    let containsCharacterHealthy characterIndex battle =
+        match battle.Characters_.TryGetValue characterIndex with
+        | (true, character) -> character.Healthy
+        | (false, _) -> false
+
+    let containsCharacterWounded characterIndex battle =
+        match battle.Characters_.TryGetValue characterIndex with
+        | (true, character) -> character.Wounded
+        | (false, _) -> false
+
+    let containsCharacterStanding characterIndex battle =
+        match battle.Characters_.TryGetValue characterIndex with
+        | (true, character) -> character.Standing
+        | (false, _) -> false
+
+    let containsCharacterSwooning characterIndex battle =
+        match battle.Characters_.TryGetValue characterIndex with
+        | (true, character) -> character.Swooning
+        | (false, _) -> false
 
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_
@@ -606,6 +628,7 @@ module Battle =
         | SelfOrFriendly -> let friendlies = getFriendlies observer.Ally battle in Map.containsKey target.CharacterIndex friendlies
         | Friendly -> let friendlies = getFriendlies observer.Ally battle in observer <> target && Map.containsKey target.CharacterIndex friendlies
         | Unfriendly -> let unfriendlies = getUnfriendlies observer.Ally battle in Map.containsKey target.CharacterIndex unfriendlies
+        | Type ty -> target.CharacterType = ty
         | BattleTargetType.Any targetTypes -> List.exists (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
         | BattleTargetType.All targetTypes -> List.forall (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
 
@@ -671,8 +694,8 @@ module Battle =
         | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
         | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
         | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
-        | Any affectTypes -> List.exists (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
-        | All affectTypes -> List.forall (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
+        | Any affectTypes -> List.exists (fun affectType -> evalItemAffectType affectType source target observer battle) affectTypes
+        | All affectTypes -> List.forall (fun affectType -> evalItemAffectType affectType source target observer battle) affectTypes
 
     let private evalItemInteractions4 (source : Character) (target : Character) (observer : Character) battle =
         List.fold (fun consequences interaction ->
@@ -1040,7 +1063,7 @@ module Battle =
             | Some targetIndex ->
                 match tryGetCharacter targetIndex battle with
                 | Some target ->
-                    match (Map.tryFind techType Data.Value.Techs,  Map.tryFind techType Data.Value.TechAnimations) with
+                    match (Map.tryFind techType Data.Value.Techs, Map.tryFind techType Data.Value.TechAnimations) with
                     | (Some techData, Some techAnimationData) ->
                         ignore techData // TODO: check for target.IsWounded case if techData is affecting wounded...
                         if target.Healthy then
@@ -1090,6 +1113,19 @@ module Battle =
                                         let impactSplash = DisplayImpactSplash (30L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
                                         withSignals [playHit; impactSplash] battle
+                                    | Slash ->
+                                        let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
+                                        let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let perimeter = getCharacterPerimeter sourceIndex battle
+                                        let slashSpike = DisplaySlashTwister (10L, perimeter.Bottom, targetIndex)
+                                        let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
+                                        let battle = animateCharacter time SlashAnimation sourceIndex battle
+                                        withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
+                                    | HeavyCritical ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let impactSplash = DisplayImpactSplash (30L, targetIndex) // TODO: darker impact splash to represent element.
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; impactSplash] battle
                                     | Cyclone ->
                                         let radius = 64.0f
                                         let perimeter = getCharacterPerimeter sourceIndex battle
@@ -1105,16 +1141,11 @@ module Battle =
                                             signal (DisplayCycloneBlur (0L, sourceIndex, radius)) ::
                                             playHits
                                         withSignals sigs battle
-                                    | HeavyCritical ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let impactSplash = DisplayImpactSplash (30L, targetIndex) // TODO: darker impact splash to represent element.
-                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; impactSplash] battle
-                                    | Slash ->
-                                        let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
+                                    | CriticalSlash ->
+                                        let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.TwisterSound)
                                         let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let perimeter = getCharacterPerimeter sourceIndex battle
-                                        let slashSpike = DisplaySlashSpike (10L, perimeter.Bottom, targetIndex)
+                                        let slashSpike = DisplaySlashTwister (10L, perimeter.Bottom, targetIndex)
                                         let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                                         let battle = animateCharacter time SlashAnimation sourceIndex battle
                                         withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
@@ -1191,6 +1222,10 @@ module Battle =
                                         let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
                                         let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex)
                                         withSignals [playBuff; displayBuff] battle
+                                    | Purify ->
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        let displayPurify = DisplayPurify (0L, targetIndex)
+                                        withSignal displayPurify battle // TODO: use new sound and effect.
                                     | Muddle ->
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
@@ -1216,10 +1251,6 @@ module Battle =
                                         let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
                                         let displayConjureIfrit = DisplayConjureIfrit 0L
                                         withSignals [playIfrit; displayConjureIfrit] battle
-                                    | Purify ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
-                                        let displayPurify = DisplayPurify (0L, targetIndex)
-                                        withSignal displayPurify battle // TODO: use new sound and effect.
                                 elif localTime = techAnimationData.AffectingStart then
                                     let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
@@ -1326,98 +1357,98 @@ module Battle =
             match consequence with
             | Charge chargeAmount ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then chargeCharacter chargeAmount observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | AddVulnerability vulnerabilityType ->
                 let battle =
-                    if containsCharacter observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then applyCharacterVulnerabilities (Set.singleton vulnerabilityType) Set.empty observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | RemoveVulnerability vulnerabilityType ->
                 let battle =
-                    if containsCharacter observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then applyCharacterVulnerabilities Set.empty (Set.singleton vulnerabilityType) observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | AddStatus statusType ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then applyCharacterStatuses (Set.singleton statusType) Set.empty observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | RemoveStatus statusType ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then applyCharacterStatuses Set.empty (Set.singleton statusType) observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | CounterAttack ->
                 let battle =
-                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
                     then characterCounterAttack observerIndex sourceIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | CounterTech techType ->
                 let battle =
-                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
                     then prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some sourceIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | CounterConsumable consumableType ->
                 let battle =
-                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
                     then prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some sourceIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | AssistTech techType ->
                 let battle =
-                    if getCharacterHealthy targetIndex battle && getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle
                     then prependActionCommand (ActionCommand.make (Tech techType) observerIndex (Some targetIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | AssistConsumable consumableType ->
                 let battle =
-                    if getCharacterHealthy targetIndex battle && getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy targetIndex battle && containsCharacterHealthy observerIndex battle
                     then prependActionCommand (ActionCommand.make (Consume consumableType) observerIndex (Some targetIndex) None) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | PilferGold gold ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then updateInventory (Inventory.removeGold gold) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | PilferConsumable consumableType ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then updateInventory (Inventory.tryRemoveItem (Consumable consumableType) >> snd) battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | RetargetToSource ->
                 let battle =
-                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle
                     then retargetCharacter observerIndex sourceIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | RetargetFriendliesToSource ->
                 let battle =
-                    if getCharacterHealthy sourceIndex battle && getCharacterHealthy observerIndex battle then 
+                    if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle then 
                         let friendlies = getFriendlies observerIndex.Ally battle
                         Map.fold (fun battle friendlyIndex _ -> retargetCharacter friendlyIndex sourceIndex battle) battle friendlies
                     else battle
@@ -1425,14 +1456,14 @@ module Battle =
                 just battle
             | ChangeAction techTypeOpt ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then updateCharacterAutoTechOpt (constant techTypeOpt) observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | ChangeFriendlyActions techTypeOpt ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle then 
+                    if containsCharacterHealthy observerIndex battle then 
                         let friendlies = getFriendlies observerIndex.Ally battle
                         Map.fold (fun battle friendlyIndex _ -> updateCharacterAutoTechOpt (constant techTypeOpt) friendlyIndex battle) battle friendlies
                     else battle
@@ -1440,7 +1471,7 @@ module Battle =
                 just battle
             | Duplicate ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle then 
+                    if containsCharacterHealthy observerIndex battle then 
                         match (getCharacter observerIndex battle).CharacterType with
                         | Enemy enemyType -> spawnEnemies time [{ EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = None; EnemyIndexOpt = None }] battle
                         | Ally _ -> battle
@@ -1449,26 +1480,25 @@ module Battle =
                 just battle
             | Spawn spawnTypes ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then spawnEnemies time spawnTypes battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | Replace enemyType ->
                 let battle =
-                    if  containsCharacter observerIndex battle &&
-                        getCharacterHealthy observerIndex battle then
+                    if containsCharacterHealthy observerIndex battle then
                         if localTime = 0L then
                             let battle = animateCharacter time ReadyAnimation observerIndex battle
                             dematerializeCharacter time observerIndex battle
-                        elif localTime = 120L then
+                        elif localTime = Constants.Battle.CharacterDematerializeDuration then
                             let spawnPosition = (getCharacterPerimeter observerIndex battle).BottomLeft
                             let spawnType = { EnemyType = enemyType; SpawnEffectType = Materialize; PositionOpt = Some spawnPosition; EnemyIndexOpt = Some observerIndex.Subindex }
                             let battle = removeCharacter observerIndex battle
                             let battle = spawnEnemy time spawnType battle
                             let battle = animateCharacter time WalkAnimation observerIndex battle
                             faceCharacter Downward observerIndex battle
-                        elif localTime = 240L then
+                        elif localTime = Constants.Battle.CharacterDematerializeDuration + Constants.Battle.CharacterMaterializeDuration then
                             let battle = materializedCharacter time observerIndex battle
                             updateCurrentCommandOpt (constant None) battle
                         else battle
@@ -1476,7 +1506,7 @@ module Battle =
                 just battle
             | Message (text, lifeTime) ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle then 
+                    if containsCharacterHealthy observerIndex battle then 
                         let lifeTime = if lifeTime <= 0L then 60L else lifeTime
                         let dialog = Dialog.make DialogThin text
                         updateMessageOpt (constant (Some (time, lifeTime, dialog))) battle
@@ -1485,14 +1515,14 @@ module Battle =
                 just battle
             | AddBattleInteraction interaction ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then addCharacterInteraction interaction observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle
                 just battle
             | ClearBattleInteractions ->
                 let battle =
-                    if getCharacterHealthy observerIndex battle
+                    if containsCharacterHealthy observerIndex battle
                     then clearCharacterInteractions observerIndex battle
                     else battle
                 let battle = updateCurrentCommandOpt (constant None) battle

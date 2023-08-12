@@ -1,6 +1,7 @@
 Type,TechStart,TechingStart,AffectingStart,AffectingEnd,TechingEnd,TechEnd
 Critical,0,30,60,80,100,120
 Slash,0,60,100,150,170,190
+CriticalSlash,0,60,100,150,170,190
 HeavyCritical,0,30,60,80,100,120
 Cyclone,0,30,50,120,140,160
 PoisonCut,0,30,60,80,100,120
@@ -23,4 +24,5 @@ Weaken,0,60,90,110,130,150
 Slow,0,60,90,110,130,150
 Bolt,0,60,90,110,130,150
 ConjureIfrit,0,60,90,110,130,150
+ConjureRamuh,0,60,90,110,130,150
 Purify,0,60,60,110,130,150
