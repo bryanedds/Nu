@@ -142,7 +142,7 @@ module EffectDescriptors =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
+                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|])}
 
     let debuff statusType =
         let image =
@@ -164,7 +164,7 @@ module EffectDescriptors =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
+                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|])}
 
     let impactSplash =
         { EffectName = "ImpactSplash"
@@ -176,12 +176,12 @@ module EffectDescriptors =
                  [|AnimatedSprite
                     (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
                      v2i 32 32, 3, 3, 8L, Once,
-                     [|PositionRelative (v3 -48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipH|],
+                     [|Position (v3 -48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipH|],
                      Nil)
                    AnimatedSprite
                     (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
                      v2i 32 32, 3, 3, 8L, Once,
-                     [|PositionRelative (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipNone|],
+                     [|Position (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipNone|],
                      Nil)|]) }
 
     let arcaneCast =
@@ -195,12 +195,12 @@ module EffectDescriptors =
           Content =
             Contents
                 (Shift 0.0f,
-                 [|candle (PositionRelative (v3 0.0f altitude 0.0f))
-                   candle (PositionRelative (v3 -halfWidth 0.0f 0.0f))
-                   candle (PositionRelative (v3 halfWidth 0.0f 0.0f))
-                   staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Degrees (v3 0.0f 0.0f -90.0f))
-                   staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))
-                   staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))|]) }
+                 [|candle (Position (v3 0.0f altitude 0.0f))
+                   candle (Position (v3 -halfWidth 0.0f 0.0f))
+                   candle (Position (v3 halfWidth 0.0f 0.0f))
+                   staticEffect (Position (v3 0.0f 0.0f 0.0f)) (Degrees (v3 0.0f 0.0f -90.0f))
+                   staticEffect (Position (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))
+                   staticEffect (Position (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))|]) }
 
     let holyCast =
         { EffectName = "HolyCast"
@@ -215,7 +215,7 @@ module EffectDescriptors =
         let length = 60L
         let electronSize = Size (v3 9.0f 9.0f 0.0f)
         let nonLocationSize = Size (v3 3.0f 3.0f 0.0f)
-        let positionAdjustY = PositionRelative (v3 0.0f -36.0f 0.0f)
+        let positionAdjustY = Position (v3 0.0f -36.0f 0.0f)
         let fade =
             Colors
                (Set, EaseOut, Once,
@@ -354,7 +354,7 @@ module EffectDescriptors =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
                  v2i 32 32, 4, 12, 2L, Once,
-                 [|PositionRelative (v3 0.0f -384.0f 0.0f)
+                 [|Position (v3 0.0f -384.0f 0.0f)
                    Size (v3 96.0f 96.0f 0.0f)
                    Colors
                     (Set, EaseOut, Once,
@@ -429,7 +429,7 @@ module EffectDescriptors =
         let sprite position =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
-              v2i 64 64, 5, 10, 3L, Once, [|PositionRelative position|], Nil)
+              v2i 64 64, 5, 10, 3L, Once, [|Position position|], Nil)
         { EffectName = "Purify"
           LifeTimeOpt = Some 54L
           Definitions = Map.empty
