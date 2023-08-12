@@ -286,7 +286,6 @@ type TechType =
     | Flame
     | Ice
     | Snowball
-    | Bolt
     | Stone
     | Quake
     | Cure
@@ -298,6 +297,7 @@ type TechType =
     | Weaken
     | Muddle
     | Slow
+    | Bolt
     | ConjureIfrit
     | ConjureRamuh
     member this.ConjureTech =
