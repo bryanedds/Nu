@@ -158,8 +158,8 @@ type Resource =
 and Aspect =
     | Enabled of bool
     | PositionAbsolute of Vector3
-    | PositionRelative of Vector3
-    | Translation of Vector3
+    | Position of Vector3
+    | PositionLocal of Vector3
     | Scale of Vector3
     | Offset of Vector3
     | Angles of Vector3
@@ -179,7 +179,7 @@ and Aspect =
     | Volume of single
     | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
     | Positions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
-    | Translations of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
+    | PositionLocals of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | Scales of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | Offsets of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | Angleses of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
@@ -236,8 +236,8 @@ type Definitions =
      "Rate " +
      "Shift " +
      "Resource Expand " +
-     "Enabled PositionAbsolute PositionRelative Translation Scale Offset Angles Degrees Size Elevation Inset Color Emission Height Volume " +
-     "Enableds Positions Translations Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights Volumes Aspects " +
+     "Enabled Position PositionLocal PositionAbsolute Scale Offset Angles Degrees Size Elevation Inset Color Emission Height Volume " +
+     "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights Volumes Aspects " +
      "Expand " +
      "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
      "View",
@@ -448,12 +448,12 @@ module EffectSystem =
     and private evalAspect aspect (slice : Slice) effectSystem =
         match aspect with
         | Enabled enabled -> { slice with Enabled = enabled }
-        | PositionAbsolute position -> { slice with Position = position }
-        | PositionRelative position -> { slice with Position = slice.Position + position }
-        | Translation translation ->
-            let oriented = Vector3.Transform (translation, slice.Angles.RollPitchYaw)
+        | Position position -> { slice with Position = slice.Position + position }
+        | PositionLocal positionLocal ->
+            let oriented = Vector3.Transform (positionLocal, slice.Angles.RollPitchYaw)
             let translated = slice.Position + oriented
             { slice with Position = translated }
+        | PositionAbsolute position -> { slice with Position = position }
         | Scale scale -> { slice with Scale = scale }
         | Offset offset -> { slice with Offset = offset }
         | Angles angles -> { slice with Angles = angles }
@@ -485,7 +485,7 @@ module EffectSystem =
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Position tweened applicator
                 { slice with Position = applied }
             else slice
-        | Translations (applicator, algorithm, playback, keyFrames) ->
+        | PositionLocals (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectLocalTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
