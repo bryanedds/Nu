@@ -121,7 +121,7 @@ type AffinityType =
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
-    | Silence // TODO: implement effect in battle.
+    | Silence
     | Sleep // TODO: implement effect in battle.
     | Confuse // TODO: implement effect in battle (disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
     | Curse // TODO: implement effect of 'can't gain HP' in battle.
@@ -149,8 +149,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
     static member randomizeWeak this =
         match this with
         | Poison -> Gen.random1 2 = 0
-        | Silence -> Gen.random1 3 = 0
-        | Sleep -> Gen.random1 4 = 0
+        | Silence -> Gen.random1 2 = 0
+        | Sleep -> Gen.random1 3 = 0
         | Confuse -> Gen.random1 3 = 0
         | Curse -> Gen.random1 2 = 0
         | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
@@ -159,9 +159,9 @@ type [<CustomEquality; CustomComparison>] StatusType =
     static member randomizeStrong this =
         match this with
         | Poison -> Gen.random1 5 <> 0
-        | Silence -> Gen.random1 2 = 0
-        | Sleep -> Gen.random1 3 = 0
-        | Confuse -> Gen.random1 2 = 0
+        | Silence -> Gen.random1 3 <> 0
+        | Sleep -> Gen.random1 2 <> 0
+        | Confuse -> Gen.random1 2 <> 0
         | Curse -> Gen.random1 5 <> 0
         | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
