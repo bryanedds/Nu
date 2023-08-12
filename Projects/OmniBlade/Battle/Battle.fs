@@ -1117,7 +1117,7 @@ module Battle =
                                         let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                                         let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let perimeter = getCharacterPerimeter sourceIndex battle
-                                        let slashSpike = DisplaySlashTwister (10L, perimeter.Bottom, targetIndex)
+                                        let slashSpike = DisplaySlashSpike (10L, perimeter.Bottom, targetIndex)
                                         let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                                         let battle = animateCharacter time SlashAnimation sourceIndex battle
                                         withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
