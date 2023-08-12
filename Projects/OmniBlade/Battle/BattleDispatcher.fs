@@ -340,12 +340,12 @@ module BattleDispatcher =
 
                  // message
                  yield! Content.dialog "Message"
-                    (Constants.Battle.GuiElevation + 2.0f) Nop Nop id
+                    (Constants.Battle.GuiOutputElevation) Nop Nop id
                     (match battle.MessageOpt with Some (_, _, dialog) -> Some dialog | None -> None)
 
                  // dialog
                  yield! Content.dialog "Dialog"
-                    (Constants.Battle.GuiElevation + 2.0f) Nop Nop id
+                    (Constants.Battle.GuiOutputElevation) Nop Nop id
                     (match battle.DialogOpt with Some dialog -> Some dialog | None -> None)
 
                  // dialog interact button
@@ -407,7 +407,7 @@ module BattleDispatcher =
                              | RegularMenu ->
                                 Content.entity<RingMenuDispatcher> "RegularMenu"
                                     [Entity.Position := ally.CenterOffset
-                                     Entity.Elevation == Constants.Battle.GuiElevation
+                                     Entity.Elevation == Constants.Battle.GuiInputElevation
                                      Entity.Enabled :=
                                         (let allies = battle |> Battle.getAllies |> Map.toValueList
                                          let alliesPastRegularMenu =
@@ -421,7 +421,7 @@ module BattleDispatcher =
                              | ItemMenu ->
                                 Content.entity<RingMenuDispatcher> "ConsumableMenu"
                                     [Entity.Position := ally.CenterOffset
-                                     Entity.Elevation == Constants.Battle.GuiElevation
+                                     Entity.Elevation == Constants.Battle.GuiInputElevation
                                      Entity.RingMenu :=
                                         (let consumables =
                                             battle.Inventory |>
@@ -433,7 +433,7 @@ module BattleDispatcher =
                              | TechMenu ->
                                 Content.entity<RingMenuDispatcher> "TechMenu"
                                     [Entity.Position := ally.CenterOffset
-                                     Entity.Elevation == Constants.Battle.GuiElevation
+                                     Entity.Elevation == Constants.Battle.GuiInputElevation
                                      Entity.RingMenu :=
                                         (let techs =
                                             ally.Techs |>
@@ -455,7 +455,7 @@ module BattleDispatcher =
                                      Entity.CancelEvent => TechItemCancel index]
                              | AimReticles _ ->
                                 Content.entity<ReticlesDispatcher> "Reticles"
-                                    [Entity.Elevation == Constants.Battle.GuiElevation
+                                    [Entity.Elevation == Constants.Battle.GuiInputElevation
                                      Entity.Reticles :=
                                         (let aimType =
                                             match Battle.tryGetCharacter index battle with
