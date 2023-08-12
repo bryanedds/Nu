@@ -1151,28 +1151,28 @@ module Battle =
                                         let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                                         let battle = animateCharacter time SlashAnimation sourceIndex battle
                                         withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
-                                    | PowerCut ->
-                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let cut = DisplayCut (30L, false, targetIndex)
-                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; cut] battle
                                     | PoisonCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (30L, false, targetIndex)
                                         let poisonCut = DisplayPoisonCut (25L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
                                         withSignals [playHit; displayCut; poisonCut] battle
-                                    | DoubleCut ->
+                                    | PowerCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let displayCut = DisplayCut (30L, false, targetIndex)
+                                        let cut = DisplayCut (30L, false, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; displayCut] battle
+                                        withSignals [playHit; cut] battle
                                     | DispelCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (30L, true, targetIndex)
                                         let dispelCut = DisplayDispelCut (25L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
                                         withSignals [playHit; displayCut; dispelCut] battle
+                                    | DoubleCut ->
+                                        let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                        let displayCut = DisplayCut (30L, false, targetIndex)
+                                        let battle = animateCharacter time AttackAnimation sourceIndex battle
+                                        withSignals [playHit; displayCut] battle
                                     | Fire ->
                                         let playFire = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.FireSound)
                                         let displayFire = DisplayFire (0L, sourceIndex, targetIndex)
