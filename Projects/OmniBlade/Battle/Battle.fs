@@ -1159,9 +1159,9 @@ module Battle =
                                         withSignals [playHit; displayCut; poisonCut] battle
                                     | PowerCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let cut = DisplayCut (30L, false, targetIndex)
+                                        let displayCut = DisplayCut (30L, false, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; cut] battle
+                                        withSignals [playHit; displayCut] battle
                                     | DispelCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (30L, true, targetIndex)
