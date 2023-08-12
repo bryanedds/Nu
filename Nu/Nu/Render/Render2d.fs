@@ -608,10 +608,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                             OpenGL.Hl.Assert ()
 
                             // destroy texture
+                            SDL.SDL_FreeSurface textSurfacePtr
                             OpenGL.Gl.DeleteTextures textTexture
                             OpenGL.Hl.Assert ()
-
-                        SDL.SDL_FreeSurface textSurfacePtr
 
                     | _ -> Log.debug "Cannot render text with a non-font asset."
                 | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
