@@ -150,6 +150,8 @@ module OmniBlade =
 
             match command with
             | Exit ->
+
+                // exit when not in editor
                 if world.Unaccompanied
                 then just (World.exit world)
                 else just world

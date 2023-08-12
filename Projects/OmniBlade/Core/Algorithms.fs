@@ -148,9 +148,9 @@ module Algorithms =
             | None -> 1.0f
         (powerBase + single level) * powerBuff * strength |> int |> max 1
 
-    let magic isMetal weaponOpt statuses archetypeType level =
+    let magic isWindOrShadow weaponOpt statuses archetypeType level =
         let magicBuff =
-            if isMetal then
+            if isWindOrShadow then // wind and shadow are affected by power buffs
                 statuses |>
                 Map.tryFindKey (function Power (_, _) -> constant true | _ -> constant false) |>
                 Option.mapOrDefaultValue (function Power (false, false) -> 0.667f | Power (false, true) -> 0.333f | Power (true, false) -> 1.333f | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f

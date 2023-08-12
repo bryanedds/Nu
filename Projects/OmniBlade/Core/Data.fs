@@ -277,6 +277,7 @@ type TechType =
     | Slash
     | HeavyCritical
     | Cyclone
+    | CriticalSlash
     | PoisonCut
     | PowerCut
     | DispelCut
@@ -285,6 +286,7 @@ type TechType =
     | Flame
     | Ice
     | Snowball
+    | Bolt
     | Stone
     | Quake
     | Cure
@@ -292,15 +294,16 @@ type TechType =
     | Aura
     | Enlighten
     | Protect
+    | Purify
     | Weaken
     | Muddle
     | Slow
-    | Bolt
     | ConjureIfrit
-    | Purify
+    | ConjureRamuh
     member this.ConjureTech =
         match this with
         | ConjureIfrit -> true
+        | ConjureRamuh -> true
         | _ -> false
 
 type StatureType =
@@ -318,11 +321,11 @@ type ArchetypeType =
     | Cleric
     | Bat
     | Snake
-    | Gorgon
     | Goblin
     | Soldier
     | Shaman
     | Trixter
+    | Gorgon
     | Avian
     | Minotaur
     | Armoros
@@ -348,13 +351,8 @@ type FieldType =
 
     member this.Connector =
         match this with
-        | EmptyField
-        | DebugField
-        | TombOuter
-        | TombGround
-        | TombBasement
-        | Castle _ -> false
         | CastleConnector -> true
+        | _ -> false
 
     static member toFieldName (fieldType : FieldType) =
         match valueToSymbol fieldType with
@@ -365,35 +363,11 @@ type FieldType =
 type BattleType =
     | EmptyBattle
     | DebugBattle
-    | CastleBattle
-    | CastleBattle2
-    | CastleBattle3
-    | CastleBattle4
-    | CastleBattle5
-    | CastleBattle6
-    | CastleBattle7
-    | CastleBattle8
-    | CastleBattle9
+    | CastleBattle | CastleBattle2 | CastleBattle3 | CastleBattle4 | CastleBattle5 | CastleBattle6 | CastleBattle7 | CastleBattle8 | CastleBattle9
     | MadTrixterBattle
-    | Castle2Battle
-    | Castle2Battle2
-    | Castle2Battle3
-    | Castle2Battle4
-    | Castle2Battle5
-    | Castle2Battle6
-    | Castle2Battle7
-    | Castle2Battle8
-    | Castle2Battle9
+    | Castle2Battle | Castle2Battle2 | Castle2Battle3 | Castle2Battle4 | Castle2Battle5 | Castle2Battle6 | Castle2Battle7 | Castle2Battle8 | Castle2Battle9
     | HeavyArmorosBattle
-    | Castle3Battle
-    | Castle3Battle2
-    | Castle3Battle3
-    | Castle3Battle4
-    | Castle3Battle5
-    | Castle3Battle6
-    | Castle3Battle7
-    | Castle3Battle8
-    | Castle3Battle9
+    | Castle3Battle | Castle3Battle2 | Castle3Battle3 | Castle3Battle4 | Castle3Battle5 | Castle3Battle6 | Castle3Battle7 | Castle3Battle8 | Castle3Battle9
     | AraneaImplicitumBattle
 
 type EncounterType =
@@ -685,6 +659,7 @@ module BattleInteractionSystem =
         | SelfOrFriendly
         | Friendly
         | Unfriendly
+        | Type of CharacterType
         | Any of BattleTargetType list
         | All of BattleTargetType list
 
@@ -1068,10 +1043,11 @@ module FieldData =
             let treasures =
                 Seq.init treasuresRepeat (constant treasuresIndexed) |>
                 Seq.concat |>
-                Seq.take chestSpawns.Length |>
+                Seq.tryTake chestSpawns.Length |> // when playing individual map sections in Gaia, treasures may be absent, so tryTake is used
                 Seq.sortBy fst |>
                 Seq.map snd |>
                 Seq.toList
+            let chestSpawns = List.take treasures.Length chestSpawns
             let (chestSpawneds, _) =
                 List.foldBack2 (fun chestSpawn treasure (chestSpawneds, rand) ->
                     let (probability, rand) = Rand.nextSingleUnder 1.0f rand

@@ -11,6 +11,18 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module EffectDescriptors =
 
+    let hop start stop =
+        { EffectName = "Hop"
+          LifeTimeOpt = Some 20L
+          Definitions = Map.empty
+          Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 20L)|], Nil) }
+
+    let circle radius =
+        { EffectName = "Circle"
+          LifeTimeOpt = Some 100L
+          Definitions = Map.empty
+          Content = Tag ("Tag", [|Circle (radius, 2.0f, 100L)|], Nil) }
+
     let hitPointsChange delta =
         let colorOpaque =
             if delta < 0
@@ -57,67 +69,6 @@ module EffectDescriptors =
                        { TweenValue = v3 156.0f 48.0f 0.0f; TweenLength = 0L }|])|],
                  Nil) }
 
-    let bolt =
-        let boltSprite =
-            StaticSprite
-                (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
-                 [|Insets
-                    (Set, Constant, Once,
-                     [|{ TweenValue = Box2 (0.0f,   0.0f,   64.0f,  256.0f); TweenLength = 5L }
-                       { TweenValue = Box2 (64.0f,  0.0f,   64.0f,  256.0f); TweenLength = 5L }
-                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 5L }
-                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 65L }|])
-                   Colors
-                    (Set, EaseOut, Once,
-                     [|{ TweenValue = Color.One; TweenLength = 40L }
-                       { TweenValue = Color.One; TweenLength = 40L }
-                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
-                 Nil)
-        let explosionSprite =
-            AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
-                 v2i 32 32, 4, 12, 2L, Once,
-                 [|PositionRelative (v3 0.0f -384.0f 0.0f)
-                   Size (v3 96.0f 96.0f 0.0f)
-                   Colors
-                    (Set, EaseOut, Once,
-                     [|{ TweenValue = Color.One; TweenLength = 30L }
-                       { TweenValue = Color.One; TweenLength = 30L }
-                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
-                 Nil)
-        let thunderSoundEffect =
-            SoundEffect
-                (Resource (AssetTag.toPair Assets.Field.ThunderSound),
-                 [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
-                 Nil)
-        { EffectName = "Bolt"
-          LifeTimeOpt = Some 80L
-          Definitions = Map.empty
-          Content =
-            Contents
-                (Shift 0.0f,
-                 [|boltSprite
-                   Delay (10L, explosionSprite)
-                   Delay (10L, thunderSoundEffect)|]) }
-
-    let impactSplash =
-        { EffectName = "ImpactSplash"
-          LifeTimeOpt = Some 24L
-          Definitions = Map.empty
-          Content =
-            Contents
-                (Shift 0.0f,
-                 [|AnimatedSprite
-                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
-                     v2i 32 32, 3, 3, 8L, Once,
-                     [|PositionRelative (v3 -48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipH|],
-                     Nil)
-                   AnimatedSprite
-                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
-                     v2i 32 32, 3, 3, 8L, Once,
-                     [|PositionRelative (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipNone|],
-                     Nil)|]) }
-
     let cut light =
         let image = if light then Assets.Battle.LightCutImage else Assets.Battle.CutImage
         { EffectName = "Cut"
@@ -146,6 +97,20 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content = emit }
 
+    let slashTwister position position2 =
+        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.TwisterAnimationSheet), v2i 32 32, 8, 8, 3L, Once, [||], Nil)
+        let emit =
+            Emit
+                (Shift 0.1f,
+                 Rate 0.333f,
+                 [|Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 60L }; { TweenValue = position2; TweenLength = 0L }|])|],
+                 [|Size (v3 96.0f 96.0f 0.0f); Offset (v3 0.0f 0.5f 0.0f)|],
+                 spike)
+        { EffectName = "SlashTwister"
+          LifeTimeOpt = Some 75L
+          Definitions = Map.empty
+          Content = emit }
+
     let cycloneBlur radius =
         { EffectName = "CycloneBlur"
           LifeTimeOpt = Some 98L
@@ -156,6 +121,68 @@ module EffectDescriptors =
                 v2i 78 78, 2, 4, 3L, Loop,
                 [|Circle (radius, 2.0f, 98L); Size (v3 234.0f 234.0f 0.0f)|],
                 Nil) }
+
+    let buff statusType =
+        let image =
+            match statusType with
+            | Power (_, _) -> Assets.Battle.PowerBuffImage
+            | Magic (_, _) -> Assets.Battle.MagicBuffImage
+            | Shield (_, _) -> Assets.Battle.ShieldBuffImage
+            | Time _ -> Assets.Battle.TimeBuffImage
+            | _ -> Assets.Default.ImageEmpty
+        let shrink =
+            Sizes
+               (Set, EaseIn, Once,
+                [|{ TweenValue = v3Zero; TweenLength = 20L }
+                  { TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 10L }
+                  { TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 20L }|])
+        { EffectName = "Buff"
+          LifeTimeOpt = Some 50L
+          Definitions = Map.empty
+          Content =
+              Contents
+                  (Shift 0.0f,
+                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
+
+    let debuff statusType =
+        let image =
+            match statusType with
+            | Power (_, _) -> Assets.Battle.PowerDebuffImage
+            | Magic (_, _) -> Assets.Battle.MagicDebuffImage
+            | Shield (_, _) -> Assets.Battle.ShieldDebuffImage
+            | Time _ -> Assets.Battle.TimeDebuffImage
+            | _ -> Assets.Default.ImageEmpty
+        let shrink =
+            Sizes
+               (Set, EaseIn, Once,
+                [|{ TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 20L }
+                  { TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 10L }
+                  { TweenValue = v3 48.0f 48.0f 0.0f; TweenLength = 20L }|])
+        { EffectName = "Debuff"
+          LifeTimeOpt = Some 50L
+          Definitions = Map.empty
+          Content =
+              Contents
+                  (Shift 0.0f,
+                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
+
+    let impactSplash =
+        { EffectName = "ImpactSplash"
+          LifeTimeOpt = Some 24L
+          Definitions = Map.empty
+          Content =
+            Contents
+                (Shift 0.0f,
+                 [|AnimatedSprite
+                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
+                     v2i 32 32, 3, 3, 8L, Once,
+                     [|PositionRelative (v3 -48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipH|],
+                     Nil)
+                   AnimatedSprite
+                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
+                     v2i 32 32, 3, 3, 8L, Once,
+                     [|PositionRelative (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipNone|],
+                     Nil)|]) }
 
     let arcaneCast =
         let halfWidth = 50.0f
@@ -174,6 +201,52 @@ module EffectDescriptors =
                    staticEffect (PositionRelative (v3 0.0f 0.0f 0.0f)) (Degrees (v3 0.0f 0.0f -90.0f))
                    staticEffect (PositionRelative (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))
                    staticEffect (PositionRelative (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))|]) }
+
+    let holyCast =
+        { EffectName = "HolyCast"
+          LifeTimeOpt = Some 36L
+          Definitions = Map.empty
+          Content =
+              AnimatedSprite
+               (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
+                v2i 100 100, 6, 36, 1L, Once, [||], Nil) }
+
+    let dimensionalCast =
+        let length = 60L
+        let electronSize = Size (v3 9.0f 9.0f 0.0f)
+        let nonLocationSize = Size (v3 3.0f 3.0f 0.0f)
+        let positionAdjustY = PositionRelative (v3 0.0f -36.0f 0.0f)
+        let fade =
+            Colors
+               (Set, EaseOut, Once,
+                [|{ TweenValue = Color.One; TweenLength = 24L }
+                  { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])
+        let orbit radiusX radiusY repetitions =
+            Aspects
+                [|Positions
+                   (Sum, SinScaled repetitions, Once,
+                    [|{ TweenValue = v3Zero; TweenLength = length }
+                      { TweenValue = v3 -radiusX 0.0f 0.0f; TweenLength = 0L }|])
+                  Positions
+                   (Sum, CosScaled repetitions, Once,
+                    [|{ TweenValue = v3Zero; TweenLength = length }
+                      { TweenValue = v3 0.0f -radiusY 0.0f; TweenLength = 0L }|])
+                  Positions
+                   (Sum, Constant, Once,
+                    [|{ TweenValue = v3 0.0f radiusY 0.0f; TweenLength = length }
+                      { TweenValue = v3 0.0f radiusY 0.0f; TweenLength = 0L }|])|]
+        let orbitH = orbit 90.0f 30.0f 2.0f
+        let orbitV = orbit 50.0f 70.0f 1.5f
+        { EffectName = "DimensionalCast"
+          LifeTimeOpt = Some length
+          Definitions = Map.empty
+          Content =
+              Contents
+                  (Shift 0.0f,
+                   [|StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronBlueImage), [|orbitH; electronSize|], Nil);
+                     Emit (Shift 0.0f, Rate 1.0f, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), [|nonLocationSize; fade|], Nil));
+                     StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil);
+                     Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|])}
 
     let fire position position2 =
         let fireSize = Size (v3 64.0f 64.0f 0.0f)
@@ -261,29 +334,48 @@ module EffectDescriptors =
                (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
                 [|Size (v3 432.0f 432.0f 0.0f); fall; rotate|], Nil) }
 
-    let holyCast =
-        { EffectName = "HolyCast"
-          LifeTimeOpt = Some 36L
-          Definitions = Map.empty
-          Content =
-              AnimatedSprite
-               (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
-                v2i 100 100, 6, 36, 1L, Once, [||], Nil) }
-
-    let purify =
-        let sprite position =
+    let bolt =
+        let boltSprite =
+            StaticSprite
+                (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
+                 [|Insets
+                    (Set, Constant, Once,
+                     [|{ TweenValue = Box2 (0.0f,   0.0f,   64.0f,  256.0f); TweenLength = 5L }
+                       { TweenValue = Box2 (64.0f,  0.0f,   64.0f,  256.0f); TweenLength = 5L }
+                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 5L }
+                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 65L }|])
+                   Colors
+                    (Set, EaseOut, Once,
+                     [|{ TweenValue = Color.One; TweenLength = 40L }
+                       { TweenValue = Color.One; TweenLength = 40L }
+                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
+                 Nil)
+        let explosionSprite =
             AnimatedSprite
-             (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
-              v2i 64 64, 5, 10, 3L, Once, [|PositionRelative position|], Nil)
-        { EffectName = "Purify"
-          LifeTimeOpt = Some 54L
+                (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
+                 v2i 32 32, 4, 12, 2L, Once,
+                 [|PositionRelative (v3 0.0f -384.0f 0.0f)
+                   Size (v3 96.0f 96.0f 0.0f)
+                   Colors
+                    (Set, EaseOut, Once,
+                     [|{ TweenValue = Color.One; TweenLength = 30L }
+                       { TweenValue = Color.One; TweenLength = 30L }
+                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
+                 Nil)
+        let thunderSoundEffect =
+            SoundEffect
+                (Resource (AssetTag.toPair Assets.Field.ThunderSound),
+                 [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
+                 Nil)
+        { EffectName = "Bolt"
+          LifeTimeOpt = Some 80L
           Definitions = Map.empty
           Content =
             Contents
                 (Shift 0.0f,
-                 [|sprite v3Zero;
-                   Delay (12L, sprite (v3 -16.0f 64.0f 0.0f));
-                   Delay (24L, sprite (v3 16.0f 32.0f 0.0f))|])}
+                 [|boltSprite
+                   Delay (10L, explosionSprite)
+                   Delay (10L, thunderSoundEffect)|]) }
 
     let cure =
         let path =
@@ -333,86 +425,20 @@ module EffectDescriptors =
                              protection [|blink; outwardMovement (v3 -outwardReach -outwardReach 0.0f); bend (v3 0.0f clockwiseBias 0.0f)|]
                              protection [|blink; outwardMovement (v3 -outwardReach outwardReach 0.0f); bend (v3 clockwiseBias 0.0f 0.0f)|]|])))|])}
 
-    let dimensionalCast =
-        let length = 60L
-        let electronSize = Size (v3 9.0f 9.0f 0.0f)
-        let nonLocationSize = Size (v3 3.0f 3.0f 0.0f)
-        let positionAdjustY = PositionRelative (v3 0.0f -36.0f 0.0f)
-        let fade =
-            Colors
-               (Set, EaseOut, Once,
-                [|{ TweenValue = Color.One; TweenLength = 24L }
-                  { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])
-        let orbit radiusX radiusY repetitions =
-            Aspects
-                [|Positions
-                   (Sum, SinScaled repetitions, Once,
-                    [|{ TweenValue = v3Zero; TweenLength = length }
-                      { TweenValue = v3 -radiusX 0.0f 0.0f; TweenLength = 0L }|])
-                  Positions
-                   (Sum, CosScaled repetitions, Once,
-                    [|{ TweenValue = v3Zero; TweenLength = length }
-                      { TweenValue = v3 0.0f -radiusY 0.0f; TweenLength = 0L }|])
-                  Positions
-                   (Sum, Constant, Once,
-                    [|{ TweenValue = v3 0.0f radiusY 0.0f; TweenLength = length }
-                      { TweenValue = v3 0.0f radiusY 0.0f; TweenLength = 0L }|])|]
-        let orbitH = orbit 90.0f 30.0f 2.0f
-        let orbitV = orbit 50.0f 70.0f 1.5f
-        { EffectName = "DimensionalCast"
-          LifeTimeOpt = Some length
+    let purify =
+        let sprite position =
+            AnimatedSprite
+             (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
+              v2i 64 64, 5, 10, 3L, Once, [|PositionRelative position|], Nil)
+        { EffectName = "Purify"
+          LifeTimeOpt = Some 54L
           Definitions = Map.empty
           Content =
-              Contents
-                  (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronBlueImage), [|orbitH; electronSize|], Nil);
-                     Emit (Shift 0.0f, Rate 1.0f, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), [|nonLocationSize; fade|], Nil));
-                     StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil);
-                     Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|])}
-
-    let buff statusType =
-        let image =
-            match statusType with
-            | Power (_, _) -> Assets.Battle.PowerBuffImage
-            | Magic (_, _) -> Assets.Battle.MagicBuffImage
-            | Shield (_, _) -> Assets.Battle.ShieldBuffImage
-            | Time _ -> Assets.Battle.TimeBuffImage
-            | _ -> Assets.Default.ImageEmpty
-        let shrink =
-            Sizes
-               (Set, EaseIn, Once,
-                [|{ TweenValue = v3Zero; TweenLength = 20L }
-                  { TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 10L }
-                  { TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 20L }|])
-        { EffectName = "Buff"
-          LifeTimeOpt = Some 50L
-          Definitions = Map.empty
-          Content =
-              Contents
-                  (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
-
-    let debuff statusType =
-        let image =
-            match statusType with
-            | Power (_, _) -> Assets.Battle.PowerDebuffImage
-            | Magic (_, _) -> Assets.Battle.MagicDebuffImage
-            | Shield (_, _) -> Assets.Battle.ShieldDebuffImage
-            | Time _ -> Assets.Battle.TimeDebuffImage
-            | _ -> Assets.Default.ImageEmpty
-        let shrink =
-            Sizes
-               (Set, EaseIn, Once,
-                [|{ TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 20L }
-                  { TweenValue = v3 96.0f 96.0f 0.0f; TweenLength = 10L }
-                  { TweenValue = v3 48.0f 48.0f 0.0f; TweenLength = 20L }|])
-        { EffectName = "Debuff"
-          LifeTimeOpt = Some 50L
-          Definitions = Map.empty
-          Content =
-              Contents
-                  (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; PositionRelative (v3 0.0f 32.0f 0.0f)|], Nil)|])}
+            Contents
+                (Shift 0.0f,
+                 [|sprite v3Zero;
+                   Delay (12L, sprite (v3 -16.0f 64.0f 0.0f));
+                   Delay (24L, sprite (v3 16.0f 32.0f 0.0f))|])}
 
     let conjureIfrit =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
@@ -430,15 +456,3 @@ module EffectDescriptors =
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f 168.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 -144.0f -111.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f -111.0f 0.0f)|]|])}
-
-    let hop start stop =
-        { EffectName = "Hop"
-          LifeTimeOpt = Some 20L
-          Definitions = Map.empty
-          Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 20L)|], Nil) }
-
-    let circle radius =
-        { EffectName = "Circle"
-          LifeTimeOpt = Some 100L
-          Definitions = Map.empty
-          Content = Tag ("Tag", [|Circle (radius, 2.0f, 100L)|], Nil) }
