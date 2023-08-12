@@ -83,6 +83,17 @@ module EffectDescriptors =
                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                 Nil) }
 
+    let poisonCut =
+        { EffectName = "PoisonCut"
+          LifeTimeOpt = Some 25L
+          Definitions = Map.empty
+          Content =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.PoisonCutAnimationSheet),
+                 v2i 32 32, 5, 5, 5L, Once,
+                 [|Size (v3 96.0f 96.0f 0.0f)|],
+                 Nil) }
+
     let slashSpike position position2 =
         let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 32 32, 5, 5, 3L, Once, [||], Nil)
         let emit =

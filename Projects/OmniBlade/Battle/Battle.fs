@@ -55,6 +55,7 @@ type BattleCommand =
     | DisplayHitPointsChange of CharacterIndex * int
     | DisplayCancel of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
+    | DisplayPoisonCut of int64 * CharacterIndex
     | DisplaySlashSpike of int64 * Vector3 * CharacterIndex
     | DisplaySlashTwister of int64 * Vector3 * CharacterIndex
     | DisplayCycloneBlur of int64 * CharacterIndex * single
@@ -1157,8 +1158,9 @@ module Battle =
                                     | PoisonCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let cut = DisplayCut (30L, false, targetIndex)
+                                        let poisonCut = DisplayPoisonCut (25L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; cut] battle
+                                        withSignals [playHit; cut; poisonCut] battle
                                     | DoubleCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let cut = DisplayCut (30L, false, targetIndex)
