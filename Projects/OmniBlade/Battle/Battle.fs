@@ -1193,14 +1193,6 @@ module Battle =
                                         let displaySnowball = DisplaySnowball (0L, targetIndex)
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playSnowball; displaySnowball] battle
-                                    | Stone ->
-                                        let displayIce = DisplayIce (0L, targetIndex)
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
-                                        withSignal displayIce battle // TODO: use new sound and effect.
-                                    | Quake ->
-                                        let displayBolt = DisplayBolt (0L, targetIndex)
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
-                                        withSignal displayBolt battle // TODO: use new sound and effect.
                                     | Cure ->
                                         let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
                                         let displayCures = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)

@@ -286,8 +286,6 @@ type TechType =
     | Flame
     | Ice
     | Snowball
-    | Stone
-    | Quake
     | Cure
     | Empower
     | Aura
