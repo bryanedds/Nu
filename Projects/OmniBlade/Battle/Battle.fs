@@ -1137,11 +1137,11 @@ module Battle =
                                              PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
                                              PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
                                              PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal]
-                                        let battle = animateCharacter time WhirlAnimation sourceIndex battle
                                         let sigs =
                                             signal (DisplayCircle (position, radius)) ::
                                             signal (DisplayCycloneBlur (0L, sourceIndex, radius)) ::
                                             playHits
+                                        let battle = animateCharacter time WhirlAnimation sourceIndex battle
                                         withSignals sigs battle
                                     | CriticalSlash ->
                                         let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.TwisterSound)
@@ -1194,75 +1194,75 @@ module Battle =
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playSnowball; displaySnowball] battle
                                     | Stone ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let displayIce = DisplayIce (0L, targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignal displayIce battle // TODO: use new sound and effect.
                                     | Quake ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let displayBolt = DisplayBolt (0L, targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignal displayBolt battle // TODO: use new sound and effect.
                                     | Cure ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
                                         let displayCures = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals (signal playCure :: displayCures) battle
                                     | Empower ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
                                         let displayBuff = DisplayBuff (0L, Power (true, true), targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
                                     | Aura ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playCure = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.CureSound)
                                         let displayCures = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayCure (0L, targetIndex) |> signal)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals (signal playCure :: displayCures) battle
                                     | Enlighten ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
                                         let displayBuff = DisplayBuff (0L, Magic (true, true), targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
                                     | Protect ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playBuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BuffSound)
                                         let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
                                     | Purify ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let displayPurify = DisplayPurify (0L, targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignal displayPurify battle // TODO: use new sound and effect.
                                     | Muddle ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
                                         let displayDebuff = DisplayDebuff (0L, Magic (false, false), targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playDebuff; displayDebuff] battle
                                     | Weaken ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
                                         let displayDebuff = DisplayDebuff (0L, Power (false, false), targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playDebuff; displayDebuff] battle
                                     | Slow ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
                                         let displayDebuff = DisplayDebuff (0L, Time false, targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playDebuff; displayDebuff] battle
                                     | Bolt ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)
                                         let displayBolt = DisplayBolt (0L, targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playSound; displayBolt] battle
                                     | ConjureIfrit ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
                                         let displayConjureIfrit = DisplayConjureIfrit 0L
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playIfrit; displayConjureIfrit] battle
                                     | ConjureRamuh ->
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         let playThunder = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ThunderSound)
                                         let displayScatterBolts =
                                             [DisplayScatterBolt 0L |> signal
                                              DisplayScatterBolt 15L |> signal
                                              DisplayScatterBolt 30L |> signal
                                              DisplayScatterBolt 45L |> signal]
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals (playThunder :: displayScatterBolts) battle
                                 elif localTime = techAnimationData.AffectingStart then
                                     let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
