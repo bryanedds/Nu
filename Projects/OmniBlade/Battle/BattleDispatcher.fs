@@ -202,6 +202,16 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) (EffectDescriptors.cut light) screen world |> just
                 | None -> just world
 
+            | DisplayTwisterCut (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.twisterCut screen world |> just
+                | None -> just world
+
+            | DisplayTornadoCut (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.tornadoCut screen world |> just
+                | None -> just world
+
             | DisplayPoisonCut (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.poisonCut screen world |> just

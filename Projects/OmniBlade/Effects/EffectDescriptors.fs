@@ -83,6 +83,28 @@ module EffectDescriptors =
                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                 Nil) }
 
+    let twisterCut =
+        { EffectName = "TwisterCut"
+          LifeTimeOpt = Some 24L
+          Definitions = Map.empty
+          Content =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.TwisterAnimationSheet),
+                 v2i 32 32, 8, 8, 3L, Once,
+                 [|Size (v3 96.0f 96.0f 0.0f)|],
+                 Nil) }
+
+    let tornadoCut =
+        { EffectName = "TornadoCut"
+          LifeTimeOpt = Some 32L
+          Definitions = Map.empty
+          Content =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.TornadoAnimationSheet),
+                 v2i 32 32, 8, 16, 2L, Once,
+                 [|Size (v3 96.0f 96.0f 0.0f)|],
+                 Nil) }
+
     let poisonCut =
         { EffectName = "PoisonCut"
           LifeTimeOpt = Some 25L
@@ -120,14 +142,14 @@ module EffectDescriptors =
           Content = emit }
 
     let slashTwister position position2 =
-        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.TwisterAnimationSheet), v2i 32 32, 8, 8, 3L, Once, [||], Nil)
+        let twister = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.TwisterAnimationSheet), v2i 32 32, 8, 8, 3L, Once, [||], Nil)
         let emit =
             Emit
                 (Shift 0.1f,
                  Rate 0.333f,
                  [|Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 60L }; { TweenValue = position2; TweenLength = 0L }|])|],
                  [|Size (v3 96.0f 96.0f 0.0f); Offset (v3 0.0f 0.5f 0.0f)|],
-                 spike)
+                 twister)
         { EffectName = "SlashTwister"
           LifeTimeOpt = Some 75L
           Definitions = Map.empty

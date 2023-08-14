@@ -55,6 +55,8 @@ type BattleCommand =
     | DisplayHitPointsChange of CharacterIndex * int
     | DisplayCancel of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
+    | DisplayTwisterCut of int64 * CharacterIndex
+    | DisplayTornadoCut of int64 * CharacterIndex
     | DisplayPoisonCut of int64 * CharacterIndex
     | DisplayDispelCut of int64 * CharacterIndex
     | DisplaySlashSpike of int64 * Vector3 * CharacterIndex
@@ -1112,9 +1114,9 @@ module Battle =
                                     match techType with
                                     | Critical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let impactSplash = DisplayImpactSplash (30L, targetIndex)
+                                        let twisterCut = DisplayTwisterCut (10L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; impactSplash] battle
+                                        withSignals [playHit; twisterCut] battle
                                     | Slash ->
                                         let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                                         let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -1125,9 +1127,10 @@ module Battle =
                                         withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
                                     | HeavyCritical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let impactSplash = DisplayImpactSplash (30L, targetIndex) // TODO: darker impact splash to represent element.
+                                        let tornadoCut = DisplayTornadoCut (10L, targetIndex)
+                                        let impactSplash = DisplayImpactSplash (34L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; impactSplash] battle
+                                        withSignals [playHit; tornadoCut; impactSplash] battle
                                     | Cyclone ->
                                         let radius = 64.0f
                                         let perimeter = getCharacterPerimeter sourceIndex battle
@@ -1147,10 +1150,10 @@ module Battle =
                                         let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.TwisterSound)
                                         let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let perimeter = getCharacterPerimeter sourceIndex battle
-                                        let slashSpike = DisplaySlashTwister (10L, perimeter.Bottom, targetIndex)
+                                        let slashTwister = DisplaySlashTwister (10L, perimeter.Bottom, targetIndex)
                                         let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                                         let battle = animateCharacter time SlashAnimation sourceIndex battle
-                                        withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
+                                        withSignals (playSlash :: playHit :: slashTwister :: impactSplashes) battle
                                     | PoisonCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (30L, false, targetIndex)
