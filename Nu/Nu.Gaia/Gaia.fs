@@ -2582,8 +2582,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.Button "Ignore exception and revert to old world." then
                     world <- World.unshelve oldWorld
                     recoverableExceptionOpt <- None
-                if ImGui.Button "Ignore exception and proceed with current world." then recoverableExceptionOpt <- None
-                if ImGui.Button "Exit the editor." then showConfirmExitDialog <- true
+                if ImGui.Button "Ignore exception and proceed with current world." then
+                    recoverableExceptionOpt <- None
+                if ImGui.Button "Exit the editor." then
+                    showConfirmExitDialog <- true
+                    recoverableExceptionOpt <- None
                 ImGui.EndPopup ()
             world
 
