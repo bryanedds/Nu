@@ -356,49 +356,6 @@ module EffectDescriptors =
                (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
                 [|Size (v3 432.0f 432.0f 0.0f); fall; rotate|], Nil) }
 
-    let bolt =
-        let boltSprite =
-            StaticSprite
-                (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
-                 [|Insets
-                    (Set, Constant, Once,
-                     [|{ TweenValue = Box2 (0.0f,   0.0f,   64.0f,  256.0f); TweenLength = 5L }
-                       { TweenValue = Box2 (64.0f,  0.0f,   64.0f,  256.0f); TweenLength = 5L }
-                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 5L }
-                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 65L }|])
-                   Colors
-                    (Set, EaseOut, Once,
-                     [|{ TweenValue = Color.One; TweenLength = 40L }
-                       { TweenValue = Color.One; TweenLength = 40L }
-                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
-                 Nil)
-        let explosionSprite =
-            AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
-                 v2i 32 32, 4, 12, 2L, Once,
-                 [|Position (v3 0.0f -384.0f 0.0f)
-                   Size (v3 96.0f 96.0f 0.0f)
-                   Colors
-                    (Set, EaseOut, Once,
-                     [|{ TweenValue = Color.One; TweenLength = 30L }
-                       { TweenValue = Color.One; TweenLength = 30L }
-                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
-                 Nil)
-        let thunderSoundEffect =
-            SoundEffect
-                (Resource (AssetTag.toPair Assets.Field.ThunderSound),
-                 [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
-                 Nil)
-        { EffectName = "Bolt"
-          LifeTimeOpt = Some 80L
-          Definitions = Map.empty
-          Content =
-            Contents
-                (Shift 0.0f,
-                 [|boltSprite
-                   Delay (10L, explosionSprite)
-                   Delay (10L, thunderSoundEffect)|]) }
-
     let cure =
         let path =
             Aspects
@@ -461,6 +418,49 @@ module EffectDescriptors =
                  [|sprite v3Zero;
                    Delay (12L, sprite (v3 -16.0f 64.0f 0.0f));
                    Delay (24L, sprite (v3 16.0f 32.0f 0.0f))|])}
+
+    let bolt =
+        let boltSprite =
+            StaticSprite
+                (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
+                 [|Insets
+                    (Set, Constant, Once,
+                     [|{ TweenValue = Box2 (0.0f,   0.0f,   64.0f,  256.0f); TweenLength = 5L }
+                       { TweenValue = Box2 (64.0f,  0.0f,   64.0f,  256.0f); TweenLength = 5L }
+                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 5L }
+                       { TweenValue = Box2 (128.0f, 0.0f,   64.0f,  256.0f); TweenLength = 65L }|])
+                   Colors
+                    (Set, EaseOut, Once,
+                     [|{ TweenValue = Color.One; TweenLength = 40L }
+                       { TweenValue = Color.One; TweenLength = 40L }
+                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
+                 Nil)
+        let explosionSprite =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
+                 v2i 32 32, 4, 12, 2L, Once,
+                 [|Position (v3 0.0f -384.0f 0.0f)
+                   Size (v3 96.0f 96.0f 0.0f)
+                   Colors
+                    (Set, EaseOut, Once,
+                     [|{ TweenValue = Color.One; TweenLength = 30L }
+                       { TweenValue = Color.One; TweenLength = 30L }
+                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
+                 Nil)
+        let thunderSoundEffect =
+            SoundEffect
+                (Resource (AssetTag.toPair Assets.Field.ThunderSound),
+                 [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
+                 Nil)
+        { EffectName = "Bolt"
+          LifeTimeOpt = Some 80L
+          Definitions = Map.empty
+          Content =
+            Contents
+                (Shift 0.0f,
+                 [|boltSprite
+                   Delay (10L, explosionSprite)
+                   Delay (10L, thunderSoundEffect)|]) }
 
     let conjureIfrit =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
