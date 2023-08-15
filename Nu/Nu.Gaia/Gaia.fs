@@ -867,6 +867,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else Log.info "Code compiled with no warnings."
                         Log.info "Updating code..."
                         world <- World.updateLateBindings session.DynamicAssemblies world
+                        focusedPropertyDescriptorOpt <- None // drop any reference to old property type
                         Log.info "Code updated."
                     with _ ->
                         let error = string errorStream
