@@ -58,6 +58,7 @@ type BattleCommand =
     | DisplayTwisterCut of int64 * CharacterIndex
     | DisplayTornadoCut of int64 * CharacterIndex
     | DisplayPoisonCut of int64 * CharacterIndex
+    | DisplayPowerCut of int64 * CharacterIndex
     | DisplayDispelCut of int64 * CharacterIndex
     | DisplayDoubleCut of int64 * CharacterIndex
     | DisplaySlashSpike of int64 * Vector3 * CharacterIndex
@@ -1166,8 +1167,9 @@ module Battle =
                                     | PowerCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
+                                        let powerCut = DisplayPowerCut (20L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; displayCut] battle
+                                        withSignals [playHit; displayCut; powerCut] battle
                                     | DispelCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
