@@ -1115,8 +1115,9 @@ module Battle =
                                     | Critical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let twisterCut = DisplayTwisterCut (10L, targetIndex)
+                                        let displayCut = DisplayCut (20L, true, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; twisterCut] battle
+                                        withSignals [playHit; twisterCut; displayCut] battle
                                     | Slash ->
                                         let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                                         let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -1128,9 +1129,10 @@ module Battle =
                                     | HeavyCritical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let tornadoCut = DisplayTornadoCut (10L, targetIndex)
+                                        let displayCut = DisplayCut (20L, true, targetIndex)
                                         let impactSplash = DisplayImpactSplash (34L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; tornadoCut; impactSplash] battle
+                                        withSignals [playHit; tornadoCut; displayCut; impactSplash] battle
                                     | Cyclone ->
                                         let radius = 64.0f
                                         let perimeter = getCharacterPerimeter sourceIndex battle
@@ -1167,7 +1169,7 @@ module Battle =
                                         withSignals [playHit; displayCut] battle
                                     | DispelCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let displayCut = DisplayCut (30L, true, targetIndex)
+                                        let displayCut = DisplayCut (30L, false, targetIndex)
                                         let dispelCut = DisplayDispelCut (25L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
                                         withSignals [playHit; displayCut; dispelCut] battle
