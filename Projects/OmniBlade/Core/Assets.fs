@@ -165,6 +165,7 @@ module Assets =
         let TwisterAnimationSheet = asset<Image> PackageName "Twister"
         let TornadoAnimationSheet = asset<Image> PackageName "Tornado"
         let PoisonCutAnimationSheet = asset<Image> PackageName "PoisonCut"
+        let PowerCutAnimationSheet = asset<Image> PackageName "PowerCut"
         let DispelCutAnimationSheet = asset<Image> PackageName "DispelCut"
         let DoubleCutAnimationSheet = asset<Image> PackageName "DoubleCut"
         let BoltAnimationSheet = asset<Image> PackageName "Bolt" // TODO: P1: Convert art.

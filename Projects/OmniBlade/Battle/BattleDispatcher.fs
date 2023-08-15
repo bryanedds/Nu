@@ -217,6 +217,11 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.poisonCut screen world |> just
                 | None -> just world
 
+            | DisplayPowerCut (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.powerCut screen world |> just
+                | None -> just world
+
             | DisplayDispelCut (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v3 96.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.dispelCut screen world |> just

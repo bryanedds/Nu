@@ -116,6 +116,17 @@ module EffectDescriptors =
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
 
+    let powerCut =
+        { EffectName = "PowerCut"
+          LifeTimeOpt = Some 24L
+          Definitions = Map.empty
+          Content =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.PowerCutAnimationSheet),
+                 v2i 48 48, 8, 8, 3L, Once,
+                 [|Size (v3 144.0f 144.0f 0.0f)|],
+                 Nil) }
+
     let dispelCut =
         { EffectName = "DispelCut"
           LifeTimeOpt = Some 24L
