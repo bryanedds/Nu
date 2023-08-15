@@ -127,6 +127,17 @@ module EffectDescriptors =
                  [|Size (v3 192.0f 192.0f 0.0f)|],
                  Nil) }
 
+    let doubleCut =
+        { EffectName = "DoubleCut"
+          LifeTimeOpt = Some 30L
+          Definitions = Map.empty
+          Content =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.DoubleCutAnimationSheet),
+                 v2i 48 48, 8, 10, 3L, Once,
+                 [|Size (v3 144.0f 144.0f 0.0f)|],
+                 Nil) }
+
     let slashSpike position position2 =
         let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 32 32, 5, 5, 3L, Once, [||], Nil)
         let emit =

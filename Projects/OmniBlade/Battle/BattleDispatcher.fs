@@ -222,6 +222,11 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v3 96.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.dispelCut screen world |> just
                 | None -> just world
 
+            | DisplayDoubleCut (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v3 96.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.doubleCut screen world |> just
+                | None -> just world
+
             | DisplaySlashSpike (delay, bottom, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
