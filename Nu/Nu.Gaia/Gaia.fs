@@ -866,8 +866,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + error)
                         else Log.info "Code compiled with no warnings."
                         Log.info "Updating code..."
-                        world <- World.updateLateBindings session.DynamicAssemblies world
                         focusedPropertyDescriptorOpt <- None // drop any reference to old property type
+                        world <- World.updateLateBindings session.DynamicAssemblies world // replace references to old types
                         Log.info "Code updated."
                     with _ ->
                         let error = string errorStream
