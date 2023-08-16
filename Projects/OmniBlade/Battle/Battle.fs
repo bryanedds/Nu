@@ -1116,7 +1116,7 @@ module Battle =
                                     match techType with
                                     | Critical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let twisterCut = DisplayTwisterCut (10L, targetIndex)
+                                        let twisterCut = DisplayTwisterCut (13L, targetIndex)
                                         let displayCut = DisplayCut (20L, true, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
                                         withSignals [playHit; twisterCut; displayCut] battle

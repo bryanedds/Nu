@@ -204,7 +204,7 @@ module BattleDispatcher =
 
             | DisplayTwisterCut (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) EffectDescriptors.twisterCut screen world |> just
+                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom (target.Bottom + v3Up * 3.0f)) EffectDescriptors.twisterCut screen world |> just
                 | None -> just world
 
             | DisplayTornadoCut (delay, targetIndex) ->
