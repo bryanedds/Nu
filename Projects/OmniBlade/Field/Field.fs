@@ -1077,8 +1077,7 @@ module Field =
                         Array.definitize
                     | (false, _) -> [||]
                 { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
-            let lowerCenter = field.Avatar.LowerCenter
-            match Array.tryFind (fun (spirit : Spirit) -> Vector3.Distance (lowerCenter, spirit.Bottom) < Constants.Field.SpiritCollisionRadius) field.Spirits_ with
+            match Array.tryFind (fun (spirit : Spirit) -> Vector3.Distance (field.Avatar.LowerCenter, spirit.Bottom) < Constants.Field.SpiritCollisionRadius) field.Spirits_ with
             | Some spirit ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->
