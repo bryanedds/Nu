@@ -83,6 +83,7 @@ module Constants =
 #endif
         let SpiritActivityAggressionThreshold = 4
         let SpiritRadius = 90.0f / SpiritOrbRatio
+        let SpiritCollisionRadius = 72.0f
         let WalkLengthScalarClosed = 0.5f // NOTE: higher is longer distance to stronger spirits.
         let WalkLengthScalarOpened = 0.45f // NOTE: higher is longer distance to stronger spirits.
         let TreasureProbability = 0.667f
