@@ -11,12 +11,12 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrY2Zg6BvFo3gUj+JRTBBnszIw5FMRk2p/LlDPQSYE3gvFB5nIEyfH/i9MCPwBir8wkSdOjv3KzKhYHQvGJYcuTo791ATDyf6FvMSJ0cL+LKB4Gg6ch8fN1LBflYWBoQBPHi+ksf0RQPv3APPSfix5HCR2iAniRmzhRa3wfw+04xOWPA4S+8oEcSMyyCDDbnz2KwHlVLHkd5CYBjOmemrbDwKboGn9BA8Dw0keVDF62E8KGI724ysD0HEKDewn10+j9o/aP1D2AwDfHtMI
+   eJzrY2Zg6BvFo3gUj+JRTBBnszIw5FMRk2p/LlDPQSYI3gvF5PJBmBz7vzBB8AcoJpf/hUz7lZlxY3UkjCyGSx059lMTDCf7F/ISJ0YL+7OA4mk4cB4eN1PDflUWBoYCPHm8kMb2RwDt3wPMS/ux5HeQ2CEg/siMPbyoYT/I7PdAOz5hye8gsa8gGs3+DDLsxhf/SkA5VWieruFmYKjjhrBBYhrMmOqpbT8IbIKm9RM8DAwneVDF6GE/KWA42o+vDEDHKTSwn1w/jdo/av9A2Q8A+FHV+A==
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUjIJRMBxAMRcDQwkXgl/KxdDwmJOB4Qknbe19xsnQ8BSIFwPtXoJk/1Kg/cJAvggQu3Lh1j8KRsEoGNpgAS9xYrQCK6F27eJhYNjNgyo2CkbBKBgFowAVAABJSw4Y
+   eJxjYBgFo2AUjIJRMFRBKRdDAzL/MScDwxNOFHmagqVA+52R7BAGskW4UOQZXGjshlEwCkbBwIIFvMSJ0QqshNp1iQuCkcVGwSgYBaNgFKACABgqCoo=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
