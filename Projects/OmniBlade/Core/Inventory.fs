@@ -264,4 +264,4 @@ type [<SymbolicExpansion>] Inventory =
         { Items = Map.empty; Gold = 0 }
 
     static member initial =
-        { Items = Map.ofList [(Consumable GreenHerb, 1); (Consumable Remedy, 1)]; Gold = 0 }
+        { Items = Map.ofList [(Consumable GreenHerb, 2)]; Gold = 0 }
