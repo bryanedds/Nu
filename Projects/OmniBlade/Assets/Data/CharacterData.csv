@@ -12,7 +12,7 @@ Type,ArchetypeType,LevelBase,AbsorbCreep,Boss,AnimationSheet,PortraitOpt,WeaponO
 [Enemy LowerGorgon],Gorgon,4,1,False,[Castle LowerGorgon],None,[Some Paws],None,[],[Some 0.5],[],[],1,1,A gorgon of the Lower Order.
 [Enemy FacelessSoldier],Soldier,5,1,False,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.4],[],[],1,1,A soldier whose face is long forgotten.
 [Enemy Hawk],Avian,5,1,False,[Castle Hawk],None,[Some Paws],None,[],[Some 0.4],[],[],1,1,An angry avian.
-[Enemy HeavyArmoros],Armoros,6,1,True,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.5],[],[],10,5,The heaviest armoros you’ve ever seen!
+[Enemy HeavyArmoros],Armoros,7,1,True,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.5],[],[],10,5,The heaviest armoros you’ve ever seen!
 [Enemy PitViper],Snake,6,1,False,[Castle PitViper],None,[Some Paws],None,[],[Some 1],[],[],1,1,A poisonous pit viper.
 [Enemy Cloak],Shaman,6,1,False,[Castle Cloak],None,[Some Paws],None,[],[Some 0.4],[],[],1,1,A conjurer of the darkness and malice.
 [Enemy BloodArmoros],Armoros,6,1,False,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.4],[],[],1,1,A long-dead warrior shadow that lives off of blood.
