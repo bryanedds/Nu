@@ -343,8 +343,8 @@ type FieldType =
     | TombOuter
     | TombGround
     | TombBasement
-    | Castle of int
     | CastleConnector
+    | Castle of int
 
     member this.Connector =
         match this with
