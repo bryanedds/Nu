@@ -22,5 +22,5 @@ Muddle,2,Magical,0.75,False,False,False,0,None,[[Magic False False]],[],None,[Si
 Weaken,2,Magical,0.75,False,False,False,0,None,[[Power False False]],[],None,[SingleTarget [EnemyAim True]],
 Slow,4,Magical,0.75,False,False,False,0,None,[[Time False]],[],None,[SingleTarget [EnemyAim True]],
 Bolt,7,Magical,1.9,False,False,False,0,[Some Lightning],[],[],None,[SingleTarget [EnemyAim True]],
-ConjureIfrit,10,Magical,1.8,True,False,False,0,[Some Fire],[],[],None,[AllTarget [EnemyAim True]],
 ConjureRamuh,12,Magical,2,True,False,False,0,[Some Lightning],[],[],None,[AllTarget [EnemyAim True]],
+ConjureIfrit,24,Magical,3,True,False,False,0,[Some Fire],[],[],None,[AllTarget [EnemyAim True]],
