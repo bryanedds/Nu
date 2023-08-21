@@ -1252,11 +1252,6 @@ module Battle =
                                         let displayBolt = DisplayBolt (0L, targetIndex)
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playSound; displayBolt] battle
-                                    | ConjureIfrit ->
-                                        let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
-                                        let displayConjureIfrit = DisplayConjureIfrit 0L
-                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
-                                        withSignals [playIfrit; displayConjureIfrit] battle
                                     | ConjureRamuh ->
                                         let playThunder = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ThunderSound)
                                         let displayScatterBolts =
@@ -1266,6 +1261,11 @@ module Battle =
                                              DisplayScatterBolt 45L |> signal]
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals (playThunder :: displayScatterBolts) battle
+                                    | ConjureIfrit ->
+                                        let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
+                                        let displayConjureIfrit = DisplayConjureIfrit 0L
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        withSignals [playIfrit; displayConjureIfrit] battle
                                 elif localTime = techAnimationData.AffectingStart then
                                     let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
