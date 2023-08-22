@@ -506,13 +506,13 @@ module EffectDescriptors =
                    Delay (10L, explosionSprite)
                    Delay (10L, thunderSoundEffect)|]) }
 
-    let conjureIfrit =
+    let inferno =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
         let fireSpin aspects =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.FireSpinAnimationSheet),
               v2i 100 100, 8, 61, 1L, Loop, aspects, Nil)
-        { EffectName = "ConjureIfrit"
+        { EffectName = "Inferno"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty
           Content =

@@ -297,10 +297,10 @@ type TechType =
     | Slow
     | Bolt
     | ConjureRamuh
-    | ConjureIfrit
+    | Inferno
     member this.ConjureTech =
         match this with
-        | ConjureRamuh | ConjureIfrit -> true
+        | ConjureRamuh -> true
         | _ -> false
 
 type StatureType =

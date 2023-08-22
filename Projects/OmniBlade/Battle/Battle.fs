@@ -78,7 +78,7 @@ type BattleCommand =
     | DisplayCure of int64 * CharacterIndex
     | DisplayProtect of int64 * CharacterIndex
     | DisplayPurify of int64 * CharacterIndex
-    | DisplayConjureIfrit of int64
+    | DisplayInferno of int64
     | DisplayScatterBolt of int64
     interface Command
 
@@ -1261,11 +1261,11 @@ module Battle =
                                              DisplayScatterBolt 45L |> signal]
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals (playThunder :: displayScatterBolts) battle
-                                    | ConjureIfrit ->
-                                        let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
-                                        let displayConjureIfrit = DisplayConjureIfrit 0L
+                                    | Inferno ->
+                                        let playInferno = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.InfernoSound)
+                                        let displayInferno = DisplayInferno 0L
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
-                                        withSignals [playIfrit; displayConjureIfrit] battle
+                                        withSignals [playInferno; displayInferno] battle
                                 elif localTime = techAnimationData.AffectingStart then
                                     let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
