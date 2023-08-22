@@ -177,17 +177,17 @@ Size=624,206
 Collapsed=0
 DockId=0x00000009,4
 
-[Window][Audio Player]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,0
-
 [Window][Renderer]
 Pos=998,874
 Size=624,206
 Collapsed=0
 DockId=0x00000009,1
+
+[Window][Audio Player]
+Pos=998,874
+Size=624,206
+Collapsed=0
+DockId=0x00000009,0
 
 [Window][Full Screen Enabled]
 Pos=20,23
@@ -2163,20 +2163,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.InputTextMultiline ("##outputStr", &outputStr, 131072u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                         ImGui.End ()
 
-                    // audio player window
-                    if ImGui.Begin ("Audio Player", ImGuiWindowFlags.NoNav) then
-                        ImGui.Text "Master Sound Volume"
-                        let mutable masterSoundVolume = World.getMasterSoundVolume world
-                        if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then world <- World.setMasterSoundVolume masterSoundVolume world
-                        ImGui.SameLine ()
-                        ImGui.Text (string masterSoundVolume)
-                        ImGui.Text "Master Song Volume"
-                        let mutable masterSongVolume = World.getMasterSongVolume world
-                        if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then world <- World.setMasterSongVolume masterSongVolume world
-                        ImGui.SameLine ()
-                        ImGui.Text (string masterSongVolume)
-                        ImGui.End ()
-
                     // renderer window
                     if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Light-Mapping (local light mapping)"
@@ -2203,6 +2189,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                               SsaoRadius = ssaoRadius
                               SsaoSampleCount = ssaoSampleCount }
                         world <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
+                        ImGui.End ()
+
+                    // audio player window
+                    if ImGui.Begin ("Audio Player", ImGuiWindowFlags.NoNav) then
+                        ImGui.Text "Master Sound Volume"
+                        let mutable masterSoundVolume = World.getMasterSoundVolume world
+                        if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then world <- World.setMasterSoundVolume masterSoundVolume world
+                        ImGui.SameLine ()
+                        ImGui.Text (string masterSoundVolume)
+                        ImGui.Text "Master Song Volume"
+                        let mutable masterSongVolume = World.getMasterSongVolume world
+                        if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then world <- World.setMasterSongVolume masterSongVolume world
+                        ImGui.SameLine ()
+                        ImGui.Text (string masterSongVolume)
                         ImGui.End ()
 
                 // in full-screen mode, just show full-screen short cut window
