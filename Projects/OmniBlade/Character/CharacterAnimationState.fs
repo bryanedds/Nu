@@ -22,11 +22,12 @@ type [<SymbolicExpansion>] CharacterAnimationState =
     static member face direction (state : CharacterAnimationState) =
         { state with Direction = direction }
 
-    static member setCharacterAnimationType timeOpt characterAnimationType state =
+    static member setCharacterAnimationType time characterAnimationType state =
         if state.CharacterAnimationType <> characterAnimationType then
-            match timeOpt with
-            | Some time -> { state with StartTime = time; CharacterAnimationType = characterAnimationType }
-            | None -> { state with CharacterAnimationType = characterAnimationType }
+            { state with
+                StartTime = time
+                CharacterAnimationType = characterAnimationType
+                MaterializationOpt = if time > state.StartTime then None else state.MaterializationOpt }
         else state
 
     static member directionToInt direction =
@@ -108,9 +109,6 @@ type [<SymbolicExpansion>] CharacterAnimationState =
 
     static member dematerialize time state =
         { state with StartTime = time; MaterializationOpt = Some Dematerializing }
-
-    static member materialized time state =
-        { state with StartTime = time; MaterializationOpt = None }
 
     static member empty =
         { StartTime = 0L

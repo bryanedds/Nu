@@ -517,14 +517,11 @@ module Character =
     let dematerialize time character =
         { character with CharacterAnimationState_ = CharacterAnimationState.dematerialize time character.CharacterAnimationState_ }
 
-    let materialized time character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.materialized time character.CharacterAnimationState_ }
-
     let face direction character =
         { character with CharacterAnimationState_ = CharacterAnimationState.face direction character.CharacterAnimationState_ }
 
     let animate time characterAnimationType character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
+        { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType time characterAnimationType character.CharacterAnimationState_ }
 
     let addInteraction interaction character =
         let characterState = character.CharacterState_
@@ -553,7 +550,7 @@ module Character =
           ActionTime_ = actionTime
           CelSize_ = celSize }
 
-    let tryMakeEnemy allyCount subindex waitSpeed enemyData =
+    let tryMakeEnemy allyCount subindex waitSpeed actionTimeAdvanced enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
@@ -573,9 +570,14 @@ module Character =
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let actionTime =
-                    if waitSpeed then       1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
-                    elif allyCount = 1 then 1000.0f - 400.0f - Gen.randomf1 6.0f * 75.0f
-                    else                    1000.0f - 375.0f - Gen.randomf1 8.0f * 75.0f
+                    if actionTimeAdvanced then
+                        if waitSpeed then       1000.0f - 125.0f - Gen.randomf1 8.0f * 75.0f
+                        elif allyCount = 1 then 1000.0f - 400.0f - Gen.randomf1 6.0f * 75.0f
+                        else                    1000.0f - 375.0f - Gen.randomf1 8.0f * 75.0f
+                    else
+                        if waitSpeed
+                        then 0.0f
+                        else -250.0f
                 let enemy = make bounds (EnemyIndex subindex) characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
                 Some enemy
             | None -> None

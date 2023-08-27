@@ -589,9 +589,10 @@ module FieldDispatcher =
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                             | Some tileMapChc ->
                                 match tileMapChc with
-                                | Choice1Of3 tileMap
-                                | Choice2Of3 (tileMap, _)
-                                | Choice3Of3 (tileMap, _) -> tileMap
+                                | Choice1Of4 tileMap
+                                | Choice2Of4 (tileMap, _)
+                                | Choice3Of4 (tileMap, _)
+                                | Choice4Of4 tileMap -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
                      Entity.TileIndexOffset :=
@@ -617,9 +618,10 @@ module FieldDispatcher =
                            match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                            | Some tileMapChc ->
                                match tileMapChc with
-                               | Choice1Of3 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                               | Choice2Of3 (_, tileMapFade) -> tileMapFade
-                               | Choice3Of3 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                               | Choice1Of4 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                               | Choice2Of4 (_, tileMapFade) -> tileMapFade
+                               | Choice3Of4 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                               | Choice4Of4 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                            | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                         | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
                      Entity.TileLayerClearance == 10.0f]
@@ -658,7 +660,7 @@ module FieldDispatcher =
                         Option.isNone field.FieldTransitionOpt &&
                         Field.touchingSavePoint field &&
                         not field.ScreenTransitioning &&
-                        field.Team.Count > 2
+                        field.Team.Count > 3
                      Entity.Text == "Party"]
 
                  // interact button

@@ -384,6 +384,7 @@ type ChestType =
 type DoorType =
     | WoodenDoor
     | SteelDoor
+    | OldDoor
 
 type PortalIndex =
     | Center
@@ -397,6 +398,7 @@ type PortalIndex =
     | SW
     | Warp
     | IX of int
+    | Room of int * int
 
 type PortalType =
     | AirPortal
@@ -512,6 +514,7 @@ type SpawnEffectType =
 type SpawnType =
     { EnemyType : EnemyType
       SpawnEffectType : SpawnEffectType
+      ActionTimeAdvanced : bool
       PositionOpt : Vector3 option
       EnemyIndexOpt : int option }
 
@@ -689,28 +692,28 @@ module BattleInteractionSystem =
         | AffectedTarget of BattleAffectType * BattleTargetType
 
     type BattleConsequence =
-        | Charge of int // may be negative to reduce
-        | AddVulnerability of VulnerabilityType
-        | RemoveVulnerability of VulnerabilityType
-        | AddStatus of StatusType
-        | RemoveStatus of StatusType
-        | CounterAttack
-        | CounterTech of TechType
-        | CounterConsumable of ConsumableType
-        | AssistTech of TechType
-        | AssistConsumable of ConsumableType
-        | PilferGold of int
-        | PilferConsumable of ConsumableType
-        | RetargetToSource
-        | RetargetFriendliesToSource
-        | ChangeAction of TechType option
-        | ChangeFriendlyActions of TechType option
-        | Duplicate
-        | Spawn of SpawnType list
-        | Replace of EnemyType
+        | Charge of int * string option // may be negative to reduce charge
+        | AddVulnerability of VulnerabilityType * string option
+        | RemoveVulnerability of VulnerabilityType * string option
+        | AddStatus of StatusType * string option
+        | RemoveStatus of StatusType * string option
+        | CounterAttack of string option
+        | CounterTech of TechType * string option
+        | CounterConsumable of ConsumableType * string option
+        | AssistTech of TechType * string option
+        | AssistConsumable of ConsumableType * string option
+        | PilferGold of int * string option
+        | PilferConsumable of ConsumableType * string option
+        | RetargetToSource of string option
+        | RetargetFriendliesToSource of string option
+        | ChangeAction of TechType option * string option
+        | ChangeFriendlyActions of TechType option * string option
+        | Duplicate of string option
+        | Spawn of SpawnType list * string option
+        | Replace of EnemyType * string option
+        | AddBattleInteraction of BattleInteraction * string option
+        | ClearBattleInteractions of string option
         | Message of string * int64
-        | AddBattleInteraction of BattleInteraction
-        | ClearBattleInteractions
 
     and BattleInteraction =
         { BattleCondition : BattleCondition
@@ -722,6 +725,7 @@ type ActionType =
     | Consume of ConsumableType
     | Tech of TechType
     | Consequence of BattleInteractionSystem.BattleConsequence
+    | Message of string * int64
     | Wound
 
 [<RequireQualifiedAccess>]
@@ -735,7 +739,7 @@ module OmniSeedState =
         match fieldType with
         | EmptyField | DebugField | TombOuter | TombGround | TombBasement
         | CastleConnector -> state.RandSeedState
-        | Castle n -> state.RandSeedState <<< n + 0 // increment constant by m for each level to ensure unique seed
+        | Castle n -> state.RandSeedState <<< n
 
     let makeFromSeedState randSeedState =
         { RandSeedState = randSeedState }
@@ -797,7 +801,7 @@ type TechData =
       AffinityOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
-      SpawnOpt : SpawnType list option
+      SpawnOpt : SpawnType list option // TODO: remove option (an empty list has the same effect as None).
       TargetType : TargetType
       Description : string }
 
@@ -903,6 +907,7 @@ type PropData =
     | Flame of FlameType * bool
     | SavePoint
     | ChestSpawn
+    | PortalSpawn
     | EmptyProp
 
 type PropDescriptor =
@@ -915,6 +920,7 @@ type FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldConnector of TileMap AssetTag * TileMap AssetTag
     | FieldRandom of int * int * single * Origin * int * string
+    | FieldRoom of TileMap AssetTag
 
 type FieldData =
     { FieldType : FieldType // key
@@ -935,7 +941,7 @@ type FieldData =
 [<RequireQualifiedAccess>]
 module FieldData =
 
-    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * Origin>>
+    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * Origin, TmxMap>>
     let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option>
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
@@ -962,18 +968,22 @@ module FieldData =
                 match fieldData.FieldTileMap with
                 | FieldStatic fieldAsset ->
                     match Metadata.tryGetTileMapMetadata fieldAsset with
-                    | Some (_, _, tileMap) -> Some (Choice1Of3 tileMap)
+                    | Some (_, _, tileMap) -> Some (Choice1Of4 tileMap)
                     | None -> None
                 | FieldConnector (fieldAsset, fieldFadeAsset) ->
                     match (Metadata.tryGetTileMapMetadata fieldAsset, Metadata.tryGetTileMapMetadata fieldFadeAsset) with
-                    | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
+                    | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of4 (tileMap, tileMapFade))
                     | (_, _) -> None
                 | FieldRandom (walkCount, walkLength, bias, origin, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
                     let (cursor, randMap, _) = RandMap.makeFromRand walkCount walkLength bias Constants.Field.RandMapSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
                     let tileMap = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal randMap
-                    Some (Choice3Of3 (tileMap, origin))
+                    Some (Choice3Of4 (tileMap, origin))
+                | FieldRoom fieldAsset ->
+                    match Metadata.tryGetTileMapMetadata fieldAsset with
+                    | Some (_, _, tileMap) -> Some (Choice4Of4 tileMap)
+                    | None -> None
             match tileMapOpt with
             | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized
             | None -> ()
@@ -989,23 +999,29 @@ module FieldData =
                 match tryGetTileMap omniSeedState fieldData with
                 | Some tileMapChc ->
                     match tileMapChc with
-                    | Choice1Of3 tileMap ->
+                    | Choice1Of4 tileMap ->
                         if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
                             let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
                             let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
                             (tileMap, propObjects, None)
                         else (tileMap, [], None)
-                    | Choice2Of3 (tileMap, _) ->
+                    | Choice2Of4 (tileMap, _) ->
                         if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
                             let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
                             let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
                             (tileMap, propObjects, None)
                         else (tileMap, [], None)
-                    | Choice3Of3 (tileMap, origin) ->
+                    | Choice3Of4 (tileMap, origin) ->
                         if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
                             let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
                             let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
                             (tileMap, propObjects, Some origin)
+                        else (tileMap, [], None)
+                    | Choice4Of4 tileMap ->
+                        if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
+                            let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
+                            let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
+                            (tileMap, propObjects, None)
                         else (tileMap, [], None)
                 | None -> (TmxMap.makeDefault (), [], None)
             propObjectsMemoized <- Map.add memoKey result propObjectsMemoized
@@ -1070,7 +1086,8 @@ module FieldData =
                     chestSpawns
                     treasures
                     ([], rand)
-            let propDescriptors = chestSpawneds @ nonChestSpawns
+            let portalSpawneds = [] // NOTE: no level uses this feature in the demo.
+            let propDescriptors = chestSpawneds @ portalSpawneds @ nonChestSpawns
             propDescriptorsMemoized <- Map.add memoKey propDescriptors propDescriptorsMemoized
             propDescriptors
         | Some propDescriptors -> propDescriptors
@@ -1087,7 +1104,7 @@ module FieldData =
         match tryGetTileMap omniSeedState fieldData with
         | Some tileMapChc ->
             match tileMapChc with
-            | Choice3Of3 (tileMap, origin) ->
+            | Choice3Of4 (tileMap, origin) ->
                 match fieldData.FieldTileMap with
                 | FieldRandom (_, _, _, _, _, _) ->
                     let tileMapPerimeter = box3 v3Zero (v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)
@@ -1114,9 +1131,13 @@ module FieldData =
                     | 0 | 1 -> Some WeakSpirit
                     | 2 | 3 -> Some NormalSpirit
                     | _ -> Some StrongSpirit
-                | FieldStatic _ | FieldConnector _ -> None
-            | Choice1Of3 _ -> None
-            | Choice2Of3 _ -> None
+                | FieldStatic _ | FieldConnector _ | FieldRoom _ -> None
+            | Choice4Of4 _ ->
+                match fieldData.FieldTileMap with
+                | FieldRoom _ -> Some NormalSpirit
+                | FieldRandom _ | FieldStatic _ | FieldConnector _ -> None
+            | Choice1Of4 _ -> None
+            | Choice2Of4 _ -> None
         | None -> None
 
 [<RequireQualifiedAccess>]
