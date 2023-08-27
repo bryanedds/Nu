@@ -70,7 +70,7 @@ module PropDispatcher =
                     if prop.Advents.IsSupersetOf requirements
                     then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
-                | Flame _ | ChestSpawn | EmptyProp ->
+                | Flame _ | ChestSpawn | PortalSpawn | EmptyProp ->
                     BodyEmpty]
 
         override this.View (prop, entity, world) =
@@ -128,6 +128,10 @@ module PropDispatcher =
                             | SteelDoor ->
                                 match prop.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.SteelDoorOpenedImage else Assets.Field.SteelDoorClosedImage
+                                | _ -> failwithumf ()
+                            | OldDoor ->
+                                match prop.Prop.PropState with
+                                | DoorState opened -> if opened then Assets.Field.OldDoorOpenedImage else Assets.Field.OldDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Chest (chestType, _, id, _, _, _) ->
@@ -259,7 +263,7 @@ module PropDispatcher =
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize
                         let inset = box2 insetPosition Constants.Gameplay.TileCelSize
                         (false, image, Color.One, Additive, Color.Zero, ValueSome inset, FlipNone)
-                    | ChestSpawn | EmptyProp ->
+                    | ChestSpawn | PortalSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                 let elevation = if background then Constants.Field.FlooringElevation else Constants.Field.ForegroundElevation
                 let horizon = transform.Horizon

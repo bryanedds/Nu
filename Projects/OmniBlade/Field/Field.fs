@@ -165,7 +165,7 @@ module Field =
                   MaterializationOpt = None
                   Direction = direction }
             CharacterState (Color.One, characterAnimationState)
-        | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
+        | Portal _ | Chest _ | Sensor _ | Npc _ | NpcBranching _ | Shopkeep _ | Seal _ | Flame _ | SavePoint | ChestSpawn | PortalSpawn | EmptyProp -> NilState
 
     let private makeProps time fieldType omniSeedState =
         match Map.tryFind fieldType Data.Value.Fields with
@@ -273,10 +273,7 @@ module Field =
         | Npc _ | NpcBranching _ -> Some "Talk"
         | Shopkeep _ -> Some "Shop"
         | Seal _ -> Some "Touch"
-        | Flame _ -> None
-        | SavePoint -> None
-        | ChestSpawn -> None
-        | EmptyProp -> None
+        | Flame _ | SavePoint | ChestSpawn | PortalSpawn | EmptyProp -> None
 
     let facingProp propId (field : Field) =
         match field.Props_.TryGetValue propId with
@@ -660,6 +657,7 @@ module Field =
                     | Flame _ -> just field
                     | SavePoint -> just field
                     | ChestSpawn -> just field
+                    | PortalSpawn -> just field
                     | EmptyProp -> just field
                 | None -> just field
         | Some dialog ->
@@ -828,7 +826,7 @@ module Field =
                         updatePropState
                             (function
                              | CharacterState (color, animationState) ->
-                                let animationState = CharacterAnimationState.setCharacterAnimationType (Some field.UpdateTime_) characterAnimationType animationState
+                                let animationState = CharacterAnimationState.setCharacterAnimationType field.UpdateTime_ characterAnimationType animationState
                                 CharacterState (color, animationState)
                              | propState -> propState)
                             propId
@@ -1105,6 +1103,14 @@ module Field =
         // advance field time
         let field = advanceUpdateTime field
 
+        // advance dialog
+        let field =
+            match field.DialogOpt_ with
+            | Some dialog ->
+                let dialog = Dialog.advance (detokenize field) time dialog
+                updateDialogOpt (constant (Some dialog)) field
+            | None -> field
+
         // advance cue
         let (cue, definitions, (signals, field)) = advanceCue field.Cue_ field.Definitions_ field
 
@@ -1114,14 +1120,6 @@ module Field =
             | CueSystem.Fin -> updateDefinitions (constant field.DefinitionsOriginal_) field
             | _ -> updateDefinitions (constant definitions) field
         let field = updateCue (constant cue) field
-
-        // advance dialog
-        let field =
-            match field.DialogOpt_ with
-            | Some dialog ->
-                let dialog = Dialog.advance (detokenize field) time dialog
-                updateDialogOpt (constant (Some dialog)) field
-            | None -> field
 
         // advance portal
         let (signals, field) =

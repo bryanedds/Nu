@@ -427,7 +427,17 @@ type RandMap =
                                 objects.[0] <- object
                                 stairsCreated <- true
                             match objectRef.Properties.TryGetValue "I" with
-                            | (true, propStr) when i = cursor.X && j = cursor.Y && propStr.Contains "ChestSpawn" -> ()
+                            | (true, propStr) when i = cursor.X && j = cursor.Y && propStr.Contains "ChestSpawn" ->
+                                () // do not spawn in origin section
+                            | (true, propStr) when propStr.Contains "PortalSpawn" ->
+                                let x = objectRef.X + double i * double Constants.Field.RoomSize.X * double mapTmx.TileWidth
+                                let y = objectRef.Y + double j * double Constants.Field.RoomSize.Y * double mapTmx.TileHeight
+                                let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
+                                let portalIndex = "[Room " + string i + " " + string j + "]"
+                                let portalInfo = "[Portal AirPortal " + portalIndex + " Downward [" + fieldName + "Room " + string floor + " " + string i + " " + string j + "] South]"
+                                object.Properties.Add ("I", portalInfo)
+                                propId <- inc propId
+                                objects.Add object
                             | (_, _) ->
                                 let x = objectRef.X + double i * double Constants.Field.RoomSize.X * double mapTmx.TileWidth
                                 let y = objectRef.Y + double j * double Constants.Field.RoomSize.Y * double mapTmx.TileHeight

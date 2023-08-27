@@ -123,6 +123,7 @@ type ConsumableType =
     | Revive
 
 type KeyItemType =
+    | NonExistentKey // for locks that can never be opened
     | BrassKey
     | IronKey
     | CopperKey
