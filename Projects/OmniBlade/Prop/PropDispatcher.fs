@@ -36,8 +36,10 @@ module PropDispatcher =
                 match prop.Prop.PropData with
                 | Sprite _ ->
                     BodyEmpty
-                | Portal _ | Switch _ ->
-                    BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                | Portal _ ->
+                    BodyBox { Size = v3Dup 0.9f; TransformOpt = None; PropertiesOpt = None }
+                | Switch _ ->
+                    BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None }
                 | SavePoint _ ->
                     BodySphere { Radius = 0.1f; TransformOpt = None; PropertiesOpt = None }
                 | Door _ ->
@@ -63,7 +65,10 @@ module PropDispatcher =
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
                         | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
-                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                        | MadTrixterNpc | HeavyArmorosNpc
+                        | TreantNpc | LilithNpc | LichKingNpc
+                        | PrototypeNpc | Prototype2Npc | MachineManNpc
+                        | LamiaNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                         | AraneaImplicitumNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Shopkeep (_, _, _, requirements) ->
@@ -198,7 +203,10 @@ module PropDispatcher =
                                 | RiainNpc -> (Assets.Field.RiainAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | PericNpc -> (Assets.Field.PericAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
-                                | MadTrixterNpc | HeavyArmorosNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | MadTrixterNpc | HeavyArmorosNpc
+                                | TreantNpc | LilithNpc | LichKingNpc
+                                | PrototypeNpc | Prototype2Npc | MachineManNpc
+                                | LamiaNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | AraneaImplicitumNpc -> (Assets.Field.BossAnimationSheet, Constants.Gameplay.BossSize)
                             let (row, column) =
                                 match npcType with
@@ -212,6 +220,13 @@ module PropDispatcher =
                                 | NostrusNpc -> (3, 0)
                                 | MadTrixterNpc -> (4, 0)
                                 | HeavyArmorosNpc -> (5, 0)
+                                | TreantNpc -> (6, 0)
+                                | LilithNpc -> (7, 0)
+                                | LichKingNpc -> (8, 0)
+                                | PrototypeNpc -> (9, 0)
+                                | Prototype2Npc -> (10, 0)
+                                | MachineManNpc -> (11, 0)
+                                | LamiaNpc -> (12, 0)
                                 | AraneaImplicitumNpc -> (0, 0)
                             let direction =
                                 match directionOpt with
