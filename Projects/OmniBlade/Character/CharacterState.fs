@@ -16,6 +16,7 @@ type [<SymbolicExpansion>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
       AbsorbCreep : single
+      Boss : bool
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list
@@ -58,7 +59,11 @@ type [<SymbolicExpansion>] CharacterState =
     static member burndownStatuses burndown state =
         let statuses =
             Map.fold (fun statuses status burndown2 ->
-                let burndown3 = burndown2 - burndown
+                let burndownScalar = // boss debuffs burndown twice as fast
+                    if state.Boss && StatusType.debuff status
+                    then 2.0f
+                    else 1.0f
+                let burndown3 = burndown2 - burndown * burndownScalar
                 if burndown3 <= 0.0f
                 then Map.remove status statuses
                 else Map.add status burndown3 statuses)
@@ -96,6 +101,7 @@ type [<SymbolicExpansion>] CharacterState =
     static member make (characterData : CharacterData) hitPoints techPoints expPoints weaponOpt armorOpt accessories =
         let archetypeType = characterData.ArchetypeType
         let absorbCreep = characterData.AbsorbCreep
+        let boss = characterData.Boss
         let level = Algorithms.expPointsToLevel expPoints
         let enchantments = Algorithms.enchantments accessories archetypeType level
         let statuses = Map.ofSeqBy (fun status -> (status, Single.MaxValue)) enchantments
@@ -104,6 +110,7 @@ type [<SymbolicExpansion>] CharacterState =
             { ArchetypeType = archetypeType
               ExpPoints = expPoints
               AbsorbCreep = absorbCreep
+              Boss = boss
               WeaponOpt = weaponOpt
               ArmorOpt = armorOpt
               Accessories = accessories
@@ -125,6 +132,7 @@ type [<SymbolicExpansion>] CharacterState =
             { ArchetypeType = Apprentice
               ExpPoints = 0
               AbsorbCreep = 1.0f
+              Boss = false
               WeaponOpt = None
               ArmorOpt = None
               Accessories = []

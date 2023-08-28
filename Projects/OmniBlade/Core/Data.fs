@@ -133,6 +133,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
     //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequel
     //| Provoke of CharacterIndex - maybe in the sequel
 
+    // TODO: make this a property.
     static member debuff this =
         match this with
         | Poison -> true
@@ -143,6 +144,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> true
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> false
 
+    // TODO: make this a property.
     static member buff this =
         not (StatusType.debuff this)
 
