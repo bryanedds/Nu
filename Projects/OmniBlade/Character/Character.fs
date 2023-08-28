@@ -255,8 +255,8 @@ module Character =
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTech techData source target characters =
-        let (direct, splashed) = evaluateTargetType techData.TargetType source target characters
-        let targetsCount = Map.count direct + Map.count splashed
+        let (direct, splashing) = evaluateTargetType techData.TargetType source target characters
+        let targetsCount = Map.count direct + Map.count splashing
         let directResults =
             Map.fold (fun results _ target ->
                 let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary false targetsCount techData source target
@@ -268,7 +268,7 @@ module Character =
                 let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary true targetsCount techData source target
                 Map.add index (cancelled, affectsWounded, delta, added, removed) results)
                 Map.empty
-                direct
+                splashing
         let results = directResults @@ splashResults
         (techData.SpawnOpt, results)
 
