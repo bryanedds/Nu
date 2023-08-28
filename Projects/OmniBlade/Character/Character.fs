@@ -135,19 +135,28 @@ module Character =
     let evaluateTargetType targetType (source : Character) (target : Character) characters =
         match targetType with
         | SingleTarget _ ->
-            Map.singleton target.CharacterIndex target
+            (Map.singleton target.CharacterIndex target, Map.empty)
+        | AllTarget (aimType, splashDamage) ->
+            let all =
+                characters |>
+                evalAimType aimType target
+            if splashDamage
+            then (Map.singleton target.CharacterIndex target, Map.remove target.CharacterIndex all)
+            else (all, Map.empty)
         | ProximityTarget (radius, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - source.Bottom
-                v.Magnitude <= radius)
+                v.Magnitude <= radius) |>
+            fun result -> (result, Map.empty)
         | RadialTarget (radius, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
-                v.Magnitude <= radius)
+                v.Magnitude <= radius) |>
+            fun result -> (result, Map.empty)
         | LineTarget (offset, aimType) ->
             characters |>
             evalAimType aimType target |>
@@ -158,7 +167,8 @@ module Character =
                     let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
                     let d = r.Magnitude
                     d <= offset 
-                else false)
+                else false) |>
+            fun result -> (result, Map.empty)
         | SegmentTarget (offset, aimType) ->
             characters |>
             evalAimType aimType target |>
@@ -171,26 +181,26 @@ module Character =
                         let d = r.Magnitude
                         d <= offset
                     else false
-                else false)
+                else false) |>
+            fun result -> (result, Map.empty)
         | VerticalTarget (width, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let x = target.Bottom.X
                 character.Bottom.X >= x - width &&
-                character.Bottom.X <= x + width)
+                character.Bottom.X <= x + width) |>
+            fun result -> (result, Map.empty)
         | HorizontalTarget (width, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
                 let y = target.Bottom.Y
                 character.Bottom.Y >= y - width &&
-                character.Bottom.Y <= y + width)
-        | AllTarget aimType ->
-            characters |>
-            evalAimType aimType target
+                character.Bottom.Y <= y + width) |>
+            fun result -> (result, Map.empty)
 
-    let evalTechUnary (targetCount : int) techData source (target : Character) =
+    let evalTechUnary splash (targetCount : int) techData source (target : Character) =
         let efficacy =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
@@ -214,6 +224,10 @@ module Character =
                 | Protect -> 0.75f
                 | _ -> techData.Scalar
             else techData.Scalar
+        let splashScalar =
+            if splash
+            then 1.0f
+            else 0.333f
         let splitScalar =
             // NOTE: enemy techs power is not split but generally reduced.
             if source.Ally then
@@ -231,24 +245,31 @@ module Character =
             | Critical -> 1.0f
             | _ -> 0.0f
         if techData.Curative then
-            let healing = single efficacy * techScalar * splitScalar |> int |> max 1
+            let healing = single efficacy * techScalar * splashScalar * splitScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage = (single efficacy * affinityScalar * techScalar * splitScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            let damage = (single efficacy * affinityScalar * techScalar * splashScalar * splitScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTech techData source target characters =
-        let targets = evaluateTargetType techData.TargetType source target characters
-        let targetsCount = Map.count targets
-        let results =
+        let (direct, splashed) = evaluateTargetType techData.TargetType source target characters
+        let targetsCount = Map.count direct + Map.count splashed
+        let directResults =
             Map.fold (fun results _ target ->
-                let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary targetsCount techData source target
+                let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary false targetsCount techData source target
                 Map.add index (cancelled, affectsWounded, delta, added, removed) results)
                 Map.empty
-                targets
+                direct
+        let splashResults =
+            Map.fold (fun results _ target ->
+                let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary true targetsCount techData source target
+                Map.add index (cancelled, affectsWounded, delta, added, removed) results)
+                Map.empty
+                direct
+        let results = directResults @@ splashResults
         (techData.SpawnOpt, results)
 
     let getPoiseType character =
