@@ -399,9 +399,22 @@ module BattleDispatcher =
                              Entity.Center := character.BottomOriginalOffset
                              Entity.Elevation == Constants.Battle.GuiBackgroundElevation
                              Entity.Fill := single character.HitPoints / single character.HitPointsMax
-                             Entity.FillColor := if character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA 0.75f else Color.Red.WithA 0.75f
+                             Entity.FillColor :=
+                                (let pulseTime = battle.UpdateTime % Constants.Battle.CharacterFillColorPulseDuration
+                                 let pulseProgress = single pulseTime / single Constants.Battle.CharacterFillColorPulseDuration
+                                 let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f) / byte 2 + byte 64
+                                 match character.AutoBattleOpt with
+                                 | Some autoBattle ->
+                                    if autoBattle.AutoTechOpt.IsSome then Color.Red.WithA8 pulseIntensity
+                                    elif autoBattle.ChargeTech then Color.Purple.WithA8 pulseIntensity
+                                    elif character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA8 pulseIntensity
+                                    else Color.Red.WithA8 (byte 191)
+                                 | None ->
+                                    if character.Statuses.ContainsKey Poison
+                                    then Color.LawnGreen.WithA8 pulseIntensity
+                                    else Color.Red.WithA8 (byte 191))
                              Entity.BorderImage == Assets.Battle.HealthBorderImage
-                             Entity.BorderColor == Color.White]
+                             Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 255)] // TODO: use constant.
 
                          // tech bar
                          if character.Ally then
@@ -413,7 +426,7 @@ module BattleDispatcher =
                                 Entity.Fill := single character.TechPoints / single character.TechPointsMax
                                 Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA 0.75f
                                 Entity.BorderImage == Assets.Battle.TechBorderImage
-                                Entity.BorderColor == Color.White]]]
+                                Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 255)]]]
 
              // inputs condition
              if battle.Running then

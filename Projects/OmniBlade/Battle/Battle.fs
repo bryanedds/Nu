@@ -110,7 +110,8 @@ module Battle =
 
     type [<ReferenceEquality; SymbolicExpansion>] Battle =
         private
-            { BattleState_ : BattleState
+            { UpdateTime_ : int64
+              BattleState_ : BattleState
               Characters_ : Map<CharacterIndex, Character>
               Inventory_ : Inventory
               PrizePool_ : PrizePool
@@ -125,6 +126,7 @@ module Battle =
               DialogOpt_ : Dialog option }
 
         (* Local Properties *)
+        member this.UpdateTime = this.UpdateTime_
         member this.Running = match this.BattleState with BattleRunning _ -> true | _ -> false
         member this.BattleState = this.BattleState_
         member this.Characters = this.Characters_
@@ -936,6 +938,9 @@ module Battle =
         spawnEnemies time [spawnType] battle
 
     (* High-Level Operations (signal-producing) *)
+
+    let private advanceUpdateTime field =
+        { field with UpdateTime_ = inc field.UpdateTime_ }
 
     let private advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
         match tryGetCharacter sourceIndex battle with
@@ -1906,6 +1911,10 @@ module Battle =
 
     and advance time (battle : Battle) : Signal list * Battle =
 
+        // advance field time
+        let battle =
+            advanceUpdateTime battle
+
         // advance message
         let battle =
             updateMessageOpt (function
@@ -1942,7 +1951,8 @@ module Battle =
         let tileIndexOffset = battleData.BattleTileIndexOffset
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         let battle =
-            { BattleState_ = BattleReady time
+            { UpdateTime_ = 0L
+              BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
               PrizePool_ = prizePool
@@ -1960,7 +1970,8 @@ module Battle =
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
         | Some battle ->
-            { BattleState_ = BattleQuit
+            { UpdateTime_ = 0L
+              BattleState_ = BattleQuit
               Characters_ = Map.empty
               Inventory_ = Inventory.empty
               PrizePool_ = PrizePool.empty

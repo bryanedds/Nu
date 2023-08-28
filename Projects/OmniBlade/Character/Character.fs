@@ -311,8 +311,8 @@ module Character =
 
     let getAnimationEmission time (character : Character) =
         if character.MaterializationOpt.IsNone then
-            let pulseTime = time % Constants.Battle.CharacterPulseDuration
-            let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseDuration
+            let pulseTime = time % Constants.Battle.CharacterSpritePulseDuration
+            let pulseProgress = single pulseTime / single Constants.Battle.CharacterSpritePulseDuration
             let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
             let statuses = character.Statuses
             if character.Wounded then Color.Zero

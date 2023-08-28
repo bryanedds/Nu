@@ -1102,7 +1102,8 @@ module Field =
     let advance time (field : Field) =
 
         // advance field time
-        let field = advanceUpdateTime field
+        let field =
+            advanceUpdateTime field
 
         // advance dialog
         let field =
@@ -1113,7 +1114,8 @@ module Field =
             | None -> field
 
         // advance cue
-        let (cue, definitions, (signals, field)) = advanceCue field.Cue_ field.Definitions_ field
+        let (cue, definitions, (signals, field)) =
+            advanceCue field.Cue_ field.Definitions_ field
 
         // reset cue definitions if finished
         let field =
