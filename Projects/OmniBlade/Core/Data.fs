@@ -253,24 +253,24 @@ type AimType =
 
 type TargetType =
     | SingleTarget of AimType
+    | AllTarget of AimType * bool
     | ProximityTarget of single * AimType
     | RadialTarget of single * AimType
     | LineTarget of single * AimType
     | SegmentTarget of single * AimType
     | VerticalTarget of single * AimType
     | HorizontalTarget of single * AimType
-    | AllTarget of AimType
 
     static member getAimType targetType =
         match targetType with
         | SingleTarget aimType -> aimType
+        | AllTarget (aimType, _) -> aimType
         | ProximityTarget (_, aimType) -> aimType
         | RadialTarget (_, aimType) -> aimType
         | LineTarget (_, aimType) -> aimType
         | SegmentTarget (_, aimType) -> aimType
         | VerticalTarget (_, aimType) -> aimType
         | HorizontalTarget (_, aimType) -> aimType
-        | AllTarget aimType -> aimType
 
 type TechType =
     | Critical
