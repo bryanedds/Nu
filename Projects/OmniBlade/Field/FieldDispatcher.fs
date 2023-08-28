@@ -243,7 +243,7 @@ module FieldDispatcher =
                 just field
 
             | MenuTechsOpen ->
-                let state = MenuTechs { TeamIndex = 0 }
+                let state = MenuTechs { TeamIndex = 0; TechIndexOpt = None }
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
                 just field
             
@@ -258,7 +258,26 @@ module FieldDispatcher =
                         field
                 just field
             
-            | MenuTechsSelect _ ->
+            | MenuTechsSelect techIndex ->
+                let field =
+                    Field.updateMenu (fun menu ->
+                        let state =
+                            match menu.MenuState with
+                            | MenuTechs menuTech -> MenuTechs { menuTech with TechIndexOpt = Some techIndex }
+                            | state -> state
+                        { menu with MenuState = state })
+                        field
+                just field
+            
+            | MenuTechClose ->
+                let field =
+                    Field.updateMenu (fun menu ->
+                        let state =
+                            match menu.MenuState with
+                            | MenuTechs menuTech -> MenuTechs { menuTech with TechIndexOpt = None }
+                            | state -> state
+                        { menu with MenuState = state })
+                        field
                 just field
 
             | MenuKeyItemsOpen ->
@@ -784,7 +803,8 @@ module FieldDispatcher =
                  | MenuTechs _ ->
                     Content.panel "Techs"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage
+                         Entity.Enabled := match field.Menu.MenuState with MenuTechs techs -> techs.TechIndexOpt.IsNone | _ -> true]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                          yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
                             match menu.MenuState with
@@ -876,6 +896,45 @@ module FieldDispatcher =
                             [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text := menuUse.MenuUseLine3]]
                  | None -> ()
+
+                 // tech
+                 match field.Menu.MenuState with
+                 | MenuTechs techs ->
+                    match techs.TechIndexOpt with
+                    | Some techIndex ->
+                        let techs =
+                            match field.Menu.MenuState with
+                            | MenuTechs menuTech ->
+                                match Map.tryFind menuTech.TeamIndex field.Team with
+                                | Some teammate -> teammate.Techs |> Seq.indexed |> Map.ofSeq
+                                | None -> Map.empty
+                            | _ -> Map.empty
+                        match techs.TryGetValue techIndex with
+                        | (true, techType) ->
+                            match Data.Value.Techs.TryGetValue techType with
+                            | (true, tech) ->
+                                Content.panel "Tech"
+                                    [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
+                                     Entity.LabelImage == Assets.Gui.DialogFatImage]
+                                    [Content.button "Close"
+                                        [Entity.PositionLocal == v3 810.0f 162.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                                         Entity.UpImage == asset "Field" "CloseButtonUp"
+                                         Entity.DownImage == asset "Field" "CloseButtonDown"
+                                         Entity.ClickEvent => MenuTechClose]
+                                     Content.text "Line1"
+                                        [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                         Entity.Text := string tech.TechType]
+                                     Content.text "Line2"
+                                        [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                         Entity.Text := "TP Cost: " + string tech.TechCost]
+                                     Content.text "Line3"
+                                        [Entity.PositionLocal == v3 66.0f -66.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 800.0f 192.0f 0.0f
+                                         Entity.Justification == Unjustified true
+                                         Entity.Text := tech.Description]]
+                            | (false, _) -> ()
+                        | (false, _) -> ()
+                    | None -> ()
+                 | _ -> ()
 
                  // shop
                  match field.ShopOpt with

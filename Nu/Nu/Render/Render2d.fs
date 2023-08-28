@@ -545,25 +545,23 @@ type [<ReferenceEquality>] GlRenderer2d =
                             colorSdl.b <- color.B8
                             colorSdl.a <- color.A8
 
-                            // get text metrics
-                            let mutable width = 0
-                            let mutable height = 0
-                            SDL_ttf.TTF_SizeUNICODE (font, text, &width, &height) |> ignore
-                            let width = single (width * Constants.Render.VirtualScalar)
-                            let height = single (height * Constants.Render.VirtualScalar)
-
-                            // justify
+                            // render text to surface
                             match justification with
                             | Unjustified wrapped ->
                                 let textSurfacePtr =
                                     if wrapped
-                                    then SDL_ttf.TTF_RenderUNICODE_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
+                                    then SDL_ttf.TTF_RenderUNICODE_Blended_Wrapped (font, text, colorSdl, uint32 (size.X / Constants.Render.VirtualScalar2.X))
                                     else SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
                                 let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
                                 let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
                                 let offsetY = size.Y - textSurfaceHeight
                                 (v2 0.0f offsetY, textSurface, textSurfacePtr)
                             | Justified (h, v) ->
+                                let mutable width = 0
+                                let mutable height = 0
+                                SDL_ttf.TTF_SizeUNICODE (font, text, &width, &height) |> ignore
+                                let width = single (width * Constants.Render.VirtualScalar)
+                                let height = single (height * Constants.Render.VirtualScalar)
                                 let textSurfacePtr = SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
                                 let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
                                 let offsetX =
