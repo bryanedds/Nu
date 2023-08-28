@@ -306,6 +306,13 @@ module Battle =
     let updateEnemies updater battle =
         updateEnemiesIf tautology2 updater battle
 
+    let private finalizeMaterializations battle =
+        updateCharacters (fun character ->
+            match character.MaterializationOpt with
+            | Some Materializing -> Character.materialized character
+            | Some _ | None -> character)
+            battle
+
     let private populateAlliesConjureCharges battle =
         updateAllies (fun ally ->
             if Character.hasConjureTechs ally
@@ -1326,6 +1333,7 @@ module Battle =
                                     | Some hop -> withSignal (DisplayHop hop) battle
                                     | None -> just battle
                                 elif localTime > techAnimationData.TechStop then
+                                    let battle = if techData.SpawnOpt.IsSome then finalizeMaterializations battle else battle
                                     let (techCost, _, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->

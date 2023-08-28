@@ -538,6 +538,9 @@ module Character =
     let dematerialize time character =
         { character with CharacterAnimationState_ = CharacterAnimationState.dematerialize time character.CharacterAnimationState_ }
 
+    let materialized character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.materialized character.CharacterAnimationState_ }
+
     let face direction character =
         { character with CharacterAnimationState_ = CharacterAnimationState.face direction character.CharacterAnimationState_ }
 
