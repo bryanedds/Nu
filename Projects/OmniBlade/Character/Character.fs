@@ -485,12 +485,12 @@ module Character =
         // choose a tech
         let (techOpt, isChargeTech) =
 
-            // see if we're charged
+            // see if we're charged. NOTE: silence only blocks non-enemy, non-charge techs.
             match source.TechChargeOpt with
             | Some (_, chargeAmount, chargeTech) when chargeAmount >= Constants.Battle.ChargeMax -> (Some chargeTech, true)
             | Some _ | None ->
                 if  Gen.randomf < Option.defaultValue 0.0f source.CharacterState_.TechProbabilityOpt &&
-                    not (Map.containsKey Silence source.Statuses) then // silence only blocks non-charge techs
+                    not (Map.containsKey Silence source.Statuses) then
                     let techOpt = CharacterState.tryGetTechRandom source.CharacterState_
                     (techOpt, false)
                 else (None, false)

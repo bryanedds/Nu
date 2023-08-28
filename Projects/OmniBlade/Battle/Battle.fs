@@ -1736,8 +1736,11 @@ module Battle =
             | Tech techType ->
                 match Data.Value.Techs.TryGetValue techType with
                 | (true, _) ->
-                    if source.Healthy && not (Map.containsKey Sleep source.Statuses) && not (Map.containsKey Silence source.Statuses) then
-                        let targetIndexOpt = evalRetarget false targetIndexOpt battle // TODO: consider affecting wounded.
+                    if  source.Healthy &&
+                        not (Map.containsKey Sleep source.Statuses) &&
+                        (not (Map.containsKey Silence source.Statuses) || // NOTE: silence only blocks non-enemy, non-charge techs.
+                         source.Enemy && match source.TechChargeOpt with Some (_, chargeAmount, _) -> chargeAmount >= Constants.Battle.ChargeMax | _ -> false) then
+                        let targetIndexOpt = evalRetarget false targetIndexOpt battle // TODO: consider affecting wounded, such as for Revive tech.
                         let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         updateCurrentCommandOpt (constant (Some command)) battle
                     else battle
