@@ -1443,7 +1443,7 @@ module Battle =
                 if containsCharacterHealthy sourceIndex battle && containsCharacterHealthy observerIndex battle && not ((getCharacter observerIndex battle).Statuses.ContainsKey Sleep) then
                     match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (CounterAttack None) messageOpt time localTime battle with
                     | (true, battle) ->
-                        let battle = characterCounterAttack observerIndex sourceIndex battle
+                        let battle = prependActionCommand (ActionCommand.make Attack observerIndex (Some sourceIndex) None) battle
                         let battle = updateCurrentCommandOpt (constant None) battle
                         just battle
                     | (false, battle) -> just battle
