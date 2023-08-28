@@ -49,6 +49,7 @@ type FieldMessage =
     | MenuTechsOpen
     | MenuTechsAlly of int
     | MenuTechsSelect of int
+    | MenuTechClose
     | MenuKeyItemsOpen
     | MenuKeyItemsPageUp
     | MenuKeyItemsPageDown

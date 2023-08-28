@@ -86,7 +86,8 @@ type MenuInventory =
     { InventoryPage : int }
 
 type MenuTechs =
-    { TeamIndex : int }
+    { TeamIndex : int
+      TechIndexOpt : int option }
 
 type MenuKeyItems =
     { KeyItemsPage : int }

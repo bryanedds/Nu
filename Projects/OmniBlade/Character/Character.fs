@@ -224,10 +224,6 @@ module Character =
                 | Protect -> 0.75f
                 | _ -> techData.Scalar
             else techData.Scalar
-        let splashScalar =
-            if splash
-            then 0.5f
-            else 1.0f
         let splitScalar =
             // NOTE: enemy techs power is not split but generally reduced.
             if source.Ally then
@@ -238,6 +234,10 @@ module Character =
                 if techData.Split
                 then Constants.Battle.EnemySplitScalar
                 else 1.0f
+        let splashScalar =
+            if splash
+            then 0.5f
+            else 1.0f
         let specialAddend =
             // HACK: special case for Critical tech to get desired behavior of 1 more damage than normal attack in the
             // beginning of the game.
@@ -245,13 +245,13 @@ module Character =
             | Critical -> 1.0f
             | _ -> 0.0f
         if techData.Curative then
-            let healing = single efficacy * techScalar * splashScalar * splitScalar |> int |> max 1
+            let healing = single efficacy * techScalar * splitScalar * splashScalar |> int |> max 1
             (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage = (single efficacy * affinityScalar * techScalar * splashScalar * splitScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            let damage = (single efficacy * affinityScalar * techScalar * splitScalar * splashScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTech techData source target characters =
