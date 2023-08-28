@@ -226,7 +226,7 @@ module Character =
             else techData.Scalar
         let splashScalar =
             if splash
-            then 0.333f
+            then 0.5f
             else 1.0f
         let splitScalar =
             // NOTE: enemy techs power is not split but generally reduced.
