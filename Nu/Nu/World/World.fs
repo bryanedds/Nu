@@ -422,6 +422,7 @@ module WorldModule3 =
                  StaticSpriteFacet () :> Facet
                  AnimatedSpriteFacet () :> Facet
                  TextFacet () :> Facet
+                 ButtonFacet () :> Facet
                  BasicStaticSpriteEmitterFacet () :> Facet
                  EffectFacet () :> Facet
                  RigidBodyFacet () :> Facet

@@ -459,6 +459,113 @@ module TextFacetModule =
             else world
 
 [<AutoOpen>]
+module ButtonFacetModule =
+
+    type Entity with
+        member this.GetDown world : bool = this.Get (nameof this.Down) world
+        member this.SetDown (value : bool) world = this.Set (nameof this.Down) value world
+        member this.Down = lens (nameof this.Down) this this.GetDown this.SetDown
+        member this.GetDownTextOffset world : Vector2 = this.Get (nameof this.DownTextOffset) world
+        member this.SetDownTextOffset (value : Vector2) world = this.Set (nameof this.DownTextOffset) value world
+        member this.DownTextOffset = lens (nameof this.DownTextOffset) this this.GetDownTextOffset this.SetDownTextOffset
+        member this.GetUpImage world : Image AssetTag = this.Get (nameof this.UpImage) world
+        member this.SetUpImage (value : Image AssetTag) world = this.Set (nameof this.UpImage) value world
+        member this.UpImage = lens (nameof this.UpImage) this this.GetUpImage this.SetUpImage
+        member this.GetDownImage world : Image AssetTag = this.Get (nameof this.DownImage) world
+        member this.SetDownImage (value : Image AssetTag) world = this.Set (nameof this.DownImage) value world
+        member this.DownImage = lens (nameof this.DownImage) this this.GetDownImage this.SetDownImage
+        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
+        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
+        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
+        member this.GetClickSoundOpt world : Sound AssetTag option = this.Get (nameof this.ClickSoundOpt) world
+        member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.ClickSoundOpt) value world
+        member this.ClickSoundOpt = lens (nameof this.ClickSoundOpt) this this.GetClickSoundOpt this.SetClickSoundOpt
+        member this.GetClickSoundVolume world : single = this.Get (nameof this.ClickSoundVolume) world
+        member this.SetClickSoundVolume (value : single) world = this.Set (nameof this.ClickSoundVolume) value world
+        member this.ClickSoundVolume = lens (nameof this.ClickSoundVolume) this this.GetClickSoundVolume this.SetClickSoundVolume
+        member this.UpEvent = Events.Up --> this
+        member this.DownEvent = Events.Down --> this
+        member this.ClickEvent = Events.Click --> this
+
+    /// Augments an entity with button behavior.
+    type ButtonFacet () =
+        inherit Facet (false)
+
+        static let handleMouseLeftDown evt world =
+            let entity = evt.Subscriber : Entity
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled then
+                        let world = entity.SetDown true world
+                        let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) (entity.GetDownTextOffset world) world
+                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
+                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static let handleMouseLeftUp evt world =
+            let entity = evt.Subscriber : Entity
+            let wasDown = entity.GetDown world
+            let world = entity.SetDown false world
+            let world = entity.SetTextOffset v2Zero world
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled && wasDown then
+                        let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
+                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
+                        let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
+                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
+                        let world =
+                            match entity.GetClickSoundOpt world with
+                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                            | None -> world
+                        (Resolve, world)
+                    else (Cascade, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static member Properties =
+            [define Entity.Down false
+             define Entity.DownTextOffset v2Zero
+             define Entity.UpImage Assets.Default.ButtonUp
+             define Entity.DownImage Assets.Default.ButtonDown
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.ClickSoundOpt (Some Assets.Default.Sound)
+             define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
+
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            world
+
+        override this.Render (entity, world) =
+            let mutable transform = entity.GetTransform world
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
+            World.enqueueLayeredOperation2d
+                { Elevation = spriteTransform.Elevation
+                  Horizon = spriteTransform.Horizon
+                  AssetTag = AssetTag.generalize spriteImage
+                  RenderOperation2d =
+                    RenderSprite
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Emission = Color.Zero
+                          Flip = FlipNone }}
+                world
+
+[<AutoOpen>]
 module EffectFacetModule =
 
     /// The timing with which an effect should be evaluated in a frame.
