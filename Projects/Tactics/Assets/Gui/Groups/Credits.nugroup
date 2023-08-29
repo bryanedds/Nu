@@ -8,7 +8,7 @@
     [Position [-96 -240 0]]
     [Text Back]]]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
@@ -16,7 +16,7 @@
     [Size [864 90 0]]
     [Text Credits]]]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code: Bryan Edds"]]
@@ -24,7 +24,7 @@
     [Size [864 90 0]]
     [Text "Code: Bryan Edds"]]]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: FinalBossBlues, SelielTheShaper, and more!"]]
@@ -32,7 +32,7 @@
     [Size [864 90 0]]
     [Text "Art: FinalBossBlues, SelielTheShaper, and more!"]]]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Music: DrassRay, JPS, OwlThery, Pdk, PeriTune, Suat"]]

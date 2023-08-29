@@ -119,36 +119,12 @@ module ButtonDispatcherModule =
 [<AutoOpen>]
 module LabelDispatcherModule =
 
-    type Entity with
-        member this.GetLabelImage world : Image AssetTag = this.Get (nameof this.LabelImage) world
-        member this.SetLabelImage (value : Image AssetTag) world = this.Set (nameof this.LabelImage) value world
-        member this.LabelImage = lens (nameof this.LabelImage) this this.GetLabelImage this.SetLabelImage
-
     /// Gives an entity the base behavior of a gui label.
     type LabelDispatcher () =
         inherit GuiDispatcher ()
 
-        static member Properties =
-            [define Entity.LabelImage Assets.Default.Label]
-
-        override this.Render (entity, world) =
-            let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
-            let spriteImage = entity.GetLabelImage world
-            World.enqueueLayeredOperation2d
-                { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Horizon
-                  AssetTag = AssetTag.generalize spriteImage
-                  RenderOperation2d =
-                    RenderSprite
-                        { Transform = spriteTransform
-                          InsetOpt = ValueNone
-                          Image = spriteImage
-                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                          Blend = Transparent
-                          Emission = Color.Zero
-                          Flip = FlipNone }}
-                world
+        static member Facets =
+            [typeof<LabelFacet>]
 
         override this.GetQuickSize (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
@@ -158,45 +134,19 @@ module LabelDispatcherModule =
 [<AutoOpen>]
 module TextDispatcherModule =
 
-    type Entity with
-        member this.GetBackgroundImageOpt world : Image AssetTag option = this.Get (nameof this.BackgroundImageOpt) world
-        member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackgroundImageOpt) value world
-        member this.BackgroundImageOpt = lens (nameof this.BackgroundImageOpt) this this.GetBackgroundImageOpt this.SetBackgroundImageOpt
-
     /// Gives an entity the base behavior of a gui text control.
     type TextDispatcher () =
         inherit GuiDispatcher ()
 
         static member Facets =
-            [typeof<TextFacet>]
+            [typeof<TextFacet>
+             typeof<BackdroppableFacet>]
 
         static member Properties =
-            [define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))
-             define Entity.BackgroundImageOpt None]
-
-        override this.Render (entity, world) =
-            match entity.GetBackgroundImageOpt world with
-            | Some spriteImage ->
-                let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
-                World.enqueueLayeredOperation2d
-                    { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Horizon
-                      AssetTag = AssetTag.generalize spriteImage
-                      RenderOperation2d =
-                        RenderSprite
-                            { Transform = spriteTransform
-                              InsetOpt = ValueNone
-                              Image = spriteImage
-                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                              Blend = Transparent
-                              Emission = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            | None -> world
+            [define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
         override this.GetQuickSize (entity, world) =
-            match entity.GetBackgroundImageOpt world with
+            match entity.GetBackdropImageOpt world with
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
                 | Some size -> size.V3
