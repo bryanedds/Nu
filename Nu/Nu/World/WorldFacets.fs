@@ -459,6 +459,46 @@ module TextFacetModule =
             else world
 
 [<AutoOpen>]
+module BackdroppableFacetModule =
+
+    type Entity with
+        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
+        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
+        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
+        member this.GetBackdropImageOpt world : Image AssetTag option = this.Get (nameof this.BackdropImageOpt) world
+        member this.SetBackdropImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackdropImageOpt) value world
+        member this.BackdropImageOpt = lens (nameof this.BackdropImageOpt) this this.GetBackdropImageOpt this.SetBackdropImageOpt
+
+    /// Augments an entity with optional backdrop behavior.
+    type BackdroppableFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: make this a constant.
+             define Entity.BackdropImageOpt None]
+
+        override this.Render (entity, world) =
+            match entity.GetBackdropImageOpt world with
+            | Some spriteImage ->
+                let mutable transform = entity.GetTransform world
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+                World.enqueueLayeredOperation2d
+                    { Elevation = spriteTransform.Elevation
+                      Horizon = spriteTransform.Horizon
+                      AssetTag = AssetTag.generalize spriteImage
+                      RenderOperation2d =
+                        RenderSprite
+                            { Transform = spriteTransform
+                              InsetOpt = ValueNone
+                              Image = spriteImage
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                              Blend = Transparent
+                              Emission = Color.Zero
+                              Flip = FlipNone }}
+                    world
+            | None -> world
+
+[<AutoOpen>]
 module ButtonFacetModule =
 
     type Entity with
@@ -474,9 +514,6 @@ module ButtonFacetModule =
         member this.GetDownImage world : Image AssetTag = this.Get (nameof this.DownImage) world
         member this.SetDownImage (value : Image AssetTag) world = this.Set (nameof this.DownImage) value world
         member this.DownImage = lens (nameof this.DownImage) this this.GetDownImage this.SetDownImage
-        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
-        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
-        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
         member this.GetClickSoundOpt world : Sound AssetTag option = this.Get (nameof this.ClickSoundOpt) world
         member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.ClickSoundOpt) value world
         member this.ClickSoundOpt = lens (nameof this.ClickSoundOpt) this this.GetClickSoundOpt this.SetClickSoundOpt
@@ -533,11 +570,11 @@ module ButtonFacetModule =
             else (Cascade, world)
 
         static member Properties =
-            [define Entity.Down false
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Down false
              define Entity.DownTextOffset v2Zero
              define Entity.UpImage Assets.Default.ButtonUp
              define Entity.DownImage Assets.Default.ButtonDown
-             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.ClickSoundOpt (Some Assets.Default.Sound)
              define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
@@ -564,6 +601,46 @@ module ButtonFacetModule =
                           Emission = Color.Zero
                           Flip = FlipNone }}
                 world
+
+[<AutoOpen>]
+module LabelFacetModule =
+
+    type Entity with
+        member this.GetLabelImage world : Image AssetTag = this.Get (nameof this.LabelImage) world
+        member this.SetLabelImage (value : Image AssetTag) world = this.Set (nameof this.LabelImage) value world
+        member this.LabelImage = lens (nameof this.LabelImage) this this.GetLabelImage this.SetLabelImage
+
+    /// Augments an entity with label behavior.
+    type LabelFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.LabelImage Assets.Default.Label]
+
+        override this.Render (entity, world) =
+            let mutable transform = entity.GetTransform world
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let spriteImage = entity.GetLabelImage world
+            World.enqueueLayeredOperation2d
+                { Elevation = spriteTransform.Elevation
+                  Horizon = spriteTransform.Horizon
+                  AssetTag = AssetTag.generalize spriteImage
+                  RenderOperation2d =
+                    RenderSprite
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Emission = Color.Zero
+                          Flip = FlipNone }}
+                world
+
+        override this.GetQuickSize (entity, world) =
+            match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
+            | Some size -> size.V3
+            | None -> Constants.Engine.EntitySizeGuiDefault
 
 [<AutoOpen>]
 module EffectFacetModule =

@@ -17,7 +17,7 @@
     [Position [0 -144 0]]
     [Text Exit]]]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Position [0 120 0]]

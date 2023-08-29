@@ -9,7 +9,7 @@
     [Text Back]]
    []]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
@@ -18,7 +18,7 @@
     [Text Credits]]
    []]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code + Music + SFX: Bryan Edds"]]
@@ -27,7 +27,7 @@
     [Text "Code + Music + SFX: Bryan Edds"]]
    []]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: MindChamber"]]

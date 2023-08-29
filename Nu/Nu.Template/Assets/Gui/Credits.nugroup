@@ -9,14 +9,14 @@
     [Position [0 -144 0]]
     [Text Back]]]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Position [0 144 0]]
     [Size [512 96 0]]
     [Text Credits]]]
   [TextDispatcher
-   [[BackgroundImageOpt
+   [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Position [0 0 0]]
