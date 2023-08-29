@@ -69,8 +69,8 @@ module AnimatedSpriteDispatcherModule =
 
         static member Properties =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
-             define Entity.CelRun 4
              define Entity.CelCount 16
+             define Entity.CelRun 4
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AnimationSheet Assets.Default.Block // TODO: use proper animated sheet.
              define Entity.Color Color.One

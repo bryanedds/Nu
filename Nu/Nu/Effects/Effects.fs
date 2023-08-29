@@ -198,7 +198,7 @@ and Aspect =
 and Content =
     | Nil // first to make default value when missing
     | StaticSprite of Image : Resource * Aspects : Aspect array * Content : Content
-    | AnimatedSprite of Image : Resource * Vector2i * CelRun : int * CelCount : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
+    | AnimatedSprite of Image : Resource * Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
     | TextSprite of Font : Resource * Text : string * Aspects : Aspect array * Content : Content
     | Billboard of Albedo : Resource * Metallic : Resource * Roughness : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * HeightMap : Resource * MinFilterOpt : OpenGL.TextureMinFilter option * MagFilterOpt : OpenGL.TextureMagFilter option * Aspects : Aspect array * Content : Content
     | StaticModel of Resource * Aspects : Aspect array * Content : Content
@@ -386,7 +386,7 @@ module EffectSystem =
         | Pow -> pow (value, value2)
         | Set -> value2
 
-    let private evalInset (celSize : Vector2i) celRun celCount delay playback effectSystem =
+    let private evalInset (celSize : Vector2i) celCount celRun delay playback effectSystem =
         // TODO: make sure Bounce playback works as intended!
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
         let celUnmodulated = int (effectSystem.EffectLocalTime / delay)
@@ -636,7 +636,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount delay playback aspects content slice history effectSystem =
+    and private evalAnimatedSprite resource (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -651,7 +651,7 @@ module EffectSystem =
             let cel = int (effectSystem.EffectLocalTime / delay)
 
             // eval inset
-            let inset = evalInset celSize celRun celCount delay playback effectSystem
+            let inset = evalInset celSize celCount celRun delay playback effectSystem
 
             // build animated sprite views
             let effectSystem =
@@ -930,8 +930,8 @@ module EffectSystem =
             effectSystem
         | StaticSprite (resource, aspects, content) ->
             evalStaticSprite resource aspects content slice history effectSystem
-        | AnimatedSprite (resource, celSize, celRun, celCount, delay, playback, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount delay playback aspects content slice history effectSystem
+        | AnimatedSprite (resource, celSize, celCount, celRun, delay, playback, aspects, content) ->
+            evalAnimatedSprite resource celSize celCount celRun delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
         | Billboard (resourceAlbedo, resourceMetallic, resourceRoughness, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, minFilterOpt, magFilterOpt, aspects, content) ->

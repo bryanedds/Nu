@@ -101,7 +101,7 @@ module EffectDescriptors =
           Content =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Battle.TornadoAnimationSheet),
-                 v2i 32 32, 8, 16, 2L, Once,
+                 v2i 32 32, 16, 8, 2L, Once,
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
 
@@ -145,7 +145,7 @@ module EffectDescriptors =
           Content =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Battle.DoubleCutAnimationSheet),
-                 v2i 48 48, 8, 10, 3L, Once,
+                 v2i 48 48, 10, 8, 3L, Once,
                  [|Size (v3 144.0f 144.0f 0.0f)|],
                  Nil) }
 
@@ -184,7 +184,7 @@ module EffectDescriptors =
           Content =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet),
-                v2i 78 78, 2, 4, 3L, Loop,
+                v2i 78 78, 4, 2, 3L, Loop,
                 [|Circle (radius, 2.0f, 98L); Size (v3 234.0f 234.0f 0.0f)|],
                 Nil) }
 
@@ -275,7 +275,7 @@ module EffectDescriptors =
           Content =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
-                v2i 100 100, 6, 36, 1L, Once, [||], Nil) }
+                v2i 100 100, 36, 6, 1L, Once, [||], Nil) }
 
     let dimensionalCast =
         let length = 60L
@@ -452,7 +452,7 @@ module EffectDescriptors =
         let sprite position =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
-              v2i 64 64, 5, 10, 3L, Once, [|Position position|], Nil)
+              v2i 64 64, 10, 5, 3L, Once, [|Position position|], Nil)
         { EffectName = "Purify"
           LifeTimeOpt = Some 54L
           Definitions = Map.empty
@@ -482,7 +482,7 @@ module EffectDescriptors =
         let explosionSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
-                 v2i 32 32, 4, 12, 2L, Once,
+                 v2i 32 32, 12, 4, 2L, Once,
                  [|Position (v3 0.0f -384.0f 0.0f)
                    Size (v3 96.0f 96.0f 0.0f)
                    Colors
@@ -511,7 +511,7 @@ module EffectDescriptors =
         let fireSpin aspects =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.FireSpinAnimationSheet),
-              v2i 100 100, 8, 61, 1L, Loop, aspects, Nil)
+              v2i 100 100, 61, 8, 1L, Loop, aspects, Nil)
         { EffectName = "Inferno"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty

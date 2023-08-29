@@ -83,12 +83,12 @@ module AnimatedSpriteFacetModule =
         member this.GetCelSize world : Vector2 = this.Get (nameof this.CelSize) world
         member this.SetCelSize (value : Vector2) world = this.Set (nameof this.CelSize) value world
         member this.CelSize = lens (nameof this.CelSize) this this.GetCelSize this.SetCelSize
-        member this.GetCelRun world : int = this.Get (nameof this.CelRun) world
-        member this.SetCelRun (value : int) world = this.Set (nameof this.CelRun) value world
-        member this.CelRun = lens (nameof this.CelRun) this this.GetCelRun this.SetCelRun
         member this.GetCelCount world : int = this.Get (nameof this.CelCount) world
         member this.SetCelCount (value : int) world = this.Set (nameof this.CelCount) value world
         member this.CelCount = lens (nameof this.CelCount) this this.GetCelCount this.SetCelCount
+        member this.GetCelRun world : int = this.Get (nameof this.CelRun) world
+        member this.SetCelRun (value : int) world = this.Set (nameof this.CelRun) value world
+        member this.CelRun = lens (nameof this.CelRun) this this.GetCelRun this.SetCelRun
         member this.GetAnimationStride world : int = this.Get (nameof this.AnimationStride) world
         member this.SetAnimationStride (value : int) world = this.Set (nameof this.AnimationStride) value world
         member this.AnimationStride = lens (nameof this.AnimationStride) this this.GetAnimationStride this.SetAnimationStride
@@ -122,8 +122,8 @@ module AnimatedSpriteFacetModule =
 
         static member Properties =
             [define Entity.CelSize (Vector2 (12.0f, 12.0f))
-             define Entity.CelRun 4
              define Entity.CelCount 16
+             define Entity.CelRun 4
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AnimationStride 1
              define Entity.AnimationSheet Assets.Default.Block
