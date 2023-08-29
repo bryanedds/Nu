@@ -405,48 +405,6 @@ module RadioButtonDispatcherModule =
             | None -> Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
-module FpsDispatcherModule =
-
-    type Entity with
-        member this.GetStartUpdateTime world : int64 = this.Get (nameof this.StartUpdateTime) world
-        member this.SetStartUpdateTime (value : int64) world = this.Set (nameof this.StartUpdateTime) value world
-        member this.StartUpdateTime = lens (nameof this.StartUpdateTime) this this.GetStartUpdateTime this.SetStartUpdateTime
-        member this.GetStartDateTime world : DateTimeOffset = this.Get (nameof this.StartDateTime) world
-        member this.SetStartDateTime (value : DateTimeOffset) world = this.Set (nameof this.StartDateTime) value world
-        member this.StartDateTime = lens (nameof this.StartDateTime) this this.GetStartDateTime this.SetStartDateTime
-
-    /// Gives an entity the base behavior of a gui FPS counter.
-    type FpsDispatcher () =
-        inherit TextDispatcher ()
-
-        static let resetIntermittent (entity : Entity) world =
-            let startDateTime = entity.GetStartDateTime world
-            let currentDateTime = DateTimeOffset.UtcNow
-            let elapsedDateTime = currentDateTime - startDateTime
-            if elapsedDateTime.TotalSeconds >= 5.0 then
-                let world = entity.SetStartUpdateTime world.UpdateTime world
-                entity.SetStartDateTime currentDateTime world
-            else world
-
-        static member Properties =
-            [nonPersistent Entity.StartUpdateTime 0L
-             nonPersistent Entity.StartDateTime DateTimeOffset.UtcNow]
-
-        override this.Update (entity, world) =
-            if entity.GetEnabled world then
-                let world = resetIntermittent entity world
-                let startDateTime = entity.GetStartDateTime world
-                let currentDateTime = DateTimeOffset.UtcNow
-                let elapsedDateTime = currentDateTime - startDateTime
-                let time = double (world.UpdateTime - entity.GetStartUpdateTime world)
-                let frames = time / elapsedDateTime.TotalSeconds
-                if not (Double.IsNaN frames) then
-                    let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
-                    entity.SetText framesStr world
-                else world
-            else world
-
-[<AutoOpen>]
 module FeelerDispatcherModule =
 
     type Entity with
@@ -634,6 +592,48 @@ module FillBarDispatcherModule =
             match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySize2dDefault
+
+[<AutoOpen>]
+module FpsDispatcherModule =
+
+    type Entity with
+        member this.GetStartUpdateTime world : int64 = this.Get (nameof this.StartUpdateTime) world
+        member this.SetStartUpdateTime (value : int64) world = this.Set (nameof this.StartUpdateTime) value world
+        member this.StartUpdateTime = lens (nameof this.StartUpdateTime) this this.GetStartUpdateTime this.SetStartUpdateTime
+        member this.GetStartDateTime world : DateTimeOffset = this.Get (nameof this.StartDateTime) world
+        member this.SetStartDateTime (value : DateTimeOffset) world = this.Set (nameof this.StartDateTime) value world
+        member this.StartDateTime = lens (nameof this.StartDateTime) this this.GetStartDateTime this.SetStartDateTime
+
+    /// Gives an entity the base behavior of a gui FPS counter.
+    type FpsDispatcher () =
+        inherit TextDispatcher ()
+
+        static let resetIntermittent (entity : Entity) world =
+            let startDateTime = entity.GetStartDateTime world
+            let currentDateTime = DateTimeOffset.UtcNow
+            let elapsedDateTime = currentDateTime - startDateTime
+            if elapsedDateTime.TotalSeconds >= 5.0 then
+                let world = entity.SetStartUpdateTime world.UpdateTime world
+                entity.SetStartDateTime currentDateTime world
+            else world
+
+        static member Properties =
+            [nonPersistent Entity.StartUpdateTime 0L
+             nonPersistent Entity.StartDateTime DateTimeOffset.UtcNow]
+
+        override this.Update (entity, world) =
+            if entity.GetEnabled world then
+                let world = resetIntermittent entity world
+                let startDateTime = entity.GetStartDateTime world
+                let currentDateTime = DateTimeOffset.UtcNow
+                let elapsedDateTime = currentDateTime - startDateTime
+                let time = double (world.UpdateTime - entity.GetStartUpdateTime world)
+                let frames = time / elapsedDateTime.TotalSeconds
+                if not (Double.IsNaN frames) then
+                    let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
+                    entity.SetText framesStr world
+                else world
+            else world
 
 [<AutoOpen>]
 module BasicStaticSpriteEmitterDispatcherModule =
