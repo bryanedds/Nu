@@ -405,14 +405,14 @@ module Content =
     /// Describe a radio button with the given initializers.
     let radioButton entityName initializers = entity<RadioButtonDispatcher> entityName initializers
 
-    /// Describe an fps gui with the given initializers.
-    let fps entityName initializers = entity<FpsDispatcher> entityName initializers
-
     /// Describe a feeler with the given initializers.
     let feeler entityName initializers = entity<FeelerDispatcher> entityName initializers
 
     /// Describe a fill bar with the given initializers.
     let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
+
+    /// Describe an fps gui with the given initializers.
+    let fps entityName initializers = entity<FpsDispatcher> entityName initializers
 
     /// Describe a 2d block with the given initializers.
     let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers
