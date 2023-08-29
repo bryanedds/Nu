@@ -319,6 +319,33 @@ module FieldDispatcher =
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = MenuClosed }) field
                 just field
 
+            | PartyMenuOpen ->
+                let field = Field.updatePartyMenu (fun partyMenu -> { partyMenu with PartyMenuState = PartyMenuOpened; PartyMenuSelections = [0] }) field
+                just field
+
+            | PartyMenuSelect teamIndex ->
+                let field =
+                    Field.updatePartyMenu (fun partyMenu ->
+                        if not (List.contains teamIndex partyMenu.PartyMenuSelections)
+                        then { partyMenu with PartyMenuSelections = partyMenu.PartyMenuSelections @ [teamIndex] }
+                        else partyMenu)
+                        field
+                just field
+
+            | PartyMenuDeselect teamIndex ->
+                let field =
+                    Field.updatePartyMenu (fun partyMenu ->
+                        if teamIndex <> 0
+                        then { partyMenu with PartyMenuSelections = List.remove ((=) teamIndex) partyMenu.PartyMenuSelections }
+                        else partyMenu)
+                        field
+                just field
+
+            | PartyMenuClose ->
+                let field = Field.arrangeTeam field.PartyMenu.PartyMenuSelections field
+                let field = Field.updatePartyMenu (constant { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }) field
+                just field
+
             | ShopBuy ->
                 let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopState = ShopBuying; ShopPage = 0 })) field
                 just field
@@ -416,6 +443,7 @@ module FieldDispatcher =
             | ProcessKeyInput ->
                 if  not (World.getSelectedScreenTransitioning world) &&
                     field.Menu.MenuState = MenuClosed &&
+                    field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                     CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&
                     Option.isNone field.ShopOpt &&
@@ -443,6 +471,7 @@ module FieldDispatcher =
             | ProcessTouchInput position ->
                 if  not (World.getSelectedScreenTransitioning world) &&
                     field.Menu.MenuState = MenuClosed &&
+                    field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                     CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&
                     Option.isNone field.ShopOpt &&
@@ -658,6 +687,7 @@ module FieldDispatcher =
                      Entity.Text == "Menu"
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
+                        field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
@@ -672,6 +702,7 @@ module FieldDispatcher =
                      Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
+                        field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.DialogOpt &&
@@ -680,7 +711,8 @@ module FieldDispatcher =
                         Field.touchingSavePoint field &&
                         not field.ScreenTransitioning &&
                         field.Team.Count > 3
-                     Entity.Text == "Party"]
+                     Entity.Text == "Party"
+                     Entity.ClickEvent => PartyMenuOpen]
 
                  // interact button
                  Content.button "Interact"
@@ -689,6 +721,7 @@ module FieldDispatcher =
                      Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
                         field.Menu.MenuState = MenuClosed &&
+                        field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
@@ -869,6 +902,59 @@ module FieldDispatcher =
 
                  // closed
                  | MenuClosed -> ()
+
+                 // party menu
+                 match field.PartyMenu.PartyMenuState with
+                 | PartyMenuOpened ->
+                    Content.panel "PartyMenu"
+                        [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
+                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                        [Content.button "Confirm"
+                            [Entity.PositionLocal == v3 810.0f 420.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
+                             Entity.EnabledLocal := field.PartyMenu.PartyMenuSelections.Length >= 3
+                             Entity.UpImage == asset "Field" "ConfirmButtonUp"
+                             Entity.DownImage == asset "Field" "ConfirmButtonDown"
+                             Entity.ClickEvent => PartyMenuClose]
+                         Content.text "Select"
+                            [Entity.PositionLocal == v3 168.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text == "Select Party:"]
+                         Content.text "Current"
+                            [Entity.PositionLocal == v3 516.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Text == "Current Party"]
+                         for (teamIndex, teammate) in field.Team.Pairs do
+                            let w =
+                                match field.Menu.MenuState with
+                                | MenuTechs _ -> 336.0f
+                                | MenuTeam _ | _ -> 252.0f
+                            let h = 72.0f
+                            let x = 144.0f
+                            let y = 339.0f - single teamIndex * 81.0f
+                            let enabled = field.PartyMenu.PartyMenuSelections.Length < 3 && not (List.contains teamIndex field.PartyMenu.PartyMenuSelections)
+                            Content.button ("Teammate+" + string teamIndex)
+                                [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
+                                 Entity.EnabledLocal := enabled
+                                 Entity.Text := CharacterType.getName teammate.CharacterType
+                                 Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                                 Entity.DownImage == Assets.Gui.ButtonBigDownImage
+                                 Entity.ClickEvent => PartyMenuSelect teamIndex]
+                         for i in 0 .. dec field.PartyMenu.PartyMenuSelections.Length do
+                            let teamIndex = field.PartyMenu.PartyMenuSelections.[i]
+                            let teammate = field.Team.[teamIndex]
+                            let w =
+                                match field.Menu.MenuState with
+                                | MenuTechs _ -> 336.0f
+                                | MenuTeam _ | _ -> 252.0f
+                            let h = 72.0f
+                            let x = 144.0f + 354.0f
+                            let y = 339.0f - single i * 81.0f
+                            Content.button ("Selected+" + string teamIndex)
+                                [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
+                                 Entity.EnabledLocal == (teamIndex <> 0)
+                                 Entity.Text := CharacterType.getName teammate.CharacterType
+                                 Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                                 Entity.DownImage == Assets.Gui.ButtonBigDownImage
+                                 Entity.ClickEvent => PartyMenuDeselect teamIndex]]
+                 | PartyMenuClosed -> ()
 
                  // use
                  match field.Menu.MenuUseOpt with

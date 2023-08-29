@@ -122,7 +122,7 @@ module FieldContent =
                      Entity.ClickEvent => fieldMsg index]]
 
         let items (position : Vector3) rows columns field fieldMsg =
-            let items = pageItems rows field |> __c // TOOD: DIFF: consider memoizing.
+            let items = pageItems rows field |> __c // TOOD: consider memoizing.
             [for entry in items do
                 let index = entry.Key
                 let (_, (itemType, itemCountOpt)) as page = entry.Value
@@ -131,12 +131,12 @@ module FieldContent =
                 let y = position.Y - single (index % columns) * 81.0f
                 Content.button itemName
                     [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
+                     Entity.EnabledLocal := match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.TextMargin == v2 16.0f 0.0f
                      Entity.Text :=
                         match itemCountOpt with
                         | Some count when count > 1 -> itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
                         | _ -> itemName
-                     Entity.EnabledLocal := match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                      Entity.UpImage == Assets.Gui.ButtonLongUpImage
                      Entity.DownImage == Assets.Gui.ButtonLongDownImage
                      Entity.ClickEvent => fieldMsg page]]
