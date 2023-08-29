@@ -57,6 +57,10 @@ type FieldMessage =
     | MenuOptionsOpen
     | MenuOptionsSelectBattleSpeed of BattleSpeed
     | MenuClose
+    | PartyMenuOpen
+    | PartyMenuSelect of int
+    | PartyMenuDeselect of int
+    | PartyMenuClose
     | ShopBuy
     | ShopSell
     | ShopPageUp
@@ -109,6 +113,7 @@ module Field =
               Inventory_ : Inventory
               Options_ : Options
               Menu_ : Menu
+              PartyMenu_ : PartyMenu
               Definitions_ : CueSystem.CueDefinitions
               DefinitionsOriginal_ : CueSystem.CueDefinitions
               Cue_ : CueSystem.Cue
@@ -137,6 +142,7 @@ module Field =
         member this.Inventory = this.Inventory_
         member this.Options = this.Options_
         member this.Menu = this.Menu_
+        member this.PartyMenu = this.PartyMenu_
         member this.Definitions = this.Definitions_
         member this.DefinitionsOriginal = this.DefinitionsOriginal_
         member this.Cue = this.Cue_
@@ -451,6 +457,9 @@ module Field =
     let updateMenu updater field =
         { field with Menu_ = updater field.Menu_ }
 
+    let updatePartyMenu updater field =
+        { field with PartyMenu_ = updater field.PartyMenu_ }
+
     let updateDefinitions updater field =
         { field with Definitions_ = updater field.Definitions_ }
 
@@ -487,6 +496,15 @@ module Field =
         let index = Map.count field.Team
         let teammate = Teammate.make level index allyType
         updateTeam (Map.add index teammate) field
+
+    let arrangeTeam (order : int list) field =
+        let (_, team) =
+            Map.fold (fun (lastIndex, team) teamIndex (teammate : Teammate) ->
+                match List.tryFindIndex ((=) teamIndex) order with
+                | Some orderIndex -> (lastIndex, Map.add orderIndex { teammate with TeamIndex = orderIndex } team)
+                | None -> (inc lastIndex, Map.add lastIndex { teammate with TeamIndex = lastIndex } team))
+                (order.Length, Map.empty) field.Team_
+        { field with Team_ = team }
 
     let restoreTeam field =
         { field with Team_ = Map.map (fun _ -> Teammate.restore) field.Team_ }
@@ -1216,6 +1234,7 @@ module Field =
           Inventory_ = inventory
           Options_ = { BattleSpeed = PacedSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
           Cue_ = CueSystem.Fin
@@ -1247,6 +1266,7 @@ module Field =
           Inventory_ = Inventory.initial
           Options_ = { BattleSpeed = PacedSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
           Cue_ = CueSystem.Fin

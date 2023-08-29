@@ -65,6 +65,7 @@
 		<Compile Include="Avatar\AvatarDispatcher.fs" />
 		<Compile Include="Field\Teammate.fs" />
 		<Compile Include="Field\Menu.fs" />
+		<Compile Include="Field\PartyMenu.fs" />
 		<Compile Include="Field\Shop.fs" />
 		<Compile Include="Field\Field.fs" />
 		<Compile Include="Field\FieldContent.fs" />
