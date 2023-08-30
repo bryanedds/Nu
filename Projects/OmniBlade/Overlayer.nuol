@@ -21,7 +21,7 @@
    [PressedOffset [0 -3]]
    [TextColor #FFFFFFFF]
    [TextDisabledColor #C0C0C0C0]
-   [ToggledTextOffset [0 -3]]
+   [ToggledOffset [0 -3]]
    [ToggleSoundOpt [Some [Gui Affirm]]]]]
  [OmniRadioButtonOverlay
   [RadioButtonOverlay]
