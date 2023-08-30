@@ -464,6 +464,9 @@ module TextFacetModule =
         member this.GetTextOffset world : Vector2 = this.Get (nameof this.TextOffset) world
         member this.SetTextOffset (value : Vector2) world = this.Set (nameof this.TextOffset) value world
         member this.TextOffset = lens (nameof this.TextOffset) this this.GetTextOffset this.SetTextOffset
+        member this.GetTextShift world : single = this.Get (nameof this.TextShift) world
+        member this.SetTextShift (value : single) world = this.Set (nameof this.TextShift) value world
+        member this.TextShift = lens (nameof this.TextShift) this this.GetTextShift this.SetTextShift
 
     /// Augments an entity with text.
     type TextFacet () =
@@ -476,7 +479,8 @@ module TextFacetModule =
              define Entity.TextMargin v2Zero
              define Entity.TextColor Color.Black
              define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
-             define Entity.TextOffset v2Zero]
+             define Entity.TextOffset v2Zero
+             define Entity.TextShift 0.5f]
 
         override this.Render (entity, world) =
             let text = entity.GetText world
@@ -487,9 +491,10 @@ module TextFacetModule =
                 let mutable textTransform = Transform.makeDefault false // centered-ness and offset is already baked into perimeterUnscaled
                 let margin = (entity.GetTextMargin world).V3
                 let offset = (entity.GetTextOffset world).V3
+                let shift = entity.GetTextShift world
                 textTransform.Position <- perimeter.Min + margin + offset
                 textTransform.Size <- perimeter.Size - margin * 2.0f
-                textTransform.Elevation <- transform.Elevation + 0.5f // lift text above parent
+                textTransform.Elevation <- transform.Elevation + shift
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
                 World.enqueueLayeredOperation2d
@@ -665,9 +670,9 @@ module ToggleButtonFacetModule =
         member this.GetToggled world : bool = this.Get (nameof this.Toggled) world
         member this.SetToggled (value : bool) world = this.Set (nameof this.Toggled) value world
         member this.Toggled = lens (nameof this.Toggled) this this.GetToggled this.SetToggled
-        member this.GetToggledTextOffset world : Vector2 = this.Get (nameof this.ToggledTextOffset) world
-        member this.SetToggledTextOffset (value : Vector2) world = this.Set (nameof this.ToggledTextOffset) value world
-        member this.ToggledTextOffset = lens (nameof this.ToggledTextOffset) this this.GetToggledTextOffset this.SetToggledTextOffset
+        member this.GetToggledOffset world : Vector2 = this.Get (nameof this.ToggledOffset) world
+        member this.SetToggledOffset (value : Vector2) world = this.Set (nameof this.ToggledOffset) value world
+        member this.ToggledOffset = lens (nameof this.ToggledOffset) this this.GetToggledOffset this.SetToggledOffset
         member this.GetPressed world : bool = this.Get (nameof this.Pressed) world
         member this.SetPressed (value : bool) world = this.Set (nameof this.Pressed) value world
         member this.Pressed = lens (nameof this.Pressed) this this.GetPressed this.SetPressed
@@ -737,7 +742,7 @@ module ToggleButtonFacetModule =
         static member Properties =
             [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.Toggled false
-             define Entity.ToggledTextOffset v2Zero
+             define Entity.ToggledOffset v2Zero
              define Entity.Pressed false
              define Entity.PressedOffset v2Zero
              define Entity.UntoggledImage Assets.Default.ButtonUp
@@ -753,7 +758,7 @@ module ToggleButtonFacetModule =
         override this.Update (entity, world) =
             let textOffset =
                 if entity.GetPressed world then entity.GetPressedOffset world
-                elif entity.GetToggled world then entity.GetToggledTextOffset world
+                elif entity.GetToggled world then entity.GetToggledOffset world
                 else v2Zero
             let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
             world
