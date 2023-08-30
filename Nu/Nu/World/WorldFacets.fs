@@ -392,54 +392,6 @@ module BasicStaticSpriteEmitterFacetModule =
             World.enqueueLayeredOperations2d particlesMessages world
 
 [<AutoOpen>]
-module BackdroppableFacetModule =
-
-    type Entity with
-        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
-        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
-        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
-        member this.GetBackdropImageOpt world : Image AssetTag option = this.Get (nameof this.BackdropImageOpt) world
-        member this.SetBackdropImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackdropImageOpt) value world
-        member this.BackdropImageOpt = lens (nameof this.BackdropImageOpt) this this.GetBackdropImageOpt this.SetBackdropImageOpt
-
-    /// Augments an entity with optional backdrop behavior.
-    type BackdroppableFacet () =
-        inherit Facet (false)
-
-        static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: make this a constant.
-             define Entity.BackdropImageOpt None]
-
-        override this.Render (entity, world) =
-            match entity.GetBackdropImageOpt world with
-            | Some spriteImage ->
-                let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
-                World.enqueueLayeredOperation2d
-                    { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Horizon
-                      AssetTag = AssetTag.generalize spriteImage
-                      RenderOperation2d =
-                        RenderSprite
-                            { Transform = spriteTransform
-                              InsetOpt = ValueNone
-                              Image = spriteImage
-                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                              Blend = Transparent
-                              Emission = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            | None -> world
-
-        override this.GetQuickSize (entity, world) =
-            match entity.GetBackdropImageOpt world with
-            | Some image ->
-                match Metadata.tryGetTextureSizeF image with
-                | Some size -> size.V3
-                | None -> Constants.Engine.EntitySize2dDefault
-            | None -> Constants.Engine.EntitySize2dDefault
-
-[<AutoOpen>]
 module TextFacetModule =
 
     type Entity with
@@ -513,6 +465,54 @@ module TextFacetModule =
 
         override this.GetQuickSize (_, _) =
             Constants.Engine.EntitySize2dDefault
+
+[<AutoOpen>]
+module BackdroppableFacetModule =
+
+    type Entity with
+        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
+        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
+        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
+        member this.GetBackdropImageOpt world : Image AssetTag option = this.Get (nameof this.BackdropImageOpt) world
+        member this.SetBackdropImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackdropImageOpt) value world
+        member this.BackdropImageOpt = lens (nameof this.BackdropImageOpt) this this.GetBackdropImageOpt this.SetBackdropImageOpt
+
+    /// Augments an entity with optional backdrop behavior.
+    type BackdroppableFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: make this a constant.
+             define Entity.BackdropImageOpt None]
+
+        override this.Render (entity, world) =
+            match entity.GetBackdropImageOpt world with
+            | Some spriteImage ->
+                let mutable transform = entity.GetTransform world
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+                World.enqueueLayeredOperation2d
+                    { Elevation = spriteTransform.Elevation
+                      Horizon = spriteTransform.Horizon
+                      AssetTag = AssetTag.generalize spriteImage
+                      RenderOperation2d =
+                        RenderSprite
+                            { Transform = spriteTransform
+                              InsetOpt = ValueNone
+                              Image = spriteImage
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                              Blend = Transparent
+                              Emission = Color.Zero
+                              Flip = FlipNone }}
+                    world
+            | None -> world
+
+        override this.GetQuickSize (entity, world) =
+            match entity.GetBackdropImageOpt world with
+            | Some image ->
+                match Metadata.tryGetTextureSizeF image with
+                | Some size -> size.V3
+                | None -> Constants.Engine.EntitySize2dDefault
+            | None -> Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
 module LabelFacetModule =
