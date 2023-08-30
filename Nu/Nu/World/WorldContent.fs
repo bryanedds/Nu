@@ -390,14 +390,14 @@ module Content =
     /// Describe a panel with the given initializers and content.
     let panel entityName initializers content = composite<LabelDispatcher> entityName initializers content
 
-    /// Describe a button with the given initializers.
-    let button entityName initializers = entity<ButtonDispatcher> entityName initializers
+    /// Describe a text with the given initializers.
+    let text entityName initializers = entity<TextDispatcher> entityName initializers
 
     /// Describe a label with the given initializers.
     let label entityName initializers = entity<LabelDispatcher> entityName initializers
 
-    /// Describe a text with the given initializers.
-    let text entityName initializers = entity<TextDispatcher> entityName initializers
+    /// Describe a button with the given initializers.
+    let button entityName initializers = entity<ButtonDispatcher> entityName initializers
 
     /// Describe a toggle button with the given initializers.
     let toggleButton entityName initializers = entity<ToggleButtonDispatcher> entityName initializers
@@ -405,11 +405,11 @@ module Content =
     /// Describe a radio button with the given initializers.
     let radioButton entityName initializers = entity<RadioButtonDispatcher> entityName initializers
 
-    /// Describe a feeler with the given initializers.
-    let feeler entityName initializers = entity<FeelerDispatcher> entityName initializers
-
     /// Describe a fill bar with the given initializers.
     let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
+
+    /// Describe a feeler with the given initializers.
+    let feeler entityName initializers = entity<FeelerDispatcher> entityName initializers
 
     /// Describe an fps gui with the given initializers.
     let fps entityName initializers = entity<FpsDispatcher> entityName initializers

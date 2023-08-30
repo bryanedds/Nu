@@ -392,6 +392,54 @@ module BasicStaticSpriteEmitterFacetModule =
             World.enqueueLayeredOperations2d particlesMessages world
 
 [<AutoOpen>]
+module BackdroppableFacetModule =
+
+    type Entity with
+        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
+        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
+        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
+        member this.GetBackdropImageOpt world : Image AssetTag option = this.Get (nameof this.BackdropImageOpt) world
+        member this.SetBackdropImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackdropImageOpt) value world
+        member this.BackdropImageOpt = lens (nameof this.BackdropImageOpt) this this.GetBackdropImageOpt this.SetBackdropImageOpt
+
+    /// Augments an entity with optional backdrop behavior.
+    type BackdroppableFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: make this a constant.
+             define Entity.BackdropImageOpt None]
+
+        override this.Render (entity, world) =
+            match entity.GetBackdropImageOpt world with
+            | Some spriteImage ->
+                let mutable transform = entity.GetTransform world
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+                World.enqueueLayeredOperation2d
+                    { Elevation = spriteTransform.Elevation
+                      Horizon = spriteTransform.Horizon
+                      AssetTag = AssetTag.generalize spriteImage
+                      RenderOperation2d =
+                        RenderSprite
+                            { Transform = spriteTransform
+                              InsetOpt = ValueNone
+                              Image = spriteImage
+                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                              Blend = Transparent
+                              Emission = Color.Zero
+                              Flip = FlipNone }}
+                    world
+            | None -> world
+
+        override this.GetQuickSize (entity, world) =
+            match entity.GetBackdropImageOpt world with
+            | Some image ->
+                match Metadata.tryGetTextureSizeF image with
+                | Some size -> size.V3
+                | None -> Constants.Engine.EntitySize2dDefault
+            | None -> Constants.Engine.EntitySize2dDefault
+
+[<AutoOpen>]
 module TextFacetModule =
 
     type Entity with
@@ -458,149 +506,8 @@ module TextFacetModule =
                     world
             else world
 
-[<AutoOpen>]
-module BackdroppableFacetModule =
-
-    type Entity with
-        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
-        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
-        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
-        member this.GetBackdropImageOpt world : Image AssetTag option = this.Get (nameof this.BackdropImageOpt) world
-        member this.SetBackdropImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackdropImageOpt) value world
-        member this.BackdropImageOpt = lens (nameof this.BackdropImageOpt) this this.GetBackdropImageOpt this.SetBackdropImageOpt
-
-    /// Augments an entity with optional backdrop behavior.
-    type BackdroppableFacet () =
-        inherit Facet (false)
-
-        static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: make this a constant.
-             define Entity.BackdropImageOpt None]
-
-        override this.Render (entity, world) =
-            match entity.GetBackdropImageOpt world with
-            | Some spriteImage ->
-                let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
-                World.enqueueLayeredOperation2d
-                    { Elevation = spriteTransform.Elevation
-                      Horizon = spriteTransform.Horizon
-                      AssetTag = AssetTag.generalize spriteImage
-                      RenderOperation2d =
-                        RenderSprite
-                            { Transform = spriteTransform
-                              InsetOpt = ValueNone
-                              Image = spriteImage
-                              Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                              Blend = Transparent
-                              Emission = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            | None -> world
-
-[<AutoOpen>]
-module ButtonFacetModule =
-
-    type Entity with
-        member this.GetDown world : bool = this.Get (nameof this.Down) world
-        member this.SetDown (value : bool) world = this.Set (nameof this.Down) value world
-        member this.Down = lens (nameof this.Down) this this.GetDown this.SetDown
-        member this.GetDownTextOffset world : Vector2 = this.Get (nameof this.DownTextOffset) world
-        member this.SetDownTextOffset (value : Vector2) world = this.Set (nameof this.DownTextOffset) value world
-        member this.DownTextOffset = lens (nameof this.DownTextOffset) this this.GetDownTextOffset this.SetDownTextOffset
-        member this.GetUpImage world : Image AssetTag = this.Get (nameof this.UpImage) world
-        member this.SetUpImage (value : Image AssetTag) world = this.Set (nameof this.UpImage) value world
-        member this.UpImage = lens (nameof this.UpImage) this this.GetUpImage this.SetUpImage
-        member this.GetDownImage world : Image AssetTag = this.Get (nameof this.DownImage) world
-        member this.SetDownImage (value : Image AssetTag) world = this.Set (nameof this.DownImage) value world
-        member this.DownImage = lens (nameof this.DownImage) this this.GetDownImage this.SetDownImage
-        member this.GetClickSoundOpt world : Sound AssetTag option = this.Get (nameof this.ClickSoundOpt) world
-        member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.ClickSoundOpt) value world
-        member this.ClickSoundOpt = lens (nameof this.ClickSoundOpt) this this.GetClickSoundOpt this.SetClickSoundOpt
-        member this.GetClickSoundVolume world : single = this.Get (nameof this.ClickSoundVolume) world
-        member this.SetClickSoundVolume (value : single) world = this.Set (nameof this.ClickSoundVolume) value world
-        member this.ClickSoundVolume = lens (nameof this.ClickSoundVolume) this this.GetClickSoundVolume this.SetClickSoundVolume
-        member this.UpEvent = Events.Up --> this
-        member this.DownEvent = Events.Down --> this
-        member this.ClickEvent = Events.Click --> this
-
-    /// Augments an entity with button behavior.
-    type ButtonFacet () =
-        inherit Facet (false)
-
-        static let handleMouseLeftDown evt world =
-            let entity = evt.Subscriber : Entity
-            if entity.GetVisible world then
-                let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
-                    if transform.Enabled then
-                        let world = entity.SetDown true world
-                        let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) (entity.GetDownTextOffset world) world
-                        let eventTrace = EventTrace.debug "ButtonDispatcher" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
-                        (Resolve, world)
-                    else (Resolve, world)
-                else (Cascade, world)
-            else (Cascade, world)
-
-        static let handleMouseLeftUp evt world =
-            let entity = evt.Subscriber : Entity
-            let wasDown = entity.GetDown world
-            let world = entity.SetDown false world
-            let world = entity.SetTextOffset v2Zero world
-            if entity.GetVisible world then
-                let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
-                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
-                    if transform.Enabled && wasDown then
-                        let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
-                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
-                        let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
-                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
-                        let world =
-                            match entity.GetClickSoundOpt world with
-                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
-                            | None -> world
-                        (Resolve, world)
-                    else (Cascade, world)
-                else (Cascade, world)
-            else (Cascade, world)
-
-        static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
-             define Entity.Down false
-             define Entity.DownTextOffset v2Zero
-             define Entity.UpImage Assets.Default.ButtonUp
-             define Entity.DownImage Assets.Default.ButtonDown
-             define Entity.ClickSoundOpt (Some Assets.Default.Sound)
-             define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
-
-        override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
-            world
-
-        override this.Render (entity, world) =
-            let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
-            let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-            World.enqueueLayeredOperation2d
-                { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Horizon
-                  AssetTag = AssetTag.generalize spriteImage
-                  RenderOperation2d =
-                    RenderSprite
-                        { Transform = spriteTransform
-                          InsetOpt = ValueNone
-                          Image = spriteImage
-                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                          Blend = Transparent
-                          Emission = Color.Zero
-                          Flip = FlipNone }}
-                world
+        override this.GetQuickSize (_, _) =
+            Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
 module LabelFacetModule =
@@ -641,6 +548,554 @@ module LabelFacetModule =
             match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
             | Some size -> size.V3
             | None -> Constants.Engine.EntitySizeGuiDefault
+
+[<AutoOpen>]
+module ButtonFacetModule =
+
+    type Entity with
+        member this.GetDown world : bool = this.Get (nameof this.Down) world
+        member this.SetDown (value : bool) world = this.Set (nameof this.Down) value world
+        member this.Down = lens (nameof this.Down) this this.GetDown this.SetDown
+        member this.GetDownOffset world : Vector2 = this.Get (nameof this.DownOffset) world
+        member this.SetDownOffset (value : Vector2) world = this.Set (nameof this.DownOffset) value world
+        member this.DownOffset = lens (nameof this.DownOffset) this this.GetDownOffset this.SetDownOffset
+        member this.GetUpImage world : Image AssetTag = this.Get (nameof this.UpImage) world
+        member this.SetUpImage (value : Image AssetTag) world = this.Set (nameof this.UpImage) value world
+        member this.UpImage = lens (nameof this.UpImage) this this.GetUpImage this.SetUpImage
+        member this.GetDownImage world : Image AssetTag = this.Get (nameof this.DownImage) world
+        member this.SetDownImage (value : Image AssetTag) world = this.Set (nameof this.DownImage) value world
+        member this.DownImage = lens (nameof this.DownImage) this this.GetDownImage this.SetDownImage
+        member this.GetClickSoundOpt world : Sound AssetTag option = this.Get (nameof this.ClickSoundOpt) world
+        member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.ClickSoundOpt) value world
+        member this.ClickSoundOpt = lens (nameof this.ClickSoundOpt) this this.GetClickSoundOpt this.SetClickSoundOpt
+        member this.GetClickSoundVolume world : single = this.Get (nameof this.ClickSoundVolume) world
+        member this.SetClickSoundVolume (value : single) world = this.Set (nameof this.ClickSoundVolume) value world
+        member this.ClickSoundVolume = lens (nameof this.ClickSoundVolume) this this.GetClickSoundVolume this.SetClickSoundVolume
+        member this.UpEvent = Events.Up --> this
+        member this.DownEvent = Events.Down --> this
+        member this.ClickEvent = Events.Click --> this
+
+    /// Augments an entity with button behavior.
+    type ButtonFacet () =
+        inherit Facet (false)
+
+        static let handleMouseLeftDown evt world =
+            let entity = evt.Subscriber : Entity
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled then
+                        let world = entity.SetDown true world
+                        let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) (entity.GetDownOffset world) world
+                        let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftDown" "" EventTrace.empty
+                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static let handleMouseLeftUp evt world =
+            let entity = evt.Subscriber : Entity
+            let wasDown = entity.GetDown world
+            let world = entity.SetDown false world
+            let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) v2Zero world
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled && wasDown then
+                        let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
+                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
+                        let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
+                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
+                        let world =
+                            match entity.GetClickSoundOpt world with
+                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                            | None -> world
+                        (Resolve, world)
+                    else (Cascade, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Down false
+             define Entity.DownOffset v2Zero
+             define Entity.UpImage Assets.Default.ButtonUp
+             define Entity.DownImage Assets.Default.ButtonDown
+             define Entity.ClickSoundOpt (Some Assets.Default.Sound)
+             define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
+
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            world
+
+        override this.Render (entity, world) =
+            let mutable transform = entity.GetTransform world
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
+            World.enqueueLayeredOperation2d
+                { Elevation = spriteTransform.Elevation
+                  Horizon = spriteTransform.Horizon
+                  AssetTag = AssetTag.generalize spriteImage
+                  RenderOperation2d =
+                    RenderSprite
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Emission = Color.Zero
+                          Flip = FlipNone }}
+                world
+
+        override this.GetQuickSize (entity, world) =
+            match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
+            | Some size -> size.V3
+            | None -> Constants.Engine.EntitySizeGuiDefault
+
+[<AutoOpen>]
+module ToggleButtonFacetModule =
+
+    type Entity with
+        member this.GetToggled world : bool = this.Get (nameof this.Toggled) world
+        member this.SetToggled (value : bool) world = this.Set (nameof this.Toggled) value world
+        member this.Toggled = lens (nameof this.Toggled) this this.GetToggled this.SetToggled
+        member this.GetToggledTextOffset world : Vector2 = this.Get (nameof this.ToggledTextOffset) world
+        member this.SetToggledTextOffset (value : Vector2) world = this.Set (nameof this.ToggledTextOffset) value world
+        member this.ToggledTextOffset = lens (nameof this.ToggledTextOffset) this this.GetToggledTextOffset this.SetToggledTextOffset
+        member this.GetPressed world : bool = this.Get (nameof this.Pressed) world
+        member this.SetPressed (value : bool) world = this.Set (nameof this.Pressed) value world
+        member this.Pressed = lens (nameof this.Pressed) this this.GetPressed this.SetPressed
+        member this.GetPressedOffset world : Vector2 = this.Get (nameof this.PressedOffset) world
+        member this.SetPressedOffset (value : Vector2) world = this.Set (nameof this.PressedOffset) value world
+        member this.PressedOffset = lens (nameof this.PressedOffset) this this.GetPressedOffset this.SetPressedOffset
+        member this.GetUntoggledImage world : Image AssetTag = this.Get (nameof this.UntoggledImage) world
+        member this.SetUntoggledImage (value : Image AssetTag) world = this.Set (nameof this.UntoggledImage) value world
+        member this.UntoggledImage = lens (nameof this.UntoggledImage) this this.GetUntoggledImage this.SetUntoggledImage
+        member this.GetToggledImage world : Image AssetTag = this.Get (nameof this.ToggledImage) world
+        member this.SetToggledImage (value : Image AssetTag) world = this.Set (nameof this.ToggledImage) value world
+        member this.ToggledImage = lens (nameof this.ToggledImage) this this.GetToggledImage this.SetToggledImage
+        member this.GetToggleSoundOpt world : Sound AssetTag option = this.Get (nameof this.ToggleSoundOpt) world
+        member this.SetToggleSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.ToggleSoundOpt) value world
+        member this.ToggleSoundOpt = lens (nameof this.ToggleSoundOpt) this this.GetToggleSoundOpt this.SetToggleSoundOpt
+        member this.GetToggleSoundVolume world : single = this.Get (nameof this.ToggleSoundVolume) world
+        member this.SetToggleSoundVolume (value : single) world = this.Set (nameof this.ToggleSoundVolume) value world
+        member this.ToggleSoundVolume = lens (nameof this.ToggleSoundVolume) this this.GetToggleSoundVolume this.SetToggleSoundVolume
+        member this.ToggleEvent = Events.Toggle --> this
+        member this.ToggledEvent = Events.Toggled --> this
+        member this.UntoggledEvent = Events.Untoggled --> this
+
+    /// Augments an entity with toggle button behavior.
+    type ToggleButtonFacet () =
+        inherit Facet (false)
+        
+        static let handleMouseLeftDown evt world =
+            let entity = evt.Subscriber : Entity
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled then
+                        let world = entity.SetPressed true world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static let handleMouseLeftUp evt world =
+            let entity = evt.Subscriber : Entity
+            let wasPressed = entity.GetPressed world
+            let world = if wasPressed then entity.SetPressed false world else world
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled && wasPressed then
+                        let world = entity.SetToggled (not (entity.GetToggled world)) world
+                        let toggled = entity.GetToggled world
+                        let eventAddress = if toggled then Events.Toggled else Events.Untoggled
+                        let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "" EventTrace.empty
+                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
+                        let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
+                        let world =
+                            match entity.GetToggleSoundOpt world with
+                            | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                            | None -> world
+                        (Resolve, world)
+                    else (Cascade, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Toggled false
+             define Entity.ToggledTextOffset v2Zero
+             define Entity.Pressed false
+             define Entity.PressedOffset v2Zero
+             define Entity.UntoggledImage Assets.Default.ButtonUp
+             define Entity.ToggledImage Assets.Default.ButtonDown
+             define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
+             define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
+
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            world
+
+        override this.Update (entity, world) =
+            let textOffset =
+                if entity.GetPressed world then entity.GetPressedOffset world
+                elif entity.GetToggled world then entity.GetToggledTextOffset world
+                else v2Zero
+            let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
+            world
+
+        override this.Render (entity, world) =
+            let mutable transform = entity.GetTransform world
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let spriteImage =
+                if entity.GetToggled world || entity.GetPressed world
+                then entity.GetToggledImage world
+                else entity.GetUntoggledImage world
+            World.enqueueLayeredOperation2d
+                { Elevation = spriteTransform.Elevation
+                  Horizon = spriteTransform.Horizon
+                  AssetTag = AssetTag.generalize spriteImage
+                  RenderOperation2d =
+                    RenderSprite
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Emission = Color.Zero
+                          Flip = FlipNone }}
+                world
+
+        override this.GetQuickSize (entity, world) =
+            match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
+            | Some size -> size.V3
+            | None -> Constants.Engine.EntitySizeGuiDefault
+
+[<AutoOpen>]
+module RadioButtonFacetModule =
+
+    type Entity with
+        member this.GetDialed world : bool = this.Get (nameof this.Dialed) world
+        member this.SetDialed (value : bool) world = this.Set (nameof this.Dialed) value world
+        member this.Dialed = lens (nameof this.Dialed) this this.GetDialed this.SetDialed
+        member this.GetDialedOffset world : Vector2 = this.Get (nameof this.DialedOffset) world
+        member this.SetDialedOffset (value : Vector2) world = this.Set (nameof this.DialedOffset) value world
+        member this.DialedOffset = lens (nameof this.DialedOffset) this this.GetDialedOffset this.SetDialedOffset
+        member this.GetUndialedImage world : Image AssetTag = this.Get (nameof this.UndialedImage) world
+        member this.SetUndialedImage (value : Image AssetTag) world = this.Set (nameof this.UndialedImage) value world
+        member this.UndialedImage = lens (nameof this.UndialedImage) this this.GetUndialedImage this.SetUndialedImage
+        member this.GetDialedImage world : Image AssetTag = this.Get (nameof this.DialedImage) world
+        member this.SetDialedImage (value : Image AssetTag) world = this.Set (nameof this.DialedImage) value world
+        member this.DialedImage = lens (nameof this.DialedImage) this this.GetDialedImage this.SetDialedImage
+        member this.GetDialSoundOpt world : Sound AssetTag option = this.Get (nameof this.DialSoundOpt) world
+        member this.SetDialSoundOpt (value : Sound AssetTag option) world = this.Set (nameof this.DialSoundOpt) value world
+        member this.DialSoundOpt = lens (nameof this.DialSoundOpt) this this.GetDialSoundOpt this.SetDialSoundOpt
+        member this.GetDialSoundVolume world : single = this.Get (nameof this.DialSoundVolume) world
+        member this.SetDialSoundVolume (value : single) world = this.Set (nameof this.DialSoundVolume) value world
+        member this.DialSoundVolume = lens (nameof this.DialSoundVolume) this this.GetDialSoundVolume this.SetDialSoundVolume
+        member this.DialEvent = Events.Dial --> this
+        member this.DialedEvent = Events.Dialed --> this
+        member this.UndialedEvent = Events.Undialed --> this
+
+    /// Augments an entity with radio button behavior.
+    type RadioButtonFacet () =
+        inherit Facet (false)
+
+        static let handleMouseLeftDown evt world =
+            let entity = evt.Subscriber : Entity
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled then
+                        let world = entity.SetPressed true world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static let handleMouseLeftUp evt world =
+            let entity = evt.Subscriber : Entity
+            let wasPressed = entity.GetPressed world
+            let world = if wasPressed then entity.SetPressed false world else world
+            let wasDialed = entity.GetDialed world
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled && wasPressed && not wasDialed then
+                        let world = entity.SetDialed true world
+                        let dialed = entity.GetDialed world
+                        let eventAddress = if dialed then Events.Dialed else Events.Undialed
+                        let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "" EventTrace.empty
+                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
+                        let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
+                        let world =
+                            match entity.GetDialSoundOpt world with
+                            | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                            | None -> world
+                        (Resolve, world)
+                    else (Cascade, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Dialed false
+             define Entity.DialedOffset v2Zero
+             define Entity.Pressed false
+             define Entity.PressedOffset v2Zero
+             define Entity.UndialedImage Assets.Default.ButtonUp
+             define Entity.DialedImage Assets.Default.ButtonDown
+             define Entity.DialSoundOpt (Some Assets.Default.Sound)
+             define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
+
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            world
+
+        override this.Update (entity, world) =
+            let textOffset =
+                if entity.GetPressed world then entity.GetPressedOffset world
+                elif entity.GetDialed world then entity.GetDialedOffset world
+                else v2Zero
+            let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
+            world
+
+        override this.Render (entity, world) =
+            let mutable transform = entity.GetTransform world
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let spriteImage =
+                if entity.GetDialed world || entity.GetPressed world
+                then entity.GetDialedImage world
+                else entity.GetUndialedImage world
+            World.enqueueLayeredOperation2d
+                { Elevation = spriteTransform.Elevation
+                  Horizon = spriteTransform.Horizon
+                  AssetTag = AssetTag.generalize spriteImage
+                  RenderOperation2d =
+                    RenderSprite
+                        { Transform = spriteTransform
+                          InsetOpt = ValueNone
+                          Image = spriteImage
+                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Blend = Transparent
+                          Emission = Color.Zero
+                          Flip = FlipNone }}
+                world
+
+        override this.GetQuickSize (entity, world) =
+            match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
+            | Some size -> size.V3
+            | None -> Constants.Engine.EntitySizeGuiDefault
+
+[<AutoOpen>]
+module FillBarFacetModule =
+
+    type Entity with
+        member this.GetFill world : single = this.Get (nameof this.Fill) world
+        member this.SetFill (value : single) world = this.Set (nameof this.Fill) value world
+        member this.Fill = lens (nameof this.Fill) this this.GetFill this.SetFill
+        member this.GetFillInset world : single = this.Get (nameof this.FillInset) world
+        member this.SetFillInset (value : single) world = this.Set (nameof this.FillInset) value world
+        member this.FillInset = lens (nameof this.FillInset) this this.GetFillInset this.SetFillInset
+        member this.GetFillColor world : Color = this.Get (nameof this.FillColor) world
+        member this.SetFillColor (value : Color) world = this.Set (nameof this.FillColor) value world
+        member this.FillColor = lens (nameof this.FillColor) this this.GetFillColor this.SetFillColor
+        member this.GetFillImage world : Image AssetTag = this.Get (nameof this.FillImage) world
+        member this.SetFillImage (value : Image AssetTag) world = this.Set (nameof this.FillImage) value world
+        member this.FillImage = lens (nameof this.FillImage) this this.GetFillImage this.SetFillImage
+        member this.GetBorderColor world : Color = this.Get (nameof this.BorderColor) world
+        member this.SetBorderColor (value : Color) world = this.Set (nameof this.BorderColor) value world
+        member this.BorderColor = lens (nameof this.BorderColor) this this.GetBorderColor this.SetBorderColor
+        member this.GetBorderImage world : Image AssetTag = this.Get (nameof this.BorderImage) world
+        member this.SetBorderImage (value : Image AssetTag) world = this.Set (nameof this.BorderImage) value world
+        member this.BorderImage = lens (nameof this.BorderImage) this this.GetBorderImage this.SetBorderImage
+
+    /// Augments an entity with fill bar behavior.
+    type FillBarFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Fill 0.0f
+             define Entity.FillInset 0.0f
+             define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
+             define Entity.FillImage Assets.Default.White
+             define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
+             define Entity.BorderImage Assets.Default.Border]
+
+        override this.Render (entity, world) =
+
+            // border sprite
+            let mutable transform = entity.GetTransform world
+            let perimeter = transform.Perimeter // gui currently ignores rotation
+            let horizon = transform.Horizon
+            let mutable borderTransform = Transform.makeDefault transform.Centered
+            borderTransform.Position <- perimeter.Min
+            borderTransform.Size <- perimeter.Size
+            borderTransform.Offset <- transform.Offset
+            borderTransform.Elevation <- transform.Elevation + 0.5f
+            borderTransform.Absolute <- transform.Absolute
+            let color = if transform.Enabled then Color.White else entity.GetDisabledColor world
+            let borderImageColor = entity.GetBorderColor world * color
+            let borderImage = entity.GetBorderImage world
+            let world =
+                World.enqueueLayeredOperation2d
+                    { Elevation = borderTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize borderImage
+                      RenderOperation2d =
+                        RenderSprite
+                            { Transform = borderTransform
+                              InsetOpt = ValueNone
+                              Image = borderImage
+                              Color = borderImageColor
+                              Blend = Transparent
+                              Emission = Color.Zero
+                              Flip = FlipNone }}
+                    world
+
+            // fill sprite
+            let fillSize = perimeter.Size
+            let fillInset = fillSize * entity.GetFillInset world * 0.5f
+            let fillPosition = perimeter.Min + fillInset
+            let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
+            let fillHeight = fillSize.Y - fillInset.Y * 2.0f
+            let fillSize = v3 fillWidth fillHeight 0.0f
+            let mutable fillTransform = Transform.makeDefault transform.Centered
+            fillTransform.Position <- fillPosition
+            fillTransform.Size <- fillSize
+            fillTransform.Offset <- transform.Offset
+            fillTransform.Elevation <- transform.Elevation
+            fillTransform.Absolute <- transform.Absolute
+            let fillImageColor = entity.GetFillColor world * color
+            let fillImage = entity.GetFillImage world
+            let world =
+                World.enqueueLayeredOperation2d
+                    { Elevation = fillTransform.Elevation
+                      Horizon = horizon
+                      AssetTag = AssetTag.generalize fillImage
+                      RenderOperation2d =
+                          RenderSprite
+                              { Transform = fillTransform
+                                InsetOpt = ValueNone
+                                Image = fillImage
+                                Color = fillImageColor
+                                Blend = Transparent
+                                Emission = Color.Zero
+                                Flip = FlipNone }}
+                    world
+
+            // fin
+            world
+
+        override this.GetQuickSize (entity, world) =
+            match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
+            | Some size -> size.V3
+            | None -> Constants.Engine.EntitySizeGuiDefault
+
+[<AutoOpen>]
+module FeelerFacetModule =
+
+    type Entity with
+        member this.GetTouched world : bool = this.Get (nameof this.Touched) world
+        member this.SetTouched (value : bool) world = this.Set (nameof this.Touched) value world
+        member this.Touched = lens (nameof this.Touched) this this.GetTouched this.SetTouched
+        member this.TouchEvent = Events.Touch --> this
+        member this.TouchingEvent = Events.Touching --> this
+        member this.UntouchEvent = Events.Untouch --> this
+
+    /// Augments an entity with feeler behavior.
+    type FeelerFacet () =
+        inherit Facet (false)
+
+        static let handleMouseLeftDown evt world =
+            let entity = evt.Subscriber : Entity
+            let data = evt.Data : MouseButtonData
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter.Box2
+                let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                    if transform.Enabled then
+                        let world = entity.SetTouched true world
+                        let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
+                        let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true false world
+                        (Resolve, world)
+                    else (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static let handleMouseLeftUp evt world =
+            let entity = evt.Subscriber : Entity
+            let data = evt.Data : MouseButtonData
+            let wasTouched = entity.GetTouched world
+            let world = entity.SetTouched false world
+            if entity.GetVisible world then
+                if entity.GetEnabled world && wasTouched then
+                    let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
+                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true false world
+                    (Resolve, world)
+                else (Cascade, world)
+            else (Cascade, world)
+
+        static let handleIncoming evt world =
+            let entity = evt.Subscriber : Entity
+            if  MouseState.isButtonDown MouseLeft &&
+                entity.GetVisible world &&
+                entity.GetEnabled world then
+                let mousePosition = MouseState.getPosition ()
+                let world = entity.SetTouched true world
+                let eventTrace = EventTrace.debug "FeelerFacet" "handleIncoming" "" EventTrace.empty
+                let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true false world
+                (Resolve, world)
+            else (Cascade, world)
+
+        static let handleOutgoing evt world =
+            let entity = evt.Subscriber : Entity
+            (Cascade, entity.SetTouched false world)
+
+        static member Properties =
+            [define Entity.Touched false]
+
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            let world = World.monitor handleIncoming (Events.IncomingFinish --> entity.Screen) entity world
+            let world = World.monitor handleOutgoing (Events.OutgoingStart --> entity.Screen) entity world
+            world
+
+        override this.Update (entity, world) =
+            if entity.GetEnabled world then
+                if entity.GetTouched world then
+                    let mousePosition = World.getMousePosition world
+                    let eventTrace = EventTrace.debug "FeelerFacet" "Update" "" EventTrace.empty
+                    let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
+                    world
+                else world
+            else world
+
+        override this.GetQuickSize (_, _) =
+            Constants.Engine.EntitySize2dDefault
 
 [<AutoOpen>]
 module EffectFacetModule =

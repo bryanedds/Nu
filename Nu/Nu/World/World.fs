@@ -386,14 +386,14 @@ module WorldModule3 =
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
-                 ButtonDispatcher () :> EntityDispatcher
-                 LabelDispatcher () :> EntityDispatcher
                  TextDispatcher () :> EntityDispatcher
+                 LabelDispatcher () :> EntityDispatcher
+                 ButtonDispatcher () :> EntityDispatcher
                  ToggleButtonDispatcher () :> EntityDispatcher
                  RadioButtonDispatcher () :> EntityDispatcher
-                 FpsDispatcher () :> EntityDispatcher
-                 FeelerDispatcher () :> EntityDispatcher
                  FillBarDispatcher () :> EntityDispatcher
+                 FeelerDispatcher () :> EntityDispatcher
+                 FpsDispatcher () :> EntityDispatcher
                  BasicStaticSpriteEmitterDispatcher () :> EntityDispatcher
                  EffectDispatcher2d () :> EntityDispatcher
                  BlockDispatcher2d () :> EntityDispatcher
@@ -421,10 +421,14 @@ module WorldModule3 =
                 [Facet false
                  StaticSpriteFacet () :> Facet
                  AnimatedSpriteFacet () :> Facet
-                 TextFacet () :> Facet
                  BackdroppableFacet () :> Facet
-                 ButtonFacet () :> Facet
+                 TextFacet () :> Facet
                  LabelFacet () :> Facet
+                 ButtonFacet () :> Facet
+                 ToggleButtonFacet () :> Facet
+                 RadioButtonFacet () :> Facet
+                 FillBarFacet () :> Facet
+                 FeelerFacet () :> Facet
                  BasicStaticSpriteEmitterFacet () :> Facet
                  EffectFacet () :> Facet
                  RigidBodyFacet () :> Facet
