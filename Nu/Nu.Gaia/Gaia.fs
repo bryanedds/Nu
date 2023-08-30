@@ -1091,11 +1091,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
             if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
             if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
+            if ImGui.IsKeyPressed ImGuiKey.F8 then tryReloadAssets ()
+            if ImGui.IsKeyPressed ImGuiKey.F9 then tryReloadCode ()
             if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
             if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
             if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
             if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
             if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then tryReloadAll ()
             if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
             if not (ImGui.GetIO ()).WantCaptureKeyboardPlus || entityHierarchyFocused then
@@ -1802,9 +1805,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
                                 if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Mark Light Probes Stale", "Ctrl+L") then markLightProbesStale ()
+                                if ImGui.MenuItem ("Mark Light Probes Stale") then markLightProbesStale ()
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
+                                if editWhileAdvancing
+                                then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
+                                else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("Reload Assets", "F8") then tryReloadAssets ()
+                                if ImGui.MenuItem ("Reload Code", "F9") then tryReloadCode ()
+                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then tryReloadAll ()
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
                         if ImGui.Button "Create" then createEntity false false
