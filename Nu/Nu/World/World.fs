@@ -421,8 +421,8 @@ module WorldModule3 =
                 [Facet false
                  StaticSpriteFacet () :> Facet
                  AnimatedSpriteFacet () :> Facet
-                 BackdroppableFacet () :> Facet
                  TextFacet () :> Facet
+                 BackdroppableFacet () :> Facet
                  LabelFacet () :> Facet
                  ButtonFacet () :> Facet
                  ToggleButtonFacet () :> Facet
