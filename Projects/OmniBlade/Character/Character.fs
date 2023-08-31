@@ -600,7 +600,7 @@ module Character =
                         else                    1000.0f - 375.0f - Gen.randomf1 8.0f * 75.0f
                     else
                         if waitSpeed
-                        then 0.0f
+                        then -25.0f
                         else -250.0f
                 let enemy = make bounds (EnemyIndex subindex) characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
                 Some enemy
