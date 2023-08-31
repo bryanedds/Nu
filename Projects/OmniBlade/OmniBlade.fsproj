@@ -63,7 +63,8 @@
 		<Compile Include="Prop\PropDispatcher.fs" />
 		<Compile Include="Avatar\Avatar.fs" />
 		<Compile Include="Avatar\AvatarDispatcher.fs" />
-		<Compile Include="Field\Teammate.fs" />
+		<Compile Include="Teammate\Teammate.fs" />
+		<Compile Include="Teammate\TeammateDispatcher.fs" />
 		<Compile Include="Field\Menu.fs" />
 		<Compile Include="Field\PartyMenu.fs" />
 		<Compile Include="Field\Shop.fs" />

@@ -58,6 +58,8 @@ module Assets =
         let ButtonSquishedDownImage = asset<Image> PackageName "ButtonSquishedDown"
         let ButtonShortUpImage = asset<Image> PackageName "ButtonShortUp"
         let ButtonShortDownImage = asset<Image> PackageName "ButtonShortDown"
+        let HealthBorderImage = asset<Image> PackageName "HealthBorder"
+        let TechBorderImage = asset<Image> PackageName "TechBorder"
         let AffirmSound = asset<Sound> PackageName "Affirm"
         let MistakeSound = asset<Sound> PackageName "Mistake"
         let SlotSound = asset<Sound> PackageName "Slot"
@@ -156,8 +158,6 @@ module Assets =
     module Battle =
 
         let PackageName = "Battle"
-        let HealthBorderImage = asset<Image> PackageName "HealthBorder"
-        let TechBorderImage = asset<Image> PackageName "TechBorder"
         let CancelImage = asset<Image> PackageName "Cancel"
         let CutImage = asset<Image> PackageName "Cut"
         let LightCutImage = asset<Image> PackageName "LightCut"

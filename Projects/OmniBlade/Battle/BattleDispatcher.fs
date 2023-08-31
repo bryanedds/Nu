@@ -413,8 +413,8 @@ module BattleDispatcher =
                                     if character.Statuses.ContainsKey Poison
                                     then Color.LawnGreen.WithA8 pulseIntensity
                                     else Color.Red.WithA8 (byte 191))
-                             Entity.BorderImage == Assets.Battle.HealthBorderImage
-                             Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 255)] // TODO: use constant.
+                             Entity.BorderImage == Assets.Gui.HealthBorderImage
+                             Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 255)]
 
                          // tech bar
                          if character.Ally then
@@ -424,8 +424,8 @@ module BattleDispatcher =
                                 Entity.Center := character.BottomOriginalOffset2
                                 Entity.Elevation == Constants.Battle.GuiBackgroundElevation
                                 Entity.Fill := single character.TechPoints / single character.TechPointsMax
-                                Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA 0.75f
-                                Entity.BorderImage == Assets.Battle.TechBorderImage
+                                Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA8 (byte 191)
+                                Entity.BorderImage == Assets.Gui.TechBorderImage
                                 Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 255)]]]
 
              // inputs condition
