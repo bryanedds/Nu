@@ -8,7 +8,7 @@ Paws,Melee,1,1,10,
 BronzeSword,Sword,2,2,50,Bronze sword for Fighters only.
 BronzeKatana,Knife,2,2,50,Bronze katana for Ninjas only.
 BronzeRod,Rod,2,2,50,Bronze rod for Wizards and Conjurors.
-LightBow,Bow,1,2,50,Light bow for Clerics only.
+LightBow,Bow,2,2,50,Light bow for Clerics only.
 Claws,Melee,2,2,50,
 IronSword,Sword,4,3,100,A heavy iron sword.
 IronKatana,Knife,4,3,100,A heavy iron katana.
