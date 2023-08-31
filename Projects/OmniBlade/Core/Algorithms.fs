@@ -231,8 +231,10 @@ module Algorithms =
         let algo = single level * 1.75f
         max (int (mythos * scalar * algo)) 1
 
-    let itemPrizeOpt (_ : ArchetypeType) (_ : int) =
-        // TODO: pull this from data.
-        if Gen.randomf < Constants.Battle.ItemDropRate
-        then Some (Consumable GreenHerb)
+    let itemPrizeOpt (_ : ArchetypeType) level =
+        // TODO: pull this from CharacterData in sequel?
+        if Gen.randomf < Constants.Battle.ItemDropRate then
+            if level <= 12 then Some (Consumable GreenHerb)
+            elif level <= 25 then Some (Consumable RedHerb)
+            else Some (Consumable GoldHerb)
         else None
