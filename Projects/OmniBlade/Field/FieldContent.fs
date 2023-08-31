@@ -65,6 +65,9 @@ module FieldContent =
                         pageItems5 rows shop.ShopPage true true items
                 | None -> (false, false, Map.empty)
 
+        let teammate entityName initializers =
+            Content.entity<TeammateDispatcher> entityName initializers
+
         let sidebar name position (field : Field) menuTeamOpen menuInventoryOpen menuTechOpen menuKeyItemsOpen menuOptionsOpen menuClose =
             Content.association name []
                 [Content.button "TeamButton"
@@ -104,8 +107,8 @@ module FieldContent =
                      Entity.ClickEvent => menuClose ()]]
 
         let team (position : Vector3) rows (field : Field) filter fieldMsg =
-            [for (index, teammate) in field.Team.Pairs do
-                let teammateName = "Teammate+" + string teammate.TeamIndex
+            [for (index, teammateValue) in field.Team.Pairs do
+                let teammateName = "Teammate+" + string teammateValue.TeamIndex
                 let w =
                     match field.Menu.MenuState with
                     | MenuTechs _ -> 336.0f
@@ -113,12 +116,10 @@ module FieldContent =
                 let h = 72.0f
                 let x = position.X + if index < rows then 0.0f else w + 48.0f
                 let y = position.Y - single (index % rows) * 81.0f
-                Content.button teammateName
+                teammate teammateName
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
-                     Entity.EnabledLocal := filter teammate field.Menu
-                     Entity.Text := CharacterType.getName teammate.CharacterType
-                     Entity.UpImage == Assets.Gui.ButtonBigUpImage
-                     Entity.DownImage == Assets.Gui.ButtonBigDownImage
+                     Entity.EnabledLocal := filter teammateValue field.Menu
+                     Entity.Teammate := teammateValue
                      Entity.ClickEvent => fieldMsg index]]
 
         let items (position : Vector3) rows columns field fieldMsg =

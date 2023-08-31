@@ -121,3 +121,6 @@ type [<SymbolicExpansion>] Teammate =
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
           Accessories = accessories }
+
+    static member empty =
+        Teammate.make 1 0 Jinn
