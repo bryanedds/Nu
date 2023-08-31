@@ -673,18 +673,16 @@ module Battle =
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
                     observer = target && friendliesHealthy.Count = 1
                 | LastTypeSurviving ->
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    observer = target &&
-                    Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType) friendliesHealthy |>
-                    Map.count = 1
+                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    friendliesHealthyDifferent.Count = 0
                 | BecomeLastSurviving ->
                     let friendlies = getFriendlies observer.Ally battle
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
                     friendlies.Count > 1 && friendliesHealthy.Count = 1
                 | BecomeLastTypeSurviving ->
-                    let friendlies = battle |> getFriendlies observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType)
-                    let friendliesHealthy = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType)
-                    friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
                 | AffectedTarget (affectType, targetType) ->
                     evalAttackAffectType affectType source target observer battle &&
                     evalSingleTargetType targetType source target observer battle
@@ -724,18 +722,16 @@ module Battle =
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
                     observer = target && friendliesHealthy.Count = 1
                 | LastTypeSurviving ->
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    observer = target &&
-                    Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType) friendliesHealthy |>
-                    Map.count = 1
+                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    friendliesHealthyDifferent.Count = 0
                 | BecomeLastSurviving ->
                     let friendlies = getFriendlies observer.Ally battle
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
                     friendlies.Count > 1 && friendliesHealthy.Count = 1
                 | BecomeLastTypeSurviving ->
-                    let friendlies = battle |> getFriendlies observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType)
-                    let friendliesHealthy = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType)
-                    friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
                 | AffectedTarget (affectType, targetType) ->
                     evalItemAffectType affectType source target observer battle &&
                     evalSingleTargetType targetType source target observer battle
@@ -786,18 +782,16 @@ module Battle =
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
                     observer = target && friendliesHealthy.Count = 1
                 | LastTypeSurviving ->
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    observer = target &&
-                    Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType) friendliesHealthy |>
-                    Map.count = 1
+                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    friendliesHealthyDifferent.Count = 0
                 | BecomeLastSurviving ->
                     let friendlies = getFriendlies observer.Ally battle
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
                     friendlies.Count > 1 && friendliesHealthy.Count = 1
                 | BecomeLastTypeSurviving ->
-                    let friendlies = battle |> getFriendlies observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType)
-                    let friendliesHealthy = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType = observer.ArchetypeType)
-                    friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                    friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
                 | AffectedTarget (affectType, targetType) ->
                     techResults |>
                     Map.map (fun characterIndex result -> (result, tryGetCharacter characterIndex battle)) |>
