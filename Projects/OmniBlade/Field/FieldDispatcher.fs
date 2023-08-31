@@ -710,7 +710,7 @@ module FieldDispatcher =
                         Option.isNone field.FieldTransitionOpt &&
                         Field.touchingSavePoint field &&
                         not field.ScreenTransitioning &&
-                        field.Team.Count > 3
+                        field.Team.Count >= 3
                      Entity.Text == "Party"
                      Entity.ClickEvent => PartyMenuOpen]
 
