@@ -15,6 +15,6 @@ Type,ArchetypeType,LevelBase,AbsorbCreep,Boss,AnimationSheet,PortraitOpt,WeaponO
 [Enemy HeavyArmoros],Armoros,7,1,True,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.5],[],[],10,5,The heaviest armoros you’ve ever seen!
 [Enemy PitViper],Snake,6,1,False,[Castle PitViper],None,[Some Paws],None,[],[Some 1],[],[],1,1,A poisonous pit viper.
 [Enemy Cloak],Shaman,6,1,False,[Castle Cloak],None,[Some Paws],None,[],[Some 0.4],[],[],1,1,A conjurer of the darkness and malice.
-[Enemy BloodArmoros],Armoros,6,1,False,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.4],[],[],1,1,A long-dead warrior shadow that lives off of blood.
+[Enemy BloodArmoros],Armoros,6,1,False,[Castle BloodArmoros],None,None,None,[],[Some 0.4],[],[],1,1,A long-dead warrior shadow that lives off of blood.
 [Enemy AraneaImplicitum],Arachnos,8,1,True,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],[],[],10,5,Demon of Entanglement.
 [Enemy Kyla],Apprentice,1,1,False,[Castle Kyla],None,None,None,[],None,[],[],1,1,Kyla NPC.
