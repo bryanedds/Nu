@@ -396,6 +396,9 @@ module Battle =
     let getCharacterArchetypeType characterIndex battle =
         (getCharacter characterIndex battle).ArchetypeType
 
+    let getCharacterVulnerabilities characterIndex battle =
+        (getCharacter characterIndex battle).Vulnerabilities
+
     let getCharacterAppendedActionCommand characterIndex battle =
         seq battle.ActionCommands_ |>
         Seq.exists (fun command -> command.SourceIndex = characterIndex)
@@ -622,7 +625,7 @@ module Battle =
     let evalAttack effectType sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
-        Character.getAttackResult effectType source target
+        Character.evalAttack effectType source target
 
     let evalTechUnary splash targetCount techData sourceIndex targetIndex battle =
         let source = getCharacter sourceIndex battle
@@ -1332,7 +1335,8 @@ module Battle =
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                                             let battle = updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
-                                            let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong else StatusType.randomizeWeak
+                                            let vulnerabilities = getCharacterVulnerabilities characterIndex battle
+                                            let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong vulnerabilities else StatusType.randomizeWeak vulnerabilities
                                             let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
                                             let battle = applyCharacterStatuses added removed characterIndex battle
                                             let wounded = getCharacterWounded characterIndex battle
@@ -1410,11 +1414,11 @@ module Battle =
                         just battle
                     | (false, battle) -> just battle
                 else just (updateCurrentCommandOpt (constant None) battle)
-            | AddVulnerability (vulnerabilityType, messageOpt) ->
+            | AddVulnerability (vulnerabilityType, vulnerabilityRank, messageOpt) ->
                 if containsCharacterHealthy observerIndex battle then
-                    match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (AddVulnerability (vulnerabilityType, None)) messageOpt time localTime battle with
+                    match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (AddVulnerability (vulnerabilityType, vulnerabilityRank, None)) messageOpt time localTime battle with
                     | (true, battle) ->
-                        let battle = applyCharacterVulnerabilities (Set.singleton vulnerabilityType) Set.empty observerIndex battle
+                        let battle = applyCharacterVulnerabilities (Map.singleton vulnerabilityType vulnerabilityRank) Set.empty observerIndex battle
                         let battle = updateCurrentCommandOpt (constant None) battle
                         just battle
                     | (false, battle) -> just battle
@@ -1423,7 +1427,7 @@ module Battle =
                 if containsCharacterHealthy observerIndex battle then
                     match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (RemoveVulnerability (vulnerabilityType, None)) messageOpt time localTime battle with
                     | (true, battle) ->
-                        let battle = applyCharacterVulnerabilities Set.empty (Set.singleton vulnerabilityType) observerIndex battle
+                        let battle = applyCharacterVulnerabilities Map.empty (Set.singleton vulnerabilityType) observerIndex battle
                         let battle = updateCurrentCommandOpt (constant None) battle
                         just battle
                     | (false, battle) -> just battle

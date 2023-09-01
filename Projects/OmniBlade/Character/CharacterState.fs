@@ -26,7 +26,7 @@ type [<SymbolicExpansion>] CharacterState =
       Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
       Charging : bool
       TechProbabilityOpt : single option
-      Vulnerabilities : VulnerabilityType Set
+      Vulnerabilities : Vulnerabilities
       Interactions : BattleInteractionSystem.BattleInteraction list
       GoldPrize : int
       ExpPrize : int
@@ -48,13 +48,6 @@ type [<SymbolicExpansion>] CharacterState =
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
     member this.ChargeTechs = Algorithms.chargeTechs this.ArchetypeType this.Level
     member this.Stature = match Map.tryFind this.ArchetypeType Data.Value.Archetypes with Some archetypeData -> archetypeData.Stature | None -> NormalStature
-
-    static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
-        let power = source.Power
-        let shield = target.Shield effectType
-        let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-        let damage = single (power - shield) * defendingScalar |> int |> max 1
-        damage
 
     static member burndownStatuses burndown state =
         let statuses =
@@ -142,7 +135,7 @@ type [<SymbolicExpansion>] CharacterState =
               Defending = false
               Charging = false
               TechProbabilityOpt = None
-              Vulnerabilities = Set.empty
+              Vulnerabilities = Map.empty
               Interactions = []
               GoldPrize = 0
               ExpPrize = 0
