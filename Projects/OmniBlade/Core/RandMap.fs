@@ -382,8 +382,10 @@ type RandMap =
         let segments = Segments.load floor abstractPath
         let slop = 12 // extra translation so that collision doesn't happen due to portal being directly aligned with a wall
         let entryId = 0
-
-        // create entry prop
+        
+        // create entry prop when needed
+        // NOTE: this code is broken for origins other than south. It's hard to get right because the Y coordinate in tmx is flipped.
+        // TODO: pull out some graph paper and fix this code taking into account the Y frame changes required by tmx.
         if floor = 0 then
             let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
                 match origin with
