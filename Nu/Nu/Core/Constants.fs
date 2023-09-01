@@ -82,13 +82,13 @@ module Render =
     let [<Uniform>] FieldOfView = single (Math.PI / 3.0) // 60 degrees
     let [<Uniform>] ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
     let [<Uniform>] ViewportOffset (windowSize : Vector2i) = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
-    let [<Uniform>] Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(v2iZero, Resolution))
+    let [<Uniform>] Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, Resolution))
     let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings.["SsaoResolutionDivisor"] with null -> 1 | ssaoResolutionDivisor -> scvalue<int> ssaoResolutionDivisor
     let [<Uniform>] SsaoResolutionX = ResolutionX / SsaoResolutionDivisor
     let [<Uniform>] SsaoResolutionY = ResolutionY / SsaoResolutionDivisor
     let [<Uniform>] SsaoResolutionF = Vector2 (single SsaoResolutionX, single SsaoResolutionY)
     let [<Uniform>] SsaoResolution = Vector2i (SsaoResolutionX, SsaoResolutionY)
-    let [<Uniform>] SsaoViewport = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(v2iZero, SsaoResolution))
+    let [<Uniform>] SsaoViewport = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, SsaoResolution))
     let [<Uniform>] WindowClearColor = Color.Zero
     let [<Uniform>] ViewportClearColor = Color.White // NOTE: do not change this color as the deferred lighting shader checks if normal color is equal to [1;1;1] to discard fragment.
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
