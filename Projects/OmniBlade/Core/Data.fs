@@ -163,9 +163,9 @@ type [<CustomEquality; CustomComparison>] StatusType =
                 match vulnerabilities.TryGetValue (Status this) with
                 | (true, rank) ->
                     match rank with
-                    | Invulnerable -> false
-                    | Resistant -> result0 && Gen.randomb
                     | Vulnerable -> result0 || Gen.randomb
+                    | Resistant -> result0 && Gen.randomb
+                    | Invulnerable -> false
                 | (false, _) -> result0 
             else result0
         result
@@ -185,9 +185,9 @@ type [<CustomEquality; CustomComparison>] StatusType =
                 match vulnerabilities.TryGetValue (Status this) with
                 | (true, rank) ->
                     match rank with
-                    | Invulnerable -> false
-                    | Resistant -> result0 && Gen.randomb
                     | Vulnerable -> result0 || Gen.randomb
+                    | Resistant -> result0 && Gen.randomb
+                    | Invulnerable -> false
                 | (false, _) -> result0 
             else result0
         result
@@ -228,9 +228,9 @@ type [<CustomEquality; CustomComparison>] StatusType =
         StatusType.enumerate this
 
 and VulnerabilityRank =
-    | Invulnerable
-    | Resistant
     | Vulnerable
+    | Resistant
+    | Invulnerable
 
 and VulnerabilityType =
     | Physical
