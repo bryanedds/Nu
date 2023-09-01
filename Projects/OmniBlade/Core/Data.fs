@@ -148,25 +148,49 @@ type [<CustomEquality; CustomComparison>] StatusType =
     static member buff this =
         not (StatusType.debuff this)
 
-    static member randomizeWeak this =
-        match this with
-        | Poison -> Gen.random1 2 = 0
-        | Silence -> Gen.random1 2 = 0
-        | Sleep -> Gen.random1 3 = 0
-        | Confuse -> Gen.random1 3 = 0
-        | Curse -> Gen.random1 2 = 0
-        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
-        | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
+    static member randomizeWeak (vulnerabilities : Vulnerabilities) this =
+        let result0 =
+            match this with
+            | Poison -> Gen.random1 2 = 0
+            | Silence -> Gen.random1 2 = 0
+            | Sleep -> Gen.random1 3 = 0
+            | Confuse -> Gen.random1 3 = 0
+            | Curse -> Gen.random1 2 = 0
+            | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
+            | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
+        let result =
+            if StatusType.debuff this then
+                match vulnerabilities.TryGetValue (Status this) with
+                | (true, rank) ->
+                    match rank with
+                    | Invulnerable -> false
+                    | Resistant -> result0 && Gen.randomb
+                    | Vulnerable -> result0 || Gen.randomb
+                | (false, _) -> result0 
+            else result0
+        result
 
-    static member randomizeStrong this =
-        match this with
-        | Poison -> Gen.random1 5 <> 0
-        | Silence -> Gen.random1 3 <> 0
-        | Sleep -> Gen.random1 2 <> 0
-        | Confuse -> Gen.random1 2 <> 0
-        | Curse -> Gen.random1 5 <> 0
-        | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
-        | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
+    static member randomizeStrong (vulnerabilities : Vulnerabilities) this =
+        let result0 =
+            match this with
+            | Poison -> Gen.random1 5 <> 0
+            | Silence -> Gen.random1 3 <> 0
+            | Sleep -> Gen.random1 2 <> 0
+            | Confuse -> Gen.random1 2 <> 0
+            | Curse -> Gen.random1 5 <> 0
+            | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
+            | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
+        let result =
+            if StatusType.debuff this then
+                match vulnerabilities.TryGetValue (Status this) with
+                | (true, rank) ->
+                    match rank with
+                    | Invulnerable -> false
+                    | Resistant -> result0 && Gen.randomb
+                    | Vulnerable -> result0 || Gen.randomb
+                | (false, _) -> result0 
+            else result0
+        result
 
     static member enumerate this =
         match this with
@@ -203,45 +227,19 @@ type [<CustomEquality; CustomComparison>] StatusType =
     override this.GetHashCode () =
         StatusType.enumerate this
 
-type [<CustomEquality; CustomComparison>] VulnerabilityType =
-    | Physical of single
-    | Magical of single
-    | Buff of single
-    | Debuff of single
-    | Affinity of single * AffinityType
-    | Status of single * StatusType
+and VulnerabilityRank =
+    | Invulnerable
+    | Resistant
+    | Vulnerable
 
-    static member enumerate this =
-        match this with
-        | Physical _ -> 0
-        | Magical _ -> 1 <<< 0
-        | Buff _ -> 1 <<< 1
-        | Debuff _ -> 1 <<< 2
-        | Affinity (_, affinity) -> 1 <<< 3 <<< hash affinity
-        | Status (_, status) -> 1 <<< 16 <<< hash status
+and VulnerabilityType =
+    | Physical
+    | Magical
+    | Affinity of AffinityType
+    | Status of StatusType
 
-    static member compare this that =
-        compare
-            (VulnerabilityType.enumerate this)
-            (VulnerabilityType.enumerate that)
-
-    interface VulnerabilityType IComparable with
-        member this.CompareTo that =
-            VulnerabilityType.compare this that
-
-    interface IComparable with
-        member this.CompareTo that =
-            match that with
-            | :? VulnerabilityType as that -> (this :> VulnerabilityType IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-    override this.Equals that =
-        match that with
-        | :? VulnerabilityType as that -> VulnerabilityType.enumerate this = VulnerabilityType.enumerate that
-        | _ -> false
-
-    override this.GetHashCode () =
-        VulnerabilityType.enumerate this
+and Vulnerabilities =
+    Map<VulnerabilityType, VulnerabilityRank>
 
 type EffectType =
     | Physical
@@ -695,7 +693,7 @@ module BattleInteractionSystem =
 
     type BattleConsequence =
         | Charge of int * string option // may be negative to reduce charge
-        | AddVulnerability of VulnerabilityType * string option
+        | AddVulnerability of VulnerabilityType * VulnerabilityRank * string option
         | RemoveVulnerability of VulnerabilityType * string option
         | AddStatus of StatusType * string option
         | RemoveStatus of StatusType * string option
@@ -880,7 +878,7 @@ type CharacterData =
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list
       TechProbabilityOpt : single option
-      Vulnerabilities : VulnerabilityType Set
+      Vulnerabilities : Vulnerabilities
       Interactions : BattleInteractionSystem.BattleInteraction list
       GoldScalar : single
       ExpScalar : single

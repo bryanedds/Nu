@@ -123,6 +123,22 @@ module Character =
         character.ArchetypeType = Fighter &&
         Gen.random1 12 = 0
 
+    let evalAttack effectType (source : Character) (target : Character) =
+        let power = source.Power
+        let shield = target.Shield effectType
+        let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
+        let damage0 = single (power - shield) * defendingScalar |> int |> abs
+        let damage1 =
+            match target.Vulnerabilities.TryGetValue VulnerabilityType.Physical with
+            | (true, rank) ->
+                match rank with
+                | Invulnerable -> 0
+                | Resistant -> damage0 / 2
+                | Vulnerable -> damage0 * 2
+            | (false, _) -> damage0
+        let damage = damage1 |> max 1
+        damage
+
     let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
         | AnyAim healthy ->
@@ -132,7 +148,7 @@ module Character =
         | NoAim ->
             Map.empty
 
-    let evaluateTargetType targetType (source : Character) (target : Character) characters =
+    let evalTargetType targetType (source : Character) (target : Character) characters =
         match targetType with
         | SingleTarget _ ->
             (Map.singleton target.CharacterIndex target, Map.empty)
@@ -251,11 +267,41 @@ module Character =
             let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage = (single efficacy * affinityScalar * techScalar * splitScalar * splashScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            let damage0 = (single efficacy * affinityScalar * techScalar * splitScalar * splashScalar + specialAddend - single shield) * defendingScalar |> int |> abs
+            let damage1 =
+                match techData.EffectType with
+                | Physical | Magical when techData.AffinityOpt = Some Wind || techData.AffinityOpt = Some Shadow ->
+                    match target.Vulnerabilities.TryGetValue VulnerabilityType.Physical with
+                    | (true, rank) ->
+                        match rank with
+                        | Invulnerable -> 0
+                        | Resistant -> damage0 / 2
+                        | Vulnerable -> damage0 * 2
+                    | (false, _) -> damage0
+                | _ ->
+                    match target.Vulnerabilities.TryGetValue VulnerabilityType.Magical with
+                    | (true, rank) ->
+                        match rank with
+                        | Invulnerable -> 0
+                        | Resistant -> damage0 / 2
+                        | Vulnerable -> damage0 * 2
+                    | (false, _) -> damage0
+            let damage2 =
+                match techData.AffinityOpt with
+                | Some affinity ->
+                    match target.Vulnerabilities.TryGetValue (Affinity affinity) with
+                    | (true, rank) ->
+                        match rank with
+                        | Invulnerable -> 0
+                        | Resistant -> damage1 / 2
+                        | Vulnerable -> damage1 * 2
+                    | (false, _) -> damage1
+                | None -> damage1
+            let damage = damage2 |> max 1
             (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTech techData source target characters =
-        let (direct, splashing) = evaluateTargetType techData.TargetType source target characters
+        let (direct, splashing) = evalTargetType techData.TargetType source target characters
         let targetsCount = Map.count direct + Map.count splashing
         let directResults =
             Map.fold (fun results _ target ->
@@ -274,9 +320,6 @@ module Character =
 
     let getPoiseType character =
         CharacterState.getPoiseType character.CharacterState_
-
-    let getAttackResult effectType source target =
-        CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
 
     let getAnimationIndex time character =
         CharacterAnimationState.index time character.CharacterAnimationState_
@@ -439,8 +482,8 @@ module Character =
 
     let applyVulnerabilityChanges vulnerabilitiesAdded vulnerabilitiesRemoved (character : Character) =
         updateVulnerabilities (fun vulnerabilities ->
-            let vulnerabilities = Set.fold (fun vulnerabilities vulnerability -> Set.add vulnerability vulnerabilities) vulnerabilities vulnerabilitiesAdded
-            let vulnerabilities = Set.fold (fun vulnerabilities vulnerability -> Set.remove vulnerability vulnerabilities) vulnerabilities vulnerabilitiesRemoved
+            let vulnerabilities = Map.fold (fun vulnerabilities vulnerabilityType vulnerabilityRank -> Map.add vulnerabilityType vulnerabilityRank vulnerabilities) vulnerabilities vulnerabilitiesAdded
+            let vulnerabilities = Set.fold (fun vulnerabilities vulnerabilityType -> Map.remove vulnerabilityType vulnerabilities) vulnerabilities vulnerabilitiesRemoved
             vulnerabilities)
             character
 
