@@ -134,7 +134,7 @@ module Character =
                 match rank with
                 | Invulnerable -> 0
                 | Resistant -> damage0 / 2
-                | Vulnerable -> damage0 * 2
+                | Vulnerable -> damage0 + damage0 / 2
             | (false, _) -> damage0
         let damage = damage1 |> max 1
         damage
@@ -276,7 +276,7 @@ module Character =
                         match rank with
                         | Invulnerable -> 0
                         | Resistant -> damage0 / 2
-                        | Vulnerable -> damage0 * 2
+                        | Vulnerable -> damage0 + damage0 / 2
                     | (false, _) -> damage0
                 | _ ->
                     match target.Vulnerabilities.TryGetValue VulnerabilityType.Magical with
@@ -284,7 +284,7 @@ module Character =
                         match rank with
                         | Invulnerable -> 0
                         | Resistant -> damage0 / 2
-                        | Vulnerable -> damage0 * 2
+                        | Vulnerable -> damage0 + damage0 / 2
                     | (false, _) -> damage0
             let damage2 =
                 match techData.AffinityOpt with
@@ -294,7 +294,7 @@ module Character =
                         match rank with
                         | Invulnerable -> 0
                         | Resistant -> damage1 / 2
-                        | Vulnerable -> damage1 * 2
+                        | Vulnerable -> damage1 + damage1 / 2
                     | (false, _) -> damage1
                 | None -> damage1
             let damage = damage2 |> max 1
