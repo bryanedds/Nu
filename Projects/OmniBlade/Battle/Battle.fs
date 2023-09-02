@@ -658,7 +658,6 @@ module Battle =
         | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
-        | OneEnemyLeft -> let enemies = getFriendliesHealthy observer.Ally battle in enemies.Count = 1
         | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
         | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
         | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
@@ -707,7 +706,6 @@ module Battle =
         | Item -> true
         | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
-        | OneEnemyLeft -> let enemies = getFriendliesHealthy observer.Ally battle in enemies.Count = 1
         | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
         | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
         | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
@@ -766,7 +764,6 @@ module Battle =
             | Buffed -> Seq.exists StatusType.buff statusesAdded
             | Wounded -> target.Wounded
             | Random chance -> Gen.randomf < chance
-            | OneEnemyLeft -> let enemies = getFriendliesHealthy observer.Ally battle in enemies.Count = 1
             | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
             | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
             | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
