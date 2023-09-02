@@ -643,10 +643,10 @@ module Battle =
 
     let rec private evalSingleTargetType targetType (source : Character) (target : Character) (observer : Character) battle =
         match targetType with
-        | Self -> observer = target
-        | Other -> observer <> target
+        | Self -> observer.CharacterIndex = target.CharacterIndex
+        | Other -> observer.CharacterIndex <> target.CharacterIndex
         | SelfOrFriendly -> let friendlies = getFriendlies observer.Ally battle in Map.containsKey target.CharacterIndex friendlies
-        | Friendly -> let friendlies = getFriendlies observer.Ally battle in observer <> target && Map.containsKey target.CharacterIndex friendlies
+        | Friendly -> let friendlies = getFriendlies observer.Ally battle in observer.CharacterIndex <> target.CharacterIndex && Map.containsKey target.CharacterIndex friendlies
         | Unfriendly -> let unfriendlies = getUnfriendlies observer.Ally battle in Map.containsKey target.CharacterIndex unfriendlies
         | Type ty -> target.CharacterType = ty
         | BattleTargetType.Any targetTypes -> List.exists (fun targetType -> evalSingleTargetType targetType source target observer battle) targetTypes
@@ -673,7 +673,7 @@ module Battle =
                 match condition with
                 | LastSurviving ->
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    observer = target && friendliesHealthy.Count = 1
+                    friendliesHealthy.Count = 1
                 | LastTypeSurviving ->
                     let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
                     friendliesHealthyDifferent.Count = 0
@@ -695,8 +695,11 @@ module Battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.foldBack (fun (observerIndex, observer) consequences ->
-            let consequences' = evalAttackInteractions4 source target observer battle
+        Seq.foldBack (fun (observerIndex, observer : Character) consequences ->
+            let consequences' =
+                if observer.Healthy
+                then evalAttackInteractions4 source target observer battle
+                else []
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
@@ -721,7 +724,7 @@ module Battle =
                 match condition with
                 | LastSurviving ->
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    observer = target && friendliesHealthy.Count = 1
+                    friendliesHealthy.Count = 1
                 | LastTypeSurviving ->
                     let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
                     friendliesHealthyDifferent.Count = 0
@@ -743,8 +746,11 @@ module Battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.foldBack (fun (observerIndex, observer) consequences ->
-            let consequences' = evalItemInteractions4 source target observer battle
+        Seq.foldBack (fun (observerIndex, observer : Character) consequences ->
+            let consequences' =
+                if observer.Healthy
+                then evalItemInteractions4 source target observer battle
+                else []
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
@@ -780,7 +786,7 @@ module Battle =
                 match condition with
                 | LastSurviving ->
                     let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    observer = target && friendliesHealthy.Count = 1
+                    friendliesHealthy.Count = 1
                 | LastTypeSurviving ->
                     let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
                     friendliesHealthyDifferent.Count = 0
@@ -809,8 +815,11 @@ module Battle =
         let source = getCharacter sourceIndex battle
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
-        Seq.foldBack (fun (observerIndex, observer) consequences ->
-            let consequences' = evalTechInteractions4 source target observer techType techResults battle
+        Seq.foldBack (fun (observerIndex, observer : Character) consequences ->
+            let consequences' =
+                if observer.Healthy
+                then evalTechInteractions4 source target observer techType techResults battle
+                else []
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
