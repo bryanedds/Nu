@@ -676,7 +676,6 @@ module BattleInteractionSystem =
         | Buffed
         | Wounded
         | Random of single
-        | OneEnemyLeft
         | HitPointsLessThanOrEqual of single
         | HitPointsGreaterThanOrEqual of single
         | TechPointsLessThanOrEqual of single
