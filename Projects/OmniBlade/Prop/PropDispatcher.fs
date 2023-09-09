@@ -24,8 +24,8 @@ module PropDispatcher =
 
         override this.Initialize (prop, entity) =
             [entity.Perimeter := prop.Prop.Perimeter
-             entity.Friction == 0.0f
              entity.BodyType == Static
+             entity.Friction == 0.0f
              entity.LinearDamping == 0.0f
              entity.AngularFactor == v3Zero
              entity.GravityOverride == Some v3Zero
