@@ -38,7 +38,7 @@ module Assets =
 
         let PackageName = "Gui"
         let Font = asset<Font> PackageName "Font" // TODO: P1: See if this is openly licensed (manaspace font).
-        let Splash = asset<Image> PackageName "Splash"
+        let NuSlide = asset<Image> PackageName "NuSlide"
         let HeaderImage = asset<Image> PackageName "Header"
         let DialogShortImage = asset<Image> PackageName "DialogShort"
         let DialogThinImage = asset<Image> PackageName "DialogThin"
