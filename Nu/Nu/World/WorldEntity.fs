@@ -578,7 +578,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishPreUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "preUpdateEntity" "" EventTrace.empty
-                World.publishPlus () entity.PreUpdateEvent eventTrace Simulants.Game false false world
+                World.publishPlus () entity.PreUpdateEvent eventTrace Game.Handle false false world
             else world
 #endif
 
@@ -593,7 +593,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishPostUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
-                World.publishPlus () entity.PostUpdateEvent eventTrace Simulants.Game false false world
+                World.publishPlus () entity.PostUpdateEvent eventTrace Game.Handle false false world
             else world
 #endif
 
@@ -607,7 +607,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishRenders entity world then
                 let eventTrace = EventTrace.debug "World" "renderEntity" "" EventTrace.empty
-                World.publishPlus () entity.RenderEvent eventTrace Simulants.Game false false world
+                World.publishPlus () entity.RenderEvent eventTrace Game.Handle false false world
             else world
 
         static member internal updateEntity (entity : Entity) world =
@@ -620,7 +620,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
-                World.publishPlus () entity.UpdateEvent eventTrace Simulants.Game false false world
+                World.publishPlus () entity.UpdateEvent eventTrace Game.Handle false false world
             else world
 
         /// Edit an entity with the given operation using the ImGui APIs.
@@ -678,7 +678,7 @@ module WorldEntityModule =
         /// Destroy multiple entities in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyEntities entities world =
-            World.frame (World.destroyEntitiesImmediate entities) Simulants.Game world
+            World.frame (World.destroyEntitiesImmediate entities) Game.Handle world
 
         /// Sort the given entities by 2d sorting priority.
         /// If there are a lot of entities, this may allocate in the LOH.

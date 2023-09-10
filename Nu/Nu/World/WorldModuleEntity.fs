@@ -2446,7 +2446,7 @@ module WorldModuleEntity =
         /// Rename an entity.
         [<FunctionBinding>]
         static member renameEntity source destination world =
-            World.frame (World.renameEntityImmediate source destination) Simulants.Game world
+            World.frame (World.renameEntityImmediate source destination) Game.Handle world
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =

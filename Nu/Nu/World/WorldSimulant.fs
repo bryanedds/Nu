@@ -112,7 +112,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
             | :? Group as group -> group.GetDispatcher world :> Dispatcher
             | :? Screen as screen -> screen.GetDispatcher world :> Dispatcher
-            | :? Game -> Simulants.Game.GetDispatcher world :> Dispatcher
+            | :? Game -> Game.Handle.GetDispatcher world :> Dispatcher
             | _ -> failwithumf ()
 
         static member internal unregister (simulant : Simulant) (world : World) =
@@ -183,7 +183,7 @@ module WorldSimulantModule =
             match simulant with
             | :? Entity as entity -> Some entity.Parent
             | :? Group as group -> Some (group.Screen :> Simulant)
-            | :? Screen -> Some (Simulants.Game :> Simulant)
+            | :? Screen -> Some (Game.Handle :> Simulant)
             | :? Game -> None
             | _ -> failwithumf ()
 
@@ -194,7 +194,7 @@ module WorldSimulantModule =
             match simulant with
             | :? Entity as entity -> entity.Parent
             | :? Group as group -> group.Screen :> Simulant
-            | :? Screen -> Simulants.Game :> Simulant
+            | :? Screen -> Game.Handle :> Simulant
             | :? Game -> failwithumf ()
             | _ -> failwithumf ()
 
@@ -245,7 +245,7 @@ module WorldSimulantModule =
             then Entity (Address.changeType<obj, Entity> address) :> Simulant
             else
                 match namesLength with
-                | 0 -> Simulants.Game :> Simulant
+                | 0 -> Game.Handle :> Simulant
                 | 1 -> Screen (Address.changeType<obj, Screen> address) :> Simulant
                 | 2 -> Group (Address.changeType<obj, Group> address) :> Simulant
                 | _ -> failwithumf ()

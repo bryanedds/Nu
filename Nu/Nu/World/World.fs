@@ -244,7 +244,7 @@ module Nu =
                         | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortHorizon = 0.0f; SortTarget = entity } :> IComparable
                         | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortHorizon = 0.0f; SortTarget = group } :> IComparable
                         | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortHorizon = 0.0f; SortTarget = screen } :> IComparable
-                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortHorizon = 0.0f; SortTarget = Simulants.Game } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortHorizon = 0.0f; SortTarget = Game.Handle } :> IComparable
                         | _ -> failwithumf ())
                     subscriptions
                     world
@@ -508,8 +508,8 @@ module WorldModule3 =
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
             let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
-            let simulants = UMap.singleton HashIdentity.Structural config (Simulants.Game :> Simulant) None
-            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
+            let simulants = UMap.singleton HashIdentity.Structural config (Game.Handle :> Simulant) None
+            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game.Handle }
             let world =
                 { EventGraph = eventGraph
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
@@ -536,7 +536,7 @@ module WorldModule3 =
                 let eventTracing = Constants.Engine.EventTracing
                 let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Constants.Engine.EventFilter
-                let globalSimulantGeneralized = { GsgAddress = atoa Simulants.Game.GameAddress }
+                let globalSimulantGeneralized = { GsgAddress = atoa Game.Handle.GameAddress }
                 let eventConfig = if config.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
@@ -600,7 +600,7 @@ module WorldModule3 =
                     let eventTracing = Constants.Engine.EventTracing
                     let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
                     let eventFilter = Constants.Engine.EventFilter
-                    let globalSimulant = Simulants.Game
+                    let globalSimulant = Game.Handle
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                     let eventConfig = if config.Imperative then Imperative else Functional
                     EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig

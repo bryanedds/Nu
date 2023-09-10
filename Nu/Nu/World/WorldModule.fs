@@ -8,12 +8,6 @@ open System.Reflection
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
-module Simulants =
-
-    /// The game. Always exists in the world.
-    let Game = Game ()
-
 [<AutoOpen>]
 module WorldModuleOperators =
 
@@ -27,7 +21,7 @@ module WorldModuleOperators =
         if simulant2.Names.Length >= 3 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names.[0]) :> Simulant :?> 't)
-        elif simulant2.Names.Length = 0 && typeof<'t> = typeof<Game> then Some (Simulants.Game :> Simulant :?> 't)
+        elif simulant2.Names.Length = 0 && typeof<'t> = typeof<Game> then Some (Game.Handle :> Simulant :?> 't)
         else None
 
     /// Relate the second simulant to the first.
@@ -222,7 +216,7 @@ module WorldModule =
         /// Set whether the world state is advancing.
         [<FunctionBinding>]
         static member setAdvancing advancing world =
-            World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Simulants.Game world
+            World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
         /// Check that the world is executing with imperative semantics where applicable.
         [<FunctionBinding>]
@@ -718,7 +712,7 @@ module WorldModule =
                     let unsubscriptions = UMap.remove subscriptionId unsubscriptions
                     let world = World.setSubscriptions subscriptions world
                     let world = World.setUnsubscriptions unsubscriptions world
-                    let world = WorldTypes.handleSubscribeAndUnsubscribeEvent false eventAddress Simulants.Game world :?> World
+                    let world = WorldTypes.handleSubscribeAndUnsubscribeEvent false eventAddress Game.Handle world :?> World
                     world
                 | None -> world
             | None -> world
@@ -751,7 +745,7 @@ module WorldModule =
                 let unsubscriptions = UMap.add subscriptionId (eventAddressObj, subscriber :> Simulant) unsubscriptions
                 let world = World.setSubscriptions subscriptions world
                 let world = World.setUnsubscriptions unsubscriptions world
-                let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Simulants.Game world :?> World
+                let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Game.Handle world :?> World
                 (World.unsubscribe subscriptionId, world)
             else failwith "Event name cannot be empty."
 

@@ -137,7 +137,7 @@ module WorldGameModule =
     type World with
 
         static member internal registerGame world =
-            let game = Simulants.Game
+            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Register (game, world)
             let eventTrace = EventTrace.debug "World" "registerGame" "Register" EventTrace.empty
@@ -146,7 +146,7 @@ module WorldGameModule =
             World.publishPlus (RegisterData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
 
         static member internal unregisterGame world =
-            let game = Simulants.Game
+            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
             let world = World.publishPlus () Events.Unregistering eventTrace game true false world
@@ -157,7 +157,7 @@ module WorldGameModule =
         static member internal preUpdateGame world =
                 
             // pre-update via dispatcher
-            let game = Simulants.Game
+            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.PreUpdate (game, world)
 
@@ -168,7 +168,7 @@ module WorldGameModule =
         static member internal updateGame world =
 
             // update via dispatcher
-            let game = Simulants.Game
+            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Update (game, world)
 
@@ -179,7 +179,7 @@ module WorldGameModule =
         static member internal postUpdateGame world =
                 
             // post-update via dispatcher
-            let game = Simulants.Game
+            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.PostUpdate (game, world)
 
@@ -190,7 +190,7 @@ module WorldGameModule =
         static member internal renderGame world =
 
             // render via dispatcher
-            let game = Simulants.Game
+            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Render (game, world)
 

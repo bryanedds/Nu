@@ -18,7 +18,7 @@ module WorldModuleGame =
     type World with
 
         static member private publishGameChange propertyName (propertyPrevious : obj) (propertyValue : obj) world =
-            let game = Game ()
+            let game = Game.Handle
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
             let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|]
             let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
@@ -44,13 +44,13 @@ module WorldModuleGame =
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }}
                     struct (gameState, World.setGameState gameState world)
-                let world = gameState.Dispatcher.TrySynchronize (initializing, Simulants.Game, world)
+                let world = gameState.Dispatcher.TrySynchronize (initializing, Game.Handle, world)
                 let world =
                     if initializing then
                         let content = World.getGameContent world
                         let desiredScreen =
                             match Seq.tryHead content.ScreenContents with
-                            | Some screen -> Desire (Simulants.Game / screen.Key)
+                            | Some screen -> Desire (Game.Handle / screen.Key)
                             | None -> DesireNone
                         World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world
@@ -79,13 +79,13 @@ module WorldModuleGame =
                 let struct (gameState, world) =
                     let gameState = { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     struct (gameState, World.setGameState gameState world)
-                let world = gameState.Dispatcher.TrySynchronize (initializing, Simulants.Game, world)
+                let world = gameState.Dispatcher.TrySynchronize (initializing, Game.Handle, world)
                 let world =
                     if initializing then
                         let content = World.getGameContent world
                         let desiredScreen =
                             match Seq.tryHead content.ScreenContents with
-                            | Some screen -> Desire (Simulants.Game / screen.Key)
+                            | Some screen -> Desire (Game.Handle / screen.Key)
                             | None -> DesireNone
                         World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world

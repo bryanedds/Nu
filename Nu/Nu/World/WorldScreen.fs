@@ -138,7 +138,7 @@ module WorldScreenModule =
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PreUpdate --> screen) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.PreUpdate --> screen) eventTrace Game.Handle false false world
 
         static member internal updateScreen (screen : Screen) world =
 
@@ -153,7 +153,7 @@ module WorldScreenModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Update --> screen) eventTrace Game.Handle false false world
 
         static member internal postUpdateScreen (screen : Screen) world =
 
@@ -168,7 +168,7 @@ module WorldScreenModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.PostUpdate --> screen) eventTrace Game.Handle false false world
 
         static member internal renderScreen (screen : Screen) world =
 
@@ -183,7 +183,7 @@ module WorldScreenModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Render --> screen) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Render --> screen) eventTrace Game.Handle false false world
 
         /// Edit a screen with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
@@ -195,7 +195,7 @@ module WorldScreenModule =
         [<FunctionBinding>]
         static member getScreens world =
             let simulants = World.getSimulants world
-            match simulants.TryGetValue (Simulants.Game :> Simulant) with
+            match simulants.TryGetValue (Game.Handle :> Simulant) with
             | (true, screensOpt) ->
                 match screensOpt with
                 | Some screens -> screens |> Seq.map cast<Screen>

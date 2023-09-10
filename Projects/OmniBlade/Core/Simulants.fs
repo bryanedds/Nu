@@ -10,6 +10,9 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module Simulants =
 
+    // game
+    let Game = Game.Handle
+
     // splash screen
     let Splash = Screen "Splash"
 
