@@ -2704,9 +2704,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     /// Run Gaia.
     let run nuConfig gaiaPlugin =
+
+        // discover the desired nu plugin for editing
         let (savedState, targetDir, plugin) = selectNuPlugin gaiaPlugin
+
+        // ensure imgui ini file exists before initialising imgui
+        let imguiIniFilePath = targetDir + "/imgui.ini"
+        if not (File.Exists imguiIniFilePath) then
+            File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
+
+        // attempt to create SDL dependencies
         match tryMakeSdlDeps () with
         | Right (sdlConfig, sdlDeps) ->
+
+            // attempt to create the world
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
                   Advancing = false
@@ -2715,6 +2726,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right (screen, world) ->
+
+                // subscribe to events related to editing
                 let world = World.subscribe handleNuMouseButton Events.MouseLeftDown Simulants.Game world
                 let world = World.subscribe handleNuMouseButton Events.MouseLeftUp Simulants.Game world
                 let world = World.subscribe handleNuMouseButton Events.MouseMiddleDown Simulants.Game world
@@ -2723,10 +2736,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = World.subscribe handleNuMouseButton Events.MouseRightUp Simulants.Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game world
                 let world = World.subscribe handleNuRender Events.Render Simulants.Game world
-                let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
-                let imguiIniFilePath = targetDir + "/imgui.ini"
-                if not (File.Exists imguiIniFilePath) then
-                    File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
+
+                // no song playback in editor by default
+                let world = World.setMasterSongVolume 0.0f world
+                
+                // run the world
                 runWithCleanUp savedState targetDir screen world
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
         | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
