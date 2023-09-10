@@ -20,17 +20,16 @@ module WorldModuleScreen =
             UMap.tryFind screen world.ScreenStates
 
         static member private screenStateAdder screenState (screen : Screen) world =
-            let game = Simulants.Game
             let simulants =
-                match world.Simulants.TryGetValue (game :> Simulant) with
+                match world.Simulants.TryGetValue (Game.Handle :> Simulant) with
                 | (true, screensOpt) ->
                     match screensOpt with
                     | Some screens ->
                         let screens = USet.add (screen :> Simulant) screens
-                        UMap.add (game :> Simulant) (Some screens) world.Simulants
+                        UMap.add (Game.Handle :> Simulant) (Some screens) world.Simulants
                     | None ->
                         let screens = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) (screen :> Simulant)
-                        UMap.add (game :> Simulant) (Some screens) world.Simulants
+                        UMap.add (Game.Handle :> Simulant) (Some screens) world.Simulants
                 | (false, _) -> failwith ("Cannot add screen '" + scstring screen + "' to non-existent game.")
             let simulants =
                 if not (UMap.containsKey (screen :> Simulant) simulants)
@@ -40,16 +39,15 @@ module WorldModuleScreen =
             World.choose { world with Simulants = simulants; ScreenStates = screenStates }
         
         static member private screenStateRemover (screen : Screen) world =
-            let game = Simulants.Game
             let simulants =
-                match world.Simulants.TryGetValue (game :> Simulant) with
+                match world.Simulants.TryGetValue (Game.Handle :> Simulant) with
                 | (true, screensOpt) ->
                     match screensOpt with
                     | Some screens ->
                         let screens = USet.remove (screen :> Simulant) screens
                         if USet.isEmpty screens
-                        then UMap.add (game :> Simulant) None world.Simulants
-                        else UMap.add (game :> Simulant) (Some screens) world.Simulants
+                        then UMap.add (Game.Handle :> Simulant) None world.Simulants
+                        else UMap.add (Game.Handle :> Simulant) (Some screens) world.Simulants
                     | None -> world.Simulants
                 | (false, _) -> world.Simulants
             let simulants = UMap.remove (screen :> Simulant) simulants

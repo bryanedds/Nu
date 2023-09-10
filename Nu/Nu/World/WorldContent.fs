@@ -323,7 +323,7 @@ module Content =
     /// Synchronize a screen and its contained simulants to the given content.
     let synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
         if contentOld =/= content then
-            let game = Simulants.Game
+            let game = Game.Handle
             let world = synchronizeEventSignals contentOld content origin game world
             let world = synchronizeEventHandlers contentOld content origin game world
             let world = synchronizeProperties initializing contentOld content game world

@@ -1139,6 +1139,9 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 /// The game type that hosts the various screens used to navigate through a game.
 and Game (gameAddress) =
 
+    /// A convenience reference to get the universal game handle.
+    static let handle = Game ()
+
     // check that address is of correct length for a game
     do if Address.length gameAddress <> 0 then failwith "Game address must be length of 0."
 
@@ -1154,6 +1157,9 @@ and Game (gameAddress) =
     /// Get the latest value of a game's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
     member private this.View = WorldTypes.viewGame WorldTypes.Chosen
+
+    /// A convenience accessor to get the universal game handle.
+    static member Handle = handle
 
     /// Derive a screen from the game.
     static member (/) (game : Game, screenName) = let _ = game in Screen (ntoa screenName)

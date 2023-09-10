@@ -2000,7 +2000,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // game properties window
                     if ImGui.Begin ("Game Properties", ImGuiWindowFlags.NoNav) then
-                        imGuiEditProperties Simulants.Game
+                        imGuiEditProperties Game.Handle
                         ImGui.End ()
 
                     // screen properties window
@@ -2155,7 +2155,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let (selectedSimulant, localFrame) =
                             match selectedEntityOpt with
                             | Some entity when entity.Exists world -> (entity :> Simulant, entity.GetScriptFrame world)
-                            | Some _ | None -> (Simulants.Game :> Simulant, Simulants.Game.GetScriptFrame world)
+                            | Some _ | None -> (Game.Handle :> Simulant, Game.Handle.GetScriptFrame world)
                         let contextStr = match selectedSimulant with :? Game -> "(Game)" | _ -> scstring selectedSimulant
                         ImGui.Text ("Context: " + contextStr)
                         ImGui.InputTextMultiline ("##consoleStr", &consoleStr, 131072u, v2 350.0f -1.0f) |> ignore<bool>
@@ -2728,14 +2728,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Right (screen, world) ->
 
                 // subscribe to events related to editing
-                let world = World.subscribe handleNuMouseButton Events.MouseLeftDown Simulants.Game world
-                let world = World.subscribe handleNuMouseButton Events.MouseLeftUp Simulants.Game world
-                let world = World.subscribe handleNuMouseButton Events.MouseMiddleDown Simulants.Game world
-                let world = World.subscribe handleNuMouseButton Events.MouseMiddleUp Simulants.Game world
-                let world = World.subscribe handleNuMouseButton Events.MouseRightDown Simulants.Game world
-                let world = World.subscribe handleNuMouseButton Events.MouseRightUp Simulants.Game world
-                let world = World.subscribe handleNuSelectedScreenOptChange Simulants.Game.SelectedScreenOpt.ChangeEvent Simulants.Game world
-                let world = World.subscribe handleNuRender Events.Render Simulants.Game world
+                let world = World.subscribe handleNuMouseButton Events.MouseLeftDown Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseLeftUp Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseMiddleDown Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseMiddleUp Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseRightDown Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseRightUp Game.Handle world
+                let world = World.subscribe handleNuSelectedScreenOptChange Game.Handle.SelectedScreenOpt.ChangeEvent Game.Handle world
+                let world = World.subscribe handleNuRender Events.Render Game.Handle world
 
                 // no song playback in editor by default
                 let world = World.setMasterSongVolume 0.0f world

@@ -116,7 +116,7 @@ module WorldGroupModule =
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PreUpdate --> group) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.PreUpdate --> group) eventTrace Game.Handle false false world
 
         static member internal updateGroup (group : Group) world =
 
@@ -126,7 +126,7 @@ module WorldGroupModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.Update --> group) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Update --> group) eventTrace Game.Handle false false world
 
         static member internal postUpdateGroup (group : Group) world =
 
@@ -136,7 +136,7 @@ module WorldGroupModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate --> group) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.PostUpdate --> group) eventTrace Game.Handle false false world
 
         static member internal renderGroup (group : Group) world =
 
@@ -146,7 +146,7 @@ module WorldGroupModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderGroup" "" EventTrace.empty
-            World.publishPlus () (Events.Render --> group) eventTrace Simulants.Game false false world
+            World.publishPlus () (Events.Render --> group) eventTrace Game.Handle false false world
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
@@ -244,7 +244,7 @@ module WorldGroupModule =
         /// Destroy multiple groups from the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyGroups groups world =
-            World.frame (World.destroyGroupsImmediate groups) Simulants.Game world
+            World.frame (World.destroyGroupsImmediate groups) Game.Handle world
 
         /// Rename a group. Note that since this destroys the renamed group immediately, you should not call this
         /// inside an event handler that involves the reassigned group itself. Note this also renames all of its
@@ -268,7 +268,7 @@ module WorldGroupModule =
         /// Rename a group.
         [<FunctionBinding>]
         static member renameGroup source destination world =
-            World.frame (World.renameGroupImmediate source destination) Simulants.Game world
+            World.frame (World.renameGroupImmediate source destination) Game.Handle world
 
         /// Write a group to a group descriptor.
         static member writeGroup group (groupDescriptor : GroupDescriptor) world =
