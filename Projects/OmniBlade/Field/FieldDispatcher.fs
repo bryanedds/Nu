@@ -61,10 +61,10 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // synchronize avatar if needed
+                // warp avatar if needed
                 let (signals, field) =
-                    if not field.AvatarSynchronized
-                    then withSignal (WarpAvatar field.Avatar.Bottom) (Field.updateAvatarSynchronized tautology field)
+                    if not field.AvatarWarped
+                    then withSignal (WarpAvatar field.Avatar.Bottom) field
                     else just field
 
                 // advance field if needed
@@ -133,8 +133,8 @@ module FieldDispatcher =
 
             | AvatarBodyTransform transform ->
 
-                // update avatar from transform if synchronized
-                if field.AvatarSynchronized then
+                // update avatar from transform if warped
+                if field.AvatarWarped then
                     let time = world.UpdateTime
                     let avatar = field.Avatar
                     let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
@@ -517,6 +517,7 @@ module FieldDispatcher =
             | WarpAvatar bottom ->
                 let bodyBottomOffset = v3Up * Constants.Gameplay.CharacterSize.Y * 0.5f
                 let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldSceneAvatar.GetBodyId world) world
+                let world = Simulants.Field.Field.Update (Field.updateAvatarWarped tautology) world
                 just world
 
             | MoveAvatar force ->
