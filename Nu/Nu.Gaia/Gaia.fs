@@ -64,6 +64,9 @@ module Gaia =
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
+    let mutable private openProjectDllPath = ""
+    let mutable private openProjectEditMode = "Title"
+    let mutable private openProjectImperativeExecution = false
     let mutable private newProjectName = "MyGame"
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
     let mutable private newEntityDispatcherName = null // this will be initialized on start
@@ -94,8 +97,8 @@ module Gaia =
     (* Project States *)
 
     let mutable private targetDir = "."
-    let mutable private gameDllPath = ""
-    let mutable private projectEditMode = "Title"
+    let mutable private projectDllPath = ""
+    let mutable private projectEditMode = ""
     let mutable private projectImperativeExecution = false
     let mutable private groupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private groupFilePaths = Map.empty<Group Address, string>
@@ -927,7 +930,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else SavedState.defaultState
             with _ -> SavedState.defaultState
         let gaiaDirectory = Directory.GetCurrentDirectory ()
-        match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectFilePath with
+        match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectDllPath with
         | Right (Some (filePath, targetDir, plugin)) ->
             Constants.Override.fromAppConfig filePath
             try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
@@ -938,8 +941,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             with _ -> Log.info "Could not save editor state."
             (savedState, ".", gaiaPlugin)
         | Left () ->
-            if not (String.IsNullOrWhiteSpace savedState.ProjectFilePath) then
-                Log.trace ("Invalid Nu Assembly: " + savedState.ProjectFilePath)
+            if not (String.IsNullOrWhiteSpace savedState.ProjectDllPath) then
+                Log.trace ("Invalid Nu Assembly: " + savedState.ProjectDllPath)
             (SavedState.defaultState, ".", gaiaPlugin)
 
     (* ImGui Callback Functions *)
@@ -2280,7 +2283,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let templateFileName = "Nu.Template.fsproj"
                                 let projectsDir = programDir + "/../../../../../Projects" |> Path.GetFullPath
                                 let newProjectDir = projectsDir + "/" + newProjectName |> Path.GetFullPath
-                                let newProjectDll = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
+                                let newProjectDllPath = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
                                 let newFileName = newProjectName + ".fsproj"
                                 let newProject = newProjectDir + "/" + newFileName |> Path.GetFullPath
                                 let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
@@ -2346,9 +2349,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                                         // configure editor to open new project then exit
                                         let savedState =
-                                            { ProjectFilePath = newProjectDll
+                                            { ProjectDllPath = newProjectDllPath
                                               EditModeOpt = Some "Title"
-                                              UseImperativeExecution = projectImperativeExecution }
+                                              UseImperativeExecution = openProjectImperativeExecution }
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                         let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
@@ -2383,19 +2386,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
                             ImGui.Text "Game Assembly Path:"
                             ImGui.SameLine ()
-                            ImGui.InputTextWithHint ("##gameDllFilePath", "[enter game .dll path]", &gameDllPath, 4096u) |> ignore<bool>
+                            ImGui.InputTextWithHint ("##openProjectDllPath", "[enter game .dll path]", &openProjectDllPath, 4096u) |> ignore<bool>
                             ImGui.Text "Edit Mode:"
                             ImGui.SameLine ()
-                            ImGui.InputText ("##projectGameMode", &projectEditMode, 4096u) |> ignore<bool>
-                            ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &projectImperativeExecution) |> ignore<bool>
+                            ImGui.InputText ("##openProjectEditMode", &openProjectEditMode, 4096u) |> ignore<bool>
+                            ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &openProjectImperativeExecution) |> ignore<bool>
                             if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
-                                String.notEmpty gameDllPath &&
-                                File.Exists gameDllPath then
+                                String.notEmpty openProjectDllPath &&
+                                File.Exists openProjectDllPath then
                                 showOpenProjectDialog <- false
                                 let savedState =
-                                    { ProjectFilePath = gameDllPath
-                                      EditModeOpt = Some projectEditMode
-                                      UseImperativeExecution = projectImperativeExecution }
+                                    { ProjectDllPath = openProjectDllPath
+                                      EditModeOpt = Some openProjectEditMode
+                                      UseImperativeExecution = openProjectImperativeExecution }
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
@@ -2606,7 +2609,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let rec private runWithCleanUp savedState targetDir' screen wtemp =
         world <- wtemp
         targetDir <- targetDir'
-        gameDllPath <- savedState.ProjectFilePath
+        projectDllPath <- savedState.ProjectDllPath
         projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
         projectImperativeExecution <- savedState.UseImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
