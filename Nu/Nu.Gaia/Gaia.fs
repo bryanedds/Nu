@@ -2348,16 +2348,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         Log.info ("Project '" + newProjectName + "'" + "created.")
 
                                         // configure editor to open new project then exit
-                                        let gaiaState =
-                                            { ProjectDllPath = newProjectDllPath
-                                              EditModeOpt = Some "Title"
-                                              UseImperativeExecution = openProjectImperativeExecution }
+                                        let gaiaState = GaiaState.make newProjectDllPath (Some "Title") openProjectImperativeExecution
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                         let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
                                             Directory.SetCurrentDirectory gaiaDirectory
                                             showRestartDialog <- true
-                                        with _ -> Log.trace "Could not save editor state and open new project."
+                                        with _ -> Log.trace "Could not save gaia state and open new project."
 
                                         // close dialog
                                         showNewProjectDialog <- false
@@ -2395,10 +2392,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 String.notEmpty openProjectDllPath &&
                                 File.Exists openProjectDllPath then
                                 showOpenProjectDialog <- false
-                                let gaiaState =
-                                    { ProjectDllPath = openProjectDllPath
-                                      EditModeOpt = Some openProjectEditMode
-                                      UseImperativeExecution = openProjectImperativeExecution }
+                                let gaiaState = GaiaState.make openProjectDllPath (Some openProjectEditMode) openProjectImperativeExecution
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2515,7 +2509,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
                             ImGui.Text "Any unsaved changes will be lost."
-                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
+                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                                let gaiaState = GaiaState.make projectDllPath (Some projectEditMode) projectImperativeExecution
+                                let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
+                                let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+                                    Directory.SetCurrentDirectory gaiaDirectory
+                                with _ -> Log.trace "Could not save gaia state."
+                                world <- World.exit world
                             ImGui.SameLine ()
                             if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then showConfirmExitDialog <- false
                             ImGui.EndPopup ()
@@ -2610,8 +2611,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         targetDir <- targetDir'
         projectDllPath <- gaiaState.ProjectDllPath
-        projectEditMode <- match gaiaState.EditModeOpt with Some m -> m | None -> ""
-        projectImperativeExecution <- gaiaState.UseImperativeExecution
+        projectEditMode <- match gaiaState.ProjectEditModeOpt with Some m -> m | None -> ""
+        projectImperativeExecution <- gaiaState.ProjectImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
         selectGroup (Nu.World.getGroups screen world |> Seq.head)
@@ -2722,9 +2723,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // attempt to create the world
             let worldConfig =
-                { Imperative = gaiaState.UseImperativeExecution
+                { Imperative = gaiaState.ProjectImperativeExecution
                   Advancing = false
-                  ModeOpt = gaiaState.EditModeOpt
+                  ModeOpt = gaiaState.ProjectEditModeOpt
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with

@@ -19,9 +19,11 @@ type DragEyeState =
 
 type [<SymbolicExpansion>] GaiaState =
     { ProjectDllPath : string
-      EditModeOpt : string option
-      UseImperativeExecution : bool }
+      ProjectEditModeOpt : string option
+      ProjectImperativeExecution : bool }
+    static member make dllPath editModeOpt imperativeExecution =
+        { ProjectDllPath = dllPath
+          ProjectEditModeOpt = editModeOpt
+          ProjectImperativeExecution = imperativeExecution }
     static member defaultState =
-        { ProjectDllPath = ""
-          EditModeOpt = None
-          UseImperativeExecution = false }
+        GaiaState.make "" None false
