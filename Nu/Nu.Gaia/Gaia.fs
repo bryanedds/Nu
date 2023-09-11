@@ -64,8 +64,8 @@ module Gaia =
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
-    let mutable private openProjectDllPath = ""
-    let mutable private openProjectEditMode = "Title"
+    let mutable private openProjectDllPath = null // this will be initialized on start
+    let mutable private openProjectEditMode = null // this will be initialized on start
     let mutable private openProjectImperativeExecution = false
     let mutable private newProjectName = "MyGame"
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
@@ -944,6 +944,57 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if not (String.IsNullOrWhiteSpace gaiaState.ProjectDllPath) then
                 Log.trace ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
+
+    let private tryMakeWorld sdlDeps worldConfig (plugin : NuPlugin) =
+
+        // attempt to make the world
+        match World.tryMake sdlDeps worldConfig plugin with
+        | Right world ->
+
+            // initialize event filter as not to flood the log
+            let world = World.setEventFilter Constants.Gaia.EventFilter world
+
+            // apply any selected mode
+            let world =
+                match worldConfig.ModeOpt with
+                | Some mode ->
+                    match plugin.EditModes.TryGetValue mode with
+                    | (true, modeFn) -> modeFn world
+                    | (false, _) -> world
+                | None -> world
+
+            // figure out which screen to use
+            let (screen, world) =
+                match World.getDesiredScreen world with
+                | Desire screen -> (screen, world)
+                | DesireNone ->
+                    let (screen, world) = World.createScreen (Some "Screen") world
+                    let world = World.setDesiredScreen (Desire screen) world
+                    (screen, world)
+                | DesireIgnore ->
+                    let (screen, world) = World.createScreen (Some "Screen") world
+                    let world = World.setSelectedScreen screen world
+                    (screen, world)
+
+            // create default group if no group exists
+            let world =
+                if Seq.isEmpty (World.getGroups screen world)
+                then World.createGroup (Some "Group") screen world |> snd
+                else world
+
+            // proceed directly to idle state
+            let world = World.selectScreen (IdlingState world.GameTime) screen world
+            Right (screen, world)
+
+        // error
+        | Left error -> Left error
+
+    let private tryMakeSdlDeps () =
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
+        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
+        match SdlDeps.tryMake sdlConfig with
+        | Left msg -> Left msg
+        | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
     (* ImGui Callback Functions *)
 
@@ -2607,12 +2658,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.EndPopup ()
             world
 
-    let rec private runWithCleanUp gaiaState targetDir' screen wtemp =
+    let rec private runWithCleanUp gaiaState targetDir_ screen wtemp =
         world <- wtemp
-        targetDir <- targetDir'
-        projectDllPath <- gaiaState.ProjectDllPath
-        projectEditMode <- match gaiaState.ProjectEditModeOpt with Some m -> m | None -> ""
-        projectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        openProjectDllPath <- gaiaState.ProjectDllPath
+        openProjectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
+        openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        targetDir <- targetDir_
+        projectDllPath <- openProjectDllPath
+        projectEditMode <- openProjectEditMode
+        projectImperativeExecution <- openProjectImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
         selectGroup (Nu.World.getGroups screen world |> Seq.head)
@@ -2650,61 +2704,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         result
 
     (* Public API *)
-
-    /// Attempt to make a world for use in the Gaia form.
-    /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
-    /// function's various requirements.
-    let tryMakeWorld sdlDeps worldConfig (plugin : NuPlugin) =
-
-        // attempt to make the world
-        match World.tryMake sdlDeps worldConfig plugin with
-        | Right world ->
-
-            // initialize event filter as not to flood the log
-            let world = World.setEventFilter Constants.Gaia.EventFilter world
-
-            // apply any selected mode
-            let world =
-                match worldConfig.ModeOpt with
-                | Some mode ->
-                    match plugin.EditModes.TryGetValue mode with
-                    | (true, modeFn) -> modeFn world
-                    | (false, _) -> world
-                | None -> world
-
-            // figure out which screen to use
-            let (screen, world) =
-                match World.getDesiredScreen world with
-                | Desire screen -> (screen, world)
-                | DesireNone ->
-                    let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = World.setDesiredScreen (Desire screen) world
-                    (screen, world)
-                | DesireIgnore ->
-                    let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = World.setSelectedScreen screen world
-                    (screen, world)
-
-            // create default group if no group exists
-            let world =
-                if Seq.isEmpty (World.getGroups screen world)
-                then World.createGroup (Some "Group") screen world |> snd
-                else world
-
-            // proceed directly to idle state
-            let world = World.selectScreen (IdlingState world.GameTime) screen world
-            Right (screen, world)
-
-        // error
-        | Left error -> Left error
-
-    /// Attempt to make Gaia's SDL dependencies.
-    let tryMakeSdlDeps () =
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
-        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
-        match SdlDeps.tryMake sdlConfig with
-        | Left msg -> Left msg
-        | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
     /// Run Gaia.
     let run nuConfig gaiaPlugin =
