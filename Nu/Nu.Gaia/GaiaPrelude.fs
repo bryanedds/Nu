@@ -18,10 +18,10 @@ type DragEyeState =
     | DragEyeInactive
 
 type SavedState =
-    { ProjectFilePath : string
+    { ProjectDllPath : string
       EditModeOpt : string option
       UseImperativeExecution : bool }
     static member defaultState =
-        { ProjectFilePath = ""
+        { ProjectDllPath = ""
           EditModeOpt = None
           UseImperativeExecution = false }
