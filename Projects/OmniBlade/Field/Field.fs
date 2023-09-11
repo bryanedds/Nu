@@ -101,6 +101,7 @@ module Field =
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
+              AvatarSynchronized_ : bool
               AvatarCollidedPropIds_ : int list
               AvatarSeparatedPropIds_ : int list
               AvatarIntersectedPropIds_ : int list
@@ -131,6 +132,7 @@ module Field =
         member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
+        member this.AvatarSynchronized = this.AvatarSynchronized_
         member this.AvatarCollidedPropIds = this.AvatarCollidedPropIds_
         member this.AvatarSeparatedPropIds = this.AvatarSeparatedPropIds_
         member this.AvatarIntersectedPropIds = this.AvatarIntersectedPropIds_
@@ -427,6 +429,12 @@ module Field =
         let propIds = updater field.AvatarIntersectedPropIds_
         if propIds =/= field.AvatarIntersectedPropIds_
         then { field with AvatarIntersectedPropIds_ = propIds }
+        else field
+
+    let updateAvatarSynchronized updater field =
+        let synchronized = updater field.AvatarSynchronized_
+        if synchronized =/= field.AvatarSynchronized_
+        then { field with AvatarSynchronized_ = synchronized }
         else field
 
     let updateTeam updater field =
@@ -1222,6 +1230,7 @@ module Field =
           SaveSlot_ = saveSlot
           OmniSeedState_ = omniSeedState
           Avatar_ = avatar
+          AvatarSynchronized_ = false
           AvatarCollidedPropIds_ = []
           AvatarSeparatedPropIds_ = []
           AvatarIntersectedPropIds_ = []
@@ -1254,6 +1263,7 @@ module Field =
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty ()
+          AvatarSynchronized_ = false
           AvatarCollidedPropIds_ = []
           AvatarSeparatedPropIds_ = []
           AvatarIntersectedPropIds_ = []
@@ -1306,7 +1316,7 @@ module Field =
             let fieldStr = File.ReadAllText saveFilePath
             let field = scvalue<Field> fieldStr
             let props = makeProps time field.FieldType_ field.OmniSeedState_
-            Some { field with Props_ = props }
+            Some { field with AvatarSynchronized_ = false; Props_ = props }
         with _ -> None
 
     let loadOrInitial time viewBounds2dAbsolute saveSlot =
