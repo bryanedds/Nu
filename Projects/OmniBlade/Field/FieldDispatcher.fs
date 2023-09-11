@@ -18,7 +18,7 @@ module FieldDispatcher =
         member this.Field = this.ModelGeneric<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty world.UpdateTime (World.getViewBounds2dAbsolute world))
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getViewBounds2dAbsolute world))
 
         static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) world =
             let collideeEntity = collidee.BodyId.BodySource :?> Entity
