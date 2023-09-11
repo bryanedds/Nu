@@ -61,17 +61,16 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // warp avatar if needed
+                // advance field if needed
                 let (signals, field) =
-                    if not field.AvatarWarped
-                    then withSignal (WarpAvatar field.Avatar.Bottom) field
+                    if world.Advancing
+                    then Field.advance world.UpdateTime field
                     else just field
 
-                // advance field if needed
-                if world.Advancing then
-                    let (signals', field) = Field.advance world.UpdateTime field
-                    (signals @ signals', field)
-                else withSignals signals field
+                // warp avatar if needed
+                if not field.AvatarWarped
+                then (WarpAvatar field.Avatar.Bottom :: signals, field)
+                else just field
 
             | UpdateFieldTransition ->
 
