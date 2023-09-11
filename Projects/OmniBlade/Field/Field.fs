@@ -1246,8 +1246,8 @@ module Field =
           FieldSongTimeOpt_ = None
           ViewBoundsAbsolute_ = viewBounds2dAbsolute }
 
-    let empty time viewBounds2dAbsolute =
-        { UpdateTime_ = time
+    let empty viewBounds2dAbsolute =
+        { UpdateTime_ = 0L
           ViewBoundsAbsolute_ = viewBounds2dAbsolute
           FieldType_ = EmptyField
           FieldState_ = Quit
