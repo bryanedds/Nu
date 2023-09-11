@@ -17,7 +17,7 @@ type DragEyeState =
     | DragEyeCenter2d of Vector2 * Vector2
     | DragEyeInactive
 
-type SavedState =
+type [<SymbolicExpansion>] GaiaState =
     { ProjectDllPath : string
       EditModeOpt : string option
       UseImperativeExecution : bool }

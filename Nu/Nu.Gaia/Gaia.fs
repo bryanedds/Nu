@@ -81,8 +81,8 @@ module Gaia =
     let mutable private fullScreen = false
     let mutable private editWhileAdvancing = false
     let mutable private snaps2dSelected = true
-    let mutable private snaps2d = (Constants.Editor.Position2dSnapDefault, Constants.Editor.Degrees2dSnapDefault, Constants.Editor.Scale2dSnapDefault)
-    let mutable private snaps3d = (Constants.Editor.Position3dSnapDefault, Constants.Editor.Degrees3dSnapDefault, Constants.Editor.Scale3dSnapDefault)
+    let mutable private snaps2d = (Constants.Gaia.Position2dSnapDefault, Constants.Gaia.Degrees2dSnapDefault, Constants.Gaia.Scale2dSnapDefault)
+    let mutable private snaps3d = (Constants.Gaia.Position3dSnapDefault, Constants.Gaia.Degrees3dSnapDefault, Constants.Gaia.Scale3dSnapDefault)
     let mutable private snapDrag = 0.1f
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
@@ -836,9 +836,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         Array.map (fun line -> line.Replace ("\\", "/")) |>
                         Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
-                        ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Editor.BuildName + "/netstandard2.0/Nu.Math.dll\""
-                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Editor.BuildName + "/net7.0/Nu.Pipe.dll\""
-                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Editor.BuildName + "/net7.0/Nu.dll\""]
+                        ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Gaia.BuildName + "/netstandard2.0/Nu.Math.dll\""
+                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Gaia.BuildName + "/net7.0/Nu.Pipe.dll\""
+                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Gaia.BuildName + "/net7.0/Nu.dll\""]
                     let fsprojFsFilePaths =
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
@@ -924,26 +924,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Left () -> Left ()
 
     let private selectNuPlugin gaiaPlugin =
-        let savedState =
-            try if File.Exists Constants.Editor.SavedStateFilePath
-                then scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-                else SavedState.defaultState
-            with _ -> SavedState.defaultState
+        let gaiaState =
+            try if File.Exists Constants.Gaia.StateFilePath
+                then scvalue (File.ReadAllText Constants.Gaia.StateFilePath)
+                else GaiaState.defaultState
+            with _ -> GaiaState.defaultState
         let gaiaDirectory = Directory.GetCurrentDirectory ()
-        match trySelectTargetDirAndMakeNuPluginFromFilePathOpt savedState.ProjectDllPath with
+        match trySelectTargetDirAndMakeNuPluginFromFilePathOpt gaiaState.ProjectDllPath with
         | Right (Some (filePath, targetDir, plugin)) ->
             Constants.Override.fromAppConfig filePath
-            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-            with _ -> Log.info "Could not save editor state."
-            (savedState, targetDir, plugin)
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+            with _ -> Log.info "Could not save gaia state."
+            (gaiaState, targetDir, plugin)
         | Right None ->
-            try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
-            with _ -> Log.info "Could not save editor state."
-            (savedState, ".", gaiaPlugin)
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+            with _ -> Log.info "Could not save gaia state."
+            (gaiaState, ".", gaiaPlugin)
         | Left () ->
-            if not (String.IsNullOrWhiteSpace savedState.ProjectDllPath) then
-                Log.trace ("Invalid Nu Assembly: " + savedState.ProjectDllPath)
-            (SavedState.defaultState, ".", gaiaPlugin)
+            if not (String.IsNullOrWhiteSpace gaiaState.ProjectDllPath) then
+                Log.trace ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
+            (GaiaState.defaultState, ".", gaiaPlugin)
 
     (* ImGui Callback Functions *)
 
@@ -984,7 +984,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match dragEntityState with
             | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
                 let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Gaia.DragMinimumSeconds then
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
@@ -1006,7 +1006,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world <- entity.SetAngularVelocity v3Zero world
             | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
                 let localTime = DateTimeOffset.Now - time
-                if entity.Exists world && localTime.TotalSeconds >= Constants.Editor.DragMinimumSeconds then
+                if entity.Exists world && localTime.TotalSeconds >= Constants.Gaia.DragMinimumSeconds then
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
@@ -1045,7 +1045,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match dragEyeState with
             | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
                 let mousePositionScreen = World.getMousePosition2dScreen world
-                let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Editor.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
+                let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Gaia.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
                 world <- World.setEyeCenter2d eyeCenter world
                 dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
             | DragEyeInactive -> ()
@@ -2283,7 +2283,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let templateFileName = "Nu.Template.fsproj"
                                 let projectsDir = programDir + "/../../../../../Projects" |> Path.GetFullPath
                                 let newProjectDir = projectsDir + "/" + newProjectName |> Path.GetFullPath
-                                let newProjectDllPath = newProjectDir + "/bin/" + Constants.Editor.BuildName + "/net7.0/" + newProjectName + ".dll"
+                                let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net7.0/" + newProjectName + ".dll"
                                 let newFileName = newProjectName + ".fsproj"
                                 let newProject = newProjectDir + "/" + newFileName |> Path.GetFullPath
                                 let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
@@ -2348,13 +2348,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         Log.info ("Project '" + newProjectName + "'" + "created.")
 
                                         // configure editor to open new project then exit
-                                        let savedState =
+                                        let gaiaState =
                                             { ProjectDllPath = newProjectDllPath
                                               EditModeOpt = Some "Title"
                                               UseImperativeExecution = openProjectImperativeExecution }
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                         let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
-                                        try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                        try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
                                             Directory.SetCurrentDirectory gaiaDirectory
                                             showRestartDialog <- true
                                         with _ -> Log.trace "Could not save editor state and open new project."
@@ -2395,13 +2395,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 String.notEmpty openProjectDllPath &&
                                 File.Exists openProjectDllPath then
                                 showOpenProjectDialog <- false
-                                let savedState =
+                                let gaiaState =
                                     { ProjectDllPath = openProjectDllPath
                                       EditModeOpt = Some openProjectEditMode
                                       UseImperativeExecution = openProjectImperativeExecution }
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
-                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
                                 with _ -> Log.info "Could not save editor state and open project."
@@ -2416,10 +2416,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.Text "Close the project and use Gaia in its default state?"
                             if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
                                 showCloseProjectDialog <- false
-                                let savedState = SavedState.defaultState
+                                let gaiaState = GaiaState.defaultState
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
-                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Editor.SavedStateFilePath, scstring savedState)
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
                                 with _ -> Log.info "Could not clear editor state and close project."
@@ -2606,12 +2606,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.EndPopup ()
             world
 
-    let rec private runWithCleanUp savedState targetDir' screen wtemp =
+    let rec private runWithCleanUp gaiaState targetDir' screen wtemp =
         world <- wtemp
         targetDir <- targetDir'
-        projectDllPath <- savedState.ProjectDllPath
-        projectEditMode <- match savedState.EditModeOpt with Some m -> m | None -> ""
-        projectImperativeExecution <- savedState.UseImperativeExecution
+        projectDllPath <- gaiaState.ProjectDllPath
+        projectEditMode <- match gaiaState.EditModeOpt with Some m -> m | None -> ""
+        projectImperativeExecution <- gaiaState.UseImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
         selectGroup (Nu.World.getGroups screen world |> Seq.head)
@@ -2660,7 +2660,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Right world ->
 
             // initialize event filter as not to flood the log
-            let world = World.setEventFilter Constants.Editor.EventFilter world
+            let world = World.setEventFilter Constants.Gaia.EventFilter world
 
             // apply any selected mode
             let world =
@@ -2709,7 +2709,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let run nuConfig gaiaPlugin =
 
         // discover the desired nu plugin for editing
-        let (savedState, targetDir, plugin) = selectNuPlugin gaiaPlugin
+        let (gaiaState, targetDir, plugin) = selectNuPlugin gaiaPlugin
 
         // ensure imgui ini file exists before initialising imgui
         let imguiIniFilePath = targetDir + "/imgui.ini"
@@ -2722,9 +2722,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // attempt to create the world
             let worldConfig =
-                { Imperative = savedState.UseImperativeExecution
+                { Imperative = gaiaState.UseImperativeExecution
                   Advancing = false
-                  ModeOpt = savedState.EditModeOpt
+                  ModeOpt = gaiaState.EditModeOpt
                   NuConfig = nuConfig
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
@@ -2744,6 +2744,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = World.setMasterSongVolume 0.0f world
                 
                 // run the world
-                runWithCleanUp savedState targetDir screen world
+                runWithCleanUp gaiaState targetDir screen world
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
         | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
