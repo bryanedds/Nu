@@ -70,7 +70,7 @@ module FieldDispatcher =
                 // warp avatar if needed
                 if not field.AvatarWarped
                 then (WarpAvatar field.Avatar.Bottom :: signals, field)
-                else just field
+                else (signals, field)
 
             | UpdateFieldTransition ->
 
