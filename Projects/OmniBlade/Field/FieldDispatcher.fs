@@ -61,10 +61,17 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // advance field
-                if world.Advancing
-                then Field.advance world.UpdateTime field
-                else just field
+                // synchronize avatar if needed
+                let (signals, field) =
+                    if not field.AvatarSynchronized
+                    then withSignal (WarpAvatar field.Avatar.Bottom) (Field.updateAvatarSynchronized tautology field)
+                    else just field
+
+                // advance field if needed
+                if world.Advancing then
+                    let (signals', field) = Field.advance world.UpdateTime field
+                    (signals @ signals', field)
+                else withSignals signals field
 
             | UpdateFieldTransition ->
 
@@ -126,20 +133,22 @@ module FieldDispatcher =
 
             | AvatarBodyTransform transform ->
 
-                // update avatar from transform
-                let time = world.UpdateTime
-                let avatar = field.Avatar
-                let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
-                let avatar =
-                    let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
-                    let speed = transform.BodyLinearVelocity.Magnitude
-                    if speed > Constants.Field.AvatarIdleSpeedMax then
-                        if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
-                            let avatar = Avatar.updateDirection (constant direction) avatar
-                            Avatar.animate time WalkAnimation avatar
-                        else avatar
-                    else Avatar.animate time IdleAnimation avatar
-                just (Field.updateAvatar (constant avatar) field)
+                // update avatar from transform if synchronized
+                if field.AvatarSynchronized then
+                    let time = world.UpdateTime
+                    let avatar = field.Avatar
+                    let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
+                    let avatar =
+                        let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
+                        let speed = transform.BodyLinearVelocity.Magnitude
+                        if speed > Constants.Field.AvatarIdleSpeedMax then
+                            if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
+                                let avatar = Avatar.updateDirection (constant direction) avatar
+                                Avatar.animate time WalkAnimation avatar
+                            else avatar
+                        else Avatar.animate time IdleAnimation avatar
+                    just (Field.updateAvatar (constant avatar) field)
+                else just field
 
             | AvatarBodyCollision collision ->
 
