@@ -163,8 +163,8 @@ module BattleDispatcher =
                 let world = World.fadeOutSong fade world
                 just world
 
-            | DisplayHop hop ->
-                let descriptor = EffectDescriptors.hop hop.HopStart hop.HopStop
+            | DisplayHop (hopStart, hopStop) ->
+                let descriptor = EffectDescriptors.hop hopStart hopStop
                 let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleSceneRide.Surnames) Simulants.BattleScene world
                 let world = entity.SetSelfDestruct true world
                 let world = entity.SetEffectDescriptor descriptor world

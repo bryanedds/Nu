@@ -9,31 +9,6 @@ open Nu
 open OmniBlade
 open OmniBlade.BattleInteractionSystem
 
-type Hop =
-    { HopStart : Vector3
-      HopStop : Vector3 }
-
-type Positioning =
-    | Position of Vector3
-    | Center of Vector3
-    | Bottom of Vector3
-
-type Layering =
-    | Under
-    | Over
-
-type BattleSpeed =
-    | SwiftSpeed
-    | PacedSpeed
-    | WaitSpeed
-
-type BattleState =
-    | BattleReady of int64
-    | BattleRunning
-    | BattleResult of int64 * bool
-    | BattleQuitting of int64 * bool * Advent Set
-    | BattleQuit
-
 type BattleMessage =
     | Update
     | UpdateRideTags of Map<string, Effects.Slice>
@@ -54,7 +29,7 @@ type BattleCommand =
     | PlaySound of int64 * single * AssetTag<Sound>
     | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
     | FadeOutSong of GameTime
-    | DisplayHop of Hop
+    | DisplayHop of Vector3 * Vector3
     | DisplayCircle of Vector3 * single
     | DisplayHitPointsChange of CharacterIndex * int
     | DisplayCancel of CharacterIndex
@@ -85,6 +60,27 @@ type BattleCommand =
     | DisplayInferno of int64
     | DisplayScatterBolt of int64
     interface Command
+
+type Positioning =
+    | Position of Vector3
+    | Center of Vector3
+    | Bottom of Vector3
+
+type Layering =
+    | Under
+    | Over
+
+type BattleSpeed =
+    | SwiftSpeed
+    | PacedSpeed
+    | WaitSpeed
+
+type BattleState =
+    | BattleReady of int64
+    | BattleRunning
+    | BattleResult of int64 * bool
+    | BattleQuitting of int64 * bool * Advent Set
+    | BattleQuit
 
 type ActionCommand =
     { Action : ActionType
@@ -1110,9 +1106,9 @@ module Battle =
                                         | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeter.Bottom.X) 0.0f 0.0f)
                                             let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
-                                            Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = hopStop })
+                                            Left (DisplayHop (sourcePerimeter.Bottom, hopStop))
                                         | Cyclone ->
-                                            Left (DisplayHop { HopStart = sourcePerimeter.Bottom; HopStop = targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3 })
+                                            Left (DisplayHop (sourcePerimeter.Bottom, targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3))
                                         | _ ->
                                             match getCharacterArchetypeType sourceIndex battle with
                                             | Cleric ->
@@ -1324,16 +1320,12 @@ module Battle =
                                         | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeterOriginal.Bottom.X) 0.0f 0.0f)
                                             let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
-                                            Some
-                                                { HopStart = hopStart
-                                                  HopStop = sourcePerimeterOriginal.Bottom }
+                                            Some (hopStart, sourcePerimeterOriginal.Bottom)
                                         | Cyclone ->
-                                            Some
-                                                { HopStart = targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3
-                                                  HopStop = sourcePerimeterOriginal.Bottom }
+                                            Some (targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3, sourcePerimeterOriginal.Bottom)
                                         | _ -> None
                                     match hopOpt with
-                                    | Some hop -> withSignal (DisplayHop hop) battle
+                                    | Some (hopStart, hopStop) -> withSignal (DisplayHop (hopStart, hopStop)) battle
                                     | None -> just battle
                                 elif localTime > techAnimationData.TechStop then
                                     let battle = if techData.SpawnOpt.IsSome then finalizeMaterializations battle else battle
