@@ -10,25 +10,6 @@ open Nu
 open OmniBlade
 open OmniBlade.CueSystem
 
-type SaveSlot =
-    | Slot1
-    | Slot2
-    | Slot3
-
-type [<SymbolicExpansion>] Options =
-    { BattleSpeed : BattleSpeed }
-
-type FieldState =
-    | Playing
-    | Quitting
-    | Quit
-
-type FieldTransition =
-    { FieldType : FieldType
-      FieldDestination : Vector3
-      FieldDirection : Direction
-      FieldTransitionTime : int64 }
-
 type FieldMessage =
     | Update
     | UpdateFieldTransition
@@ -88,6 +69,25 @@ type FieldCommand =
     | FadeOutSong of int64
     | Nop
     interface Command
+
+type SaveSlot =
+    | Slot1
+    | Slot2
+    | Slot3
+
+type [<SymbolicExpansion>] Options =
+    { BattleSpeed : BattleSpeed }
+
+type FieldState =
+    | Playing
+    | Quitting
+    | Quit
+
+type FieldTransition =
+    { FieldType : FieldType
+      FieldDestination : Vector3
+      FieldDirection : Direction
+      FieldTransitionTime : int64 }
 
 [<RequireQualifiedAccess>]
 module Field =
