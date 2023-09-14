@@ -1163,7 +1163,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false |> ignore<bool>
                 if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
                 if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
-                if ImGui.IsKeyPressed ImGuiKey.Escape then selectEntityOpt None
+                if ImGui.IsKeyPressed ImGuiKey.Escape then
+                    focusedPropertyDescriptorOpt <- None
+                    selectEntityOpt None
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
         let children = world |> entity.GetChildren |> Seq.toArray
