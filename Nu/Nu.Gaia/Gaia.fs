@@ -58,6 +58,7 @@ module Gaia =
     let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
     let mutable private focusedPropertyDescriptorOpt = None
+    let mutable private focusPropertyEditorRequested = false
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
@@ -1635,6 +1636,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 else ImGui.Text "Name"
                             | _ -> ()
                             if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
+                        elif not (simulant :? Entity) && propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                            let mutable clickToEditModel = "*click to edit model*"
+                            ImGui.InputText ("Model", &clickToEditModel, 256u) |> ignore<bool>
+                            if ImGui.IsItemFocused () then
+                                focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                                focusPropertyEditorRequested <- true
                         else
                             let focusProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                             let mutable replaced = false
@@ -2077,6 +2084,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // property editor window
+                    if focusPropertyEditorRequested then ImGui.SetNextWindowFocus ()
                     if ImGui.Begin ("Property Editor", ImGuiWindowFlags.NoNav) then
                         match focusedPropertyDescriptorOpt with
                         | Some (propertyDescriptor, simulant) when
@@ -2096,6 +2104,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.SameLine ()
                                 if ImGui.Button "Pick" then showAssetPickerDialog <- true
                             let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
+                            if focusPropertyEditorRequested then
+                                ImGui.SetKeyboardFocusHere ()
+                                focusPropertyEditorRequested <- false
                             if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
                                 propertyDescriptor.PropertyType = typeof<string Set> then
                                 ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
