@@ -118,7 +118,10 @@ module Relation =
             let addressStr = string address
             let relationStr = string relation
             let pathStr = relationStr.Replace("^", "..").Replace('~', '.')
-            let resultStr = addressStr + Constants.Address.SeparatorStr + pathStr |> Path.Simplify
+            let resultStr =
+                addressStr + Constants.Address.SeparatorStr + pathStr |>
+                (fun path -> Uri(Uri("http://example.com/"), path).AbsolutePath.TrimStart('/')) |>
+                Uri.UnescapeDataString
             let resultStr =
                 let resultStrLen = resultStr.Length
                 if resultStrLen > 0 && resultStr.[dec resultStrLen] = '/'
