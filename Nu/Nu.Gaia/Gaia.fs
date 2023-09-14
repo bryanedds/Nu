@@ -375,7 +375,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
-            if not (selectedGroup.Exists world) then
+            selectedScreen <- World.getSelectedScreen world
+            if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
                 selectGroup group
             match selectedEntityOpt with
@@ -396,7 +397,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
-            if not (selectedGroup.Exists world) then
+            selectedScreen <- World.getSelectedScreen world
+            if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
                 selectGroup group
             match selectedEntityOpt with
