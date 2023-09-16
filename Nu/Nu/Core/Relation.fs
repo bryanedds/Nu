@@ -7,7 +7,7 @@ open Nu
 
 [<RequireQualifiedAccess>]
 module Relation =
-    
+
     let [<Literal>] Current = '~'
     let [<Literal>] CurrentStr = "~"
     let [<Literal>] Parent = '^'
@@ -16,7 +16,6 @@ module Relation =
 namespace Nu
 open System
 open System.ComponentModel
-open System.IO
 open System.Reflection
 open Prime
 
@@ -29,12 +28,12 @@ type Token =
 /// Converts Relation types.
 type RelationConverter (targetType : Type) =
     inherit TypeConverter ()
-    
+
     override this.CanConvertTo (_, destType) =
         destType = typeof<string> ||
         destType = typeof<Symbol> ||
         destType = targetType
-        
+
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
             let toStringMethod = targetType.GetMethod "ToString"
@@ -51,7 +50,7 @@ type RelationConverter (targetType : Type) =
         sourceType = typeof<string> ||
         sourceType = typeof<Symbol> ||
         sourceType = targetType
-        
+
     override this.ConvertFrom (_, _, source) =
         match source with
         | :? string as fullName ->
@@ -96,7 +95,7 @@ module Relation =
         static member makeFromAddress<'a> (address : 'a Address) : 'a Relation =
             let names = Address.getNames address
             Relation.makeFromArray<'a> names
-    
+
         /// Make a relation from a '/' delimited string.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (relationStr : string) : 'a Relation =
@@ -156,15 +155,15 @@ module Relation =
         interface 'a Relation IEquatable with
             member this.Equals that =
                 Relation<'a>.equals this that
-    
+
         override this.Equals that =
             match that with
             | :? ('a Relation) as that -> Relation<'a>.equals this that
             | _ -> false
-    
+
         override this.GetHashCode () =
             Relation<'a>.hash this
-        
+
         override this.ToString () =
             let names =
                 Array.map (fun token ->
