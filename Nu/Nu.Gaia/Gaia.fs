@@ -1639,7 +1639,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             | _ -> ()
                             if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
                         elif not (simulant :? Entity) && propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                            let mutable clickToEditModel = "*click to edit model*"
+                            let mutable clickToEditModel = "*click to edit*"
                             ImGui.InputText ("Model", &clickToEditModel, 256u) |> ignore<bool>
                             if ImGui.IsItemFocused () then
                                 focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
