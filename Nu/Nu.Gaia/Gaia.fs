@@ -709,7 +709,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
         // error
         else
-            messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the Elmish API)."
+            messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC API)."
             false
 
     let private tryQuickSizeSelectedEntity () =
@@ -731,7 +731,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Some peer ->
                 if not (entity.GetProtected world) && not (peer.GetProtected world)
                 then world <- World.swapEntityOrders entity peer world
-                else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the Elmish API)."
+                else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the MMCC API)."
             | None -> ()
         | Some _ | None -> ()
 
@@ -743,7 +743,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world <- World.destroyEntity entity world
                 true
             else
-                messageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the Elmish API)."
+                messageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -756,7 +756,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world <- World.cutEntityToClipboard entity world
                 true
             else
-                messageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the Elmish API)."
+                messageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the MMCC API)."
                 false
         | Some _ | None -> false
 
@@ -1247,7 +1247,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
                             selectEntityOpt (Some sourceEntity')
                             showSelectedEntity <- true
-                    else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the Elmish API)."
+                    else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
         if expanded then
             for child in children do imGuiEntityHierarchy child
