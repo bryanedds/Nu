@@ -120,6 +120,7 @@ module Field =
               Cue_ : CueSystem.Cue
               ScreenTransitioning_ : bool
               FieldTransitionOpt_ : FieldTransition option
+              Tint_ : Color
               ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               BattleOpt_ : Battle option
@@ -150,6 +151,7 @@ module Field =
         member this.Cue = this.Cue_
         member this.ScreenTransitioning = this.ScreenTransitioning_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
+        member this.Tint = this.Tint_
         member this.ShopOpt = this.ShopOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
@@ -480,6 +482,9 @@ module Field =
     let updateFieldTransitionOpt updater field =
         { field with FieldTransitionOpt_ = updater field.FieldTransitionOpt_ }
 
+    let updateTint updater field =
+        { field with Tint_ = updater field.Tint_ }
+
     let updateShopOpt updater field =
         { field with ShopOpt_ = updater field.ShopOpt_ }
 
@@ -784,6 +789,19 @@ module Field =
             if field.UpdateTime_ < time
             then (cue, definitions, just field)
             else (Fin, definitions, just field)
+
+        | Tint (length, colorStart, colorStop) ->
+            (TintState (field.UpdateTime_, length, colorStart, colorStop), definitions, just field)
+
+        | TintState (startTime, length, colorStart, colorStop) ->
+            let time = field.UpdateTime_
+            let localTime = time - startTime
+            let progress = single localTime / single length
+            let tint = colorStart * (1.0f - progress) + colorStop * progress
+            let field = updateTint (constant tint) field
+            if progress >= 1.0f
+            then (Fin, definitions, just field)
+            else (cue, definitions, just field)
 
         | Fade (target, length, fadeIn) ->
             (FadeState (field.UpdateTime_, target, length, fadeIn), definitions, just field)
@@ -1127,36 +1145,44 @@ module Field =
 
     let advance time (field : Field) =
 
-        // advance field time
-        let field =
-            advanceUpdateTime field
+        // advance when battle is inactive
+        match field.BattleOpt_ with
+        | None ->
 
-        // advance dialog
-        let field =
-            match field.DialogOpt_ with
-            | Some dialog ->
-                let dialog = Dialog.advance (detokenize field) time dialog
-                updateDialogOpt (constant (Some dialog)) field
-            | None -> field
+            // advance field time
+            let field = advanceUpdateTime field
 
-        // advance cue
-        let (cue, definitions, (signals, field)) =
-            advanceCue field.Cue_ field.Definitions_ field
+            // warp avatar when needed
+            let (signals, field) =
+                if not field.AvatarWarped
+                then withSignal (WarpAvatar field.Avatar.Bottom) field
+                else just field
 
-        // reset cue definitions if finished
-        let field =
-            match cue with
-            | CueSystem.Fin -> updateDefinitions (constant field.DefinitionsOriginal_) field
-            | _ -> updateDefinitions (constant definitions) field
-        let field = updateCue (constant cue) field
+            // advance dialog
+            let field =
+                match field.DialogOpt_ with
+                | Some dialog ->
+                    let dialog = Dialog.advance (detokenize field) time dialog
+                    updateDialogOpt (constant (Some dialog)) field
+                | None -> field
 
-        // advance portal
-        let (signals, field) =
-            match field.FieldTransitionOpt_ with
-            | None ->
-                match tryGetTouchingPortal field with
-                | Some (fieldType, destination, direction, isWarp) ->
-                    if Option.isNone field.BattleOpt_ then // make sure we don't teleport if a battle is started earlier in the frame
+            // advance cue
+            let (cue, definitions, (signals', field)) = advanceCue field.Cue_ field.Definitions_ field
+            let signals = signals @ signals'
+
+            // reset cue definitions if finished
+            let field =
+                match cue with
+                | CueSystem.Fin -> updateDefinitions (constant field.DefinitionsOriginal_) field
+                | _ -> updateDefinitions (constant definitions) field
+            let field = updateCue (constant cue) field
+
+            // advance portal
+            let (signals, field) =
+                match field.FieldTransitionOpt_ with
+                | None ->
+                    match tryGetTouchingPortal field with
+                    | Some (fieldType, destination, direction, isWarp) ->
                         let transition =
                             { FieldType = fieldType
                               FieldDestination = destination
@@ -1168,50 +1194,49 @@ module Field =
                             then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
                             else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
                         (signal playSound :: signals, field)
-                    else (signals, field)
-                | None -> (signals, field)
-            | Some _ -> (signals, field)
+                    | None -> (signals, field)
+                | Some _ -> (signals, field)
 
-        // advance sensor
-        let (signals, field) =
-            match field.FieldTransitionOpt_ with
-            | None ->
-                let sensors = getTouchedSensors field
-                let results =
-                    List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
-                        if field.Advents_.IsSupersetOf requirements then
-                            let field = updateCue (constant cue) field
-                            match sensorType with
-                            | AirSensor -> (signals, field)
-                            | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
-                        else (signals, field))
-                        (signals, field) sensors
-                results
-            | Some _ -> (signals, field)
+            // advance sensor
+            let (signals, field) =
+                match field.FieldTransitionOpt_ with
+                | None ->
+                    let sensors = getTouchedSensors field
+                    let results =
+                        List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
+                            if field.Advents_.IsSupersetOf requirements then
+                                let field = updateCue (constant cue) field
+                                match sensorType with
+                                | AirSensor -> (signals, field)
+                                | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                            else (signals, field))
+                            (signals, field) sensors
+                    results
+                | Some _ -> (signals, field)
 
-        // advance spirits
-        let (signals : Signal list, field) =
-            if  field.Menu_.MenuState = MenuClosed &&
-                CueSystem.Cue.notInterrupting field.Inventory_ field.Advents_ field.Cue_ &&
-                Option.isNone field.DialogOpt_ &&
-                Option.isNone field.BattleOpt_ &&
-                Option.isNone field.ShopOpt_ &&
-                Option.isNone field.FieldTransitionOpt_ then
-                match advanceSpirits time field with
-                | Left (battleData, field) ->
-                    let fieldTime = field.UpdateTime_
-                    let playTime = Option.defaultValue fieldTime field.FieldSongTimeOpt_
-                    let startTime = fieldTime - playTime
-                    let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                    let field = enterBattle time startTime prizePool battleData field
-                    let fade = FadeOutSong 60L
-                    let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
-                    (signal fade :: signal beastGrowl :: signals, field)
-                | Right field -> (signals, field)
-            else (signals, field)
+            // advance spirits
+            let (signals : Signal list, field) =
+                if  field.Menu_.MenuState = MenuClosed &&
+                    CueSystem.Cue.notInterrupting field.Inventory_ field.Advents_ field.Cue_ &&
+                    Option.isNone field.DialogOpt_ &&
+                    Option.isNone field.ShopOpt_ &&
+                    Option.isNone field.FieldTransitionOpt_ then
+                    match advanceSpirits time field with
+                    | Left (battleData, field) ->
+                        let fieldTime = field.UpdateTime_
+                        let playTime = Option.defaultValue fieldTime field.FieldSongTimeOpt_
+                        let startTime = fieldTime - playTime
+                        let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
+                        let field = enterBattle time startTime prizePool battleData field
+                        let fade = FadeOutSong 60L
+                        let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
+                        (signal fade :: signal beastGrowl :: signals, field)
+                    | Right field -> (signals, field)
+                else (signals, field)
 
-        // fin
-        (signals, field)
+            // fin
+            (signals, field)
+        | Some _ -> just field
 
     let make time viewBounds2dAbsolute fieldType saveSlot randSeedState (avatar : Avatar) team advents inventory =
         let (spiritRate, debugAdvents, debugKeyItems, definitions) =
@@ -1249,6 +1274,7 @@ module Field =
           Cue_ = CueSystem.Fin
           ScreenTransitioning_ = false
           FieldTransitionOpt_ = None
+          Tint_ = Color.Zero
           ShopOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None
@@ -1282,6 +1308,7 @@ module Field =
           Cue_ = CueSystem.Fin
           ScreenTransitioning_ = false
           FieldTransitionOpt_ = None
+          Tint_ = Color.Zero
           ShopOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None

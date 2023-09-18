@@ -110,8 +110,8 @@ type [<SymbolicExpansion>] CharacterAnimationState =
     static member dematerialize time state =
         { state with StartTime = time; MaterializationOpt = Some Dematerializing }
 
-    static member materialized state =
-        { state with MaterializationOpt = None }
+    static member materialized time state =
+        { state with StartTime = time; CharacterAnimationType = PoiseAnimation Poising; MaterializationOpt = None }
 
     static member empty =
         { StartTime = 0L

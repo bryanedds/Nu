@@ -1,4 +1,4 @@
-Type,FieldTileMap,FieldTileIndexOffset,FieldTileIndexOffsetRange,FieldBackgroundColor,FieldDebugAdvents,FieldDebugKeyItems,FieldSongOpt,ShowUnopenedChests,UseWindPortal,UseAlternativeSections,EncounterTypeOpt,EncounterRate,Definitions,`
+Type,FieldTileMap,FieldTileIndexOffset,FieldTileIndexOffsetRange,FieldBackgroundColor,FieldDebugAdvents,FieldDebugKeyItems,FieldSongOpt,ShowUnopenedChests,UseWindPortal,UseAlternativeSegments,EncounterTypeOpt,EncounterRate,Definitions,Treasures
 EmptyField,[FieldStatic [Field EmptyField]],0,[0 0],#00000000,[],[],None,True,False,False,None,1,[],[]
 DebugField,[FieldStatic [Castle Castle+BS+2]],0,[0 0],#000000FF,[[KylaAdvent 6] AraneaImplicitumDefeated],[BrassKey IronKey CopperKey AluminumKey PewterKey SteelKey],[Some [Field Field]],True,False,False,None,1,[],[]
 TombOuter,[FieldStatic [Field TombOuter]],0,[0 0],#839CACFF,[],[],[Some [Field TombOuter]],True,False,False,None,1,[],[]
