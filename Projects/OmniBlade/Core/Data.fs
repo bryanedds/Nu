@@ -111,6 +111,7 @@ type AffinityType =
         | (Ice, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Water) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Lightning, Metal) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Water, Fire) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Water, Lightning) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Light, Shadow) -> Constants.Battle.AffinityVulnerabilityScalar
         | (Shadow, Light) -> Constants.Battle.AffinityVulnerabilityScalar
@@ -174,7 +175,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
         let result0 =
             match this with
             | Poison -> Gen.random1 5 <> 0
-            | Silence -> Gen.random1 3 <> 0
+            | Silence -> Gen.random1 4 <> 0
             | Sleep -> Gen.random1 2 <> 0
             | Confuse -> Gen.random1 2 <> 0
             | Curse -> Gen.random1 5 <> 0
@@ -385,6 +386,7 @@ type DoorType =
     | WoodenDoor
     | SteelDoor
     | OldDoor
+    | BarredDoor
 
 type PortalIndex =
     | Center
@@ -555,6 +557,7 @@ module CueSystem =
         | Walk
         | Run
         | Mosey
+        | Crawl
         | Instant
 
         member this.MoveSpeedOpt =
@@ -562,6 +565,7 @@ module CueSystem =
             | Walk -> Some Constants.Gameplay.CueWalkSpeed
             | Run -> Some Constants.Gameplay.CueRunSpeed
             | Mosey -> Some Constants.Gameplay.CueMoseySpeed
+            | Crawl -> Some Constants.Gameplay.CueCrawlSpeed
             | Instant -> None
 
         static member computeStepAndStepCount (translation : Vector3) (moveType : CueMovement) =
@@ -595,6 +599,8 @@ module CueSystem =
         | ReplaceAdvent of Advent * Advent
         | Wait of int64
         | WaitState of int64
+        | Tint of int64 * Color * Color
+        | TintState of int64 * int64 * Color * Color
         | Fade of CueTarget * int64 * bool
         | FadeState of int64 * CueTarget * int64 * bool
         | Animate of CueTarget * CharacterAnimationType * CueWait
@@ -622,7 +628,7 @@ module CueSystem =
             match cue with
             | Fin | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
             | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
-            | Wait _ | WaitState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+            | Wait _ | WaitState _ | Tint _ | TintState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
             | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
             | If (p, c, a) ->
                 match p with
@@ -769,7 +775,6 @@ type ArmorData =
 type AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
-      CounterBase : int
       AffinityOpt : AffinityType option
       Immunities : StatusType Set
       Enchantments : StatusType Set

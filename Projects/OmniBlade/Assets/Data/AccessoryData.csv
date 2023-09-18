@@ -1,6 +1,6 @@
-Type,ShieldBase,CounterBase,AffinityOpt,Immunities,Enchantments,Cost,Description
-SteelRing,0,0,None,[[Power False False] [Power False True]],[],100,Prevents power afflictions.
-IronBrace,1,0,None,[],[],200,Increases defense slightly.
-SnakeCharm,0,0,None,[Poison],[],200,Prevents poison afflictions.
-SilverRing,0,0,None,[[Magic False False] [Magic False True] [Power False False] [Power False True]],[],200,Prevents power and magic afflictions.
-SilverWatch,0,0,None,[[Time False]],[],200,Prevents time afflictions.
+Type,ShieldBase,AffinityOpt,Immunities,Enchantments,Cost,Description
+SteelRing,0,None,[[Power False False] [Power False True]],[],100,Prevents power afflictions.
+IronBrace,1,None,[],[],200,Increases defense slightly.
+SnakeCharm,0,None,[Poison],[],200,Prevents poison afflictions.
+SilverRing,0,None,[[Magic False False] [Magic False True] [Power False False] [Power False True]],[],200,Prevents power and magic afflictions.
+SilverWatch,0,None,[[Time False]],[],200,Prevents time afflictions.

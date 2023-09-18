@@ -302,10 +302,10 @@ module Battle =
     let updateEnemies updater battle =
         updateEnemiesIf tautology2 updater battle
 
-    let private finalizeMaterializations battle =
+    let private finalizeMaterializations time battle =
         updateCharacters (fun character ->
             match character.MaterializationOpt with
-            | Some Materializing -> Character.materialized character
+            | Some Materializing -> Character.materialized time character
             | Some _ | None -> character)
             battle
 
@@ -1328,7 +1328,7 @@ module Battle =
                                     | Some (hopStart, hopStop) -> withSignal (DisplayHop (hopStart, hopStop)) battle
                                     | None -> just battle
                                 elif localTime > techAnimationData.TechStop then
-                                    let battle = if techData.SpawnOpt.IsSome then finalizeMaterializations battle else battle
+                                    let battle = if techData.SpawnOpt.IsSome then finalizeMaterializations time battle else battle
                                     let (techCost, _, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
@@ -1393,7 +1393,7 @@ module Battle =
                 let battle = updateMessageOpt (constant (Some (time, dec messageTime, dialog))) battle
                 (false, battle)
             else
-                let actionCommand  = { Action = Consequence consequence; SourceIndex = sourceIndex; TargetIndexOpt = targetIndexOpt; ObserverIndexOpt = observerIndexOpt }
+                let actionCommand = { Action = Consequence consequence; SourceIndex = sourceIndex; TargetIndexOpt = targetIndexOpt; ObserverIndexOpt = observerIndexOpt }
                 let currentCommand = { StartTime = inc time; ActionCommand = actionCommand }
                 let battle = updateCurrentCommandOpt (constant (Some currentCommand)) battle
                 (false, battle)
@@ -1565,9 +1565,14 @@ module Battle =
                 if containsCharacterHealthy observerIndex battle then
                     match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (Spawn (spawnTypes, None)) messageOpt time localTime battle with
                     | (true, battle) ->
-                        let battle = spawnEnemies time spawnTypes battle
-                        let battle = updateCurrentCommandOpt (constant None) battle
-                        just battle
+                        if localTime = 0L then
+                            let battle = spawnEnemies time spawnTypes battle
+                            just battle
+                        elif localTime = Constants.Battle.CharacterMaterializeDuration then
+                            let battle = finalizeMaterializations time battle
+                            let battle = updateCurrentCommandOpt (constant None) battle
+                            just battle
+                        else just battle
                     | (false, battle) -> just battle
                 else just (updateCurrentCommandOpt (constant None) battle)
             | Replace (enemyType, messageOpt) ->

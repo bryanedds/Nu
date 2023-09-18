@@ -119,9 +119,8 @@ module Character =
         | None -> false
 
     let shouldCounter (character : Character) =
-        // TODO: pull this from stats
-        character.ArchetypeType = Fighter &&
-        Gen.random1 12 = 0
+        if character.ArchetypeType = Fighter then Gen.random1 12 = 0
+        else false
 
     let evalAttack effectType (source : Character) (target : Character) =
         let power = source.Power
@@ -233,6 +232,7 @@ module Character =
                 | Slash -> 1.333f
                 | TechType.Flame -> 1.45f
                 | Snowball -> 1.15f
+                | Quake -> 1.667f
                 | Cure -> 1.5f
                 | Aura -> 1f
                 | Empower -> 0.75f
@@ -241,10 +241,9 @@ module Character =
                 | _ -> techData.Scalar
             else techData.Scalar
         let splitScalar =
-            // NOTE: enemy techs power is not split but generally reduced.
             if source.Ally then
                 if techData.Split && targetCount > 1
-                then 1.5f / min 3.0f (single targetCount)
+                then 1.75f / min 3.0f (single targetCount)
                 else 1.0f
             else
                 if techData.Split
@@ -581,8 +580,8 @@ module Character =
     let dematerialize time character =
         { character with CharacterAnimationState_ = CharacterAnimationState.dematerialize time character.CharacterAnimationState_ }
 
-    let materialized character =
-        { character with CharacterAnimationState_ = CharacterAnimationState.materialized character.CharacterAnimationState_ }
+    let materialized time character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.materialized time character.CharacterAnimationState_ }
 
     let face direction character =
         { character with CharacterAnimationState_ = CharacterAnimationState.face direction character.CharacterAnimationState_ }

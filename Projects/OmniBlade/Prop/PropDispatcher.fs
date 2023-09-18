@@ -43,10 +43,13 @@ module PropDispatcher =
                     BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None }
                 | SavePoint _ ->
                     BodySphere { Radius = 0.1f; TransformOpt = None; PropertiesOpt = None }
-                | Door _ ->
+                | Door (doorType, _, _, _, _) ->
                     match prop.Prop.PropState with
                     | DoorState true -> BodyEmpty
-                    | _ -> BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                    | _ ->
+                        match doorType with
+                        | BarredDoor -> BodyBox { Size = v3 1.0f 0.5f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 0.0f -0.25f 0.0f)); PropertiesOpt = None }
+                        | _ -> BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                 | Chest _ ->
                     BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                 | Sensor (_, shapeOpt, _, _, _) ->
@@ -66,7 +69,7 @@ module PropDispatcher =
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
                         | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
-                        | MadTrixterNpc | HeavyArmorosNpc-> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                         | AraneaImplicitumNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Shopkeep (_, _, _, requirements) ->
@@ -135,6 +138,10 @@ module PropDispatcher =
                             | OldDoor ->
                                 match prop.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.OldDoorOpenedImage else Assets.Field.OldDoorClosedImage
+                                | _ -> failwithumf ()
+                            | BarredDoor ->
+                                match prop.Prop.PropState with
+                                | DoorState opened -> if opened then Assets.Field.BarredDoorOpenedImage else Assets.Field.BarredDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Chest (chestType, _, id, _, _, _) ->

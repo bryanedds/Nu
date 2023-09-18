@@ -58,7 +58,7 @@ type ShopConfirm =
         let price = if buying then ad.Cost else ad.Cost / 2
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let effect = "Effect: " + ad.Description
-        let stats = "Shd: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        let stats = "Shd: " + string ad.ShieldBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
         ShopConfirm.make selection price offer effect stats
 
     static member tryMakeFromSelection buying inventory selection =

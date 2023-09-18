@@ -61,16 +61,10 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // advance field if needed
-                let (signals, field) =
-                    if world.Advancing
-                    then Field.advance world.UpdateTime field
-                    else just field
-
-                // warp avatar if needed
-                if not field.AvatarWarped
-                then (WarpAvatar field.Avatar.Bottom :: signals, field)
-                else (signals, field)
+                // advance field when needed
+                if world.Advancing
+                then Field.advance world.UpdateTime field
+                else just field
 
             | UpdateFieldTransition ->
 
@@ -90,22 +84,24 @@ module FieldDispatcher =
                             | (Some song, Some song2) when assetEq song song2 -> just field
                             | (_, _) -> withSignal (FadeOutSong 30L) field
 
-                            // half-way transition (fully blacked out)
-                            elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
-                                match destinationData.FieldType with // HACK: pre-generate fields.
-                                | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
-                                | _ -> ()
-                                let field = Field.updateFieldType world.UpdateTime (constant fieldTransition.FieldType) field
-                                let field = Field.updateAvatar (Avatar.updateDirection (constant fieldTransition.FieldDirection)) field
-                                let warpAvatar = WarpAvatar fieldTransition.FieldDestination
-                                let songCmd =
-                                    match Field.getFieldSongOpt field with
-                                    | Some fieldSong ->
-                                        match currentSongOpt with
-                                        | Some song when assetEq song fieldSong -> Nop
-                                        | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
-                                    | None -> Nop
-                                withSignals [warpAvatar; songCmd] field
+                        // half-way transition (fully blacked out)
+                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
+
+                            // transition field
+                            match destinationData.FieldType with // HACK: pre-generate fields.
+                            | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+                            | _ -> ()
+                            let field = Field.updateFieldType world.UpdateTime (constant fieldTransition.FieldType) field
+                            let field = Field.updateAvatar (Avatar.updateDirection (constant fieldTransition.FieldDirection)) field
+                            let warpAvatar = WarpAvatar fieldTransition.FieldDestination
+                            let songCmd =
+                                match Field.getFieldSongOpt field with
+                                | Some fieldSong ->
+                                    match currentSongOpt with
+                                    | Some song when assetEq song fieldSong -> Nop
+                                    | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
+                                | None -> Nop
+                            withSignals [warpAvatar; songCmd] field
 
                         // finish field transition
                         elif time = fieldTransition.FieldTransitionTime then

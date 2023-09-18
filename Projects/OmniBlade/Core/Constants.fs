@@ -51,6 +51,7 @@ module Constants =
         let CueWalkSpeed = 1.0f
         let CueRunSpeed = 2.0f
         let CueMoseySpeed = 0.5f
+        let CueCrawlSpeed = 0.25f
 
     [<RequireQualifiedAccess>]
     module Field =
@@ -96,6 +97,7 @@ module Constants =
         let ForegroundElevation = 0.0f
         let EffectElevation = 10.0f
         let SpiritOrbElevation = 20.0f
+        let TintElevation = 25.0f
         let GuiElevation = 30.0f
         let GuiEffectElevation = 40.0f
         let FieldSongFadeInTime = 60L
