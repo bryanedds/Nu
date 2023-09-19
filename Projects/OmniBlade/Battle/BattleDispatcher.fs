@@ -393,40 +393,44 @@ module BattleDispatcher =
                     Content.composite (CharacterIndex.toEntityName index + "+Hud") []
 
                         [// health bar
-                         Content.fillBar "HealthBar"
-                            [Entity.MountOpt == None
-                             Entity.Size == v3 48.0f 6.0f 0.0f
-                             Entity.Center := character.BottomOriginalOffset
-                             Entity.Elevation == Constants.Battle.GuiBackgroundElevation
-                             Entity.Fill := single character.HitPoints / single character.HitPointsMax
-                             Entity.FillColor :=
-                                (let pulseTime = battle.UpdateTime % Constants.Battle.CharacterFillColorPulseDuration
-                                 let pulseProgress = single pulseTime / single Constants.Battle.CharacterFillColorPulseDuration
-                                 let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f) / byte 2 + byte 64
-                                 match character.AutoBattleOpt with
-                                 | Some autoBattle ->
-                                    if autoBattle.AutoTechOpt.IsSome then Color.Red.WithA8 pulseIntensity
-                                    elif autoBattle.ChargeTech then Color.Purple.WithA8 pulseIntensity
-                                    elif character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA8 pulseIntensity
-                                    else Color.Red.WithA8 (byte 191)
-                                 | None ->
-                                    if character.Statuses.ContainsKey Poison
-                                    then Color.LawnGreen.WithA8 pulseIntensity
-                                    else Color.Red.WithA8 (byte 191))
-                             Entity.BorderImage == Assets.Gui.HealthBorderImage
-                             Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 255)]
+                         for i in 0 .. dec 2 do
+                            Content.fillBar ("HealthBar+" + string i)
+                                [Entity.MountOpt == None
+                                 Entity.Size == v3 48.0f 6.0f 0.0f
+                                 Entity.Center := character.BottomOriginalOffset
+                                 Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
+                                 Entity.Fill := single character.HitPoints / single character.HitPointsMax
+                                 Entity.FillInset == 1.0f / 24.0f
+                                 Entity.FillColor :=
+                                    (let pulseTime = battle.UpdateTime % Constants.Battle.CharacterFillColorPulseDuration
+                                     let pulseProgress = single pulseTime / single Constants.Battle.CharacterFillColorPulseDuration
+                                     let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 127.0f) / byte 2 + byte 32
+                                     match character.AutoBattleOpt with
+                                     | Some autoBattle ->
+                                        if autoBattle.AutoTechOpt.IsSome then Color.Red.WithA8 pulseIntensity
+                                        elif autoBattle.ChargeTech then Color.Purple.WithA8 pulseIntensity
+                                        elif character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA8 pulseIntensity
+                                        else Color.Red.WithA8 (byte 95)
+                                     | None ->
+                                        if character.Statuses.ContainsKey Poison
+                                        then Color.LawnGreen.WithA8 pulseIntensity
+                                        else Color.Red.WithA8 (byte 95))
+                                 Entity.BorderImage == Assets.Gui.HealthBorderImage
+                                 Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 255)]
 
                          // tech bar
-                         if character.Ally then
-                            Content.fillBar "TechBar"
-                               [Entity.MountOpt == None
-                                Entity.Size == v3 48.0f 6.0f 0.0f
-                                Entity.Center := character.BottomOriginalOffset2
-                                Entity.Elevation == Constants.Battle.GuiBackgroundElevation
-                                Entity.Fill := single character.TechPoints / single character.TechPointsMax
-                                Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA8 (byte 191)
-                                Entity.BorderImage == Assets.Gui.TechBorderImage
-                                Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 255)]]]
+                         for i in 0 .. dec 2 do
+                            if character.Ally then
+                                Content.fillBar ("TechBar+" + string i)
+                                    [Entity.MountOpt == None
+                                     Entity.Size == v3 48.0f 6.0f 0.0f
+                                     Entity.Center := character.BottomOriginalOffset2
+                                     Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
+                                     Entity.Fill := single character.TechPoints / single character.TechPointsMax
+                                     Entity.FillInset == 1.0f / 24.0f
+                                     Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 127)).WithA8 (byte 95)
+                                     Entity.BorderImage == Assets.Gui.TechBorderImage
+                                     Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 255)]]]
 
              // inputs condition
              if battle.Running then
