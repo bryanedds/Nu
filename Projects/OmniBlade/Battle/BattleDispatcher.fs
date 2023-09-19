@@ -416,7 +416,7 @@ module BattleDispatcher =
                                         then Color.LawnGreen.WithA8 pulseIntensity
                                         else Color.Red.WithA8 (byte 95))
                                  Entity.BorderImage == Assets.Gui.HealthBorderImage
-                                 Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 127)]
+                                 Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 191)]
 
                          // tech bar
                          for i in 0 .. dec 2 do
@@ -430,7 +430,7 @@ module BattleDispatcher =
                                      Entity.FillInset := 1.0f / 12.0f
                                      Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 127)).WithA8 (byte 95)
                                      Entity.BorderImage == Assets.Gui.TechBorderImage
-                                     Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 127)]]]
+                                     Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 191)]]]
 
              // inputs condition
              if battle.Running then
