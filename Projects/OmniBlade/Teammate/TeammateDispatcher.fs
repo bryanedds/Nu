@@ -43,9 +43,10 @@ module TeammateDispatcher =
 
             // fill sprite
             let fillSize = perimeter.Size
-            let fillPosition = perimeter.Min
-            let fillWidth = fillSize.X * fill
-            let fillHeight = fillSize.Y
+            let fillInset = fillSize * (1.0f / 24.0f)
+            let fillPosition = perimeter.Min + fillInset
+            let fillWidth = (fillSize.X - fillInset.X * 2.0f) * fill
+            let fillHeight = fillSize.Y - fillInset.Y * 2.0f
             let fillSize = v3 fillWidth fillHeight 0.0f
             let mutable fillTransform = Transform.makeDefault transform.Centered
             fillTransform.Position <- fillPosition

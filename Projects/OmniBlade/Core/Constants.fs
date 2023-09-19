@@ -154,6 +154,7 @@ module Constants =
         let EffectElevationUnder = -2.5f
         let GuiBackgroundElevation = -5.0f
         let ForegroundElevation = 0.0f
+        let GuiForegroundElevation = 5.0f
         let EffectElevationOver = 10.0f
         let GuiOutputElevation = 20.0f
         let GuiInputElevation = 30.0f
