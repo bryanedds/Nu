@@ -19,7 +19,7 @@ module TeammateDispatcher =
     type TeammateDispatcher () =
         inherit GuiDispatcher<Teammate, Message, Command> (Teammate.empty)
 
-        static let viewFillBar borderImage (borderImageColor : Color) fillImage (fillImageColor : Color) (transform : Transform byref) fill =
+        static let viewFillBar borderImage (borderImageColor : Color) fillImage (fillImageColor : Color) (transform : Transform byref) fillInset fill =
 
             // border sprite
             let perimeter = transform.Perimeter // gui currently ignores rotation
@@ -43,10 +43,10 @@ module TeammateDispatcher =
 
             // fill sprite
             let fillSize = perimeter.Size
-            let fillInset = fillSize * (1.0f / 24.0f)
-            let fillPosition = perimeter.Min + fillInset
-            let fillWidth = (fillSize.X - fillInset.X * 2.0f) * fill
-            let fillHeight = fillSize.Y - fillInset.Y * 2.0f
+            let fillInset = fillSize.X * fillInset * 0.5f
+            let fillPosition = perimeter.Min + v3 fillInset fillInset 0.0f
+            let fillWidth = (fillSize.X - fillInset * 2.0f) * fill
+            let fillHeight = fillSize.Y - fillInset * 2.0f
             let fillSize = v3 fillWidth fillHeight 0.0f
             let mutable fillTransform = Transform.makeDefault transform.Centered
             fillTransform.Position <- fillPosition
@@ -96,6 +96,7 @@ module TeammateDispatcher =
                     Assets.Default.White
                     (Color.Red.WithA8 (byte 131)) // TODO: use a constant.
                     &hitPointsTransform
+                    (1.0f / 12.0f)
                     (single character.HitPoints / single character.HitPointsMax)
             let mutable techPointsTransform = transform
             techPointsTransform.Position <- v3 (techPointsTransform.Min.X + 102.0f) (techPointsTransform.Min.Y + 12.0f + downOffset.Y) 0.0f
@@ -108,5 +109,6 @@ module TeammateDispatcher =
                     Assets.Default.White
                     ((color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA8 (byte 131)) // TODO: use a constant.
                     &techPointsTransform
+                    (1.0f / 12.0f)
                     (single character.TechPoints / single character.TechPointsMax)
             Views [|hitPointsView; techPointsView|]

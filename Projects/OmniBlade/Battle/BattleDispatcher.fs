@@ -400,7 +400,7 @@ module BattleDispatcher =
                                  Entity.Center := character.BottomOriginalOffset
                                  Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                                  Entity.Fill := single character.HitPoints / single character.HitPointsMax
-                                 Entity.FillInset == 1.0f / 24.0f
+                                 Entity.FillInset := 1.0f / 12.0f
                                  Entity.FillColor :=
                                     (let pulseTime = battle.UpdateTime % Constants.Battle.CharacterFillColorPulseDuration
                                      let pulseProgress = single pulseTime / single Constants.Battle.CharacterFillColorPulseDuration
@@ -416,7 +416,7 @@ module BattleDispatcher =
                                         then Color.LawnGreen.WithA8 pulseIntensity
                                         else Color.Red.WithA8 (byte 95))
                                  Entity.BorderImage == Assets.Gui.HealthBorderImage
-                                 Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 255)]
+                                 Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 127)]
 
                          // tech bar
                          for i in 0 .. dec 2 do
@@ -427,10 +427,10 @@ module BattleDispatcher =
                                      Entity.Center := character.BottomOriginalOffset2
                                      Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                                      Entity.Fill := single character.TechPoints / single character.TechPointsMax
-                                     Entity.FillInset == 1.0f / 24.0f
+                                     Entity.FillInset := 1.0f / 12.0f
                                      Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 127)).WithA8 (byte 95)
                                      Entity.BorderImage == Assets.Gui.TechBorderImage
-                                     Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 255)]]]
+                                     Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 127)]]]
 
              // inputs condition
              if battle.Running then

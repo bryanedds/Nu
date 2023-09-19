@@ -981,10 +981,10 @@ module FillBarFacetModule =
 
             // fill sprite
             let fillSize = perimeter.Size
-            let fillInset = fillSize * entity.GetFillInset world * 0.5f
-            let fillPosition = perimeter.Min + fillInset
-            let fillWidth = (fillSize.X - fillInset.X * 2.0f) * entity.GetFill world
-            let fillHeight = fillSize.Y - fillInset.Y * 2.0f
+            let fillInset = fillSize.X * entity.GetFillInset world * 0.5f
+            let fillPosition = perimeter.Min + v3 fillInset fillInset 0.0f
+            let fillWidth = (fillSize.X - fillInset * 2.0f) * entity.GetFill world
+            let fillHeight = fillSize.Y - fillInset * 2.0f
             let fillSize = v3 fillWidth fillHeight 0.0f
             let mutable fillTransform = Transform.makeDefault transform.Centered
             fillTransform.Position <- fillPosition
