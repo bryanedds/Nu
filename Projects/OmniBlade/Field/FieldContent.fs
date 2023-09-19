@@ -44,25 +44,25 @@ module FieldContent =
                 else false
             (pageUp, pageDown, itemsPaged)
 
-        let pageItems rows (field : Field) =
+        let pageItems pageSize (field : Field) =
             match field.Menu.MenuState with
             | MenuInventory inventory ->
                 let items = Inventory.getNonKeyItems field.Inventory
-                pageItems5 rows inventory.InventoryPage false true items
+                pageItems5 pageSize inventory.InventoryPage false true items
             | MenuKeyItems keyItems ->
                 let items = Inventory.getKeyItems field.Inventory
-                pageItems5 rows keyItems.KeyItemsPage false true items
+                pageItems5 pageSize keyItems.KeyItemsPage false true items
             | _ ->
                 match field.ShopOpt with
                 | Some shop ->
                     match shop.ShopState with
                     | ShopBuying ->
                         match Map.tryFind shop.ShopType Data.Value.Shops with
-                        | Some shopData -> pageItems5 rows shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
+                        | Some shopData -> pageItems5 pageSize shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
                         | None -> (false, false, Map.empty)
                     | ShopSelling ->
                         let items = Inventory.getNonKeyItems field.Inventory
-                        pageItems5 rows shop.ShopPage true true items
+                        pageItems5 pageSize shop.ShopPage true true items
                 | None -> (false, false, Map.empty)
 
         let teammate entityName initializers =
@@ -122,14 +122,14 @@ module FieldContent =
                      Entity.Teammate := teammateValue
                      Entity.ClickEvent => fieldMsg index]]
 
-        let items (position : Vector3) rows columns field fieldMsg =
-            let items = pageItems rows field |> __c // TOOD: consider memoizing.
+        let items (position : Vector3) pageSize rows field fieldMsg =
+            let items = pageItems pageSize field |> __c // TOOD: consider memoizing.
             [for entry in items do
                 let index = entry.Key
                 let (_, (itemType, itemCountOpt)) as page = entry.Value
                 let itemName = ItemType.getName itemType
-                let x = if index < columns then position.X else position.X + 375.0f
-                let y = position.Y - single (index % columns) * 81.0f
+                let x = if index < rows then position.X else position.X + 375.0f
+                let y = position.Y - single (index % rows) * 81.0f
                 Content.button itemName
                     [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
                      Entity.EnabledLocal := match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
