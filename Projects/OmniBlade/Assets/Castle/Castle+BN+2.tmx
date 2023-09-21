@@ -51,7 +51,7 @@
   </object>
   <object id="5" gid="235" x="744" y="1440" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal WarpPortal Warp Upward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
+    <property name="I" value="[Portal WarpPortal Warp Upward TombInner [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
   <object id="8" gid="1" x="552" y="1128" width="432" height="720">

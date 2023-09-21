@@ -31,7 +31,7 @@
  <objectgroup id="4" name="Props" opacity="0.97">
   <object id="4" gid="443" x="2016" y="3180" width="96" height="48">
    <properties>
-    <property name="I" value="[Portal AirPortal South Downward TombGround South]"/>
+    <property name="I" value="[Portal AirPortal South Downward TombInner South]"/>
    </properties>
   </object>
   <object id="6" gid="443" x="192" y="3456" width="144" height="144">

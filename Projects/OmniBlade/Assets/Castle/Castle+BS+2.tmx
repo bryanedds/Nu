@@ -46,7 +46,7 @@
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal WarpPortal Warp Downward TombGround [IX 0] false [[KylaAdvent 7]]]"/>
+    <property name="I" value="[Portal WarpPortal Warp Downward TombInner [IX 0] false [[KylaAdvent 7]]]"/>
    </properties>
   </object>
   <object id="4" gid="235" x="720" y="1488" width="96" height="144">

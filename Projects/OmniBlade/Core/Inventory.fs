@@ -22,11 +22,7 @@ type Advent =
     | ForestSealed
     | FactorySealed
     | SwampSealed
-    | MountainSealed
     | DeadSeaSealed
-    | RuinsSealed
-    | DesertSealed
-    | SeasonsSealed
     | VolcanoSealed
     | KylaAdvent of int
 
@@ -42,11 +38,7 @@ module Advents =
              ForestSealed
              FactorySealed
              SwampSealed
-             MountainSealed
              DeadSeaSealed
-             RuinsSealed
-             DesertSealed
-             SeasonsSealed
              VolcanoSealed
              KylaAdvent 0]
 
