@@ -342,8 +342,7 @@ type FieldType =
     | EmptyField
     | DebugField
     | TombOuter
-    | TombGround
-    | TombBasement
+    | TombInner
     | CastleConnector
     | Castle of int
 
@@ -742,7 +741,7 @@ module OmniSeedState =
 
     let rotate fieldType state =
         match fieldType with
-        | EmptyField | DebugField | TombOuter | TombGround | TombBasement
+        | EmptyField | DebugField | TombOuter | TombInner
         | CastleConnector -> state.RandSeedState
         | Castle n -> state.RandSeedState <<< n
 

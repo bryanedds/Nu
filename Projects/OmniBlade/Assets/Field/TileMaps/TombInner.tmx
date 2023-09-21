@@ -47,14 +47,14 @@
     <property name="I" value="[Seal [0 1 0 0.5] [Dialog &quot;Sealed...&quot;] [ForestSealed]]"/>
    </properties>
   </object>
-  <object id="6" gid="235" x="2448" y="192" width="96" height="96">
+  <object id="6" gid="235" x="1872" y="240" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [1 1 0 0.5] [Dialog &quot;Sealed...&quot;] [RuinsSealed]]"/>
+    <property name="I" value="[Seal [1 1 0 0.5] [Dialog &quot;Sealed...&quot;] [DeadSeaSealed]]"/>
    </properties>
   </object>
-  <object id="7" gid="235" x="1872" y="240" width="96" height="96">
+  <object id="7" gid="235" x="2448" y="192" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [1 0 0 0.5] [Dialog &quot;Sealed...&quot;] [DesertSealed]]"/>
+    <property name="I" value="[Seal [1 0 0 0.5] [Dialog &quot;Sealed...&quot;] [VolcanoSealed]]"/>
    </properties>
   </object>
   <object id="8" gid="235" x="1584" y="912" width="96" height="96">
@@ -64,12 +64,12 @@
   </object>
   <object id="9" gid="235" x="240" y="1296" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [0 0 1 0.5] [Dialog &quot;Sealed...&quot;] [DeadSeaSealed]]"/>
+    <property name="I" value="[Seal [0 0 1 0.5] [Dialog &quot;Sealed...&quot;]]"/>
    </properties>
   </object>
   <object id="10" gid="235" x="528" y="2688" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [0.625 0.53 0 0.5] [Dialog &quot;Sealed...&quot;] [MountainSealed]]"/>
+    <property name="I" value="[Seal [0.625 0.53 0 0.5] [Dialog &quot;Sealed...&quot;]]"/>
    </properties>
   </object>
   <object id="13" gid="235" x="1584" y="2544" width="48" height="48">
