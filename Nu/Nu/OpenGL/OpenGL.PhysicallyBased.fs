@@ -944,24 +944,22 @@ module PhysicallyBased =
                                         let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
                                         let lightMatrix = node.ImportMatrix node.TransformWorld
                                         let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
-                                        match light.LightType with
-                                        | _ -> // just use point light for all lights right now
-                                            let lightType =
-                                                match light.LightType with
-                                                | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
-                                                | _ -> PointLight
-                                            let physicallyBasedLight =
-                                                { LightNames = names
-                                                  LightMatrixIsIdentity = lightMatrix.IsIdentity
-                                                  LightMatrix = lightMatrix
-                                                  LightColor = color
-                                                  LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
-                                                  LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
-                                                  LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
-                                                  LightCutoff = Constants.Render.CutoffDefault // TODO: figure out if we can populate this properly.
-                                                  PhysicallyBasedLightType = lightType }
-                                            lights.Add physicallyBasedLight
-                                            yield PhysicallyBasedLight physicallyBasedLight
+                                        let lightType =
+                                            match light.LightType with
+                                            | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
+                                            | _ -> PointLight // default to point light
+                                        let physicallyBasedLight =
+                                            { LightNames = names
+                                              LightMatrixIsIdentity = lightMatrix.IsIdentity
+                                              LightMatrix = lightMatrix
+                                              LightColor = color
+                                              LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
+                                              LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
+                                              LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
+                                              LightCutoff = Constants.Render.CutoffDefault // TODO: figure out if we can populate this properly.
+                                              PhysicallyBasedLightType = lightType }
+                                        lights.Add physicallyBasedLight
+                                        yield PhysicallyBasedLight physicallyBasedLight
 
                                 // collect surfaces
                                 for i in 0 .. dec node.MeshIndices.Count do
