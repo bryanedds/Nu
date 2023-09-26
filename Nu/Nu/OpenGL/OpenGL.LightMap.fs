@@ -262,6 +262,7 @@ module LightMap =
         Gl.UseProgram 0u
         Hl.Assert ()
 
+    /// Create an environment filter map.
     let CreateEnvironmentFilterMap
         (resolution,
          environmentFilterShader,
