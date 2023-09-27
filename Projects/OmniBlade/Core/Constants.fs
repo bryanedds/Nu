@@ -80,7 +80,7 @@ module Constants =
 #if DEV_FIELD
         let SpiritActivityThreshold = 10000L
 #else
-        let SpiritActivityThreshold = 225L
+        let SpiritActivityThreshold = 240L
 #endif
         let SpiritActivityAggressionThreshold = 4
         let SpiritRadius = 90.0f / SpiritOrbRatio
