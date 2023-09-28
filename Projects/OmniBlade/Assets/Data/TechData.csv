@@ -16,8 +16,8 @@ Cure,3,Magical,3,False,True,False,0,None,[],[],None,[SingleTarget [AllyAim True]
 Empower,3,Magical,1,False,True,False,0,None,[[Power True False]],[],None,[SingleTarget [AllyAim True]],Buff the physical power of an ally and cure trivial injuries.
 Aura,5,Magical,1.5,False,True,False,0,None,[],[],None,[AllTarget [AllyAim True]],Cure moderate wounds on all allies.
 Enlighten,3,Magical,1,False,True,False,0,None,[[Magic True False]],[],None,[SingleTarget [AllyAim True]],Buff the magical power of an ally and cure trivial injuries.
-Protect,5,Magical,2,False,True,False,0,None,[[Shield True False]],[],None,[SingleTarget [AllyAim True]],Increase the defenses of an ally and cure minor injuries.
-Purify,5,Magical,2,False,True,False,0,None,[],[Poison Silence Sleep Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],None,[SingleTarget [AllyAim True]],Remove all status ailments of an ally and cure minor injuries.
+Protect,5,Magical,1.5,False,True,False,0,None,[[Shield True False]],[],None,[SingleTarget [AllyAim True]],Increase the defenses of an ally and cure minor injuries.
+Purify,5,Magical,1.5,False,True,False,0,None,[],[Poison Silence Sleep Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],None,[SingleTarget [AllyAim True]],Remove all status ailments of an ally and cure minor injuries.
 Muddle,2,Magical,0.75,False,False,False,0,None,[[Magic False False]],[],None,[SingleTarget [EnemyAim True]],Debuff the magical power of an enemy.
 Weaken,2,Magical,0.75,False,False,False,0,None,[[Power False False]],[],None,[SingleTarget [EnemyAim True]],Debuff the physical power of an enemy.
 Slow,4,Magical,0.75,False,False,False,0,None,[[Time False]],[],None,[SingleTarget [EnemyAim True]],Slow down an enemy.
