@@ -77,7 +77,7 @@ module Constants =
         let SpiritOrbSize = v3 192.0f 192.0f 0.0f
         let SpiritOrbRatio = 0.075f
         let SpiritOrbBlipSize = v3 21.0f 21.0f 0.0f
-#if DEV_FIELD
+#if DEV
         let SpiritActivityThreshold = 10000L
 #else
         let SpiritActivityThreshold = 240L
