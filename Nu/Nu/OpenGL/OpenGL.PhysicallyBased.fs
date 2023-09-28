@@ -718,7 +718,7 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (6u, 1u)
                 Hl.Assert ()
 
-                // create texCoordsOffset buffer
+                // create tex coords offset buffer
                 let texCoordsOffsetBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, texCoordsOffsetBuffer)
                 let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
