@@ -1055,16 +1055,20 @@ module FieldData =
                     List.sortBy fst |>
                     List.map snd
                 | None -> chestSpawnsUnsorted
-            let treasuresRepeat = match fieldData.Treasures.Length with 0 -> 0 | treasureCount -> inc (chestSpawnsUnsorted.Length / treasureCount)
-            let treasuresIndexed = fieldData.Treasures |> List.rev |> List.indexed
             let treasures =
+                let front = fieldData.Treasures |> List.take (fieldData.Treasures.Length / 3) |> Gen.randomize |> List.ofSeq
+                let back = List.skip front.Length fieldData.Treasures |> Gen.randomize |> List.ofSeq
+                front @ back
+            let treasuresRepeat = match treasures.Length with 0 -> 0 | treasureCount -> inc (chestSpawnsUnsorted.Length / treasureCount)
+            let treasuresIndexed = treasures |> List.rev |> List.indexed
+            let treasureSpawns =
                 Seq.init treasuresRepeat (constant treasuresIndexed) |>
                 Seq.concat |>
                 Seq.tryTake chestSpawns.Length |> // when playing individual map sections in Gaia, treasures may be absent, so tryTake is used
                 Seq.sortBy fst |>
                 Seq.map snd |>
                 Seq.toList
-            let chestSpawns = List.take treasures.Length chestSpawns
+            let chestSpawns = List.take treasureSpawns.Length chestSpawns
             let (chestSpawneds, _) =
                 List.foldBack2 (fun chestSpawn treasure (chestSpawneds, rand) ->
                     let (probability, rand) = Rand.nextSingleUnder 1.0f rand
