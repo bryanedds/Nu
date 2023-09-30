@@ -1055,20 +1055,20 @@ module FieldData =
                     List.sortBy fst |>
                     List.map snd
                 | None -> chestSpawnsUnsorted
-            let treasures =
+            let treasuresField =
                 let front = fieldData.Treasures |> List.take (fieldData.Treasures.Length / 3) |> Gen.randomize |> List.ofSeq
                 let back = List.skip front.Length fieldData.Treasures |> Gen.randomize |> List.ofSeq
                 front @ back
-            let treasuresRepeat = match treasures.Length with 0 -> 0 | treasureCount -> inc (chestSpawnsUnsorted.Length / treasureCount)
-            let treasuresIndexed = treasures |> List.rev |> List.indexed
-            let treasureSpawns =
+            let treasuresRepeat = match treasuresField.Length with 0 -> 0 | treasureCount -> inc (chestSpawnsUnsorted.Length / treasureCount)
+            let treasuresIndexed = treasuresField |> List.rev |> List.indexed
+            let treasures =
                 Seq.init treasuresRepeat (constant treasuresIndexed) |>
                 Seq.concat |>
                 Seq.tryTake chestSpawns.Length |> // when playing individual map sections in Gaia, treasures may be absent, so tryTake is used
                 Seq.sortBy fst |>
                 Seq.map snd |>
                 Seq.toList
-            let chestSpawns = List.take treasureSpawns.Length chestSpawns
+            let chestSpawns = List.take treasures.Length chestSpawns
             let (chestSpawneds, _) =
                 List.foldBack2 (fun chestSpawn treasure (chestSpawneds, rand) ->
                     let (probability, rand) = Rand.nextSingleUnder 1.0f rand
@@ -1092,7 +1092,7 @@ module FieldData =
                         (chestSpawned :: chestSpawneds, rand)
                     else (chestSpawneds, rand))
                     chestSpawns
-                    treasures
+                    treasuresField
                     ([], rand)
             let portalSpawneds = [] // NOTE: no level uses this feature in the demo.
             let propDescriptors = chestSpawneds @ portalSpawneds @ nonChestSpawns
