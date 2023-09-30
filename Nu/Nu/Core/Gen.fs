@@ -106,7 +106,7 @@ module Gen =
 
         /// Randomly shuffle a sequence.
         /// If seq is large, this may allocate to the LOH.
-        static member shuffle (seq : 'a seq) =
+        static member randomize (seq : 'a seq) =
             seq |>
             Array.ofSeq |>
             Array.map (fun a -> (Gen.random, a)) |>
