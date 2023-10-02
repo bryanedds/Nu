@@ -175,7 +175,7 @@ module Algorithms =
         let shieldBuff =
             statuses |>
             Map.tryFindKey (function Shield (_, _) -> constant true | _ -> constant false) |>
-            Option.mapOrDefaultValue (function Shield (false, false) -> 0.667f | Shield (false, true) -> 0.333f | Shield (true, false) -> 1.333f | Shield (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+            Option.mapOrDefaultValue (function Shield (false, false) -> 0.5f | Shield (false, true) -> 0.25f | Shield (true, false) -> 1.5f | Shield (true, true) -> 2.0f | _ -> 1.0f) 1.0f
         let (defense, absorbUncrept) = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> (archetypeData.Defense, archetypeData.Absorb)

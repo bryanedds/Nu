@@ -210,19 +210,19 @@ module PropDispatcher =
                                 | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
                                 | MadTrixterNpc | HeavyArmorosNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
                                 | AraneaImplicitumNpc -> (Assets.Field.BossAnimationSheet, Constants.Gameplay.BossSize)
-                            let (row, column) =
+                            let row =
                                 match npcType with
                                 | ShadeNpc
                                 | MaelNpc
                                 | RiainNpc
-                                | PericNpc -> (10, 0)
-                                | RavelNpc -> (0, 0)
-                                | AdvenNpc -> (1, 0)
-                                | EildaenNpc -> (2, 0)
-                                | NostrusNpc -> (3, 0)
-                                | MadTrixterNpc -> (4, 0)
-                                | HeavyArmorosNpc -> (5, 0)
-                                | AraneaImplicitumNpc -> (0, 0)
+                                | PericNpc -> 10
+                                | RavelNpc -> 0
+                                | AdvenNpc -> 1
+                                | EildaenNpc -> 2
+                                | NostrusNpc -> 3
+                                | MadTrixterNpc -> 4
+                                | HeavyArmorosNpc -> 5
+                                | AraneaImplicitumNpc -> 0
                             let direction =
                                 match directionOpt with
                                 | Some direction -> direction
@@ -232,7 +232,7 @@ module PropDispatcher =
                                     if direction <> Upward && delta.Length () <= 288.0f // TODO: make constant.
                                     then direction
                                     else Downward
-                            let column = column + CharacterAnimationState.directionToInt direction
+                            let column = CharacterAnimationState.directionToInt direction
                             let celSize = (size / 3.0f).V2
                             let insetPosition = v2 (single column) (single row) * celSize
                             let inset = box2 insetPosition celSize
