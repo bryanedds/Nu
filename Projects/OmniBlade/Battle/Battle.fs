@@ -463,7 +463,7 @@ module Battle =
         updateCharacter
             (Character.updateTechChargeOpt
                 (function
-                 | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, max 0 (min Constants.Battle.ChargeMax (chargeAmount + chargeTime)), techType)
+                 | Some (chargeRate, chargeAmount', techType) -> Some (chargeRate, max 0 (min Constants.Battle.ChargeMax (chargeAmount + chargeAmount')), techType)
                  | None -> None))
             characterIndex
             battle
@@ -654,10 +654,10 @@ module Battle =
         | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
-        | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
-        | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
-        | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
-        | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
+        | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPoints / single target.HitPointsMax <= ceiling
+        | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPoints / single target.HitPointsMax >= floor
+        | TechPointsLessThanOrEqual ceiling -> single target.TechPoints / single target.TechPointsMax <= ceiling
+        | TechPointsGreaterThanOrEqual floor -> single target.TechPoints / single target.TechPointsMax >= floor
         | Any affectTypes -> List.exists (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalAttackAffectType affectType source target observer battle) affectTypes
 
@@ -705,10 +705,10 @@ module Battle =
         | Item -> true
         | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
-        | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
-        | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
-        | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
-        | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
+        | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPoints / single target.HitPointsMax <= ceiling
+        | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPoints / single target.HitPointsMax >= floor
+        | TechPointsLessThanOrEqual ceiling -> single target.TechPoints / single target.TechPointsMax <= ceiling
+        | TechPointsGreaterThanOrEqual floor -> single target.TechPoints / single target.TechPointsMax >= floor
         | Any affectTypes -> List.exists (fun affectType -> evalItemAffectType affectType source target observer battle) affectTypes
         | All affectTypes -> List.forall (fun affectType -> evalItemAffectType affectType source target observer battle) affectTypes
 
@@ -766,10 +766,10 @@ module Battle =
             | Buffed -> Seq.exists StatusType.buff statusesAdded
             | Wounded -> target.Wounded
             | Random chance -> Gen.randomf < chance
-            | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPointsMax / single target.HitPoints <= ceiling
-            | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPointsMax / single target.HitPoints >= floor
-            | TechPointsLessThanOrEqual ceiling -> single target.TechPointsMax / single target.TechPoints <= ceiling
-            | TechPointsGreaterThanOrEqual floor -> single target.TechPointsMax / single target.TechPoints >= floor
+            | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPoints / single target.HitPointsMax <= ceiling
+            | HitPointsGreaterThanOrEqual floor -> target.Healthy && single target.HitPoints / single target.HitPointsMax >= floor
+            | TechPointsLessThanOrEqual ceiling -> single target.TechPoints / single target.TechPointsMax <= ceiling
+            | TechPointsGreaterThanOrEqual floor -> single target.TechPoints / single target.TechPointsMax >= floor
             | Any affectTypes -> List.exists (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
             | All affectTypes -> List.forall (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
         | (false, _) -> false
@@ -1408,6 +1408,13 @@ module Battle =
                     match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (Charge (chargeAmount, None)) messageOpt time localTime battle with
                     | (true, battle) ->
                         let battle = chargeCharacter chargeAmount observerIndex battle
+                        let battle =
+                            match getCharacterBy (fun c -> c.TechChargeOpt) observerIndex battle with
+                            | Some (_, chargeAmount, techType) when chargeAmount >= Constants.Battle.ChargeMax ->
+                                let battle = updateCharacterAutoTechOpt (constant (Some techType)) observerIndex battle
+                                let battle = retargetCharacter observerIndex sourceIndex battle // TODO: make this target self if healing tech.
+                                battle
+                            | Some _ | None -> battle
                         let battle = updateCurrentCommandOpt (constant None) battle
                         just battle
                     | (false, battle) -> just battle

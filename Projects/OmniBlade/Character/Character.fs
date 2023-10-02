@@ -119,7 +119,7 @@ module Character =
         | None -> false
 
     let shouldCounter (character : Character) =
-        if character.ArchetypeType = Fighter then Gen.random1 12 = 0
+        if character.ArchetypeType = Fighter then Gen.random1 10 = 0
         else false
 
     let evalAttack effectType (source : Character) (target : Character) =
@@ -500,8 +500,8 @@ module Character =
     let resetTechCharge (character : Character) =
         updateTechChargeOpt
             (function
-             | Some (_, chargeTime, _) as chargeTechOpt ->
-                if chargeTime >= Constants.Battle.ChargeMax then
+             | Some (_, chargeAmount, _) as chargeTechOpt ->
+                if chargeAmount >= Constants.Battle.ChargeMax then
                     let chargeTechs = Algorithms.chargeTechs character.ArchetypeType character.Level
                     chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 else chargeTechOpt
@@ -511,7 +511,7 @@ module Character =
     let advanceTechCharge (character : Character) =
         updateTechChargeOpt
             (function
-             | Some (chargeRate, chargeTime, techType) -> Some (chargeRate, chargeRate + chargeTime, techType)
+             | Some (chargeRate, chargeAmount, techType) -> Some (chargeRate, chargeRate + chargeAmount, techType)
              | None -> None)
             character
 

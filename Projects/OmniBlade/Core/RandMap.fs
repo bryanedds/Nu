@@ -363,6 +363,7 @@ type RandMap =
             enoughRooms walkLength map &&
             noContiguousSameRooms map
 #if DEV
+        printfn "Floor: %i" floor
         RandMap.printn map
 #endif
         if not isMapValid // make another if no valid map could be created

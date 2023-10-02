@@ -96,11 +96,11 @@ module BattleDispatcher =
                         Battle.undefendCharacter characterIndex
                     | _ -> failwithumf ()
                 just battle
-            
+
             | RegularItemCancel characterIndex ->
                 let battle = Battle.updateCharacterInputState (constant RegularMenu) characterIndex battle
                 just battle
-            
+
             | ConsumableItemSelect (characterIndex, item) ->
                 let consumableType =
                     scvalue<ConsumableType> item
@@ -114,7 +114,7 @@ module BattleDispatcher =
             | ConsumableItemCancel characterIndex ->
                 let battle = Battle.updateCharacterInputState (constant RegularMenu) characterIndex battle
                 just battle
-            
+
             | TechItemSelect (characterIndex, item) ->
                 let techType =
                     scvalue<TechType> item
@@ -124,7 +124,7 @@ module BattleDispatcher =
                     | (false, _) -> NoAim
                 let battle = Battle.updateCharacterInputState (constant (AimReticles (item, aimType))) characterIndex battle
                 just battle
-            
+
             | TechItemCancel characterIndex ->
                 let battle = Battle.updateCharacterInputState (constant RegularMenu) characterIndex battle
                 just battle

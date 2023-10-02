@@ -20,6 +20,12 @@ module FieldDispatcher =
     type FieldDispatcher () =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getViewBounds2dAbsolute world))
 
+        // HACK: override songs under special conditions.
+        // NOTE: Technically this should be data-driven, but it may not worth doing so for this game.
+        static let overrideSong (_ : FieldType) (_ : Advent Set) song =
+            // NOTE: no special conditions in demo.
+            song
+
         static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) world =
             let collideeEntity = collidee.BodyId.BodySource :?> Entity
             if (collider.ShapeIndex = Constants.Field.AvatarCollisionShapeIndex &&
@@ -80,7 +86,13 @@ module FieldDispatcher =
                         let time = field.UpdateTime
                         let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                         if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
-                            match (currentSongOpt, destinationData.FieldSongOpt) with
+
+                            // attempt to look up destination song
+                            let desinationSongOpt =
+                                match destinationData.FieldSongOpt with
+                                | Some destinationSong -> Some (overrideSong fieldTransition.FieldType field.Advents destinationSong)
+                                | None -> None
+                            match (currentSongOpt, desinationSongOpt) with
                             | (Some song, Some song2) when assetEq song song2 -> just field
                             | (_, _) -> withSignal (FadeOutSong 30L) field
 
@@ -97,6 +109,7 @@ module FieldDispatcher =
                             let songCmd =
                                 match Field.getFieldSongOpt field with
                                 | Some fieldSong ->
+                                    let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                                     match currentSongOpt with
                                     | Some song when assetEq song fieldSong -> Nop
                                     | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
@@ -537,6 +550,7 @@ module FieldDispatcher =
                 | (true, fieldData) ->
                     match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
                     | (Some fieldSong, Some currentSong) ->
+                        let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                         if not (AssetTag.equals fieldSong currentSong.Song) then
                             let (playTime, startTime) =
                                 let time = field.UpdateTime
@@ -553,6 +567,7 @@ module FieldDispatcher =
                             withSignal (PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
                         else just world
                     | (Some fieldSong, None) ->
+                        let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                         let (playTime, startTime) =
                             let time = field.UpdateTime
                             match field.FieldSongTimeOpt with
@@ -614,6 +629,13 @@ module FieldDispatcher =
                         match Data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
+
+                 // tint sprite
+                 if field.Tint.A > 0.0f then
+                    Content.staticSprite "Tint"
+                       [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Constants.Field.TintElevation; Entity.Absolute == true
+                        Entity.StaticImage == Assets.Default.White
+                        Entity.Color := field.Tint]
 
                  // transition fade sprite
                  Content.staticSprite "Fade"

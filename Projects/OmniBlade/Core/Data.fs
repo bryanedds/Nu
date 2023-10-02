@@ -86,7 +86,7 @@ type AffinityType =
     | Ice
     | Lightning
     | Water
-    | Wind // weak to self
+    | Wind
     | Metal // vulnerable to shadow
     | Earth // not resistant to self
     | Light // not resistant to self
@@ -101,9 +101,7 @@ type AffinityType =
         | (Lightning, Lightning) -> Constants.Battle.AffinityResistanceScalar
         | (Water, Water) -> Constants.Battle.AffinityResistanceScalar
         | (Metal, Metal) -> Constants.Battle.AffinityResistanceScalar
-
-        // self-vulnerable
-        | (Wind, Wind) -> Constants.Battle.AffinityVulnerabilityScalar
+        | (Wind, Wind) -> Constants.Battle.AffinityResistanceScalar
 
         // vulnerable
         | (Fire, Ice) -> Constants.Battle.AffinityVulnerabilityScalar
@@ -126,13 +124,12 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Sleep // TODO: implement effect in battle.
     | Confuse // TODO: implement effect in battle (disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
     | Curse // TODO: implement effect of 'can't gain HP' in battle.
-    //| Blind - maybe in the sequel
+    //| Blind - maybe implement in the sequel
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    //| Counter of bool * bool // true = Up, false = Down; true = 2, false = 1 - maybe in the sequel
-    //| Provoke of CharacterIndex - maybe in the sequel
+    //| Provoke of CharacterIndex - maybe implement in the sequel
 
     // TODO: make this a property.
     static member debuff this =
@@ -366,7 +363,7 @@ type BattleType =
     | HeavyArmorosBattle
     | Castle3Battle | Castle3Battle2 | Castle3Battle3 | Castle3Battle4 | Castle3Battle5 | Castle3Battle6 | Castle3Battle7 | Castle3Battle8 | Castle3Battle9
     | AraneaImplicitumBattle
-
+    
 type EncounterType =
     | DebugEncounter
     | CastleEncounter
@@ -1130,8 +1127,10 @@ module FieldData =
                         | OriginSW -> let delta = avatarBottom - tileMapPerimeter.BottomLeft in delta.Magnitude
                     let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
-                    | 0 | 1 -> Some WeakSpirit
-                    | 2 | 3 -> Some NormalSpirit
+                    | 0 -> Some WeakSpirit
+                    | 1 -> if Gen.random1 3 <> 0 then Some WeakSpirit else Some NormalSpirit
+                    | 2 -> Some NormalSpirit
+                    | 3 -> if Gen.random1 3 <> 0 then Some NormalSpirit else Some StrongSpirit
                     | _ -> Some StrongSpirit
                 | FieldStatic _ | FieldConnector _ | FieldRoom _ -> None
             | Choice4Of4 _ ->
