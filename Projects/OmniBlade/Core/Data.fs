@@ -1092,7 +1092,7 @@ module FieldData =
                         (chestSpawned :: chestSpawneds, rand)
                     else (chestSpawneds, rand))
                     chestSpawns
-                    treasuresField
+                    treasures
                     ([], rand)
             let portalSpawneds = [] // NOTE: no level uses this feature in the demo.
             let propDescriptors = chestSpawneds @ portalSpawneds @ nonChestSpawns
