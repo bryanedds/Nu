@@ -25,6 +25,10 @@ type Advent =
     | LakeSealed
     | VolcanoSealed
     | KylaAdvent of int
+    | OranAdvent of int
+    | NarahAdvent of int
+    | SiphonieAdvent of int
+    | JinnAdvent of int
 
 [<RequireQualifiedAccess>]
 module Advents =
@@ -40,7 +44,11 @@ module Advents =
              SwampSealed
              LakeSealed
              VolcanoSealed
-             KylaAdvent 0]
+             KylaAdvent 0
+             OranAdvent 0
+             NarahAdvent 0
+             SiphonieAdvent 0
+             JinnAdvent 0]
 
 type WeaponType =
     | Bare
