@@ -119,8 +119,10 @@ module Character =
         | None -> false
 
     let shouldCounter (character : Character) =
-        if character.ArchetypeType = Fighter then Gen.random1 10 = 0
-        else false
+        let counterRoll = character.ArchetypeType = Fighter && Gen.random1 10 = 0
+        counterRoll &&
+        character.Healthy &&
+        not (Map.containsKey Sleep character.Statuses)
 
     let evalAttack effectType (source : Character) (target : Character) =
         let power = source.Power
