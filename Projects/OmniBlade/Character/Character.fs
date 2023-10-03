@@ -470,7 +470,7 @@ module Character =
                     statuses)
                     character
             updateActionTime (fun actionTime ->
-                if  statusesAdded.Contains (Time false) &&
+                if  Set.exists (function Time false -> true | _ -> false) statusesAdded &&
                     actionTime < Constants.Battle.ActionTime then
                     let slowScalar =
                         if character.Ally then Constants.Battle.ActionTimeSlowScalar
