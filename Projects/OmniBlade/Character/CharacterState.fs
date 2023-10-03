@@ -49,6 +49,11 @@ type [<SymbolicExpansion>] CharacterState =
     member this.ChargeTechs = Algorithms.chargeTechs this.ArchetypeType this.Level
     member this.Stature = match Map.tryFind this.ArchetypeType Data.Value.Archetypes with Some archetypeData -> archetypeData.Stature | None -> NormalStature
 
+    static member restore (state : CharacterState) =
+        { state with
+            HitPoints = state.HitPointsMax
+            TechPoints = state.TechPointsMax }
+
     static member burndownStatuses burndown state =
         let statuses =
             Map.fold (fun statuses status burndown2 ->

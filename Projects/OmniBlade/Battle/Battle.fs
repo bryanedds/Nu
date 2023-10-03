@@ -1910,6 +1910,12 @@ module Battle =
             let (sigs, battle) =
                 if outcome then
                     let battle = updateAllies (fun ally -> if ally.Healthy then Character.updateExpPoints ((+) battle.PrizePool_.Exp) ally else ally) battle
+                    let battle =
+                        updateAllies (fun ally ->
+                            if List.exists (fun (ally' : Character) -> ally.CharacterIndex = ally'.CharacterIndex) alliesLevelingUp
+                            then Character.restore ally
+                            else ally)
+                            battle
                     let battle = updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool_.Gold }) battle
                     let battle = updateInventory (Inventory.tryAddItems battle.PrizePool_.Items >> snd) battle
                     if List.notEmpty alliesLevelingUp
