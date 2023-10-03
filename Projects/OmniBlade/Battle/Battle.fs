@@ -1814,14 +1814,15 @@ module Battle =
                     then Constants.Battle.AllyActionTimeDelta
                     else Constants.Battle.EnemyActionTimeDelta
                 let actionTimeDelta =
-                    if Map.containsKey (Time false) character.Statuses then
+                    match Map.tryFindKey (function Time _ -> constant true | _ -> constant false) character.Statuses with
+                    | Some (Time false) ->
                         let slowScalar =
                             if character.Ally then Constants.Battle.ActionTimeSlowScalar
                             elif character.Boss then Constants.Battle.ActionTimeSlowerScalar
                             else Constants.Battle.ActionTimeSlowestScalar
                         actionTimeDelta * slowScalar
-                    elif Map.containsKey (Time true) character.Statuses then actionTimeDelta * Constants.Battle.ActionTimeHasteScalar
-                    else actionTimeDelta
+                    | Some (Time true) -> actionTimeDelta * Constants.Battle.ActionTimeHasteScalar
+                    | Some _ | None -> actionTimeDelta
                 let actionTimeDelta =
                     let anyAlliesInputting = getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.CharacterInputState <> CharacterInputState.NoInput)
                     if anyAlliesInputting then
