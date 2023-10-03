@@ -458,6 +458,9 @@ module Character =
     let updateBottom updater (character : Character) =
         { character with Perimeter_ = character.Bottom |> updater |> character.Perimeter.WithBottom }
 
+    let restore (character : Character) =
+        { character with CharacterState_ = CharacterState.restore character.CharacterState_ }
+
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
         if character.Healthy then
             let character =
