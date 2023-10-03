@@ -1362,7 +1362,10 @@ module Battle =
                                     let battle = updateCharacterTechPoints -techCost sourceIndex battle
                                     let battle = updateCurrentCommandOpt (constant None) battle
                                     let battle = animationCharacterPoise time sourceIndex battle
-                                    let battle = resetCharacterTechCharge sourceIndex battle
+                                    let battle =
+                                        match source.TechChargeOpt with
+                                        | Some (_, _, chargeTechType) when techType = chargeTechType -> resetCharacterTechCharge sourceIndex battle
+                                        | Some _ | None -> battle
                                     let battle =
                                         if techType.ConjureTech
                                         then resetCharacterConjureCharge sourceIndex battle
