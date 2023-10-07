@@ -6,7 +6,7 @@
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "The ancient 'tomb' of the 9 mythical demons."]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "The ancient 'tomb' of the six mythical demons."]]
     [Optimized False]
     [Position [-32 -32 0]]
     [Size [64 64 0]]
