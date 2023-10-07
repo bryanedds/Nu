@@ -1062,10 +1062,10 @@ module FieldData =
                 Seq.sortBy fst |>
                 Seq.map snd |>
                 Seq.toList
-            let treasures =
-                let front = treasuresOrdered |> List.take (treasuresOrdered.Length / 3) |> Gen.randomize |> List.ofSeq
-                let back = List.skip front.Length treasuresOrdered |> Gen.randomize |> List.ofSeq
-                front @ back
+            let (treasures, rand) =
+                let (front, rand) = treasuresOrdered |> List.take (treasuresOrdered.Length / 3) |> flip Rand.nextPermutation rand
+                let (back, rand) = List.skip front.Length treasuresOrdered |> flip Rand.nextPermutation rand
+                (front @ back, rand)
             let chestSpawns = List.take treasures.Length chestSpawns
             let (chestSpawneds, _) =
                 List.foldBack2 (fun chestSpawn treasure (chestSpawneds, rand) ->
