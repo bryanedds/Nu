@@ -47,12 +47,12 @@
     <property name="I" value="[Seal [0 1 0 0.5] [Dialog &quot;Sealed...&quot;] [ForestSealed]]"/>
    </properties>
   </object>
-  <object id="6" gid="235" x="1872" y="240" width="96" height="96">
+  <object id="6" gid="235" x="2448" y="192" width="96" height="96">
    <properties>
     <property name="I" value="[Seal [1 1 0 0.5] [Dialog &quot;Sealed...&quot;] [LakeSealed]]"/>
    </properties>
   </object>
-  <object id="7" gid="235" x="2448" y="192" width="96" height="96">
+  <object id="7" gid="235" x="1872" y="240" width="96" height="96">
    <properties>
     <property name="I" value="[Seal [1 0 0 0.5] [Dialog &quot;Sealed...&quot;] [VolcanoSealed]]"/>
    </properties>
