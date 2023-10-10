@@ -10,8 +10,8 @@ open BlazeVector
 module BulletDispatcher =
 
     type BulletCommand =
-        | BulletUpdate
-        | BulletCollision
+        | Update
+        | Collision
         interface Command
 
     type BulletDispatcher () =
@@ -34,19 +34,19 @@ module BulletDispatcher =
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
 
         override this.Initialize (_, _) =
-            [Entity.UpdateEvent => BulletUpdate
-             Entity.BodyCollisionEvent => BulletCollision]
+            [Entity.UpdateEvent => Update
+             Entity.BodyCollisionEvent => Collision]
 
         override this.Command (startTime, command, entity, world) =
             match command with
-            | BulletUpdate ->
+            | Update ->
                 let localTime = world.UpdateTime - startTime
                 let world =
                     if localTime = BulletLifeTime
                     then World.destroyEntity entity world
                     else world
                 just world
-            | BulletCollision ->
+            | Collision ->
                 let world = World.destroyEntity entity world
                 just world
 
@@ -57,12 +57,12 @@ module EnemyDispatcher =
         { Health : int }
 
     type EnemyMessage =
-        | EnemyCollision of BodyCollisionData
+        | Collision of BodyCollisionData
         interface Message
 
     type EnemyCommand =
-        | EnemyUpdate
-        | EnemyShot
+        | Update
+        | Shot
         interface Command
 
     type Entity with
@@ -94,23 +94,23 @@ module EnemyDispatcher =
              define Entity.AnimationSheet Assets.Gameplay.EnemyImage]
 
         override this.Initialize (_, _) =
-            [Entity.UpdateEvent => EnemyUpdate
-             Entity.BodyCollisionEvent =|> fun evt -> EnemyCollision evt.Data]
+            [Entity.UpdateEvent => Update
+             Entity.BodyCollisionEvent =|> fun evt -> Collision evt.Data]
 
         override this.Message (enemy, message, _, world) =
 
             match message with
-            | EnemyCollision collision ->
+            | Collision collision ->
                 match collision.BodyShapeCollidee.BodyId.BodySource with
                 | :? Entity as collidee when collidee.Is<BulletDispatcher> world ->
                     let enemy = { enemy with Health = dec enemy.Health }
-                    withSignal EnemyShot enemy
+                    withSignal Shot enemy
                 | _ -> just enemy
 
         override this.Command (enemy, command, entity, world) =
 
             match command with
-            | EnemyUpdate ->
+            | Update ->
                 let world =
                     if entity.GetInView2d world
                     then World.applyBodyForce WalkForce v3Zero (entity.GetBodyId world) world
@@ -123,7 +123,7 @@ module EnemyDispatcher =
                     else world
                 just world
 
-            | EnemyShot ->
+            | Shot ->
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
                 just world
 
@@ -135,13 +135,13 @@ module PlayerDispatcher =
           LastTimeJump : int64 }
 
     type PlayerMessage =
-        | PlayerUpdateMessage
+        | UpdateMessage
         | TryJumpByMouse
         | TryJumpByKeyboard of KeyboardKeyData
         interface Message
 
     type PlayerCommand =
-        | PlayerUpdateCommand
+        | UpdateCommand
         | Shoot
         | Jump
         interface Command
@@ -191,15 +191,15 @@ module PlayerDispatcher =
              define Entity.AnimationSheet Assets.Gameplay.PlayerImage]
 
         override this.Initialize (_, _) =
-            [Entity.UpdateEvent => PlayerUpdateMessage
-             Entity.UpdateEvent => PlayerUpdateCommand
+            [Entity.UpdateEvent => UpdateMessage
+             Entity.UpdateEvent => UpdateCommand
              Simulants.Game.MouseLeftDownEvent => TryJumpByMouse
              Simulants.Game.KeyboardKeyDownEvent =|> fun evt -> TryJumpByKeyboard evt.Data]
 
         override this.Message (player, message, entity, world) =
 
             match message with
-            | PlayerUpdateMessage ->
+            | UpdateMessage ->
                 let player =
                     if World.getBodyGrounded (entity.GetBodyId world) world
                     then { player with LastTimeOnGround = world.UpdateTime }
@@ -230,7 +230,7 @@ module PlayerDispatcher =
         override this.Command (_, command, entity, world) =
 
             match command with
-            | PlayerUpdateCommand ->
+            | UpdateCommand ->
                 if world.Advancing then
                     let bodyId = entity.GetBodyId world
                     let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
