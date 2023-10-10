@@ -23,18 +23,16 @@ module BulletDispatcher =
             [typeof<RigidBodyFacet>
              typeof<StaticSpriteFacet>]
 
-        static member Properties =
-            [define Entity.Size (v3 20.0f 20.0f 0.0f)
-             define Entity.Presence Omnipresent
-             define Entity.Substance (Density 0.1f)
-             define Entity.Restitution 0.5f
-             define Entity.LinearDamping 0.0f
-             define Entity.GravityOverride (Some v3Zero)
-             define Entity.BodyShape (BodySphere { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
-             define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
-
         override this.Initialize (_, _) =
-            [Entity.UpdateEvent => Update
+            [Entity.Size == v3 20.0f 20.0f 0.0f
+             Entity.Presence == Omnipresent
+             Entity.Substance == Density 0.1f
+             Entity.Restitution == 0.5f
+             Entity.LinearDamping == 0.0f
+             Entity.GravityOverride == Some v3Zero
+             Entity.BodyShape == BodySphere { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
+             Entity.StaticImage == Assets.Gameplay.PlayerBulletImage
+             Entity.UpdateEvent => Update
              Entity.BodyCollisionEvent => Collision]
 
         override this.Command (startTime, command, entity, world) =
@@ -80,21 +78,19 @@ module EnemyDispatcher =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
 
-        static member Properties =
-            [define Entity.Size (v3 48.0f 96.0f 0.0f)
-             define Entity.Friction 0.0f
-             define Entity.AngularFactor v3Zero
-             define Entity.LinearDamping 3.0f
-             define Entity.GravityOverride (Some v3Zero)
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
-             define Entity.CelCount 6
-             define Entity.CelRun 4
-             define Entity.CelSize (v2 48.0f 96.0f)
-             define Entity.AnimationDelay (UpdateTime 8L)
-             define Entity.AnimationSheet Assets.Gameplay.EnemyImage]
-
         override this.Initialize (_, _) =
-            [Entity.UpdateEvent => Update
+            [Entity.Size == v3 48.0f 96.0f 0.0f
+             Entity.Friction == 0.0f
+             Entity.AngularFactor == v3Zero
+             Entity.LinearDamping == 3.0f
+             Entity.GravityOverride == Some v3Zero
+             Entity.BodyShape == BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None }
+             Entity.CelCount == 6
+             Entity.CelRun == 4
+             Entity.CelSize == v2 48.0f 96.0f
+             Entity.AnimationDelay == UpdateTime 8L
+             Entity.AnimationSheet == Assets.Gameplay.EnemyImage
+             Entity.UpdateEvent => Update
              Entity.BodyCollisionEvent =|> fun evt -> Collision evt.Data]
 
         override this.Message (enemy, message, _, world) =
@@ -177,21 +173,19 @@ module PlayerDispatcher =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
 
-        static member Properties =
-            [define Entity.Size (v3 48.0f 96.0f 0.0f)
-             define Entity.AngularFactor v3Zero
-             define Entity.Friction 0.0f
-             define Entity.LinearDamping 3.0f
-             define Entity.GravityOverride (Some v3Zero)
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
-             define Entity.CelCount 16
-             define Entity.CelRun 4
-             define Entity.CelSize (v2 48.0f 96.0f)
-             define Entity.AnimationDelay (UpdateTime 3L)
-             define Entity.AnimationSheet Assets.Gameplay.PlayerImage]
-
         override this.Initialize (_, _) =
-            [Entity.UpdateEvent => UpdateMessage
+            [Entity.Size == v3 48.0f 96.0f 0.0f
+             Entity.AngularFactor == v3Zero
+             Entity.Friction == 0.0f
+             Entity.LinearDamping == 3.0f
+             Entity.GravityOverride == Some v3Zero
+             Entity.BodyShape == BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None }
+             Entity.CelCount == 16
+             Entity.CelRun == 4
+             Entity.CelSize == v2 48.0f 96.0f
+             Entity.AnimationDelay == UpdateTime 3L
+             Entity.AnimationSheet == Assets.Gameplay.PlayerImage
+             Entity.UpdateEvent => UpdateMessage
              Entity.UpdateEvent => UpdateCommand
              Simulants.Game.MouseLeftDownEvent => TryJumpByMouse
              Simulants.Game.KeyboardKeyDownEvent =|> fun evt -> TryJumpByKeyboard evt.Data]
