@@ -3,7 +3,20 @@
   [Name Gui]
   [Persistent True]
   [Visible True]]
- [[ButtonDispatcher
+ [[TextDispatcher
+   [[BackdropImageOpt
+     [Some [Default Label]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" BlazeVector]]
+    [Name Title]
+    [Position [0 120 0]]
+    [Size [512 96 0]]
+    [Text BlazeVector]]
+   []]
+  [ButtonDispatcher
+   [[Name Play] [Text Play]]
+   []]
+  [ButtonDispatcher
    [[Name Credits]
     [Position [0 -72 0]]
     [Text Credits]]
@@ -12,16 +25,4 @@
    [[Name Exit]
     [Position [0 -144 0]]
     [Text Exit]]
-   []]
-  [ButtonDispatcher
-   [[Name Play] [Text Play]]
-   []]
-  [TextDispatcher
-   [[BackdropImageOpt
-     [Some [Default Label]]]
-    [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" BlazeVector]]
-    [Position [0 120 0]]
-    [Size [512 96 0]]
-    [Text BlazeVector]]
    []]]]

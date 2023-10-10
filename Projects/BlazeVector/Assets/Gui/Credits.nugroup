@@ -3,16 +3,12 @@
   [Name Gui]
   [Persistent True]
   [Visible True]]
- [[ButtonDispatcher
-   [[Name Back]
-    [Position [0 -144 0]]
-    [Text Back]]
-   []]
-  [TextDispatcher
+ [[TextDispatcher
    [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" Credits]]
+    [Name Credits]
     [Position [0 144 0]]
     [Size [512 96 0]]
     [Text Credits]]
@@ -21,7 +17,8 @@
    [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code + Music + SFX: Bryan Edds"]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" "Code + Music + SFX: Bryan Edds"]]
+    [Name Code]
     [Position [0 36 0]]
     [Size [512 48 0]]
     [Text "Code + Music + SFX: Bryan Edds"]]
@@ -30,8 +27,14 @@
    [[BackdropImageOpt
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: MindChamber"]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" "Art: MindChamber"]]
+    [Name Art]
     [Position [0 -48 0]]
     [Size [512 48 0]]
     [Text "Art: MindChamber"]]
+   []]
+  [ButtonDispatcher
+   [[Name Back]
+    [Position [0 -144 0]]
+    [Text Back]]
    []]]]
