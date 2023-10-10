@@ -8,7 +8,7 @@ open BlazeVector
 [<AutoOpen>]
 module EnemyDispatcher =
 
-    type Enemy =
+    type [<SymbolicExpansion>] Enemy =
         { Health : int }
 
     type EnemyMessage =

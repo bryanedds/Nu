@@ -9,7 +9,7 @@ open BlazeVector
 [<AutoOpen>]
 module PlayerDispatcher =
 
-    type Player =
+    type [<SymbolicExpansion>] Player =
         { LastTimeOnGround : int64
           LastTimeJump : int64 }
 
