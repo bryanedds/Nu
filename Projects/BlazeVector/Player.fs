@@ -10,7 +10,8 @@ open BlazeVector
 module PlayerDispatcher =
 
     type [<SymbolicExpansion>] Player =
-        { LastTimeOnGround : int64
+        { Alive : bool
+          LastTimeOnGround : int64
           LastTimeJump : int64 }
 
     type PlayerMessage =
@@ -23,16 +24,16 @@ module PlayerDispatcher =
         | UpdateCommand
         | Shoot
         | Jump
+        | Die
         interface Command
 
     type Entity with
         member this.GetPlayer world : Player = this.GetModelGeneric<Player> world
         member this.SetPlayer player world = this.SetModelGeneric<Player> player world
         member this.Player = this.ModelGeneric<Player> ()
-        member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit EntityDispatcher2d<Player, PlayerMessage, PlayerCommand> (true, { LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
+        inherit EntityDispatcher2d<Player, PlayerMessage, PlayerCommand> (true, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
         static let [<Literal>] WalkForce = 1750.0f
         static let [<Literal>] FallForce = -5000.0f
@@ -58,6 +59,7 @@ module PlayerDispatcher =
 
         override this.Initialize (_, _) =
             [Entity.Size == v3 48.0f 96.0f 0.0f
+             Entity.Presence == Omnipresent
              Entity.AngularFactor == v3Zero
              Entity.Friction == 0.0f
              Entity.LinearDamping == 3.0f
@@ -81,8 +83,12 @@ module PlayerDispatcher =
                     if World.getBodyGrounded (entity.GetBodyId world) world
                     then { player with LastTimeOnGround = world.UpdateTime }
                     else player
-                if world.Advancing && not (entity.HasFallen world) && world.UpdateTime % 5L = 0L
-                then withSignal Shoot player
+                let (player, dying) =
+                    if player.Alive && (entity.GetPosition world).Y <= -600.0f
+                    then ({ player with Alive = false }, true)
+                    else (player, false)
+                if dying then withSignal Die player
+                elif player.Alive && world.UpdateTime % 5L = 0L then withSignal Shoot player
                 else just player
 
             | TryJumpByMouse ->
@@ -129,4 +135,9 @@ module PlayerDispatcher =
             | Shoot ->
                 let (bullet, world) = createBullet entity world
                 let world = propelBullet bullet world
+                just world
+
+            | Die ->
+                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+                let world = World.publish () entity.DyingEvent entity world
                 just world
