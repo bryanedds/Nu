@@ -8,19 +8,19 @@ open MyGame
 [<AutoOpen>]
 module Gameplay =
 
-    // this is our Elm-style model type representing gameplay.
+    // this is our MMCC model type representing gameplay.
     type Gameplay =
         | Playing
         | Quitting
         | Quit
 
-    // this is our Elm-style message type.
+    // this is our MMCC message type.
     type GameplayMessage =
         | StartQutting
         | FinishQuitting
         interface Message
 
-    // this is our Elm-style command type. Commands are used instead of messages when things like physics are involved.
+    // this is our MMCC command type. Commands are used instead of messages when things like physics are involved.
     type GameplayCommand =
         | Update
         | PostUpdateEye

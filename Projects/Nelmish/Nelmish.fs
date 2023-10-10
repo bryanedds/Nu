@@ -3,22 +3,22 @@ open Prime
 open Nu
 open Nu.Declarative
 
-// this is our Elm-style model type
+// this is our MMCC model type
 type Model =
     int
 
-// this is our Elm-style message type
+// this is our MMCC message type
 type Message =
     | Decrement
     | Increment
     | Reset
     interface Nu.Message
 
-// this is our Elm-style game dispatcher
+// this is our MMCC game dispatcher
 type NelmishDispatcher () =
     inherit GameDispatcher<Model, Message, Command> (0) // initial model value
 
-    // here we handle the Elm-style messages
+    // here we handle the MMCC messages
     override this.Message (model, message, _, _) =
         match message with
         | Decrement -> just (model - 1)

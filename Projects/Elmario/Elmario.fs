@@ -13,14 +13,14 @@ module Simulants =
     let Group = Screen / "Group"
     let Elmario = Group / "Elmario"
 
-// this is our Elm-style command type
+// this is our MMCC command type
 type Command =
     | Update
     | Jump
     | Nop
     interface Nu.Command
 
-// this is our Elm-style game dispatcher
+// this is our MMCC game dispatcher
 type ElmarioDispatcher () =
     inherit GameDispatcher<unit, Message, Command> (())
 
@@ -32,7 +32,7 @@ type ElmarioDispatcher () =
             then Jump
             else Nop]
 
-    // here we handle the Elm-style commands
+    // here we handle the MMCC commands
     override this.Command (_, command, _, world) =
         match command with
         | Update ->
