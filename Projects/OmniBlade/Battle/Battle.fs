@@ -650,7 +650,7 @@ module Battle =
 
     let rec private evalAttackAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
-        | Physical -> true
+        | Physical | Touching -> source.ArchetypeType.AttackTouchingArchetype
         | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
@@ -668,22 +668,32 @@ module Battle =
             let satisfied =
                 match condition with
                 | LastSurviving ->
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    friendliesHealthy.Count = 1
+                    if observer.Healthy then
+                        let friendliesHealthy = getFriendliesHealthy observer.Ally battle
+                        friendliesHealthy.Count = 1
+                    else false
                 | LastTypeSurviving ->
-                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    friendliesHealthyDifferent.Count = 0
+                    if observer.Healthy then
+                        let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        friendliesHealthyDifferent.Count = 0
+                    else false
                 | BecomeLastSurviving ->
-                    let friendlies = getFriendlies observer.Ally battle
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    if observer.Healthy then
+                        let friendlies = getFriendlies observer.Ally battle
+                        let friendliesHealthy = getFriendliesHealthy observer.Ally battle
+                        friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    else false
                 | BecomeLastTypeSurviving ->
-                    let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
+                    if observer.Healthy then
+                        let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
+                    else false
                 | AffectedTarget (affectType, targetType) ->
-                    evalAttackAffectType affectType source target observer battle &&
-                    evalSingleTargetType targetType source target observer battle
+                    if observer.Healthy || affectType = Wounded then
+                        evalAttackAffectType affectType source target observer battle &&
+                        evalSingleTargetType targetType source target observer battle
+                    else false
             if satisfied then consequences @ consequences' else consequences)
             [] observer.Interactions
 
@@ -692,16 +702,13 @@ module Battle =
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
         Seq.foldBack (fun (observerIndex, observer : Character) consequences ->
-            let consequences' =
-                if observer.Healthy
-                then evalAttackInteractions4 source target observer battle
-                else []
+            let consequences' = evalAttackInteractions4 source target observer battle
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
     let rec private evalItemAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
-        | Physical | Magical | Affinity _ | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
+        | Physical | Touching | Magical | Affinity _ | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Item -> true
         | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
@@ -719,22 +726,32 @@ module Battle =
             let satisfied =
                 match condition with
                 | LastSurviving ->
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    friendliesHealthy.Count = 1
+                    if observer.Healthy then
+                        let friendliesHealthy = getFriendliesHealthy observer.Ally battle
+                        friendliesHealthy.Count = 1
+                    else false
                 | LastTypeSurviving ->
-                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    friendliesHealthyDifferent.Count = 0
+                    if observer.Healthy then
+                        let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        friendliesHealthyDifferent.Count = 0
+                    else false
                 | BecomeLastSurviving ->
-                    let friendlies = getFriendlies observer.Ally battle
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    if observer.Healthy then
+                        let friendlies = getFriendlies observer.Ally battle
+                        let friendliesHealthy = getFriendliesHealthy observer.Ally battle
+                        friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    else false
                 | BecomeLastTypeSurviving ->
-                    let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
+                    if observer.Healthy then
+                        let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
+                    else false
                 | AffectedTarget (affectType, targetType) ->
-                    evalItemAffectType affectType source target observer battle &&
-                    evalSingleTargetType targetType source target observer battle
+                    if observer.Healthy || affectType = Wounded then
+                        evalItemAffectType affectType source target observer battle &&
+                        evalSingleTargetType targetType source target observer battle
+                    else false
             if satisfied then consequences @ consequences' else consequences)
             [] observer.Interactions
 
@@ -743,10 +760,7 @@ module Battle =
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
         Seq.foldBack (fun (observerIndex, observer : Character) consequences ->
-            let consequences' =
-                if observer.Healthy
-                then evalItemInteractions4 source target observer battle
-                else []
+            let consequences' = evalItemInteractions4 source target observer battle
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
@@ -756,6 +770,7 @@ module Battle =
             match affectType with
             | Physical -> tech.EffectType = EffectType.Physical
             | Magical -> tech.EffectType = EffectType.Magical
+            | Touching -> tech.TechType.TouchingTech
             | Affinity affinity -> tech.AffinityOpt = Some affinity
             | Item -> false
             | OrbEmptied -> false
@@ -781,29 +796,39 @@ module Battle =
             let satisfied =
                 match condition with
                 | LastSurviving ->
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    friendliesHealthy.Count = 1
+                    if observer.Healthy then
+                        let friendliesHealthy = getFriendliesHealthy observer.Ally battle
+                        friendliesHealthy.Count = 1
+                    else false
                 | LastTypeSurviving ->
-                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    friendliesHealthyDifferent.Count = 0
+                    if observer.Healthy then
+                        let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        friendliesHealthyDifferent.Count = 0
+                    else false
                 | BecomeLastSurviving ->
-                    let friendlies = getFriendlies observer.Ally battle
-                    let friendliesHealthy = getFriendliesHealthy observer.Ally battle
-                    friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    if observer.Healthy then
+                        let friendlies = getFriendlies observer.Ally battle
+                        let friendliesHealthy = getFriendliesHealthy observer.Ally battle
+                        friendlies.Count > 1 && friendliesHealthy.Count = 1
+                    else false
                 | BecomeLastTypeSurviving ->
-                    let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
-                    friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
+                    if observer.Healthy then
+                        let friendliesWoundedDifferent = battle |> getFriendliesWounded observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        let friendliesHealthyDifferent = battle |> getFriendliesHealthy observer.Ally |> Map.filter (fun _ (ally : Character) -> ally.ArchetypeType <> observer.ArchetypeType)
+                        friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
+                    else false
                 | AffectedTarget (affectType, targetType) ->
-                    techResults |>
-                    Map.map (fun characterIndex result -> (result, tryGetCharacter characterIndex battle)) |>
-                    Map.toValueList |>
-                    List.exists (fun ((cancelled, affectsWounded, delta, statusesAdded, statusesRemoved), targetOpt) ->
-                        match targetOpt with
-                        | Some target ->
-                            evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle &&
-                            evalSingleTargetType targetType source target observer battle
-                        | None -> false)
+                    if observer.Healthy || affectType = Wounded then
+                        techResults |>
+                        Map.map (fun characterIndex result -> (result, tryGetCharacter characterIndex battle)) |>
+                        Map.toValueList |>
+                        List.exists (fun ((cancelled, affectsWounded, delta, statusesAdded, statusesRemoved), targetOpt) ->
+                            match targetOpt with
+                            | Some target ->
+                                evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle &&
+                                evalSingleTargetType targetType source target observer battle
+                            | None -> false)
+                    else false
             if satisfied then consequences @ consequences' else consequences)
             [] observer.Interactions
 
@@ -812,10 +837,7 @@ module Battle =
         let target = getCharacter targetIndex battle
         let characters = getCharacters battle
         Seq.foldBack (fun (observerIndex, observer : Character) consequences ->
-            let consequences' =
-                if observer.Healthy
-                then evalTechInteractions4 source target observer techType techResults battle
-                else []
+            let consequences' = evalTechInteractions4 source target observer techType techResults battle
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
@@ -1103,12 +1125,12 @@ module Battle =
                                         else battle
                                     let effectOpt =
                                         match techType with
-                                        | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
+                                        | Cyclone ->
+                                            Left (DisplayHop (sourcePerimeter.Bottom, targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3))
+                                        | _ when techType.TouchingTech ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeter.Bottom.X) 0.0f 0.0f)
                                             let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
                                             Left (DisplayHop (sourcePerimeter.Bottom, hopStop))
-                                        | Cyclone ->
-                                            Left (DisplayHop (sourcePerimeter.Bottom, targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3))
                                         | _ ->
                                             match getCharacterArchetypeType sourceIndex battle with
                                             | Cleric ->
@@ -1317,12 +1339,12 @@ module Battle =
                                     let targetPerimeter = getCharacterPerimeter targetIndex battle
                                     let hopOpt =
                                         match techType with
-                                        | Critical | HeavyCritical | PoisonCut | PowerCut | DispelCut | DoubleCut ->
+                                        | Cyclone ->
+                                            Some (targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3, sourcePerimeterOriginal.Bottom)
+                                        | _ when techType.TouchingTech ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeterOriginal.Bottom.X) 0.0f 0.0f)
                                             let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
                                             Some (hopStart, sourcePerimeterOriginal.Bottom)
-                                        | Cyclone ->
-                                            Some (targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3, sourcePerimeterOriginal.Bottom)
                                         | _ -> None
                                     match hopOpt with
                                     | Some (hopStart, hopStop) -> withSignal (DisplayHop (hopStart, hopStop)) battle
@@ -1571,18 +1593,22 @@ module Battle =
                         just battle
                     | (false, battle) -> just battle
                 else just (updateCurrentCommandOpt (constant None) battle)
-            | Spawn (spawnTypes, messageOpt) ->
+            | AddBattleInteraction (interaction, messageOpt) ->
                 if containsCharacterHealthy observerIndex battle then
-                    match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (Spawn (spawnTypes, None)) messageOpt time localTime battle with
+                    match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (AddBattleInteraction (interaction, None)) messageOpt time localTime battle with
                     | (true, battle) ->
-                        if localTime = 0L then
-                            let battle = spawnEnemies time spawnTypes battle
-                            just battle
-                        elif localTime = Constants.Battle.CharacterMaterializeDuration then
-                            let battle = finalizeMaterializations time battle
-                            let battle = updateCurrentCommandOpt (constant None) battle
-                            just battle
-                        else just battle
+                        let battle = addCharacterInteraction interaction observerIndex battle
+                        let battle = updateCurrentCommandOpt (constant None) battle
+                        just battle
+                    | (false, battle) -> just battle
+                else just (updateCurrentCommandOpt (constant None) battle)
+            | ClearBattleInteractions messageOpt ->
+                if containsCharacterHealthy observerIndex battle then
+                    match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (ClearBattleInteractions None) messageOpt time localTime battle with
+                    | (true, battle) ->
+                        let battle = clearCharacterInteractions observerIndex battle
+                        let battle = updateCurrentCommandOpt (constant None) battle
+                        just battle
                     | (false, battle) -> just battle
                 else just (updateCurrentCommandOpt (constant None) battle)
             | Replace (enemyType, messageOpt) ->
@@ -1608,24 +1634,18 @@ module Battle =
                         else just battle
                     | (false, battle) -> just battle
                 else just (updateCurrentCommandOpt (constant None) battle)
-            | AddBattleInteraction (interaction, messageOpt) ->
-                if containsCharacterHealthy observerIndex battle then
-                    match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (AddBattleInteraction (interaction, None)) messageOpt time localTime battle with
-                    | (true, battle) ->
-                        let battle = addCharacterInteraction interaction observerIndex battle
+            | Spawn (spawnTypes, messageOpt) ->
+                match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (Spawn (spawnTypes, None)) messageOpt time localTime battle with
+                | (true, battle) ->
+                    if localTime = 0L then
+                        let battle = spawnEnemies time spawnTypes battle
+                        just battle
+                    elif localTime = Constants.Battle.CharacterMaterializeDuration then
+                        let battle = finalizeMaterializations time battle
                         let battle = updateCurrentCommandOpt (constant None) battle
                         just battle
-                    | (false, battle) -> just battle
-                else just (updateCurrentCommandOpt (constant None) battle)
-            | ClearBattleInteractions messageOpt ->
-                if containsCharacterHealthy observerIndex battle then
-                    match advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (ClearBattleInteractions None) messageOpt time localTime battle with
-                    | (true, battle) ->
-                        let battle = clearCharacterInteractions observerIndex battle
-                        let battle = updateCurrentCommandOpt (constant None) battle
-                        just battle
-                    | (false, battle) -> just battle
-                else just (updateCurrentCommandOpt (constant None) battle)
+                    else just battle
+                | (false, battle) -> just battle
             | Message (text, lifeTime) ->
                 let battle =
                     if containsCharacterHealthy observerIndex battle then 
@@ -1764,14 +1784,18 @@ module Battle =
                         updateCurrentCommandOpt (constant (Some command)) battle
                     else battle
                 | (false, _) -> battle
-            | Consequence _ ->
+            | Consequence consequence ->
                 match observerIndexOpt with
                 | Some observerIndex ->
-                    match tryGetCharacter observerIndex battle with
-                    | Some observer when observer.Healthy && not (Map.containsKey Sleep observer.Statuses) ->
+                    let observerOpt = tryGetCharacter observerIndex battle
+                    match (consequence, observerOpt) with
+                    | (Spawn _, _) ->
                         let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         updateCurrentCommandOpt (constant (Some command)) battle
-                    | Some _ | None -> battle
+                    | (_, Some observer) when observer.Healthy ->
+                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                        updateCurrentCommandOpt (constant (Some command)) battle
+                    | (_, _) -> battle
                 | None -> battle
             | ActionType.Message (_, _) ->
                 updateCurrentCommandOpt (constant (Some command)) battle

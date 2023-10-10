@@ -49,7 +49,7 @@
   </object>
   <object id="6" gid="235" x="2448" y="192" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [1 1 0 0.5] [Dialog &quot;Sealed...&quot;] [LakeSealed]]"/>
+    <property name="I" value="[Seal [1 1 0 0.5] [Dialog &quot;Sealed...&quot;]]"/>
    </properties>
   </object>
   <object id="7" gid="235" x="1872" y="240" width="96" height="96">
@@ -69,7 +69,7 @@
   </object>
   <object id="10" gid="235" x="528" y="2688" width="96" height="96">
    <properties>
-    <property name="I" value="[Seal [0.625 0.53 0 0.5] [Dialog &quot;Sealed...&quot;]]"/>
+    <property name="I" value="[Seal [0.625 0.53 0 0.5] [Dialog &quot;Sealed...&quot;] [LakeSealed]]"/>
    </properties>
   </object>
   <object id="13" gid="235" x="1584" y="2544" width="48" height="48">
