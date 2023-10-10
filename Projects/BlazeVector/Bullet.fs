@@ -38,10 +38,7 @@ module BulletDispatcher =
             match command with
             | Update ->
                 let localTime = world.UpdateTime - startTime
-                let world =
-                    if localTime = BulletLifeTime
-                    then World.destroyEntity entity world
-                    else world
+                let world = if localTime = BulletLifeTime then World.destroyEntity entity world else world
                 just world
             | Collision ->
                 let world = World.destroyEntity entity world
