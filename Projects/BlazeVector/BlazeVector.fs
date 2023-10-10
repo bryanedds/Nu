@@ -8,15 +8,15 @@ open BlazeVector
 [<AutoOpen>]
 module BlazeVector =
 
-    // this is our Elm-style model type. It determines what state the game is in. To learn about the
-    // Elm-style in Nu, see here - https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
+    // this is our MMCC model type. It determines what state the game is in. To learn about MMCC in
+    // Nu, see here - https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
     type Model =
         | Splash
         | Title
         | Credits
         | Gameplay of Gameplay
 
-    // this is our Elm-style message type.
+    // this is our MMCC message type.
     type Message =
         | ShowTitle
         | ShowCredits
@@ -24,7 +24,7 @@ module BlazeVector =
         | Update
         interface Nu.Message
 
-    // this is our Elm-style command type. Commands are used instead of messages when explicitly
+    // this is our MMCC command type. Commands are used instead of messages when explicitly
     // updating the world is involved.
     type Command =
         | Exit
