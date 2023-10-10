@@ -116,8 +116,8 @@ module PlayerDispatcher =
                 else just world
 
             | Jump ->
-                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (entity.GetBodyId world) world
+                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 just world
 
             | Shoot ->
@@ -129,6 +129,6 @@ module PlayerDispatcher =
                 just world
 
             | Die ->
-                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                 let world = World.publish () entity.DieEvent entity world
+                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                 just world
