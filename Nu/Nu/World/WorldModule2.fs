@@ -1388,7 +1388,7 @@ module EntityDispatcherModule2 =
             let property = World.getEntityModelProperty entity world
             if property.DesignerType = typeof<unit>
             then World.setEntityModel<'model> true (makeInitial world) entity world |> snd'
-            else world
+            else World.setEntityModel<'model> true (property.DesignerValue :?> 'model) entity world |> snd' // NOTE: setting with existing value is needed to apply synchronization
 
         override this.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -1632,7 +1632,7 @@ module GroupDispatcherModule =
             let property = World.getGroupModelProperty group world
             if property.DesignerType = typeof<unit>
             then World.setGroupModel<'model> true (makeInitial world) group world |> snd'
-            else world
+            else World.setGroupModel<'model> true (property.DesignerValue :?> 'model) group world |> snd' // NOTE: setting with existing value is needed to apply synchronization
 
         override this.Render (group, world) =
             let view = this.View (this.GetModel group world, group, world)
@@ -1764,7 +1764,7 @@ module ScreenDispatcherModule =
             let property = World.getScreenModelProperty screen world
             if property.DesignerType = typeof<unit>
             then World.setScreenModel<'model> true (makeInitial world) screen world |> snd'
-            else world
+            else World.setScreenModel<'model> true (property.DesignerValue :?> 'model) screen world |> snd' // NOTE: setting with existing value is needed to apply synchronization
 
         override this.Render (screen, world) =
             let view = this.View (this.GetModel screen world, screen, world)
@@ -1903,7 +1903,7 @@ module GameDispatcherModule =
             let property = World.getGameModelProperty world
             if property.DesignerType = typeof<unit>
             then World.setGameModel<'model> true (makeInitial world) world |> snd'
-            else world
+            else World.setGameModel<'model> true (property.DesignerValue :?> 'model) world |> snd' // NOTE: setting with existing value is needed to apply synchronization
 
         override this.Render (game, world) =
             let view = this.View (this.GetModel game world, game, world)

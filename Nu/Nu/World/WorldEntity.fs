@@ -870,7 +870,7 @@ module WorldEntityModule =
 
             // attach the entity state's dispatcher properties
             let entityState = Reflection.attachProperties id entityState.Dispatcher entityState world
-            
+
             // synchronize the entity state's facets (and attach their properties)
             let entityState =
                 match World.trySynchronizeFacetsToNames Set.empty entityState None world with
