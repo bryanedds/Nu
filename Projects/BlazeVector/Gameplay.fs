@@ -3,16 +3,15 @@ open System
 open System.Numerics
 open Nu
 open Nu.Declarative
+open Prime
 open BlazeVector
 
-// TODO: convert BlazeVector entities to the Elmish style.
-
 [<AutoOpen>]
-module Bullet =
+module BulletDispatcher =
 
     type BulletCommand =
         | BulletUpdate
-        | BulletCollide
+        | BulletCollision
         interface Command
 
     type BulletDispatcher () =
@@ -36,7 +35,7 @@ module Bullet =
 
         override this.Initialize (_, _) =
             [Entity.UpdateEvent => BulletUpdate
-             Entity.BodyCollisionEvent => BulletCollide]
+             Entity.BodyCollisionEvent => BulletCollision]
 
         override this.Command (startTime, command, entity, world) =
             match command with
@@ -47,48 +46,35 @@ module Bullet =
                     then World.destroyEntity entity world
                     else world
                 just world
-            | BulletCollide ->
+            | BulletCollision ->
                 let world = World.destroyEntity entity world
                 just world
 
 [<AutoOpen>]
-module Enemy =
+module EnemyDispatcher =
+
+    type Enemy =
+        { Health : int }
+
+    type EnemyMessage =
+        | EnemyCollision of BodyCollisionData
+        interface Message
+
+    type EnemyCommand =
+        | EnemyUpdate
+        | EnemyShot
+        interface Command
 
     type Entity with
-        member this.GetHealth world : int = this.Get (nameof Entity.Health) world
-        member this.SetHealth (value : int) world = this.Set (nameof Entity.Health) value world
-        member this.Health = lens (nameof this.Health) this this.GetHealth this.SetHealth
+        member this.GetEnemy world : Enemy = this.GetModelGeneric<Enemy> world
+        member this.SetEnemy enemy world = this.SetModelGeneric<Enemy> enemy world
+        member this.Enemy = this.ModelGeneric<Enemy> ()
         member this.DyingEvent = Events.Dying --> this
 
     type EnemyDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d<Enemy, EnemyMessage, EnemyCommand> (true, { Health = 7 })
 
-        static let move (entity : Entity) world =
-            let force = v3 -750.0f -5000.0f 0.0f
-            World.applyBodyForce force v3Zero (entity.GetBodyId world) world
-
-        static let die (entity : Entity) world =
-            let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
-            let world = World.publish () entity.DyingEvent entity world
-            World.destroyEntity entity world
-
-        static let handleUpdate evt world =
-            let enemy = evt.Subscriber : Entity
-            let world = if enemy.GetInView2d world then move enemy world else world
-            let world = if enemy.GetHealth world <= 0 then die enemy world else world
-            (Cascade, world)
-
-        static let handleBodyCollision evt (world : World) =
-            let enemy = evt.Subscriber : Entity
-            let world =
-                if world.Advancing then
-                    match evt.Data.BodyShapeCollidee.BodyId.BodySource with
-                    | :? Entity as collidee when collidee.Is<BulletDispatcher> world ->
-                        let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
-                        enemy.SetHealth (enemy.GetHealth world - 1) world
-                    | _ -> world
-                else world
-            (Cascade, world)
+        static let WalkForce = v3 -750.0f -5000.0f 0.0f
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -105,28 +91,69 @@ module Enemy =
              define Entity.CelRun 4
              define Entity.CelSize (v2 48.0f 96.0f)
              define Entity.AnimationDelay (UpdateTime 8L)
-             define Entity.AnimationSheet Assets.Gameplay.EnemyImage
-             define Entity.Health 7]
+             define Entity.AnimationSheet Assets.Gameplay.EnemyImage]
 
-        override this.Register (entity, world) =
-            let world = World.monitor handleUpdate entity.UpdateEvent entity world
-            let world = World.monitor handleBodyCollision entity.BodyCollisionEvent entity world
-            world
+        override this.Initialize (_, _) =
+            [Entity.UpdateEvent => EnemyUpdate
+             Entity.BodyCollisionEvent =|> fun evt -> EnemyCollision evt.Data]
+
+        override this.Message (enemy, message, _, world) =
+
+            match message with
+            | EnemyCollision collision ->
+                match collision.BodyShapeCollidee.BodyId.BodySource with
+                | :? Entity as collidee when collidee.Is<BulletDispatcher> world ->
+                    let enemy = { enemy with Health = dec enemy.Health }
+                    withSignal EnemyShot enemy
+                | _ -> just enemy
+
+        override this.Command (enemy, command, entity, world) =
+
+            match command with
+            | EnemyUpdate ->
+                let world =
+                    if entity.GetInView2d world
+                    then World.applyBodyForce WalkForce v3Zero (entity.GetBodyId world) world
+                    else world
+                let world =
+                    if enemy.Health <= 0 then
+                        let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
+                        let world = World.publish () entity.DyingEvent entity world
+                        World.destroyEntity entity world
+                    else world
+                just world
+
+            | EnemyShot ->
+                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
+                just world
 
 [<AutoOpen>]
-module Player =
+module PlayerDispatcher =
+
+    type Player =
+        { LastTimeOnGround : int64
+          LastTimeJump : int64 }
+
+    type PlayerMessage =
+        | PlayerUpdateMessage
+        | TryJumpByMouse
+        | TryJumpByKeyboard of KeyboardKeyData
+        interface Message
+
+    type PlayerCommand =
+        | PlayerUpdateCommand
+        | Shoot
+        | Jump
+        interface Command
 
     type Entity with
-        member this.GetLastTimeOnGround world : int64 = this.Get (nameof Entity.LastTimeOnGround) world
-        member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof Entity.LastTimeOnGround) value world
-        member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this this.GetLastTimeOnGround this.SetLastTimeOnGround
-        member this.GetLastTimeJump world : int64 = this.Get (nameof Entity.LastTimeJump) world
-        member this.SetLastTimeJump (value : int64) world = this.Set (nameof Entity.LastTimeJump) value world
-        member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
+        member this.GetPlayer world : Player = this.GetModelGeneric<Player> world
+        member this.SetPlayer player world = this.SetModelGeneric<Player> player world
+        member this.Player = this.ModelGeneric<Player> ()
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d<Player, PlayerMessage, PlayerCommand> (true, { LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
         static let [<Literal>] WalkForce = 1750.0f
         static let [<Literal>] FallForce = -5000.0f
@@ -146,60 +173,6 @@ module Player =
             let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
             World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetBodyId world) world
 
-        static let shootBullet (entity : Entity) world =
-            let (bullet, world) = createBullet entity world
-            propelBullet bullet world
-
-        static let handleSpawnBullet evt (world : World) =
-            let player = evt.Subscriber : Entity
-            let world =
-                if world.Advancing then
-                    if not (player.HasFallen world) then
-                        if world.UpdateTime % 5L = 0L
-                        then shootBullet player world
-                        else world
-                    else world
-                else world
-            (Cascade, world)
-
-        static let getLastTimeOnGround (entity : Entity) world =
-            if not (World.getBodyGrounded (entity.GetBodyId world) world)
-            then entity.GetLastTimeOnGround world
-            else world.UpdateTime
-
-        static let handleMovement evt world =
-            let player = evt.Subscriber : Entity
-            let lastTimeOnGround = getLastTimeOnGround player world
-            let world = player.SetLastTimeOnGround lastTimeOnGround world
-            let bodyId = player.GetBodyId world
-            let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
-            let force =
-                match groundTangentOpt with
-                | Some groundTangent ->
-                    let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
-                    Vector3.Multiply (groundTangent, v3 WalkForce downForce 0.0f)
-                | None -> v3 WalkForce FallForce 0.0f
-            let world = World.applyBodyForce force v3Zero bodyId world
-            (Cascade, world)
-
-        static let handleJump evt (world : World) =
-            let player = evt.Subscriber : Entity
-            let time = world.UpdateTime
-            if  time >= player.GetLastTimeJump world + 12L &&
-                time <= player.GetLastTimeOnGround world + 10L then
-                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
-                let world = player.SetLastTimeJump time world
-                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (player.GetBodyId world) world
-                (Cascade, world)
-            else (Cascade, world)
-
-        static let handleJumpByKeyboardKey evt world =
-            if World.getSelectedScreenIdling world then
-                match (evt.Data.KeyboardKey, evt.Data.Repeated) with
-                | (KeyboardKey.Space, false) -> handleJump evt world
-                | _ -> (Cascade, world)
-            else (Cascade, world)
-
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
@@ -215,16 +188,71 @@ module Player =
              define Entity.CelRun 4
              define Entity.CelSize (v2 48.0f 96.0f)
              define Entity.AnimationDelay (UpdateTime 3L)
-             define Entity.AnimationSheet Assets.Gameplay.PlayerImage
-             nonPersistent Entity.LastTimeOnGround Int64.MinValue
-             nonPersistent Entity.LastTimeJump Int64.MinValue]
+             define Entity.AnimationSheet Assets.Gameplay.PlayerImage]
 
-        override this.Register (entity, world) =
-            let world = World.monitor handleSpawnBullet entity.UpdateEvent entity world
-            let world = World.monitor handleMovement entity.UpdateEvent entity world
-            let world = World.monitor handleJump Events.MouseLeftDown entity world
-            let world = World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown entity world
-            world
+        override this.Initialize (_, _) =
+            [Entity.UpdateEvent => PlayerUpdateMessage
+             Entity.UpdateEvent => PlayerUpdateCommand
+             Simulants.Game.MouseLeftDownEvent => TryJumpByMouse
+             Simulants.Game.KeyboardKeyDownEvent =|> fun evt -> TryJumpByKeyboard evt.Data]
+
+        override this.Message (player, message, entity, world) =
+
+            match message with
+            | PlayerUpdateMessage ->
+                let player =
+                    if World.getBodyGrounded (entity.GetBodyId world) world
+                    then { player with LastTimeOnGround = world.UpdateTime }
+                    else player
+                if world.Advancing && not (entity.HasFallen world) && world.UpdateTime % 5L = 0L
+                then withSignal Shoot player
+                else just player
+
+            | TryJumpByMouse ->
+                let time = world.UpdateTime
+                if  time >= player.LastTimeJump + 12L &&
+                    time <= player.LastTimeOnGround + 10L then
+                    let player = { player with LastTimeJump = time }
+                    withSignal Jump player
+                else just player
+
+            | TryJumpByKeyboard keyboardKeyData ->
+                match (keyboardKeyData.KeyboardKey, keyboardKeyData.Repeated) with
+                | (KeyboardKey.Space, false) ->
+                    let time = world.UpdateTime
+                    if  time >= player.LastTimeJump + 12L &&
+                        time <= player.LastTimeOnGround + 10L then
+                        let player = { player with LastTimeJump = time }
+                        withSignal Jump player
+                    else just player
+                | _ -> just player
+
+        override this.Command (_, command, entity, world) =
+
+            match command with
+            | PlayerUpdateCommand ->
+                if world.Advancing then
+                    let bodyId = entity.GetBodyId world
+                    let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
+                    let force =
+                        match groundTangentOpt with
+                        | Some groundTangent ->
+                            let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
+                            Vector3.Multiply (groundTangent, v3 WalkForce downForce 0.0f)
+                        | None -> v3 WalkForce FallForce 0.0f
+                    let world = World.applyBodyForce force v3Zero bodyId world
+                    just world
+                else just world
+
+            | Jump ->
+                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
+                let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (entity.GetBodyId world) world
+                just world
+
+            | Shoot ->
+                let (bullet, world) = createBullet entity world
+                let world = propelBullet bullet world
+                just world
 
 [<AutoOpen>]
 module Gameplay =
