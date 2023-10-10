@@ -2601,7 +2601,7 @@ module WorldModuleEntity =
             match Clipboard with
             | Some entityStateObj ->
                 let entityState = EntityState.makeFromEntityState surnamesOpt (entityStateObj :?> EntityState)
-                entityState.Protected <- false // ensure pasted entity is not protected in case user pastes an Elmish entity
+                entityState.Protected <- false // ensure pasted entity is not protected in case user pastes an MMCC entity
                 let (position, snapsOpt) =
                     if entityState.Is2d then
                         let viewport = World.getViewport world

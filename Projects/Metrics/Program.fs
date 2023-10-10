@@ -37,7 +37,7 @@ type [<StructuralEquality; NoComparison; Struct>] Shake =
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher3d<StaticModel AssetTag, Message, Command> (true, false, Assets.Default.StaticModel)
 
-#if !ELMISH
+#if !MMCC
     override this.Update (entity, world) =
         entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
 #endif
@@ -56,7 +56,7 @@ type MetricsEntityDispatcher () =
         let boundsExtended = bounds.Combine bounds.Mirror
         boundsExtended.Size
 
-#if !ELMISH
+#if !MMCC
 type MyGameDispatcher () =
     inherit GameDispatcher ()
 
@@ -124,7 +124,7 @@ type MyGameDispatcher () =
         //
         // correlated components                                inits slow, runs medium fast. suboptimal, but very flexible.
 
-        // elmish                                               1,000's
+        // mmcc                                                 1,000's
         //
         // classic                                              10,000's
         //
@@ -175,8 +175,8 @@ type Message =
     | Nop
     interface Nu.Message
 
-type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 elmish entities (goal: steady 60FPS, current: steady 60FPS)
+type MmccGameDispatcher () =
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 MMCC entities (goal: steady 60FPS, current: steady 60FPS)
 
     override this.Initialize (_, _) =
         [Game.UpdateEvent => Inc]

@@ -616,7 +616,7 @@ and Facet (physical) =
 
     interface LateBindings
 
-/// Describes a property to the Elmish content system.
+/// Describes a property to the MMCC content system.
 and [<ReferenceEquality>] PropertyContent =
     { PropertyInitializer : bool
       PropertyLens : Lens
@@ -626,13 +626,13 @@ and [<ReferenceEquality>] PropertyContent =
           PropertyLens = lens
           PropertyValue = value }
 
-/// Describes an initializer to the Elmish content system.
+/// Describes an initializer to the MMCC content system.
 and [<ReferenceEquality>] InitializerContent =
     | PropertyContent of PropertyContent
     | EventSignalContent of obj Address * obj
     | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
 
-/// Describes a simulant to the Elmish content system.
+/// Describes a simulant to the MMCC content system.
 and SimulantContent =
     abstract DispatcherNameOpt : string option
     abstract SimulantNameOpt : string option
@@ -642,7 +642,7 @@ and SimulantContent =
     abstract PropertyContentsOpt : List<PropertyContent>
     abstract GetChildContentsOpt<'v when 'v :> SimulantContent> : unit -> OrderedDictionary<string, 'v>
 
-/// Describes a game to the Elmish content system.
+/// Describes a game to the MMCC content system.
 and [<ReferenceEquality>] GameContent =
     { InitialScreenNameOpt : string option
       mutable SimulantCachedOpt : Simulant
@@ -666,7 +666,7 @@ and [<ReferenceEquality>] GameContent =
           PropertyContentsOpt = null
           ScreenContents = OrderedDictionary StringComparer.Ordinal }
 
-/// Describes a screen to the Elmish content system.
+/// Describes a screen to the MMCC content system.
 and [<ReferenceEquality>] ScreenContent =
     { ScreenDispatcherName : string
       ScreenName : string
@@ -696,7 +696,7 @@ and [<ReferenceEquality>] ScreenContent =
           PropertyContentsOpt = null
           GroupContents = OrderedDictionary StringComparer.Ordinal }
 
-/// Describes a group to the Elmish content system.
+/// Describes a group to the MMCC content system.
 and [<ReferenceEquality>] GroupContent =
     { GroupDispatcherName : string
       GroupName : string
@@ -724,7 +724,7 @@ and [<ReferenceEquality>] GroupContent =
           PropertyContentsOpt = null
           EntityContentsOpt = null }
 
-/// Describes an entity to the Elmish content system.
+/// Describes an entity to the MMCC content system.
 and [<ReferenceEquality>] EntityContent =
     { EntityDispatcherName : string
       EntityName : string

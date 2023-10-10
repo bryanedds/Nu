@@ -22,7 +22,7 @@ module SimulantOperators =
         /// Concatenate an address with a simulant's address, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (simulant : Simulant) =
             match box simulant with
-            | null -> address // HACK: this case is a hack to be able to insert events into an elmish event handler
+            | null -> address // HACK: this case is a hack to be able to insert events into an MMCC event handler
             | _ -> acatff address simulant.SimulantAddress
 
         /// Concatenate an address with a simulant's address, forcing the type of first address.
