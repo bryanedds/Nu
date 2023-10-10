@@ -13,7 +13,7 @@ module Gameplay =
         | Quitting
         | Quit
 
-    type Gameplay =
+    type [<SymbolicExpansion>] Gameplay =
         { State : GameplayState
           Score : int }
 
