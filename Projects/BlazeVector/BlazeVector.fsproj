@@ -35,6 +35,9 @@
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
 		<Compile Include="Events.fs" />
+		<Compile Include="Bullet.fs" />
+		<Compile Include="Enemy.fs" />
+		<Compile Include="Player.fs" />
 		<Compile Include="Gameplay.fs" />
 		<Compile Include="BlazeVector.fs" />
 		<Compile Include="BlazeVectorPlugin.fs" />
