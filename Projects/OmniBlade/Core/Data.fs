@@ -122,14 +122,14 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
     | Silence
     | Sleep // TODO: implement effect in battle.
-    | Confuse // TODO: implement effect in battle (disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
-    | Curse // TODO: implement effect of 'can't gain HP' in battle.
+    | Confuse // NOTE: dummied out. maybe implement in the sequel. effect of disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
+    //| Curse - maybe implement in the sequel. effect of 'can't gain HP' in battle.
     //| Blind - maybe implement in the sequel
+    //| Provoke of CharacterIndex - maybe implement in the sequel
     | Time of bool // true = Haste, false = Slow
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    //| Provoke of CharacterIndex - maybe implement in the sequel
 
     // TODO: make this a property.
     static member debuff this =
@@ -138,7 +138,6 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Silence -> true
         | Sleep -> true
         | Confuse -> true
-        | Curse -> true
         | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> true
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> false
 
@@ -153,7 +152,6 @@ type [<CustomEquality; CustomComparison>] StatusType =
             | Silence -> Gen.random1 2 = 0
             | Sleep -> Gen.random1 3 = 0
             | Confuse -> Gen.random1 3 = 0
-            | Curse -> Gen.random1 2 = 0
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
         let result =
@@ -175,7 +173,6 @@ type [<CustomEquality; CustomComparison>] StatusType =
             | Silence -> Gen.random1 4 <> 0
             | Sleep -> Gen.random1 2 <> 0
             | Confuse -> Gen.random1 2 <> 0
-            | Curse -> Gen.random1 5 <> 0
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
         let result =
@@ -196,11 +193,10 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Silence -> 1
         | Sleep -> 2
         | Confuse -> 3
-        | Curse -> 4
-        | Time _ -> 5
-        | Power (_, _) -> 6
-        | Magic (_, _) -> 7
-        | Shield (_, _) -> 8
+        | Time _ -> 4
+        | Power (_, _) -> 5
+        | Magic (_, _) -> 6
+        | Shield (_, _) -> 7
 
     static member compare this that =
         compare
@@ -296,9 +292,22 @@ type TechType =
     | Bolt
     | ConjureRamuh
     | Inferno
+
+    // TODO: put this in TechData.
     member this.ConjureTech =
         match this with
         | ConjureRamuh -> true
+        | _ -> false
+
+    // TODO: put this in TechData.
+    member this.TouchingTech =
+        match this with
+        | Critical
+        | HeavyCritical
+        | PoisonCut
+        | PowerCut
+        | DispelCut
+        | DoubleCut -> true
         | _ -> false
 
 type StatureType =
@@ -325,6 +334,10 @@ type ArchetypeType =
     | Minotaur
     | Armoros
     | Arachnos
+    member this.AttackTouchingArchetype =
+        match this with
+        | Cleric -> false
+        | _ -> true
 
 type ShopType =
     | Chemist
@@ -668,6 +681,7 @@ module BattleInteractionSystem =
     type BattleAffectType =
         | Physical
         | Magical
+        | Touching
         | Affinity of AffinityType
         | Item
         | OrbEmptied
@@ -710,10 +724,10 @@ module BattleInteractionSystem =
         | ChangeAction of TechType option * string option
         | ChangeFriendlyActions of TechType option * string option
         | Duplicate of string option
-        | Spawn of SpawnType list * string option
-        | Replace of EnemyType * string option
         | AddBattleInteraction of BattleInteraction * string option
         | ClearBattleInteractions of string option
+        | Replace of EnemyType * string option
+        | Spawn of SpawnType list * string option
         | Message of string * int64
 
     and BattleInteraction =

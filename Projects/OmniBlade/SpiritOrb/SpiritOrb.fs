@@ -13,7 +13,7 @@ type SpiritOrbInhabitant =
     | PortalInhabitant of Portal
     | SpiritInhabitant of Spirit
 
-// TODO: consider making this an algebraic data type.
+// TODO: consider making this an abstract data type.
 type [<ReferenceEquality>] SpiritOrb =
     { AvatarLowerCenter : Vector3
       ShowUnopenedChests : bool
