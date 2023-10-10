@@ -26,7 +26,7 @@ module Gameplay =
     type GameplayCommand =
         | CreateSections
         | DestroySections
-        | Update
+        | UpdateEye
         interface Command
 
     type Screen with
@@ -58,7 +58,7 @@ module Gameplay =
         override this.Initialize (_, _) =
             [Screen.SelectEvent => CreateSections
              Screen.DeselectingEvent => DestroySections
-             Screen.UpdateEvent => Update
+             Screen.PostUpdateEvent => UpdateEye
              Simulants.GameplayGuiQuit.ClickEvent => StartQutting]
 
         override this.Message (gameplay, message, _, _) =
@@ -67,7 +67,7 @@ module Gameplay =
             | StartQutting -> just { gameplay with State = Quitting }
             | FinishQuitting -> just { gameplay with State = Quit }
 
-        override this.Command (gameplay, command, screen, world) =
+        override this.Command (_, command, screen, world) =
 
             match command with
             | CreateSections ->
@@ -92,23 +92,15 @@ module Gameplay =
                 let world = World.destroyGroups groups world
                 withSignal FinishQuitting world
 
-            | Update ->
-
-                // update eye
-                let world =
-                    if world.Advancing then
-                        let playerPosition = Simulants.GameplayScenePlayer.GetPosition world
-                        let playerSize = Simulants.GameplayScenePlayer.GetSize world
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
-                        World.setEyeCenter2d eyeCenter world
-                    else world
-
-                // update player fall
-                if Simulants.GameplayScenePlayer.HasFallen world && World.getSelectedScreenIdling world && gameplay.State = Playing then
-                    let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                    withSignal StartQutting world
+            | UpdateEye ->
+                if world.Advancing then
+                    let playerPosition = Simulants.GameplayScenePlayer.GetPosition world
+                    let playerSize = Simulants.GameplayScenePlayer.GetSize world
+                    let eyeCenter = World.getEyeCenter2d world
+                    let eyeSize = World.getEyeSize2d world
+                    let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
+                    let world = World.setEyeCenter2d eyeCenter world
+                    just world
                 else just world
 
         override this.Content (gameplay, _) =
@@ -130,5 +122,6 @@ module Gameplay =
                 Content.group Simulants.GameplayScene.Name []
                     [Content.entity<PlayerDispatcher> Simulants.GameplayScenePlayer.Name
                         [Entity.Position == v3 -876.0f -127.6805f 0.0f
-                         Entity.Elevation == 1.0f]]
+                         Entity.Elevation == 1.0f
+                         Entity.DyingEvent => StartQutting]]
              | Quit -> ()]
