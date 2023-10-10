@@ -110,11 +110,11 @@ module PlayerDispatcher =
                     else just player
                 | _ -> just player
 
-        override this.Command (_, command, entity, world) =
+        override this.Command (player, command, entity, world) =
 
             match command with
             | UpdateCommand ->
-                if world.Advancing then
+                if player.Alive then
                     let bodyId = entity.GetBodyId world
                     let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
                     let force =
@@ -139,5 +139,5 @@ module PlayerDispatcher =
 
             | Die ->
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                let world = World.publish () entity.DyingEvent entity world
+                let world = World.publish () entity.DieEvent entity world
                 just world
