@@ -17,7 +17,7 @@ module EnemyDispatcher =
 
     type EnemyCommand =
         | Update
-        | Shot
+        | Hit
         interface Command
 
     type Entity with
@@ -57,7 +57,7 @@ module EnemyDispatcher =
                 match collision.BodyShapeCollidee.BodyId.BodySource with
                 | :? Entity as collidee when collidee.Is<BulletDispatcher> world ->
                     let enemy = { enemy with Health = dec enemy.Health }
-                    withSignal Shot enemy
+                    withSignal Hit enemy
                 | _ -> just enemy
 
         override this.Command (enemy, command, entity, world) =
@@ -76,6 +76,6 @@ module EnemyDispatcher =
                     else world
                 just world
 
-            | Shot ->
+            | Hit ->
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
                 just world
