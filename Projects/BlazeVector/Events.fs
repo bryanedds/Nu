@@ -7,5 +7,5 @@ open Nu
 [<RequireQualifiedAccess>]
 module Events =
 
-    // this event is called when the player or an enemy is dying
-    let Dying = stoa<unit> "Dying/Event"
+    // this event is called when the player or an enemy dies
+    let Die = stoa<unit> "Die/Event"

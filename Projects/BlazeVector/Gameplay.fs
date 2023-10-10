@@ -45,7 +45,7 @@ module Gameplay =
                 (fun world (entity : Entity) ->
                     let world = entity.SetPosition (entity.GetPosition world + v3 xShift 0.0f 0.0f) world
                     if entity.Is<EnemyDispatcher> world
-                    then World.monitor (fun _ world -> (Cascade, screen.Signal (Score 100) world)) entity.DyingEvent screen world
+                    then World.monitor (fun _ world -> (Cascade, screen.Signal (Score 100) world)) entity.DieEvent screen world
                     else world)
                 world
                 entities
@@ -123,5 +123,5 @@ module Gameplay =
                     [Content.entity<PlayerDispatcher> Simulants.GameplayScenePlayer.Name
                         [Entity.Position == v3 -876.0f -127.6805f 0.0f
                          Entity.Elevation == 1.0f
-                         Entity.DyingEvent => StartQutting]]
+                         Entity.DieEvent => StartQutting]]
              | Quit -> ()]
