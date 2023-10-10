@@ -1,5 +1,6 @@
 ﻿namespace BlazeVector
 open System
+open Prime
 open Nu
 
 // this extend the available vocabulary for expressing events in Nu for BlazeVector's specific purposes.
