@@ -10,18 +10,15 @@ open BlazeVector
 [<AutoOpen>]
 module Bullet =
 
+    type BulletCommand =
+        | BulletUpdate
+        | BulletCollide
+        interface Command
+
     type BulletDispatcher () =
-        inherit EntityDispatcher2d (true)
+        inherit EntityDispatcher2d<int64, Message, BulletCommand> (true, fun world -> world.UpdateTime)
 
         static let [<Literal>] BulletLifeTime = 27L
-
-        static let handleBodyCollision evt (world : World) =
-            let bullet = evt.Subscriber : Entity
-            let world =
-                if world.Advancing
-                then World.destroyEntity bullet world
-                else world
-            (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -37,10 +34,22 @@ module Bullet =
              define Entity.BodyShape (BodySphere { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
              define Entity.StaticImage Assets.Gameplay.PlayerBulletImage]
 
-        override this.Register (entity, world) =
-            let world = World.monitor handleBodyCollision entity.BodyCollisionEvent entity world
-            let world = World.schedule BulletLifeTime (World.destroyEntity entity) entity world
-            world
+        override this.Initialize (_, _) =
+            [Entity.UpdateEvent => BulletUpdate
+             Entity.BodyCollisionEvent => BulletCollide]
+
+        override this.Command (startTime, command, entity, world) =
+            match command with
+            | BulletUpdate ->
+                let localTime = world.UpdateTime - startTime
+                let world =
+                    if localTime = BulletLifeTime
+                    then World.destroyEntity entity world
+                    else world
+                just world
+            | BulletCollide ->
+                let world = World.destroyEntity entity world
+                just world
 
 [<AutoOpen>]
 module Enemy =
