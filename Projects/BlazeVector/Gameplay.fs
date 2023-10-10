@@ -109,6 +109,7 @@ module Gameplay =
              Content.group Simulants.GameplayGui.Name []
                  [Content.text Simulants.GameplayGuiScore.Name
                     [Entity.Position == v3 392.0f 232.0f 0.0f
+                     Entity.Elevation == 10.0f
                      Entity.Text := "Score: " + string gameplay.Score]
                   Content.button Simulants.GameplayGuiQuit.Name
                     [Entity.Position == v3 336.0f -216.0f 0.0f
