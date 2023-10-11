@@ -66,7 +66,7 @@ module WorldModuleGame =
             | modelObj ->
                 try modelObj |> valueToSymbol |> symbolToValue
                 with _ ->
-                    Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
+                    Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                     match gameState.Dispatcher.TryGetInitialModelValue<'a> world with
                     | None -> failwithnie ()
                     | Some value -> value
