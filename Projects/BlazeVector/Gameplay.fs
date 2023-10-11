@@ -44,7 +44,7 @@ module Gameplay =
              Screen.DeselectingEvent => DestroySections
              Screen.PostUpdateEvent => UpdateEye
              Simulants.GameplayGuiQuit.ClickEvent => StartQutting
-             for i in 0 .. SectionCount do (Simulants.GameplaySectionEntities i).DieEvent => Score 100]
+             for i in 0 .. dec SectionCount do (Simulants.GameplaySectionEntities i).DieEvent => Score 100]
 
         override this.Message (gameplay, message, _, _) =
             match message with
