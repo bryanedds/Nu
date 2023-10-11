@@ -1425,7 +1425,7 @@ module EntityDispatcherModule2 =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         entity.SignalPlus<'model, 'message, 'command> command world
                     with _ ->
-                        Log.debug
+                        Log.debugOnce
                             ("Incompatible signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').\n" +
                              "This may come about due to sending an incorrect signal type to the entity or due to too significant a change in the signal type when reloading code.")
                         world
@@ -1676,7 +1676,7 @@ module GroupDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         group.SignalPlus<'model, 'message, 'command> command world
                     with _ ->
-                        Log.debug
+                        Log.debugOnce
                             ("Incompatible signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').\n" +
                              "This may come about due to sending an incorrect signal type to the group or due to too significant a change in the signal type when reloading code.")
                         world
@@ -1826,7 +1826,7 @@ module ScreenDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         screen.SignalPlus<'model, 'message, 'command> command world
                     with _ ->
-                        Log.debug
+                        Log.debugOnce
                             ("Incompatible signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').\n" +
                              "This may come about due to sending an incorrect signal type to the screen or due to too significant a change in the signal type when reloading code.")
                         world
@@ -1983,7 +1983,7 @@ module GameDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         game.SignalPlus<'model, 'message, 'command> command world
                     with _ ->
-                        Log.debug
+                        Log.debugOnce
                             ("Incompatible signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').\n" +
                              "This may come about due to sending an incorrect signal type to the game or due to too significant a change in the signal type when reloading code.")
                         world
