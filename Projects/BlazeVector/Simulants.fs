@@ -35,4 +35,5 @@ module Simulants =
     let GameplayGuiQuit = GameplayGui / "Quit"
     let GameplayScene = Gameplay / "Scene"
     let GameplayScenePlayer = GameplayScene / "Player"
-    let GameplaySectionEntities i = Gameplay / ("Section" + string i) / "@"
+    let GameplaySection i = Gameplay / ("Section" + string i)
+    let GameplaySectionEntities i = GameplaySection i / "@"
