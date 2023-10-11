@@ -22,6 +22,7 @@ type ImGuiFileDialogType =
 
 type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
     member val Title : string = "" with get, set
+    member val FilePattern : string = "*" with get, set
     member val FileDialogType : ImGuiFileDialogType = ImGuiFileDialogType.Open with get, set
     member val FileName : string = "" with get, set
     member val DirectoryPath : DirectoryInfo = DirectoryInfo (if String.notEmpty directoryPath then directoryPath else ".") with get, set
@@ -59,7 +60,7 @@ module ImGui =
 
         let directory = DirectoryInfo dialogInfo.DirectoryPath.FullName
         dialogInfo.CurrentDirectories <- directory.GetDirectories () |> Seq.toList
-        dialogInfo.CurrentFiles <- directory.GetFiles () |> Seq.toList
+        dialogInfo.CurrentFiles <- directory.GetFiles (dialogInfo.FilePattern) |> Seq.toList
 
     let private sort (dialogState : ImGuiFileDialogState, forceSort : bool) =
         let mutable sort = false
