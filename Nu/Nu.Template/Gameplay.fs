@@ -43,7 +43,7 @@ module Gameplay =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => PostUpdateEye
              Screen.DeselectingEvent => FinishQuitting
-             Game.KeyboardKeyDownEvent =|> fun evt ->
+             Simulants.Game.KeyboardKeyDownEvent =|> fun evt ->
                 if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
                 then Jump
                 else Nop]
