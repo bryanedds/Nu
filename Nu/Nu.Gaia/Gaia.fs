@@ -65,7 +65,7 @@ module Gaia =
     let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
-    let mutable private openProjectDllPath = null // this will be initialized on start
+    let mutable private openProjectFilePath = null // this will be initialized on start
     let mutable private openProjectEditMode = null // this will be initialized on start
     let mutable private openProjectImperativeExecution = false
     let mutable private newProjectName = "MyGame"
@@ -99,6 +99,7 @@ module Gaia =
 
     let mutable private targetDir = "."
     let mutable private projectDllPath = ""
+    let mutable private projectFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private projectEditMode = ""
     let mutable private projectImperativeExecution = false
     let mutable private groupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
@@ -117,6 +118,7 @@ module Gaia =
     let mutable private showAssetPickerDialog = false
     let mutable private showNewProjectDialog = false
     let mutable private showOpenProjectDialog = false
+    let mutable private showOpenProjectFileDialog = false
     let mutable private showCloseProjectDialog = false
     let mutable private showNewGroupDialog = false
     let mutable private showOpenGroupDialog = false
@@ -133,6 +135,7 @@ module Gaia =
         showAssetPickerDialog ||
         showNewProjectDialog ||
         showOpenProjectDialog ||
+        showOpenProjectFileDialog ||
         showCloseProjectDialog ||
         showNewGroupDialog ||
         showOpenGroupDialog ||
@@ -1146,30 +1149,29 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private updateHotkeys entityHierarchyFocused =
         if not (modal ()) then
             if ImGui.IsKeyPressed ImGuiKey.F2 && selectedEntityOpt.IsSome && not (selectedEntityOpt.Value.GetProtected world) then showRenameEntityDialog <- true
-            if ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
-            if ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
-            if ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
-            if ImGui.IsKeyPressed ImGuiKey.F8 then tryReloadAssets ()
-            if ImGui.IsKeyPressed ImGuiKey.F9 then tryReloadCode ()
-            if ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
-            if ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
-            if ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
-            if ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
-            if ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
-            if ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then tryReloadAll ()
-            if ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
-            if ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
-            if not (ImGui.GetIO ()).WantCaptureKeyboardPlus || entityHierarchyFocused then
+            elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
+            elif ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
+            elif ImGui.IsKeyPressed ImGuiKey.F8 then tryReloadAssets ()
+            elif ImGui.IsKeyPressed ImGuiKey.F9 then tryReloadCode ()
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
+            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then showOpenProjectDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then tryReloadAll ()
+            elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
+            elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
+            elif not (ImGui.GetIO ()).WantCaptureKeyboardPlus || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo () |> ignore<bool>
-                if ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
-                if ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
-                if ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
-                if ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false |> ignore<bool>
-                if ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
-                if ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
-                if ImGui.IsKeyPressed ImGuiKey.Escape then
-                    focusedPropertyDescriptorOpt <- None
-                    selectEntityOpt None
+                elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
+                elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.Escape then focusedPropertyDescriptorOpt <- None; selectEntityOpt None
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
         let children = world |> entity.GetChildren |> Seq.toArray
@@ -2444,22 +2446,24 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             showNewProjectDialog <- false
 
                     // open project dialog
-                    if showOpenProjectDialog then
+                    if showOpenProjectDialog && not showOpenProjectFileDialog then
                         let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal (title, &showOpenProjectDialog) then
                             ImGui.Text "Game Assembly Path:"
                             ImGui.SameLine ()
-                            ImGui.InputTextWithHint ("##openProjectDllPath", "[enter game .dll path]", &openProjectDllPath, 4096u) |> ignore<bool>
+                            ImGui.InputTextWithHint ("##openProjectFilePath", "[enter game .dll path]", &openProjectFilePath, 4096u) |> ignore<bool>
+                            ImGui.SameLine ()
+                            if ImGui.Button "..." then showOpenProjectFileDialog <- true
                             ImGui.Text "Edit Mode:"
                             ImGui.SameLine ()
                             ImGui.InputText ("##openProjectEditMode", &openProjectEditMode, 4096u) |> ignore<bool>
                             ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &openProjectImperativeExecution) |> ignore<bool>
                             if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
-                                String.notEmpty openProjectDllPath &&
-                                File.Exists openProjectDllPath then
+                                String.notEmpty openProjectFilePath &&
+                                File.Exists openProjectFilePath then
                                 showOpenProjectDialog <- false
-                                let gaiaState = GaiaState.make openProjectDllPath (Some openProjectEditMode) openProjectImperativeExecution
+                                let gaiaState = GaiaState.make openProjectFilePath (Some openProjectEditMode) openProjectImperativeExecution
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2468,6 +2472,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 with _ -> Log.info "Could not save editor state and open project."
                             if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
                             ImGui.EndPopup ()
+
+                    // open project file dialog
+                    elif showOpenProjectFileDialog then
+                        projectFileDialogState.Title <- "Choose a game .dll..."
+                        projectFileDialogState.FilePattern <- "*.dll"
+                        projectFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+                        if ImGui.FileDialog (&showOpenProjectFileDialog, projectFileDialogState) then
+                            openProjectFilePath <- projectFileDialogState.FilePath
 
                     // close project dialog
                     if showCloseProjectDialog then
@@ -2517,6 +2529,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     // open group dialog
                     if showOpenGroupDialog then
                         groupFileDialogState.Title <- "Choose a nugroup file..."
+                        groupFileDialogState.FilePattern <- "*.nugroup"
                         groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
                         if ImGui.FileDialog (&showOpenGroupDialog, groupFileDialogState) then
                             snapshot ()
@@ -2525,6 +2538,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     // save group dialog
                     if showSaveGroupDialog then
                         groupFileDialogState.Title <- "Save a nugroup file..."
+                        groupFileDialogState.FilePattern <- "*.nugroup"
                         groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
                         if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
                             snapshot ()
@@ -2678,11 +2692,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let rec private runWithCleanUp gaiaState targetDir_ screen wtemp =
         world <- wtemp
-        openProjectDllPath <- gaiaState.ProjectDllPath
+        openProjectFilePath <- gaiaState.ProjectDllPath
         openProjectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         targetDir <- targetDir_
-        projectDllPath <- openProjectDllPath
+        projectDllPath <- openProjectFilePath
+        projectFileDialogState <- ImGuiFileDialogState targetDir
         projectEditMode <- openProjectEditMode
         projectImperativeExecution <- openProjectImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
