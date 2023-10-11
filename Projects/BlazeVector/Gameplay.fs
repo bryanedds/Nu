@@ -39,37 +39,6 @@ module Gameplay =
 
         static let [<Literal>] SectionCount = 16
 
-        static let createSections world =
-
-            // create stage sections from random section files
-            (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
-
-                // load a random section from file (except the first section which is always 0)
-                let sectionName = "Section" + string sectionIndex
-                let sectionFilePath =
-                    if sectionIndex = 0
-                    then Assets.Gameplay.SectionFilePaths.[0]
-                    else Gen.randomItem Assets.Gameplay.SectionFilePaths
-                let (section, world) =
-                    World.readGroupFromFile sectionFilePath (Some sectionName) Simulants.Gameplay world
-
-                // shift all entities in the loaded section so that they go after the previously loaded section
-                let sectionXShift = 2048.0f * single sectionIndex
-                let sectionEntities = World.getEntitiesFlattened section world
-                Seq.fold (fun world (sectionEntity : Entity) ->
-                    sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
-                    world sectionEntities)
-
-        static let destroySections world =
-
-            // destroy stage sections that were created from section files
-            (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
-
-                // destroy section
-                let sectionName = "Section" + string sectionIndex
-                let group = Simulants.Gameplay / sectionName
-                World.destroyGroup group world)
-
         override this.Initialize (_, _) =
             [Screen.SelectEvent => CreateSections
              Screen.DeselectingEvent => DestroySections
@@ -87,14 +56,45 @@ module Gameplay =
 
             match command with
             | CreateSections ->
-                let world = createSections world
+
+                // create stage sections from random section files
+                let world = (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
+
+                    // load a random section from file (except the first section which is always 0)
+                    let sectionName = "Section" + string sectionIndex
+                    let sectionFilePath =
+                        if sectionIndex = 0
+                        then Assets.Gameplay.SectionFilePaths.[0]
+                        else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                    let (section, world) =
+                        World.readGroupFromFile sectionFilePath (Some sectionName) Simulants.Gameplay world
+
+                    // shift all entities in the loaded section so that they go after the previously loaded section
+                    let sectionXShift = 2048.0f * single sectionIndex
+                    let sectionEntities = World.getEntitiesFlattened section world
+                    Seq.fold (fun world (sectionEntity : Entity) ->
+                        sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
+                        world sectionEntities)
+
+                // fin
                 just world
 
             | DestroySections ->
-                let world = destroySections world
+
+                // destroy stage sections that were created from section files
+                let world = (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
+
+                    // destroy section
+                    let sectionName = "Section" + string sectionIndex
+                    let group = Simulants.Gameplay / sectionName
+                    World.destroyGroup group world)
+
+                // quitting finished
                 withSignal FinishQuitting world
 
             | UpdateEye ->
+
+                // update eye to look at player while game is advancing
                 if world.Advancing then
                     let playerPosition = Simulants.GameplayScenePlayer.GetPosition world
                     let playerSize = Simulants.GameplayScenePlayer.GetSize world
