@@ -1414,11 +1414,22 @@ module EntityDispatcherModule2 =
             let world = this.SetModel model entity world
             Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
 
-        override this.Signal (signalObj, entity, world) =
+        override this.Signal (signalObj : obj, entity, world) =
             match signalObj with
             | :? 'message as message -> entity.SignalPlus<'model, 'message, 'command> message world
             | :? 'command as command -> entity.SignalPlus<'model, 'message, 'command> command world
-            | _ -> Log.info ("Incorrect signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "')."); world
+            | _ ->
+                try let message = signalObj |> valueToSymbol |> symbolToValue : 'message
+                    entity.SignalPlus<'model, 'message, 'command> message world
+                with _ ->
+                    try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
+                        entity.SignalPlus<'model, 'message, 'command> command world
+                    with _ ->
+                        Log.debug
+                            ("Incompatible signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').\n" +
+                             "This may come about due to sending an incorrect signal type to the entity or due to too significant a change in the signal type when reloading code.")
+                        world
+
 
         override this.TryGetInitialModelValue<'a> world =
             makeInitial world :> obj :?> 'a |> Some
@@ -1658,7 +1669,17 @@ module GroupDispatcherModule =
             match signalObj with
             | :? 'message as message -> group.SignalPlus<'model, 'message, 'command> message world
             | :? 'command as command -> group.SignalPlus<'model, 'message, 'command> command world
-            | _ -> Log.info ("Incorrect signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "')."); world
+            | _ ->
+                try let message = signalObj |> valueToSymbol |> symbolToValue : 'message
+                    group.SignalPlus<'model, 'message, 'command> message world
+                with _ ->
+                    try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
+                        group.SignalPlus<'model, 'message, 'command> command world
+                    with _ ->
+                        Log.debug
+                            ("Incompatible signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').\n" +
+                             "This may come about due to sending an incorrect signal type to the group or due to too significant a change in the signal type when reloading code.")
+                        world
 
         override this.TryGetInitialModelValue<'a> world =
             makeInitial world :> obj :?> 'a |> Some
@@ -1798,7 +1819,17 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? 'message as message -> screen.SignalPlus<'model, 'message, 'command> message world
             | :? 'command as command -> screen.SignalPlus<'model, 'message, 'command> command world
-            | _ -> Log.info ("Incorrect signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "')."); world
+            | _ ->
+                try let message = signalObj |> valueToSymbol |> symbolToValue : 'message
+                    screen.SignalPlus<'model, 'message, 'command> message world
+                with _ ->
+                    try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
+                        screen.SignalPlus<'model, 'message, 'command> command world
+                    with _ ->
+                        Log.debug
+                            ("Incompatible signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').\n" +
+                             "This may come about due to sending an incorrect signal type to the screen or due to too significant a change in the signal type when reloading code.")
+                        world
 
         override this.TryGetInitialModelValue<'a> world =
             makeInitial world :> obj :?> 'a |> Some
@@ -1945,7 +1976,17 @@ module GameDispatcherModule =
             match signalObj with
             | :? 'message as message -> game.SignalPlus<'model, 'message, 'command> message world
             | :? 'command as command -> game.SignalPlus<'model, 'message, 'command> command world
-            | _ -> Log.info ("Incorrect signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "')."); world
+            | _ ->
+                try let message = signalObj |> valueToSymbol |> symbolToValue : 'message
+                    game.SignalPlus<'model, 'message, 'command> message world
+                with _ ->
+                    try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
+                        game.SignalPlus<'model, 'message, 'command> command world
+                    with _ ->
+                        Log.debug
+                            ("Incompatible signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').\n" +
+                             "This may come about due to sending an incorrect signal type to the game or due to too significant a change in the signal type when reloading code.")
+                        world
 
         override this.TryGetInitialModelValue<'a> world =
             makeInitial world :> obj :?> 'a |> Some
