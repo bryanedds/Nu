@@ -1386,20 +1386,17 @@ module EntityDispatcherModule2 =
 
         override this.Register (entity, world) =
             let property = World.getEntityModelProperty entity world
-            if property.DesignerType = typeof<unit>
-            then World.setEntityModel<'model> true (makeInitial world) entity world |> snd'
-            else
-                // NOTE: setting with existing value is needed to apply synchronization
-                let model =
-                    match property.DesignerValue with
-                    | :? 'model as model -> model
-                    | null -> null :> obj :?> 'model
-                    | modelObj ->
-                        try modelObj |> valueToSymbol |> symbolToValue
-                        with _ ->
-                            Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
-                            makeInitial world
-                World.setEntityModel<'model> true model entity world |> snd'
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try modelObj |> valueToSymbol |> symbolToValue
+                    with _ ->
+                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setEntityModel<'model> true model entity world |> snd'
 
         override this.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -1641,20 +1638,17 @@ module GroupDispatcherModule =
 
         override this.Register (group, world) =
             let property = World.getGroupModelProperty group world
-            if property.DesignerType = typeof<unit>
-            then World.setGroupModel<'model> true (makeInitial world) group world |> snd'
-            else
-                // NOTE: setting with existing value is needed to apply synchronization
-                let model =
-                    match property.DesignerValue with
-                    | :? 'model as model -> model
-                    | null -> null :> obj :?> 'model
-                    | modelObj ->
-                        try modelObj |> valueToSymbol |> symbolToValue
-                        with _ ->
-                            Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
-                            makeInitial world
-                World.setGroupModel<'model> true model group world |> snd'
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try modelObj |> valueToSymbol |> symbolToValue
+                    with _ ->
+                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setGroupModel<'model> true model group world |> snd'
 
         override this.Render (group, world) =
             let view = this.View (this.GetModel group world, group, world)
@@ -1784,20 +1778,17 @@ module ScreenDispatcherModule =
 
         override this.Register (screen, world) =
             let property = World.getScreenModelProperty screen world
-            if property.DesignerType = typeof<unit>
-            then World.setScreenModel<'model> true (makeInitial world) screen world |> snd'
-            else
-                // NOTE: setting with existing value is needed to apply synchronization
-                let model =
-                    match property.DesignerValue with
-                    | :? 'model as model -> model
-                    | null -> null :> obj :?> 'model
-                    | modelObj ->
-                        try modelObj |> valueToSymbol |> symbolToValue
-                        with _ ->
-                            Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
-                            makeInitial world
-                World.setScreenModel<'model> true model screen world |> snd'
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try modelObj |> valueToSymbol |> symbolToValue
+                    with _ ->
+                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setScreenModel<'model> true model screen world |> snd'
 
         override this.Render (screen, world) =
             let view = this.View (this.GetModel screen world, screen, world)
@@ -1934,20 +1925,17 @@ module GameDispatcherModule =
 
         override this.Register (_, world) =
             let property = World.getGameModelProperty world
-            if property.DesignerType = typeof<unit>
-            then World.setGameModel<'model> true (makeInitial world) world |> snd'
-            else
-                // NOTE: setting with existing value is needed to apply synchronization
-                let model =
-                    match property.DesignerValue with
-                    | :? 'model as model -> model
-                    | null -> null :> obj :?> 'model
-                    | modelObj ->
-                        try modelObj |> valueToSymbol |> symbolToValue
-                        with _ ->
-                            Log.debugOnce "Could not convert existing model to new type. Falling back on default model value."
-                            makeInitial world
-                World.setGameModel<'model> true model world |> snd'
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try modelObj |> valueToSymbol |> symbolToValue
+                    with _ ->
+                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setGameModel<'model> true model world |> snd'
 
         override this.Render (game, world) =
             let view = this.View (this.GetModel game world, game, world)
