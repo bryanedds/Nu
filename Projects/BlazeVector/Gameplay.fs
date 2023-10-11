@@ -37,29 +37,45 @@ module Gameplay =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ State = Quit; Score = 0 })
 
-        static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionCount = 16
 
-        static let inductEntities xShift entities (screen : Screen) world =
-            Seq.fold
-                (fun world (entity : Entity) ->
-                    let world = entity.SetPosition (entity.GetPosition world + v3 xShift 0.0f 0.0f) world
-                    if entity.Is<EnemyDispatcher> world
-                    then World.monitor (fun _ world -> (Cascade, screen.Signal (Score 100) world)) entity.DieEvent screen world
-                    else world)
-                world
-                entities
+        static let createSections world =
 
-        static let createSectionFromFile filePath sectionName xShift screen world =
-            let (section, world) = World.readGroupFromFile filePath (Some sectionName) screen world
-            let sectionEntities = World.getEntitiesFlattened section world
-            inductEntities xShift sectionEntities screen world
+            // create stage sections from random section files
+            (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
+
+                // load a random section from file (except the first section which is always 0)
+                let sectionName = "Section" + string sectionIndex
+                let sectionFilePath =
+                    if sectionIndex = 0
+                    then Assets.Gameplay.SectionFilePaths.[0]
+                    else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                let (section, world) =
+                    World.readGroupFromFile sectionFilePath (Some sectionName) Simulants.Gameplay world
+
+                // shift all entities in the loaded section so that they go after the previously loaded section
+                let sectionXShift = 2048.0f * single sectionIndex
+                let sectionEntities = World.getEntitiesFlattened section world
+                Seq.fold (fun world (sectionEntity : Entity) ->
+                    sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
+                    world sectionEntities)
+
+        static let destroySections world =
+
+            // destroy stage sections that were created from section files
+            (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
+
+                // destroy section
+                let sectionName = "Section" + string sectionIndex
+                let group = Simulants.Gameplay / sectionName
+                World.destroyGroup group world)
 
         override this.Initialize (_, _) =
             [Screen.SelectEvent => CreateSections
              Screen.DeselectingEvent => DestroySections
              Screen.PostUpdateEvent => UpdateEye
-             Simulants.GameplayGuiQuit.ClickEvent => StartQutting]
+             Simulants.GameplayGuiQuit.ClickEvent => StartQutting
+             for i in 0 .. SectionCount do (Simulants.GameplaySectionEntities i).DieEvent => Score 100]
 
         override this.Message (gameplay, message, _, _) =
             match message with
@@ -67,29 +83,15 @@ module Gameplay =
             | StartQutting -> just { gameplay with State = Quitting }
             | FinishQuitting -> just { gameplay with State = Quit }
 
-        override this.Command (_, command, screen, world) =
+        override this.Command (_, command, _, world) =
 
             match command with
             | CreateSections ->
-                let world =
-                    List.fold
-                        (fun world i ->
-                            let sectionFilePath =
-                                if i = 0
-                                then Assets.Gameplay.SectionFilePaths.[0]
-                                else Gen.randomItem Assets.Gameplay.SectionFilePaths
-                            let sectionName = SectionName + string i
-                            let sectionXShift = 2048.0f * single i
-                            createSectionFromFile sectionFilePath sectionName sectionXShift screen world)
-                        world
-                        [0 .. SectionCount - 1]
+                let world = createSections world
                 just world
 
             | DestroySections ->
-                let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + string i]
-                let groupNames = Simulants.GameplayScene.Name :: sectionNames
-                let groups = List.map (fun groupName -> screen / groupName) groupNames
-                let world = World.destroyGroups groups world
+                let world = destroySections world
                 withSignal FinishQuitting world
 
             | UpdateEye ->

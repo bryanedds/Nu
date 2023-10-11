@@ -692,10 +692,15 @@ module WorldModule =
                 world
             else world
 
-        /// Publish an event with no subscription sorting.
-        static member publish<'a, 'p when 'p :> Simulant>
+        /// Publish an event with no subscription sorting or wildcard utilization.
+        static member publishUnsorted<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) (world : World) =
             World.publishPlus<'a, 'p> eventData eventAddress [] publisher false false world
+
+        /// Publish an event with subscription sorting and wildcard utilization.
+        static member publish<'a, 'p when 'p :> Simulant>
+            (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) (world : World) =
+            World.publishPlus<'a, 'p> eventData eventAddress [] publisher true false world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionId world =
