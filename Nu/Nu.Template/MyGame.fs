@@ -9,7 +9,7 @@ open MyGame
 module MyGame =
 
     // this is our MMCC model type. It determines what state the game is in. To learn about MMCC in
-    // Nu, see here - https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
+    // Nu, see here - https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
     type Model =
         | Splash
         | Title
