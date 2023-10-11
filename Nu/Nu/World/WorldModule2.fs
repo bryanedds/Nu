@@ -275,9 +275,9 @@ module WorldModule2 =
                     match Nu.Game.Handle.GetDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if world.Unaccompanied || world.Advancing then
-                                World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                            else World.setSelectedScreenOpt (Some desiredScreen) world // quick cut such as when halted in editor
+                            if world.Unaccompanied || world.Advancing
+                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                            else World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world // quick cut
                         else world
                     | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     | DesireIgnore -> world
