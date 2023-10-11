@@ -46,7 +46,7 @@ module OmniBlade =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
 
         override this.Initialize (model, _) =
-            [Simulants.Game.DesiredScreen :=
+            [Game.DesiredScreen :=
                 match model with
                 | Gui gui ->
                     match gui with
@@ -71,8 +71,8 @@ module OmniBlade =
                  match field.BattleOpt with
                  | None -> Simulants.Field.Field := field
                  | Some battle -> Simulants.Battle.Battle := battle
-             Simulants.Game.UpdateEvent => UpdateMessage
-             Simulants.Game.UpdateEvent => UpdateCommand
+             Game.UpdateEvent => UpdateMessage
+             Game.UpdateEvent => UpdateCommand
              Simulants.Splash.DeselectingEvent => ShowTitle
              Simulants.TitleGuiPlay.ClickEvent => ShowPick
              Simulants.TitleGuiCredits.ClickEvent => ShowCredits
