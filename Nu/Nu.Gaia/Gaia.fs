@@ -66,7 +66,7 @@ module Gaia =
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
     let mutable private openProjectFilePath = null // this will be initialized on start
-    let mutable private openProjectEditMode = null // this will be initialized on start
+    let mutable private openProjectEditMode = "Title"
     let mutable private openProjectImperativeExecution = false
     let mutable private newProjectName = "MyGame"
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
@@ -2693,12 +2693,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let rec private runWithCleanUp gaiaState targetDir_ screen wtemp =
         world <- wtemp
         openProjectFilePath <- gaiaState.ProjectDllPath
-        openProjectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         targetDir <- targetDir_
         projectDllPath <- openProjectFilePath
         projectFileDialogState <- ImGuiFileDialogState targetDir
-        projectEditMode <- openProjectEditMode
+        projectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
         projectImperativeExecution <- openProjectImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
