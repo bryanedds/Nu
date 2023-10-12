@@ -309,17 +309,17 @@ module WorldEntityModule =
             Cached.Order <- lensReadOnly (nameof Cached.Order) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Id <- lensReadOnly (nameof Cached.Id) Unchecked.defaultof<_> Unchecked.defaultof<_>
 
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.RegisterEvent --> this
+        member this.UnregisteringEvent = Events.UnregisteringEvent --> this
+        member this.ChangeEvent propertyName = Events.ChangeEvent propertyName --> this
 #if !DISABLE_ENTITY_PRE_UPDATE
-        member this.PreUpdateEvent = Events.PreUpdate --> this
+        member this.PreUpdateEvent = Events.PreUpdateEvent --> this
 #endif
-        member this.UpdateEvent = Events.Update --> this
+        member this.UpdateEvent = Events.UpdateEvent --> this
 #if !DISABLE_ENTITY_POST_UPDATE
-        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.PostUpdateEvent = Events.PostUpdateEvent --> this
 #endif
-        member this.RenderEvent = Events.Render --> this
+        member this.RenderEvent = Events.RenderEvent --> this
 
         /// The state of an entity.
         /// The only place this accessor should be used is in performance-sensitive code.
@@ -560,7 +560,7 @@ module WorldEntityModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get an entity's change event address.
-        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
+        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName --> this.EntityAddress
 
         /// Send a signal to an entity.
         member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)

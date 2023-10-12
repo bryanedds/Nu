@@ -3,9 +3,9 @@ open System
 open Prime
 open Nu
 
-// this extend the available vocabulary for expressing events in Nu for BlazeVector's specific purposes.
+// this module specifies new events types for BlazeVector.
 [<RequireQualifiedAccess>]
 module Events =
 
     // this event is called when the player or an enemy dies
-    let Die = stoa<unit> "Die/Event"
+    let DieEvent = stoa<unit> "Die/Event"

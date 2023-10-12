@@ -19,7 +19,6 @@ module Engine =
     let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
     let [<Uniform>] GroupSortPriority = ScreenSortPriority - 1.0f
     let [<Uniform>] EntitySortPriority = GroupSortPriority - 1.0f
-    let [<Literal>] WildcardName = "*"
     let [<Literal>] NamePropertyName = "Name"
     let [<Literal>] SurnamesPropertyName = "Surnames"
     let [<Literal>] DispatcherPropertyName = "Dispatcher"
@@ -161,6 +160,7 @@ module Physics =
     let [<Literal>] SleepingThresholdLinear = 1.0f // NOTE: in the example or bullet source code (can't remember), this defaulted to 0.8f...
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
     let [<Literal>] CollisionMargin3d = 0.0078125f // 1 >>> 7
+    let [<Literal>] CollisionWildcard = "*"
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)

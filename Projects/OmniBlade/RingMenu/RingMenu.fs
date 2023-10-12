@@ -24,8 +24,8 @@ module RingMenuDispatcher =
         member this.GetRingMenu world = this.GetModelGeneric<RingMenu> world
         member this.SetRingMenu value world = this.SetModelGeneric<RingMenu> value world
         member this.RingMenu = this.ModelGeneric<RingMenu> ()
-        member this.ItemSelectEvent = Events.ItemSelect --> this
-        member this.CancelEvent = Events.Cancel --> this
+        member this.ItemSelectEvent = Events.ItemSelectEvent --> this
+        member this.CancelEvent = Events.CancelEvent --> this
 
     type RingMenuDispatcher () =
         inherit GuiDispatcher<RingMenu, Message, RingMenuCommand> ({ Items = Map.empty; Cancellable = false })

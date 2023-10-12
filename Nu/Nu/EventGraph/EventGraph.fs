@@ -143,7 +143,7 @@ module EventGraph =
         Array.iteri (fun i _ ->
             let eventAddressNamesAny = Array.zeroCreate eventAddressNamesLength
             Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNamesLength)
-            eventAddressNamesAny.[i] <- Constants.Engine.WildcardName
+            eventAddressNamesAny.[i] <- Address.WildcardName
             let eventAddressAny = Address.rtoa eventAddressNamesAny
             eventAddresses.[i] <- eventAddressAny)
             eventAddressNames

@@ -42,23 +42,23 @@ module WorldPhysics =
                 match message with
                 | CreateBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    World.publishPlus message.BodyId Events.BodyAdding eventTrace Game.Handle false false world
+                    World.publishPlus message.BodyId Events.BodyAddingEvent eventTrace Game.Handle false false world
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
                         let bodyId = { BodySource = message.BodySource; BodyIndex = bodyProperties.BodyIndex }
-                        World.publishPlus bodyId Events.BodyAdding eventTrace Game.Handle false false world)
+                        World.publishPlus bodyId Events.BodyAddingEvent eventTrace Game.Handle false false world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
-                    let world = World.publishPlus { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Game.Handle false false world
-                    let world = World.publishPlus message.BodyId Events.BodyRemoving eventTrace Game.Handle false false world
+                    let world = World.publishPlus { BodyId = message.BodyId } Events.BodySeparationImplicitEvent eventTrace Game.Handle false false world
+                    let world = World.publishPlus message.BodyId Events.BodyRemovingEvent eventTrace Game.Handle false false world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage2d" "" EventTrace.empty
                     List.fold (fun world (bodyId : BodyId) ->
-                        let world = World.publishPlus { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Game.Handle false false world
-                        let world = World.publishPlus bodyId Events.BodyRemoving eventTrace Game.Handle false false world
+                        let world = World.publishPlus { BodyId = bodyId } Events.BodySeparationImplicitEvent eventTrace Game.Handle false false world
+                        let world = World.publishPlus bodyId Events.BodyRemovingEvent eventTrace Game.Handle false false world
                         world)
                         world message.BodyIds
                 | _ -> world
@@ -74,23 +74,23 @@ module WorldPhysics =
                 match message with
                 | CreateBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    World.publishPlus message.BodyId Events.BodyAdding eventTrace Game.Handle false false world
+                    World.publishPlus message.BodyId Events.BodyAddingEvent eventTrace Game.Handle false false world
                 | CreateBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
                     List.fold (fun world (bodyProperties : BodyProperties) ->
                         let bodyId = { BodySource = message.BodySource; BodyIndex = bodyProperties.BodyIndex }
-                        World.publishPlus bodyId Events.BodyAdding eventTrace Game.Handle false false world)
+                        World.publishPlus bodyId Events.BodyAddingEvent eventTrace Game.Handle false false world)
                         world message.BodiesProperties
                 | DestroyBodyMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
-                    let world = World.publishPlus { BodyId = message.BodyId } Events.BodySeparationImplicit eventTrace Game.Handle false false world
-                    let world = World.publishPlus message.BodyId Events.BodyRemoving eventTrace Game.Handle false false world
+                    let world = World.publishPlus { BodyId = message.BodyId } Events.BodySeparationImplicitEvent eventTrace Game.Handle false false world
+                    let world = World.publishPlus message.BodyId Events.BodyRemovingEvent eventTrace Game.Handle false false world
                     world
                 | DestroyBodiesMessage message ->
                     let eventTrace = EventTrace.debug "World" "enqueuePhysicsMessage3d" "" EventTrace.empty
                     List.fold (fun world (bodyId : BodyId) ->
-                        let world = World.publishPlus { BodyId = bodyId } Events.BodySeparationImplicit eventTrace Game.Handle false false world
-                        let world = World.publishPlus bodyId Events.BodyRemoving eventTrace Game.Handle false false world
+                        let world = World.publishPlus { BodyId = bodyId } Events.BodySeparationImplicitEvent eventTrace Game.Handle false false world
+                        let world = World.publishPlus bodyId Events.BodyRemovingEvent eventTrace Game.Handle false false world
                         world)
                         world message.BodyIds
                 | _ -> world
@@ -313,11 +313,11 @@ module WorldPhysics =
         static member internal updateBodyObservable subscribing (bodySource : Entity) world =
             let observable =
                 subscribing ||
-                let collisionEventAddress = atooa (Events.BodyCollision --> bodySource.EntityAddress)
+                let collisionEventAddress = atooa (Events.BodyCollisionEvent --> bodySource.EntityAddress)
                 match (World.getSubscriptions world).TryGetValue collisionEventAddress with
                 | (true, subscriptions) -> OMap.notEmpty subscriptions
                 | (false, _) ->
-                    let separationEventAddress = atooa (Events.BodySeparationExplicit --> bodySource.EntityAddress)
+                    let separationEventAddress = atooa (Events.BodySeparationExplicitEvent --> bodySource.EntityAddress)
                     match (World.getSubscriptions world).TryGetValue separationEventAddress with
                     | (true, subscriptions) -> OMap.notEmpty subscriptions
                     | (false, _) -> false

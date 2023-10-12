@@ -65,6 +65,12 @@ type AddressConverter (targetType : Type) =
 [<AutoOpen>]
 module Address =
 
+    [<RequireQualifiedAccess>]
+    module private AddressInternal =
+
+        /// The name of the address wildcard.
+        let [<Literal>] WildcardName = "*"
+
     /// A generalized address.
     type Address =
         interface
@@ -80,11 +86,6 @@ module Address =
         { Names : string array
           HashCode : int // OPTIMIZATION: hash is cached for speed
           Anonymous : bool } // HACK: allows for Nu to internally indicate the anonymity of an address.
-
-        interface Address with
-            member this.Names = this.Names
-            member this.HashCode = this.HashCode
-            member this.Anonymous = this.Anonymous
 
         /// Make an address from a '/' delimited string.
         /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
@@ -166,6 +167,10 @@ module Address =
         static member acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address  =
             Address.acats (Address.atooa address) address2
 
+        /// The wildcard address.
+        static member Wildcard =
+            Address.ntoa AddressInternal.WildcardName
+
         /// Concatenate two addresses of the same type.
         static member (-|-) (address : 'a Address, address2 : 'a Address) = Address.acat address address2
 
@@ -180,6 +185,11 @@ module Address =
 
         /// Concatenate two addresses, forcing the type of second address.
         static member (<--) (address : 'a Address, address2 : 'b Address) = Address.acatsf address address2
+
+        interface Address with
+            member this.Names = this.Names
+            member this.HashCode = this.HashCode
+            member this.Anonymous = this.Anonymous
 
         interface 'a Address IComparable with
             member this.CompareTo that =
@@ -208,6 +218,9 @@ module Address =
 
     [<RequireQualifiedAccess>]
     module Address =
+
+        /// The name of the address wildcard.
+        let [<Literal>] WildcardName = AddressInternal.WildcardName
 
         /// The empty address.
         let empty<'a> : 'a Address =
