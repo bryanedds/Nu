@@ -2091,7 +2091,7 @@ module WorldModuleEntity =
 
 #if !DISABLE_ENTITY_PRE_UPDATE
         static member internal updateEntityPublishPreUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishPreUpdates entity (atooa (Events.PreUpdate --> entity)) world
+            World.updateEntityPublishEventFlag World.setEntityPublishPreUpdates entity (atooa (Events.PreUpdateEvent --> entity)) world
 #endif
 
         static member internal updateEntityPublishUpdateFlag entity world =
@@ -2099,7 +2099,7 @@ module WorldModuleEntity =
 
 #if !DISABLE_ENTITY_POST_UPDATE
         static member internal updateEntityPublishPostUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa (Events.PostUpdate --> entity)) world
+            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa (Events.PostUpdateEvent --> entity)) world
 #endif
 
         static member internal updateEntityPublishRenderFlag entity world =
