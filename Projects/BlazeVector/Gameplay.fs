@@ -62,13 +62,9 @@ module Gameplay =
                 let world = (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
 
                     // load a random section from file (except the first section which is always 0)
-                    let sectionName = "Section" + string sectionIndex
-                    let sectionFilePath =
-                        if sectionIndex = 0
-                        then Assets.Gameplay.SectionFilePaths.[0]
-                        else Gen.randomItem Assets.Gameplay.SectionFilePaths
-                    let (section, world) =
-                        World.readGroupFromFile sectionFilePath (Some sectionName) Simulants.Gameplay world
+                    let section = Simulants.GameplaySection sectionIndex
+                    let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                    let world = World.readGroupFromFile sectionFilePath (Some section.Name) Simulants.Gameplay world |> snd
 
                     // shift all entities in the loaded section so that they go after the previously loaded section
                     let sectionXShift = 2048.0f * single sectionIndex
@@ -86,9 +82,8 @@ module Gameplay =
                 let world = (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
 
                     // destroy section
-                    let sectionName = "Section" + string sectionIndex
-                    let group = Simulants.Gameplay / sectionName
-                    World.destroyGroup group world)
+                    let section = Simulants.GameplaySection sectionIndex
+                    World.destroyGroup section world)
 
                 // quitting finished
                 withSignal FinishQuitting world
