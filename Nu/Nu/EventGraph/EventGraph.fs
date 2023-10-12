@@ -134,22 +134,55 @@ module EventGraph =
         // create target event address array
         let eventAddressNames = Address.getNames eventAddress
         let eventAddressNamesLength = eventAddressNames.Length
-        let eventAddresses = Array.zeroCreate (inc eventAddressNamesLength)
+        match Address.indexOf Constants.Lens.EventName eventAddress with
+        | -1 ->
 
-        // make non-wildcard address the last element
-        eventAddresses.[eventAddressNamesLength] <- eventAddress
+            // make addresses array
+            let eventAddresses = Array.zeroCreate (inc eventAddressNamesLength)
 
-        // populate wildcard addresses from specific to general
-        Array.iteri (fun i _ ->
-            let eventAddressNamesAny = Array.zeroCreate eventAddressNamesLength
-            Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNamesLength)
-            eventAddressNamesAny.[i] <- Address.WildcardName
-            let eventAddressAny = Address.rtoa eventAddressNamesAny
-            eventAddresses.[i] <- eventAddressAny)
-            eventAddressNames
+            // populate wildcard addresses
+            Array.iteri (fun i _ ->
+                let eventAddressNamesAny = Array.zeroCreate eventAddressNamesLength
+                Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNamesLength)
+                eventAddressNamesAny.[i] <- Address.WildcardName
+                let eventAddressAny = Address.rtoa eventAddressNamesAny
+                eventAddresses.[i] <- eventAddressAny)
+                eventAddressNames
 
-        // fin
-        eventAddresses
+            // make concrete address the last element
+            eventAddresses.[dec eventAddresses.Length] <- eventAddress
+            eventAddresses
+
+        // has appropriate Event name...
+        | eventAddressEventNameIndex ->
+
+            // make addresses array
+            let eventAddressEventNamesLength = inc eventAddressEventNameIndex
+            let eventAddressSimulantsIndex = eventAddressEventNamesLength
+            let eventAddressSimulantsLength = eventAddressNamesLength - eventAddressSimulantsIndex
+            let eventAddresses = Array.zeroCreate (eventAddressNamesLength + eventAddressSimulantsLength + 1)
+
+            // populate wildcard addresses
+            for i in 0 .. dec eventAddressNamesLength do
+                let eventAddressNames' = Array.zeroCreate eventAddressNamesLength
+                Array.Copy (eventAddressNames, 0, eventAddressNames', 0, eventAddressNamesLength)
+                eventAddressNames'.[i] <- Address.WildcardName
+                let eventAddress' = Address.rtoa eventAddressNames'
+                eventAddresses.[i] <- eventAddress'
+
+            // populate ellipsis addresses
+            for i in 0 .. dec eventAddressSimulantsLength do
+                let j = eventAddressSimulantsIndex + i
+                let k = eventAddressNamesLength + i
+                let eventAddressNames' = Array.zeroCreate (j + 1)
+                Array.Copy (eventAddressNames, 0, eventAddressNames', 0, j)
+                eventAddressNames'.[j] <- Address.EllipsisName
+                let eventAddress' = Address.rtoa eventAddressNames'
+                eventAddresses.[k] <- eventAddress'
+
+            // make concrete address the last element
+            eventAddresses.[dec eventAddresses.Length] <- eventAddress
+            eventAddresses
 
     /// Get the wild-carded addresses of an event address.
     let getEventAddresses2 (eventAddress : 'a Address) (_ : EventGraph) =
