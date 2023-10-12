@@ -64,7 +64,7 @@ module Gameplay =
                     // load a random section from file (except the first section which is always 0)
                     let section = Simulants.GameplaySection sectionIndex
                     let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
-                    let world = World.readGroupFromFile sectionFilePath (Some section.Name) Simulants.Gameplay world |> snd
+                    let world = World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> snd
 
                     // shift all entities in the loaded section so that they go after the previously loaded section
                     let sectionXShift = 2048.0f * single sectionIndex
