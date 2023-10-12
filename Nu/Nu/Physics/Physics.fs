@@ -469,11 +469,11 @@ module Physics =
 
     /// Convert a category mask to a value that represents collision categories.
     /// Examples -
-    ///     @ = -1
+    ///     * = -1
     ///     0 = 0
     ///     1 = 1
     ///     10 = 2
-    ///     2 = ERROR - input must be either @ or a binary number!
+    ///     2 = ERROR - input must be either * or a binary number!
     let categorizeCollisionMask categoryMask =
         match categoryMask with
         | Constants.Engine.WildcardName -> -1
