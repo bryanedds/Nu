@@ -80,8 +80,6 @@ module Gameplay =
 
                 // destroy stage sections that were created from section files
                 let world = (world, [0 .. dec SectionCount]) ||> List.fold (fun world sectionIndex ->
-
-                    // destroy section
                     let section = Simulants.GameplaySection sectionIndex
                     World.destroyGroup section world)
 
