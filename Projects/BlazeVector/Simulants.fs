@@ -36,4 +36,4 @@ module Simulants =
     let GameplayScene = Gameplay / "Scene"
     let GameplayScenePlayer = GameplayScene / "Player"
     let GameplaySection i = Gameplay / ("Section" + string i)
-    let GameplaySectionEntities i = GameplaySection i / "@"
+    let GameplaySectionEntities i = GameplaySection i / "*"
