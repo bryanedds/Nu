@@ -71,6 +71,9 @@ module Address =
         /// The name of the address wildcard.
         let [<Literal>] WildcardName = "*"
 
+        /// The name of the address ellipsis.
+        let [<Literal>] EllipsisName = "..."
+
     /// A generalized address.
     type Address =
         interface
@@ -168,8 +171,10 @@ module Address =
             Address.acats (Address.atooa address) address2
 
         /// The wildcard address.
-        static member Wildcard =
-            Address.ntoa AddressInternal.WildcardName
+        static member Wildcard = Address.ntoa AddressInternal.WildcardName
+
+        /// The ellipsis address.
+        static member Ellipsis = Address.ntoa AddressInternal.EllipsisName
 
         /// Concatenate two addresses of the same type.
         static member (-|-) (address : 'a Address, address2 : 'a Address) = Address.acat address address2
@@ -221,6 +226,9 @@ module Address =
 
         /// The name of the address wildcard.
         let [<Literal>] WildcardName = AddressInternal.WildcardName
+
+        /// The name of the address ellipsis.
+        let [<Literal>] EllipsisName = AddressInternal.EllipsisName
 
         /// The empty address.
         let empty<'a> : 'a Address =
@@ -305,6 +313,10 @@ module Address =
         /// Find the index of a name
         let findIndex finder address =
             Array.findIndex finder address.Names
+
+        /// Find the index of a name
+        let indexOf name address =
+            Array.IndexOf (address.Names, name)
 
         /// Get the length of an address by its names.
         let length address =
