@@ -81,27 +81,30 @@ module Nu =
 #if !DISABLE_ENTITY_PRE_UPDATE
                         | "PreUpdate" ->
     #if DEBUG
-                            if Array.contains Address.WildcardName eventNames then
+                            if  Array.contains Address.WildcardName eventNames ||
+                                Array.contains Address.EllipsisName eventNames then
                                 Log.debug
-                                    ("Subscribing to entity pre-update events with a wildcard is not supported. " +
+                                    ("Subscribing to entity pre-update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity pre-update events are not published.")
     #endif
                             World.updateEntityPublishPreUpdateFlag entity world |> snd'
 #endif
                         | "Update" ->
 #if DEBUG
-                            if Array.contains Address.WildcardName eventNames then
+                            if  Array.contains Address.WildcardName eventNames ||
+                                Array.contains Address.EllipsisName eventNames then
                                 Log.debug
-                                    ("Subscribing to entity update events with a wildcard is not supported. " +
+                                    ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity update events are not published.")
 #endif
                             World.updateEntityPublishUpdateFlag entity world |> snd'
 #if !DISABLE_ENTITY_POST_UPDATE
                         | "PostUpdate" ->
     #if DEBUG
-                            if Array.contains Address.WildcardName eventNames then
+                            if  Array.contains Address.WildcardName eventNames ||
+                                Array.contains Address.EllipsisName eventNames then
                                 Log.debug
-                                    ("Subscribing to entity post-update events with a wildcard is not supported. " +
+                                    ("Subscribing to entity post-update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity post-update events are not published.")
     #endif
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
@@ -145,8 +148,9 @@ module Nu =
                                         let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 else world
-                            if Array.contains Address.WildcardName eventNames then
-                                Log.debug "Subscribing to change events with a wildcard is not supported."
+                            if  Array.contains Address.WildcardName eventNames ||
+                                Array.contains Address.EllipsisName eventNames then
+                                Log.debug "Subscribing to change events with a wildcard or ellipsis is not supported."
                             world
                         | _ -> world
                     else world
