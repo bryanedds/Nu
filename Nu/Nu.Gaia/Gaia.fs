@@ -2758,14 +2758,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Right (screen, world) ->
 
                 // subscribe to events related to editing
-                let world = World.subscribe handleNuMouseButton Events.MouseLeftDown Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseLeftUp Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseMiddleDown Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseMiddleUp Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseRightDown Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseRightUp Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseLeftDownEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseLeftUpEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseMiddleDownEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseMiddleUpEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseRightDownEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Events.MouseRightUpEvent Game.Handle world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.Handle.SelectedScreenOpt.ChangeEvent Game.Handle world
-                let world = World.subscribe handleNuRender Events.Render Game.Handle world
+                let world = World.subscribe handleNuRender Events.RenderEvent Game.Handle world
 
                 // no song playback in editor by default
                 let world = World.setMasterSongVolume 0.0f world

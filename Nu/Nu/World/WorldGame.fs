@@ -50,40 +50,40 @@ module WorldGameModule =
         member this.GetId world = World.getGameId world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
-        member this.RegisterEvent = Events.Register
-        member this.UnregisteringEvent = Events.Unregistering
-        member this.ChangeEvent propertyName = Events.Change propertyName
-        member this.PreUpdateEvent = Events.PreUpdate
-        member this.UpdateEvent = Events.Update
-        member this.PostUpdateEvent = Events.PostUpdate
-        member this.RenderEvent = Events.Render
-        member this.MouseMoveEvent = Events.MouseMove
-        member this.MouseDragEvent = Events.MouseDrag
-        member this.MouseLeftChangeEvent = Events.MouseLeftChange
-        member this.MouseLeftDownEvent = Events.MouseLeftDown
-        member this.MouseLeftUpEvent = Events.MouseLeftUp
-        member this.MouseMiddleChangeEvent = Events.MouseMiddleChange
-        member this.MouseMiddleDownEvent = Events.MouseMiddleDown
-        member this.MouseMiddleUpEvent = Events.MouseMiddleUp
-        member this.MouseRightChangeEvent = Events.MouseRightChange
-        member this.MouseRightDownEvent = Events.MouseRightDown
-        member this.MouseRightUpEvent = Events.MouseRightUp
-        member this.MouseX1ChangeEvent = Events.MouseX1Change
-        member this.MouseX1DownEvent = Events.MouseX1Down
-        member this.MouseX1UpEvent = Events.MouseX1Up
-        member this.MouseX2ChangeEvent = Events.MouseX2Change
-        member this.MouseX2DownEvent = Events.MouseX2Down
-        member this.MouseX2UpEvent = Events.MouseX2Up
-        member this.KeyboardKeyChangeEvent = Events.KeyboardKeyChange
-        member this.KeyboardKeyDownEvent = Events.KeyboardKeyDown
-        member this.KeyboardKeyUpEvent = Events.KeyboardKeyUp
-        member this.GamepadDirectionChangeEvent index = Events.GamepadDirectionChange index
-        member this.GamepadButtonChangeEvent index = Events.GamepadButtonChange index
-        member this.GamepadButtonDownEvent index = Events.GamepadButtonDown index
-        member this.GamepadButtonUpEvent index = Events.GamepadButtonUp index
-        member this.AssetsReloadEvent = Events.AssetsReload
-        member this.BodyAddingEvent = Events.BodyAdding
-        member this.BodyRemovingEvent = Events.BodyRemoving
+        member this.RegisterEvent = Events.RegisterEvent
+        member this.UnregisteringEvent = Events.UnregisteringEvent
+        member this.ChangeEvent propertyName = Events.ChangeEvent propertyName
+        member this.PreUpdateEvent = Events.PreUpdateEvent
+        member this.UpdateEvent = Events.UpdateEvent
+        member this.PostUpdateEvent = Events.PostUpdateEvent
+        member this.RenderEvent = Events.RenderEvent
+        member this.MouseMoveEvent = Events.MouseMoveEvent
+        member this.MouseDragEvent = Events.MouseDragEvent
+        member this.MouseLeftChangeEvent = Events.MouseLeftChangeEvent
+        member this.MouseLeftDownEvent = Events.MouseLeftDownEvent
+        member this.MouseLeftUpEvent = Events.MouseLeftUpEvent
+        member this.MouseMiddleChangeEvent = Events.MouseMiddleChangeEvent
+        member this.MouseMiddleDownEvent = Events.MouseMiddleDownEvent
+        member this.MouseMiddleUpEvent = Events.MouseMiddleUpEvent
+        member this.MouseRightChangeEvent = Events.MouseRightChangeEvent
+        member this.MouseRightDownEvent = Events.MouseRightDownEvent
+        member this.MouseRightUpEvent = Events.MouseRightUpEvent
+        member this.MouseX1ChangeEvent = Events.MouseX1ChangeEvent
+        member this.MouseX1DownEvent = Events.MouseX1DownEvent
+        member this.MouseX1UpEvent = Events.MouseX1UpEvent
+        member this.MouseX2ChangeEvent = Events.MouseX2ChangeEvent
+        member this.MouseX2DownEvent = Events.MouseX2DownEvent
+        member this.MouseX2UpEvent = Events.MouseX2UpEvent
+        member this.KeyboardKeyChangeEvent = Events.KeyboardKeyChangeEvent
+        member this.KeyboardKeyDownEvent = Events.KeyboardKeyDownEvent
+        member this.KeyboardKeyUpEvent = Events.KeyboardKeyUpEvent
+        member this.GamepadDirectionChangeEvent index = Events.GamepadDirectionChangeEvent index
+        member this.GamepadButtonChangeEvent index = Events.GamepadButtonChangeEvent index
+        member this.GamepadButtonDownEvent index = Events.GamepadButtonDownEvent index
+        member this.GamepadButtonUpEvent index = Events.GamepadButtonUpEvent index
+        member this.AssetsReloadEvent = Events.AssetsReloadEvent
+        member this.BodyAddingEvent = Events.BodyAddingEvent
+        member this.BodyRemovingEvent = Events.BodyRemovingEvent
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -128,7 +128,7 @@ module WorldGameModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get a game's change event address.
-        member this.GetChangeEvent propertyName = Events.Change propertyName
+        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName
 
         /// Send a signal to a game.
         member this.Signal<'message, 'command> (signal : Signal) world =
@@ -141,17 +141,17 @@ module WorldGameModule =
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Register (game, world)
             let eventTrace = EventTrace.debug "World" "registerGame" "Register" EventTrace.empty
-            let world = World.publishPlus () Events.Register eventTrace game true false world
+            let world = World.publishPlus () Events.RegisterEvent eventTrace game true false world
             let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
-            World.publishPlus (RegisterData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
+            World.publishPlus (RegisterData game) (Events.LifeCycleEvent (nameof Game)) eventTrace game true false world
 
         static member internal unregisterGame world =
             let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus () Events.Unregistering eventTrace game true false world
+            let world = World.publishPlus () Events.UnregisteringEvent eventTrace game true false world
             let eventTrace = EventTrace.debug "World" "unregisteringGame" "" EventTrace.empty
-            let world = World.publishPlus (UnregisteringData game) (Events.LifeCycle (nameof Game)) eventTrace game true false world
+            let world = World.publishPlus (UnregisteringData game) (Events.LifeCycleEvent (nameof Game)) eventTrace game true false world
             dispatcher.Unregister (game, world)
 
         static member internal preUpdateGame world =
@@ -163,7 +163,7 @@ module WorldGameModule =
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateGame" "" EventTrace.empty
-            World.publishPlus () Events.PreUpdate eventTrace game false false world
+            World.publishPlus () Events.PreUpdateEvent eventTrace game false false world
 
         static member internal updateGame world =
 
@@ -174,7 +174,7 @@ module WorldGameModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGame" "" EventTrace.empty
-            World.publishPlus () Events.Update eventTrace game false false world
+            World.publishPlus () Events.UpdateEvent eventTrace game false false world
 
         static member internal postUpdateGame world =
                 
@@ -185,7 +185,7 @@ module WorldGameModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGame" "" EventTrace.empty
-            World.publishPlus () Events.PostUpdate eventTrace game false false world
+            World.publishPlus () Events.PostUpdateEvent eventTrace game false false world
 
         static member internal renderGame world =
 
@@ -196,7 +196,7 @@ module WorldGameModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderGame" "" EventTrace.empty
-            World.publishPlus () Events.Render eventTrace game false false world
+            World.publishPlus () Events.RenderEvent eventTrace game false false world
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

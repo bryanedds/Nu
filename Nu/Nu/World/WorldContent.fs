@@ -53,7 +53,7 @@ module Content =
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.Unregistering --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -107,7 +107,7 @@ module Content =
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.Unregistering --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
                                 simulant
                                 world
                         world)

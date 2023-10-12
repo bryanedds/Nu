@@ -45,19 +45,19 @@ module WorldScreenModule =
         member this.GetId world = World.getScreenId this world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.PreUpdateEvent = Events.PreUpdate --> this
-        member this.UpdateEvent = Events.Update --> this
-        member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.RenderEvent = Events.Render --> this
-        member this.SelectEvent = Events.Select --> this
-        member this.DeselectingEvent = Events.Deselecting --> this
-        member this.IncomingStartEvent = Events.IncomingStart --> this
-        member this.IncomingFinishEvent = Events.IncomingFinish --> this
-        member this.OutgoingStartEvent = Events.OutgoingStart --> this
-        member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
+        member this.RegisterEvent = Events.RegisterEvent --> this
+        member this.UnregisteringEvent = Events.UnregisteringEvent --> this
+        member this.ChangeEvent propertyName = Events.ChangeEvent propertyName --> this
+        member this.PreUpdateEvent = Events.PreUpdateEvent --> this
+        member this.UpdateEvent = Events.UpdateEvent --> this
+        member this.PostUpdateEvent = Events.PostUpdateEvent --> this
+        member this.RenderEvent = Events.RenderEvent --> this
+        member this.SelectEvent = Events.SelectEvent --> this
+        member this.DeselectingEvent = Events.DeselectingEvent --> this
+        member this.IncomingStartEvent = Events.IncomingStartEvent --> this
+        member this.IncomingFinishEvent = Events.IncomingFinishEvent --> this
+        member this.OutgoingStartEvent = Events.OutgoingStartEvent --> this
+        member this.OutgoingFinishEvent = Events.OutgoingFinishEvent --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -118,7 +118,7 @@ module WorldScreenModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get a screen's change event address.
-        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
+        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName --> this.ScreenAddress
 
         /// Send a signal to a screen.
         member this.Signal signal world = (this.GetDispatcher world).Signal (signal, this, world)
@@ -138,7 +138,7 @@ module WorldScreenModule =
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PreUpdate --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.PreUpdateEvent --> screen) eventTrace Game.Handle false false world
 
         static member internal updateScreen (screen : Screen) world =
 
@@ -153,7 +153,7 @@ module WorldScreenModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Update --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.UpdateEvent --> screen) eventTrace Game.Handle false false world
 
         static member internal postUpdateScreen (screen : Screen) world =
 
@@ -168,7 +168,7 @@ module WorldScreenModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.PostUpdateEvent --> screen) eventTrace Game.Handle false false world
 
         static member internal renderScreen (screen : Screen) world =
 
@@ -183,7 +183,7 @@ module WorldScreenModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderScreen" "" EventTrace.empty
-            World.publishPlus () (Events.Render --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.RenderEvent --> screen) eventTrace Game.Handle false false world
 
         /// Edit a screen with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

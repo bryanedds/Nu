@@ -11,7 +11,7 @@ open OmniBlade
 [<RequireQualifiedAccess>]
 module Events =
 
-    let Cancel = stoa<unit> "Cancel/Event"
-    let ItemSelect = stoa<string> "Item/Select/Event"
-    let TargetSelect = stoa<CharacterIndex> "Target/Select/Event"
-    let Travel = stoa<Vector2> "Travel/Event"
+    let CancelEvent = stoa<unit> "Cancel/Event"
+    let ItemSelectEvent = stoa<string> "Item/Select/Event"
+    let TargetSelectEvent = stoa<CharacterIndex> "Target/Select/Event"
+    let TravelEvent = stoa<Vector2> "Travel/Event"

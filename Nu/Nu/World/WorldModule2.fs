@@ -147,14 +147,14 @@ module WorldModule2 =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
-                    World.publishPlus () (Events.Deselecting --> selectedScreen) eventTrace selectedScreen false false world
+                    World.publishPlus () (Events.DeselectingEvent --> selectedScreen) eventTrace selectedScreen false false world
                 | None -> world
             match transitionStateAndScreenOpt with
             | Some (transitionState, screen) ->
                 let world = World.setScreenTransitionStatePlus transitionState screen world
                 let world = World.setSelectedScreen screen world
                 let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                World.publishPlus () (Events.Select --> screen) eventTrace screen false false world
+                World.publishPlus () (Events.SelectEvent --> screen) eventTrace screen false false world
             | None ->
                 World.setSelectedScreenOpt None world
 
@@ -203,12 +203,12 @@ module WorldModule2 =
                 let world = World.unsubscribe ScreenTransitionKeyboardKeyId world
                 world
             | IncomingState _ | OutgoingState _ ->
-                let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Constants.Engine.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Constants.Engine.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Constants.Engine.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Constants.Engine.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Constants.Engine.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Constants.Engine.WildcardName + "/Event")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
                 world
 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
@@ -251,14 +251,14 @@ module WorldModule2 =
                                 | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
                             | None -> world
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
-                        World.publishPlus () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen false false world
+                        World.publishPlus () (Events.IncomingStartEvent --> selectedScreen) eventTrace selectedScreen false false world
                     else world
                 match World.getLiveness world with
                 | Live ->
                     if World.updateScreenTransition3 Incoming selectedScreen world then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
                         let world = World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
-                        World.publishPlus () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen false false world
+                        World.publishPlus () (Events.IncomingFinishEvent --> selectedScreen) eventTrace selectedScreen false false world
                     else world
                 | Dead -> world
             | Dead -> world
@@ -316,7 +316,7 @@ module WorldModule2 =
                                 | None -> world
                         | None -> world
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                    World.publishPlus () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen false false world
+                    World.publishPlus () (Events.OutgoingStartEvent --> selectedScreen) eventTrace selectedScreen false false world
                 else world
             match World.getLiveness world with
             | Live ->
@@ -326,7 +326,7 @@ module WorldModule2 =
                         match World.getLiveness world with
                         | Live ->
                             let eventTrace = EventTrace.debug "World" "updateScreenOutgoing" "OutgoingFinish" EventTrace.empty
-                            World.publishPlus () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen false false world
+                            World.publishPlus () (Events.OutgoingFinishEvent --> selectedScreen) eventTrace selectedScreen false false world
                         | Dead -> world
                     match World.getLiveness world with
                     | Live ->
@@ -536,7 +536,7 @@ module WorldModule2 =
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     Metadata.generateMetadata (World.getImperative world) assetGraph
                     let world = World.reloadExistingAssets world
-                    let world = World.publishPlus () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
+                    let world = World.publishPlus () Events.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
                     (Right assetGraph, world)
 
                 // propagate errors
@@ -640,10 +640,10 @@ module WorldModule2 =
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.debug "World" "processInput" "MouseDrag" EventTrace.empty
-                            World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Nu.Game.Handle true true world
+                            World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseDragEvent eventTrace Nu.Game.Handle true true world
                         else world
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseMove" EventTrace.empty
-                    World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Nu.Game.Handle true true world
+                    World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMoveEvent eventTrace Nu.Game.Handle true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let io = ImGui.GetIO ()
                     if not (io.WantCaptureMousePlus) then
@@ -687,9 +687,9 @@ module WorldModule2 =
                         let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
-                        let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Nu.Game.Handle true true world
+                        let world = World.publishPlus eventData Events.KeyboardKeyDownEvent eventTrace Nu.Game.Handle true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                        World.publishPlus eventData Events.KeyboardKeyChange eventTrace Nu.Game.Handle true true world
+                        World.publishPlus eventData Events.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
                     else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let io = ImGui.GetIO ()
@@ -698,25 +698,25 @@ module WorldModule2 =
                         let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
-                        let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Nu.Game.Handle true true world
+                        let world = World.publishPlus eventData Events.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                        World.publishPlus eventData Events.KeyboardKeyChange eventTrace Nu.Game.Handle true true world
+                        World.publishPlus eventData Events.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
                     else world
                 | SDL.SDL_EventType.SDL_JOYHATMOTION ->
                     let index = evt.jhat.which
                     let direction = evt.jhat.hatValue
                     let eventData = { GamepadDirection = GamepadState.toNuDirection direction }
                     let eventTrace = EventTrace.debug "World" "processInput" "GamepadDirectionChange" EventTrace.empty
-                    World.publishPlus eventData (Events.GamepadDirectionChange index) eventTrace Nu.Game.Handle true true world
+                    World.publishPlus eventData (Events.GamepadDirectionChangeEvent index) eventTrace Nu.Game.Handle true true world
                 | SDL.SDL_EventType.SDL_JOYBUTTONDOWN ->
                     let index = evt.jbutton.which
                     let button = int evt.jbutton.button
                     if GamepadState.isSdlButtonSupported button then
                         let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonDown" EventTrace.empty
-                        let world = World.publishPlus eventData (Events.GamepadButtonDown index) eventTrace Nu.Game.Handle true true world
+                        let world = World.publishPlus eventData (Events.GamepadButtonDownEvent index) eventTrace Nu.Game.Handle true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonChange" EventTrace.empty
-                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Nu.Game.Handle true true world
+                        World.publishPlus eventData (Events.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
                     else world
                 | SDL.SDL_EventType.SDL_JOYBUTTONUP ->
                     let index = evt.jbutton.which
@@ -724,9 +724,9 @@ module WorldModule2 =
                     if GamepadState.isSdlButtonSupported button then
                         let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonUp" EventTrace.empty
-                        let world = World.publishPlus eventData (Events.GamepadButtonUp index) eventTrace Nu.Game.Handle true true world
+                        let world = World.publishPlus eventData (Events.GamepadButtonUpEvent index) eventTrace Nu.Game.Handle true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "GamepadButtonChange" EventTrace.empty
-                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Nu.Game.Handle true true world
+                        World.publishPlus eventData (Events.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
                     else world
                 | _ -> world
             (World.getLiveness world, world)
@@ -743,7 +743,7 @@ module WorldModule2 =
                                 { BodyShapeCollider = bodyCollisionMessage.BodyShapeSource
                                   BodyShapeCollidee = bodyCollisionMessage.BodyShapeSource2
                                   Normal = bodyCollisionMessage.Normal }
-                            let collisionAddress = Events.BodyCollision --> entity.EntityAddress
+                            let collisionAddress = Events.BodyCollisionEvent --> entity.EntityAddress
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus collisionData collisionAddress eventTrace Nu.Game.Handle false false world
                         else world
@@ -755,7 +755,7 @@ module WorldModule2 =
                             let explicit =
                                 { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
                                   BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
-                            let separationAddress = Events.BodySeparationExplicit --> entity.EntityAddress
+                            let separationAddress = Events.BodySeparationExplicitEvent --> entity.EntityAddress
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                             World.publishPlus explicit separationAddress eventTrace Nu.Game.Handle false false world
                         else world
@@ -775,7 +775,7 @@ module WorldModule2 =
                                       BodyRotation = rotation
                                       BodyLinearVelocity = linearVelocity
                                       BodyAngularVelocity = angularVelocity }
-                                let transformAddress = Events.BodyTransform --> entity.EntityAddress
+                                let transformAddress = Events.BodyTransformEvent --> entity.EntityAddress
                                 let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                                 World.publishPlus transformData transformAddress eventTrace Nu.Game.Handle false false world
                             else entity.ApplyPhysics center rotation linearVelocity angularVelocity world
@@ -1150,7 +1150,7 @@ module WorldModule2 =
             let world = World.setPhysicsEngine2d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
-            let world = World.publishPlus { IntegrationMessages = integrationMessages } Events.Integration eventTrace Nu.Game.Handle false false world
+            let world = World.publishPlus { IntegrationMessages = integrationMessages } Events.IntegrationEvent eventTrace Nu.Game.Handle false false world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
@@ -1160,7 +1160,7 @@ module WorldModule2 =
             let world = World.setPhysicsEngine3d physicsEngine world
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
-            let world = World.publishPlus { IntegrationMessages = integrationMessages } Events.Integration eventTrace Nu.Game.Handle false false world
+            let world = World.publishPlus { IntegrationMessages = integrationMessages } Events.IntegrationEvent eventTrace Nu.Game.Handle false false world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 

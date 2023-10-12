@@ -73,7 +73,7 @@ module WorldConsole =
                         then run (getActiveWindowTitle ()) world
                         else world
                     (Cascade, world))
-                    Events.KeyboardKeyDown
+                    Events.KeyboardKeyDownEvent
                     Game.Handle
                     world
             Log.info "Console hooked up (press ` (backtick) in game to open console)."

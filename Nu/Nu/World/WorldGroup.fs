@@ -36,13 +36,13 @@ module WorldGroupModule =
         member this.GetId world = World.getGroupId this world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.PreUpdateEvent = Events.PreUpdate --> this
-        member this.UpdateEvent = Events.Update --> this
-        member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.RenderEvent = Events.Render --> this
+        member this.RegisterEvent = Events.RegisterEvent --> this
+        member this.UnregisteringEvent = Events.UnregisteringEvent --> this
+        member this.ChangeEvent propertyName = Events.ChangeEvent propertyName --> this
+        member this.PreUpdateEvent = Events.PreUpdateEvent --> this
+        member this.UpdateEvent = Events.UpdateEvent --> this
+        member this.PostUpdateEvent = Events.PostUpdateEvent --> this
+        member this.RenderEvent = Events.RenderEvent --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -100,7 +100,7 @@ module WorldGroupModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get a group's change event address.
-        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GroupAddress
+        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName --> this.GroupAddress
 
         /// Send a signal to a group.
         member this.Signal<'message, 'command> (signal : Signal) world =
@@ -116,7 +116,7 @@ module WorldGroupModule =
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PreUpdate --> group) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.PreUpdateEvent --> group) eventTrace Game.Handle false false world
 
         static member internal updateGroup (group : Group) world =
 
@@ -126,7 +126,7 @@ module WorldGroupModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.Update --> group) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.UpdateEvent --> group) eventTrace Game.Handle false false world
 
         static member internal postUpdateGroup (group : Group) world =
 
@@ -136,7 +136,7 @@ module WorldGroupModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdate --> group) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.PostUpdateEvent --> group) eventTrace Game.Handle false false world
 
         static member internal renderGroup (group : Group) world =
 
@@ -146,7 +146,7 @@ module WorldGroupModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderGroup" "" EventTrace.empty
-            World.publishPlus () (Events.Render --> group) eventTrace Game.Handle false false world
+            World.publishPlus () (Events.RenderEvent --> group) eventTrace Game.Handle false false world
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

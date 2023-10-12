@@ -576,9 +576,9 @@ module ButtonFacetModule =
         member this.GetClickSoundVolume world : single = this.Get (nameof this.ClickSoundVolume) world
         member this.SetClickSoundVolume (value : single) world = this.Set (nameof this.ClickSoundVolume) value world
         member this.ClickSoundVolume = lens (nameof this.ClickSoundVolume) this this.GetClickSoundVolume this.SetClickSoundVolume
-        member this.UpEvent = Events.Up --> this
-        member this.DownEvent = Events.Down --> this
-        member this.ClickEvent = Events.Click --> this
+        member this.UpEvent = Events.UpEvent --> this
+        member this.DownEvent = Events.DownEvent --> this
+        member this.ClickEvent = Events.ClickEvent --> this
 
     /// Augments an entity with button behavior.
     type ButtonFacet () =
@@ -595,7 +595,7 @@ module ButtonFacetModule =
                         let world = entity.SetDown true world
                         let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) (entity.GetDownOffset world) world
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (Events.DownEvent --> entity) eventTrace entity true false world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -613,9 +613,9 @@ module ButtonFacetModule =
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
-                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (Events.UpEvent --> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
-                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () (Events.ClickEvent --> entity) eventTrace entity true false world
                         let world =
                             match entity.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
@@ -635,8 +635,8 @@ module ButtonFacetModule =
              define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
             world
 
         override this.Render (entity, world) =
@@ -691,9 +691,9 @@ module ToggleButtonFacetModule =
         member this.GetToggleSoundVolume world : single = this.Get (nameof this.ToggleSoundVolume) world
         member this.SetToggleSoundVolume (value : single) world = this.Set (nameof this.ToggleSoundVolume) value world
         member this.ToggleSoundVolume = lens (nameof this.ToggleSoundVolume) this this.GetToggleSoundVolume this.SetToggleSoundVolume
-        member this.ToggleEvent = Events.Toggle --> this
-        member this.ToggledEvent = Events.Toggled --> this
-        member this.UntoggledEvent = Events.Untoggled --> this
+        member this.ToggleEvent = Events.ToggleEvent --> this
+        member this.ToggledEvent = Events.ToggledEvent --> this
+        member this.UntoggledEvent = Events.UntoggledEvent --> this
 
     /// Augments an entity with toggle button behavior.
     type ToggleButtonFacet () =
@@ -725,11 +725,11 @@ module ToggleButtonFacetModule =
                     if transform.Enabled && wasPressed then
                         let world = entity.SetToggled (not (entity.GetToggled world)) world
                         let toggled = entity.GetToggled world
-                        let eventAddress = if toggled then Events.Toggled else Events.Untoggled
+                        let eventAddress = if toggled then Events.ToggledEvent else Events.UntoggledEvent
                         let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "" EventTrace.empty
                         let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                        let world = World.publishPlus toggled (Events.Toggle --> entity) eventTrace entity true false world
+                        let world = World.publishPlus toggled (Events.ToggleEvent --> entity) eventTrace entity true false world
                         let world =
                             match entity.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
@@ -751,8 +751,8 @@ module ToggleButtonFacetModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
             world
 
         override this.Update (entity, world) =
@@ -812,9 +812,9 @@ module RadioButtonFacetModule =
         member this.GetDialSoundVolume world : single = this.Get (nameof this.DialSoundVolume) world
         member this.SetDialSoundVolume (value : single) world = this.Set (nameof this.DialSoundVolume) value world
         member this.DialSoundVolume = lens (nameof this.DialSoundVolume) this this.GetDialSoundVolume this.SetDialSoundVolume
-        member this.DialEvent = Events.Dial --> this
-        member this.DialedEvent = Events.Dialed --> this
-        member this.UndialedEvent = Events.Undialed --> this
+        member this.DialEvent = Events.DialEvent --> this
+        member this.DialedEvent = Events.DialedEvent --> this
+        member this.UndialedEvent = Events.UndialedEvent --> this
 
     /// Augments an entity with radio button behavior.
     type RadioButtonFacet () =
@@ -847,11 +847,11 @@ module RadioButtonFacetModule =
                     if transform.Enabled && wasPressed && not wasDialed then
                         let world = entity.SetDialed true world
                         let dialed = entity.GetDialed world
-                        let eventAddress = if dialed then Events.Dialed else Events.Undialed
+                        let eventAddress = if dialed then Events.DialedEvent else Events.UndialedEvent
                         let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "" EventTrace.empty
                         let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
                         let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
-                        let world = World.publishPlus dialed (Events.Dial --> entity) eventTrace entity true false world
+                        let world = World.publishPlus dialed (Events.DialEvent --> entity) eventTrace entity true false world
                         let world =
                             match entity.GetDialSoundOpt world with
                             | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
@@ -873,8 +873,8 @@ module RadioButtonFacetModule =
              define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
             world
 
         override this.Update (entity, world) =
@@ -1025,9 +1025,9 @@ module FeelerFacetModule =
         member this.GetTouched world : bool = this.Get (nameof this.Touched) world
         member this.SetTouched (value : bool) world = this.Set (nameof this.Touched) value world
         member this.Touched = lens (nameof this.Touched) this this.GetTouched this.SetTouched
-        member this.TouchEvent = Events.Touch --> this
-        member this.TouchingEvent = Events.Touching --> this
-        member this.UntouchEvent = Events.Untouch --> this
+        member this.TouchEvent = Events.TouchEvent --> this
+        member this.TouchingEvent = Events.TouchingEvent --> this
+        member this.UntouchEvent = Events.UntouchEvent --> this
 
     /// Augments an entity with feeler behavior.
     type FeelerFacet () =
@@ -1044,7 +1044,7 @@ module FeelerFacetModule =
                     if transform.Enabled then
                         let world = entity.SetTouched true world
                         let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true false world
+                        let world = World.publishPlus data.Position (Events.TouchEvent --> entity) eventTrace entity true false world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -1058,7 +1058,7 @@ module FeelerFacetModule =
             if entity.GetVisible world then
                 if entity.GetEnabled world && wasTouched then
                     let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true false world
+                    let world = World.publishPlus data.Position (Events.UntouchEvent --> entity) eventTrace entity true false world
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -1071,7 +1071,7 @@ module FeelerFacetModule =
                 let mousePosition = MouseState.getPosition ()
                 let world = entity.SetTouched true world
                 let eventTrace = EventTrace.debug "FeelerFacet" "handleIncoming" "" EventTrace.empty
-                let world = World.publishPlus mousePosition (Events.Touch --> entity) eventTrace entity true false world
+                let world = World.publishPlus mousePosition (Events.TouchEvent --> entity) eventTrace entity true false world
                 (Resolve, world)
             else (Cascade, world)
 
@@ -1083,10 +1083,10 @@ module FeelerFacetModule =
             [define Entity.Touched false]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
-            let world = World.monitor handleIncoming (Events.IncomingFinish --> entity.Screen) entity world
-            let world = World.monitor handleOutgoing (Events.OutgoingStart --> entity.Screen) entity world
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
+            let world = World.monitor handleIncoming (Events.IncomingFinishEvent --> entity.Screen) entity world
+            let world = World.monitor handleOutgoing (Events.OutgoingStartEvent --> entity.Screen) entity world
             world
 
         override this.Update (entity, world) =
@@ -1094,7 +1094,7 @@ module FeelerFacetModule =
                 if entity.GetTouched world then
                     let mousePosition = World.getMousePosition world
                     let eventTrace = EventTrace.debug "FeelerFacet" "Update" "" EventTrace.empty
-                    let world = World.publishPlus mousePosition (Events.Touching --> entity) eventTrace entity true false world
+                    let world = World.publishPlus mousePosition (Events.TouchingEvent --> entity) eventTrace entity true false world
                     world
                 else world
             else world
@@ -1255,7 +1255,7 @@ module EffectFacetModule =
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.sense handleEffectDescriptorChange (entity.GetChangeEvent (nameof entity.EffectDescriptor)) entity (nameof EffectFacet) world
             let world = World.sense handleEffectsChange (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity (nameof EffectFacet) world
-            let world = World.sense handleAssetsReload Events.AssetsReload entity (nameof EffectFacet) world
+            let world = World.sense handleAssetsReload Events.AssetsReloadEvent entity (nameof EffectFacet) world
 #if DISABLE_ENTITY_PRE_UPDATE
             let world = World.sense handlePreUpdate entity.Group.PreUpdateEvent entity (nameof EffectFacet) world
 #endif
@@ -1345,10 +1345,10 @@ module RigidBodyFacetModule =
         member this.ModelDriven = lens (nameof this.ModelDriven) this this.GetModelDriven this.SetModelDriven
         member this.GetBodyId world : BodyId = this.Get (nameof this.BodyId) world
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
-        member this.BodyCollisionEvent = Events.BodyCollision --> this
-        member this.BodySeparationImplicitEvent = Events.BodySeparationImplicit
-        member this.BodySeparationExplicitEvent = Events.BodySeparationExplicit --> this
-        member this.BodyTransformEvent = Events.BodyTransform --> this
+        member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this
+        member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent
+        member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
+        member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
     /// Augments an entity with a physics-driven rigid body.
     type RigidBodyFacet () =
@@ -1374,7 +1374,7 @@ module RigidBodyFacetModule =
              define Entity.GravityOverride None
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask Constants.Engine.WildcardName
+             define Entity.CollisionMask Constants.Physics.CollisionWildcard
              define Entity.BodyShape (BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None })
              define Entity.Sensor false
              define Entity.ModelDriven false
@@ -1509,7 +1509,7 @@ module TileMapFacetModule =
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask Constants.Engine.WildcardName
+             define Entity.CollisionMask Constants.Physics.CollisionWildcard
              define Entity.ModelDriven false
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
@@ -1610,7 +1610,7 @@ module TmxMapFacetModule =
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
-             define Entity.CollisionMask Constants.Engine.WildcardName
+             define Entity.CollisionMask Constants.Physics.CollisionWildcard
              define Entity.ModelDriven false
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
@@ -1903,7 +1903,7 @@ module LayoutFacetModule =
                             performLayout entity world
                         else world
                     (Cascade, world))
-                    (Events.Unmount --> entity)
+                    (Events.UnmountEvent --> entity)
                     entity
                     (nameof LayoutFacet)
                     world
@@ -1919,7 +1919,7 @@ module LayoutFacetModule =
 
         override this.Register (entity, world) =
             let world = performLayout entity world
-            let world = World.sense handleMount (Events.Mount --> entity) entity (nameof LayoutFacet) world
+            let world = World.sense handleMount (Events.MountEvent --> entity) entity (nameof LayoutFacet) world
             let world = World.sense handleLayout entity.Transform.ChangeEvent entity (nameof LayoutFacet) world
             let world = World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
             let world = World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world

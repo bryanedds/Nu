@@ -306,16 +306,16 @@ module WorldModuleGroup =
             let dispatcher = World.getGroupDispatcher group world
             let world = dispatcher.Register (group, world)
             let eventTrace = EventTrace.debug "World" "registerGroup" "" EventTrace.empty
-            let world = World.publishPlus () (Events.Register --> group) eventTrace group true false world
+            let world = World.publishPlus () (Events.RegisterEvent --> group) eventTrace group true false world
             let eventTrace = EventTrace.debug "World" "registerGroup" "LifeCycle" EventTrace.empty
-            World.publishPlus (RegisterData group) (Events.LifeCycle (nameof Group)) eventTrace group true false world
+            World.publishPlus (RegisterData group) (Events.LifeCycleEvent (nameof Group)) eventTrace group true false world
 
         static member internal unregisterGroup group world =
             let dispatcher = World.getGroupDispatcher group world
             let eventTrace = EventTrace.debug "World" "unregisterGroup" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (UnregisteringData group) (Events.LifeCycle (nameof Group)) eventTrace group true false world
+            let world = World.publishPlus (UnregisteringData group) (Events.LifeCycleEvent (nameof Group)) eventTrace group true false world
             let eventTrace = EventTrace.debug "World" "unregisteringGroup" "" EventTrace.empty
-            let world = World.publishPlus () (Events.Unregistering --> group) eventTrace group true false world
+            let world = World.publishPlus () (Events.UnregisteringEvent --> group) eventTrace group true false world
             dispatcher.Unregister (group, world)
 
         static member internal addGroup mayReplace groupState group world =

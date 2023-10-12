@@ -24,7 +24,7 @@ module EnemyDispatcher =
         member this.GetEnemy world : Enemy = this.GetModelGeneric<Enemy> world
         member this.SetEnemy enemy world = this.SetModelGeneric<Enemy> enemy world
         member this.Enemy = this.ModelGeneric<Enemy> ()
-        member this.DieEvent = Events.Die --> this
+        member this.DieEvent = Events.DieEvent --> this
 
     type EnemyDispatcher () =
         inherit EntityDispatcher2d<Enemy, EnemyMessage, EnemyCommand> (true, { Health = 7 })

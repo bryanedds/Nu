@@ -24,7 +24,7 @@ module ReticlesDispatcher =
         member this.GetReticles world = this.GetModelGeneric<Reticles> world
         member this.SetReticles value world = this.SetModelGeneric<Reticles> value world
         member this.Reticles = this.ModelGeneric<Reticles> ()
-        member this.TargetSelectEvent = Events.TargetSelect --> this
+        member this.TargetSelectEvent = Events.TargetSelectEvent --> this
 
     type ReticlesDispatcher () =
         inherit GuiDispatcher<Reticles, Message, ReticlesCommand> (Map.empty)
