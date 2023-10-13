@@ -53,7 +53,7 @@ module WorldModuleGame =
                             match Seq.tryHead content.ScreenContents with
                             | Some screen -> Desire (game / screen.Key)
                             | None -> DesireNone
-                        World.setGameDesiredScreenPlus desiredScreen game world |> snd'
+                        World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world
                 let world = World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue game world
                 struct (true, world)
@@ -88,7 +88,7 @@ module WorldModuleGame =
                             match Seq.tryHead content.ScreenContents with
                             | Some screen -> Desire (game / screen.Key)
                             | None -> DesireNone
-                        World.setGameDesiredScreenPlus desiredScreen game world |> snd'
+                        World.setDesiredScreenPlus desiredScreen world |> snd'
                     else world
                 let world = World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value game world
                 struct (true, world)
@@ -131,6 +131,114 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member setOmniScreen value world =
             World.setOmniScreenPlus value world |> snd'
+
+        static member internal setDesiredScreenPlus value world =
+            let gameState = World.getGameState Game.Handle world
+            let previous = gameState.DesiredScreen
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } Game.Handle |> World.publishGameChange (nameof gameState.DesiredScreen) previous value Game.Handle)
+            else struct (false, world)
+
+        /// Get the desired screen to transition to if necessary.
+        [<FunctionBinding>]
+        static member getDesiredScreen world =
+            (World.getGameState Game.Handle world).DesiredScreen
+
+        /// Set the desired screen to transition to if necessary.
+        [<FunctionBinding>]
+        static member setDesiredScreen value world =
+            World.setDesiredScreenPlus value world |> snd'
+
+        /// Set the currently selected screen or None.
+        static member internal setSelectedScreenOptPlus value world =
+
+            // disallow omni-screen selection
+            if  Option.isSome value &&
+                World.getOmniScreenOpt world = value then
+                failwith "Cannot set SelectedScreen to OmniScreen."
+
+            // update game state if changed
+            let gameState = World.getGameState Game.Handle world
+            let previous = gameState.SelectedScreenOpt
+            if value <> previous then
+
+                // raise change event for None case
+                let world =
+                    match value with
+                    | None -> World.publishGameChange (nameof gameState.SelectedScreenOpt) previous None Game.Handle world
+                    | _ -> world
+
+                // clear out singleton states
+                let world =
+                    match (World.getGameState Game.Handle world).SelectedScreenOpt with
+                    | Some screen ->
+                        let world = WorldModule.unregisterScreenPhysics screen world
+                        let world = WorldModule.evictScreenElements screen world
+                        world
+                    | None -> world
+                
+                // actually set selected screen (no events)
+                let gameState = World.getGameState Game.Handle world
+                let gameState = { gameState with SelectedScreenOpt = value }
+                let world = World.setGameState gameState Game.Handle world
+
+                // set selected ecs opt
+                let world =
+                    match value with
+                    | Some screen -> World.setSelectedEcsOpt (Some (WorldModule.getScreenEcs screen world)) world
+                    | None -> World.setSelectedEcsOpt None world
+
+                // raise change event for Some case
+                match value with
+                | Some screen ->
+
+                    // populate singleton states
+                    let world = WorldModule.admitScreenElements screen world
+                    let world = WorldModule.registerScreenPhysics screen world
+
+                    // raise change event for some selection
+                    let world = World.publishGameChange (nameof gameState.SelectedScreenOpt) previous value Game.Handle world
+                    (true, world)
+
+                // fin
+                | None -> (true, world)
+            else (false, world)
+            
+        static member internal setSelectedScreenPlus value world =
+            World.setSelectedScreenOptPlus (Some value) world
+
+        /// Get the currently selected screen, if any.
+        [<FunctionBinding>]
+        static member getSelectedScreenOpt world =
+            (World.getGameState Game.Handle world).SelectedScreenOpt
+
+        /// Set the currently selected screen or None.
+        static member setSelectedScreenOpt value world =
+            World.setSelectedScreenOptPlus value world |> snd
+
+        /// Get the currently selected screen (failing with an exception if there isn't one).
+        [<FunctionBinding>]
+        static member getSelectedScreen world =
+            Option.get (World.getSelectedScreenOpt world)
+
+        /// Set the currently selected screen.
+        [<FunctionBinding>]
+        static member setSelectedScreen value world =
+            World.setSelectedScreenPlus value world |> snd
+
+        /// Get the current destination screen if a screen transition is currently underway.
+        [<FunctionBinding>]
+        static member getScreenTransitionDestinationOpt world =
+            (World.getGameState Game.Handle world).ScreenTransitionDestinationOpt
+
+        /// Set the current destination screen or None.
+        [<FunctionBinding>]
+        static member setScreenTransitionDestinationOpt value world =
+            let gameState = World.getGameState Game.Handle world
+            let previous = gameState.ScreenTransitionDestinationOpt
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with ScreenTransitionDestinationOpt = value } Game.Handle |> World.publishGameChange (nameof gameState.ScreenTransitionDestinationOpt) previous value Game.Handle)
+            else struct (false, world)
 
         /// Get the current 2d eye center.
         [<FunctionBinding>]
@@ -261,97 +369,6 @@ module WorldModuleGame =
             let eyeCenter = eyeBounds.Center
             World.setEyeCenter2d eyeCenter world
 
-        /// Set the currently selected screen or None.
-        static member internal setSelectedScreenOptPlus value world =
-
-            // disallow omni-screen selection
-            if  Option.isSome value &&
-                World.getOmniScreenOpt world = value then
-                failwith "Cannot set SelectedScreen to OmniScreen."
-
-            // update game state if changed
-            let gameState = World.getGameState Game.Handle world
-            let previous = gameState.SelectedScreenOpt
-            if value <> previous then
-
-                // raise change event for None case
-                let world =
-                    match value with
-                    | None -> World.publishGameChange (nameof gameState.SelectedScreenOpt) previous None Game.Handle world
-                    | _ -> world
-
-                // clear out singleton states
-                let world =
-                    match (World.getGameState Game.Handle world).SelectedScreenOpt with
-                    | Some screen ->
-                        let world = WorldModule.unregisterScreenPhysics screen world
-                        let world = WorldModule.evictScreenElements screen world
-                        world
-                    | None -> world
-                
-                // actually set selected screen (no events)
-                let gameState = World.getGameState Game.Handle world
-                let gameState = { gameState with SelectedScreenOpt = value }
-                let world = World.setGameState gameState Game.Handle world
-
-                // set selected ecs opt
-                let world =
-                    match value with
-                    | Some screen -> World.setSelectedEcsOpt (Some (WorldModule.getScreenEcs screen world)) world
-                    | None -> World.setSelectedEcsOpt None world
-
-                // raise change event for Some case
-                match value with
-                | Some screen ->
-
-                    // populate singleton states
-                    let world = WorldModule.admitScreenElements screen world
-                    let world = WorldModule.registerScreenPhysics screen world
-
-                    // raise change event for some selection
-                    let world = World.publishGameChange (nameof gameState.SelectedScreenOpt) previous value Game.Handle world
-                    (true, world)
-
-                // fin
-                | None -> (true, world)
-            else (false, world)
-            
-        static member internal setSelectedScreenPlus value world =
-            World.setSelectedScreenOptPlus (Some value) world
-
-        /// Get the currently selected screen, if any.
-        [<FunctionBinding>]
-        static member getSelectedScreenOpt world =
-            (World.getGameState Game.Handle world).SelectedScreenOpt
-
-        /// Set the currently selected screen or None.
-        static member setSelectedScreenOpt value world =
-            World.setSelectedScreenOptPlus value world |> snd
-
-        /// Get the currently selected screen (failing with an exception if there isn't one).
-        [<FunctionBinding>]
-        static member getSelectedScreen world =
-            Option.get (World.getSelectedScreenOpt world)
-
-        /// Set the currently selected screen.
-        [<FunctionBinding>]
-        static member setSelectedScreen value world =
-            World.setSelectedScreenPlus value world |> snd
-
-        /// Get the current destination screen if a screen transition is currently underway.
-        [<FunctionBinding>]
-        static member getScreenTransitionDestinationOpt world =
-            (World.getGameState Game.Handle world).ScreenTransitionDestinationOpt
-
-        /// Set the current destination screen or None.
-        [<FunctionBinding>]
-        static member setScreenTransitionDestinationOpt value world =
-            let gameState = World.getGameState Game.Handle world
-            let previous = gameState.ScreenTransitionDestinationOpt
-            if value <> previous
-            then struct (true, world |> World.setGameState { gameState with ScreenTransitionDestinationOpt = value } Game.Handle |> World.publishGameChange (nameof gameState.ScreenTransitionDestinationOpt) previous value Game.Handle)
-            else struct (false, world)
-
         /// Get the bounds of the 2d eye's sight irrespective of its position.
         [<FunctionBinding>]
         static member getViewBounds2dAbsolute world =
@@ -413,19 +430,6 @@ module WorldModuleGame =
                 let containment = viewFrustum.Contains bounds
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
-
-        static member internal setGameDesiredScreenPlus value game world =
-            let gameState = World.getGameState Game.Handle world
-            let previous = gameState.DesiredScreen
-            if value <> previous
-            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } game |> World.publishGameChange (nameof gameState.DesiredScreen) previous value game)
-            else struct (false, world)
-
-        static member internal getGameDesiredScreen game world =
-            (World.getGameState game world).DesiredScreen
-
-        static member internal setGameDesiredScreen value game world =
-            World.setGameDesiredScreenPlus value game world |> snd'
 
         static member internal setGameScriptFrame value game world =
             let gameState = World.getGameState game world
@@ -557,6 +561,7 @@ module WorldModuleGame =
         GameGetters.Add ("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
         GameGetters.Add ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         GameGetters.Add ("OmniScreenOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
+        GameGetters.Add ("DesiredScreen", fun _ world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getDesiredScreen world })
         GameGetters.Add ("SelectedScreenOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         GameGetters.Add ("ScreenTransitionDestinationOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
         GameGetters.Add ("EyeCenter2d", fun _ world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter2d world })
@@ -566,7 +571,6 @@ module WorldModuleGame =
         GameGetters.Add ("EyeFrustum3dEnclosed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dEnclosed world })
         GameGetters.Add ("EyeFrustum3dExposed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dExposed world })
         GameGetters.Add ("EyeFrustum3dImposter", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dImposter world })
-        GameGetters.Add ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
         GameGetters.Add ("ScriptFrame", fun game world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame game world })
         GameGetters.Add ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
         GameGetters.Add ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
@@ -575,11 +579,11 @@ module WorldModuleGame =
     let private initSetters () =
         GameSetters.Add ("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
         GameSetters.Add ("OmniScreenOpt", fun property _ world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
+        GameSetters.Add ("DesiredScreen", fun property _ world -> World.setDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) world)
         GameSetters.Add ("EyeCenter2d", fun property _ world -> World.setEyeCenter2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize2d", fun property _ world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeCenter3d", fun property _ world -> World.setEyeCenter3dPlus (property.PropertyValue :?> Vector3) world)
         GameSetters.Add ("EyeRotation3d", fun property _ world -> World.setEyeRotation3dPlus (property.PropertyValue :?> Quaternion) world)
-        GameSetters.Add ("DesiredScreen", fun property game world -> World.setGameDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) game world)
 
     /// Initialize getters and setters
     let internal init () =
