@@ -762,7 +762,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Xtension : Xtension
       Model : DesignerProperty
       Content : GameContent
-      DesiredScreen : DesiredScreen
       OmniScreenOpt : Screen option
       SelectedScreenOpt : Screen option
       ScreenTransitionDestinationOpt : Screen option
@@ -773,6 +772,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       EyeFrustum3dEnclosed : Frustum
       EyeFrustum3dExposed : Frustum
       EyeFrustum3dImposter : Frustum
+      DesiredScreen : DesiredScreen
       ScriptFrame : Scripting.DeclarationFrame
       Order : int64
       Id : Guid }
@@ -785,9 +785,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
         { Dispatcher = dispatcher
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
-          DesiredScreen = DesireIgnore
-          OmniScreenOpt = None
           Content = WorldTypes.EmptyGameContent :?> GameContent
+          OmniScreenOpt = None
           SelectedScreenOpt = None
           ScreenTransitionDestinationOpt = None
           EyeCenter2d = v2Zero
@@ -797,6 +796,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyeCenter3d, eyeRotation3d)
           EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyeCenter3d, eyeRotation3d)
           EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyeCenter3d, eyeRotation3d)
+          DesiredScreen = DesireIgnore
           ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
           Order = Core.getTimeStampUnique ()
           Id = Gen.id }

@@ -99,12 +99,38 @@ module WorldModuleGame =
             let gameState = { gameState with Content = value}
             World.setGameState gameState game world
 
-        static member internal setGameScriptFrame value game world =
-            let gameState = World.getGameState game world
-            let previous = gameState.ScriptFrame
+        /// Get the omni-screen, if any.
+        [<FunctionBinding>]
+        static member getOmniScreenOpt world =
+            (World.getGameState Game.Handle world).OmniScreenOpt
+        
+        /// Set the omni-screen or None.
+        static member internal setOmniScreenOptPlus value world =
+            if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreenOpt to [Some SelectedScreen]."
+            let gameState = World.getGameState Game.Handle world
+            let previous = gameState.OmniScreenOpt
             if value <> previous
-            then struct (true, world |> World.setGameState { gameState with ScriptFrame = value } game |> World.publishGameChange (nameof gameState.ScriptFrame) previous value game)
+            then struct (true, world |> World.setGameState { gameState with OmniScreenOpt = value } Game.Handle |> World.publishGameChange (nameof gameState.OmniScreenOpt) previous value Game.Handle)
             else struct (false, world)
+
+        /// Set the omni-screen or None.
+        [<FunctionBinding>]
+        static member setOmniScreenOpt value world =
+            World.setOmniScreenOptPlus value world |> snd'
+
+        /// Get the omniScreen (failing with an exception if there isn't one).
+        [<FunctionBinding>]
+        static member getOmniScreen world =
+            Option.get (World.getOmniScreenOpt world)
+
+        /// Set the omniScreen.
+        static member internal setOmniScreenPlus value world =
+            World.setOmniScreenOptPlus (Some value) world
+        
+        /// Set the omniScreen.
+        [<FunctionBinding>]
+        static member setOmniScreen value world =
+            World.setOmniScreenPlus value world |> snd'
 
         /// Get the current 2d eye center.
         [<FunctionBinding>]
@@ -220,39 +246,6 @@ module WorldModuleGame =
             let lightBoxSize = Constants.Render.LightBoxSize3d
             box3 ((World.getGameState Game.Handle world).EyeCenter3d - lightBoxSize * 0.5f) lightBoxSize
 
-        /// Get the omni-screen, if any.
-        [<FunctionBinding>]
-        static member getOmniScreenOpt world =
-            (World.getGameState Game.Handle world).OmniScreenOpt
-        
-        /// Set the omni-screen or None.
-        static member internal setOmniScreenOptPlus value world =
-            if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreenOpt to [Some SelectedScreen]."
-            let gameState = World.getGameState Game.Handle world
-            let previous = gameState.OmniScreenOpt
-            if value <> previous
-            then struct (true, world |> World.setGameState { gameState with OmniScreenOpt = value } Game.Handle |> World.publishGameChange (nameof gameState.OmniScreenOpt) previous value Game.Handle)
-            else struct (false, world)
-
-        /// Set the omni-screen or None.
-        [<FunctionBinding>]
-        static member setOmniScreenOpt value world =
-            World.setOmniScreenOptPlus value world |> snd'
-
-        /// Get the omniScreen (failing with an exception if there isn't one).
-        [<FunctionBinding>]
-        static member getOmniScreen world =
-            Option.get (World.getOmniScreenOpt world)
-
-        /// Set the omniScreen.
-        static member internal setOmniScreenPlus value world =
-            World.setOmniScreenOptPlus (Some value) world
-        
-        /// Set the omniScreen.
-        [<FunctionBinding>]
-        static member setOmniScreen value world =
-            World.setOmniScreenPlus value world |> snd'
-
         /// Constrain the eye to the given 2d bounds.
         [<FunctionBinding>]
         static member constrainEyeBounds2d (bounds : Box2) world =
@@ -345,19 +338,6 @@ module WorldModuleGame =
         static member setSelectedScreen value world =
             World.setSelectedScreenPlus value world |> snd
 
-        static member internal setGameDesiredScreenPlus value game world =
-            let gameState = World.getGameState Game.Handle world
-            let previous = gameState.DesiredScreen
-            if value <> previous
-            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } game |> World.publishGameChange (nameof gameState.DesiredScreen) previous value game)
-            else struct (false, world)
-
-        static member internal getGameDesiredScreen game world =
-            (World.getGameState game world).DesiredScreen
-
-        static member internal setGameDesiredScreen value game world =
-            World.setGameDesiredScreenPlus value game world |> snd'
-
         /// Get the current destination screen if a screen transition is currently underway.
         [<FunctionBinding>]
         static member getScreenTransitionDestinationOpt world =
@@ -433,6 +413,26 @@ module WorldModuleGame =
                 let containment = viewFrustum.Contains bounds
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
+
+        static member internal setGameDesiredScreenPlus value game world =
+            let gameState = World.getGameState Game.Handle world
+            let previous = gameState.DesiredScreen
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } game |> World.publishGameChange (nameof gameState.DesiredScreen) previous value game)
+            else struct (false, world)
+
+        static member internal getGameDesiredScreen game world =
+            (World.getGameState game world).DesiredScreen
+
+        static member internal setGameDesiredScreen value game world =
+            World.setGameDesiredScreenPlus value game world |> snd'
+
+        static member internal setGameScriptFrame value game world =
+            let gameState = World.getGameState game world
+            let previous = gameState.ScriptFrame
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with ScriptFrame = value } game |> World.publishGameChange (nameof gameState.ScriptFrame) previous value game)
+            else struct (false, world)
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =
@@ -556,7 +556,6 @@ module WorldModuleGame =
     let private initGetters () =
         GameGetters.Add ("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
         GameGetters.Add ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        GameGetters.Add ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
         GameGetters.Add ("OmniScreenOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         GameGetters.Add ("SelectedScreenOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         GameGetters.Add ("ScreenTransitionDestinationOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
@@ -567,6 +566,7 @@ module WorldModuleGame =
         GameGetters.Add ("EyeFrustum3dEnclosed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dEnclosed world })
         GameGetters.Add ("EyeFrustum3dExposed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dExposed world })
         GameGetters.Add ("EyeFrustum3dImposter", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dImposter world })
+        GameGetters.Add ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
         GameGetters.Add ("ScriptFrame", fun game world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame game world })
         GameGetters.Add ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
         GameGetters.Add ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
@@ -574,12 +574,12 @@ module WorldModuleGame =
     /// Initialize property setters.
     let private initSetters () =
         GameSetters.Add ("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
-        GameSetters.Add ("DesiredScreen", fun property game world -> World.setGameDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) game world)
         GameSetters.Add ("OmniScreenOpt", fun property _ world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
         GameSetters.Add ("EyeCenter2d", fun property _ world -> World.setEyeCenter2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize2d", fun property _ world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeCenter3d", fun property _ world -> World.setEyeCenter3dPlus (property.PropertyValue :?> Vector3) world)
         GameSetters.Add ("EyeRotation3d", fun property _ world -> World.setEyeRotation3dPlus (property.PropertyValue :?> Quaternion) world)
+        GameSetters.Add ("DesiredScreen", fun property game world -> World.setGameDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) game world)
 
     /// Initialize getters and setters
     let internal init () =
