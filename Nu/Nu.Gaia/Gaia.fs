@@ -62,11 +62,11 @@ module Gaia =
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
-    let mutable private selectedScreen = Game.Handle / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
+    let mutable private selectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
     let mutable private openProjectFilePath = null // this will be initialized on start
-    let mutable private openProjectEditMode = "Title"
+    let mutable private openProjectEditMode = "Splash"
     let mutable private openProjectImperativeExecution = false
     let mutable private newProjectName = "MyGame"
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
@@ -971,11 +971,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // figure out which screen to use
             let (screen, world) =
-                match Game.Handle.GetDesiredScreen world with
+                match Game.GetDesiredScreen world with
                 | Desire screen -> (screen, world)
                 | DesireNone ->
                     let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = Game.Handle.SetDesiredScreen (Desire screen) world
+                    let world = Game.SetDesiredScreen (Desire screen) world
                     (screen, world)
                 | DesireIgnore ->
                     let (screen, world) = World.createScreen (Some "Screen") world
@@ -1230,10 +1230,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 match dragDropPayloadOpt with
                 | Some payload ->
                     let sourceEntityAddressStr = payload
-                    let sourceEntity = Entity sourceEntityAddressStr
+                    let sourceEntity = Nu.Entity sourceEntityAddressStr
                     if not (sourceEntity.GetProtected world) then
                         if ImGui.IsAltDown () then
-                            let next = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                            let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let previousOpt = World.tryGetPreviousEntity next world
                             let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
                             let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
@@ -1244,7 +1244,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             selectEntityOpt (Some sourceEntity')
                             showSelectedEntity <- true
                         else
-                            let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
+                            let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
                             let mount = Relation.makeParent ()
                             world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                             world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
@@ -2040,9 +2040,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 match dragDropPayloadOpt with
                                 | Some payload ->
                                     let sourceEntityAddressStr = payload
-                                    let sourceEntity = Entity sourceEntityAddressStr
+                                    let sourceEntity = Nu.Entity sourceEntityAddressStr
                                     if not (sourceEntity.GetProtected world) then
-                                        let sourceEntity' = Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
+                                        let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
                                         world <- sourceEntity.SetMountOptWithAdjustment None world
                                         world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                         selectEntityOpt (Some sourceEntity')
@@ -2063,7 +2063,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // game properties window
                     if ImGui.Begin ("Game Properties", ImGuiWindowFlags.NoNav) then
-                        imGuiEditProperties Game.Handle
+                        imGuiEditProperties Game
                         ImGui.End ()
 
                     // screen properties window
@@ -2222,7 +2222,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let (selectedSimulant, localFrame) =
                             match selectedEntityOpt with
                             | Some entity when entity.Exists world -> (entity :> Simulant, entity.GetScriptFrame world)
-                            | Some _ | None -> (Game.Handle :> Simulant, Game.Handle.GetScriptFrame world)
+                            | Some _ | None -> (Game :> Simulant, Game.GetScriptFrame world)
                         let contextStr = match selectedSimulant with :? Game -> "(Game)" | _ -> scstring selectedSimulant
                         ImGui.Text ("Context: " + contextStr)
                         ImGui.InputTextMultiline ("##consoleStr", &consoleStr, 131072u, v2 350.0f -1.0f) |> ignore<bool>
@@ -2571,7 +2571,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.Text "Entity Name:"
                                 ImGui.SameLine ()
                                 ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &entityRename, 4096u) |> ignore<bool>
-                                let entity' = Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
+                                let entity' = Nu.Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
                                 if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
                                     snapshot ()
                                     world <- World.renameEntityImmediate entity entity' world
@@ -2758,14 +2758,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Right (screen, world) ->
 
                 // subscribe to events related to editing
-                let world = World.subscribe handleNuMouseButton Game.Handle.MouseLeftDownEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Game.Handle.MouseLeftUpEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Game.Handle.MouseMiddleDownEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Game.Handle.MouseMiddleUpEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Game.Handle.MouseRightDownEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Game.Handle.MouseRightUpEvent Game.Handle world
-                let world = World.subscribe handleNuSelectedScreenOptChange Game.Handle.SelectedScreenOpt.ChangeEvent Game.Handle world
-                let world = World.subscribe handleNuRender Game.Handle.RenderEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Game.MouseLeftDownEvent Game world
+                let world = World.subscribe handleNuMouseButton Game.MouseLeftUpEvent Game world
+                let world = World.subscribe handleNuMouseButton Game.MouseMiddleDownEvent Game world
+                let world = World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world
+                let world = World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world
+                let world = World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world
+                let world = World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world
+                let world = World.subscribe handleNuRender Game.RenderEvent Game world
 
                 // no song playback in editor by default
                 let world = World.setMasterSongVolume 0.0f world

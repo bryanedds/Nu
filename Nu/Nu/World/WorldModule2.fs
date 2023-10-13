@@ -12,7 +12,6 @@ open SDL2
 open ImGuiNET
 open Prime
 open Nu
-open Nu.Declarative
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =

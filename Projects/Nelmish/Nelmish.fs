@@ -1,7 +1,6 @@
 ﻿namespace Nelmish
 open Prime
 open Nu
-open Nu.Declarative
 
 // this is our MMCC model type
 type Model =

@@ -1,14 +1,12 @@
 ﻿namespace Elmario
 open Prime
 open Nu
-open Nu.Declarative
 
 // this module provides global handles to the game's key simulants.
 // having a Simulants module for your game is optional, but can be nice to avoid duplicating string literals across
 // the code base.
 [<RequireQualifiedAccess>]
 module Simulants =
-    let Game = Nu.Game.Handle
     let Screen = Game / "Screen"
     let Group = Screen / "Group"
     let Elmario = Group / "Elmario"

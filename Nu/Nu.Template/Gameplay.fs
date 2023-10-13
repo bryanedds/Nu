@@ -2,7 +2,6 @@
 open System
 open Prime
 open Nu
-open Nu.Declarative
 open MyGame
 
 [<AutoOpen>]
@@ -43,7 +42,7 @@ module Gameplay =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => PostUpdateEye
              Screen.DeselectingEvent => FinishQuitting
-             Simulants.Game.KeyboardKeyDownEvent =|> fun evt ->
+             Game.KeyboardKeyDownEvent =|> fun evt ->
                 if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
                 then Jump
                 else Nop]

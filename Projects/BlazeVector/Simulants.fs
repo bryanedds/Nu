@@ -10,9 +10,6 @@ open BlazeVector
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // game
-    let Game = Game.Handle
-
     // splash screen
     let Splash = Game / "Splash"
 
