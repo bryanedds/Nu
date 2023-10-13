@@ -379,6 +379,11 @@ let generateBindingsCode bindings =
         "\n" +
         "[<RequireQualifiedAccess>]\n" +
         "module WorldBindings =\n" +
+        "\n" +
+        "    type Game = Nu.Game\n" +
+        "    type Screen = Nu.Screen\n" +
+        "    type Group = Nu.Group\n" +
+        "    type Entity = Nu.Entity\n" +
         "\n"
 
     let bindingSyntax =
