@@ -763,16 +763,16 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Model : DesignerProperty
       Content : GameContent
       DesiredScreen : DesiredScreen
-      OmniScreenOpt : Screen option // TODO: move to WorldExtension.
-      SelectedScreenOpt : Screen option // TODO: move to WorldExtension.
-      ScreenTransitionDestinationOpt : Screen option // TODO: move to WorldExtension.
-      EyeCenter2d : Vector2 // TODO: move to WorldExtension.
-      EyeSize2d : Vector2 // TODO: move to WorldExtension.
-      EyeCenter3d : Vector3 // TODO: move to WorldExtension.
-      EyeRotation3d : Quaternion // TODO: move to WorldExtension.
-      EyeFrustum3dEnclosed : Frustum // TODO: move to WorldExtension.
-      EyeFrustum3dExposed : Frustum // TODO: move to WorldExtension.
-      EyeFrustum3dImposter : Frustum // TODO: move to WorldExtension.
+      OmniScreenOpt : Screen option
+      SelectedScreenOpt : Screen option
+      ScreenTransitionDestinationOpt : Screen option
+      EyeCenter2d : Vector2
+      EyeSize2d : Vector2
+      EyeCenter3d : Vector3
+      EyeRotation3d : Quaternion
+      EyeFrustum3dEnclosed : Frustum
+      EyeFrustum3dExposed : Frustum
+      EyeFrustum3dImposter : Frustum
       ScriptFrame : Scripting.DeclarationFrame
       Order : int64
       Id : Guid }
