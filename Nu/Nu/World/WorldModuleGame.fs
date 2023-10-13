@@ -249,8 +249,11 @@ module WorldModuleGame =
         static member internal setEyeCenter2dPlus value world =
             let gameState = World.getGameState Game.Handle world
             let previous = gameState.EyeCenter2d
-            if v2Neq previous value
-            then struct (true, world |> World.setGameState { gameState with EyeCenter2d = value } Game.Handle |> World.publishGameChange (nameof gameState.EyeCenter2d) previous value Game.Handle)
+            if v2Neq previous value then
+                let world = World.setGameState { gameState with EyeCenter2d = value } Game.Handle world
+                let world = World.publishGameChange (nameof gameState.EyeCenter2d) previous value Game.Handle world
+                let world = World.publishGameChange "LightBox3d" previous value Game.Handle world
+                struct (true, world)
             else struct (false, world)
 
         /// Set the current 2d eye center.
@@ -571,6 +574,7 @@ module WorldModuleGame =
         GameGetters.Add ("EyeFrustum3dEnclosed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dEnclosed world })
         GameGetters.Add ("EyeFrustum3dExposed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dExposed world })
         GameGetters.Add ("EyeFrustum3dImposter", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dImposter world })
+        GameGetters.Add ("LightBox3d", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getLightBox3d world })
         GameGetters.Add ("ScriptFrame", fun game world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame game world })
         GameGetters.Add ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
         GameGetters.Add ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
