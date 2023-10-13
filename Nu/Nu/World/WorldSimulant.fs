@@ -24,7 +24,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState |> Some
             | :? Group as group -> World.getGroupState group world :> SimulantState |> Some
             | :? Screen as screen -> World.getScreenState screen world :> SimulantState |> Some
-            | :? Game -> World.getGameState world :> SimulantState |> Some
+            | :? Game as game -> World.getGameState game world :> SimulantState |> Some
             | _ -> None
 
         static member internal getState (simulant : Simulant) world =
@@ -32,7 +32,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState
             | :? Group as group -> World.getGroupState group world :> SimulantState
             | :? Screen as screen -> World.getScreenState screen world :> SimulantState
-            | :? Game -> World.getGameState world :> SimulantState
+            | :? Game as game -> World.getGameState game world :> SimulantState
             | _ -> failwithumf ()
 
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
@@ -41,7 +41,7 @@ module WorldSimulantModule =
             then World.tryGetEntityProperty (name, simulant :?> Entity, world, &property)
             else
                 match namesLength with
-                | 1 -> World.tryGetGameProperty (name, world, &property)
+                | 1 -> World.tryGetGameProperty (name, simulant :?> Game, world, &property)
                 | 2 -> World.tryGetScreenProperty (name, simulant :?> Screen, world, &property)
                 | 3 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
                 | _ -> failwithumf ()
@@ -52,7 +52,7 @@ module WorldSimulantModule =
             then World.getEntityProperty name (simulant :?> Entity) world
             else
                 match namesLength with
-                | 1 -> World.getGameProperty name world
+                | 1 -> World.getGameProperty name (simulant :?> Game) world
                 | 2 -> World.getScreenProperty name (simulant :?> Screen) world
                 | 3 -> World.getGroupProperty name (simulant :?> Group) world
                 | _ -> failwithumf ()
@@ -63,7 +63,7 @@ module WorldSimulantModule =
             then World.trySetEntityPropertyFast name property (simulant :?> Entity) world
             else
                 match namesLength with
-                | 1 -> World.trySetGamePropertyFast name property world
+                | 1 -> World.trySetGamePropertyFast name property (simulant :?> Game) world
                 | 2 -> World.trySetScreenPropertyFast name property (simulant :?> Screen) world
                 | 3 -> World.trySetGroupPropertyFast name property (simulant :?> Group) world
                 | _ -> failwithumf ()
@@ -74,7 +74,7 @@ module WorldSimulantModule =
             then World.trySetEntityProperty name property (simulant :?> Entity) world
             else
                 match namesLength with
-                | 1 -> World.trySetGameProperty name property world
+                | 1 -> World.trySetGameProperty name property (simulant :?> Game) world
                 | 2 -> World.trySetScreenProperty name property (simulant :?> Screen) world
                 | 3 -> World.trySetGroupProperty name property (simulant :?> Group) world
                 | _ -> failwithumf ()
@@ -85,7 +85,7 @@ module WorldSimulantModule =
             then World.setEntityProperty name property (simulant :?> Entity) world
             else
                 match namesLength with
-                | 1 -> World.setGameProperty name property world
+                | 1 -> World.setGameProperty name property (simulant :?> Game) world
                 | 2 -> World.setScreenProperty name property (simulant :?> Screen) world
                 | 3 -> World.setGroupProperty name property (simulant :?> Group) world
                 | _ -> failwithumf ()
@@ -95,7 +95,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.attachEntityProperty name property entity world
             | :? Group as group -> World.attachGroupProperty name property group world
             | :? Screen as screen -> World.attachScreenProperty name property screen world
-            | :? Game -> World.attachGameProperty name property world
+            | :? Game as game -> World.attachGameProperty name property game world
             | _ -> failwithumf ()
 
         static member internal detachProperty name (simulant : Simulant) world =
@@ -103,7 +103,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.detachEntityProperty name entity world
             | :? Group as group -> World.detachGroupProperty name group world
             | :? Screen as screen -> World.detachScreenProperty name screen world
-            | :? Game -> World.detachGameProperty name world
+            | :? Game as game -> World.detachGameProperty name game world
             | _ -> failwithumf ()
 
         /// Get the given simulant's dispatcher.
@@ -112,7 +112,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
             | :? Group as group -> group.GetDispatcher world :> Dispatcher
             | :? Screen as screen -> screen.GetDispatcher world :> Dispatcher
-            | :? Game -> Game.Handle.GetDispatcher world :> Dispatcher
+            | :? Game as game -> game.GetDispatcher world :> Dispatcher
             | _ -> failwithumf ()
 
         static member internal unregister (simulant : Simulant) (world : World) =
@@ -120,7 +120,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.unregisterEntity entity world
             | :? Group as group -> World.unregisterGroup group world
             | :? Screen as screen -> World.unregisterScreen screen world
-            | :? Game -> World.unregisterGame world
+            | :? Game as game -> World.unregisterGame game world
             | _ -> failwithumf ()
 
         static member internal register (simulant : Simulant) (world : World) =
@@ -128,7 +128,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.registerEntity entity world
             | :? Group as group -> World.registerGroup group world
             | :? Screen as screen -> World.registerScreen screen world
-            | :? Game -> World.registerGame world
+            | :? Game as game -> World.registerGame game world
             | _ -> failwithumf ()
 
         static member internal trySynchronize initializing (simulant : Simulant) (world : World) =
@@ -136,7 +136,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> (World.getEntityDispatcher entity world).TrySynchronize (initializing, entity, world)
             | :? Group as group -> (World.getGroupDispatcher group world).TrySynchronize (initializing, group, world)
             | :? Screen as screen -> (World.getScreenDispatcher screen world).TrySynchronize (initializing, screen, world)
-            | :? Game as game -> (World.getGameDispatcher world).TrySynchronize (initializing, game, world)
+            | :? Game as game -> (World.getGameDispatcher game world).TrySynchronize (initializing, game, world)
             | _ -> failwithumf ()
 
         /// Destroy the given simulant.
@@ -173,7 +173,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> Some (World.getEntityScriptFrame entity world)
             | :? Group as group -> Some (World.getGroupScriptFrame group world)
             | :? Screen as screen -> Some (World.getScreenScriptFrame screen world)
-            | :? Game -> Some (World.getGameScriptFrame world)
+            | :? Game as game -> Some (World.getGameScriptFrame game world)
             | _ -> failwithumf ()
 
         /// Attempt to get the parent of the given simulant.

@@ -100,7 +100,7 @@ module WorldScreenModule =
 
         /// Check that a screen is selected.
         member this.Selected world =
-            let gameState = World.getGameState world
+            let gameState = World.getGameState Game.Handle world
             match gameState.OmniScreenOpt with
             | Some omniScreen when this.Name = omniScreen.Name -> true
             | _ ->

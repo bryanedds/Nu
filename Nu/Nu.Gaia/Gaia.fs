@@ -971,11 +971,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // figure out which screen to use
             let (screen, world) =
-                match World.getDesiredScreen world with
+                match Game.Handle.GetDesiredScreen world with
                 | Desire screen -> (screen, world)
                 | DesireNone ->
                     let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = World.setDesiredScreen (Desire screen) world
+                    let world = Game.Handle.SetDesiredScreen (Desire screen) world
                     (screen, world)
                 | DesireIgnore ->
                     let (screen, world) = World.createScreen (Some "Screen") world
