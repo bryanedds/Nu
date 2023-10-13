@@ -263,7 +263,7 @@ module WorldModule2 =
                 | Dead -> world
             | Dead -> world
 
-        static member private updateScreenIdling transitionTime (selectedScreen : Screen) game world =
+        static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
                 match selectedScreen.GetSlideOpt world with
@@ -272,7 +272,7 @@ module WorldModule2 =
                     then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     else world
                 | None ->
-                    match World.getGameDesiredScreen game world with
+                    match World.getDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
                             if world.Unaccompanied || world.Advancing
@@ -283,7 +283,7 @@ module WorldModule2 =
                     | DesireIgnore -> world
             | Dead -> world
 
-        static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) game (world : World) =
+        static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
                 if (match transitionTime with
                     | UpdateTime time -> time + 1L = world.UpdateTime
@@ -300,7 +300,7 @@ module WorldModule2 =
                                     match World.getScreenTransitionDestinationOpt world with
                                     | Some destination -> Some destination
                                     | None ->
-                                        match World.getGameDesiredScreen game world with
+                                        match World.getDesiredScreen world with
                                         | Desire destination -> Some destination
                                         | DesireNone -> None
                                         | DesireIgnore -> None
@@ -337,7 +337,7 @@ module WorldModule2 =
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination -> Some destination
                                 | None ->
-                                    match World.getGameDesiredScreen game world with
+                                    match World.getDesiredScreen world with
                                     | Desire destination -> Some destination
                                     | DesireNone -> None
                                     | DesireIgnore -> None
@@ -348,7 +348,7 @@ module WorldModule2 =
                             else world
                         | None ->
                             let world = World.selectScreenOpt None world
-                            match World.getGameDesiredScreen game world with // handle the possibility that screen deselect event changed destination
+                            match World.getDesiredScreen world with // handle the possibility that screen deselect event changed destination
                             | Desire destination -> World.selectScreen (IncomingState world.GameTime) destination world
                             | DesireNone -> world
                             | DesireIgnore -> world
@@ -356,17 +356,17 @@ module WorldModule2 =
                 else world
             | Dead -> world
 
-        static member private updateScreenTransition game world =
+        static member private updateScreenTransition world =
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
             // full opacity if fading and an extra frame for the render messages to actually get processed.
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 match selectedScreen.GetTransitionState world with
                 | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
-                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen game world
-                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen game world
+                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
+                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
             | None ->
-                match World.getGameDesiredScreen game world with
+                match World.getDesiredScreen world with
                 | Desire desiredScreen -> World.transitionScreen desiredScreen world
                 | DesireNone -> world
                 | DesireIgnore -> world
@@ -1195,7 +1195,7 @@ module WorldModule2 =
                 | Live ->
 
                     // update screen transitioning process
-                    let world = World.updateScreenTransition Nu.Game.Handle world
+                    let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
 

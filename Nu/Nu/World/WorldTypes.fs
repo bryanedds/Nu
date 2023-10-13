@@ -763,6 +763,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Model : DesignerProperty
       Content : GameContent
       OmniScreenOpt : Screen option
+      DesiredScreen : DesiredScreen
       SelectedScreenOpt : Screen option
       ScreenTransitionDestinationOpt : Screen option
       EyeCenter2d : Vector2
@@ -772,7 +773,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       EyeFrustum3dEnclosed : Frustum
       EyeFrustum3dExposed : Frustum
       EyeFrustum3dImposter : Frustum
-      DesiredScreen : DesiredScreen
       ScriptFrame : Scripting.DeclarationFrame
       Order : int64
       Id : Guid }
@@ -787,6 +787,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGameContent :?> GameContent
           OmniScreenOpt = None
+          DesiredScreen = DesireIgnore
           SelectedScreenOpt = None
           ScreenTransitionDestinationOpt = None
           EyeCenter2d = v2Zero
@@ -796,7 +797,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyeCenter3d, eyeRotation3d)
           EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyeCenter3d, eyeRotation3d)
           EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyeCenter3d, eyeRotation3d)
-          DesiredScreen = DesireIgnore
           ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
           Order = Core.getTimeStampUnique ()
           Id = Gen.id }
