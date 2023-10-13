@@ -2637,6 +2637,30 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setSelectedScreen' due to: " + scstring exn, ValueNone)
             struct (violation, World.choose oldWorld)
 
+    let getDesiredScreen world =
+        let oldWorld = world
+        try
+            let result = World.getDesiredScreen world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<DesiredScreen> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getDesiredScreen' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
+    let setDesiredScreen value world =
+        let oldWorld = world
+        try
+            let value =
+                match ScriptingSystem.tryExport typeof<DesiredScreen> value world with
+                | Some value -> value :?> DesiredScreen
+                | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to DesiredScreen."
+            let result = World.setDesiredScreen value world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setDesiredScreen' due to: " + scstring exn, ValueNone)
+            struct (violation, World.choose oldWorld)
+
     let getScreenTransitionDestinationOpt world =
         let oldWorld = world
         try
@@ -4926,6 +4950,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetDesiredScreenBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getDesiredScreen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetDesiredScreenBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|value|] -> setDesiredScreen value world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, ValueNone)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetScreenTransitionDestinationOptBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -5662,6 +5708,8 @@ module WorldBindings =
              ("getSelectedScreenOpt", { Fn = evalGetSelectedScreenOptBinding; Pars = [||]; DocOpt = None })
              ("getSelectedScreen", { Fn = evalGetSelectedScreenBinding; Pars = [||]; DocOpt = None })
              ("setSelectedScreen", { Fn = evalSetSelectedScreenBinding; Pars = [|"value"|]; DocOpt = None })
+             ("getDesiredScreen", { Fn = evalGetDesiredScreenBinding; Pars = [||]; DocOpt = None })
+             ("setDesiredScreen", { Fn = evalSetDesiredScreenBinding; Pars = [|"value"|]; DocOpt = None })
              ("getScreenTransitionDestinationOpt", { Fn = evalGetScreenTransitionDestinationOptBinding; Pars = [||]; DocOpt = None })
              ("setScreenTransitionDestinationOpt", { Fn = evalSetScreenTransitionDestinationOptBinding; Pars = [|"value"|]; DocOpt = None })
              ("getViewBounds2dAbsolute", { Fn = evalGetViewBounds2dAbsoluteBinding; Pars = [||]; DocOpt = None })
