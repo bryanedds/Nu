@@ -346,9 +346,9 @@ module Content =
                         let world = World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
                         synchronizeScreen true ScreenContent.empty screenContent origin screen world)
                         world screensAdded
-                (content.InitialScreenNameOpt |> Option.map Screen, world)
-            | None -> (content.InitialScreenNameOpt |> Option.map Screen, world)
-        else (content.InitialScreenNameOpt |> Option.map Screen, world)
+                (content.InitialScreenNameOpt |> Option.map (fun name -> Game.Handle / name), world)
+            | None -> (content.InitialScreenNameOpt |> Option.map (fun name -> Game.Handle / name), world)
+        else (content.InitialScreenNameOpt |> Option.map (fun name -> Game.Handle / name), world)
 
     /// Describe an entity with the given initializers as well as its contained entities.
     let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =

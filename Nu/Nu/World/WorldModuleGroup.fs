@@ -73,7 +73,7 @@ module WorldModuleGroup =
         static member internal publishGroupChange propertyName (propertyPrevious : obj) (propertyValue : obj) (group : Group) world =
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
             let groupNames = Address.getNames group.GroupAddress
-            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; groupNames.[0]; groupNames.[1]|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; groupNames.[0]; groupNames.[1]; groupNames.[2]|]
             let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace group false false world
 
@@ -308,12 +308,12 @@ module WorldModuleGroup =
             let eventTrace = EventTrace.debug "World" "registerGroup" "" EventTrace.empty
             let world = World.publishPlus () (Events.RegisterEvent --> group) eventTrace group true false world
             let eventTrace = EventTrace.debug "World" "registerGroup" "LifeCycle" EventTrace.empty
-            World.publishPlus (RegisterData group) (Events.LifeCycleEvent (nameof Group)) eventTrace group true false world
+            World.publishPlus (RegisterData group) (Events.LifeCycleEvent (nameof Group) --> Nu.Game.Handle) eventTrace group true false world
 
         static member internal unregisterGroup group world =
             let dispatcher = World.getGroupDispatcher group world
             let eventTrace = EventTrace.debug "World" "unregisterGroup" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (UnregisteringData group) (Events.LifeCycleEvent (nameof Group)) eventTrace group true false world
+            let world = World.publishPlus (UnregisteringData group) (Events.LifeCycleEvent (nameof Group) --> Nu.Game.Handle) eventTrace group true false world
             let eventTrace = EventTrace.debug "World" "unregisteringGroup" "" EventTrace.empty
             let world = World.publishPlus () (Events.UnregisteringEvent --> group) eventTrace group true false world
             dispatcher.Unregister (group, world)

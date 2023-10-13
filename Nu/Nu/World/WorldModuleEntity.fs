@@ -55,7 +55,7 @@ module WorldModuleEntity =
 
     // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
     let mutable changeEventNamesFree = true
-    let changeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""|]
+    let changeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
 
     type World with
 
@@ -86,7 +86,7 @@ module WorldModuleEntity =
 
         static member private entityStateAdder entityState (entity : Entity) world =
             let parent =
-                if entity.EntityAddress.Names.Length <= 3
+                if entity.EntityAddress.Names.Length <= 4
                 then entity.Group :> Simulant
                 else Entity (Array.allButLast entity.EntityAddress.Names) :> Simulant
             let simulants =
@@ -109,7 +109,7 @@ module WorldModuleEntity =
 
         static member private entityStateRemover (entity : Entity) world =
             let parent =
-                if entity.EntityAddress.Names.Length <= 3
+                if entity.EntityAddress.Names.Length <= 4
                 then entity.Group :> Simulant
                 else Entity (Array.allButLast entity.EntityAddress.Names) :> Simulant
             let simulants =
@@ -150,7 +150,7 @@ module WorldModuleEntity =
                 let changeEventAddress =
                     // OPTIMIZATION: this optimization should be hit >= 90% of the time. The 10% of cases where
                     // it isn't should be acceptable.
-                    if  Array.length entityNames = 3 &&
+                    if  Array.length entityNames = 4 &&
                         changeEventNamesFree then
                         changeEventNamesFree <- false
                         changeEventNamesUtilized <- true
@@ -158,6 +158,7 @@ module WorldModuleEntity =
                         changeEventNamesCached.[3] <- entityNames.[0]
                         changeEventNamesCached.[4] <- entityNames.[1]
                         changeEventNamesCached.[5] <- entityNames.[2]
+                        changeEventNamesCached.[6] <- entityNames.[3]
                         rtoa<ChangeData> changeEventNamesCached
                     else rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|] entityNames)
                 let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
@@ -723,7 +724,7 @@ module WorldModuleEntity =
 
                 // publish life cycle event unconditionally
                 let eventTrace = EventTrace.debug "World" "setEntityMount" "" EventTrace.empty
-                let world = World.publishPlus (MountOptChangeData (previous, value, entity)) (Events.LifeCycleEvent (nameof Entity)) eventTrace entity false false world
+                let world = World.publishPlus (MountOptChangeData (previous, value, entity)) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
                 struct (true, world)
 
             else struct (false, world)
@@ -2091,7 +2092,7 @@ module WorldModuleEntity =
 
 #if !DISABLE_ENTITY_PRE_UPDATE
         static member internal updateEntityPublishPreUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishPreUpdates entity (atooa (Events.PreUpdateEvent --> entity)) world
+            World.updateEntityPublishEventFlag World.setEntityPublishPreUpdates entity (atooa (entity.PreUpdateEvent --> entity)) world
 #endif
 
         static member internal updateEntityPublishUpdateFlag entity world =
@@ -2142,12 +2143,12 @@ module WorldModuleEntity =
             let eventAddresses = EventGraph.getEventAddresses1 (Events.RegisterEvent --> entity)
             let world = Array.fold (fun world eventAddress -> World.publishPlus () eventAddress eventTrace entity false false world) world eventAddresses
             let eventTrace = EventTrace.debug "World" "registerEntity" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (RegisterData entity) (Events.LifeCycleEvent (nameof Entity)) eventTrace entity false false world
+            let world = World.publishPlus (RegisterData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
             world
 
         static member internal unregisterEntity (entity : Entity) world =
             let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (UnregisteringData entity) (Events.LifeCycleEvent (nameof Entity)) eventTrace entity false false world
+            let world = World.publishPlus (UnregisteringData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
             let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.UnregisteringEvent --> entity)
             let world = Array.fold (fun world eventAddress -> World.publishPlus () eventAddress eventTrace entity false false world) world eventAddresses

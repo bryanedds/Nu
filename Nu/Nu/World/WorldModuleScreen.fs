@@ -70,7 +70,7 @@ module WorldModuleScreen =
 
         static member internal publishScreenChange (propertyName : string) (propertyPrevious : obj) (propertyValue : obj) (screen : Screen) world =
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; screen.Name|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; screen.Names.[0]; screen.Names.[1]|]
             let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace screen false false world
 
@@ -326,12 +326,12 @@ module WorldModuleScreen =
             let eventTrace = EventTrace.debug "World" "registerScreen" "" EventTrace.empty
             let world = World.publishPlus () (Events.RegisterEvent --> screen) eventTrace screen true false world
             let eventTrace = EventTrace.debug "World" "registerScreen" "LifeCycle" EventTrace.empty
-            World.publishPlus (RegisterData screen) (Events.LifeCycleEvent (nameof Screen)) eventTrace screen true false world
+            World.publishPlus (RegisterData screen) (Events.LifeCycleEvent (nameof Screen) --> Nu.Game.Handle) eventTrace screen true false world
 
         static member internal unregisterScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
             let eventTrace = EventTrace.debug "World" "registerScreen" "LifeCycle" EventTrace.empty
-            let world = World.publishPlus (UnregisteringData screen) (Events.LifeCycleEvent (nameof Screen)) eventTrace screen true false world
+            let world = World.publishPlus (UnregisteringData screen) (Events.LifeCycleEvent (nameof Screen) --> Nu.Game.Handle) eventTrace screen true false world
             let eventTrace = EventTrace.debug "World" "unregisteringScreen" "" EventTrace.empty
             let world = World.publishPlus () (Events.UnregisteringEvent --> screen) eventTrace screen true false world
             dispatcher.Unregister (screen, world)

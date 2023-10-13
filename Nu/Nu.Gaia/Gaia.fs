@@ -62,7 +62,7 @@ module Gaia =
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
-    let mutable private selectedScreen = Screen "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
+    let mutable private selectedScreen = Game.Handle / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private selectedGroup = selectedScreen / "Group"
     let mutable private selectedEntityOpt = Option<Entity>.None
     let mutable private openProjectFilePath = null // this will be initialized on start
@@ -861,7 +861,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
                         String.Join ("\n", fsprojProjectLines) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
-                    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536" // TODO: P1: pull these from fsproj!
+                    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536" // TODO: pull these from fsproj!
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; fsProjectNoWarn|]
                     use errorStream = new StringWriter ()
@@ -2758,14 +2758,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Right (screen, world) ->
 
                 // subscribe to events related to editing
-                let world = World.subscribe handleNuMouseButton Events.MouseLeftDownEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseLeftUpEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseMiddleDownEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseMiddleUpEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseRightDownEvent Game.Handle world
-                let world = World.subscribe handleNuMouseButton Events.MouseRightUpEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Game.Handle.MouseLeftDownEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Game.Handle.MouseLeftUpEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Game.Handle.MouseMiddleDownEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Game.Handle.MouseMiddleUpEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Game.Handle.MouseRightDownEvent Game.Handle world
+                let world = World.subscribe handleNuMouseButton Game.Handle.MouseRightUpEvent Game.Handle world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.Handle.SelectedScreenOpt.ChangeEvent Game.Handle world
-                let world = World.subscribe handleNuRender Events.RenderEvent Game.Handle world
+                let world = World.subscribe handleNuRender Game.Handle.RenderEvent Game.Handle world
 
                 // no song playback in editor by default
                 let world = World.setMasterSongVolume 0.0f world

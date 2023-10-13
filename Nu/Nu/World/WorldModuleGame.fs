@@ -20,7 +20,7 @@ module WorldModuleGame =
         static member private publishGameChange propertyName (propertyPrevious : obj) (propertyValue : obj) world =
             let game = Game.Handle
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; Constants.Engine.GameName|]
             let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace game false false world
 

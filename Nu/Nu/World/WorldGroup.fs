@@ -84,10 +84,10 @@ module WorldGroupModule =
         member this.Selected world =
             let gameState = World.getGameState world
             match gameState.OmniScreenOpt with
-            | Some omniScreen when Address.head this.GroupAddress = Address.head omniScreen.ScreenAddress -> true
+            | Some omniScreen when this.Screen.Name = omniScreen.Name -> true
             | _ ->
                 match gameState.SelectedScreenOpt with
-                | Some screen when Address.head this.GroupAddress = Address.head screen.ScreenAddress -> true
+                | Some screen when this.Screen.Name = screen.Name -> true
                 | _ -> false
 
         /// Check that a group exists in the world.
@@ -100,7 +100,7 @@ module WorldGroupModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get a group's change event address.
-        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName --> this.GroupAddress
+        member this.GetChangeEvent propertyName = this.ChangeEvent propertyName
 
         /// Send a signal to a group.
         member this.Signal<'message, 'command> (signal : Signal) world =
@@ -116,7 +116,7 @@ module WorldGroupModule =
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PreUpdateEvent --> group) eventTrace Game.Handle false false world
+            World.publishPlus () group.PreUpdateEvent eventTrace group false false world
 
         static member internal updateGroup (group : Group) world =
 
@@ -126,7 +126,7 @@ module WorldGroupModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.UpdateEvent --> group) eventTrace Game.Handle false false world
+            World.publishPlus () group.UpdateEvent eventTrace group false false world
 
         static member internal postUpdateGroup (group : Group) world =
 
@@ -136,7 +136,7 @@ module WorldGroupModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateGroup" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdateEvent --> group) eventTrace Game.Handle false false world
+            World.publishPlus () group.PostUpdateEvent eventTrace group false false world
 
         static member internal renderGroup (group : Group) world =
 
@@ -146,7 +146,7 @@ module WorldGroupModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderGroup" "" EventTrace.empty
-            World.publishPlus () (Events.RenderEvent --> group) eventTrace Game.Handle false false world
+            World.publishPlus () group.RenderEvent eventTrace group false false world
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

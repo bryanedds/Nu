@@ -595,7 +595,7 @@ module ButtonFacetModule =
                         let world = entity.SetDown true world
                         let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) (entity.GetDownOffset world) world
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus () (Events.DownEvent --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () entity.DownEvent eventTrace entity true false world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -613,9 +613,9 @@ module ButtonFacetModule =
                 if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
-                        let world = World.publishPlus () (Events.UpEvent --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () entity.UpEvent eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
-                        let world = World.publishPlus () (Events.ClickEvent --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () entity.ClickEvent eventTrace entity true false world
                         let world =
                             match entity.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
@@ -635,8 +635,8 @@ module ButtonFacetModule =
              define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
+            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
             world
 
         override this.Render (entity, world) =
@@ -725,11 +725,11 @@ module ToggleButtonFacetModule =
                     if transform.Enabled && wasPressed then
                         let world = entity.SetToggled (not (entity.GetToggled world)) world
                         let toggled = entity.GetToggled world
-                        let eventAddress = if toggled then Events.ToggledEvent else Events.UntoggledEvent
+                        let eventAddress = if toggled then entity.ToggledEvent else entity.UntoggledEvent
                         let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "" EventTrace.empty
-                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () eventAddress eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                        let world = World.publishPlus toggled (Events.ToggleEvent --> entity) eventTrace entity true false world
+                        let world = World.publishPlus toggled entity.ToggleEvent eventTrace entity true false world
                         let world =
                             match entity.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
@@ -751,8 +751,8 @@ module ToggleButtonFacetModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
+            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
             world
 
         override this.Update (entity, world) =
@@ -847,11 +847,11 @@ module RadioButtonFacetModule =
                     if transform.Enabled && wasPressed && not wasDialed then
                         let world = entity.SetDialed true world
                         let dialed = entity.GetDialed world
-                        let eventAddress = if dialed then Events.DialedEvent else Events.UndialedEvent
+                        let eventAddress = if dialed then entity.DialedEvent else entity.UndialedEvent
                         let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "" EventTrace.empty
-                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true false world
+                        let world = World.publishPlus () eventAddress eventTrace entity true false world
                         let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
-                        let world = World.publishPlus dialed (Events.DialEvent --> entity) eventTrace entity true false world
+                        let world = World.publishPlus dialed entity.DialEvent eventTrace entity true false world
                         let world =
                             match entity.GetDialSoundOpt world with
                             | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
@@ -873,8 +873,8 @@ module RadioButtonFacetModule =
              define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
+            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
             world
 
         override this.Update (entity, world) =
@@ -1044,7 +1044,7 @@ module FeelerFacetModule =
                     if transform.Enabled then
                         let world = entity.SetTouched true world
                         let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
-                        let world = World.publishPlus data.Position (Events.TouchEvent --> entity) eventTrace entity true false world
+                        let world = World.publishPlus data.Position entity.TouchEvent eventTrace entity true false world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -1058,7 +1058,7 @@ module FeelerFacetModule =
             if entity.GetVisible world then
                 if entity.GetEnabled world && wasTouched then
                     let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
-                    let world = World.publishPlus data.Position (Events.UntouchEvent --> entity) eventTrace entity true false world
+                    let world = World.publishPlus data.Position entity.UntouchEvent eventTrace entity true false world
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -1071,7 +1071,7 @@ module FeelerFacetModule =
                 let mousePosition = MouseState.getPosition ()
                 let world = entity.SetTouched true world
                 let eventTrace = EventTrace.debug "FeelerFacet" "handleIncoming" "" EventTrace.empty
-                let world = World.publishPlus mousePosition (Events.TouchEvent --> entity) eventTrace entity true false world
+                let world = World.publishPlus mousePosition entity.TouchEvent eventTrace entity true false world
                 (Resolve, world)
             else (Cascade, world)
 
@@ -1083,10 +1083,10 @@ module FeelerFacetModule =
             [define Entity.Touched false]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Events.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Events.MouseLeftUpEvent entity world
-            let world = World.monitor handleIncoming (Events.IncomingFinishEvent --> entity.Screen) entity world
-            let world = World.monitor handleOutgoing (Events.OutgoingStartEvent --> entity.Screen) entity world
+            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
+            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
+            let world = World.monitor handleIncoming entity.Screen.IncomingFinishEvent entity world
+            let world = World.monitor handleOutgoing entity.Screen.OutgoingStartEvent entity world
             world
 
         override this.Update (entity, world) =
@@ -1094,7 +1094,7 @@ module FeelerFacetModule =
                 if entity.GetTouched world then
                     let mousePosition = World.getMousePosition world
                     let eventTrace = EventTrace.debug "FeelerFacet" "Update" "" EventTrace.empty
-                    let world = World.publishPlus mousePosition (Events.TouchingEvent --> entity) eventTrace entity true false world
+                    let world = World.publishPlus mousePosition entity.TouchingEvent eventTrace entity true false world
                     world
                 else world
             else world
@@ -1255,7 +1255,7 @@ module EffectFacetModule =
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.sense handleEffectDescriptorChange (entity.GetChangeEvent (nameof entity.EffectDescriptor)) entity (nameof EffectFacet) world
             let world = World.sense handleEffectsChange (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity (nameof EffectFacet) world
-            let world = World.sense handleAssetsReload Events.AssetsReloadEvent entity (nameof EffectFacet) world
+            let world = World.sense handleAssetsReload Nu.Game.Handle.AssetsReloadEvent entity (nameof EffectFacet) world
 #if DISABLE_ENTITY_PRE_UPDATE
             let world = World.sense handlePreUpdate entity.Group.PreUpdateEvent entity (nameof EffectFacet) world
 #endif
@@ -1903,7 +1903,7 @@ module LayoutFacetModule =
                             performLayout entity world
                         else world
                     (Cascade, world))
-                    (Events.UnmountEvent --> entity)
+                    entity.UnmountEvent
                     entity
                     (nameof LayoutFacet)
                     world
@@ -1919,7 +1919,7 @@ module LayoutFacetModule =
 
         override this.Register (entity, world) =
             let world = performLayout entity world
-            let world = World.sense handleMount (Events.MountEvent --> entity) entity (nameof LayoutFacet) world
+            let world = World.sense handleMount entity.MountEvent entity (nameof LayoutFacet) world
             let world = World.sense handleLayout entity.Transform.ChangeEvent entity (nameof LayoutFacet) world
             let world = World.sense handleLayout entity.Layout.ChangeEvent entity (nameof LayoutFacet) world
             let world = World.sense handleLayout entity.LayoutMargin.ChangeEvent entity (nameof LayoutFacet) world

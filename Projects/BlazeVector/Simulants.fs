@@ -14,22 +14,22 @@ module Simulants =
     let Game = Game.Handle
 
     // splash screen
-    let Splash = Screen "Splash"
+    let Splash = Game / "Splash"
 
     // title screen
-    let Title = Screen "Title"
+    let Title = Game / "Title"
     let TitleGui = Title / "Gui"
     let TitleGuiPlay = TitleGui / "Play"
     let TitleGuiCredits = TitleGui / "Credits"
     let TitleGuiExit = TitleGui / "Exit"
 
     // credits screen
-    let Credits = Screen "Credits"
+    let Credits = Game / "Credits"
     let CreditsGui = Credits / "Gui"
     let CreditsGuiBack = CreditsGui / "Back"
 
     // gameplay screen
-    let Gameplay = Screen "Gameplay"
+    let Gameplay = Game / "Gameplay"
     let GameplayGui = Gameplay / "Gui"
     let GameplayGuiScore = GameplayGui / "Score"
     let GameplayGuiQuit = GameplayGui / "Quit"

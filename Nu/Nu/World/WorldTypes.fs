@@ -1137,19 +1137,19 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         member this.GetXtension () = this.Xtension
 
 /// The game type that hosts the various screens used to navigate through a game.
-and Game (gameAddress) =
+and Game (gameAddress : Game Address) =
+
+#if DEBUG
+    // check that address is of correct length for a game
+    do if gameAddress.Length <> 1 || gameAddress.Names.[0] <> Constants.Engine.GameName then
+        failwith "Game address must be length of 1 with name = 'Game'."
+#endif
 
     /// A convenience reference to get the universal game handle.
-    static let handle = Game ()
-
-    // check that address is of correct length for a game
-    do if Address.length gameAddress <> 0 then failwith "Game address must be length of 0."
+    static let handle = Game (ntoa Constants.Engine.GameName)
 
     // cache the simulant address to avoid allocation
     let simulantAddress = atoa<Game, Simulant> gameAddress
-
-    /// Create a game reference.
-    new () = Game (Address.empty)
 
     /// The address of the game.
     member this.GameAddress = gameAddress
@@ -1162,12 +1162,12 @@ and Game (gameAddress) =
     static member Handle = handle
 
     /// Derive a screen from the game.
-    static member (/) (game : Game, screenName) = let _ = game in Screen (ntoa screenName)
+    static member (/) (game : Game, screenName) = let _ = game in Screen (rtoa [|Constants.Engine.GameName; screenName|])
 
     /// Concatenate an address with a game's address, forcing the type of first address.
-    static member (-->) (address : 'a Address, _ : Game) =
-        // NOTE: nothing to do since game address is always [||].
-        address
+    static member (-->) (address : 'a Address, game : Game) =
+        // HACK: anonymizes address when entity is null due to internal engine trickery.
+        if isNull (game :> obj) then Address.anonymize address else acatff address game.GameAddress
 
     override this.ToString () =
         scstring this.GameAddress
@@ -1198,14 +1198,26 @@ and Game (gameAddress) =
 /// currently interactive groups of entities.
 and Screen (screenAddress) =
 
+#if DEBUG
     // check that address is of correct length for a screen
-    do if Address.length screenAddress <> 1 then failwith "Screen address must be length of 1."
+    do if screenAddress.Length <> 2 || screenAddress.Names.[0] <> Constants.Engine.GameName then
+        failwith "Screen address must be length of 2 with Game name = 'Game'."
+#endif
 
     // cache the simulant address to avoid allocation
     let simulantAddress = atoa<Screen, Simulant> screenAddress
 
+    /// Create a group reference from an address string.
+    new (screenAddressStr : string) = Screen (stoa screenAddressStr)
+
+    /// Create a screen reference from a list of names.
+    new (screenNames : string array) = Screen (rtoa screenNames)
+
+    /// Create a screen reference from a list of names.
+    new (screenNames : string list) = Screen (ltoa screenNames)
+
     /// Create a screen reference from a name string.
-    new (screenName : string) = Screen (ntoa screenName)
+    new (gameName : string, screenName : string) = Screen (rtoa [|gameName; screenName|])
 
     /// The address of the screen.
     member this.ScreenAddress = screenAddress
@@ -1225,7 +1237,7 @@ and Screen (screenAddress) =
 
     /// Concatenate an address with a screen's address, forcing the type of first address.
     static member (-->) (address : 'a Address, screen : Screen) =
-        // HACK: anonymizes address when entity is null due to internal engine trickery.
+        // HACK: anonymizes address when screen is null due to internal engine trickery.
         if isNull (screen :> obj) then Address.anonymize address else acatff address screen.ScreenAddress
 
     override this.ToString () =
@@ -1256,8 +1268,11 @@ and Screen (screenAddress) =
 /// Forms a logical group of entities.
 and Group (groupAddress) =
 
+#if DEBUG
     // check that address is of correct length for a group
-    do if Address.length groupAddress <> 2 then failwith "Group address must be length of 2."
+    do if groupAddress.Length <> 3 || groupAddress.Names.[0] <> Constants.Engine.GameName then
+        failwith "Group address must be length of 3 with Game name = 'Game'."
+#endif
 
     // cache the simulant address to avoid allocation
     let simulantAddress = atoa<Group, Simulant> groupAddress
@@ -1272,13 +1287,13 @@ and Group (groupAddress) =
     new (groupNames : string list) = Group (ltoa groupNames)
 
     /// Create a group reference from a the required names.
-    new (screenName : string, groupName : string) = Group [screenName; groupName]
+    new (gameName : string, screenName : string, groupName : string) = Group [gameName; screenName; groupName]
 
     /// The address of the group.
     member this.GroupAddress = groupAddress
 
     /// The containing screen of the group.
-    member this.Screen = let names = this.GroupAddress.Names in Screen names.[0]
+    member this.Screen = let names = this.GroupAddress.Names in Screen (names.[0], names[1])
 
     /// Get the names of a group.
     member inline this.Names = Address.getNames this.GroupAddress
@@ -1295,7 +1310,7 @@ and Group (groupAddress) =
 
     /// Concatenate an address with a group's address, forcing the type of first address.
     static member (-->) (address : 'a Address, group : Group) =
-        // HACK: anonymizes address when entity is null due to internal engine trickery.
+        // HACK: anonymizes address when group is null due to internal engine trickery.
         if isNull (group :> obj) then Address.anonymize address else acatff address group.GroupAddress
 
     override this.ToString () =
@@ -1327,8 +1342,11 @@ and Group (groupAddress) =
 /// like buttons, characters, blocks, and things of that sort.
 and Entity (entityAddress) =
 
+#if DEBUG
     // check that address is of correct length for an entity
-    do if Address.length entityAddress < 3 then failwith "Entity address must be length >= 3."
+    do if entityAddress.Length < 4 || entityAddress.Names.[0] <> Constants.Engine.GameName then
+        failwith "Entity address must be length >= 4 with Game name = 'Game'."
+#endif
 
     /// The entity's cached state.
     let mutable entityStateOpt = Unchecked.defaultof<EntityState>
@@ -1346,30 +1364,30 @@ and Entity (entityAddress) =
     new (surnames : string list) = Entity (ltoa surnames)
 
     /// Create an entity reference from a the required names.
-    new (screenName : string, groupName : string, entityName : string) = Entity [screenName; groupName; entityName]
+    new (gameName : string, screenName : string, groupName : string, entityName : string) = Entity [gameName; screenName; groupName; entityName]
 
     /// The address of the entity.
     member this.EntityAddress = entityAddress
 
     /// The containing screen of the entity.
-    member this.Screen = let names = this.EntityAddress.Names in Screen names.[0]
+    member this.Screen = let names = this.EntityAddress.Names in Screen (names.[0], names.[1])
 
     /// The containing group of the entity.
-    member this.Group = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
+    member this.Group = let names = this.EntityAddress.Names in Group (names.[0], names.[1], names.[2])
 
     /// The containing parent of the entity.
     member this.Parent =
         let names = this.EntityAddress.Names
         let namesLength = Array.length names
-        if namesLength < 4
-        then Group (Array.take 2 names) :> Simulant
+        if namesLength < 5
+        then Group (Array.take 3 names) :> Simulant
         else Entity (Array.take (dec namesLength) names) :> Simulant
 
     /// Get the names of an entity.
     member this.Names = Address.getNames this.EntityAddress
 
     /// Get the surnames of an entity (the names of an entity not including group or screen).
-    member this.Surnames = Address.getNames this.EntityAddress |> Array.skip 2
+    member this.Surnames = Address.getNames this.EntityAddress |> Array.skip 3
 
     /// Get the last name of an entity.
     member this.Name = Address.getNames this.EntityAddress |> Array.last
