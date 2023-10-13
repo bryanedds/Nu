@@ -321,9 +321,8 @@ module Content =
         else world
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) world =
+    let synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
         if contentOld =/= content then
-            let game = Game.Handle
             let world = synchronizeEventSignals contentOld content origin game world
             let world = synchronizeEventHandlers contentOld content origin game world
             let world = synchronizeProperties initializing contentOld content game world
@@ -505,7 +504,8 @@ module Content =
         screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) initializers groups
 
     /// Describe a game with the given initializers as well as its contained simulants.
-    let game initializers screens =
+    let game gameName initializers screens =
+        ignore<string> gameName
         let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null

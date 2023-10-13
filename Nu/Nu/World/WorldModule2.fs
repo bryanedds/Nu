@@ -263,7 +263,7 @@ module WorldModule2 =
                 | Dead -> world
             | Dead -> world
 
-        static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
+        static member private updateScreenIdling transitionTime (selectedScreen : Screen) game world =
             match World.getLiveness world with
             | Live ->
                 match selectedScreen.GetSlideOpt world with
@@ -272,7 +272,7 @@ module WorldModule2 =
                     then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     else world
                 | None ->
-                    match Nu.Game.Handle.GetDesiredScreen world with
+                    match World.getGameDesiredScreen game world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
                             if world.Unaccompanied || world.Advancing
@@ -283,7 +283,7 @@ module WorldModule2 =
                     | DesireIgnore -> world
             | Dead -> world
 
-        static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
+        static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) game (world : World) =
             let world =
                 if (match transitionTime with
                     | UpdateTime time -> time + 1L = world.UpdateTime
@@ -300,7 +300,7 @@ module WorldModule2 =
                                     match World.getScreenTransitionDestinationOpt world with
                                     | Some destination -> Some destination
                                     | None ->
-                                        match Nu.Game.Handle.GetDesiredScreen world with
+                                        match World.getGameDesiredScreen game world with
                                         | Desire destination -> Some destination
                                         | DesireNone -> None
                                         | DesireIgnore -> None
@@ -337,7 +337,7 @@ module WorldModule2 =
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination -> Some destination
                                 | None ->
-                                    match Nu.Game.Handle.GetDesiredScreen world with
+                                    match World.getGameDesiredScreen game world with
                                     | Desire destination -> Some destination
                                     | DesireNone -> None
                                     | DesireIgnore -> None
@@ -348,7 +348,7 @@ module WorldModule2 =
                             else world
                         | None ->
                             let world = World.selectScreenOpt None world
-                            match Nu.Game.Handle.GetDesiredScreen world with // handle the possibility that screen deselect event changed destination
+                            match World.getGameDesiredScreen game world with // handle the possibility that screen deselect event changed destination
                             | Desire destination -> World.selectScreen (IncomingState world.GameTime) destination world
                             | DesireNone -> world
                             | DesireIgnore -> world
@@ -356,17 +356,17 @@ module WorldModule2 =
                 else world
             | Dead -> world
 
-        static member private updateScreenTransition world =
+        static member private updateScreenTransition game world =
             // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
             // full opacity if fading and an extra frame for the render messages to actually get processed.
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 match selectedScreen.GetTransitionState world with
                 | IncomingState transitionTime -> World.updateScreenIncoming transitionTime selectedScreen world
-                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen world
-                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
+                | IdlingState transitionTime -> World.updateScreenIdling transitionTime selectedScreen game world
+                | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen game world
             | None ->
-                match World.getDesiredScreen world with
+                match World.getGameDesiredScreen game world with
                 | Desire desiredScreen -> World.transitionScreen desiredScreen world
                 | DesireNone -> world
                 | DesireIgnore -> world
@@ -907,6 +907,7 @@ module WorldModule2 =
 
             // gather simulants
             PreUpdateGatherTimer.Start ()
+            let game = Nu.Game.Handle
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -919,7 +920,7 @@ module WorldModule2 =
 
             // pre-update game
             PreUpdateGameTimer.Start ()
-            let world = World.preUpdateGame world
+            let world = World.preUpdateGame game world
             PreUpdateGameTimer.Stop ()
 
             // pre-update screens
@@ -952,6 +953,7 @@ module WorldModule2 =
 
             // gather simulants
             UpdateGatherTimer.Start ()
+            let game = Nu.Game.Handle
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -962,7 +964,7 @@ module WorldModule2 =
 
             // update game
             UpdateGameTimer.Start ()
-            let world = World.updateGame world
+            let world = World.updateGame game world
             UpdateGameTimer.Stop ()
             
             // update screens
@@ -993,6 +995,7 @@ module WorldModule2 =
 
             // gather simulants
             PostUpdateGatherTimer.Start ()
+            let game = Nu.Game.Handle
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -1005,7 +1008,7 @@ module WorldModule2 =
 
             // post-update game
             PostUpdateGameTimer.Start ()
-            let world = World.postUpdateGame world
+            let world = World.postUpdateGame game world
             PostUpdateGameTimer.Stop ()
 
             // post-update screens
@@ -1081,6 +1084,7 @@ module WorldModule2 =
 
             // gather simulants
             RenderGatherTimer.Start ()
+            let game = Nu.Game.Handle
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -1090,7 +1094,7 @@ module WorldModule2 =
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
-            let world = World.renderGame world
+            let world = World.renderGame game world
             let world = List.fold (fun world screen -> World.renderScreen screen world) world screens
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> world
             let world = Seq.fold (fun world (group : Group) -> if group.GetVisible world then World.renderGroup group world else world) world groups
@@ -1171,7 +1175,8 @@ module WorldModule2 =
 
         /// Clean-up the resources held by the world.
         static member cleanUp world =
-            let world = World.unregisterGame world
+            let game = Nu.Game.Handle
+            let world = World.unregisterGame game world
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
@@ -1190,7 +1195,7 @@ module WorldModule2 =
                 | Live ->
 
                     // update screen transitioning process
-                    let world = World.updateScreenTransition world
+                    let world = World.updateScreenTransition Nu.Game.Handle world
                     match World.getLiveness world with
                     | Live ->
 
@@ -1931,13 +1936,13 @@ module GameDispatcherModule =
         inherit GameDispatcher ()
 
         static let synchronize initializing game world (this : GameDispatcher<'model, 'message, 'command>) =
-            let contentOld = World.getGameContent world
+            let contentOld = World.getGameContent game world
             let model = this.GetModel game world
             let initializers = this.Initialize (model, game)
             let screens = this.Content (model, game)
-            let content = Content.game initializers screens
-            let (initialScreenOpt, world) = Content.synchronizeGame World.setScreenSlide initializing contentOld content game world
-            (initialScreenOpt, World.setGameContent content world)
+            let content = Content.game game.Name initializers screens
+            let (initialScreenOpt, world) = Content.synchronizeGame World.setScreenSlide initializing contentOld content game game world
+            (initialScreenOpt, World.setGameContent content game world)
 
         new (initial : 'model) =
             GameDispatcher<'model, 'message, 'command> (fun _ -> initial)
@@ -1954,8 +1959,8 @@ module GameDispatcherModule =
         member this.Model (game : Game) =
             lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
 
-        override this.Register (_, world) =
-            let property = World.getGameModelProperty world
+        override this.Register (game, world) =
+            let property = World.getGameModelProperty game world
             let model =
                 match property.DesignerValue with
                 | _ when property.DesignerType = typeof<unit> -> makeInitial world
@@ -1966,7 +1971,7 @@ module GameDispatcherModule =
                     with _ ->
                         Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setGameModel<'model> true model world |> snd'
+            World.setGameModel<'model> true model game world |> snd'
 
         override this.Render (game, world) =
             let view = this.View (this.GetModel game world, game, world)
@@ -2176,12 +2181,12 @@ module WorldModule2' =
                     then World.setScreenState { screenState with Dispatcher = screenDispatcher } screen world
                     else world
                 | _ -> world
-            | :? Game ->
-                let gameState = World.getGameState world
+            | :? Game as game ->
+                let gameState = World.getGameState game world
                 match latebindings with
                 | :? GameDispatcher as gameDispatcher ->
                     if getTypeName gameState.Dispatcher = getTypeName gameDispatcher
-                    then World.setGameState { gameState with Dispatcher = gameDispatcher } world
+                    then World.setGameState { gameState with Dispatcher = gameDispatcher } game world
                     else world
                 | _ -> world
             | _ -> failwithumf ()

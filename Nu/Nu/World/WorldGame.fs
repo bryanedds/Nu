@@ -12,42 +12,21 @@ module WorldGameModule =
 
     type Game with
 
-        member this.GetDispatcher world = World.getGameDispatcher world
+        member this.GetDispatcher world = World.getGameDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
-        member this.GetModelGeneric<'a> world = World.getGameModel<'a> world
-        member this.SetModelGeneric<'a> value world = World.setGameModel<'a> false value world |> snd'
+        member this.GetModelGeneric<'a> world = World.getGameModel<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setGameModel<'a> false value this world |> snd'
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a> // TODO: make this string a constant.
-        member this.GetOmniScreenOpt world = World.getOmniScreenOpt world
-        member this.SetOmniScreenOpt value world = World.setOmniScreenOptPlus value world |> snd'
-        member this.OmniScreenOpt = lens (nameof this.OmniScreenOpt) this this.GetOmniScreenOpt this.SetOmniScreenOpt
-        member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
-        member this.SelectedScreenOpt = lensReadOnly (nameof this.SelectedScreenOpt) this this.GetSelectedScreenOpt
-        member this.GetDesiredScreen world = World.getDesiredScreen world
-        member this.SetDesiredScreen value world = World.setDesiredScreenPlus value world |> snd'
+        member this.GetDesiredScreen world = World.getGameDesiredScreen this world
+        member this.SetDesiredScreen value world = World.setGameDesiredScreenPlus value this world |> snd'
         member this.DesiredScreen = lens (nameof this.DesiredScreen) this this.GetDesiredScreen this.SetDesiredScreen
-        member this.GetEyeCenter2d world = World.getEyeCenter2d world
-        member this.SetEyeCenter2d value world = World.setEyeCenter2dPlus value world |> snd'
-        member this.EyeCenter2d = lens (nameof this.EyeCenter2d) this this.GetEyeCenter2d this.SetEyeCenter2d
-        member this.GetEyeSize2d world = World.getEyeSize2d world
-        member this.SetEyeSize2d value world = World.setEyeSize2dPlus value world |> snd'
-        member this.EyeSize2d = lens (nameof this.EyeSize2d) this this.GetEyeSize2d this.SetEyeSize2d
-        member this.GetEyeCenter3d world = World.getEyeCenter3d world
-        member this.SetEyeCenter3d value world = World.setEyeCenter3dPlus value world |> snd'
-        member this.EyeCenter3d = lens (nameof this.EyeCenter3d) this this.GetEyeCenter3d this.SetEyeCenter3d
-        member this.GetEyeRotation3d world = World.getEyeRotation3d world
-        member this.SetEyeRotation3d value world = World.setEyeRotation3dPlus value world |> snd'
-        member this.EyeRotation3d = lens (nameof this.EyeRotation3d) this this.GetEyeRotation3d this.SetEyeRotation3d
-        member this.GetEyeFrustum3dEnclosed world = World.getEyeFrustum3dEnclosed world
-        member this.EyeFrustum3dEnclosed = lensReadOnly (nameof this.EyeFrustum3dEnclosed) this this.GetEyeFrustum3dEnclosed
-        member this.GetEyeFrustum3dExposed world = World.getEyeFrustum3dExposed world
-        member this.EyeFrustum3dExposed = lensReadOnly (nameof this.EyeFrustum3dExposed) this this.GetEyeFrustum3dExposed
-        member this.GetEyeFrustum3dImposter world = World.getEyeFrustum3dImposter world
-        member this.EyeFrustum3dImposter = lensReadOnly (nameof this.EyeFrustum3dImposter) this this.GetEyeFrustum3dImposter
-        member this.GetScriptFrame world = World.getGameScriptFrame world
+        member this.GetScriptFrame world = World.getGameScriptFrame this world
+        member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world // TODO: remove this.
+        member this.SelectedScreenOpt = lensReadOnly (nameof this.SelectedScreenOpt) this this.GetSelectedScreenOpt // TODO: remove this.
         member this.ScriptFrame = lensReadOnly (nameof this.ScriptFrame) this this.GetScriptFrame
-        member this.GetOrder world = World.getGameOrder world
+        member this.GetOrder world = World.getGameOrder this world
         member this.Order = lensReadOnly (nameof this.Order) this this.GetOrder
-        member this.GetId world = World.getGameId world
+        member this.GetId world = World.getGameId this world
         member this.Id = lensReadOnly (nameof this.Id) this this.GetId
 
         member this.RegisterEvent = Events.RegisterEvent --> Game.Handle
@@ -91,38 +70,38 @@ module WorldGameModule =
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
             let mutable property = Unchecked.defaultof<_>
-            let found = World.tryGetGameProperty (propertyName, world, &property)
+            let found = World.tryGetGameProperty (propertyName, this, world, &property)
             if found then Some property else None
 
         /// Get a property value and type.
         member this.GetProperty propertyName world =
-            World.getGameProperty propertyName world
+            World.getGameProperty propertyName this world
 
         /// Get an xtension property value.
         member this.TryGet<'a> propertyName world : 'a =
-            World.tryGetGameXtensionValue<'a> propertyName world
+            World.tryGetGameXtensionValue<'a> propertyName this world
 
         /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
-            World.getGameXtensionValue<'a> propertyName world
+            World.getGameXtensionValue<'a> propertyName this world
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world =
-            World.trySetGameProperty propertyName property world
+            World.trySetGameProperty propertyName property this world
 
         /// Set a property value with explicit type.
         member this.SetProperty propertyName property world =
-            World.setGameProperty propertyName property world |> snd'
+            World.setGameProperty propertyName property this world |> snd'
 
         /// To try set an xtension property value.
         member this.TrySet<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.trySetGameXtensionProperty propertyName property world
+            World.trySetGameXtensionProperty propertyName property this world
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setGameXtensionProperty propertyName property world
+            World.setGameXtensionProperty propertyName property this world
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
@@ -139,8 +118,7 @@ module WorldGameModule =
 
     type World with
 
-        static member internal registerGame world =
-            let game = Game.Handle
+        static member internal registerGame (game : Game) world =
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Register (game, world)
             let eventTrace = EventTrace.debug "World" "registerGame" "Register" EventTrace.empty
@@ -148,8 +126,7 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
             World.publishPlus (RegisterData game) (game.LifeCycleEvent (nameof Game)) eventTrace game true false world
 
-        static member internal unregisterGame world =
-            let game = Game.Handle
+        static member internal unregisterGame (game : Game) world =
             let dispatcher = game.GetDispatcher world
             let eventTrace = EventTrace.debug "World" "registerGame" "LifeCycle" EventTrace.empty
             let world = World.publishPlus () game.UnregisteringEvent eventTrace game true false world
@@ -157,10 +134,9 @@ module WorldGameModule =
             let world = World.publishPlus (UnregisteringData game) (game.LifeCycleEvent (nameof Game)) eventTrace game true false world
             dispatcher.Unregister (game, world)
 
-        static member internal preUpdateGame world =
+        static member internal preUpdateGame (game : Game) world =
                 
             // pre-update via dispatcher
-            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.PreUpdate (game, world)
 
@@ -168,10 +144,9 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "preUpdateGame" "" EventTrace.empty
             World.publishPlus () game.PreUpdateEvent eventTrace game false false world
 
-        static member internal updateGame world =
+        static member internal updateGame (game : Game) world =
 
             // update via dispatcher
-            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Update (game, world)
 
@@ -179,10 +154,9 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "updateGame" "" EventTrace.empty
             World.publishPlus () game.UpdateEvent eventTrace game false false world
 
-        static member internal postUpdateGame world =
+        static member internal postUpdateGame (game : Game) world =
                 
             // post-update via dispatcher
-            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.PostUpdate (game, world)
 
@@ -190,10 +164,9 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "postUpdateGame" "" EventTrace.empty
             World.publishPlus () game.PostUpdateEvent eventTrace game false false world
 
-        static member internal renderGame world =
+        static member internal renderGame (game : Game) world =
 
             // render via dispatcher
-            let game = Game.Handle
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Render (game, world)
 
@@ -222,8 +195,8 @@ module WorldGameModule =
             Seq.concat
 
         /// Write a game to a game descriptor.
-        static member writeGame gameDescriptor world =
-            let gameState = World.getGameState world
+        static member writeGame gameDescriptor game world =
+            let gameState = World.getGameState game world
             let gameDispatcherName = getTypeName gameState.Dispatcher
             let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
             let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
@@ -233,10 +206,10 @@ module WorldGameModule =
 
         /// Write a game to a file.
         [<FunctionBinding>]
-        static member writeGameToFile (filePath : string) world =
+        static member writeGameToFile (filePath : string) game world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let gameDescriptor = World.writeGame GameDescriptor.empty world
+            let gameDescriptor = World.writeGame GameDescriptor.empty game world
             let gameDescriptorStr = scstring gameDescriptor
             let gameDescriptorPretty = PrettyPrinter.prettyPrint gameDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, gameDescriptorPretty)
@@ -244,7 +217,7 @@ module WorldGameModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a game from a game descriptor.
-        static member readGame gameDescriptor world =
+        static member readGame gameDescriptor name world =
 
             // make the dispatcher
             let dispatcherName = gameDescriptor.GameDispatcherName
@@ -260,10 +233,12 @@ module WorldGameModule =
             let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
 
             // set the game's state in the world
-            let world = World.setGameState gameState world
+            let game = Game name
+            let world = World.setGameState gameState game world
 
             // read the game's screens
-            World.readScreens gameDescriptor.ScreenDescriptors world |> snd
+            let world = World.readScreens gameDescriptor.ScreenDescriptors world |> snd
+            (game, world)
 
         /// Read a game from a file.
         [<FunctionBinding>]

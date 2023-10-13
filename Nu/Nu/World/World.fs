@@ -57,7 +57,7 @@ module Nu =
             WorldTypes.EmptyEntityContent <- EntityContent.empty
 
             // init debug view F# reach-arounds
-            WorldTypes.viewGame <- fun world -> World.viewGameProperties (world :?> World)
+            WorldTypes.viewGame <- fun game world -> World.viewGameProperties (game :?> Game) (world :?> World)
             WorldTypes.viewScreen <- fun screen world -> World.viewScreenProperties (screen :?> Screen) (world :?> World)
             WorldTypes.viewGroup <- fun group world -> World.viewGroupProperties (group :?> Group) (world :?> World)
             WorldTypes.viewEntity <- fun entity world -> World.viewEntityProperties (entity :?> Entity) (world :?> World)
@@ -589,7 +589,7 @@ module WorldModule3 =
             let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
-            World.registerGame world
+            World.registerGame Game.Handle world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
@@ -701,7 +701,7 @@ module WorldModule3 =
                     | Right (_, world) ->
 
                         // register the game
-                        let world = World.registerGame world
+                        let world = World.registerGame Game.Handle world
 
 #if DEBUG
                         // attempt to hookup the console if debugging
@@ -710,7 +710,7 @@ module WorldModule3 =
 
                         // fin
                         Right world
-                    
+
                     // forward error messages
                     | Left (error, _) -> Left error
                 | Left error -> Left error

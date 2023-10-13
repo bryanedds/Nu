@@ -430,7 +430,7 @@ module WorldEntityModule =
 
         /// Check that an entity is selected.
         member this.Selected world =
-            let gameState = World.getGameState world
+            let gameState = World.getGameState Game.Handle world
             match gameState.OmniScreenOpt with
             | Some omniScreen when this.Screen.Name = omniScreen.Name -> true
             | _ ->
