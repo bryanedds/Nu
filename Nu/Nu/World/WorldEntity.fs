@@ -320,6 +320,11 @@ module WorldEntityModule =
         member this.PostUpdateEvent = Events.PostUpdateEvent --> this
 #endif
         member this.RenderEvent = Events.RenderEvent --> this
+        member this.MountEvent = Events.MountEvent --> this
+        member this.UnmountEvent = Events.UnmountEvent --> this
+        member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this // TODO: make sure we have all the applicable entity physics events.
+        member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
+        member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
         /// The state of an entity.
         /// The only place this accessor should be used is in performance-sensitive code.
@@ -427,10 +432,10 @@ module WorldEntityModule =
         member this.Selected world =
             let gameState = World.getGameState world
             match gameState.OmniScreenOpt with
-            | Some omniScreen when Address.head this.EntityAddress = Address.head omniScreen.ScreenAddress -> true
+            | Some omniScreen when this.Screen.Name = omniScreen.Name -> true
             | _ ->
                 match gameState.SelectedScreenOpt with
-                | Some screen when Address.head this.EntityAddress = Address.head screen.ScreenAddress -> true
+                | Some screen when this.Screen.Name = screen.Name -> true
                 | _ -> false
 
         /// Check that an entity exists in the world.
@@ -578,7 +583,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishPreUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "preUpdateEntity" "" EventTrace.empty
-                World.publishPlus () entity.PreUpdateEvent eventTrace Game.Handle false false world
+                World.publishPlus () entity.PreUpdateEvent eventTrace entity false false world
             else world
 #endif
 
@@ -593,7 +598,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishPostUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
-                World.publishPlus () entity.PostUpdateEvent eventTrace Game.Handle false false world
+                World.publishPlus () entity.PostUpdateEvent eventTrace entity false false world
             else world
 #endif
 
@@ -607,7 +612,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishRenders entity world then
                 let eventTrace = EventTrace.debug "World" "renderEntity" "" EventTrace.empty
-                World.publishPlus () entity.RenderEvent eventTrace Game.Handle false false world
+                World.publishPlus () entity.RenderEvent eventTrace entity false false world
             else world
 
         static member internal updateEntity (entity : Entity) world =
@@ -620,7 +625,7 @@ module WorldEntityModule =
                 else world
             if World.getEntityPublishUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
-                World.publishPlus () entity.UpdateEvent eventTrace Game.Handle false false world
+                World.publishPlus () entity.UpdateEvent eventTrace entity false false world
             else world
 
         /// Edit an entity with the given operation using the ImGui APIs.

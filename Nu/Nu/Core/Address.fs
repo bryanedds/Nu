@@ -84,11 +84,15 @@ module Address =
             end
 
     /// Specifies the address of an identifiable value.
-    /// TODO: P1: have Address constructor throw if multiple wildcards are used (at least in Debug build mode).
+    /// TODO: P1: have Address constructor throw if multiple wildcards or ellipses are used (at least in Debug build mode).
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         { Names : string array
           HashCode : int // OPTIMIZATION: hash is cached for speed
           Anonymous : bool } // HACK: allows for Nu to internally indicate the anonymity of an address.
+
+        /// Get the length of an address by its names.
+        member this.Length =
+            Array.length this.Names
 
         /// Make an address from a '/' delimited string.
         /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
@@ -319,8 +323,8 @@ module Address =
             Array.IndexOf (address.Names, name)
 
         /// Get the length of an address by its names.
-        let length address =
-            Array.length address.Names
+        let length (address : 'a Address) =
+            address.Length
 
         /// Check that an address is devoid of names.
         let isEmpty address =

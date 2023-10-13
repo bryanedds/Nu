@@ -21,6 +21,7 @@ module Engine =
     let [<Uniform>] EntitySortPriority = GroupSortPriority - 1.0f
     let [<Literal>] NamePropertyName = "Name"
     let [<Literal>] SurnamesPropertyName = "Surnames"
+    let [<Literal>] GameName = "Game"
     let [<Literal>] DispatcherPropertyName = "Dispatcher"
     let [<Literal>] PropertiesPropertyName = "Properties"
     let [<Literal>] RequiredDispatcherPropertyName = "RequiredDispatcher"

@@ -102,10 +102,10 @@ module WorldScreenModule =
         member this.Selected world =
             let gameState = World.getGameState world
             match gameState.OmniScreenOpt with
-            | Some omniScreen when Address.head this.ScreenAddress = Address.head omniScreen.ScreenAddress -> true
+            | Some omniScreen when this.Name = omniScreen.Name -> true
             | _ ->
                 match gameState.SelectedScreenOpt with
-                | Some screen when Address.head this.ScreenAddress = Address.head screen.ScreenAddress -> true
+                | Some screen when this.Name = screen.Name -> true
                 | _ -> false
 
         /// Check that a screen exists in the world.
@@ -118,7 +118,7 @@ module WorldScreenModule =
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Get a screen's change event address.
-        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName --> this.ScreenAddress
+        member this.GetChangeEvent propertyName = this.ChangeEvent propertyName
 
         /// Send a signal to a screen.
         member this.Signal signal world = (this.GetDispatcher world).Signal (signal, this, world)
@@ -138,7 +138,7 @@ module WorldScreenModule =
 
             // publish pre-update event
             let eventTrace = EventTrace.debug "World" "preUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PreUpdateEvent --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () screen.PreUpdateEvent eventTrace screen false false world
 
         static member internal updateScreen (screen : Screen) world =
 
@@ -153,7 +153,7 @@ module WorldScreenModule =
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.UpdateEvent --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () screen.UpdateEvent eventTrace screen false false world
 
         static member internal postUpdateScreen (screen : Screen) world =
 
@@ -168,7 +168,7 @@ module WorldScreenModule =
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
-            World.publishPlus () (Events.PostUpdateEvent --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () screen.PostUpdateEvent eventTrace screen false false world
 
         static member internal renderScreen (screen : Screen) world =
 
@@ -183,7 +183,7 @@ module WorldScreenModule =
 
             // publish render event
             let eventTrace = EventTrace.debug "World" "renderScreen" "" EventTrace.empty
-            World.publishPlus () (Events.RenderEvent --> screen) eventTrace Game.Handle false false world
+            World.publishPlus () screen.RenderEvent eventTrace screen false false world
 
         /// Edit a screen with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
@@ -240,7 +240,7 @@ module WorldScreenModule =
             let ecs = world.WorldExtension.Plugin.MakeEcs ()
             let screenState = ScreenState.make world.GameTime nameOpt dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
-            let screen = ntos screenState.Name
+            let screen = Game.Handle / screenState.Name
             let world =
                 if World.getScreenExists screen world then
                     if screen.GetDestroying world

@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Reflection
 open Prime
 open Nu
@@ -11,17 +10,13 @@ open Nu
 [<AutoOpen>]
 module WorldModuleOperators =
 
-    /// Derive a screen from a name.
-    let ntos (screenName : string) =
-        Screen screenName
-
     /// Attempt to resolve a relationship from a simulant.
     let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't option =
         let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
-        if simulant2.Names.Length >= 3 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
-        elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
-        elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names.[0]) :> Simulant :?> 't)
-        elif simulant2.Names.Length = 0 && typeof<'t> = typeof<Game> then Some (Game.Handle :> Simulant :?> 't)
+        if simulant2.Names.Length >= 4 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 3 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names) :> Simulant :?> 't)
+        elif simulant2.Names.Length = 1 && typeof<'t> = typeof<Game> then Some (Game.Handle :> Simulant :?> 't)
         else None
 
     /// Relate the second simulant to the first.
@@ -672,17 +667,17 @@ module WorldModule =
                         if not selectedOnly || getSelected subscriber world then
                             let result =
                                 let namesLength = subscriber.SimulantAddress.Names.Length
-                                if namesLength >= 3
-                                then EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                if namesLength >= 4 then
+                                    EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                 else
                                     match namesLength with
-                                    | 0 ->
+                                    | 1 ->
                                         match subscriber with
                                         | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                         | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                         | _ -> failwithumf ()
-                                    | 1 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | 2 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | 2 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
+                                    | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                     | _ -> failwithumf ()
                             handling <- fst result
                             world <- snd result

@@ -74,9 +74,8 @@ module Nu =
                 let eventNames = Address.getNames eventAddress
                 let eventNamesLength = Array.length eventNames
                 let world =
-                    if eventNamesLength >= 5 then
+                    if eventNamesLength >= 6 then
                         let eventFirstName = eventNames.[0]
-                        let entity = Entity (Array.skip 2 eventNames)
                         match eventFirstName with
 #if !DISABLE_ENTITY_PRE_UPDATE
                         | "PreUpdate" ->
@@ -87,6 +86,7 @@ module Nu =
                                     ("Subscribing to entity pre-update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity pre-update events are not published.")
     #endif
+                            let entity = Entity (Array.skip 2 eventNames)
                             World.updateEntityPublishPreUpdateFlag entity world |> snd'
 #endif
                         | "Update" ->
@@ -97,6 +97,7 @@ module Nu =
                                     ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity update events are not published.")
 #endif
+                            let entity = Entity (Array.skip 2 eventNames)
                             World.updateEntityPublishUpdateFlag entity world |> snd'
 #if !DISABLE_ENTITY_POST_UPDATE
                         | "PostUpdate" ->
@@ -107,14 +108,16 @@ module Nu =
                                     ("Subscribing to entity post-update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity post-update events are not published.")
     #endif
+                            let entity = Entity (Array.skip 2 eventNames)
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
                         | "BodyCollision" | "BodySeparationExplicit" ->
+                            let entity = Entity (Array.skip 2 eventNames)
                             World.updateBodyObservable subscribing entity world
                         | _ -> world
                     else world
                 let world =
-                    if eventNamesLength >= 3 then
+                    if eventNamesLength >= 4 then
                         match eventNames.[0] with
                         | "Change" ->
                             let world =

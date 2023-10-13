@@ -14,24 +14,24 @@ module Simulants =
     let Game = Game.Handle
 
     // splash screen
-    let Splash = Screen "Splash"
+    let Splash = Game / "Splash"
 
     // intro screens
-    let Intro = Screen "Intro"
-    let Intro2 = Screen "Intro2"
-    let Intro3 = Screen "Intro3"
-    let Intro4 = Screen "Intro4"
-    let Intro5 = Screen "Intro5"
+    let Intro = Game / "Intro"
+    let Intro2 = Game / "Intro2"
+    let Intro3 = Game / "Intro3"
+    let Intro4 = Game / "Intro4"
+    let Intro5 = Game / "Intro5"
 
     // title screen
-    let Title = Screen "Title"
+    let Title = Game / "Title"
     let TitleGui = Title / "Gui"
     let TitleGuiPlay = TitleGui / "Play"
     let TitleGuiCredits = TitleGui / "Credits"
     let TitleGuiExit = TitleGui / "Exit"
 
     // pick screen
-    let Pick = Screen "Pick"
+    let Pick = Game / "Pick"
     let PickGui = Pick / "Gui"
     let PickGuiNewGame1 = PickGui / "NewGame1"
     let PickGuiNewGame2 = PickGui / "NewGame2"
@@ -42,14 +42,14 @@ module Simulants =
     let PickGuiBack = PickGui / "Back"
 
     // credits screen
-    let Credits = Screen "Credits"
+    let Credits = Game / "Credits"
     let CreditsGui = Credits / "Gui"
     let CreditsGuiBack = CreditsGui / "Back"
 
     // atals screen
-    let Atlas = Screen "Atlas"
+    let Atlas = Game / "Atlas"
     let AtlasScene = Atlas / "Scene"
 
     // field screen
-    let Field = Screen "Field"
+    let Field = Game / "Field"
     let FieldScene = Field / "Scene"
