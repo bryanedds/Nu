@@ -11,6 +11,7 @@ type MyGamePlugin () =
     // this exposes different editing modes in the editor
     override this.EditModes =
         Map.ofSeq
-            [("Title", fun world -> Simulants.Game.SetModel Title world)
-             ("Credits", fun world -> Simulants.Game.SetModel Credits world)
-             ("Gameplay", fun world -> Simulants.Game.SetModel (Gameplay Playing) world)]
+            [("Splash", fun world -> Game.SetModel Splash world)
+             ("Title", fun world -> Game.SetModel Title world)
+             ("Credits", fun world -> Game.SetModel Credits world)
+             ("Gameplay", fun world -> Game.SetModel (Gameplay Playing) world)]

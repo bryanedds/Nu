@@ -49,7 +49,7 @@ module WorldConsole =
                 showWindowByTitle gameTitle |> ignore
                 world
             | input ->
-                let context = Game.Handle
+                let context = Game
                 let frame = context.GetScriptFrame world
                 try let expr = scvalue<Scripting.Expr> input
                     let struct (result, world) = World.eval expr frame context world
@@ -73,8 +73,8 @@ module WorldConsole =
                         then run (getActiveWindowTitle ()) world
                         else world
                     (Cascade, world))
-                    Game.Handle.KeyboardKeyDownEvent
-                    Game.Handle
+                    Game.KeyboardKeyDownEvent
+                    Game
                     world
             Log.info "Console hooked up (press ` (backtick) in game to open console)."
             (true, world)

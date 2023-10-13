@@ -120,7 +120,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.selectScreen transitionState screen world
@@ -183,7 +183,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.tryTransitionScreen destination world
@@ -204,7 +204,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.transitionScreen destination world
@@ -227,7 +227,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let struct (screen, world) =
@@ -237,7 +237,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.setScreenSlide slideDescriptor destination screen world
@@ -326,7 +326,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world
@@ -355,7 +355,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createSlideScreen nameOpt slideDescriptor destination world
@@ -1522,7 +1522,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
-            let result = World.writeGameToFile filePath Game.Handle world
+            let result = World.writeGameToFile filePath Game world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
             struct (value, world)
@@ -1537,7 +1537,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
-            let result = World.readGameFromFile filePath Game.Handle.GameAddress world |> snd
+            let result = World.readGameFromFile filePath Game.GameAddress world |> snd
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readGameFromFile' due to: " + scstring exn, ValueNone)
@@ -1572,7 +1572,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.setScreenDissolve dissolveDescriptor songOpt screen world
@@ -1591,7 +1591,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.destroyScreenImmediate screen world
@@ -1610,7 +1610,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.destroyScreen screen world
@@ -1679,7 +1679,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.writeScreenToFile filePath screen world
@@ -1719,7 +1719,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getGroups screen world
@@ -1748,7 +1748,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createGroup4 dispatcherName nameOpt screen world
@@ -1769,7 +1769,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.destroyGroupImmediate group world
@@ -1788,7 +1788,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.destroyGroup group world
@@ -1810,7 +1810,7 @@ module WorldBindings =
                         | Scripting.Keyword str ->
                             let relation = Relation.makeFromString str
                             let address = Relation.resolve context.SimulantAddress relation
-                            struct (Group address :: simulants, world)
+                            struct (Nu.Group address :: simulants, world)
                         | Scripting.Violation (_, error, _) -> failwith error
                         | _ -> failwith "Relation must be either a String or Keyword.")
                         struct ([], world)
@@ -1836,7 +1836,7 @@ module WorldBindings =
                         | Scripting.Keyword str ->
                             let relation = Relation.makeFromString str
                             let address = Relation.resolve context.SimulantAddress relation
-                            struct (Group address :: simulants, world)
+                            struct (Nu.Group address :: simulants, world)
                         | Scripting.Violation (_, error, _) -> failwith error
                         | _ -> failwith "Relation must be either a String or Keyword.")
                         struct ([], world)
@@ -1859,7 +1859,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let struct (destination, world) =
@@ -1869,7 +1869,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.renameGroup source destination world
@@ -1892,7 +1892,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.writeGroupToFile filePath group world
@@ -1921,7 +1921,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.readGroupFromFile filePath nameOpt screen world
@@ -1942,7 +1942,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntitiesFlattened group world
@@ -1963,7 +1963,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntitiesSovereign group world
@@ -1984,7 +1984,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.destroyEntity entity world
@@ -2006,7 +2006,7 @@ module WorldBindings =
                         | Scripting.Keyword str ->
                             let relation = Relation.makeFromString str
                             let address = Relation.resolve context.SimulantAddress relation
-                            struct (Entity address :: simulants, world)
+                            struct (Nu.Entity address :: simulants, world)
                         | Scripting.Violation (_, error, _) -> failwith error
                         | _ -> failwith "Relation must be either a String or Keyword.")
                         struct ([], world)
@@ -2032,7 +2032,7 @@ module WorldBindings =
                         | Scripting.Keyword str ->
                             let relation = Relation.makeFromString str
                             let address = Relation.resolve context.SimulantAddress relation
-                            struct (Entity address :: simulants, world)
+                            struct (Nu.Entity address :: simulants, world)
                         | Scripting.Violation (_, error, _) -> failwith error
                         | _ -> failwith "Relation must be either a String or Keyword.")
                         struct ([], world)
@@ -2062,7 +2062,7 @@ module WorldBindings =
                         | Scripting.Keyword str ->
                             let relation = Relation.makeFromString str
                             let address = Relation.resolve context.SimulantAddress relation
-                            struct (Entity address :: simulants, world)
+                            struct (Nu.Entity address :: simulants, world)
                         | Scripting.Violation (_, error, _) -> failwith error
                         | _ -> failwith "Relation must be either a String or Keyword.")
                         struct ([], world)
@@ -2071,7 +2071,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Expecting a list of relations."
             let result = World.tryPickEntity2d position entities world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Entity>> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Nu.Entity>> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity2d' due to: " + scstring exn, ValueNone)
@@ -2094,7 +2094,7 @@ module WorldBindings =
                         | Scripting.Keyword str ->
                             let relation = Relation.makeFromString str
                             let address = Relation.resolve context.SimulantAddress relation
-                            struct (Entity address :: simulants, world)
+                            struct (Nu.Entity address :: simulants, world)
                         | Scripting.Violation (_, error, _) -> failwith error
                         | _ -> failwith "Relation must be either a String or Keyword.")
                         struct ([], world)
@@ -2103,7 +2103,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Expecting a list of relations."
             let result = World.tryPickEntity3d position entities world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Tuple<Single, Entity>>> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Tuple<Single, Nu.Entity>>> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity3d' due to: " + scstring exn, ValueNone)
@@ -2123,7 +2123,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.writeEntityToFile filePath enity world
@@ -2173,7 +2173,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntityChildren entity world
@@ -2188,8 +2188,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let effect =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<Entity, FSharpFunc<Entity, FSharpFunc<World, World>>>> effect world with
-                | Some value -> value :?> FSharpFunc<Entity, FSharpFunc<Entity, FSharpFunc<World, World>>>
+                match ScriptingSystem.tryExport typeof<FSharpFunc<Nu.Entity, FSharpFunc<Nu.Entity, FSharpFunc<World, World>>>> effect world with
+                | Some value -> value :?> FSharpFunc<Nu.Entity, FSharpFunc<Nu.Entity, FSharpFunc<World, World>>>
                 | None -> failwith "Invalid argument type for 'effect'; expecting a value convertable to FSharpFunc`2."
             let struct (entity, world) =
                 let context = World.getScriptContext world
@@ -2198,7 +2198,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.traverseEntityChildren effect entity world
@@ -2217,7 +2217,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntityMounters entity world
@@ -2232,8 +2232,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let effect =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<Entity, FSharpFunc<Entity, FSharpFunc<World, World>>>> effect world with
-                | Some value -> value :?> FSharpFunc<Entity, FSharpFunc<Entity, FSharpFunc<World, World>>>
+                match ScriptingSystem.tryExport typeof<FSharpFunc<Nu.Entity, FSharpFunc<Nu.Entity, FSharpFunc<World, World>>>> effect world with
+                | Some value -> value :?> FSharpFunc<Nu.Entity, FSharpFunc<Nu.Entity, FSharpFunc<World, World>>>
                 | None -> failwith "Invalid argument type for 'effect'; expecting a value convertable to FSharpFunc`2."
             let struct (entity, world) =
                 let context = World.getScriptContext world
@@ -2242,7 +2242,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.traverseEntityMounters effect entity world
@@ -2261,7 +2261,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.destroyEntityImmediate entity world
@@ -2292,7 +2292,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Group address, world)
+                    struct (Nu.Group address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createEntity5 dispatcherName overlayDescriptor surnames group world
@@ -2313,7 +2313,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let struct (destination, world) =
@@ -2323,7 +2323,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.renameEntity source destination world
@@ -2346,7 +2346,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.trySetEntityOverlayNameOptFromScript overlayNameOpt entity world
@@ -2369,7 +2369,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
+                    struct (Nu.Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.trySetEntityFacetNamesFromScript facetNames entity world
@@ -2534,7 +2534,7 @@ module WorldBindings =
         try
             let result = World.getOmniScreenOpt world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Screen>> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Nu.Screen>> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniScreenOpt' due to: " + scstring exn, ValueNone)
@@ -2544,8 +2544,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let value =
-                match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> value world with
-                | Some value -> value :?> FSharpOption<Screen>
+                match ScriptingSystem.tryExport typeof<FSharpOption<Nu.Screen>> value world with
+                | Some value -> value :?> FSharpOption<Nu.Screen>
                 | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to FSharpOption`1."
             let result = World.setOmniScreenOpt value world
             struct (Scripting.Unit, result)
@@ -2574,7 +2574,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.setOmniScreen value world
@@ -2601,7 +2601,7 @@ module WorldBindings =
         try
             let result = World.getSelectedScreenOpt world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Screen>> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Nu.Screen>> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreenOpt' due to: " + scstring exn, ValueNone)
@@ -2628,7 +2628,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
+                    struct (Nu.Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.setSelectedScreen value world
@@ -2666,7 +2666,7 @@ module WorldBindings =
         try
             let result = World.getScreenTransitionDestinationOpt world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Screen>> value world |> Option.get
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Nu.Screen>> value world |> Option.get
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getScreenTransitionDestinationOpt' due to: " + scstring exn, ValueNone)
@@ -2676,8 +2676,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let value =
-                match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> value world with
-                | Some value -> value :?> FSharpOption<Screen>
+                match ScriptingSystem.tryExport typeof<FSharpOption<Nu.Screen>> value world with
+                | Some value -> value :?> FSharpOption<Nu.Screen>
                 | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to FSharpOption`1."
             let result = World.setScreenTransitionDestinationOpt value world
             let value = result

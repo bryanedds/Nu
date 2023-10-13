@@ -10,10 +10,11 @@ open Prime
 open Nu
 
 /// Declaratively exposes simulant lenses and events.
+[<AutoOpen>]
 module Declarative =
 
-    /// Declaratively exposes Game lenses and events.
-    let Game = Unchecked.defaultof<Game>
+    /// Declaratively exposes Game lenses, events, and properties.
+    let Game = Game.Handle
 
     /// Declaratively exposes Screen lenses and events.
     let Screen = Unchecked.defaultof<Screen>

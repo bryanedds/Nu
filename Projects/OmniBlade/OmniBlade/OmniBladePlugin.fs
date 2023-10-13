@@ -12,12 +12,13 @@ type OmniBladePlugin () =
 
     override this.EditModes =
         Map.ofSeq
-            [("Title", fun world -> Simulants.Game.SetModel (Gui Title) world)
-             ("Credits", fun world -> Simulants.Game.SetModel (Gui Credits) world)
-             ("Pick", fun world -> Simulants.Game.SetModel (Gui Pick) world)
-             ("Field", fun world -> Simulants.Game.SetModel (Field (Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1)) world)
-             ("FieldDebug", fun world -> Simulants.Game.SetModel (Field (Field.debug world.UpdateTime (World.getViewBounds2dAbsolute world))) world)
-             ("BattleDebug", fun world -> Simulants.Game.SetModel (Field (Field.debugBattle world.UpdateTime (World.getViewBounds2dAbsolute world))) world)
-             ("Slot1", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1)) world)
-             ("Slot2", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot2)) world)
-             ("Slot3", fun world -> Simulants.Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot3)) world)]
+            [("Splash", fun world -> Game.SetModel (Gui Splash) world)
+             ("Title", fun world -> Game.SetModel (Gui Title) world)
+             ("Credits", fun world -> Game.SetModel (Gui Credits) world)
+             ("Pick", fun world -> Game.SetModel (Gui Pick) world)
+             ("Field", fun world -> Game.SetModel (Field (Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1)) world)
+             ("FieldDebug", fun world -> Game.SetModel (Field (Field.debug world.UpdateTime (World.getViewBounds2dAbsolute world))) world)
+             ("BattleDebug", fun world -> Game.SetModel (Field (Field.debugBattle world.UpdateTime (World.getViewBounds2dAbsolute world))) world)
+             ("Slot1", fun world -> Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1)) world)
+             ("Slot2", fun world -> Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot2)) world)
+             ("Slot3", fun world -> Game.SetModel (Field (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot3)) world)]

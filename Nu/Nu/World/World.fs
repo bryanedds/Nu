@@ -48,7 +48,7 @@ module Nu =
             WorldModuleEntity.init ()
 
             // init simulant types
-            Entity.init ()
+            Nu.Entity.init ()
 
             // init content variables
             WorldTypes.EmptyGameContent <- GameContent.empty
@@ -86,7 +86,7 @@ module Nu =
                                     ("Subscribing to entity pre-update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity pre-update events are not published.")
     #endif
-                            let entity = Entity (Array.skip 2 eventNames)
+                            let entity = Nu.Entity (Array.skip 2 eventNames)
                             World.updateEntityPublishPreUpdateFlag entity world |> snd'
 #endif
                         | "Update" ->
@@ -97,7 +97,7 @@ module Nu =
                                     ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity update events are not published.")
 #endif
-                            let entity = Entity (Array.skip 2 eventNames)
+                            let entity = Nu.Entity (Array.skip 2 eventNames)
                             World.updateEntityPublishUpdateFlag entity world |> snd'
 #if !DISABLE_ENTITY_POST_UPDATE
                         | "PostUpdate" ->
@@ -108,11 +108,11 @@ module Nu =
                                     ("Subscribing to entity post-update events with a wildcard or ellipsis is not supported. " +
                                      "This will cause a bug where some entity post-update events are not published.")
     #endif
-                            let entity = Entity (Array.skip 2 eventNames)
+                            let entity = Nu.Entity (Array.skip 2 eventNames)
                             World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
                         | "BodyCollision" | "BodySeparationExplicit" ->
-                            let entity = Entity (Array.skip 2 eventNames)
+                            let entity = Nu.Entity (Array.skip 2 eventNames)
                             World.updateBodyObservable subscribing entity world
                         | _ -> world
                     else world
@@ -123,7 +123,7 @@ module Nu =
                             let world =
                                 if eventNamesLength >= 6 then
                                     let entityAddress = rtoa (Array.skip 3 eventNames)
-                                    let entity = Entity entityAddress
+                                    let entity = Nu.Entity entityAddress
                                     match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
                                     | (true, entityChangeCounts) ->
                                         match entityChangeCounts.TryGetValue entityAddress with
@@ -251,7 +251,7 @@ module Nu =
                         | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortHorizon = 0.0f; SortTarget = entity } :> IComparable
                         | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortHorizon = 0.0f; SortTarget = group } :> IComparable
                         | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortHorizon = 0.0f; SortTarget = screen } :> IComparable
-                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortHorizon = 0.0f; SortTarget = Game.Handle } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortHorizon = 0.0f; SortTarget = Game } :> IComparable
                         | _ -> failwithumf ())
                     subscriptions
                     world
@@ -515,8 +515,8 @@ module WorldModule3 =
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
             let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
-            let simulants = UMap.singleton HashIdentity.Structural config (Game.Handle :> Simulant) None
-            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game.Handle }
+            let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
+            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game }
             let world =
                 { EventGraph = eventGraph
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
@@ -543,7 +543,7 @@ module WorldModule3 =
                 let eventTracing = Constants.Engine.EventTracing
                 let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Constants.Engine.EventFilter
-                let globalSimulantGeneralized = { GsgAddress = atoa Game.Handle.GameAddress }
+                let globalSimulantGeneralized = { GsgAddress = atoa Game.GameAddress }
                 let eventConfig = if config.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
@@ -589,7 +589,7 @@ module WorldModule3 =
             let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
-            World.registerGame Game.Handle world
+            World.registerGame Game world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
@@ -607,7 +607,7 @@ module WorldModule3 =
                     let eventTracing = Constants.Engine.EventTracing
                     let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
                     let eventFilter = Constants.Engine.EventFilter
-                    let globalSimulant = Game.Handle
+                    let globalSimulant = Game
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                     let eventConfig = if config.Imperative then Imperative else Functional
                     EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
@@ -701,7 +701,7 @@ module WorldModule3 =
                     | Right (_, world) ->
 
                         // register the game
-                        let world = World.registerGame Game.Handle world
+                        let world = World.registerGame Game world
 
 #if DEBUG
                         // attempt to hookup the console if debugging

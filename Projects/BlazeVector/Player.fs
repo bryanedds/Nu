@@ -3,7 +3,6 @@ open System
 open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
 open BlazeVector
 
 [<AutoOpen>]
@@ -60,8 +59,8 @@ module PlayerDispatcher =
              Entity.AnimationSheet == Assets.Gameplay.PlayerImage
              Entity.UpdateEvent => UpdateMessage
              Entity.UpdateEvent => UpdateCommand
-             Simulants.Game.MouseLeftDownEvent => TryJumpByMouse
-             Simulants.Game.KeyboardKeyDownEvent =|> fun evt -> TryJumpByKeyboard evt.Data]
+             Game.MouseLeftDownEvent => TryJumpByMouse
+             Game.KeyboardKeyDownEvent =|> fun evt -> TryJumpByKeyboard evt.Data]
 
         override this.Message (player, message, entity, world) =
 

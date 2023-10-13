@@ -5,7 +5,6 @@ open System.IO
 open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
 open Nu.Ecs
 
 type [<StructuralEquality; NoComparison; Struct>] StaticSpriteComponent =
