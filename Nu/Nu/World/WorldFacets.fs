@@ -634,8 +634,8 @@ module ButtonFacetModule =
              define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
+            let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ButtonFacet) world
+            let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ButtonFacet) world
             world
 
         override this.Render (entity, world) =
@@ -750,8 +750,8 @@ module ToggleButtonFacetModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
+            let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof ToggleButtonFacet) world
+            let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ToggleButtonFacet) world
             world
 
         override this.Update (entity, world) =
@@ -872,8 +872,8 @@ module RadioButtonFacetModule =
              define Entity.DialSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
+            let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof RadioButtonFacet) world
+            let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof RadioButtonFacet) world
             world
 
         override this.Update (entity, world) =
@@ -1082,10 +1082,10 @@ module FeelerFacetModule =
             [define Entity.Touched false]
 
         override this.Register (entity, world) =
-            let world = World.monitor handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity world
-            let world = World.monitor handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity world
-            let world = World.monitor handleIncoming entity.Screen.IncomingFinishEvent entity world
-            let world = World.monitor handleOutgoing entity.Screen.OutgoingStartEvent entity world
+            let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof FeelerFacet) world
+            let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof FeelerFacet) world
+            let world = World.sense handleIncoming entity.Screen.IncomingFinishEvent entity (nameof FeelerFacet) world
+            let world = World.sense handleOutgoing entity.Screen.OutgoingStartEvent entity (nameof FeelerFacet) world
             world
 
         override this.Update (entity, world) =
