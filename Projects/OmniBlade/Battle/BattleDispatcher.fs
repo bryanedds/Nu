@@ -6,7 +6,6 @@ open System
 open System.Numerics
 open Prime
 open Nu
-open OmniBlade
 
 [<AutoOpen>]
 module BattleDispatcher =
@@ -150,15 +149,15 @@ module BattleDispatcher =
                 let world = World.setEyeCenter2d v2Zero world
                 just world
 
-            | PlaySound (delay, volume, sound) ->
+            | BattleCommand.PlaySound (delay, volume, sound) ->
                 let world = World.schedule delay (World.playSound volume sound) screen world
                 just world
 
-            | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
+            | BattleCommand.PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
                 let world = World.playSong fadeIn fadeOut start volume assetTag world
                 just world
 
-            | FadeOutSong fade ->
+            | BattleCommand.FadeOutSong fade ->
                 let world = World.fadeOutSong fade world
                 just world
 

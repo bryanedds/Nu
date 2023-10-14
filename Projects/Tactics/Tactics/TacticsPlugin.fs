@@ -5,7 +5,6 @@ namespace Tactics
 open System
 open Prime
 open Nu
-open Tactics
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor
 type TacticsPlugin () =

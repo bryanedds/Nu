@@ -6,7 +6,6 @@ open System
 open System.IO
 open Prime
 open Nu
-open OmniBlade
 
 [<AutoOpen>]
 module OmniBlade =

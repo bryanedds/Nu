@@ -5,7 +5,6 @@ namespace OmniBlade
 open System
 open Prime
 open Nu
-open OmniBlade
 
 type [<SymbolicExpansion>] AutoBattle =
     { AutoTarget : CharacterIndex

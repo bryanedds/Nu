@@ -5,7 +5,6 @@ namespace Tactics
 open System
 open Prime
 open Nu
-open Tactics
 
 [<RequireQualifiedAccess>]
 module Simulants =

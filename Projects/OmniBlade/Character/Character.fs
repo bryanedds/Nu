@@ -7,7 +7,6 @@ open System.Numerics
 open FSharp.Reflection
 open Prime
 open Nu
-open OmniBlade
 
 [<RequireQualifiedAccess>]
 module Character =

@@ -4,9 +4,8 @@
 namespace OmniBlade
 open System
 open System.IO
-open Nu
 open SDL2
-open OmniBlade
+open Nu
 module Program =
     
     let [<EntryPoint; STAThread>] main _ =

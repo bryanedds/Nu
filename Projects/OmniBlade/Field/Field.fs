@@ -7,8 +7,7 @@ open System.IO
 open System.Numerics
 open Prime
 open Nu
-open OmniBlade
-open OmniBlade.CueSystem
+open CueSystem
 
 type FieldMessage =
     | Update

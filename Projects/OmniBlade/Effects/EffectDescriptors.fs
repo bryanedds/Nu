@@ -6,7 +6,6 @@ open System
 open Prime
 open Nu
 open Nu.Effects
-open OmniBlade
 
 [<RequireQualifiedAccess>]
 module EffectDescriptors =

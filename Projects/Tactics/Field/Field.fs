@@ -5,7 +5,6 @@ open System.Numerics
 open Prime
 open TiledSharp
 open Nu
-open Tactics
 
 type Occupant =
     | Character of Character

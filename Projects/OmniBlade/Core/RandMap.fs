@@ -4,9 +4,8 @@
 namespace OmniBlade
 open System
 open Prime
-open Nu
 open TiledSharp
-open OmniBlade
+open Nu
 
 type Origin =
     | OriginC

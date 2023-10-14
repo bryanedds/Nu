@@ -2,7 +2,6 @@
 open System
 open Prime
 open Nu
-open Tactics
 
 [<AutoOpen>]
 module CharacterDispatcher =
