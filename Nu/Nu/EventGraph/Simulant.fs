@@ -17,10 +17,10 @@ module SimulantOperators =
     type Simulant with
 
         /// The names of the simulant.
-        member this.Names = this.SimulantAddress.Names
+        member this.Names = Address.getNames this.SimulantAddress
 
         /// The name of the simulant.
-        member this.Name = Array.head this.Names
+        member this.Name = Address.getName this.SimulantAddress
 
         /// Concatenate an address with a simulant's address, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (simulant : Simulant) =
