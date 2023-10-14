@@ -6,7 +6,6 @@ open System
 open System.Numerics
 open Prime
 open Nu
-open OmniBlade
 
 type [<CustomEquality; NoComparison>] PropPlus =
     { Prop : Prop

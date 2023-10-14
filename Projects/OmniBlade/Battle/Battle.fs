@@ -6,8 +6,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
-open OmniBlade
-open OmniBlade.BattleInteractionSystem
+open BattleInteractionSystem
 
 type BattleMessage =
     | Update

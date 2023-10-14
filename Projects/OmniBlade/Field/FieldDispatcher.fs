@@ -6,7 +6,6 @@ open System
 open System.Numerics
 open Prime
 open Nu
-open OmniBlade
 
 [<AutoOpen>]
 module FieldDispatcher =
@@ -93,7 +92,7 @@ module FieldDispatcher =
                                 | None -> None
                             match (currentSongOpt, desinationSongOpt) with
                             | (Some song, Some song2) when assetEq song song2 -> just field
-                            | (_, _) -> withSignal (FadeOutSong 30L) field
+                            | (_, _) -> withSignal (FieldCommand.FadeOutSong 30L) field
 
                         // half-way transition (fully blacked out)
                         elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
@@ -111,7 +110,7 @@ module FieldDispatcher =
                                     let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                                     match currentSongOpt with
                                     | Some song when assetEq song fieldSong -> Nop
-                                    | _ -> PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
+                                    | _ -> FieldCommand.PlaySong (0L, 30L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
                                 | None -> Nop
                             withSignals [warpAvatar; songCmd] field
 
@@ -249,7 +248,7 @@ module FieldDispatcher =
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                         let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateMenu (constant { field.Menu with MenuUseOpt = None }) field
-                        if result then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
+                        if result then withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
                         else just field
                     | None -> just field
                 | None -> just field
@@ -403,8 +402,8 @@ module FieldDispatcher =
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
                             let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
-                        else withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
+                            withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
+                        else withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
                     | None -> just field
                 | None -> just field
 
@@ -446,7 +445,7 @@ module FieldDispatcher =
                     let startTime = time - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let field = Field.enterBattle world.UpdateTime startTime prizePool battleData field
-                    withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
+                    withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 
             | Interact ->
@@ -563,7 +562,7 @@ module FieldDispatcher =
                             let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let world = screen.SetField field world
-                            withSignal (PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
+                            withSignal (FieldCommand.PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
                         else just world
                     | (Some fieldSong, None) ->
                         let fieldSong = overrideSong field.FieldType field.Advents fieldSong
@@ -579,19 +578,19 @@ module FieldDispatcher =
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
                         let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                         let world = screen.SetField field world
-                        withSignal (PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
+                        withSignal (FieldCommand.PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
                     | (None, _) -> just world
                 | (false, _) -> just world
 
-            | PlaySound (delay, volume, sound) ->
+            | FieldCommand.PlaySound (delay, volume, sound) ->
                 let world = World.schedule delay (World.playSound volume sound) screen world
                 just world
 
-            | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
+            | FieldCommand.PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
                 let world = World.playSong fadeIn fadeOut start volume assetTag world
                 just world
 
-            | FadeOutSong fade ->
+            | FieldCommand.FadeOutSong fade ->
                 let world = World.fadeOutSong fade world
                 just world
 

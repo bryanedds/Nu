@@ -3,7 +3,6 @@ open System
 open System.Numerics
 open Prime
 open Nu
-open Tactics
 
 [<AutoOpen>]
 module FieldDispatcher =

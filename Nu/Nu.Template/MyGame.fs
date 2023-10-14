@@ -2,7 +2,6 @@
 open System
 open Prime
 open Nu
-open MyGame
 
 [<AutoOpen>]
 module MyGame =

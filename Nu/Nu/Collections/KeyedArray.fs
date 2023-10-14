@@ -2,9 +2,9 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu
-open Prime
 open System
 open System.Collections.Generic
+open Prime
 
 [<RequireQualifiedAccess>]
 module KeyedArray =

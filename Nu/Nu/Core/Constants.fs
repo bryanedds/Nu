@@ -5,8 +5,8 @@ namespace Nu.Constants
 open System
 open System.Numerics
 open System.Configuration
-open Nu
 open Prime
+open Nu
 
 [<RequireQualifiedAccess>]
 module Engine =

@@ -8,7 +8,6 @@ open System.IO
 open TiledSharp
 open Prime
 open Nu
-open OmniBlade
 
 type Direction =
     | Upward

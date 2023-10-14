@@ -15,7 +15,6 @@ open ImGuiNET
 open ImGuizmoNET
 open Prime
 open Nu
-open Nu.Gaia
 
 ///////////////////////////////////
 // TODO:
