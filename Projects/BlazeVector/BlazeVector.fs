@@ -22,9 +22,9 @@ module BlazeVector =
         | ShowGameplay
         | Update
         interface Nu.Message
-
-    // this is our MMCC command type. Commands are used instead of messages when explicitly
-    // updating the world is involved.
+        
+    // this is our MMCC command type. Commands are used instead of messages when the world is to be
+    // transformed.
     type Command =
         | Exit
         interface Nu.Command
