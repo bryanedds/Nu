@@ -8,7 +8,6 @@ open System.Numerics
 open ImGuiNET
 open ImGuizmoNET
 open Prime
-open Nu
 
 /// Wraps ImGui context, state, and calls. Also extends the ImGui interface with static methods.
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port of a port.

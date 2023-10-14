@@ -6,7 +6,6 @@ open System
 open System.Reflection
 open System.Runtime.CompilerServices
 open Prime
-open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldSimulantModule =

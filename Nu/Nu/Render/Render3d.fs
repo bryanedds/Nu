@@ -8,7 +8,6 @@ open System.IO
 open System.Numerics
 open SDL2
 open Prime
-open Nu
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // TODO: add TwoSidedOpt as render message parameter.                                   //

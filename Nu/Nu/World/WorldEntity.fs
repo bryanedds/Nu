@@ -6,7 +6,6 @@ open System
 open System.IO
 open System.Numerics
 open Prime
-open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldEntityModule =

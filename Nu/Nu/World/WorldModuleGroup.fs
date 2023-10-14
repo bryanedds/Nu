@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open Prime
-open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModuleGroup =

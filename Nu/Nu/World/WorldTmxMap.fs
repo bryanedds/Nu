@@ -8,8 +8,8 @@ open System.IO
 open System.Numerics
 open System.Text
 open System.Xml.Linq
-open Prime
 open TiledSharp
+open Prime
 
 [<RequireQualifiedAccess>]
 module TmxMap =

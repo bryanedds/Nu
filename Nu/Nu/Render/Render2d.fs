@@ -10,7 +10,6 @@ open System.Runtime.InteropServices
 open SDL2
 open TiledSharp
 open Prime
-open Nu
 
 /// A mutable sprite value.
 type [<NoEquality; NoComparison; Struct>] Sprite =

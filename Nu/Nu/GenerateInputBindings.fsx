@@ -24,7 +24,6 @@ open System.Linq
 open System.IO
 open Prime
 open SDL2
-open Nu
 
 // this function was copied and converted from - https://stackoverflow.com/a/46095771
 let upperCaseToPascalCase (original : string) =
@@ -83,7 +82,6 @@ let generateBindingsCode codesStr =
     "namespace Nu\n" +
     "open System\n" +
     "open Prime\n" +
-    "open Nu\n" +
     "\n" +
     "type KeyboardKey =\n" +
     codesStr +

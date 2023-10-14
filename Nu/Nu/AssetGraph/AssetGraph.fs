@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open ImageMagick
 open Prime
-open Nu
 
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =

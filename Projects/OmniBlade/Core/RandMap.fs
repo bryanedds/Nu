@@ -3,8 +3,8 @@
 
 namespace OmniBlade
 open System
-open Prime
 open TiledSharp
+open Prime
 open Nu
 
 type Origin =

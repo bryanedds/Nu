@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
-open Nu
 
 /// The data for a mouse move event.
 type MouseMoveData =

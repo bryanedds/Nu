@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open Prime
-open Nu
 
 /// Symbol loading metadata.
 /// OPTIMIZATION: made this a struct because, well, it's two booleans. If we add non-trivial fields to this, it will be

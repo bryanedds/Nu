@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open Prime
-open Nu
 
 /// An asset that is used for rendering.
 type RenderAsset =

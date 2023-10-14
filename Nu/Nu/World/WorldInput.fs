@@ -5,7 +5,6 @@ namespace Nu
 open System
 open ImGuiNET
 open Prime
-open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldInputModule =

@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open SDL2
 open Prime
-open Nu
 
 /// Descrides a song.
 type SongDescriptor =

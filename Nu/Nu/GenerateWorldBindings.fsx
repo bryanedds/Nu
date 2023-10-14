@@ -374,7 +374,6 @@ let generateBindingsCode bindings =
         "open System\n" +
         "open System.Numerics\n" +
         "open Prime\n" +
-        "open Nu\n" +
         "open Nu.Particles\n" +
         "\n" +
         "[<RequireQualifiedAccess>]\n" +

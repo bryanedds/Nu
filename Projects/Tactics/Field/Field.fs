@@ -2,8 +2,8 @@
 open System
 open System.Collections.Generic
 open System.Numerics
-open Prime
 open TiledSharp
+open Prime
 open Nu
 
 type Occupant =

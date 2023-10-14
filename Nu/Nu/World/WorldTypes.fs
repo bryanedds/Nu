@@ -8,7 +8,6 @@ open System.Diagnostics
 open System.Numerics
 open System.Reflection
 open Prime
-open Nu
 
 [<RequireQualifiedAccess>]
 module internal WorldTypes =

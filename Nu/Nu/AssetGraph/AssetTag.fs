@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open Nu
 
 /// Describes a means for looking up an asset.
 type [<StructuralEquality; StructuralComparison; Struct>] 'a AssetTag =

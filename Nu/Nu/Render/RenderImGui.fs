@@ -4,7 +4,6 @@ open System.Numerics
 open System.Runtime.CompilerServices
 open ImGuiNET
 open Prime
-open Nu
 
 /// Renders an imgui view.
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port of a port.

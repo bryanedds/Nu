@@ -16,7 +16,6 @@ open System
 open System.ComponentModel
 open System.Reflection
 open Prime
-open Nu
 
 /// Converts Address types.
 type AddressConverter (targetType : Type) =

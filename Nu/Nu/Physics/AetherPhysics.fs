@@ -10,7 +10,6 @@ open tainicom.Aether.Physics2D.Dynamics
 open tainicom.Aether.Physics2D.Dynamics.Contacts
 open tainicom.Aether.Physics2D.Dynamics.Joints
 open Prime
-open Nu
 
 #nowarn "44" // ignore aether deprecation warnings
 

@@ -9,7 +9,6 @@ open System.Threading
 open SDL2
 open ImGuiNET
 open Prime
-open Nu
 
 /// A renderer process that may or may not be threaded.
 type RendererProcess =
