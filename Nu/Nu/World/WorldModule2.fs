@@ -790,11 +790,11 @@ module WorldModule2 =
             (elements, world)
 
         static member private getElementsInView2d set world =
-            let viewBounds = World.getViewBounds2d world
+            let viewBounds = World.getViewBounds2dRelative world
             World.getElements2dBy (Quadtree.getElementsInView viewBounds set) world
 
         static member private getElementsInPlay2d set world =
-            let playBounds = World.getPlayBounds2d world
+            let playBounds = World.getPlayBounds2dRelative world
             World.getElements2dBy (Quadtree.getElementsInPlay playBounds set) world
 
         static member private getElements2d set world =
@@ -822,12 +822,12 @@ module WorldModule2 =
 
         /// Get all 2d entities in the current 2d view, including all uncullable entities.
         static member getEntitiesInView2d set world =
-            let viewBounds = World.getViewBounds2d world
+            let viewBounds = World.getViewBounds2dRelative world
             World.getEntities2dBy (Quadtree.getElementsInView viewBounds set) world
 
         /// Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
         static member getEntitiesInPlay2d set world =
-            let playBounds = World.getPlayBounds2d world
+            let playBounds = World.getPlayBounds2dRelative world
             World.getEntities2dBy (Quadtree.getElementsInPlay playBounds set) world
 
         /// Get all 2d entities in the current selected screen, including all uncullable entities.

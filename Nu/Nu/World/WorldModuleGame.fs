@@ -132,23 +132,6 @@ module WorldModuleGame =
         static member setOmniScreen value world =
             World.setOmniScreenPlus value world |> snd'
 
-        static member internal setDesiredScreenPlus value world =
-            let gameState = World.getGameState Game.Handle world
-            let previous = gameState.DesiredScreen
-            if value <> previous
-            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } Game.Handle |> World.publishGameChange (nameof gameState.DesiredScreen) previous value Game.Handle)
-            else struct (false, world)
-
-        /// Get the desired screen to transition to if necessary.
-        [<FunctionBinding>]
-        static member getDesiredScreen world =
-            (World.getGameState Game.Handle world).DesiredScreen
-
-        /// Set the desired screen to transition to if necessary.
-        [<FunctionBinding>]
-        static member setDesiredScreen value world =
-            World.setDesiredScreenPlus value world |> snd'
-
         /// Set the currently selected screen or None.
         static member internal setSelectedScreenOptPlus value world =
 
@@ -226,6 +209,23 @@ module WorldModuleGame =
         static member setSelectedScreen value world =
             World.setSelectedScreenPlus value world |> snd
 
+        static member internal setDesiredScreenPlus value world =
+            let gameState = World.getGameState Game.Handle world
+            let previous = gameState.DesiredScreen
+            if value <> previous
+            then struct (true, world |> World.setGameState { gameState with DesiredScreen = value } Game.Handle |> World.publishGameChange (nameof gameState.DesiredScreen) previous value Game.Handle)
+            else struct (false, world)
+
+        /// Get the desired screen to transition to if necessary.
+        [<FunctionBinding>]
+        static member getDesiredScreen world =
+            (World.getGameState Game.Handle world).DesiredScreen
+
+        /// Set the desired screen to transition to if necessary.
+        [<FunctionBinding>]
+        static member setDesiredScreen value world =
+            World.setDesiredScreenPlus value world |> snd'
+
         /// Get the current destination screen if a screen transition is currently underway.
         [<FunctionBinding>]
         static member getScreenTransitionDestinationOpt world =
@@ -285,6 +285,58 @@ module WorldModuleGame =
             let eyeCenter = World.getEyeCenter2d world
             let eyeSize = World.getEyeSize2d world
             box2 (eyeCenter - eyeSize * 0.5f) eyeSize
+
+        /// Constrain the eye to the given 2d bounds.
+        [<FunctionBinding>]
+        static member constrainEyeBounds2d (bounds : Box2) world =
+            let mutable eyeBounds = World.getEyeBounds2d world
+            eyeBounds.Min <-
+                v2
+                    (if eyeBounds.Min.X < bounds.Min.X then bounds.Min.X
+                        elif eyeBounds.Right.X > bounds.Right.X then bounds.Right.X - eyeBounds.Size.X
+                        else eyeBounds.Min.X)
+                    (if eyeBounds.Min.Y < bounds.Min.Y then bounds.Min.Y
+                        elif eyeBounds.Top.Y > bounds.Top.Y then bounds.Top.Y - eyeBounds.Size.Y
+                        else eyeBounds.Min.Y)
+            let eyeCenter = eyeBounds.Center
+            World.setEyeCenter2d eyeCenter world
+
+        /// Get the bounds of the 2d eye's sight irrespective of its position.
+        [<FunctionBinding>]
+        static member getViewBounds2dAbsolute world =
+            let gameState = World.getGameState Game.Handle world
+            box2
+                (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
+                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
+
+        /// Get the bounds of the 2d eye's sight relative to its position.
+        [<FunctionBinding>]
+        static member getViewBounds2dRelative world =
+            let gameState = World.getGameState Game.Handle world
+            let min = v2 (gameState.EyeCenter2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyeCenter2d.Y - gameState.EyeSize2d.Y * 0.5f)
+            box2 min gameState.EyeSize2d
+
+        /// Get the bounds of the 2d play zone irrespective of eye center.
+        [<FunctionBinding>]
+        static member getPlayBounds2dAbsolute world =
+            World.getViewBounds2dAbsolute world
+
+        /// Get the bounds of the 2d play zone relative to eye center.
+        [<FunctionBinding>]
+        static member getPlayBounds2dRelative world =
+            World.getViewBounds2dRelative world
+
+        /// Check that the given bounds is within the 2d eye's sight irrespective of eye center.
+        [<FunctionBinding>]
+        static member boundsInView2dAbsolute (bounds : Box2) world =
+            let viewBounds = World.getViewBounds2dAbsolute world
+            bounds.Intersects viewBounds
+
+        /// Check that the given bounds is within the 2d eye's sight relative to eye center.
+        [<FunctionBinding>]
+        static member boundsInView2dRelative (bounds : Box2) world =
+            let viewBounds = World.getViewBounds2dRelative world
+            bounds.Intersects viewBounds
 
         /// Get the current 3d eye center.
         [<FunctionBinding>]
@@ -356,52 +408,6 @@ module WorldModuleGame =
         static member getLightBox3d world =
             let lightBoxSize = Constants.Render.LightBoxSize3d
             box3 ((World.getGameState Game.Handle world).EyeCenter3d - lightBoxSize * 0.5f) lightBoxSize
-
-        /// Constrain the eye to the given 2d bounds.
-        [<FunctionBinding>]
-        static member constrainEyeBounds2d (bounds : Box2) world =
-            let mutable eyeBounds = World.getEyeBounds2d world
-            eyeBounds.Min <-
-                v2
-                    (if eyeBounds.Min.X < bounds.Min.X then bounds.Min.X
-                        elif eyeBounds.Right.X > bounds.Right.X then bounds.Right.X - eyeBounds.Size.X
-                        else eyeBounds.Min.X)
-                    (if eyeBounds.Min.Y < bounds.Min.Y then bounds.Min.Y
-                        elif eyeBounds.Top.Y > bounds.Top.Y then bounds.Top.Y - eyeBounds.Size.Y
-                        else eyeBounds.Min.Y)
-            let eyeCenter = eyeBounds.Center
-            World.setEyeCenter2d eyeCenter world
-
-        /// Get the bounds of the 2d eye's sight irrespective of its position.
-        [<FunctionBinding>]
-        static member getViewBounds2dAbsolute world =
-            let gameState = World.getGameState Game.Handle world
-            box2
-                (v2 (gameState.EyeSize2d.X * -0.5f) (gameState.EyeSize2d.Y * -0.5f))
-                (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
-
-        /// Get the bounds of the 2d play zone irrespective of eye center.
-        [<FunctionBinding>]
-        static member getPlayBounds2dAbsolute world =
-            World.getViewBounds2d world
-
-        /// Get the bounds of the 2d eye's sight relative to its position.
-        [<FunctionBinding>]
-        static member getViewBounds2d world =
-            let gameState = World.getGameState Game.Handle world
-            let min = v2 (gameState.EyeCenter2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyeCenter2d.Y - gameState.EyeSize2d.Y * 0.5f)
-            box2 min gameState.EyeSize2d
-
-        /// Get the bounds of the 2d play zone.
-        [<FunctionBinding>]
-        static member getPlayBounds2d world =
-            World.getViewBounds2d world
-
-        /// Check that the given bounds is within the 2d eye's sight.
-        [<FunctionBinding>]
-        static member boundsInView2d (bounds : Box2) world =
-            let viewBounds = World.getViewBounds2d world
-            bounds.Intersects viewBounds
 
         /// Get the bounds of the 3d play zone.
         [<FunctionBinding>]
@@ -564,17 +570,22 @@ module WorldModuleGame =
         GameGetters.Add ("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
         GameGetters.Add ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         GameGetters.Add ("OmniScreenOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
-        GameGetters.Add ("DesiredScreen", fun _ world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getDesiredScreen world })
         GameGetters.Add ("SelectedScreenOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
+        GameGetters.Add ("DesiredScreen", fun _ world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getDesiredScreen world })
         GameGetters.Add ("ScreenTransitionDestinationOpt", fun _ world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
         GameGetters.Add ("EyeCenter2d", fun _ world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter2d world })
         GameGetters.Add ("EyeSize2d", fun _ world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize2d world })
+        GameGetters.Add ("ViewBounds2dAbsolute", fun _ world -> { PropertyType = typeof<Box2>; PropertyValue = World.getViewBounds2dAbsolute world })
+        GameGetters.Add ("ViewBounds2dRelative", fun _ world -> { PropertyType = typeof<Box2>; PropertyValue = World.getViewBounds2dRelative world })
+        GameGetters.Add ("PlayBounds2dAbsolute", fun _ world -> { PropertyType = typeof<Box2>; PropertyValue = World.getPlayBounds2dAbsolute world })
+        GameGetters.Add ("PlayBounds2dRelative", fun _ world -> { PropertyType = typeof<Box2>; PropertyValue = World.getPlayBounds2dRelative world })
         GameGetters.Add ("EyeCenter3d", fun _ world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getEyeCenter3d world })
         GameGetters.Add ("EyeRotation3d", fun _ world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getEyeRotation3d world })
         GameGetters.Add ("EyeFrustum3dEnclosed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dEnclosed world })
         GameGetters.Add ("EyeFrustum3dExposed", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dExposed world })
         GameGetters.Add ("EyeFrustum3dImposter", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getEyeFrustum3dImposter world })
-        GameGetters.Add ("LightBox3d", fun _ world -> { PropertyType = typeof<Frustum>; PropertyValue = World.getLightBox3d world })
+        GameGetters.Add ("LightBox3d", fun _ world -> { PropertyType = typeof<Box3>; PropertyValue = World.getLightBox3d world })
+        GameGetters.Add ("PlayBounds3d", fun _ world -> { PropertyType = typeof<struct (Box3 * Frustum)>; PropertyValue = World.getPlayBounds3d world })
         GameGetters.Add ("ScriptFrame", fun game world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame game world })
         GameGetters.Add ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
         GameGetters.Add ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
@@ -584,6 +595,7 @@ module WorldModuleGame =
         GameSetters.Add ("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
         GameSetters.Add ("OmniScreenOpt", fun property _ world -> World.setOmniScreenOptPlus (property.PropertyValue :?> Screen option) world)
         GameSetters.Add ("DesiredScreen", fun property _ world -> World.setDesiredScreenPlus (property.PropertyValue :?> DesiredScreen) world)
+        GameSetters.Add ("ScreenTransitionDestinationOpt", fun property _ world -> World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world)
         GameSetters.Add ("EyeCenter2d", fun property _ world -> World.setEyeCenter2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeSize2d", fun property _ world -> World.setEyeSize2dPlus (property.PropertyValue :?> Vector2) world)
         GameSetters.Add ("EyeCenter3d", fun property _ world -> World.setEyeCenter3dPlus (property.PropertyValue :?> Vector3) world)

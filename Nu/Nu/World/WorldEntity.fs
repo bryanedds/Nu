@@ -422,8 +422,17 @@ module WorldEntityModule =
         /// Get an entity's quick size.
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
-        /// Check that an entity is in the eye's view.
-        member this.GetInView2d world = World.getEntityInView2d this world
+        /// Check that an entity is in the eye's view irrespective of eye center.
+        member this.GetInView2dAbsolute world = World.getEntityInView2dAbsolute this world
+
+        /// Check that an entity is in the eye's view relative to eye center.
+        member this.GetInView2dRelative world = World.getEntityInView2dRelative this world
+
+        /// Check that an entity is in the play area irrespective of eye center.
+        member this.GetInPlay2dAbsolute world = World.getEntityInPlay2dAbsolute this world
+
+        /// Check that an entity is in the play area relative to eye center.
+        member this.GetInPlay2dRelative world = World.getEntityInPlay2dRelative this world
 
         /// Check that an entity is in the eye's view.
         member this.GetInView3d world = World.getEntityInView3d this world
