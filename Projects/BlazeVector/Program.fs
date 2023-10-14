@@ -2,7 +2,6 @@
 open System
 open System.IO
 open Nu
-open BlazeVector
 module Program =
 
     // this the entry point for the BlazeVector application
