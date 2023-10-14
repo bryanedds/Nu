@@ -202,12 +202,12 @@ module WorldModule2 =
                 let world = World.unsubscribe ScreenTransitionKeyboardKeyId world
                 world
             | IncomingState _ | OutgoingState _ ->
-                let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Address.WildcardName + "/Event")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
                 world
 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
