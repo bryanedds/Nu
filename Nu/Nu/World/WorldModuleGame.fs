@@ -249,11 +249,8 @@ module WorldModuleGame =
         static member internal setEyeCenter2dPlus value world =
             let gameState = World.getGameState Game.Handle world
             let previous = gameState.EyeCenter2d
-            if v2Neq previous value then
-                let world = World.setGameState { gameState with EyeCenter2d = value } Game.Handle world
-                let world = World.publishGameChange (nameof gameState.EyeCenter2d) previous value Game.Handle world
-                let world = World.publishGameChange "LightBox3d" previous value Game.Handle world
-                struct (true, world)
+            if v2Neq previous value
+            then struct (true, world |> World.setGameState { gameState with EyeCenter2d = value } Game.Handle |> World.publishGameChange (nameof gameState.EyeCenter2d) previous value Game.Handle)
             else struct (false, world)
 
         /// Set the current 2d eye center.
