@@ -82,7 +82,7 @@ module Gameplay =
                     let section = Simulants.GameplaySection sectionIndex
                     World.destroyGroup section world)
 
-                // quitting finished
+                // finish quitting
                 withSignal FinishQuitting world
 
             | UpdateEye ->

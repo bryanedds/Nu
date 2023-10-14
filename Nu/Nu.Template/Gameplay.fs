@@ -19,7 +19,8 @@ module Gameplay =
         | FinishQuitting
         interface Message
 
-    // this is our MMCC command type. Commands are used instead of messages when things like physics are involved.
+    // this is our MMCC command type. Commands are used instead of messages when the world is to be
+    // transformed.
     type GameplayCommand =
         | Update
         | PostUpdateEye
