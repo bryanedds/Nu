@@ -2035,8 +2035,7 @@ module GamePropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "DesiredScreen" || propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
-             propertyName = "EyeCenter2d" || propertyName = "EyeSize2d" || propertyName = "EyeCenter3d" || propertyName = "EyeRotation3d" ||
-             propertyName = "EyeFrustum3dEnclosed" || propertyName = "EyeFrustum3dExposed" || propertyName = "EyeFrustum3dImposter" then
+             propertyName = "EyeCenter2d" || propertyName = "EyeSize2d" || propertyName = "EyeCenter3d" || propertyName = "EyeRotation3d" then
              "Built-In Properties"
         else "Xtension Properties"
 
