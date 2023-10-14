@@ -13,7 +13,7 @@ open Nu
 [<AutoOpen>]
 module Declarative =
 
-    /// Declaratively exposes Game lenses, events, and properties.
+    /// The global Game simulant.
     let Game = Game.Handle
 
     /// Declaratively exposes Screen lenses and events.
@@ -24,8 +24,6 @@ module Declarative =
 
     /// Declaratively exposes Entity lenses and events.
     let Entity = Unchecked.defaultof<Entity>
-
-open Declarative
 
 [<AutoOpen>]
 module StaticSpriteFacetModule =
