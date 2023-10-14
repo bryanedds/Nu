@@ -2020,14 +2020,23 @@ module WorldModuleEntity =
             | Some _ as opt -> opt
             | None -> Some dispatcherName
 
-        static member internal getEntityInView2d entity world =
+        static member internal getEntityInView2dAbsolute entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView2d transform.Bounds.Box2 world
+            presence.OmnipresentType || World.boundsInView2dAbsolute transform.Bounds.Box2 world
 
-        static member internal getEntityInPlay2d entity world =
-            World.getEntityInView2d entity world // same meaning as in view for 2d
+        static member internal getEntityInView2dRelative entity world =
+            let entityState = World.getEntityState entity world
+            let mutable transform = &entityState.Transform
+            let presence = transform.Presence
+            presence.OmnipresentType || World.boundsInView2dRelative transform.Bounds.Box2 world
+
+        static member internal getEntityInPlay2dAbsolute entity world =
+            World.getEntityInView2dAbsolute entity world
+
+        static member internal getEntityInPlay2dRelative entity world =
+            World.getEntityInView2dRelative entity world
 
         static member internal getEntityInPlay3d entity world =
             let entityState = World.getEntityState entity world

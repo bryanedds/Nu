@@ -1570,7 +1570,7 @@ module TileMapFacetModule =
             | Some tileMap ->
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
-                let viewBounds = World.getViewBounds2d world
+                let viewBounds = World.getViewBounds2dRelative world
                 let tileMapMessages =
                     TmxMap.getLayeredMessages2d
                         world.GameTime
@@ -1666,7 +1666,7 @@ module TmxMapFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
-            let viewBounds = World.getViewBounds2d world
+            let viewBounds = World.getViewBounds2dRelative world
             let tmxMap = entity.GetTmxMap world
             let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else Path.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
             let tmxMapMessages =

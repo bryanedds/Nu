@@ -64,7 +64,7 @@ module EnemyDispatcher =
             match command with
             | Update ->
                 let world =
-                    if entity.GetInView2d world
+                    if entity.GetInView2dRelative world
                     then World.applyBodyForce WalkForce v3Zero (entity.GetBodyId world) world
                     else world
                 let world =
