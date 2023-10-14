@@ -208,7 +208,7 @@ module EffectDescriptors =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|])}
+                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|]) }
 
     let debuff statusType =
         let image =
@@ -230,7 +230,7 @@ module EffectDescriptors =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|])}
+                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|]) }
 
     let impactSplash =
         { EffectName = "ImpactSplash"
@@ -311,8 +311,8 @@ module EffectDescriptors =
                   (Shift 0.0f,
                    [|StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronBlueImage), [|orbitH; electronSize|], Nil);
                      Emit (Shift 0.0f, Rate 1.0f, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), [|nonLocationSize; fade|], Nil));
-                     StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil);
-                     Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|])}
+                     StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil)
+                     Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|]) }
 
     let fire position position2 =
         let fireSize = Size (v3 64.0f 64.0f 0.0f)
@@ -354,7 +354,7 @@ module EffectDescriptors =
                    Sizes (Set, Linear, Once, [|{ TweenValue = v3 32.0f 32.0f 0.0f; TweenLength = 36L }; { TweenValue = v3 192.0f 192.0f 0.0f; TweenLength = 0L }|])
                    Degrees (v3 0.0f 0.0f 0.0f)
                    Color (Color.One.WithA8 (byte 207))|],
-                 AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
+                 AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil)) }
 
     let ice =
         let coverRadius = 50.0f
@@ -382,10 +382,10 @@ module EffectDescriptors =
                  [|iceCover
                    iceBombard (v3 -700.0f 0.0f 0.0f)
                    iceBombard (v3 500.0f 500.0f 0.0f)
-                   iceBombard (v3 500.0f -500.0f 0.0f)|])}
+                   iceBombard (v3 500.0f -500.0f 0.0f)|]) }
 
     let snowball =
-        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L };{ TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
+        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L }; { TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
         let rotate =
             Degreeses (Set, Constant, Loop,
                 [|{ TweenValue = v3Zero; TweenLength = 5L }
@@ -421,7 +421,7 @@ module EffectDescriptors =
         { EffectName = "Cure"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
-          Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle)}
+          Content = Emit (Shift 0.0f, Rate 0.2f, [|path|], [||], sparkle) }
 
     let protect =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
@@ -446,7 +446,7 @@ module EffectDescriptors =
                            [|protection [|blink; outwardMovement (v3 outwardReach outwardReach 0.0f); bend (v3 0.0f -clockwiseBias 0.0f)|]
                              protection [|blink; outwardMovement (v3 outwardReach -outwardReach 0.0f); bend (v3 -clockwiseBias 0.0f 0.0f)|]
                              protection [|blink; outwardMovement (v3 -outwardReach -outwardReach 0.0f); bend (v3 0.0f clockwiseBias 0.0f)|]
-                             protection [|blink; outwardMovement (v3 -outwardReach outwardReach 0.0f); bend (v3 clockwiseBias 0.0f 0.0f)|]|])))|])}
+                             protection [|blink; outwardMovement (v3 -outwardReach outwardReach 0.0f); bend (v3 clockwiseBias 0.0f 0.0f)|]|])))|]) }
 
     let purify =
         let sprite position =
@@ -461,7 +461,7 @@ module EffectDescriptors =
                 (Shift 0.0f,
                  [|sprite v3Zero;
                    Delay (12L, sprite (v3 -16.0f 64.0f 0.0f));
-                   Delay (24L, sprite (v3 16.0f 32.0f 0.0f))|])}
+                   Delay (24L, sprite (v3 16.0f 32.0f 0.0f))|]) }
 
     let bolt =
         let boltSprite =
@@ -521,4 +521,4 @@ module EffectDescriptors =
                    [|fireSpin [|fireSpinSize; PositionAbsolute (v3 -144.0f 168.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f 168.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 -144.0f -111.0f 0.0f)|]
-                     fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f -111.0f 0.0f)|]|])}
+                     fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f -111.0f 0.0f)|]|]) }
