@@ -763,8 +763,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Model : DesignerProperty
       Content : GameContent
       OmniScreenOpt : Screen option
-      DesiredScreen : DesiredScreen
       SelectedScreenOpt : Screen option
+      DesiredScreen : DesiredScreen
       ScreenTransitionDestinationOpt : Screen option
       EyeCenter2d : Vector2
       EyeSize2d : Vector2
@@ -787,8 +787,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGameContent :?> GameContent
           OmniScreenOpt = None
-          DesiredScreen = DesireIgnore
           SelectedScreenOpt = None
+          DesiredScreen = DesireIgnore
           ScreenTransitionDestinationOpt = None
           EyeCenter2d = v2Zero
           EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
