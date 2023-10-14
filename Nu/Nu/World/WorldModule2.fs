@@ -377,7 +377,7 @@ module WorldModule2 =
             | Some selectedScreen ->
                 if  selectedScreen <> destination &&
                     not (World.getSelectedScreenTransitioning world) then
-                    let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
+                    let world = World.setScreenTransitionDestinationOpt (Some destination) world
                     let world = World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     (true, world)
                 else (false, world)
