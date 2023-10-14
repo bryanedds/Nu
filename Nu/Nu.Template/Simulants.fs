@@ -15,18 +15,18 @@ module Simulants =
     // title screen
     let Title = Game / "Title"
     let TitleGui = Title / "Gui"
-    let TitleGuiPlay = TitleGui / "Play"
-    let TitleGuiCredits = TitleGui / "Credits"
-    let TitleGuiExit = TitleGui / "Exit"
+    let TitlePlay = TitleGui / "Play"
+    let TitleCredits = TitleGui / "Credits"
+    let TitleExit = TitleGui / "Exit"
 
     // credits screen
     let Credits = Game / "Credits"
     let CreditsGui = Credits / "Gui"
-    let CreditsGuiBack = CreditsGui / "Back"
+    let CreditsBack = CreditsGui / "Back"
 
     // gameplay screen
     let Gameplay = Game / "Gameplay"
     let GameplayGui = Gameplay / "Gui"
-    let GameplayGuiQuit = GameplayGui / "Quit"
+    let GameplayQuit = GameplayGui / "Quit"
     let GameplayScene = Gameplay / "Scene"
-    let GameplayScenePlayer = GameplayScene / "Player"
+    let GameplayPlayer = GameplayScene / "Player"

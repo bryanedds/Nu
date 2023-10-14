@@ -42,7 +42,7 @@ module Gameplay =
             [Screen.SelectEvent => CreateSections
              Screen.DeselectingEvent => DestroySections
              Screen.PostUpdateEvent => UpdateEye
-             Simulants.GameplayGuiQuit.ClickEvent => StartQutting
+             Simulants.GameplayQuit.ClickEvent => StartQutting
              for i in 0 .. dec SectionCount do
                 Events.DieEvent --> Simulants.GameplaySection i --> Address.Wildcard => Score 100]
 
@@ -89,8 +89,8 @@ module Gameplay =
 
                 // update eye to look at player while game is advancing
                 if world.Advancing then
-                    let playerPosition = Simulants.GameplayScenePlayer.GetPosition world
-                    let playerSize = Simulants.GameplayScenePlayer.GetSize world
+                    let playerPosition = Simulants.GameplayPlayer.GetPosition world
+                    let playerSize = Simulants.GameplayPlayer.GetSize world
                     let eyeCenter = World.getEyeCenter2d world
                     let eyeSize = World.getEyeSize2d world
                     let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
@@ -102,11 +102,11 @@ module Gameplay =
 
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
-                 [Content.text Simulants.GameplayGuiScore.Name
+                 [Content.text Simulants.GameplayScore.Name
                     [Entity.Position == v3 392.0f 232.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Text := "Score: " + string gameplay.Score]
-                  Content.button Simulants.GameplayGuiQuit.Name
+                  Content.button Simulants.GameplayQuit.Name
                     [Entity.Position == v3 336.0f -216.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Text == "Quit"
@@ -116,7 +116,7 @@ module Gameplay =
              match gameplay.State with
              | Playing | Quitting ->
                 Content.group Simulants.GameplayScene.Name []
-                    [Content.entity<PlayerDispatcher> Simulants.GameplayScenePlayer.Name
+                    [Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Position == v3 -876.0f -127.6805f 0.0f
                          Entity.Elevation == 1.0f
                          Entity.DieEvent => StartQutting]]

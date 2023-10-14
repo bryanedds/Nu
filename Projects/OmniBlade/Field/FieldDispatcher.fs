@@ -56,10 +56,10 @@ module FieldDispatcher =
              Screen.IncomingFinishEvent => ScreenTransitioning false
              Screen.OutgoingStartEvent => ScreenTransitioning true
              Screen.OutgoingFinishEvent => ScreenTransitioning false
-             Simulants.FieldSceneAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
-             Simulants.FieldSceneAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
-             Simulants.FieldSceneAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
-             Simulants.FieldSceneAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal]
+             Simulants.FieldAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
+             Simulants.FieldAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
+             Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
+             Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal]
 
         override this.Message (field, message, _, world) =
 
@@ -464,7 +464,7 @@ module FieldDispatcher =
                     Option.isNone field.DialogOpt &&
                     Option.isNone field.ShopOpt &&
                     Option.isNone field.FieldTransitionOpt &&
-                    Simulants.FieldSceneFeeler.GetTouched world |> not then
+                    Simulants.FieldFeeler.GetTouched world |> not then
                     let force = v3Zero
                     let force = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
@@ -514,7 +514,7 @@ module FieldDispatcher =
             | UpdateEye ->
                 if world.Advancing then
                     let world = World.setEyeCenter2d field.Avatar.LowerCenter.V2 world
-                    let tileMapPerimeter2d = (Simulants.FieldSceneTileMap.GetPerimeter world).Box2
+                    let tileMapPerimeter2d = (Simulants.FieldTileMap.GetPerimeter world).Box2
                     let eyeBounds = tileMapPerimeter2d.WithMin (tileMapPerimeter2d.Min + v2 48.0f 48.0f)
                     let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)
                     let world = World.constrainEyeBounds2d eyeBounds world
@@ -523,19 +523,19 @@ module FieldDispatcher =
 
             | WarpAvatar bottom ->
                 let bodyBottomOffset = v3Up * Constants.Gameplay.CharacterSize.Y * 0.5f
-                let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldSceneAvatar.GetBodyId world) world
+                let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldAvatar.GetBodyId world) world
                 let world = Simulants.Field.Field.Update (Field.updateAvatarWarped tautology) world
                 just world
 
             | MoveAvatar force ->
                 let world =
                     if force <> v3Zero
-                    then World.applyBodyForce force v3Zero (Simulants.FieldSceneAvatar.GetBodyId world) world
+                    then World.applyBodyForce force v3Zero (Simulants.FieldAvatar.GetBodyId world) world
                     else world
                 just world
 
             | FaceAvatar direction ->
-                let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldSceneAvatar.GetBodyId world) world
+                let linearVelocity = World.getBodyLinearVelocity (Simulants.FieldAvatar.GetBodyId world) world
                 let speed = linearVelocity.Magnitude
                 let field =
                     if speed <= Constants.Field.AvatarIdleSpeedMax
@@ -603,7 +603,7 @@ module FieldDispatcher =
              Content.group Simulants.FieldScene.Name []
 
                 [// avatar
-                 Content.entity<AvatarDispatcher> Simulants.FieldSceneAvatar.Name
+                 Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Position == v3Zero
                      Entity.Elevation == Constants.Field.ForegroundElevation
                      Entity.Size == Constants.Gameplay.CharacterSize
@@ -655,7 +655,7 @@ module FieldDispatcher =
                         | None -> Color.Zero]
 
                  // tmx map
-                 Content.tmxMap Simulants.FieldSceneTileMap.Name
+                 Content.tmxMap Simulants.FieldTileMap.Name
                     [Entity.Elevation == Constants.Field.BackgroundElevation
                      Entity.TmxMap :=
                         match Map.tryFind field.FieldType Data.Value.Fields with
@@ -701,7 +701,7 @@ module FieldDispatcher =
                      Entity.TileLayerClearance == 10.0f]
 
                  // feeler
-                 Content.feeler Simulants.FieldSceneFeeler.Name
+                 Content.feeler Simulants.FieldFeeler.Name
                     [Entity.Position == -Constants.Render.ResolutionF.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.ResolutionF.V3
                      Entity.TouchingEvent =|> fun evt -> ProcessTouchInput evt.Data |> signal]
 

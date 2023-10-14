@@ -58,7 +58,7 @@ module Gameplay =
         override this.Command (_, command, _, world) =
             match command with
             | Update ->
-                let bodyId = Simulants.GameplayScenePlayer.GetBodyId world
+                let bodyId = Simulants.GameplayPlayer.GetBodyId world
                 let world =
                     if World.isKeyboardKeyDown KeyboardKey.Left world then
                         if World.getBodyGrounded bodyId world
@@ -71,7 +71,7 @@ module Gameplay =
                     else world
                 just world
             | Jump ->
-                let bodyId = Simulants.GameplayScenePlayer.GetBodyId world
+                let bodyId = Simulants.GameplayPlayer.GetBodyId world
                 if world.Advancing && World.getBodyGrounded bodyId world then
                     let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                     let world = World.applyBodyLinearImpulse (v3 0.0f 2300.0f 0.0f) v3Zero bodyId world
@@ -79,7 +79,7 @@ module Gameplay =
                 else just world
             | PostUpdateEye ->
                 if world.Advancing then
-                    let characterCenter = Simulants.GameplayScenePlayer.GetCenter world
+                    let characterCenter = Simulants.GameplayPlayer.GetCenter world
                     let world = World.setEyeCenter2d characterCenter.V2 world
                     just world
                 else just world
@@ -90,7 +90,7 @@ module Gameplay =
 
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
-                [Content.button Simulants.GameplayGuiQuit.Name
+                [Content.button Simulants.GameplayQuit.Name
                     [Entity.Position == v3 336.0f -216.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Text == "Quit"
@@ -100,7 +100,7 @@ module Gameplay =
              match gameplay with
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-                    [Content.sideViewCharacter Simulants.GameplayScenePlayer.Name
+                    [Content.sideViewCharacter Simulants.GameplayPlayer.Name
                         [Entity.Position == v3 0.0f 24.0f 0.0f
                          Entity.Size == v3 108.0f 108.0f 0.0f]]
              | Quit -> ()]

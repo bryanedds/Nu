@@ -40,7 +40,7 @@ module BattleDispatcher =
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateEye
-             Simulants.BattleSceneRide.EffectTags.ChangeEvent =|> fun evt -> UpdateRideTags (evt.Data.Value :?> Map<string, Effects.Slice>)]
+             Simulants.BattleRide.EffectTags.ChangeEvent =|> fun evt -> UpdateRideTags (evt.Data.Value :?> Map<string, Effects.Slice>)]
 
         override this.Message (battle, message, _, world) =
 
@@ -164,14 +164,14 @@ module BattleDispatcher =
 
             | DisplayHop (hopStart, hopStop) ->
                 let descriptor = EffectDescriptors.hop hopStart hopStop
-                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleSceneRide.Surnames) Simulants.BattleScene world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleRide.Surnames) Simulants.BattleScene world
                 let world = entity.SetSelfDestruct true world
                 let world = entity.SetEffectDescriptor descriptor world
                 just world
 
             | DisplayCircle (position, radius) ->
                 let descriptor = EffectDescriptors.circle radius
-                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleSceneRide.Surnames) Simulants.BattleScene world
+                let (entity, world) = World.createEntity<EffectDispatcher2d> DefaultOverlay (Some Simulants.BattleRide.Surnames) Simulants.BattleScene world
                 let world = entity.SetPosition position world
                 let world = entity.SetSelfDestruct true world
                 let world = entity.SetEffectDescriptor descriptor world
