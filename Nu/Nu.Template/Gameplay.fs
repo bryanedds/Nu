@@ -23,7 +23,7 @@ module Gameplay =
     // transformed.
     type GameplayCommand =
         | Update
-        | PostUpdateEye
+        | UpdateEye
         | Jump
         | Nop
         interface Command
@@ -41,7 +41,7 @@ module Gameplay =
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => Update
-             Screen.PostUpdateEvent => PostUpdateEye
+             Screen.PostUpdateEvent => UpdateEye
              Screen.DeselectingEvent => FinishQuitting
              Game.KeyboardKeyDownEvent =|> fun evt ->
                 if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
@@ -77,7 +77,7 @@ module Gameplay =
                     let world = World.applyBodyLinearImpulse (v3 0.0f 2300.0f 0.0f) v3Zero bodyId world
                     just world
                 else just world
-            | PostUpdateEye ->
+            | UpdateEye ->
                 if world.Advancing then
                     let characterCenter = Simulants.GameplayPlayer.GetCenter world
                     let world = World.setEyeCenter2d characterCenter.V2 world
