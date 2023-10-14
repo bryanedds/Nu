@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open TiledSharp
 open Prime
-open Nu
 
 /// An image. Currently just used as a phantom type.
 type Image = private { __ : unit }

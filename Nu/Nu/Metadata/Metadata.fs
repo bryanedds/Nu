@@ -7,7 +7,6 @@ open System.Diagnostics
 open System.IO
 open TiledSharp
 open Prime
-open Nu
 
 (* NOTE: The Metadata folder is placed after the subsystems folders in order to prevent subsystem from accessing
 Metadata from another thread. *)

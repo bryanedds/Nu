@@ -11,7 +11,6 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
-open Nu
 open Nu.Particles
 
 [<RequireQualifiedAccess>]

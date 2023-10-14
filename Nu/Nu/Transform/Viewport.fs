@@ -2,9 +2,9 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu
+open System
 open System.Numerics
 open Prime
-open Nu
 
 [<AutoOpen>]
 module Viewport =

@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open Nu
 
 /// The desired frame rate.
 type FrameRate =
@@ -30,7 +29,6 @@ namespace Nu
 open System
 open System.ComponentModel
 open Prime
-open Nu
 
 /// Type converter for GameTime.
 type GameTimeConverter () =

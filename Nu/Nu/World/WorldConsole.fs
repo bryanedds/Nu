@@ -6,7 +6,6 @@ open System
 open System.Runtime.InteropServices
 open System.Text
 open Prime
-open Nu
 
 [<RequireQualifiedAccess>]
 module WorldConsole =

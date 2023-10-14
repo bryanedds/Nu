@@ -11,7 +11,6 @@ open System.Threading
 open SDL2
 open ImGuiNET
 open Prime
-open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =

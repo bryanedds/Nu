@@ -8,7 +8,6 @@ open System.Reflection
 open System.Threading
 open SDL2
 open Prime
-open Nu
 
 [<RequireQualifiedAccess>]
 module Nu =

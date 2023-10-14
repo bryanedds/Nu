@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open Prime
-open Nu
 
 /// Describes the form of an element's presence.
 /// TODO: see if implemented IEquatable<_> will keep an expression like `pres = pres2` from boxing. If so, consolidate

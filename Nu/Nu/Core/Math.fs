@@ -8,7 +8,6 @@ open System.Globalization
 open System.Numerics
 open FSharp.NativeInterop
 open Prime
-open Nu
 
 [<AutoOpen>]
 module Vector2 =

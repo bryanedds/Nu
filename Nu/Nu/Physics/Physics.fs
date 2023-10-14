@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Numerics
 open Prime
-open Nu
 
 /// Identifies a body that can be found in a physics engine.
 type [<CustomEquality; NoComparison>] BodyId =

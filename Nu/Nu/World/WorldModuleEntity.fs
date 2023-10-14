@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open Prime
-open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModuleEntity =

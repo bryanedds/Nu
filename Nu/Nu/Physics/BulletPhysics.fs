@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Numerics
 open BulletSharp
 open Prime
-open Nu
 
 /// Tracks Bullet physics bodies by their BodyIds.
 type internal BulletBodyDictionary = OrderedDictionary<BodyId, Vector3 option * RigidBody>

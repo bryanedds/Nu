@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 open Prime.Scripting
-open Nu
 #nowarn "22"
 #nowarn "40"
 

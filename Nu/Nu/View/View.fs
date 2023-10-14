@@ -2,7 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu
-open Nu
+open System
 open Prime
 
 /// A tag interface for describing an emitter.

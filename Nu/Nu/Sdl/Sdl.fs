@@ -5,7 +5,6 @@ namespace Nu
 open System
 open SDL2
 open Prime
-open Nu
 
 /// A window for rendering in SDL OpenGL.
 type [<ReferenceEquality>] SglWindow =

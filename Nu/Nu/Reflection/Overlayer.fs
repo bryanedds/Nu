@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open Prime
-open Nu
 
 /// Describes the overlay state of a property.
 type [<StructuralEquality; StructuralComparison>] internal OverlayState =

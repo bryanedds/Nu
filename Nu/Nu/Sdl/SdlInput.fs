@@ -5,7 +5,6 @@ namespace Nu
 open System
 open SDL2
 open Prime
-open Nu
 
 // for NativeInterop with KeyboardState
 #nowarn "9"

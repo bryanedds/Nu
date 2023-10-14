@@ -7,7 +7,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Reflection
 open Prime
-open Nu
 
 [<RequireQualifiedAccess>]
 module Reflection =
@@ -545,7 +544,6 @@ module Reflection =
 
 namespace Prime
 open Nu
-open Prime
     
 /// In tandem with the define literal, grants a nice syntax to define value properties.
 type [<NoEquality; NoComparison>] ValueDescription =

@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Reflection
 open Prime
-open Nu
 
 [<AutoOpen>]
 module WorldModuleOperators =

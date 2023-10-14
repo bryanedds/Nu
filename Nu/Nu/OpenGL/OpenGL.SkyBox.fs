@@ -3,8 +3,6 @@
 
 namespace OpenGL
 open System
-open System.Numerics
-open FSharp.NativeInterop
 open Prime
 open Nu
 

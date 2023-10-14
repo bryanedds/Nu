@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu.Constants
+open System
 open System.Configuration
 open Prime
 open Nu

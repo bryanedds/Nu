@@ -8,7 +8,6 @@ open System.Numerics
 open SDL2
 open TiledSharp
 open Prime
-open Nu
 
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
