@@ -770,9 +770,9 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       EyeSize2d : Vector2
       EyeCenter3d : Vector3
       EyeRotation3d : Quaternion
-      EyeFrustum3dEnclosed : Frustum
-      EyeFrustum3dExposed : Frustum
-      EyeFrustum3dImposter : Frustum
+      EyeFrustum3dEnclosed : Frustum // OPTIMIZATION: cached value
+      EyeFrustum3dExposed : Frustum // OPTIMIZATION: cached value
+      EyeFrustum3dImposter : Frustum // OPTIMIZATION: cached value
       ScriptFrame : Scripting.DeclarationFrame
       Order : int64
       Id : Guid }
