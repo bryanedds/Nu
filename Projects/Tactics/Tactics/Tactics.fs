@@ -73,17 +73,17 @@ module TacticsGame =
              Game.UpdateEvent => UpdateMessage
              Game.UpdateEvent => UpdateCommand
              Simulants.Splash.DeselectingEvent => ShowTitle
-             Simulants.TitleGuiPlay.ClickEvent => ShowPick
-             Simulants.TitleGuiCredits.ClickEvent => ShowCredits
-             Simulants.TitleGuiExit.ClickEvent => Exit
-             Simulants.PickGuiNewGame1.ClickEvent => ShowIntro Slot1
-             Simulants.PickGuiNewGame2.ClickEvent => ShowIntro Slot2
-             Simulants.PickGuiNewGame3.ClickEvent => ShowIntro Slot3
-             Simulants.PickGuiLoadGame1.ClickEvent => TryLoad Slot1
-             Simulants.PickGuiLoadGame2.ClickEvent => TryLoad Slot2
-             Simulants.PickGuiLoadGame3.ClickEvent => TryLoad Slot3
-             Simulants.PickGuiBack.ClickEvent => ShowTitle
-             Simulants.CreditsGuiBack.ClickEvent => ShowTitle]
+             Simulants.TitlePlay.ClickEvent => ShowPick
+             Simulants.TitleCredits.ClickEvent => ShowCredits
+             Simulants.TitleExit.ClickEvent => Exit
+             Simulants.PickNewGame1.ClickEvent => ShowIntro Slot1
+             Simulants.PickNewGame2.ClickEvent => ShowIntro Slot2
+             Simulants.PickNewGame3.ClickEvent => ShowIntro Slot3
+             Simulants.PickLoadGame1.ClickEvent => TryLoad Slot1
+             Simulants.PickLoadGame2.ClickEvent => TryLoad Slot2
+             Simulants.PickLoadGame3.ClickEvent => TryLoad Slot3
+             Simulants.PickBack.ClickEvent => ShowTitle
+             Simulants.CreditsBack.ClickEvent => ShowTitle]
 
         override this.Message (model, message, _, world) =
 
@@ -158,12 +158,12 @@ module TacticsGame =
                 // update picks
                 let world =
                     if Simulants.Pick.Selected world then
-                        let world = Simulants.PickGuiNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
-                        let world = Simulants.PickGuiNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
-                        let world = Simulants.PickGuiNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
-                        let world = Simulants.PickGuiLoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
-                        let world = Simulants.PickGuiLoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
-                        let world = Simulants.PickGuiLoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
+                        let world = Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
+                        let world = Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
+                        let world = Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
+                        let world = Simulants.PickLoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
+                        let world = Simulants.PickLoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
+                        let world = Simulants.PickLoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
                         world
                     else world
 

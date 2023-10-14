@@ -54,10 +54,10 @@ module MyGame =
              match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
              Game.UpdateEvent => Update
              Simulants.Splash.DeselectingEvent => ShowTitle
-             Simulants.TitleGuiCredits.ClickEvent => ShowCredits
-             Simulants.TitleGuiPlay.ClickEvent => ShowGameplay
-             Simulants.TitleGuiExit.ClickEvent => Exit
-             Simulants.CreditsGuiBack.ClickEvent => ShowTitle]
+             Simulants.TitleCredits.ClickEvent => ShowCredits
+             Simulants.TitlePlay.ClickEvent => ShowGameplay
+             Simulants.TitleExit.ClickEvent => Exit
+             Simulants.CreditsBack.ClickEvent => ShowTitle]
 
         // here we handle the above messages
         override this.Message (model, message, _, world) =
