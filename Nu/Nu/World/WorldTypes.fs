@@ -1154,6 +1154,9 @@ and Game (gameAddress : Game Address) =
     /// The address of the game.
     member this.GameAddress = gameAddress
 
+    /// Get the names of a game.
+    member inline this.Names = Address.getNames this.GameAddress
+
     /// Get the name of a game.
     member inline this.Name = Address.getName this.GameAddress
 
