@@ -1,5 +1,4 @@
 ﻿namespace Nelmish
-open Prime
 open Nu
 
 // this is our MMCC model type
