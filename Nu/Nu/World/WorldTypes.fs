@@ -1169,10 +1169,10 @@ and Game (gameAddress : Game Address) =
     /// Derive a screen from the game.
     static member (/) (game : Game, screenName) = let _ = game in Screen (rtoa [|Constants.Engine.GameName; screenName|])
 
-    /// Concatenate an address with a game's address, forcing the type of first address.
+    /// Concatenate an address with a game's address, taking the type of first address.
     static member (-->) (address : 'a Address, game : Game) =
         // HACK: anonymizes address when entity is null due to internal engine trickery.
-        if isNull (game :> obj) then Address.anonymize address else acatff address game.GameAddress
+        if isNull (game :> obj) then Address.anonymize address else acatf address game.GameAddress
 
     override this.ToString () =
         scstring this.GameAddress
@@ -1240,10 +1240,10 @@ and Screen (screenAddress) =
     /// Derive a group from its screen.
     static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
 
-    /// Concatenate an address with a screen's address, forcing the type of first address.
+    /// Concatenate an address with a screen's address, taking the type of first address.
     static member (-->) (address : 'a Address, screen : Screen) =
         // HACK: anonymizes address when screen is null due to internal engine trickery.
-        if isNull (screen :> obj) then Address.anonymize address else acatff address screen.ScreenAddress
+        if isNull (screen :> obj) then Address.anonymize address else acatf address screen.ScreenAddress
 
     override this.ToString () =
         scstring this.ScreenAddress
@@ -1313,10 +1313,10 @@ and Group (groupAddress) =
     /// Derive an entity from its group.
     static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
 
-    /// Concatenate an address with a group's address, forcing the type of first address.
+    /// Concatenate an address with a group's address, taking the type of first address.
     static member (-->) (address : 'a Address, group : Group) =
         // HACK: anonymizes address when group is null due to internal engine trickery.
-        if isNull (group :> obj) then Address.anonymize address else acatff address group.GroupAddress
+        if isNull (group :> obj) then Address.anonymize address else acatf address group.GroupAddress
 
     override this.ToString () =
         scstring this.GroupAddress
@@ -1409,10 +1409,10 @@ and Entity (entityAddress) =
     /// Derive an entity from its parent entity.
     static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
 
-    /// Concatenate an address with an entity, forcing the type of first address.
+    /// Concatenate an address with an entity, taking the type of first address.
     static member (-->) (address : 'a Address, entity : Entity) =
         // HACK: anonymizes address when entity is null due to internal engine trickery.
-        if isNull (entity :> obj) then Address.anonymize address else acatff address entity.EntityAddress
+        if isNull (entity :> obj) then Address.anonymize address else acatf address entity.EntityAddress
 
     override this.ToString () =
         scstring this.EntityAddress

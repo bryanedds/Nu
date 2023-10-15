@@ -158,20 +158,12 @@ module Address =
             Address.rtoa<'a> (Array.append address.Names address2.Names)
 
         /// Concatenate two addresses, taking the type of first address.
-        static member acatf<'a> (address : 'a Address) (address2 : obj Address) : 'a Address =
-            Address.rtoa<'a> (Array.append address.Names address2.Names)
-    
-        /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'a Address =
-            Address.acatf address (Address.atooa address2)
+        static member acatf<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'a Address =
+            Address.acat address (Address.atoa<'b, 'a> address2)
 
-        /// Concatenate two addresses, taking the type of the second address.
-        static member acats<'a> (address : obj Address) (address2 : 'a Address) : 'a Address =
-            Address.rtoa<'a> (Array.append address.Names address2.Names)
-    
-        /// Concatenate two addresses, forcing the type of second address.
-        static member acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address  =
-            Address.acats (Address.atooa address) address2
+        /// Concatenate two addresses, taking the type of second address.
+        static member acats<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address  =
+            Address.acat (Address.atoa<'a, 'b> address) address2
 
         /// The wildcard address.
         static member Wildcard = Address.ntoa AddressInternal.WildcardName
@@ -180,19 +172,13 @@ module Address =
         static member Ellipsis = Address.ntoa AddressInternal.EllipsisName
 
         /// Concatenate two addresses of the same type.
-        static member (-|-) (address : 'a Address, address2 : 'a Address) = Address.acat address address2
+        static member (-|-) (address : 'a Address, address2 : 'a Address) : 'a Address = Address.acat address address2
 
         /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address : 'a Address, address2 : obj Address) = Address.acatf address address2
+        static member (-->) (address : 'a Address, address2 : 'b Address) : 'a Address = Address.acatf address address2
 
-        /// Concatenate two addresses, forcing the type of first address.
-        static member (-->) (address : 'a Address, address2 : 'b Address) = Address.acatff address address2
-
-        /// Concatenate two addresses, taking the type of the second address.
-        static member (-<-) (address : obj Address, address2 : 'b Address) = Address.acats address address2
-
-        /// Concatenate two addresses, forcing the type of second address.
-        static member (<--) (address : 'a Address, address2 : 'b Address) = Address.acatsf address address2
+        /// Concatenate two addresses, taking the type of second address.
+        static member (<--) (address : 'a Address, address2 : 'b Address) : 'b Address = Address.acats address address2
 
         interface Address with
             member this.Names = this.Names
@@ -369,16 +355,10 @@ module AddressOperators =
     let inline acat<'a> (address : 'a Address) (address2 : 'a Address) = Address.acat<'a> address address2
 
     /// Concatenate two addresses, taking the type of first address.
-    let inline acatf<'a> (address : 'a Address) (address2 : obj Address) = Address.acatf<'a> address address2
+    let inline acatf<'a, 'b> (address : 'a Address) (address2 : 'b Address) = Address.acatf<'a, 'b> address address2
 
-    /// Concatenate two addresses, forcing the type of first address.
-    let inline acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) = Address.acatff<'a, 'b> address address2
-
-    /// Concatenate two addresses, taking the type of the second address.
-    let inline acats<'a> (address : obj Address) (address2 : 'a Address) = Address.acats<'a> address address2
-
-    /// Concatenate two addresses, forcing the type of second address.
-    let inline acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) = Address.acatsf<'a, 'b> address address2
+    /// Concatenate two addresses, taking the type of second address.
+    let inline acats<'a, 'b> (address : 'a Address) (address2 : 'b Address) = Address.acats<'a, 'b> address address2
 
 /// Specifies the address of an identifiable value.
 type 'a Address = 'a Address.Address
