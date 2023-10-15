@@ -18,7 +18,7 @@
 #r "../../../Nu/Nu.Math/bin/Debug/netstandard2.0/Nu.Math.dll"
 #r "../../../Nu/Nu/bin/Debug/net7.0/Nu.dll"
 
-namespace TemplateDispatcher2d
+namespace Namespace
 open System
 open Prime
 open Nu
