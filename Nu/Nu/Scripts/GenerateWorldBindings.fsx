@@ -10,13 +10,13 @@
 #r "nuget: Prime, 9.9.1"
 #r "nuget: Prime.Scripting, 9.5.0"
 #r "nuget: System.Configuration.ConfigurationManager, 7.0.0"
-#r "../../Nu/Nu.Dependencies/AssimpNet/netstandard1.3/AssimpNet.dll"
-#r "../../Nu/Nu.Dependencies/BulletSharpPInvoke/netstandard2.1/BulletSharp.dll"
-#r "../../Nu/Nu.Dependencies/OpenGL.NET/lib/netcoreapp2.2/OpenGL.Net.dll"
-#r "../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
-#r "../../Nu/Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll"
-#r "../../Nu/Nu.Math/bin/Debug/netstandard2.0/Nu.Math.dll"
-#r "../../Nu/Nu/bin/Debug/net7.0/Nu.dll"
+#r "../../../Nu/Nu.Dependencies/AssimpNet/netstandard1.3/AssimpNet.dll"
+#r "../../../Nu/Nu.Dependencies/BulletSharpPInvoke/netstandard2.1/BulletSharp.dll"
+#r "../../../Nu/Nu.Dependencies/OpenGL.NET/lib/netcoreapp2.2/OpenGL.Net.dll"
+#r "../../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
+#r "../../../Nu/Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll"
+#r "../../../Nu/Nu.Math/bin/Debug/netstandard2.0/Nu.Math.dll"
+#r "../../../Nu/Nu/bin/Debug/net7.0/Nu.dll"
 
 open System
 open System.Reflection
@@ -428,6 +428,6 @@ let bindings =
     Array.definitize // TODO: error output
 
 do
-    Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
+    Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/../bin/Debug")
     let bindings = generateBindingsCode bindings
-    File.WriteAllText ("../../World/WorldBindings.fs", bindings)
+    File.WriteAllText ("../../../World/WorldBindings.fs", bindings)

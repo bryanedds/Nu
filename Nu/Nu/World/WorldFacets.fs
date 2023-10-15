@@ -29,12 +29,12 @@ module Declarative =
 module StaticSpriteFacetModule =
 
     type Entity with
-        member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
-        member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
-        member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
         member this.GetInsetOpt world : Box2 option = this.Get (nameof this.InsetOpt) world
         member this.SetInsetOpt (value : Box2 option) world = this.Set (nameof this.InsetOpt) value world
         member this.InsetOpt = lens (nameof this.InsetOpt) this this.GetInsetOpt this.SetInsetOpt
+        member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
+        member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
+        member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
         member this.GetColor world : Color = this.Get (nameof this.Color) world
         member this.SetColor (value : Color) world = this.Set (nameof this.Color) value world
         member this.Color = lens (nameof this.Color) this this.GetColor this.SetColor
@@ -53,11 +53,11 @@ module StaticSpriteFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Box
+            [define Entity.InsetOpt None
+             define Entity.StaticImage Assets.Default.Box
              define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Emission Color.Zero
-             define Entity.InsetOpt None
              define Entity.Flip FlipNone]
 
         override this.Render (entity, world) =

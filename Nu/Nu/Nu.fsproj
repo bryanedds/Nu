@@ -118,8 +118,10 @@
 		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\WorldBindings.fs" />
 		<Compile Include="World\World.fs" />
-		<None Include="GenerateInputBindings.fsx" />
-		<None Include="GenerateWorldBindings.fsx" />
+		<None Include="Scripts\EntityDispatcher2dTemplate.fsx" />
+		<None Include="Scripts\EntityDispatcher3dTemplate.fsx" />
+		<None Include="Scripts\GenerateInputBindings.fsx" />
+		<None Include="Scripts\GenerateWorldBindings.fsx" />
 		<None Include="SDL2.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
