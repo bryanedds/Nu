@@ -135,7 +135,14 @@ module SdlDeps =
     let tryMake sdlConfig =
         match attemptPerformSdlInit
             (fun () ->
-                let initConfig = SDL.SDL_INIT_EVERYTHING - SDL.SDL_INIT_SENSOR // NOTE: avoids depending on the presence of tilt sensor hardware.
+                let initConfig =
+                    SDL.SDL_INIT_TIMER |||
+                    SDL.SDL_INIT_AUDIO |||
+                    SDL.SDL_INIT_VIDEO |||
+                    SDL.SDL_INIT_JOYSTICK |||
+                    SDL.SDL_INIT_HAPTIC |||
+                    SDL.SDL_INIT_GAMECONTROLLER |||
+                    SDL.SDL_INIT_EVENTS
                 SDL.SDL_Init initConfig)
             (fun () -> SDL.SDL_Quit ()) with
         | Left error -> Left error
