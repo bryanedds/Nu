@@ -203,7 +203,7 @@ module WorldModuleGame =
             World.setGameSelectedScreenOpt value Game.Handle world |> snd
 
         static member internal getGameSelectedScreen game world =
-            World.getGameSelectedScreen game world
+            (World.getGameSelectedScreenOpt game world).Value
 
         static member internal setGameSelectedScreen screen game world =
             World.setGameSelectedScreenOpt (Some screen) game world
