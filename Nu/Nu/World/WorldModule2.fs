@@ -1449,13 +1449,17 @@ module EntityDispatcherModule2 =
         abstract Initialize : 'model * Entity -> InitializerContent list
         default this.Initialize (_, _) = []
 
+        /// The message handler of the MMCC programming model.
+        abstract Message : 'model * 'message * Entity * World -> Signal list * 'model
+        default this.Message (model, _, _, _) = just model
+
         /// The physics synchronization handler for the MMCC programming model.
         abstract Physics : Vector3 * Quaternion * Vector3 * Vector3 * 'model * Entity * World -> Signal list * 'model
         default this.Physics (_, _, _, _, model, _, _) = just model
 
-        /// The message handler of the MMCC programming model.
-        abstract Message : 'model * 'message * Entity * World -> Signal list * 'model
-        default this.Message (model, _, _, _) = just model
+        /// Implements additional editing behavior for an entity via the ImGui API.
+        abstract Edit : 'model * EditOperation * Entity * World -> Signal list * 'model
+        default this.Edit (model, _, _, _) = just model
 
         /// The command handler of the MMCC programming model.
         abstract Command : 'model * 'command * Entity * World -> Signal list * World
@@ -1468,10 +1472,6 @@ module EntityDispatcherModule2 =
         /// Describes how the entity is to be viewed using the View API.
         abstract View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
-
-        /// Implements additional editing behavior for an entity via the ImGui API.
-        abstract Edit : 'model * EditOperation * Entity * World -> Signal list * 'model
-        default this.Edit (model, _, _, _) = just model
 
     /// A 2d entity dispatcher.
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
