@@ -1473,6 +1473,7 @@ module EntityDispatcherModule2 =
         abstract Edit : 'model * EditOperation * Entity * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
 
+    /// A 2d entity dispatcher.
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, centered, physical, makeInitial)
 
@@ -1489,6 +1490,7 @@ module EntityDispatcherModule2 =
             [define Entity.Size Constants.Engine.EntitySize2dDefault
              define Entity.Centered Constants.Engine.EntityCentered2dDefault]
 
+    /// A gui entity dispatcher.
     and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityCenteredGuiDefault, false, makeInitial)
 
@@ -1511,6 +1513,7 @@ module EntityDispatcherModule2 =
              define Entity.DockType DockCenter
              define Entity.GridPosition v2iZero]
 
+    /// A 3d entity dispatcher.
     and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, centered, physical, makeInitial)
 
@@ -1526,6 +1529,14 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize3dDefault
              define Entity.Centered Constants.Engine.EntityCentered3dDefault]
+
+    /// A vui dispatcher (gui in 3d).
+    and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, Constants.Engine.EntityCenteredVuiDefault, false, makeInitial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntitySizeVuiDefault
+             define Entity.Centered Constants.Engine.EntityCenteredVuiDefault]
 
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
