@@ -1490,7 +1490,7 @@ module EntityDispatcherModule2 =
              define Entity.Centered Constants.Engine.EntityCentered2dDefault]
 
     and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher2d<'model, 'message, 'command> (Constants.Engine.EntityCenteredGuiDefault, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityCenteredGuiDefault, false, makeInitial)
 
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)

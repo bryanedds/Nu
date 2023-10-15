@@ -100,7 +100,7 @@ module WorldModuleGame =
 
         static member internal getGameOmniScreenOpt game world =
             (World.getGameState game world).OmniScreenOpt
-        
+
         static member internal setGameOmniScreenOpt value game world =
             if Option.isSome value && World.getGameSelectedScreenOpt game world = value then failwith "Cannot set OmniScreenOpt to [Some SelectedScreen]."
             let gameState = World.getGameState game world
@@ -113,7 +113,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getOmniScreenOpt world =
             World.getGameOmniScreenOpt Game.Handle world
-        
+
         /// Set the omni-screen or None.
         [<FunctionBinding>]
         static member setOmniScreenOpt value world =
@@ -121,7 +121,7 @@ module WorldModuleGame =
 
         static member internal getGameOmniScreen game world =
             (World.getGameOmniScreenOpt game world).Value
-        
+
         static member internal setGameOmniScreen value game world =
             World.setGameOmniScreenOpt (Some value) game world
 
@@ -129,7 +129,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getOmniScreen world =
             World.getGameOmniScreen Game.Handle world
-        
+
         /// Set the omni-screen.
         [<FunctionBinding>]
         static member setOmniScreen value world =
@@ -196,7 +196,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getSelectedScreenOpt world =
             World.getGameSelectedScreenOpt Game.Handle world
-        
+
         /// Set the currently selected screen or None.
         [<FunctionBinding>]
         static member setSelectedScreenOpt value world =
@@ -212,7 +212,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getSelectedScreen world =
             World.getGameSelectedScreen Game.Handle world
-        
+
         /// Set the currently selected screen.
         [<FunctionBinding>]
         static member setSelectedScreen value world =
@@ -232,7 +232,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getDesiredScreen world =
             World.getGameDesiredScreen Game.Handle world
-        
+
         /// Set the desired screen, if applicable.
         [<FunctionBinding>]
         static member setDesiredScreen value world =
@@ -252,7 +252,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getScreenTransitionDestinationOpt world =
             World.getGameScreenTransitionDestinationOpt Game.Handle world
-        
+
         /// Set the current destination screen or None.
         [<FunctionBinding>]
         static member setScreenTransitionDestinationOpt value world =
@@ -272,7 +272,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getEyeCenter2d world =
             World.getGameEyeCenter2d Game.Handle world
-        
+
         /// Set the current 2d eye center.
         [<FunctionBinding>]
         static member setEyeCenter2d value world =
@@ -292,7 +292,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getEyeSize2d world =
             World.getGameEyeSize2d Game.Handle world
-        
+
         /// Set the current 2d eye size.
         [<FunctionBinding>]
         static member setEyeSize2d value world =
@@ -378,7 +378,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getEyeCenter3d world =
             World.getGameEyeCenter3d Game.Handle world
-        
+
         /// Set the current 3d eye center.
         [<FunctionBinding>]
         static member setEyeCenter3d value world =
@@ -405,7 +405,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getEyeRotation3d world =
             World.getGameEyeRotation3d Game.Handle world
-        
+
         /// Set the current 3d eye rotation.
         [<FunctionBinding>]
         static member setEyeRotation3d value world =
