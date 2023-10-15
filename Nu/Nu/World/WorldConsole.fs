@@ -63,7 +63,7 @@ module WorldConsole =
     /// Attempt to hook-up the interactive console window.
     let tryHookUp world =
         match Environment.OSVersion.Platform with
-        | PlatformID.Win32NT 
+        | PlatformID.Win32NT
         | PlatformID.Win32Windows ->
             let world =
                 World.subscribe (fun keyEvent world ->

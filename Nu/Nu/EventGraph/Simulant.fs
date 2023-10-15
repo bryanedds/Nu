@@ -22,14 +22,14 @@ module SimulantOperators =
         /// The name of the simulant.
         member this.Name = Address.getName this.SimulantAddress
 
-        /// Concatenate an address with a simulant's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (simulant : Simulant) =
+        /// Concatenate an address with a simulant's address, taking the type of first address.
+        static member acatf<'a> (address : 'a Address) (simulant : Simulant) =
             match box simulant with
             | null -> address // HACK: this case is a hack to be able to insert events into an MMCC event handler
-            | _ -> acatff address simulant.SimulantAddress
+            | _ -> acatf address simulant.SimulantAddress
 
-        /// Concatenate an address with a simulant's address, forcing the type of first address.
-        // Disabled due to extension types not supporting operators: static member (-->) (address, simulant : Simulant) = Simulant.acatff address simulant
+        /// Concatenate an address with a simulant's address, taking the type of first address.
+        // Disabled due to extension types not supporting operators: static member (-->) (address, simulant : Simulant) = Simulant.acatf address simulant
 
 /// A simulant in the event system that is globalized and compatible with generalized events.
 type GlobalSimulantGeneralized =

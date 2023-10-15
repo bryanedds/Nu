@@ -1433,7 +1433,6 @@ module EntityDispatcherModule2 =
                              "This may come about due to sending an incorrect signal type to the entity or due to too significant a change in the signal type when reloading code.")
                         world
 
-
         override this.TryGetInitialModelValue<'a> world =
             makeInitial world :> obj :?> 'a |> Some
 
