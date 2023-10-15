@@ -59,6 +59,14 @@ module EntityDispatcherModule =
                 else [||]
             else base.RayCast (ray, entity, world)
 
+    /// A vui dispatcher (gui in 3d).
+    and [<AbstractClass>] VuiDispatcher () =
+        inherit EntityDispatcher (false, Constants.Engine.EntityCenteredVuiDefault, false)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntitySizeVuiDefault
+             define Entity.Centered Constants.Engine.EntityCenteredVuiDefault]
+
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
 

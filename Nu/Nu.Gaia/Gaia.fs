@@ -1910,11 +1910,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "|"
                         ImGui.SameLine ()
                         if world.Halted then
-                            if ImGui.Button "*Run*" then
+                            if ImGui.Button "Advance (F5)" then
                                 snapshot ()
                                 world <- World.setAdvancing true world
                         else
-                            if ImGui.Button "Pause" then
+                            if ImGui.Button "Halt (F5)" then
                                 world <- World.setAdvancing false world
                             ImGui.SameLine ()
                             ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
@@ -1967,7 +1967,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SameLine ()
                         ImGui.Text "Mode:"
                         ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 150.0f
+                        ImGui.SetNextItemWidth 130.0f
                         if ImGui.BeginCombo ("##projectEditMode", projectEditMode) then
                             let editModes = World.getEditModes world
                             for editMode in editModes do
