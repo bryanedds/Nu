@@ -21,6 +21,26 @@ module EntityDispatcherModule =
             [define Entity.Size Constants.Engine.EntitySize2dDefault
              define Entity.Centered Constants.Engine.EntityCentered2dDefault]
 
+    /// A gui entity dispatcher.
+    type GuiDispatcher () =
+        inherit EntityDispatcher (true, Constants.Engine.EntityCenteredGuiDefault, false)
+
+        static member Facets =
+            [typeof<LayoutFacet>]
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
+             define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
+             define Entity.Absolute true
+             define Entity.AlwaysUpdate true
+             define Entity.Presence Omnipresent
+             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.Layout Manual
+             define Entity.LayoutMargin v2Zero
+             define Entity.LayoutOrder 0
+             define Entity.DockType DockCenter
+             define Entity.GridPosition v2iZero]
+
     /// A 3d entity dispatcher.
     type EntityDispatcher3d (centered, physical) =
         inherit EntityDispatcher (false, centered, physical)
@@ -75,29 +95,6 @@ module AnimatedSpriteDispatcherModule =
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.Flip FlipNone]
-
-[<AutoOpen>]
-module GuiDispatcherModule =
-
-    /// Gives an entity the base behavior of gui control.
-    type GuiDispatcher () =
-        inherit EntityDispatcher2d (Constants.Engine.EntityCenteredGuiDefault, false)
-
-        static member Facets =
-            [typeof<LayoutFacet>]
-
-        static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
-             define Entity.Absolute true
-             define Entity.AlwaysUpdate true
-             define Entity.Presence Omnipresent
-             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
-             define Entity.Layout Manual
-             define Entity.LayoutMargin v2Zero
-             define Entity.LayoutOrder 0
-             define Entity.DockType DockCenter
-             define Entity.GridPosition v2iZero]
 
 [<AutoOpen>]
 module TextDispatcherModule =
