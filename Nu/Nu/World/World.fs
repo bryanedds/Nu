@@ -419,7 +419,8 @@ module WorldModule3 =
                  RigidModelHierarchyDispatcher () :> EntityDispatcher
                  EffectDispatcher3d () :> EntityDispatcher
                  BlockDispatcher3d () :> EntityDispatcher
-                 BoxDispatcher3d () :> EntityDispatcher]
+                 BoxDispatcher3d () :> EntityDispatcher
+                 TerrainDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these.
@@ -446,7 +447,8 @@ module WorldModule3 =
                  SkyBoxFacet () :> Facet
                  StaticBillboardFacet () :> Facet
                  StaticModelSurfaceFacet () :> Facet
-                 StaticModelFacet () :> Facet]
+                 StaticModelFacet () :> Facet
+                 TerrainFacet () :> Facet]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =

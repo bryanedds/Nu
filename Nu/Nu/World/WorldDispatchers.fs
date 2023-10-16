@@ -835,3 +835,16 @@ module BoxDispatcher3dModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.StaticModel Assets.Default.StaticModel]
+
+[<AutoOpen>]
+module TerrainDispatcher3dModule =
+
+    /// Gives an entity the base behavior of a rigid 3d terrain.
+    type TerrainDispatcher () =
+        inherit EntityDispatcher3d (true)
+
+        static member Facets =
+            [typeof<TerrainFacet>]
+
+        static member Properties =
+            []
