@@ -68,7 +68,7 @@ type [<StructuralEquality; NoComparison>] SplatMaterial =
       SplatMap : SplatMap }
 
 /// Dynamically specified blend-weighted 3d terrain material.
-/// TODO: define this later if we support dynamic splat terrain editing.
+/// TODO: define this later if we support dynamic terrain editing.
 type [<StructuralEquality; NoComparison>] DynamicMaterial =
     { Unused : unit }
 
