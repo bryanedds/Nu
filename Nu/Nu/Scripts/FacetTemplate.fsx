@@ -30,7 +30,7 @@ module TemplateFacet =
         member this.GetValue world : single = this.Get (nameof this.Value) world
         member this.SetValue (value : single) world = this.Set (nameof this.Value) value world
         member this.Value = lens (nameof this.Value) this this.GetValue this.SetValue
-        // TODO: optional implement more custom properties.
+        // TODO: optionally implement more custom properties.
 
     type TemplateFacet () =
         inherit Facet (false)
