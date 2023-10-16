@@ -2675,20 +2675,18 @@ module TerrainFacetModule =
         member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
         member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
         member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
-        member this.GetTerrainBounds world : Box3 = this.Get (nameof this.TerrainBounds) world
-        member this.SetTerrainBounds (value : Box3) world = this.Set (nameof this.TerrainBounds) value world
-        member this.TerrainBounds = lens (nameof this.TerrainBounds) this this.GetTerrainBounds this.SetTerrainBounds
         member this.GetTerrainMaterial world : TerrainMaterial = this.Get (nameof this.TerrainMaterial) world
         member this.SetTerrainMaterial (value : TerrainMaterial) world = this.Set (nameof this.TerrainMaterial) value world
         member this.TerrainMaterial = lens (nameof this.TerrainMaterial) this this.GetTerrainMaterial this.SetTerrainMaterial
 
         member this.GetTerrainResolution world =
             match this.GetHeightMap world with
+            | ImageHeightMap map -> Metadata.getTextureSize map
             | RawHeightMap map -> map.Resolution
-            | ImageHeightMap image -> Metadata.getTextureSize image
+            | DynamicHeightMap map -> map.Resolution
 
         member this.GetTerrainQuadSize world =
-            let bounds = this.GetTerrainBounds world
+            let bounds = this.GetBounds world
             let resolution = this.GetTerrainResolution world
             v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y)
 
@@ -2697,9 +2695,9 @@ module TerrainFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.Segments v2iOne
+            [define Entity.Size (v3Dup 48.0f)
+             define Entity.Segments v2iOne
              define Entity.HeightMap (ImageHeightMap Assets.Default.Block)
-             define Entity.TerrainBounds (box3 (-v3Dup 24.0f) (v3Dup 24.0f))
              define Entity.TerrainMaterial
                 (FlatMaterial
                     { AlbedoImage = Assets.Default.MaterialAlbedo

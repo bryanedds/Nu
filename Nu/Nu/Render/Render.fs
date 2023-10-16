@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
 
 /// The endianness which indicates byte order in an asset.
@@ -70,17 +71,39 @@ type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
       Resolution : Vector2i
       RawAsset : Raw AssetTag }
 
+/// A height map for 3d terrain constructed from a dynamically-specifiable array.
+type [<CustomEquality; NoComparison; Struct>] DynamicHeightMap =
+    { Resolution : Vector2i
+      Vertices : Vector3 array // NOTE: do not mutate these vertices in-place or else changes won't be detected.
+      HashCode : int }
+    override this.GetHashCode () =
+        this.HashCode
+    override this.Equals that =
+        match that with
+        | :? DynamicHeightMap as that ->
+            this.Resolution = that.Resolution &&
+            refEq this.Vertices that.Vertices // OPTIMIZATION: refEq for speed.
+        | _ -> failwithumf ()
+    static member make (resolution : Vector2i) (vertices : Vector3 array) =
+        let requiredElements = resolution.X * resolution.Y
+        if vertices.Length <> requiredElements then
+            failwith ("Invalid vertices; array must contain " + string requiredElements + "elements.")
+        { Resolution = resolution
+          Vertices = vertices
+          HashCode = hash vertices }
+
 /// A height map for 3d terrain.
 [<Syntax
-    ("RawHeightMap ImageHeightMap", "", "", "", "",
+    ("ImageHeightMap RawHeightMap DynamicHeightMap", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison>] HeightMap =
-    | RawHeightMap of RawHeightMap
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
+    | RawHeightMap of RawHeightMap
+    | DynamicHeightMap of DynamicHeightMap
 
 /// An asset that is used for rendering.
-type RenderAsset =
+type [<StructuralEquality; NoComparison>] RenderAsset =
     | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
     | FontAsset of string * int * nativeint
     | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
