@@ -49,16 +49,12 @@ type [<StructuralEquality; NoComparison>] TerrainLayer =
       // TODO: figure out if 'Scale' is the right nomenclature or if it should be 'Repeat' or 'Tile' or something else.
       LayerScale : Vector2 }
 
-/// Blend-weight channel for a 3d terrain.
-type [<StructuralEquality; NoComparison>] SplatChannel =
-    { SplatChannelImage : Image AssetTag
-      SplatChannelIndex : int (* 0 - 3 for R, G, B, A *) }
-
-/// Blend-weighted map for a 3d terrain.
+/// Splat map for a 3d terrain.
 type [<StructuralEquality; NoComparison>] SplatMap =
-    { SplatChannels : SplatChannel array }
+    | RgbaMap of Image AssetTag
+    | RedsMap of Image AssetTag array
 
-/// Blend-weighted material for a 3d terrain.
+/// Weighted material for a 3d terrain.
 type [<StructuralEquality; NoComparison>] SplatMaterial =
     { SplatMap : SplatMap
       TerrainLayers : TerrainLayer array
