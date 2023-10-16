@@ -5,17 +5,16 @@ namespace Nu
 open System
 open Prime
 
-/// An asset that is used for rendering.
-type RenderAsset =
-    | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
-    | FontAsset of string * int * nativeint
-    | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
-    | StaticModelAsset of bool * OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+/// The endianness which indicates byte order in an asset.
+type [<StructuralEquality; NoComparison; Struct>] Endianness =
+    | LittleEndian
+    | BigEndian
 
-/// The type of rendering used on a surface.
-type [<StructuralEquality; NoComparison; Struct>] RenderType =
-    | DeferredRenderType
-    | ForwardRenderType of Subsort : single * Sort : single
+/// The bit depth of a color channel.
+type [<StructuralEquality; NoComparison; Struct>] BitDepth =
+    | BitDepth8
+    | BitDepth16
+    | BitDepth32
 
 /// The blend mode of a sprite.
 [<Syntax
@@ -63,6 +62,34 @@ type [<NoEquality; NoComparison; Struct>] Particle =
       mutable Color : Color
       mutable Emission : Color
       mutable Flip : Flip }
+
+/// A height map for 3d terrain constructed from a raw asset.
+type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
+    { ByteOrder : Endianness
+      BitDepth : BitDepth
+      Resolution : Vector2i
+      RawAsset : Raw AssetTag }
+
+/// A height map for 3d terrain.
+[<Syntax
+    ("RawHeightMap ImageHeightMap", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type [<StructuralEquality; NoComparison>] HeightMap =
+    | RawHeightMap of RawHeightMap
+    | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
+
+/// An asset that is used for rendering.
+type RenderAsset =
+    | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
+    | FontAsset of string * int * nativeint
+    | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
+    | StaticModelAsset of bool * OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+
+/// The type of rendering used on a surface.
+type [<StructuralEquality; NoComparison; Struct>] RenderType =
+    | DeferredRenderType
+    | ForwardRenderType of Subsort : single * Sort : single
 
 /// A renderer tag interface.
 type Renderer = interface end

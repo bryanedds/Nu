@@ -38,6 +38,54 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
+/// A layer from which a 3d terrain's material is composed.
+/// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
+type [<StructuralEquality; NoComparison>] TerrainLayer =
+    { AlbedoImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      // TODO: figure out the precise relationship between layer scale and tile size
+      // TODO: figure out if 'Scale' is the right nomenclature or if it should be 'Repeat' or 'Tile' or something else.
+      LayerScale : Vector2 }
+
+/// Blend-weight channel for a 3d terrain.
+/// OPTIMIZATION: hash is cached for speed.
+type [<CustomEquality; NoComparison>] SplatChannel =
+    { SplatWeights : single array array
+      HashCode : int }
+    static member equals left right = refEq left.SplatWeights right.SplatWeights // OPTIMIZATION: refEq on weights for speed.
+    override this.GetHashCode () = this.HashCode
+    override this.Equals that = match that with :? SplatChannel as that -> SplatChannel.equals this that | _ -> failwithumf ()
+
+/// Blend-weighted map for a 3d terrain.
+/// NOTE: we'll import RGBA as splat map with 4 channels.
+/// OPTIMIZATION: hash is cached for speed.
+type [<CustomEquality; NoComparison>] SplatMap =
+    { SplatChannels : SplatChannel array
+      HashCode : int }
+    static member equals left right = left.SplatChannels = right.SplatChannels
+    override this.GetHashCode () = this.HashCode
+    override this.Equals that = match that with :? SplatMap as that -> SplatMap.equals this that | _ -> failwithumf ()
+
+/// Blend-weighted material for a 3d terrain.
+type [<StructuralEquality; NoComparison>] SplatMaterial =
+    { AlbedoMap : Image Asset
+      SplatMap : SplatMap
+      TerrainLayers : TerrainLayer array }
+
+/// A material as projected from images to a 3d terrain.
+type [<StructuralEquality; NoComparison>] FlatMaterial =
+    { AlbedoMap : Image AssetTag
+      RoughnessMap : Image AssetTag
+      AmbientOcclusionMap : Image AssetTag
+      NormalMap : Image AssetTag }
+
+/// Describes the material of which a 3d terrain is composed.
+type [<StructuralEquality; NoComparison>] TerrainMaterial =
+    | SplatMaterial of SplatMaterial
+    | FlatMaterial of FlatMaterial
+
 /// Describes a static model surface.
 and [<NoEquality; NoComparison>] SurfaceDescriptor =
     { Positions : Vector3 array
@@ -73,6 +121,13 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
       MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
       Particles : Particle SArray }
+
+/// Describes a 3d terrain.
+and [<StructuralEquality; NoComparison>] TerrainDescriptor =
+    { Segments : Vector2i
+      HeightMap : HeightMap
+      Bounds : Box3
+      Material : TerrainMaterial }
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
@@ -258,6 +313,11 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
       SurfaceDescriptors : SurfaceDescriptor array
       Bounds : Box3 }
 
+and [<ReferenceEquality>] RenderTerrain =
+    { Absolute : bool
+      ModelMatrix : Matrix4x4
+      TerrainDescriptor : TerrainDescriptor }
+
 /// A message to the 3d renderer.
 and [<ReferenceEquality>] RenderMessage3d =
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
@@ -274,6 +334,7 @@ and [<ReferenceEquality>] RenderMessage3d =
     | RenderCachedStaticModel of CachedStaticModelMessage
     | RenderCachedStaticModelSurface of CachedStaticModelSurfaceMessage
     | RenderUserDefinedStaticModel of RenderUserDefinedStaticModel
+    | RenderTerrain of RenderTerrain
     | RenderPostPass3d of RenderPassMessage3d
     | ConfigureLightMapping of LightMappingConfig
     | ConfigureSsao of SsaoConfig
@@ -1517,6 +1578,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
                 GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.Presence, &insetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
+            | RenderTerrain _ ->
+                // NOTE: it's up to the renderer to instantiate and memoize the geometry for the terrain internally.
+                ()
             | RenderPostPass3d rpp ->
                 postPasses.Add rpp |> ignore<bool>
             | ConfigureLightMapping lmc ->

@@ -2668,64 +2668,13 @@ module StaticModelSurfaceFacetModule =
 [<AutoOpen>]
 module TerrainFacetModule =
 
-    type Endianness =
-        | LittleEndian
-        | BigEndian
-
-    type BitDepth =
-        | BitDepth8
-        | BitDepth16
-        | BitDepth32
-
-    type RawHeightMap =
-        { ByteOrder : Endianness
-          BitDepth : BitDepth
-          Resolution : Vector2i
-          RawAsset : Raw AssetTag }
-
-    type HeightMap =
-        | RawHeightMap of RawHeightMap
-        | ImageHeightMap of Image AssetTag // only supports 8-bit depth on R channel
-
-    // NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
-    type TerrainLayer =
-        { AlbedoImage : Image AssetTag
-          RoughnessImage : Image AssetTag
-          AmbientOcclusionImage : Image AssetTag
-          NormalImage : Image AssetTag
-          // TODO: figure out the precise relationship between layer scale and tile size
-          // TODO: figure out if 'Scale' is the right nomenclature or if it should be 'Repeat' or 'Tile' or something else.
-          LayerScale : Vector2 }
-
-    type SplatChannel =
-        { SplatWeights : single array array }
-
-    // NOTE: we'll import RGBA as splat map with 4 channels.
-    type SplatMap =
-        { SplatChannels : SplatChannel array }
-
-    type SplatMaterial =
-        { AlbedoMap : Image Asset
-          SplatMap : SplatMap
-          TerrainLayers : TerrainLayer array }
-
-    type FlatMaterial =
-        { AlbedoMap : Image AssetTag
-          RoughnessMap : Image AssetTag
-          AmbientOcclusionMap : Image AssetTag
-          NormalMap : Image AssetTag }
-
-    type TerrainMaterial =
-        | SplatMaterial of SplatMaterial
-        | FlatMaterial of FlatMaterial
-
     type Entity with
+        member this.GetSegments world : Vector2i = this.Get (nameof this.Segments) world
+        member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
+        member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
         member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
         member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
         member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
-        member this.GetDivisions world : Vector2i = this.Get (nameof this.Divisions) world
-        member this.SetDivisions (value : Vector2i) world = this.Set (nameof this.Divisions) value world
-        member this.Divisions = lens (nameof this.Divisions) this this.GetDivisions this.SetDivisions
         member this.GetTerrainBounds world : Box3 = this.Get (nameof this.TerrainBounds) world
         member this.SetTerrainBounds (value : Box3) world = this.Set (nameof this.TerrainBounds) value world
         member this.TerrainBounds = lens (nameof this.TerrainBounds) this this.GetTerrainBounds this.SetTerrainBounds
@@ -2748,8 +2697,8 @@ module TerrainFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.HeightMap (ImageHeightMap Assets.Default.Block)
-             define Entity.Divisions v2iOne
+            [define Entity.Segments v2iOne
+             define Entity.HeightMap (ImageHeightMap Assets.Default.Block)
              define Entity.TerrainBounds (box3 (-v3Dup 24.0f) (v3Dup 24.0f))
              define Entity.TerrainMaterial
                 (FlatMaterial
