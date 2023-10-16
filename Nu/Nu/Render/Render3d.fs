@@ -68,15 +68,15 @@ type [<StructuralEquality; NoComparison>] SplatMaterial =
       SplatMap : SplatMap }
 
 /// Dynamically specified 3d terrain material.
-/// TODO: define this later if we support dynamic terrain editing.
-type [<StructuralEquality; NoComparison>] DynamicTerrainMaterial =
+/// TODO: define this later if we support dynamic splat terrain editing.
+type [<StructuralEquality; NoComparison>] DynamicMaterial =
     { Unused : unit }
 
 /// Describes the material of which a 3d terrain is composed.
 type [<StructuralEquality; NoComparison>] TerrainMaterial =
     | FlatMaterial of FlatMaterial
     | SplatMaterial of SplatMaterial
-    | DynamicMaterial of DynamicTerrainMaterial
+    | DynamicMaterial of DynamicMaterial
 
 /// Describes a static model surface.
 and [<NoEquality; NoComparison>] SurfaceDescriptor =
