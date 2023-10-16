@@ -54,12 +54,6 @@ type [<StructuralEquality; NoComparison>] SplatMap =
     | RgbaMap of Image AssetTag
     | RedsMap of Image AssetTag array
 
-/// Blend-weighted material for a 3d terrain.
-type [<StructuralEquality; NoComparison>] SplatMaterial =
-    { SplatMap : SplatMap
-      TerrainLayers : TerrainLayer array
-      AlbedoImage : Image Asset }
-
 /// A material as projected from images to a 3d terrain.
 type [<StructuralEquality; NoComparison>] FlatMaterial =
     { AlbedoImage : Image AssetTag
@@ -67,10 +61,22 @@ type [<StructuralEquality; NoComparison>] FlatMaterial =
       AmbientOcclusionImage : Image AssetTag
       NormalImage : Image AssetTag }
 
+/// Blend-weighted material for a 3d terrain.
+type [<StructuralEquality; NoComparison>] SplatMaterial =
+    { AlbedoImage : Image Asset
+      TerrainLayers : TerrainLayer array
+      SplatMap : SplatMap }
+
+/// Dynamically specified 3d terrain material.
+/// TODO: define this later if we support dynamic terrain editing.
+type [<StructuralEquality; NoComparison>] DynamicTerrainMaterial =
+    { Unused : unit }
+
 /// Describes the material of which a 3d terrain is composed.
 type [<StructuralEquality; NoComparison>] TerrainMaterial =
-    | SplatMaterial of SplatMaterial
     | FlatMaterial of FlatMaterial
+    | SplatMaterial of SplatMaterial
+    | DynamicMaterial of DynamicTerrainMaterial
 
 /// Describes a static model surface.
 and [<NoEquality; NoComparison>] SurfaceDescriptor =
@@ -108,11 +114,11 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
       RenderType : RenderType
       Particles : Particle SArray }
 
-/// Describes a 3d terrain.
+/// Describes a static 3d terrain.
 and [<StructuralEquality; NoComparison>] TerrainDescriptor =
-    { Segments : Vector2i
+    { Bounds : Box3
+      Segments : Vector2i
       HeightMap : HeightMap
-      Bounds : Box3
       Material : TerrainMaterial }
 
 /// A collection of render tasks in a pass.
