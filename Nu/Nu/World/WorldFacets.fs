@@ -2702,10 +2702,10 @@ module TerrainFacetModule =
              define Entity.TerrainBounds (box3 (-v3Dup 24.0f) (v3Dup 24.0f))
              define Entity.TerrainMaterial
                 (FlatMaterial
-                    { AlbedoMap = Assets.Default.MaterialAlbedo
-                      RoughnessMap = Assets.Default.MaterialRoughness
-                      AmbientOcclusionMap = Assets.Default.MaterialAmbientOcclusion
-                      NormalMap = Assets.Default.MaterialNormal })]
+                    { AlbedoImage = Assets.Default.MaterialAlbedo
+                      RoughnessImage = Assets.Default.MaterialRoughness
+                      AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
+                      NormalImage = Assets.Default.MaterialNormal })]
 
         override this.Register (entity, world) =
             ignore entity

@@ -50,36 +50,26 @@ type [<StructuralEquality; NoComparison>] TerrainLayer =
       LayerScale : Vector2 }
 
 /// Blend-weight channel for a 3d terrain.
-/// OPTIMIZATION: hash is cached for speed.
-type [<CustomEquality; NoComparison>] SplatChannel =
-    { SplatWeights : single array array
-      HashCode : int }
-    static member equals left right = refEq left.SplatWeights right.SplatWeights // OPTIMIZATION: refEq on weights for speed.
-    override this.GetHashCode () = this.HashCode
-    override this.Equals that = match that with :? SplatChannel as that -> SplatChannel.equals this that | _ -> failwithumf ()
+type [<StructuralEquality; NoComparison>] SplatChannel =
+    { SplatChannelImage : Image AssetTag
+      SplatChannelIndex : int (* 0 - 3 for R, G, B, A *) }
 
 /// Blend-weighted map for a 3d terrain.
-/// NOTE: we'll import RGBA as splat map with 4 channels.
-/// OPTIMIZATION: hash is cached for speed.
-type [<CustomEquality; NoComparison>] SplatMap =
-    { SplatChannels : SplatChannel array
-      HashCode : int }
-    static member equals left right = left.SplatChannels = right.SplatChannels
-    override this.GetHashCode () = this.HashCode
-    override this.Equals that = match that with :? SplatMap as that -> SplatMap.equals this that | _ -> failwithumf ()
+type [<StructuralEquality; NoComparison>] SplatMap =
+    { SplatChannels : SplatChannel array }
 
 /// Blend-weighted material for a 3d terrain.
 type [<StructuralEquality; NoComparison>] SplatMaterial =
-    { AlbedoMap : Image Asset
-      SplatMap : SplatMap
-      TerrainLayers : TerrainLayer array }
+    { SplatMap : SplatMap
+      TerrainLayers : TerrainLayer array
+      AlbedoImage : Image Asset }
 
 /// A material as projected from images to a 3d terrain.
 type [<StructuralEquality; NoComparison>] FlatMaterial =
-    { AlbedoMap : Image AssetTag
-      RoughnessMap : Image AssetTag
-      AmbientOcclusionMap : Image AssetTag
-      NormalMap : Image AssetTag }
+    { AlbedoImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      NormalImage : Image AssetTag }
 
 /// Describes the material of which a 3d terrain is composed.
 type [<StructuralEquality; NoComparison>] TerrainMaterial =
