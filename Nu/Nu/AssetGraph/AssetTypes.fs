@@ -29,6 +29,9 @@ type Sound = private { __ : unit }
 /// A static model. Currently just used as a phantom type.
 type StaticModel = private { __ : unit }
 
+/// A raw data asset. Currently just used as a phantom type.
+type Raw = private { __ : unit }
+
 /// Thrown when a tile set property is not found.
 exception TileSetPropertyNotFoundException of string
 

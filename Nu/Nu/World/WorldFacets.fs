@@ -2664,3 +2664,133 @@ module StaticModelSurfaceFacetModule =
                     Some (bounds.Transform (entity.GetAffineMatrixOffset world))
                 else None
             | None -> None
+
+[<AutoOpen>]
+module TerrainFacetModule =
+
+    type Endianness =
+        | LittleEndian
+        | BigEndian
+
+    type BitDepth =
+        | BitDepth8
+        | BitDepth16
+        | BitDepth32
+
+    type RawHeightMap =
+        { ByteOrder : Endianness
+          BitDepth : BitDepth
+          Resolution : Vector2i
+          RawAsset : Raw AssetTag }
+
+    type HeightMap =
+        | RawHeightMap of RawHeightMap
+        | ImageHeightMap of Image AssetTag // only supports 8-bit depth on R channel
+
+    // NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
+    type TerrainLayer =
+        { AlbedoImage : Image AssetTag
+          RoughnessImage : Image AssetTag
+          AmbientOcclusionImage : Image AssetTag
+          NormalImage : Image AssetTag
+          // TODO: figure out the precise relationship between layer scale and tile size
+          // TODO: figure out if 'Scale' is the right nomenclature or if it should be 'Repeat' or 'Tile' or something else.
+          LayerScale : Vector2 }
+
+    type SplatChannel =
+        { SplatWeights : single array array }
+
+    // NOTE: we'll import RGBA as splat map with 4 channels.
+    type SplatMap =
+        { SplatChannels : SplatChannel array }
+
+    type SplatMaterial =
+        { AlbedoMap : Image Asset
+          SplatMap : SplatMap
+          TerrainLayers : TerrainLayer array }
+
+    type FlatMaterial =
+        { AlbedoMap : Image AssetTag
+          RoughnessMap : Image AssetTag
+          AmbientOcclusionMap : Image AssetTag
+          NormalMap : Image AssetTag }
+
+    type TerrainMaterial =
+        | SplatMaterial of SplatMaterial
+        | FlatMaterial of FlatMaterial
+
+    // NOTE: we're not supporting auto-normalization, so no need to represent normalized min and max heights.
+    type TerrainDispatcher =
+        { HeightMap : HeightMap
+          Divisions : int
+          TerrainBounds : Box3
+          TerrainMaterial : TerrainMaterial }
+
+    type Entity with
+        member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
+        member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
+        member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
+        member this.GetDivisions world : Vector2i = this.Get (nameof this.Divisions) world
+        member this.SetDivisions (value : Vector2i) world = this.Set (nameof this.Divisions) value world
+        member this.Divisions = lens (nameof this.Divisions) this this.GetDivisions this.SetDivisions
+        member this.GetTerrainBounds world : Box3 = this.Get (nameof this.TerrainBounds) world
+        member this.SetTerrainBounds (value : Box3) world = this.Set (nameof this.TerrainBounds) value world
+        member this.TerrainBounds = lens (nameof this.TerrainBounds) this this.GetTerrainBounds this.SetTerrainBounds
+        member this.GetTerrainMaterial world : TerrainMaterial = this.Get (nameof this.TerrainMaterial) world
+        member this.SetTerrainMaterial (value : TerrainMaterial) world = this.Set (nameof this.TerrainMaterial) value world
+        member this.TerrainMaterial = lens (nameof this.TerrainMaterial) this this.GetTerrainMaterial this.SetTerrainMaterial
+
+        member this.GetTerrainResolution world =
+            match this.GetHeightMap world with
+            | RawHeightMap map -> map.Resolution
+            | ImageHeightMap image -> Metadata.getTextureSize image
+
+        member this.GetTerrainQuadSize world =
+            let bounds = this.GetTerrainBounds world
+            let resolution = this.GetTerrainResolution world
+            v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y)
+
+    /// Augments an entity with a rigid 3d terrain.
+    type TerrainFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.HeightMap (ImageHeightMap Assets.Default.Block)
+             define Entity.Divisions v2iOne
+             define Entity.TerrainBounds (box3 (-v3Dup 24.0f) (v3Dup 24.0f))
+             define Entity.TerrainMaterial
+                (FlatMaterial
+                    { AlbedoMap = Assets.Default.MaterialAlbedo
+                      RoughnessMap = Assets.Default.MaterialRoughness
+                      AmbientOcclusionMap = Assets.Default.MaterialAmbientOcclusion
+                      NormalMap = Assets.Default.MaterialNormal })]
+
+        override this.Register (entity, world) =
+            ignore entity
+            // TODO: optionally implement registration behavior for the faceted entity.
+            world
+
+        override this.Unregister (entity, world) =
+            ignore entity
+            // TODO: optionally implement unregistration behavior for the faceted entity.
+            world
+
+        override this.RegisterPhysics (entity, world) =
+            ignore entity
+            // TODO: optionally implement registration behavior for the faceted entity.
+            world
+
+        override this.UnregisterPhysics (entity, world) =
+            ignore entity
+            // TODO: optionally implement unregistration behavior for the faceted entity.
+            world
+
+        override this.Update (entity, world) =
+            ignore entity
+            // TODO: optionally implement update code for the faceted entity.
+            world
+
+        override this.Render (entity, world) =
+            ignore entity
+            // TODO: optionally implement rendering code for the faceted entity.
+            world
