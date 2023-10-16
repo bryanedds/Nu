@@ -2719,13 +2719,6 @@ module TerrainFacetModule =
         | SplatMaterial of SplatMaterial
         | FlatMaterial of FlatMaterial
 
-    // NOTE: we're not supporting auto-normalization, so no need to represent normalized min and max heights.
-    type TerrainDispatcher =
-        { HeightMap : HeightMap
-          Divisions : int
-          TerrainBounds : Box3
-          TerrainMaterial : TerrainMaterial }
-
     type Entity with
         member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
         member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
