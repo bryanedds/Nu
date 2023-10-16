@@ -121,7 +121,7 @@
 		<None Include="Scripts\GenerateInputBindings.fsx" />
 		<None Include="Scripts\GenerateWorldBindings.fsx" />
 		<None Include="Scripts\EntityDispatcher2dTemplate.fsx" />
-		<None Include="Scripts\EntityDispatcher3dTemplate - Copy.fsx" />
+		<None Include="Scripts\EntityDispatcher3dTemplate.fsx" />
 		<None Include="Scripts\FacetTemplate.fsx" />
 		<None Include="SDL2.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
