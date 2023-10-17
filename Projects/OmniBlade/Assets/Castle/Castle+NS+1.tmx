@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -45,18 +45,31 @@
     [PlaySong 120 0 0 0.5 [Field TheCalling]]
     [Wait 180]
     [Dialog &quot;Always. They have always treated me this way...&quot;]
+    [Wait 120]
     [Dialog &quot;Things cannot be put right. Things can only be put in my favor...&quot;]
+    [Wait 120]
     [Dialog &quot;You are either the spider or you are the fly...&quot;]
+    [Wait 120]
     [Dialog &quot;A lifetime of poison is what she gave to me...&quot;]
+    [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
+    [Wait 60]
     [Dialog &quot;I shall give it all back to her all in one moment!&quot;]
+    [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Wait 60]
     [Dialog &quot;Aranea's poison is tasteless and unidentifiable...&quot;]
+    [Wait 120]
     [Dialog &quot;In my master's nightly herbal brew shall I serve it.&quot;]
+    [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
+    [Wait 60]
     [Dialog &quot;Upon her death by morning, through the custom of succession, I will take her stead.&quot;]
+    [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Downward]
+    [Wait 60]
     [Dialog &quot;Imagine their faces when they see the lowest servant become the highest... their victim become their tormentor...&quot;]
+    [Wait 120]
     [Dialog &quot;Things could not be put right...&quot;]
     [FadeOutSong 120]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
