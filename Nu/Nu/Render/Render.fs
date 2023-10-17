@@ -6,16 +6,17 @@ open System
 open System.Numerics
 open Prime
 
-/// The endianness which indicates byte order in an asset.
+/// The endianness which indicates byte order in a raw asset.
 type [<StructuralEquality; NoComparison; Struct>] Endianness =
     | LittleEndian
     | BigEndian
 
-/// The bit depth of a color channel.
-type [<StructuralEquality; NoComparison; Struct>] BitDepth =
-    | BitDepth8
-    | BitDepth16
-    | BitDepth32
+/// The format of a raw asset.
+type [<StructuralEquality; NoComparison>] RawFormat =
+    | RawUInt8 of Endianness
+    | RawUInt16 of Endianness
+    | RawUInt32 of Endianness
+    | RawSingle of Endianness
 
 /// The blend mode of a sprite.
 [<Syntax
@@ -66,9 +67,8 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 
 /// A height map for 3d terrain constructed from a raw asset.
 type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
-    { ByteOrder : Endianness
-      BitDepth : BitDepth
-      Resolution : Vector2i
+    { Resolution : Vector2i
+      RawFormat : RawFormat
       RawAsset : Raw AssetTag }
 
 /// A height map for 3d terrain constructed from a dynamically-specifiable array.
@@ -108,6 +108,7 @@ type [<StructuralEquality; NoComparison>] RenderAsset =
     | FontAsset of string * int * nativeint
     | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
     | StaticModelAsset of bool * OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+    | RawAsset of byte array
 
 /// The type of rendering used on a surface.
 type [<StructuralEquality; NoComparison; Struct>] RenderType =

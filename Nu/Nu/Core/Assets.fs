@@ -32,6 +32,7 @@ module Assets =
         let [<Literal>] SideViewCharacterJumpImageName = "SideViewCharacterJump"
         let [<Literal>] SideViewCharacterWalkImageName = "SideViewCharacterWalk"
         let [<Literal>] HighlightImageName = "Highlight"
+        let [<Literal>] HeightMapName = "HeightMap"
         let [<Literal>] FontName = "Font"
         let [<Literal>] TileMapName = "TileMap"
         let [<Literal>] TileMapEmptyName = "TileMapEmpty"
