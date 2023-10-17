@@ -13,7 +13,7 @@ type [<StructuralEquality; NoComparison; Struct>] Endianness =
 
 /// The format of a raw asset.
 type [<StructuralEquality; NoComparison>] RawFormat =
-    | RawUInt8 of Endianness
+    | RawUInt8
     | RawUInt16 of Endianness
     | RawUInt32 of Endianness
     | RawSingle of Endianness
