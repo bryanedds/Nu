@@ -1606,7 +1606,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             try
                                 Some
                                     [|match map.RawFormat with
-                                      | RawUInt8 endianness -> // TODO: also consider endianness.
+                                      | RawUInt8 -> // TODO: also consider endianness.
                                         for _ in 0 .. dec map.Resolution.X do
                                             for _ in 0 .. dec map.Resolution.Y do
                                                 let divisor = single Byte.MaxValue
