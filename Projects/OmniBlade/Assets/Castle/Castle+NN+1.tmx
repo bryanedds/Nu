@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="9" nextobjectid="6">
  <tileset firstgid="1" source="Castle.tsx"/>
  <tileset firstgid="1480" source="CastleInterior.tsx"/>
  <tileset firstgid="3160" source="CastleObjects.tsx"/>
@@ -45,15 +45,25 @@
     [PlaySong 120 0 0 0.5 [Field DancingWithEvil]]
     [Wait 180]
     [Dialog &quot;He told me that my beauty was why I suffered their cruelty all these years...&quot;]
+    [Wait 120]
     [Dialog &quot;No one ever said anything like that to me before...&quot;]
+    [Wait 120]
     [Dialog &quot;He said he would take me away from here...&quot;]
+    [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Leftward]
+    [Wait 60]
     [Dialog &quot;But how can I leave now? My plan for retribution is finally in place.&quot;]
+    [Wait 120]
     [Dialog &quot;The web is already woven...&quot;]
+    [Wait 120]
     [Dialog &quot;For a moment my heart's desire can be felt over my need for revenge...&quot;]
+    [Wait 120]
     [Dialog &quot;Until now, vengefulness and fear is all I've felt...&quot;]
+    [Wait 120]
     [Dialog &quot;I don't know how I feel anymore...&quot;]
+    [Wait 60]
     [Face [CharacterTarget [Enemy Kyla]] Upward]
+    [Wait 60]
     [Dialog &quot;How can I leave now...&quot;]
     [FadeOutSong 120]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
