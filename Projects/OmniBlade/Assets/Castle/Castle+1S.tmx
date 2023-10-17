@@ -35,7 +35,7 @@
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="5" gid="235" x="744" y="912" width="48" height="48">
+  <object id="5" gid="235" x="672" y="912" width="48" height="48">
    <properties>
     <property name="S" value=""/>
    </properties>
