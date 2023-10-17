@@ -157,6 +157,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | FontAsset (_, _, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
+        | RawAsset _ -> ()
 
     static member private tryLoadRenderAsset (asset : obj Asset) renderer =
         GlRenderer2d.invalidateCaches renderer

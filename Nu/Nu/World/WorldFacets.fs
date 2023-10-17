@@ -2692,17 +2692,16 @@ module TerrainFacetModule =
 
     /// Augments an entity with a rigid 3d terrain.
     type TerrainFacet () =
-        inherit Facet (false)
+        inherit Facet (true)
 
         static member Properties =
             [define Entity.Size (v3Dup 48.0f)
              define Entity.Segments v2iOne
-             define Entity.HeightMap (ImageHeightMap Assets.Default.Block)
+             define Entity.HeightMap (ImageHeightMap Assets.Default.HeightMap)
              define Entity.TerrainMaterial
                 (FlatMaterial
                     { AlbedoImage = Assets.Default.MaterialAlbedo
                       RoughnessImage = Assets.Default.MaterialRoughness
-                      AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
                       NormalImage = Assets.Default.MaterialNormal })]
 
         override this.Register (entity, world) =

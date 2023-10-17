@@ -527,6 +527,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         | StaticModelAsset (_, staticModel) ->
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedStaticModel staticModel
             OpenGL.Hl.Assert ()
+        | RawAsset _ ->
+            () // nothing to do
 
     static member private tryLoadTextureAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
@@ -568,6 +570,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         | Right staticModel -> Some staticModel
         | Left error -> Log.debug ("Could not load static model '" + asset.FilePath + "' due to: " + error); None
 
+    static member private tryLoadRawAsset (asset : obj Asset) =
+        try let bytes = File.ReadAllBytes asset.FilePath
+            Some bytes
+        with exn ->
+            Log.debug ("Could not load texture '" + asset.FilePath + "' due to: " + scstring exn)
+            None
+
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
@@ -582,6 +591,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ".fbx" | ".obj" ->
             match GlRenderer3d.tryLoadStaticModelAsset packageState asset renderer with
             | Some model -> Some (StaticModelAsset (false, model))
+            | None -> None
+        | ".raw" ->
+            match GlRenderer3d.tryLoadRawAsset asset with
+            | Some bytes -> Some (RawAsset bytes)
             | None -> None
         | _ -> None
 
@@ -623,6 +636,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     OpenGL.Hl.Assert ()
                                     match GlRenderer3d.tryLoadStaticModelAsset renderPackage.PackageState asset renderer with
                                     | Some staticModel -> renderPackage.Assets.Add (asset.AssetTag.AssetName, StaticModelAsset (userDefined, staticModel))
+                                    | None -> ()
+                                | _ -> ()
+                            | RawAsset _ ->
+                                match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
+                                | ".raw" ->
+                                    renderPackage.Assets.Remove asset.AssetTag.AssetName |> ignore<bool>
+                                    match GlRenderer3d.tryLoadRawAsset asset with
+                                    | Some bytes -> renderPackage.Assets.Add (asset.AssetTag.AssetName, RawAsset bytes)
                                     | None -> ()
                                 | _ -> ()
                         | (false, _) -> ()
@@ -1563,15 +1584,78 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csm.CachedStaticModelAbsolute, &csm.CachedStaticModelMatrix, csm.CachedStaticModelPresence, &csm.CachedStaticModelInsetOpt, &csm.CachedStaticModelMaterialProperties, csm.CachedStaticModelRenderType, csm.CachedStaticModel, renderer)
             | RenderCachedStaticModelSurface csms ->
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (csms.CachedStaticModelSurfaceAbsolute, &csms.CachedStaticModelSurfaceMatrix, &csms.CachedStaticModelSurfaceInsetOpt, &csms.CachedStaticModelSurfaceMaterialProperties, csms.CachedStaticModelSurfaceRenderType, csms.CachedStaticModelSurfaceModel, csms.CachedStaticModelSurfaceIndex, renderer)
-            | RenderUserDefinedStaticModel renderUdsm ->
-                let insetOpt = Option.toValueOption renderUdsm.InsetOpt
+            | RenderUserDefinedStaticModel rudsm ->
+                let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
-                GlRenderer3d.tryCreateUserDefinedStaticModel renderUdsm.SurfaceDescriptors renderUdsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, renderUdsm.Absolute, &renderUdsm.ModelMatrix, renderUdsm.Presence, &insetOpt, &renderUdsm.MaterialProperties, renderUdsm.RenderType, assetTag, renderer)
+                GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.SurfaceDescriptors rudsm.Bounds assetTag renderer
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rudsm.Absolute, &rudsm.ModelMatrix, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, rudsm.RenderType, assetTag, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
-            | RenderTerrain _ ->
-                // NOTE: it's up to the renderer to instantiate and memoize the geometry for the terrain internally.
+            | RenderTerrain rt ->
+
+                // TODO: check if geometry needed to render terrain is already memoized so no unecessary computation occurs
+
+                match rt.TerrainDescriptor.HeightMap with
+                | RawHeightMap map ->
+
+                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
+                    | ValueSome (RawAsset rawAsset) ->
+
+                        use rawMemory = new MemoryStream (rawAsset)
+                        use rawReader = new BinaryReader (rawMemory)
+                        let vertsOpt =
+                            try
+                                Some
+                                    [|match map.RawFormat with
+                                      | RawUInt8 endianness -> // TODO: also consider endianness.
+                                        for _ in 0 .. dec map.Resolution.X do
+                                            for _ in 0 .. dec map.Resolution.Y do
+                                                let divisor = single Byte.MaxValue
+                                                v3
+                                                    ((rawReader.ReadByte () |> single) / divisor)
+                                                    ((rawReader.ReadByte () |> single) / divisor)
+                                                    ((rawReader.ReadByte () |> single) / divisor)
+                                      | RawUInt16 endianness -> // TODO: also consider endianness.
+                                        for _ in 0 .. dec map.Resolution.X do
+                                            for _ in 0 .. dec map.Resolution.Y do
+                                                let divisor = single UInt16.MaxValue
+                                                v3
+                                                    ((rawReader.ReadUInt16 () |> single) / divisor)
+                                                    ((rawReader.ReadUInt16 () |> single) / divisor)
+                                                    ((rawReader.ReadUInt16 () |> single) / divisor)
+                                      | RawUInt32 endianness -> // TODO: also consider endianness.
+                                        for _ in 0 .. dec map.Resolution.X do
+                                            for _ in 0 .. dec map.Resolution.Y do
+                                                let divisor = single UInt32.MaxValue
+                                                v3
+                                                    ((rawReader.ReadUInt32 () |> single) / divisor)
+                                                    ((rawReader.ReadUInt32 () |> single) / divisor)
+                                                    ((rawReader.ReadUInt32 () |> single) / divisor)
+                                      | RawSingle endianness -> // TODO: also consider endianness.
+                                        for _ in 0 .. dec map.Resolution.X do
+                                            for _ in 0 .. dec map.Resolution.Y do
+                                                v3
+                                                    (rawReader.ReadSingle ())
+                                                    (rawReader.ReadSingle ())
+                                                    (rawReader.ReadSingle ())|]
+                            with exn ->
+                                // TODO: log error.
+                                None
+
+                        match vertsOpt with
+                        | Some verts ->
+
+                            // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
+                            // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
+
+                            // TODO: use verts and splat map to construct terrain geometry
+                            ()
+
+                        | None -> ()
+
+                // TODO: render terrain if its geometry was either found in the memoization dictionary or was able to
+                // be created from assets
                 ()
+
             | RenderPostPass3d rpp ->
                 postPasses.Add rpp |> ignore<bool>
             | ConfigureLightMapping lmc ->
