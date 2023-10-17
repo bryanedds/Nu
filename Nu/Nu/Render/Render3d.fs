@@ -58,7 +58,6 @@ type [<StructuralEquality; NoComparison>] SplatMap =
 type [<StructuralEquality; NoComparison>] FlatMaterial =
     { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
       NormalImage : Image AssetTag }
 
 /// Blend-weighted material for a 3d terrain.
