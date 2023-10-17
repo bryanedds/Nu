@@ -1594,8 +1594,6 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // TODO: check if geometry needed to render terrain is already memoized so no unecessary computation occurs
 
-                let bounds = rt.ModelMatrix.
-
                 match rt.TerrainDescriptor.HeightMap with
                 | RawHeightMap map ->
 
