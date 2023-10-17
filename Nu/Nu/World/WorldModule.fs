@@ -667,6 +667,7 @@ module WorldModule =
                             let result =
                                 let namesLength = subscriber.SimulantAddress.Names.Length
                                 if namesLength >= 4 then
+                                    // OPTIMIZATION: handling common case explicitly first.
                                     EventGraph.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                 else
                                     match namesLength with
@@ -674,10 +675,10 @@ module WorldModule =
                                         match subscriber with
                                         | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                         | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                        | _ -> failwithumf ()
+                                        | _ -> Log.debugOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized."); (Cascade, world)
                                     | 2 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                     | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | _ -> failwithumf ()
+                                    | _ -> Log.debugOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); (Cascade, world)
                             handling <- fst result
                             world <- snd result
                             world |> World.choose |> ignore
