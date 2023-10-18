@@ -25,12 +25,12 @@
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="624" y="720" width="48" height="48">
+  <object id="4" gid="235" x="960" y="1104" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="5" gid="235" x="720" y="816" width="48" height="48">
+  <object id="5" gid="235" x="672" y="816" width="48" height="48">
    <properties>
     <property name="S" value=""/>
    </properties>
