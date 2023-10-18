@@ -1665,6 +1665,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // TODO: log error.
                                 None
 
+                        let indices = 
+                            [|for i in 0 .. dec map.Resolution.Y do
+                                for j in 0 .. dec map.Resolution.X do
+                                    for k in 0 .. 1 do
+                                        j + map.Resolution.X * (i + k)|]
+                        
                         match vertsOpt with
                         | Some verts ->
 
