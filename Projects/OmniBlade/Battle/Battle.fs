@@ -145,6 +145,11 @@ module Battle =
     let private updateInventory updater battle =
         { battle with Inventory_ = updater battle.Inventory_ }
 
+    let private sortActionCommands battle =
+        let actionCommands = Array.ofSeq battle.ActionCommands_
+        let actionCommandsSorted = Array.sortStableBy (fun command -> match command.Action with Wound -> 0 | Consequence _ -> 1 | _ -> 2) actionCommands
+        { battle with ActionCommands_ = Queue.ofSeq actionCommandsSorted }
+
     let private updateMessageOpt updater field =
         { field with MessageOpt_ = updater field.MessageOpt_ }
 
@@ -841,15 +846,12 @@ module Battle =
             (sourceIndex, targetIndex, observerIndex, consequences') :: consequences)
             characters.Pairs []
 
-    let private evalConsequence sourceIndex targetIndex observerIndex consequence battle =
-        appendActionCommand (ActionCommand.make (Consequence consequence) sourceIndex (Some targetIndex) (Some observerIndex)) battle
-
     let evalConsequences consequences battle =
-        List.fold (fun battle (sourceIndex, targetIndex, observerIndex, consequences) ->
-            List.fold (fun battle consequence ->
-                evalConsequence sourceIndex targetIndex observerIndex consequence battle)
-                battle consequences)
-            battle consequences
+        let battle =
+            (battle, consequences) ||> List.fold (fun battle (sourceIndex, targetIndex, observerIndex, consequences) ->
+                (battle, consequences) ||> List.fold (fun battle consequence ->
+                    appendActionCommand (ActionCommand.make (Consequence consequence) sourceIndex (Some targetIndex) (Some observerIndex)) battle))
+        sortActionCommands battle
 
     (* Mid-Level Operations *)
 
