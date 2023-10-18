@@ -58,6 +58,7 @@ module Gaia =
     let mutable private rightClickPosition = v2Zero
     let mutable private focusedPropertyDescriptorOpt = None
     let mutable private focusPropertyEditorRequested = false
+    let mutable private propertyValuePrettyPrevious = ""
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
@@ -2115,7 +2116,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
                                 propertyDescriptor.PropertyType = typeof<string Set> then
                                 ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) && propertyValuePretty <> propertyValuePrettyPrevious then
                                 let worldsPast' = worldsPast
                                 try let propertyValueEscaped = propertyValuePretty
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
@@ -2123,6 +2124,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     setPropertyValue propertyValue propertyDescriptor simulant
                                 with :? ParseException | :? ConversionException ->
                                     worldsPast <- worldsPast'
+                            propertyValuePrettyPrevious <- propertyValuePretty
                             if isPropertyAssetTag then
                                 if ImGui.BeginDragDropTarget () then
                                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
