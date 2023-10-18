@@ -58,7 +58,7 @@ module Gaia =
     let mutable private rightClickPosition = v2Zero
     let mutable private focusedPropertyDescriptorOpt = None
     let mutable private focusPropertyEditorRequested = false
-    let mutable private propertyValuePrettyPrevious = ""
+    let mutable private propertyValueStrPrevious = ""
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
     let mutable private dragEyeState = DragEyeInactive
@@ -1358,9 +1358,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName
         let converter = SymbolicConverter ty
-        let value = getProperty propertyDescriptor simulant
-        let valueStr = converter.ConvertToString value
-        match value with
+        let propertyValue = getProperty propertyDescriptor simulant
+        let propertyValueStr = converter.ConvertToString propertyValue
+        match propertyValue with
         | :? Frustum -> () // TODO: implement FrustumConverter.
         | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (name, &b') then setProperty b' propertyDescriptor simulant
         | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int8 i') propertyDescriptor simulant
@@ -1491,7 +1491,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
                     combo <- true
                     let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                    let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                    let (unionCaseInfo, _) = FSharpValue.GetUnionFields (propertyValue, ty)
                     let mutable tag = unionCaseInfo.Tag
                     if ImGui.Combo (name, &tag, caseNames, caseNames.Length) then
                         let value' = FSharpValue.MakeUnion (cases.[tag], [||])
@@ -1504,7 +1504,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                    (ty.GenericTypeArguments.[0].IsValueType && ty.GenericTypeArguments.[0].Name <> typedefof<_ AssetTag>.Name ||
                     ty.GenericTypeArguments.[0] = typeof<string> ||
                     ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                    let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                    let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
                     if ImGui.Checkbox ((if isSome then "##" else "") + name, &isSome) then
                         if isSome then
                             if ty.GenericTypeArguments.[0].IsValueType then
@@ -1532,7 +1532,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                      (ty.GenericTypeArguments.[0].IsValueType && ty.GenericTypeArguments.[0].Name <> typedefof<_ AssetTag>.Name ||
                       ty.GenericTypeArguments.[0] = typeof<string> ||
                       ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                    let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                    let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
                     if ImGui.Checkbox ((if isSome then "##" else "") + name, &isSome) then
                         if isSome then
                             if ty.GenericTypeArguments.[0].IsValueType then
@@ -1552,11 +1552,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
                         imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant
                 elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
-                    let mutable valueStr' = valueStr
-                    if ImGui.InputText ("##text" + name, &valueStr', 4096u) then
+                    let mutable propertyValueStr = propertyValueStr
+                    if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
                         let worldsPast' = worldsPast
-                        try let value' = converter.ConvertFromString valueStr'
-                            setProperty value' propertyDescriptor simulant
+                        try let propertyValue = converter.ConvertFromString propertyValueStr
+                            setProperty propertyValue propertyDescriptor simulant
                         with :? ParseException | :? ConversionException ->
                             worldsPast <- worldsPast'
                     focusProperty ()
@@ -1582,7 +1582,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.Text name
                 elif name = Constants.Engine.FacetNamesPropertyName && ty = typeof<string Set> then
                     let facetNamesAll = world |> World.getFacets |> Map.toKeyArray |> Array.append [|"(Empty)"|]
-                    let facetNames = scvalue<string Set> valueStr
+                    let facetNames = scvalue<string Set> propertyValueStr
                     let mutable facetNames' = Set.empty
                     let mutable changed = false
                     ImGui.Indent ()
@@ -1596,13 +1596,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.Unindent ()
                     if changed then setPropertyValueIgnoreError facetNames' propertyDescriptor simulant
                 else
-                    let mutable valueStr' = valueStr
-                    if ImGui.InputText (name, &valueStr', 131072u) then
+                    let mutable propertyValueStr = propertyValueStr
+                    if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> propertyValueStrPrevious then
                         let worldsPast' = worldsPast
-                        try let value' = converter.ConvertFromString valueStr'
-                            setProperty value' propertyDescriptor simulant
+                        try let propertyValue = converter.ConvertFromString propertyValueStr
+                            setProperty propertyValue propertyDescriptor simulant
                         with :? ParseException | :? ConversionException ->
                             worldsPast <- worldsPast'
+                        propertyValueStrPrevious <- propertyValueStr
         focusProperty ()
 
     let private imGuiEditProperties (simulant : Simulant) =
@@ -2116,7 +2117,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
                                 propertyDescriptor.PropertyType = typeof<string Set> then
                                 ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) && propertyValuePretty <> propertyValuePrettyPrevious then
+                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) && propertyValuePretty <> propertyValueStrPrevious then
                                 let worldsPast' = worldsPast
                                 try let propertyValueEscaped = propertyValuePretty
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
@@ -2124,7 +2125,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     setPropertyValue propertyValue propertyDescriptor simulant
                                 with :? ParseException | :? ConversionException ->
                                     worldsPast <- worldsPast'
-                            propertyValuePrettyPrevious <- propertyValuePretty
+                                propertyValueStrPrevious <- propertyValuePretty
                             if isPropertyAssetTag then
                                 if ImGui.BeginDragDropTarget () then
                                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
