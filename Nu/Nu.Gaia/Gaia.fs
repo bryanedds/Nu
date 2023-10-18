@@ -1553,19 +1553,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
                     let mutable valueStr' = valueStr
                     if ImGui.InputText ("##text" + name, &valueStr', 4096u) then
+                        let worldsPast' = worldsPast
                         try let value' = converter.ConvertFromString valueStr'
                             setProperty value' propertyDescriptor simulant
-                        with :? ParseException | :? ConversionException -> ()
+                        with :? ParseException | :? ConversionException ->
+                            worldsPast <- worldsPast'
                     focusProperty ()
                     if ImGui.BeginDragDropTarget () then
                         if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                             match dragDropPayloadOpt with
                             | Some payload ->
+                                let worldsPast' = worldsPast
                                 try let propertyValueEscaped = payload
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     setProperty propertyValue propertyDescriptor simulant
-                                with :? ParseException | :? ConversionException -> ()
+                                with :? ParseException | :? ConversionException ->
+                                    worldsPast <- worldsPast'
                             | None -> ()
                         ImGui.EndDragDropTarget ()
                     ImGui.SameLine ()
@@ -1593,9 +1597,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else
                     let mutable valueStr' = valueStr
                     if ImGui.InputText (name, &valueStr', 131072u) then
+                        let worldsPast' = worldsPast
                         try let value' = converter.ConvertFromString valueStr'
                             setProperty value' propertyDescriptor simulant
-                        with :? ParseException | :? ConversionException -> ()
+                        with :? ParseException | :? ConversionException ->
+                            worldsPast <- worldsPast'
         focusProperty ()
 
     let private imGuiEditProperties (simulant : Simulant) =
@@ -2110,21 +2116,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 propertyDescriptor.PropertyType = typeof<string Set> then
                                 ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                             elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) then
+                                let worldsPast' = worldsPast
                                 try let propertyValueEscaped = propertyValuePretty
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     setPropertyValue propertyValue propertyDescriptor simulant
-                                with :? ParseException | :? ConversionException -> ()
+                                with :? ParseException | :? ConversionException ->
+                                    worldsPast <- worldsPast'
                             if isPropertyAssetTag then
                                 if ImGui.BeginDragDropTarget () then
                                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                         match dragDropPayloadOpt with
                                         | Some payload ->
+                                            let worldsPast' = worldsPast
                                             try let propertyValueEscaped = payload
                                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                                 setPropertyValue propertyValue propertyDescriptor simulant
-                                            with :? ParseException | :? ConversionException -> ()
+                                            with :? ParseException | :? ConversionException ->
+                                                worldsPast <- worldsPast'
                                         | None -> ()
                                     ImGui.EndDragDropTarget ()
                         | Some _ | None -> ()
