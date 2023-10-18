@@ -399,7 +399,8 @@ module Battle =
         Seq.exists (fun command -> command.SourceIndex = characterIndex)
 
     let shouldCharacterCounter sourceIndex targetIndex battle =
-        if CharacterIndex.unfriendly sourceIndex targetIndex
+        let isSourceNotMadMinotaur = getCharacterBy (fun c -> c.CharacterType <> Enemy MadMinotaur) sourceIndex battle // HACK: disallow countering mad minotaurs since it nerfs challenge of first boss battle.
+        if CharacterIndex.unfriendly sourceIndex targetIndex && isSourceNotMadMinotaur
         then getCharacterBy Character.shouldCounter sourceIndex battle
         else false
 
@@ -970,15 +971,13 @@ module Battle =
         { field with UpdateTime_ = inc field.UpdateTime_ }
 
     let private advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
-        match tryGetCharacter sourceIndex battle with
-        | Some source when source.Healthy ->
+        if getCharacterHealthy sourceIndex battle then
             match targetIndexOpt with
             | Some targetIndex ->
-                match tryGetCharacter targetIndex battle with
-                | Some target ->
+                if containsCharacter targetIndex battle then
                     match localTime with
                     | 0L ->
-                        if target.Healthy then
+                        if getCharacterHealthy targetIndex battle then
                             let sourcePerimeter = getCharacterPerimeter sourceIndex battle
                             let targetPerimeter = getCharacterPerimeter targetIndex battle
                             let battle =
@@ -999,21 +998,18 @@ module Battle =
                                 resetCharacterInput targetIndex battle
                             else battle
                         withSignal (DisplayHitPointsChange (targetIndex, -damage)) battle
-                    | _ when localTime > 15L && Character.getAnimationFinished time target ->
-                        let target = getCharacter targetIndex battle
-                        if target.Healthy then
+                    | _ when localTime > 15L && getCharacterAnimationFinished time targetIndex battle ->
+                        if getCharacterHealthy targetIndex battle then
                             let battle = updateCurrentCommandOpt (constant None) battle
                             let battle = animationCharacterPoise time sourceIndex battle
                             let battle = animationCharacterPoise time targetIndex battle
                             let battle = finishCharacterAction sourceIndex battle
                             let battle =
-                                if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                    shouldCharacterCounter targetIndex sourceIndex battle then
-                                    characterCounterAttack targetIndex sourceIndex battle
-                                else
-                                    let consequences = evalAttackInteractions sourceIndex targetIndex battle
-                                    let battle = evalConsequences consequences battle
-                                    battle
+                                if shouldCharacterCounter targetIndex sourceIndex battle
+                                then characterCounterAttack targetIndex sourceIndex battle
+                                else battle
+                            let consequences = evalAttackInteractions sourceIndex targetIndex battle
+                            let battle = evalConsequences consequences battle
                             just battle
                         else
                             let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex) None)
@@ -1024,13 +1020,12 @@ module Battle =
                             let battle = evalConsequences consequences battle
                             just battle
                     | _ -> just battle
-                | None -> just (abortCharacterAction time sourceIndex battle)
+                else just (abortCharacterAction time sourceIndex battle)
             | None -> just (abortCharacterAction time sourceIndex battle)
-        | Some _ | None -> just (abortCharacterAction time sourceIndex battle)
+        else just (abortCharacterAction time sourceIndex battle)
 
     let private advanceDefend sourceIndex time localTime battle =
-        match tryGetCharacter sourceIndex battle with
-        | Some source when source.Healthy ->
+        if getCharacterHealthy sourceIndex battle then
             match localTime with
             | 0L ->
                 let battle =
@@ -1043,20 +1038,18 @@ module Battle =
                 let battle = finishCharacterAction sourceIndex battle
                 just battle
             | _ -> just battle
-        | Some _ | None ->
+        else
             let battle = updateCurrentCommandOpt (constant None) battle
             just battle
 
     let private advanceConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
-        match tryGetCharacter sourceIndex battle with
-        | Some source when source.Healthy ->
+        if containsCharacterHealthy sourceIndex battle then
             match targetIndexOpt with
             | Some targetIndex ->
-                match tryGetCharacter targetIndex battle with
-                | Some target ->
+                if containsCharacter targetIndex battle then
                     match localTime with
                     | 0L ->
-                        if target.Healthy || consumable = Revive then // HACK: should really be checked ConsumableData.
+                        if getCharacterHealthy targetIndex battle || consumable = Revive then // HACK: should really be checked ConsumableData.
                             let sourcePerimeter = getCharacterPerimeter sourceIndex battle
                             let targetPerimeter = getCharacterPerimeter targetIndex battle
                             let battle =
@@ -1083,7 +1076,7 @@ module Battle =
                                 withSignals [displayHitPointsChange; playHealSound] battle
                             else just battle // TODO: non-curative case
                         | (false, _) -> just battle
-                    | _ when localTime > 30L && Character.getAnimationFinished time target ->
+                    | _ when localTime > 30L && getCharacterAnimationFinished time targetIndex battle ->
                         let battle = updateCurrentCommandOpt (constant None) battle
                         let battle = animationCharacterPoise time sourceIndex battle
                         let battle = animationCharacterPoise time targetIndex battle
@@ -1092,9 +1085,9 @@ module Battle =
                         let battle = evalConsequences consequences battle
                         just battle
                     | _ -> just battle
-                | None -> just (abortCharacterAction time sourceIndex battle)
+                else just (abortCharacterAction time sourceIndex battle)
             | None -> just (abortCharacterAction time sourceIndex battle)
-        | Some _ | None -> just (abortCharacterAction time sourceIndex battle)
+        else just (abortCharacterAction time sourceIndex battle)
 
     let private advanceMessage text lifeTime time localTime battle =
         ignore<int64> localTime
@@ -1104,16 +1097,14 @@ module Battle =
         just battle
 
     let private advanceTech techType sourceIndex (targetIndexOpt : CharacterIndex option) time localTime battle =
-        match tryGetCharacter sourceIndex battle with
-        | Some source when source.Healthy ->
+        if containsCharacterHealthy sourceIndex battle then
             match targetIndexOpt with
             | Some targetIndex ->
-                match tryGetCharacter targetIndex battle with
-                | Some target ->
+                if containsCharacter targetIndex battle then
                     match (Map.tryFind techType Data.Value.Techs, Map.tryFind techType Data.Value.TechAnimations) with
                     | (Some techData, Some techAnimationData) ->
                         ignore techData // TODO: check for target.IsWounded case if techData is affecting wounded...
-                        if target.Healthy then
+                        if getCharacterHealthy targetIndex battle then
                             let (sigs, battle) =
                                 if localTime = techAnimationData.TechStart then
                                     let sourcePerimeter = getCharacterPerimeter sourceIndex battle
@@ -1351,6 +1342,7 @@ module Battle =
                                 elif localTime > techAnimationData.TechStop then
                                     let battle = if techData.SpawnOpt.IsSome then finalizeMaterializations time battle else battle
                                     let (techCost, _, results) = evalTech sourceIndex targetIndex techType battle
+                                    let source = getCharacter sourceIndex battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
                                             let battle = updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
@@ -1404,9 +1396,9 @@ module Battle =
                             withSignals sigs battle
                         else just (abortCharacterAction time sourceIndex battle)
                     | (_, _) -> just (abortCharacterAction time sourceIndex battle)
-                | None -> just (abortCharacterAction time sourceIndex battle)
+                else just (abortCharacterAction time sourceIndex battle)
             | None -> just (abortCharacterAction time sourceIndex battle)
-        | Some _ | None -> just (abortCharacterAction time sourceIndex battle)
+        else just (abortCharacterAction time sourceIndex battle)
 
     let private advanceConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt consequence messageOpt time localTime battle =
         let messageTime = 45L
