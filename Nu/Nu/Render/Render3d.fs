@@ -1581,10 +1581,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for (modelMatrix, presence, insetOpt, properties) in rsms.StaticModels do
                     let insetOpt = Option.toValueOption insetOpt
                     GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, &insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
-            | RenderCachedStaticModel csm ->
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csm.CachedStaticModelAbsolute, &csm.CachedStaticModelMatrix, csm.CachedStaticModelPresence, &csm.CachedStaticModelInsetOpt, &csm.CachedStaticModelMaterialProperties, csm.CachedStaticModelRenderType, csm.CachedStaticModel, renderer)
-            | RenderCachedStaticModelSurface csms ->
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (csms.CachedStaticModelSurfaceAbsolute, &csms.CachedStaticModelSurfaceMatrix, &csms.CachedStaticModelSurfaceInsetOpt, &csms.CachedStaticModelSurfaceMaterialProperties, csms.CachedStaticModelSurfaceRenderType, csms.CachedStaticModelSurfaceModel, csms.CachedStaticModelSurfaceIndex, renderer)
+            | RenderCachedStaticModel csmm ->
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModelRenderType, csmm.CachedStaticModel, renderer)
+            | RenderCachedStaticModelSurface csmsm ->
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (csmsm.CachedStaticModelSurfaceAbsolute, &csmsm.CachedStaticModelSurfaceMatrix, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
@@ -1680,16 +1680,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 // be created from assets
                 ()
 
-            | RenderPostPass3d rpp ->
-                postPasses.Add rpp |> ignore<bool>
+            | RenderPostPass3d rp ->
+                postPasses.Add rp |> ignore<bool>
             | ConfigureLightMapping lmc ->
                 renderer.RenderLightMappingConfig <- lmc
-            | ConfigureSsao cs ->
-                renderer.RenderSsaoConfig <- cs
-            | LoadRenderPackage3d lrp ->
-                GlRenderer3d.handleLoadRenderPackage lrp renderer
-            | UnloadRenderPackage3d urp ->
-                GlRenderer3d.handleUnloadRenderPackage urp renderer
+            | ConfigureSsao sc ->
+                renderer.RenderSsaoConfig <- sc
+            | LoadRenderPackage3d packageName ->
+                GlRenderer3d.handleLoadRenderPackage packageName renderer
+            | UnloadRenderPackage3d packageName ->
+                GlRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
                 GlRenderer3d.handleReloadRenderAssets renderer
 
