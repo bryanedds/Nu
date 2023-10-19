@@ -379,7 +379,7 @@ and [<ReferenceEquality>] SortableLight =
                 lightConeOuters.[i] <- light.SortableLightConeOuter
         (lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters)
 
-/// The 3d renderer. Represents the 3d rendering system in Nu generally.
+/// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 and Renderer3d =
     inherit Renderer
     /// The physically-based shader.
