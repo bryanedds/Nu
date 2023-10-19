@@ -189,7 +189,7 @@ module Metadata =
     let getTextureSizeF assetTag =
         Option.get (tryGetTextureSizeF assetTag)
 
-    /// Try to get the tile map metadata of the given asset.
+    /// Attempt to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata (assetTag : TileMap AssetTag) =
         match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)
