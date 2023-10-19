@@ -56,5 +56,13 @@ type Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
+/// A mutable particle type.
+type [<NoEquality; NoComparison; Struct>] Particle =
+    { mutable Transform : Transform
+      mutable InsetOpt : Box2 ValueOption
+      mutable Color : Color
+      mutable Emission : Color
+      mutable Flip : Flip }
+
 /// A renderer tag interface.
 type Renderer = interface end
