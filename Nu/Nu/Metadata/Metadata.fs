@@ -8,7 +8,7 @@ open System.IO
 open TiledSharp
 open Prime
 
-(* NOTE: The Metadata folder is placed after the subsystems folders in order to prevent subsystem from accessing
+(* NOTE: The Metadata folder is placed after the subsystems folders in order to prevent subsystems from accessing
 Metadata from another thread. *)
 
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
@@ -159,7 +159,7 @@ module Metadata =
                 MetadataPackages
                 packageNames
 
-    /// Try to get the metadata of the given asset.
+    /// Attempt to get the metadata of the given asset.
     let tryGetMetadata (assetTag : obj AssetTag) =
         match UMap.tryFind assetTag.PackageName MetadataPackages with
         | Some package ->
@@ -168,7 +168,7 @@ module Metadata =
             | None -> None
         | None -> None
 
-    /// Try to get the texture metadata of the given asset.
+    /// Attempt to get the texture metadata of the given asset.
     let tryGetTextureSize (assetTag : Image AssetTag) =
         match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (TextureMetadata size) -> Some size
@@ -179,7 +179,7 @@ module Metadata =
     let getTextureSize assetTag =
         Option.get (tryGetTextureSize assetTag)
 
-    /// Try to get the texture size metadata of the given asset.
+    /// Attempt to get the texture size metadata of the given asset.
     let tryGetTextureSizeF assetTag =
         match tryGetTextureSize assetTag with
         | Some size -> Some (v2 (single size.X) (single size.Y))
@@ -200,7 +200,7 @@ module Metadata =
     let getTileMapMetadata assetTag =
         Option.get (tryGetTileMapMetadata assetTag)
 
-    /// Try to get the static model metadata of the given asset.
+    /// Attempt to get the static model metadata of the given asset.
     let tryGetStaticModelMetadata (assetTag : StaticModel AssetTag) =
         match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (StaticModelMetadata model) -> Some model
