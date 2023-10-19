@@ -189,7 +189,15 @@ module Metadata =
     let getTextureSizeF assetTag =
         Option.get (tryGetTextureSizeF assetTag)
 
-    /// Try to get the tile map metadata of the given asset.
+    /// Attempt to get the cubism model metadata of the given asset.
+    let tryGetCubismModelMetadata (assetTag : CubismModel AssetTag) =
+        failwithnie () : CubismModelMetadata option
+
+    /// Forcibly get the cubism model metadata of the given asset (throwing on failure).
+    let getCubismModelMetadata assetTag =
+        Option.get (tryGetCubismModelMetadata assetTag)
+
+    /// Attempt to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata (assetTag : TileMap AssetTag) =
         match tryGetMetadata (AssetTag.generalize assetTag) with
         | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)

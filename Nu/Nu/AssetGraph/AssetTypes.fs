@@ -17,6 +17,9 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
+/// A Live2D Cubism model. Currently just used as a phantom type.
+type CubismModel = private { __ : unit }
+
 /// A cube map. Currently just used as a phantom type.
 type CubeMap = private { __ : unit }
 
