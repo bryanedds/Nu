@@ -317,7 +317,7 @@ module FieldDispatcher =
                         | _ -> menu)
                         field
                 just field
-            
+
             | MenuKeyItemsSelect _ ->
                 just field
 
@@ -329,7 +329,7 @@ module FieldDispatcher =
             | MenuOptionsSelectBattleSpeed battleSpeed ->
                 let field = Field.updateOptions (constant { BattleSpeed = battleSpeed }) field
                 just field
-            
+
             | MenuClose ->
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = MenuClosed }) field
                 just field
