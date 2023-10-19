@@ -43,7 +43,36 @@ type [<NoEquality; NoComparison>] SpriteDescriptors =
 type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
     { mutable CachedSprite : Sprite }
 
-/// Describes how to render tile map tiles to the rendering system.
+/// Describes the attributes of a cubism parameter, similar to System.Reflection.ParameterInfo.
+type CubismParameterInfo =
+    { ValueMin : single
+      ValueMax : single
+      ValueDefault : single
+      FriendlyName : string }
+
+/// Represents a single frame pose of a cubism model.
+type CubismModelPose =
+    Map<string, single>
+
+/// Describes the attributes of interest of a cubism model.
+type CubismModelMetadata =
+    { ModelParameterInfos : Map<string, CubismParameterInfo>
+      ModelPoseDefault : CubismModelPose
+      ModelPoses : Map<string, CubismModelPose> }
+
+/// Not really a handle, but a collection of cubism model value handles.
+type CubismModelHandle =
+    { ModelContainerMemoryPtr : voidptr
+      ModelMemoryPtr : voidptr
+      ModelContainerPtr : nativeint
+      ModelPtr : nativeint }
+
+/// Describe how to render a cubism model to a rendering subsystem.
+type CubismModelDescriptor =
+    { ModelParameters : Map<string, single> (* low-level user-facing algebra *)
+      ModelPoseOpt : Choice<unit, string, single * string * string> (* high-level user-facing algebra *) }
+
+/// Describes how to render tile map tiles to a rendering subsystem.
 type [<NoEquality; NoComparison>] TilesDescriptor =
     { mutable Transform : Transform
       Color : Color
@@ -79,6 +108,7 @@ type [<ReferenceEquality>] RenderOperation2d =
     | RenderSpriteParticles of SpriteParticlesDescriptor
     | RenderCachedSprite of CachedSpriteDescriptor
     | RenderText of TextDescriptor
+    | RenderCubismModel of CubismModelDescriptor
     | RenderTiles of TilesDescriptor
     | RenderCallback2d of (Vector2 * Vector2 * Renderer2d -> unit)
 
@@ -140,6 +170,9 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderSpriteShader : int * int * int * int * uint // TODO: release these resources on clean-up.
           RenderSpriteQuad : uint * uint * uint // TODO: release these resources on clean-up.
           RenderTextQuad : uint * uint * uint // TODO: release these resources on clean-up.
+          RenderCubismModelShader : int (* TOOD: add an int for every shader parameter *) // TODO: release these resources on clean-up.
+          RenderCubismModelMetadata : Map<CubismModel AssetTag, CubismModelMetadata>
+          RenderCubismModelHandles : Map<CubismModel AssetTag, CubismModelHandle> // TODO: release these resources on clean-up.
           RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, unit>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed.
@@ -642,6 +675,11 @@ type [<ReferenceEquality>] GlRenderer2d =
         | RenderText descriptor ->
             GlRenderer2d.renderText
                 (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
+        | RenderCubismModel descriptor ->
+
+            // TODO: render cubism model according to what's specified in the descriptor.
+            ()
+
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
@@ -692,6 +730,9 @@ type [<ReferenceEquality>] GlRenderer2d =
               RenderSpriteShader = spriteShader
               RenderSpriteQuad = spriteQuad
               RenderTextQuad = textQuad
+              RenderCubismModelShader = -1 // TODO: provide a loaded cubism model shader.
+              RenderCubismModelMetadata = Map.empty
+              RenderCubismModelHandles = Map.empty
               RenderSpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
