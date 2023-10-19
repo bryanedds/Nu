@@ -21,7 +21,7 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
       mutable Emission : Color
       mutable Flip : Flip }
 
-/// Describes how to render a sprite to the rendering system.
+/// Describes how to render a sprite to a rendering subsystem.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
     { mutable Transform : Transform
       InsetOpt : Box2 ValueOption
@@ -31,11 +31,11 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
       Emission : Color
       Flip : Flip }
 
-/// Describes how to render multiple sprites to the rendering system.
+/// Describes how to render multiple sprites to a rendering subsystem.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
     { Sprites : Sprite SArray }
 
-/// Describes how to render multiple sprite descriptors to the rendering system.
+/// Describes how to render multiple sprite descriptors to a rendering subsystem.
 type [<NoEquality; NoComparison>] SpriteDescriptors =
     { SpriteDescriptors : SpriteDescriptor SList }
 
@@ -54,6 +54,14 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       TileSize : Vector2
       TileAssets : (TmxTileset * Image AssetTag) array }
 
+/// A mutable particle type.
+type [<NoEquality; NoComparison; Struct>] Particle =
+    { mutable Transform : Transform
+      mutable InsetOpt : Box2 ValueOption
+      mutable Color : Color
+      mutable Emission : Color
+      mutable Flip : Flip }
+
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
     { Absolute : bool
@@ -63,7 +71,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Image : Image AssetTag
       Particles : Particle SArray }
 
-/// Describes how to render text to the rendering system.
+/// Describes how to render text to a rendering subsystem.
 type [<NoEquality; NoComparison>] TextDescriptor =
     { mutable Transform : Transform
       Text : string
@@ -82,7 +90,7 @@ type [<ReferenceEquality>] RenderOperation2d =
     | RenderTiles of TilesDescriptor
     | RenderCallback2d of (Vector2 * Vector2 * Renderer2d -> unit)
 
-/// Describes a layered rendering operation to the 2d rendering system.
+/// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
 and [<ReferenceEquality>] LayeredOperation2d =
     { mutable Elevation : single
@@ -90,14 +98,14 @@ and [<ReferenceEquality>] LayeredOperation2d =
       mutable AssetTag : obj AssetTag
       mutable RenderOperation2d : RenderOperation2d }
 
-/// A message to the 2d rendering system.
+/// A message to a 2d rendering subsystem.
 and [<ReferenceEquality>] RenderMessage2d =
     | LayeredOperation2d of LayeredOperation2d
     | LoadRenderPackage2d of string
     | UnloadRenderPackage2d of string
     | ReloadRenderAssets2d
 
-/// The 2d renderer. Represents the 2d rendering system in Nu generally.
+/// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
 and Renderer2d =
     inherit Renderer
     /// The sprite batch operational environment if it exists for this implementation.
