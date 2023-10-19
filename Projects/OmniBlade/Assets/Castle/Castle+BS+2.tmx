@@ -40,6 +40,7 @@
     <property name="I">[Npc AraneaImplicitumNpc [Some Downward]
   [Sequence
    [[Dialog &quot;What a delightful addition...&quot;]
+    [Wait 60]
     [Dialog &quot;...to my web of souls!&quot;]
     [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]</property>
    </properties>

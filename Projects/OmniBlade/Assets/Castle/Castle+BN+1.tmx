@@ -40,7 +40,9 @@
     <property name="I">[Npc HeavyArmorosNpc [Some Upward]
   [Sequence
    [[Dialog &quot;Through the gate... the soul...&quot;]
+    [Wait 60]
     [Dialog &quot;Through the soul... the gate...&quot;]
+    [Wait 60]
     [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]</property>
    </properties>
   </object>

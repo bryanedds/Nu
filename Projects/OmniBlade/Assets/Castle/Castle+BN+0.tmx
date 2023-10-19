@@ -40,7 +40,9 @@
     <property name="I">[Npc MadTrixterNpc [Some Upward]
  [Sequence
   [[Dialog &quot;You've run a fool's errand...&quot;]
+   [Wait 60]
    [Dialog &quot;Her soul is forever ours...&quot;]
+   [Wait 60]
    [Dialog &quot;...and now so is yours!&quot;]
    [Battle MadTrixterBattle [MadTrixterDefeated]]]]]</property>
    </properties>

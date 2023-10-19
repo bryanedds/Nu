@@ -317,7 +317,7 @@ module FieldDispatcher =
                         | _ -> menu)
                         field
                 just field
-            
+
             | MenuKeyItemsSelect _ ->
                 just field
 
@@ -329,7 +329,7 @@ module FieldDispatcher =
             | MenuOptionsSelectBattleSpeed battleSpeed ->
                 let field = Field.updateOptions (constant { BattleSpeed = battleSpeed }) field
                 just field
-            
+
             | MenuClose ->
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = MenuClosed }) field
                 just field
@@ -878,21 +878,21 @@ module FieldDispatcher =
                          Entity.LabelImage == Assets.Gui.DialogXXLImage
                          Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
+                         yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuKeyItemsSelect
                          Content.button "PageUp"
                             [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
                              Entity.VisibleLocal := Content.pageItems 10 field |> a__
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent => MenuInventoryPageUp]
+                             Entity.ClickEvent => MenuKeyItemsPageUp]
                          Content.button "PageDown"
                             [Entity.PositionLocal == v3 777.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
                              Entity.VisibleLocal := Content.pageItems 10 field |> _b_
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
-                             Entity.ClickEvent => MenuInventoryPageDown]]
+                             Entity.ClickEvent => MenuKeyItemsPageDown]]
 
                  // options
                  | MenuOptions ->

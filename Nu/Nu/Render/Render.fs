@@ -57,14 +57,6 @@ type Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
-/// A mutable particle type.
-type [<NoEquality; NoComparison; Struct>] Particle =
-    { mutable Transform : Transform
-      mutable InsetOpt : Box2 ValueOption
-      mutable Color : Color
-      mutable Emission : Color
-      mutable Flip : Flip }
-
 /// A height map for 3d terrain constructed from a raw asset.
 type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
     { Resolution : Vector2i
