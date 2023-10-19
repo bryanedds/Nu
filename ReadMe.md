@@ -4,13 +4,13 @@ Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](h
 **Live Discord Support Here -**
 https://discord.gg/hfPAjtHpb
 
-What is the **Nu Game Engine**?
+"What is the Nu Game Engine?"
 
 *"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers a declarative Elm-style programming API, as well as an algebraic ECS programming API for additional scalability. Nu offers a path to a future where game developers are liberated from imperative, OO game programming style. After nearly 10,000 commits, the implementation has matured enough to prove both the efficacy and viability of functional programming techniques in games in terms of performance, programmability, and reliability. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Bullet 3D Physics."*
 
 ***"...everything that I can think of that makes games programming so awful seems to have a solution in your engine!"* - @Sigmoid**
 
-This repository hosts several projects, including -
+This repository hosts several projects, including:
 
 - the sample game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
 - the game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade) available free for Windows and Linux here - https://github.com/bryanedds/Nu/releases/tag/v10.6.2
@@ -19,7 +19,7 @@ This repository hosts several projects, including -
 Getting Started with Nu
 =======================
 
-Look here to get started with your own project in Nu -
+Look here to get started with your own project in Nu :
 
 [https://github.com/bryanedds/Nu/wiki/Getting-Started-with-Nu](https://github.com/bryanedds/Nu/wiki#introductory-material-starting-from-the-beginning)
 
@@ -56,7 +56,7 @@ Another 3D scene screenshot from editor.
 ![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
 And another 3D scene screenshot from editor.
 
-**Public Sponsors We Wish to Thank**
+ **"Public Sponsors We Wish to Thank"
 ====================================
 
 **[@reinux](https://github.com/reinux)**
