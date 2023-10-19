@@ -54,14 +54,6 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       TileSize : Vector2
       TileAssets : (TmxTileset * Image AssetTag) array }
 
-/// A mutable particle type.
-type [<NoEquality; NoComparison; Struct>] Particle =
-    { mutable Transform : Transform
-      mutable InsetOpt : Box2 ValueOption
-      mutable Color : Color
-      mutable Emission : Color
-      mutable Flip : Flip }
-
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
     { Absolute : bool
