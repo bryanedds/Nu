@@ -60,8 +60,8 @@ type CubismModelMetadata =
       ModelPoseDefault : CubismModelPose
       ModelPoses : Map<string, CubismModelPose> }
 
-/// Not really a handle, but a collection of cubism model value handles.
-type CubismModelHandle =
+/// The operational context for an individual loaded cubism model.
+type CubismModelContext =
     { ModelContainerMemoryPtr : voidptr
       ModelMemoryPtr : voidptr
       ModelContainerPtr : nativeint
@@ -171,8 +171,8 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderSpriteQuad : uint * uint * uint // TODO: release these resources on clean-up.
           RenderTextQuad : uint * uint * uint // TODO: release these resources on clean-up.
           RenderCubismModelShader : int (* TOOD: add an int for every shader parameter *) // TODO: release these resources on clean-up.
+          RenderCubismModelContexts : Map<CubismModel AssetTag, CubismModelContext> // TODO: release these resources on clean-up.
           RenderCubismModelMetadata : Map<CubismModel AssetTag, CubismModelMetadata>
-          RenderCubismModelHandles : Map<CubismModel AssetTag, CubismModelHandle> // TODO: release these resources on clean-up.
           RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, unit>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed.
