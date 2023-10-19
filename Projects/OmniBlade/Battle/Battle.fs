@@ -881,15 +881,19 @@ module Battle =
 
     (* Mid-Level Operations *)
 
-    let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
+    let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * StatureType * EnemyType) option> array array) =
         if attempts < 10000 then
-            let (w, h) = (layout.Length, layout.[0].Length)
-            let (x, y) = (Gen.random1 w, Gen.random1 h)
             match Data.Value.Characters.TryFind (Enemy enemy) with
             | Some characterData ->
                 match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
                 | Some archetypeData ->
-                    match archetypeData.Stature with
+                    let (w, h) = (layout.Length, layout.[0].Length)
+                    let (x, y) =
+                        if index = 0 && characterData.Boss // HACK: put boss enemy 0 in center.
+                        then (w / 2 - 1, h / 2 - 1)
+                        else (Gen.random1 w, Gen.random1 h)
+                    let stature = archetypeData.Stature
+                    match stature with
                     | SmallStature | NormalStature | LargeStature ->
                         if x > 0 && x < w - 1 && y < h - 1 then
                             match
@@ -898,11 +902,11 @@ module Battle =
                             |   (Left (), Left (), Left (),
                                  Left (), Left (), Left ()) ->
                                 layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
-                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None
+                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, stature, enemy)); layout.[x+1].[y+0] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                     | BossStature ->
-                        if x > 1 && x < w - 2 && y > 0 && y < h - 3 then 
+                        if x > 1 && x < w - 2 && y > 0 && y < h - 3 then
                             match
                                 (layout.[x-2].[y+3], layout.[x-1].[y+3], layout.[x+0].[y+3], layout.[x+1].[y+3], layout.[x+2].[y+3],
                                  layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
@@ -917,7 +921,7 @@ module Battle =
                                 layout.[x-2].[y+3] <- Right None; layout.[x-1].[y+3] <- Right None; layout.[x+0].[y+3] <- Right None; layout.[x+1].[y+3] <- Right None; layout.[x+2].[y+3] <- Right None
                                 layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None; layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
                                 layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
-                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
+                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, stature, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
                                 layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
@@ -946,8 +950,11 @@ module Battle =
                     match enemyOpt with
                     | Left () -> None
                     | Right None -> None
-                    | Right (Some (enemyIndex, enemy)) ->
-                        let position = v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
+                    | Right (Some (enemyIndex, enemyStature, enemy)) ->
+                        let position =
+                            match enemyStature with
+                            | SmallStature | NormalStature | LargeStature -> v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
+                            | BossStature -> v3 (origin.X + single x * tile.X - 90.0f) (origin.Y + single y * tile.Y) 0.0f
                         Character.tryMakeEnemy allyCount enemyIndex waitSpeed true { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
