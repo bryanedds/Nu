@@ -21,4 +21,4 @@ module WorldView =
             | SpawnEmitter (_, _) -> world
             | Tag _ -> world
             | Views views -> Array.fold (fun world view -> World.renderView view world) world views
-            | SegmentedViews views -> SArray.fold (fun world view -> World.renderView view world) world views
+            | ViewsSegmented views -> SArray.fold (fun world view -> World.renderView view world) world views

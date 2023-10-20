@@ -19,7 +19,7 @@ type [<ReferenceEquality>] View =
     | SpawnEmitter of string * EmitterDescriptor
     | Tag of string * obj
     | Views of View array
-    | SegmentedViews of View SArray
+    | ViewsSegmented of View SArray
 
 [<RequireQualifiedAccess>]
 module View =
