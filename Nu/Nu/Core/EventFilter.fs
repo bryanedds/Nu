@@ -66,7 +66,7 @@ type [<StructuralEquality; StructuralComparison; CLIMutable>] EventInfo =
 
 /// Describes how events are filtered.
 [<Syntax
-    ("Empty Any NotAny All Pattern", "", "", "", "",
+    ("Empty All Any NotAny Pattern", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type EventFilter =
