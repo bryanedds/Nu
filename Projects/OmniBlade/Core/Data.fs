@@ -849,9 +849,6 @@ type TechAnimationData =
       TechingStop : int64
       TechStop : int64 }
 
-type KeyItemData =
-    { KeyItemData : unit }
-
 type DoorData =
     { DoorType : DoorType // key
       DoorKeyOpt : string option
@@ -861,10 +858,6 @@ type DoorData =
 type ShopData =
     { ShopType : ShopType // key
       ShopItems : ItemType list }
-
-type EnemyDescriptor =
-    { EnemyType : EnemyType
-      EnemyPosition : Vector3 }
 
 type BattleData =
     { BattleType : BattleType // key
