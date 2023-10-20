@@ -619,8 +619,8 @@ module Character =
           ActionTime_ = actionTime
           CelSize_ = celSize }
 
-    let tryMakeEnemy allyCount subindex waitSpeed actionTimeAdvanced enemyData =
-        match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
+    let tryMakeEnemy allyCount subindex waitSpeed actionTimeAdvanced position enemyType =
+        match Map.tryFind (Enemy enemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
             match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
@@ -629,7 +629,7 @@ module Character =
                     match archetypeData.Stature with
                     | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
                     | BossStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
-                let position = if allyCount = 1 then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
+                let position = if allyCount = 1 then position + Constants.Battle.CharacterOffset else position
                 let bounds = box3 position size
                 let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
                 let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase

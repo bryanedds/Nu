@@ -955,7 +955,7 @@ module Battle =
                             match enemyStature with
                             | SmallStature | NormalStature | LargeStature -> v3 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y) 0.0f
                             | BossStature -> v3 (origin.X + single x * tile.X - 90.0f) (origin.Y + single y * tile.Y) 0.0f
-                        Character.tryMakeEnemy allyCount enemyIndex waitSpeed true { EnemyType = enemy; EnemyPosition = position })
+                        Character.tryMakeEnemy allyCount enemyIndex waitSpeed true position enemy)
                     arr) |>
             Array.concat |>
             Array.definitize |>
@@ -981,7 +981,8 @@ module Battle =
                     let notOverlapping = Array.notExists (fun position' -> Vector3.Distance (position, position') < tile.X * 2.0f) positions
                     if notOnSides && notOverlapping then
                         let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
-                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed spawnType.ActionTimeAdvanced { EnemyType = spawnType.EnemyType; EnemyPosition = Option.defaultValue position spawnType.PositionOpt } with
+                        let enemyPosition = Option.defaultValue position spawnType.PositionOpt
+                        match Character.tryMakeEnemy allyCount enemyIndex.Subindex waitSpeed spawnType.ActionTimeAdvanced enemyPosition spawnType.EnemyType with
                         | Some enemy ->
                             let enemy =
                                 match spawnType.SpawnEffectType with
