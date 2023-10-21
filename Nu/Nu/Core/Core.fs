@@ -27,6 +27,24 @@ module Core =
 [<AutoOpen>]
 module CoreOperators =
 
+    /// Test for object equality.
+    /// OPTIMIZATION: always tests reference equality first.
+    /// TODO: remove this after updating Prime.
+    let inline objEq (a : obj) (b : obj) =
+        obj.ReferenceEquals (a, b) ||
+        match a with
+        | :? Array -> a = b // NOTE: arrays are given special deep equality semantics in F#.
+        | _ -> obj.Equals (a, b)
+
+    /// Test for object inequality.
+    /// OPTIMIZATION: always tests reference equality first.
+    /// TODO: remove this after updating Prime.
+    let inline objNeq (a : obj) (b : obj) =
+        not (obj.ReferenceEquals (a, b) ||
+        match a with
+        | :? Array -> a <> b // NOTE: arrays are given special deep equality semantics in F#.
+        | _ -> obj.Equals (a, b))
+
     /// Sequences two functions like Haskell ($).
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
