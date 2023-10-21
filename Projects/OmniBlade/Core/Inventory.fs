@@ -138,9 +138,9 @@ type ItemType =
 
     static member getName item =
         match item with
-        | Consumable ty -> scstringm ty
-        | Equipment ty -> match ty with WeaponType ty -> scstringm ty | ArmorType ty -> scstringm ty | AccessoryType ty -> scstringm ty
-        | KeyItem ty -> scstringm ty
+        | Consumable ty -> scstringMemo ty
+        | Equipment ty -> match ty with WeaponType ty -> scstringMemo ty | ArmorType ty -> scstringMemo ty | AccessoryType ty -> scstringMemo ty
+        | KeyItem ty -> scstringMemo ty
         | Stash gold -> string gold + "G"
 
     static member sortItems items =

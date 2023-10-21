@@ -1421,9 +1421,8 @@ module Battle =
                                     let battle = finishCharacterInteraction sourceIndex battle
                                     let battle = updateCurrentCommandOpt (constant None) battle
                                     let battle =
-                                        if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                            shouldCharacterCounter targetIndex sourceIndex battle then
-                                            characterCounterAttack targetIndex sourceIndex battle
+                                        if shouldCharacterCounter targetIndex sourceIndex battle
+                                        then characterCounterAttack targetIndex sourceIndex battle
                                         else battle
                                     let consequences = evalTechInteractions sourceIndex targetIndex techType results battle
                                     let battle = evalConsequences consequences battle
