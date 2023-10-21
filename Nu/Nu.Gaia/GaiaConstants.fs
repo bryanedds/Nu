@@ -21,6 +21,7 @@ module Constants =
         let [<Literal>] CreationElevationDefault = 0.0f
         let [<Literal>] EyeSpeed = 3.0f // NOTE: might be nice to be able to configure this just like entity creation elevation in the editor.
         let [<Literal>] DragMinimumSeconds = 0.2
+        let [<Literal>] PropertyValueStrMemoCapacity = 32768
         let [<Literal>] StateFilePath = "GaiaState.txt"
         let [<Literal>] NonePick = "\"None\""
         let [<Uniform>] EventFilter =
