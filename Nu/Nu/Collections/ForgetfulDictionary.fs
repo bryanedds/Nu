@@ -5,7 +5,7 @@ open System.Collections.Generic
 open System.Diagnostics
 open Prime
 
-/// A dictionary with access-time-based eviction.
+/// A dictionary with access-age-based eviction.
 /// TODO: once this is well-tested, let's consider moving into Prime.
 /// NOTE: not supported by SymbolicConverter.
 type ForgetfulDictionary<'k, 'v when 'k : equality> (capacity : int, comparer : 'k IEqualityComparer) =
@@ -84,9 +84,9 @@ type ForgetfulDictionary<'k, 'v when 'k : equality> (capacity : int, comparer : 
         for entry in accessTimes do accessTimes.[entry.Key] <- now // TODO: don't update access time of entries before 'index'.
         (entries :> ICollection).CopyTo (array, index)
 
-    member this.Evict (ageTicks : int64) =
+    member this.Evict (accessAgeTicks : int64) =
         let time = Stopwatch.GetTimestamp ()
-        let cutoff = time - ageTicks
+        let cutoff = time - accessAgeTicks
         keysToEvict.Clear ()
         for accessEntry in accessTimes do
             if accessEntry.Value < cutoff then
@@ -95,8 +95,8 @@ type ForgetfulDictionary<'k, 'v when 'k : equality> (capacity : int, comparer : 
             entries.Remove key |> ignore<bool>
             accessTimes.Remove key |> ignore<bool>
 
-    member this.Evict (ageSeconds : double) =
-        this.Evict (ageSeconds * double Stopwatch.Frequency |> int64)
+    member this.Evict (accessAgeSeconds : double) =
+        this.Evict (accessAgeSeconds * double Stopwatch.Frequency |> int64)
 
     interface IDictionary<'k, 'v> with
         member this.IsReadOnly = this.IsReadOnly
