@@ -11,8 +11,8 @@ open Prime
 type ForgetfulDictionary<'k, 'v when 'k : equality> (capacity : int, comparer : 'k IEqualityComparer) =
 
     let entries = new Dictionary<'k, 'v> (capacity, comparer)
-    let accessTimes = new Dictionary<'k, int64> (capacity, comparer)
-    let keysToEvict = new List<'k> ()
+    let accesses = new Dictionary<'k, int64> (capacity, comparer)
+    let evictions = new List<'k> () // OPTIMIZATION: cached to avoid thrashing LOH.
 
     new (capacity) =
         ForgetfulDictionary (capacity, HashIdentity.Structural)
@@ -28,23 +28,23 @@ type ForgetfulDictionary<'k, 'v when 'k : equality> (capacity : int, comparer : 
 
     member this.Keys =
         let now = Stopwatch.GetTimestamp ()
-        for entry in accessTimes do accessTimes.[entry.Key] <- now
+        for entry in accesses do accesses.[entry.Key] <- now
         entries.Keys
 
     member this.Values =
         let now = Stopwatch.GetTimestamp ()
-        for entry in accessTimes do accessTimes.[entry.Key] <- now
+        for entry in accesses do accesses.[entry.Key] <- now
         entries.Values
 
     member this.ContainsKey key =
         if entries.ContainsKey key then
-            accessTimes.[key] <- Stopwatch.GetTimestamp ()
+            accesses.[key] <- Stopwatch.GetTimestamp ()
             true
         else false
 
     member this.TryGetValue (key, value: 'v outref) =
         if entries.TryGetValue (key, &value) then
-            accessTimes.[key] <- Stopwatch.GetTimestamp ()
+            accesses.[key] <- Stopwatch.GetTimestamp ()
             true
         else false
 
@@ -55,45 +55,45 @@ type ForgetfulDictionary<'k, 'v when 'k : equality> (capacity : int, comparer : 
             else raise (KeyNotFoundException("The key was not found in the dictionary."))
         and set key value =
             entries.[key] <- value
-            accessTimes.[key] <- Stopwatch.GetTimestamp ()
+            accesses.[key] <- Stopwatch.GetTimestamp ()
 
     member this.Add (key, value) =
         entries.Add (key, value)
-        accessTimes.Add (key, Stopwatch.GetTimestamp ())
+        accesses.Add (key, Stopwatch.GetTimestamp ())
 
     member this.Remove key =
         entries.Remove key |> ignore<bool>
-        accessTimes.Remove key
+        accesses.Remove key
 
     member this.Clear() =
         entries.Clear ()
-        accessTimes.Clear ()
+        accesses.Clear ()
 
     member this.GetEnumeratorGeneralized () =
         let now = Stopwatch.GetTimestamp ()
-        for entry in accessTimes do accessTimes.[entry.Key] <- now
+        for entry in accesses do accesses.[entry.Key] <- now
         entries.GetEnumerator () :> IEnumerator
 
     member this.GetEnumerator () =
         let now = Stopwatch.GetTimestamp ()
-        for entry in accessTimes do accessTimes.[entry.Key] <- now
+        for entry in accesses do accesses.[entry.Key] <- now
         entries.GetEnumerator () :> IEnumerator<KeyValuePair<'k, 'v>>
 
     member this.CopyTo (array, index) =
         let now = Stopwatch.GetTimestamp ()
-        for entry in accessTimes do accessTimes.[entry.Key] <- now // TODO: don't update access time of entries before 'index'.
+        for entry in accesses do accesses.[entry.Key] <- now // TODO: don't update access time of entries before 'index'.
         (entries :> ICollection).CopyTo (array, index)
 
     member this.Evict (accessAgeTicks : int64) =
         let time = Stopwatch.GetTimestamp ()
         let cutoff = time - accessAgeTicks
-        keysToEvict.Clear ()
-        for accessEntry in accessTimes do
+        evictions.Clear ()
+        for accessEntry in accesses do
             if accessEntry.Value < cutoff then
-                keysToEvict.Add accessEntry.Key
-        for key in keysToEvict do
+                evictions.Add accessEntry.Key
+        for key in evictions do
             entries.Remove key |> ignore<bool>
-            accessTimes.Remove key |> ignore<bool>
+            accesses.Remove key |> ignore<bool>
 
     member this.Evict (accessAgeSeconds : double) =
         this.Evict (accessAgeSeconds * double Stopwatch.Frequency |> int64)
