@@ -147,8 +147,8 @@ module Gaia =
         showRestartDialog
 
     (* Memoization *)
-    let mutable toSymbolMemo = new Dictionary<obj, Symbol> (HashIdentity.FromFunctions LanguagePrimitives.PhysicalHash objEq)
-    let mutable ofSymbolMemo = new Dictionary<Symbol, obj> (HashIdentity.Structural)
+    let mutable toSymbolMemo = new ForgetfulDictionary<obj, Symbol> (HashIdentity.FromFunctions LanguagePrimitives.PhysicalHash objEq)
+    let mutable ofSymbolMemo = new ForgetfulDictionary<Symbol, obj> (HashIdentity.Structural)
 
     (* Initial imgui.ini File Content *)
 
@@ -2102,8 +2102,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Some (propertyDescriptor, simulant) when
                             World.getExists simulant world &&
                             propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
-                            if toSymbolMemo.Count >= Constants.Gaia.PropertyValueStrMemoCapacity then toSymbolMemo.Clear ()
-                            if ofSymbolMemo.Count >= Constants.Gaia.PropertyValueStrMemoCapacity then ofSymbolMemo.Clear ()
+                            toSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
+                            ofSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
                             let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType, toSymbolMemo, ofSymbolMemo)
                             let propertyValue = getPropertyValue propertyDescriptor simulant
                             ImGui.Text propertyDescriptor.PropertyName
