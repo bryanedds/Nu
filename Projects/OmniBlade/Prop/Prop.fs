@@ -3,7 +3,6 @@
 
 namespace OmniBlade
 open System
-open System.Numerics
 open Prime
 open Nu
 
@@ -17,10 +16,6 @@ type PropState =
 [<RequireQualifiedAccess>]
 module Prop =
 
-    [<Syntax
-        ("", "", "", "", "",
-         Constants.PrettyPrinter.DefaultThresholdMin,
-         Constants.PrettyPrinter.DetailedThresholdMax)>]
     type [<SymbolicExpansion>] Prop =
         private
             { Perimeter_ : Box3
