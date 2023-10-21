@@ -132,7 +132,8 @@ and [<ReferenceEquality>] RenderTasks =
       RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
+      RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderTerrain : Dictionary<string, TerrainDescriptor> }
 
 /// The parameters for completing a render pass.
 and [<ReferenceEquality>] RenderPassParameters3d =
@@ -1941,7 +1942,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderSurfacesForwardAbsolute = SList.make ()
               RenderSurfacesForwardRelative = SList.make ()
               RenderSurfacesForwardAbsoluteSorted = SList.make ()
-              RenderSurfacesForwardRelativeSorted = SList.make () }
+              RenderSurfacesForwardRelativeSorted = SList.make ()
+              RenderTerrain = Dictionary HashIdentity.Structural }
 
         // make renderer
         let renderer =
@@ -1987,7 +1989,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              PhysicallyBasedTerrainGeometries = dictPlus HashIdentity.Structural []
+              PhysicallyBasedTerrainGeometries = Dictionary HashIdentity.Structural
               RenderMessages = List () }
 
         // fin

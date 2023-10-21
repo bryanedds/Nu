@@ -1250,6 +1250,111 @@ module PhysicallyBased =
         let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
         (shaderGeometry, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
 
+    let DrawPhysicallyBasedTerrain
+        (view : single array,
+         projection : single array,
+         eyeCenter : Vector3,
+         blending,
+         lightAmbientColor : single array,
+         lightAmbientBrightness : single,
+         lightMapOrigins : single array,
+         lightMapMins : single array,
+         lightMapSizes : single array,
+         lightMapsCount : int,
+         lightOrigins : single array,
+         lightDirections : single array,
+         lightColors : single array,
+         lightBrightnesses : single array,
+         lightAttenuationLinears : single array,
+         lightAttenuationQuadratics : single array,
+         lightCutoffs : single array,
+         lightDirectionals : int array,
+         lightConeInners : single array,
+         lightConeOuters : single array,
+         lightsCount : int,
+         numStrips : int,
+         numVertsPerStrip : int,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedShader) =
+
+        // setup state
+        Gl.DepthFunc DepthFunction.Lequal
+        Gl.Enable EnableCap.DepthTest
+        if blending then
+            Gl.BlendEquation BlendEquationMode.FuncAdd
+            Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+            Gl.Enable EnableCap.Blend
+        Gl.Enable EnableCap.CullFace // correct default?
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedShader
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
+        Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
+        Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
+        Gl.Uniform1 (shader.MetallicTextureUniform, 1)
+        Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
+        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
+        Gl.Uniform1 (shader.EmissionTextureUniform, 4)
+        Gl.Uniform1 (shader.NormalTextureUniform, 5)
+        Gl.Uniform1 (shader.HeightTextureUniform, 6)
+        Gl.Uniform1 (shader.BrdfTextureUniform, 7)
+        Gl.Uniform1 (shader.IrradianceMapUniform, 8)
+        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 9)
+        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+            Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 10)
+        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward)
+        Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
+        Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
+        Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
+        Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
+        Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
+        Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
+        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+        Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
+        Gl.Uniform1 (shader.LightAttenuationLinearsUniform, lightAttenuationLinears)
+        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniform, lightAttenuationQuadratics)
+        Gl.Uniform1 (shader.LightCutoffsUniform, lightCutoffs)
+        Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
+        Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
+        Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+        Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+        Hl.Assert ()
+                
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        for i in 0 .. dec numStrips do
+            let offset = sizeof<uint> * numVertsPerStrip * i
+            Gl.DrawElements (OpenGL.PrimitiveType.TriangleStrip, numVertsPerStrip, DrawElementsType.UnsignedInt, nativeint offset)
+            Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+        
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown state
+        Gl.DepthFunc DepthFunction.Less
+        Gl.Disable EnableCap.DepthTest
+        if blending then
+            Gl.Disable EnableCap.Blend
+            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+            Gl.BlendEquation BlendEquationMode.FuncAdd
+        Gl.Disable EnableCap.CullFace // correct default?
+
+
     /// Draw a batch of physically-based surfaces.
     let DrawPhysicallyBasedSurfaces
         (view : single array,
