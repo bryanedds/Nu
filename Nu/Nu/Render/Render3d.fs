@@ -508,6 +508,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
+          PhysicallyBasedTerrainGeometries : Dictionary<string, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>
           RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
@@ -1593,99 +1594,105 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderTerrain rt ->
 
-                // TODO: check if geometry needed to render terrain is already memoized so no unecessary computation occurs
+                let terrainId = "terrain"
 
-                let terrainHeight = rt.TerrainDescriptor.Bounds.Size.Y
-                let terrainBottom = rt.TerrainDescriptor.Bounds.Min.Y
+                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue terrainId with
+                | (true, _) -> ()
+                | (false, _) ->
+                
+                    let terrainHeight = rt.TerrainDescriptor.Bounds.Size.Y
+                    let terrainBottom = rt.TerrainDescriptor.Bounds.Min.Y
                                 
-                // NOTE: this code expects a normalized heightmap i.e. lowest point = 00, highest = ff;
-                // otherwise extra work will be required to find these points and scale accordingly.
-                match rt.TerrainDescriptor.HeightMap with
-                | RawHeightMap map ->
+                    // NOTE: this code expects a normalized heightmap i.e. lowest point = 00, highest = ff;
+                    // otherwise extra work will be required to find these points and scale accordingly.
+                    match rt.TerrainDescriptor.HeightMap with
+                    | RawHeightMap map ->
 
-                    let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / (single map.Resolution.X)
-                    let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / (single map.Resolution.Y)
+                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / (single map.Resolution.X)
+                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / (single map.Resolution.Y)
 
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
-                    | ValueSome (RawAsset rawAsset) ->
+                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
+                        | ValueSome (RawAsset rawAsset) ->
 
-                        use rawMemory = new MemoryStream (rawAsset)
-                        use rawReader = new BinaryReader (rawMemory)
-                        let positionsOpt =
-                            try
-                                Some
-                                    [|match map.RawFormat with
-                                      | RawUInt8 ->
-                                        for y in 0 .. dec map.Resolution.Y do
-                                            for x in 0 .. dec map.Resolution.X do
-                                                let divisor = single Byte.MaxValue
-                                                let normalized = (rawReader.ReadByte () |> single) / divisor
-                                                v3
-                                                    ((single x) * quadSizeX)
-                                                    (normalized * terrainHeight + terrainBottom)
-                                                    ((single y) * quadSizeY)
-                                      | RawUInt16 endianness ->
-                                        for y in 0 .. dec map.Resolution.Y do
-                                            for x in 0 .. dec map.Resolution.X do
-                                                let value =
-                                                    match endianness with
-                                                    | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
-                                                    | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
-                                                let divisor = single UInt16.MaxValue
-                                                let normalized = (value |> single) / divisor
-                                                v3
-                                                    ((single x) * quadSizeX)
-                                                    (normalized * terrainHeight + terrainBottom)
-                                                    ((single y) * quadSizeY)
-                                      | RawUInt32 endianness ->
-                                        for y in 0 .. dec map.Resolution.Y do
-                                            for x in 0 .. dec map.Resolution.X do
-                                                let value =
-                                                    match endianness with
-                                                    | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
-                                                    | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
-                                                let divisor = single UInt32.MaxValue
-                                                let normalized = (value |> single) / divisor
-                                                v3
-                                                    ((single x) * quadSizeX)
-                                                    (normalized * terrainHeight + terrainBottom)
-                                                    ((single y) * quadSizeY)
-                                      | RawSingle endianness ->
-                                        for y in 0 .. dec map.Resolution.Y do
-                                            for x in 0 .. dec map.Resolution.X do
-                                                let value =
-                                                    match endianness with
-                                                    | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
-                                                    | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
-                                                v3
-                                                    ((single x) * quadSizeX)
-                                                    (value * terrainHeight + terrainBottom)
-                                                    ((single y) * quadSizeY)|]
-                            with exn ->
-                                // TODO: log error.
-                                None
+                            use rawMemory = new MemoryStream (rawAsset)
+                            use rawReader = new BinaryReader (rawMemory)
+                            let positionsOpt =
+                                try
+                                    Some
+                                        [|match map.RawFormat with
+                                          | RawUInt8 ->
+                                            for y in 0 .. dec map.Resolution.Y do
+                                                for x in 0 .. dec map.Resolution.X do
+                                                    let divisor = single Byte.MaxValue
+                                                    let normalized = (rawReader.ReadByte () |> single) / divisor
+                                                    v3
+                                                        ((single x) * quadSizeX)
+                                                        (normalized * terrainHeight + terrainBottom)
+                                                        ((single y) * quadSizeY)
+                                          | RawUInt16 endianness ->
+                                            for y in 0 .. dec map.Resolution.Y do
+                                                for x in 0 .. dec map.Resolution.X do
+                                                    let value =
+                                                        match endianness with
+                                                        | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
+                                                        | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
+                                                    let divisor = single UInt16.MaxValue
+                                                    let normalized = (value |> single) / divisor
+                                                    v3
+                                                        ((single x) * quadSizeX)
+                                                        (normalized * terrainHeight + terrainBottom)
+                                                        ((single y) * quadSizeY)
+                                          | RawUInt32 endianness ->
+                                            for y in 0 .. dec map.Resolution.Y do
+                                                for x in 0 .. dec map.Resolution.X do
+                                                    let value =
+                                                        match endianness with
+                                                        | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
+                                                        | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
+                                                    let divisor = single UInt32.MaxValue
+                                                    let normalized = (value |> single) / divisor
+                                                    v3
+                                                        ((single x) * quadSizeX)
+                                                        (normalized * terrainHeight + terrainBottom)
+                                                        ((single y) * quadSizeY)
+                                          | RawSingle endianness ->
+                                            for y in 0 .. dec map.Resolution.Y do
+                                                for x in 0 .. dec map.Resolution.X do
+                                                    let value =
+                                                        match endianness with
+                                                        | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
+                                                        | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
+                                                    v3
+                                                        ((single x) * quadSizeX)
+                                                        (value * terrainHeight + terrainBottom)
+                                                        ((single y) * quadSizeY)|]
+                                with exn ->
+                                    // TODO: log error.
+                                    None
 
-                        let indices = 
-                            [|for i in 0 .. dec map.Resolution.Y do
-                                for j in 0 .. dec map.Resolution.X do
-                                    for k in 0 .. 1 do
-                                        j + map.Resolution.X * (i + k)|]
+                            let indices = 
+                                [|for i in 0 .. dec map.Resolution.Y do
+                                    for j in 0 .. dec map.Resolution.X do
+                                        for k in 0 .. 1 do
+                                            j + map.Resolution.X * (i + k)|]
                         
-                        match positionsOpt with
-                        | Some positions ->
+                            match positionsOpt with
+                            | Some positions ->
 
-                            // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
-                            // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
+                                // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
+                                // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
 
-                            // TODO: use verts and splat map to construct terrain geometry
-                            let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; single 0; single 0; single 0; single 0; single 0|]) positions
+                                // TODO: use verts and splat map to construct terrain geometry
+                                let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; single 0; single 0; single 0; single 0; single 0|]) positions
 
-                            // TODO: write CreatePhysicallyBasedTerrainGeometry function
-                            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
+                                // TODO: write CreatePhysicallyBasedTerrainGeometry function
+                                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
-                            ()
+                                renderer.PhysicallyBasedTerrainGeometries.Add (terrainId, geometry)
+                                
+                                ()
 
-                        | None -> ()
+                            | None -> ()
 
                 // TODO: render terrain if its geometry was either found in the memoization dictionary or was able to
                 // be created from assets
@@ -1980,6 +1987,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
+              PhysicallyBasedTerrainGeometries = dictPlus HashIdentity.Structural []
               RenderMessages = List () }
 
         // fin
