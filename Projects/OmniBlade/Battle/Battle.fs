@@ -407,8 +407,7 @@ module Battle =
         Seq.exists (fun command -> command.SourceIndex = characterIndex)
 
     let shouldCharacterCounter sourceIndex targetIndex battle =
-        let isSourceNotMadMinotaur = getCharacterBy (fun c -> c.CharacterType <> Enemy MadMinotaur) sourceIndex battle // HACK: disallow countering mad minotaurs since it nerfs challenge of first boss battle.
-        if CharacterIndex.unfriendly sourceIndex targetIndex && isSourceNotMadMinotaur
+        if CharacterIndex.unfriendly sourceIndex targetIndex
         then getCharacterBy Character.shouldCounter sourceIndex battle
         else false
 
