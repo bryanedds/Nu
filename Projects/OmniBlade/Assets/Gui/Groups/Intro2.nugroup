@@ -6,11 +6,10 @@
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "The ancient 'tomb' of the six mythical demons."]]
     [Optimized False]
     [Position [-32 -32 0]]
     [Size [64 64 0]]
-    [Text "the ancient 'tomb' of the 9 mythical demons."]]]
+    [Text "...the ancient tomb of the six mythical demons."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
     [Elevation -10]
