@@ -147,7 +147,7 @@ module Gaia =
 
     (* Memoization *)
 
-    let mutable toSymbolMemo = Dictionary<obj, Symbol> HashIdentity.Reference
+    let mutable toSymbolMemo = Dictionary<obj, Symbol> HashIdentity.Structural
     let mutable ofSymbolMemo = Dictionary<Symbol, obj> HashIdentity.Structural
 
     (* Initial imgui.ini File Content *)
