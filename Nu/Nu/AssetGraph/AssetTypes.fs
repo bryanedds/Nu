@@ -46,7 +46,7 @@ module TmxExtensions =
             let imageAsset =
                 match this.Properties.TryGetValue "Image" with
                 | (true, imageAssetTagString) ->
-                    try scvaluem<Image AssetTag> imageAssetTagString
+                    try scvalueMemo<Image AssetTag> imageAssetTagString
                     with :? KeyNotFoundException ->
                         let errorMessage =
                             "Tileset '" + this.Name + "' missing Image property.\n" +

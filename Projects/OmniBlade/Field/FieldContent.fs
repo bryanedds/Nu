@@ -150,7 +150,7 @@ module FieldContent =
                 | _ -> Map.empty
             let useSmallButtons = techs.Count > 6
             [for (index, tech) in techs.Pairs do
-                let techName = scstringm tech
+                let techName = scstringMemo tech
                 let x = position.X
                 let y =
                     position.Y -

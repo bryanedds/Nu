@@ -464,7 +464,7 @@ module BattleDispatcher =
                                         (let consumables =
                                             battle.Inventory |>
                                             Inventory.getConsumables |>
-                                            Map.ofSeqBy (fun kvp -> (scstringm kvp.Key, (getTag kvp.Key, true)))
+                                            Map.ofSeqBy (fun kvp -> (scstringMemo kvp.Key, (getTag kvp.Key, true)))
                                          { Items = consumables; Cancellable = true })
                                      Entity.ItemSelectEvent =|> fun evt -> ConsumableItemSelect (index, evt.Data) |> signal
                                      Entity.CancelEvent => ConsumableItemCancel index]
@@ -487,7 +487,7 @@ module BattleDispatcher =
                                                         | None -> true
                                                     else true
                                                 let usable = affordable && castable
-                                                (scstringm tech, (getTag tech, usable)))
+                                                (scstringMemo tech, (getTag tech, usable)))
                                          { Items = techs; Cancellable = true })
                                      Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data) |> signal
                                      Entity.CancelEvent => TechItemCancel index]
