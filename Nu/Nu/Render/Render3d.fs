@@ -1611,7 +1611,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         use rawMemory = new MemoryStream (rawAsset)
                         use rawReader = new BinaryReader (rawMemory)
-                        let vertsOpt =
+                        let positionsOpt =
                             try
                                 Some
                                     [|match map.RawFormat with
@@ -1671,13 +1671,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     for k in 0 .. 1 do
                                         j + map.Resolution.X * (i + k)|]
                         
-                        match vertsOpt with
-                        | Some verts ->
+                        match positionsOpt with
+                        | Some positions ->
 
                             // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
                             // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
 
                             // TODO: use verts and splat map to construct terrain geometry
+                            let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; single 0; single 0; single 0; single 0; single 0|]) positions
+
+                            // TODO: write CreatePhysicallyBasedTerrainGeometry function
+                            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
+
                             ()
 
                         | None -> ()
