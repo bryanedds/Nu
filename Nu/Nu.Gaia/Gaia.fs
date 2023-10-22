@@ -1562,7 +1562,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let worldsPast' = worldsPast
                         try let propertyValue = converter.ConvertFromString propertyValueStr
                             setProperty propertyValue propertyDescriptor simulant
-                        with :? ParseException | :? ConversionException ->
+                        with :? ParseException | :? ConversionException | :? IndexOutOfRangeException ->
                             worldsPast <- worldsPast'
                     focusProperty ()
                     if ImGui.BeginDragDropTarget () then
@@ -1574,7 +1574,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     setProperty propertyValue propertyDescriptor simulant
-                                with :? ParseException | :? ConversionException ->
+                                with :? ParseException | :? ConversionException | :? IndexOutOfRangeException ->
                                     worldsPast <- worldsPast'
                             | None -> ()
                         ImGui.EndDragDropTarget ()
@@ -1606,7 +1606,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let worldsPast' = worldsPast
                         try let propertyValue = converter.ConvertFromString propertyValueStr
                             setProperty propertyValue propertyDescriptor simulant
-                        with :? ParseException | :? ConversionException ->
+                        with :? ParseException | :? ConversionException | :? IndexOutOfRangeException ->
                             worldsPast <- worldsPast'
                         propertyValueStrPrevious <- propertyValueStr
         focusProperty ()
@@ -2129,7 +2129,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     setPropertyValue propertyValue propertyDescriptor simulant
-                                with :? ParseException | :? ConversionException ->
+                                with :? ParseException | :? ConversionException | :? IndexOutOfRangeException ->
                                     worldsPast <- worldsPast'
                                 propertyValueStrPrevious <- propertyValueStr
                             if isPropertyAssetTag then
@@ -2142,7 +2142,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                                 setPropertyValue propertyValue propertyDescriptor simulant
-                                            with :? ParseException | :? ConversionException ->
+                                            with :? ParseException | :? ConversionException | :? IndexOutOfRangeException ->
                                                 worldsPast <- worldsPast'
                                         | None -> ()
                                     ImGui.EndDragDropTarget ()
