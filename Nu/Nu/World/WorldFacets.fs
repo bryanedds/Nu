@@ -2697,7 +2697,7 @@ module TerrainFacetModule =
         static member Properties =
             [define Entity.Size (v3Dup 48.0f)
              define Entity.Segments v2iOne
-             define Entity.HeightMap (ImageHeightMap Assets.Default.HeightMap)
+             define Entity.HeightMap (RawHeightMap { Resolution = v2i 256 256; RawFormat = RawSingle LittleEndian; RawAsset = asset "Default" "HeightMapRaw" }) //(ImageHeightMap Assets.Default.HeightMap)
              define Entity.TerrainMaterial
                 (FlatMaterial
                     { AlbedoImage = Assets.Default.MaterialAlbedo
