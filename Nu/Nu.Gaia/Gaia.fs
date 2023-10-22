@@ -11,6 +11,7 @@ open System.Reflection
 open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
 open FSharp.Reflection
+open Microsoft.FSharp.Core
 open ImGuiNET
 open ImGuizmoNET
 open Prime
@@ -144,6 +145,10 @@ module Gaia =
         showRenameEntityDialog ||
         showConfirmExitDialog ||
         showRestartDialog
+
+    (* Memoization *)
+    let mutable toSymbolMemo = new ForgetfulDictionary<obj, Symbol> (HashIdentity.FromFunctions LanguagePrimitives.PhysicalHash objEq)
+    let mutable ofSymbolMemo = new ForgetfulDictionary<Symbol, obj> (HashIdentity.Structural)
 
     (* Initial imgui.ini File Content *)
 
@@ -2097,35 +2102,36 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Some (propertyDescriptor, simulant) when
                             World.getExists simulant world &&
                             propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
-                            let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
+                            toSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
+                            ofSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
+                            let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType, toSymbolMemo, ofSymbolMemo)
                             let propertyValue = getPropertyValue propertyDescriptor simulant
                             ImGui.Text propertyDescriptor.PropertyName
                             ImGui.SameLine ()
                             ImGui.Text ":"
                             ImGui.SameLine ()
                             ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
-                            let propertyValueUnescaped = converter.ConvertToString propertyValue
-                            let propertyValueEscaped = String.escape propertyValueUnescaped
+                            let propertyValueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
+                            let mutable propertyValueStr = PrettyPrinter.prettyPrintSymbol propertyValueSymbol PrettyPrinter.defaultPrinter
                             let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
                             if  isPropertyAssetTag then
                                 ImGui.SameLine ()
                                 if ImGui.Button "Pick" then showAssetPickerDialog <- true
-                            let mutable propertyValuePretty = PrettyPrinter.prettyPrint propertyValueEscaped PrettyPrinter.defaultPrinter
                             if focusPropertyEditorRequested then
                                 ImGui.SetKeyboardFocusHere ()
                                 focusPropertyEditorRequested <- false
                             if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
                                 propertyDescriptor.PropertyType = typeof<string Set> then
-                                ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValuePretty, 131072u, v2 -1.0f -1.0f) && propertyValuePretty <> propertyValueStrPrevious then
+                                ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 131072u, v2 -1.0f -1.0f) && propertyValueStr <> propertyValueStrPrevious then
                                 let worldsPast' = worldsPast
-                                try let propertyValueEscaped = propertyValuePretty
+                                try let propertyValueEscaped = propertyValueStr
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
                                     let propertyValue = converter.ConvertFromString propertyValueUnescaped
                                     setPropertyValue propertyValue propertyDescriptor simulant
                                 with :? ParseException | :? ConversionException ->
                                     worldsPast <- worldsPast'
-                                propertyValueStrPrevious <- propertyValuePretty
+                                propertyValueStrPrevious <- propertyValueStr
                             if isPropertyAssetTag then
                                 if ImGui.BeginDragDropTarget () then
                                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then

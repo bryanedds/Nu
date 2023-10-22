@@ -45,6 +45,25 @@ type [<CustomEquality; CustomComparison>] StreamPluggable =
         member this.ToSymbol () =
             Symbols ([], ValueNone)
 
+/// Augments Prime.ScriptingMarshalling.
+module ScriptingMarshalling =
+
+    let tryImportAddress (ty : Type) (value : obj) =
+        Some (String ((AddressConverter ty).ConvertToString value))
+
+    let tryImportRelation (ty : Type) (value : obj) =
+        Some (String ((RelationConverter ty).ConvertToString value))
+
+    let tryExportAddress (ty : Type) (address : Expr) =
+        match address with
+        | String str | Keyword str -> Some ((AddressConverter ty).ConvertFromString str)
+        | _ -> None
+
+    let tryExportRelation (ty : Type) (relation : Expr) =
+        match relation with
+        | String str | Keyword str -> Some ((RelationConverter ty).ConvertFromString str)
+        | _ -> None
+
 [<AutoOpen>]
 module WorldScripting =
 
@@ -973,6 +992,14 @@ module WorldScripting =
             | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
     let internal init () =
+
+        // add Address and Relation types to scripting marshalling.
+        ScriptingMarshalling.Importers.Add (typedefof<_ Address>.Name, (fun _ ty value -> ScriptingMarshalling.tryImportAddress ty value))
+        ScriptingMarshalling.Importers.Add (typedefof<_ Relation>.Name, (fun _ ty value -> ScriptingMarshalling.tryImportRelation ty value))
+        ScriptingMarshalling.Exporters.Add (typedefof<_ Address>.Name, fun _ ty evaled -> ScriptingMarshalling.tryExportAddress ty evaled)
+        ScriptingMarshalling.Exporters.Add (typedefof<_ Relation>.Name, fun _ ty evaled -> ScriptingMarshalling.tryExportRelation ty evaled)
+
+        // populate extrinsics
         let extrinsics =
             [("v2", { Fn = World.evalV2Extrinsic; Pars = [|"x"; "y"|]; DocOpt = Some "Construct a Vector2." })
              ("index_Vector2", { Fn = World.evalIndexV2Extrinsic; Pars = [||]; DocOpt = None })

@@ -182,7 +182,7 @@ module TmxMap =
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.TileMap.AnimationPropertyName with
                 | (true, tileAnimationStr) ->
-                    try ValueSome (scvaluem<TileAnimationDescriptor> tileAnimationStr)
+                    try ValueSome (scvalueMemo<TileAnimationDescriptor> tileAnimationStr)
                     with _ -> ValueNone
                 | (false, _) -> ValueNone
             | None -> ValueNone
