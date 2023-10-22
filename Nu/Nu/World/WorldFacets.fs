@@ -2730,6 +2730,15 @@ module TerrainFacetModule =
             world
 
         override this.Render (entity, world) =
-            ignore entity
-            // TODO: optionally implement rendering code for the faceted entity.
-            world
+            let mutable transform = entity.GetTransform world
+            let absolute = transform.Absolute
+            let terrainDescriptor =
+                { Bounds = transform.Bounds
+                  Segments = entity.GetSegments world
+                  HeightMap = entity.GetHeightMap world
+                  Material = entity.GetTerrainMaterial world }
+            World.enqueueRenderMessage3d
+                (RenderTerrain
+                    { Absolute = absolute
+                      TerrainDescriptor = terrainDescriptor })
+                world
