@@ -308,7 +308,6 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
 
 and [<ReferenceEquality>] RenderTerrain =
     { Absolute : bool
-      ModelMatrix : Matrix4x4
       TerrainDescriptor : TerrainDescriptor }
 
 /// A message to the 3d renderer.
@@ -1709,6 +1708,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 renderer.PhysicallyBasedTerrainGeometries.Add (terrainId, geometry)
 
                             | None -> ()
+
+                        | ValueNone -> ()
+
+                    | _ -> ()
 
                 match renderer.PhysicallyBasedTerrainGeometries.TryGetValue terrainId with
                 | (true, _) ->
