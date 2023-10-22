@@ -407,8 +407,7 @@ module Battle =
         Seq.exists (fun command -> command.SourceIndex = characterIndex)
 
     let shouldCharacterCounter sourceIndex targetIndex battle =
-        let isSourceNotMadMinotaur = getCharacterBy (fun c -> c.CharacterType <> Enemy MadMinotaur) sourceIndex battle // HACK: disallow countering mad minotaurs since it nerfs challenge of first boss battle.
-        if CharacterIndex.unfriendly sourceIndex targetIndex && isSourceNotMadMinotaur
+        if CharacterIndex.unfriendly sourceIndex targetIndex
         then getCharacterBy Character.shouldCounter sourceIndex battle
         else false
 
@@ -1421,9 +1420,8 @@ module Battle =
                                     let battle = finishCharacterInteraction sourceIndex battle
                                     let battle = updateCurrentCommandOpt (constant None) battle
                                     let battle =
-                                        if  (match source.CharacterType with Enemy MadMinotaur -> false | _ -> true) && // HACK: disallow countering mad minotaurs since it nerfs challenge of first battle.
-                                            shouldCharacterCounter targetIndex sourceIndex battle then
-                                            characterCounterAttack targetIndex sourceIndex battle
+                                        if shouldCharacterCounter targetIndex sourceIndex battle
+                                        then characterCounterAttack targetIndex sourceIndex battle
                                         else battle
                                     let consequences = evalTechInteractions sourceIndex targetIndex techType results battle
                                     let battle = evalConsequences consequences battle
