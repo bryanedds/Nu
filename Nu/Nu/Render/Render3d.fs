@@ -1329,6 +1329,22 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
+        // render terrain
+        for entry in renderer.RenderTasks.RenderTerrain do
+            match renderer.PhysicallyBasedTerrainGeometries.TryGetValue entry.Key with
+            | (true, geometry) ->
+                match entry.Value.HeightMap with
+                | RawHeightMap map ->
+                    let numStrips = map.Resolution.Y - 1
+                    let numVertsPerStrip = map.Resolution.X * 2
+                    OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
+                        (viewRelativeArray, geometryProjectionArray, eyeCenter, false, lightAmbientColor, lightAmbientBrightness, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
+                        lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
+                        numStrips, numVertsPerStrip, geometry, renderer.RenderPhysicallyBasedDeferredGeometryShader)
+                    OpenGL.Hl.Assert ()
+                | _ -> ()
+            | (false, _) -> ()
+        
         // deferred render surfaces w/ absolute transforms if in top level render
         if topLevelRender then
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAbsolute do
@@ -1684,20 +1700,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
 
                                 // TODO: use verts and splat map to construct terrain geometry
+                                
                                 let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; single 0; single 0; single 0; single 0; single 0|]) positions
 
                                 // TODO: write CreatePhysicallyBasedTerrainGeometry function
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
                                 renderer.PhysicallyBasedTerrainGeometries.Add (terrainId, geometry)
-                                
-                                ()
 
                             | None -> ()
 
-                // TODO: render terrain if its geometry was either found in the memoization dictionary or was able to
-                // be created from assets
-                ()
+                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue terrainId with
+                | (true, _) ->
+                    renderer.RenderTasks.RenderTerrain.Add (terrainId, rt.TerrainDescriptor)
+                | (false, _) -> ()
+                
 
             | RenderPostPass3d rp ->
                 postPasses.Add rp |> ignore<bool>
@@ -1757,6 +1774,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
         renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted.Clear ()
         renderer.RenderTasks.RenderSurfacesForwardRelativeSorted.Clear ()
+        renderer.RenderTasks.RenderTerrain.Clear ()
 
         // destroy user-defined static models
         for staticModel in userDefinedStaticModelsToDestroy do
