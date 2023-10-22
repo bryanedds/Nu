@@ -35,6 +35,7 @@ module Assets =
         let [<Uniform>] SideViewCharacterWalkImage = asset<Image> PackageName Assets.Default.SideViewCharacterWalkImageName
         let [<Uniform>] HighlightImage = asset<Image> PackageName Assets.Default.HighlightImageName
         let [<Uniform>] HeightMap = asset<Image> PackageName Assets.Default.HeightMapName
+        let [<Uniform>] HeightMapRaw = asset<Image> PackageName Assets.Default.HeightMapRawName
         let [<Uniform>] Font = asset<Font> PackageName Assets.Default.FontName
         let [<Uniform>] TileMap = asset<TileMap> PackageName Assets.Default.TileMapName
         let [<Uniform>] TileMapEmpty = asset<TileMap> PackageName Assets.Default.TileMapEmptyName
