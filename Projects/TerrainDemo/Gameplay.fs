@@ -23,7 +23,6 @@ module Gameplay =
     type GameplayCommand =
         | Update
         | UpdateEye
-        | Jump
         | Nop
         interface Command
 
@@ -41,11 +40,7 @@ module Gameplay =
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateEye
-             Screen.DeselectingEvent => FinishQuitting
-             Game.KeyboardKeyDownEvent =|> fun evt ->
-                if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
-                then Jump
-                else Nop]
+             Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the above messages
         override this.Message (_, message, _, _) =
@@ -56,32 +51,8 @@ module Gameplay =
         // here we handle the above commands
         override this.Command (_, command, _, world) =
             match command with
-            | Update ->
-                let bodyId = Simulants.GameplayPlayer.GetBodyId world
-                let world =
-                    if World.isKeyboardKeyDown KeyboardKey.Left world then
-                        if World.getBodyGrounded bodyId world
-                        then World.applyBodyForce (v3 -2500.0f 0.0f 0.0f) v3Zero bodyId world
-                        else World.applyBodyForce (v3 -750.0f 0.0f 0.0f) v3Zero bodyId world
-                    elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                        if World.getBodyGrounded bodyId world
-                        then World.applyBodyForce (v3 2500.0f 0.0f 0.0f) v3Zero bodyId world
-                        else World.applyBodyForce (v3 750.0f 0.0f 0.0f) v3Zero bodyId world
-                    else world
-                just world
-            | Jump ->
-                let bodyId = Simulants.GameplayPlayer.GetBodyId world
-                if world.Advancing && World.getBodyGrounded bodyId world then
-                    let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
-                    let world = World.applyBodyLinearImpulse (v3 0.0f 2300.0f 0.0f) v3Zero bodyId world
-                    just world
-                else just world
-            | UpdateEye ->
-                if world.Advancing then
-                    let characterCenter = Simulants.GameplayPlayer.GetCenter world
-                    let world = World.setEyeCenter2d characterCenter.V2 world
-                    just world
-                else just world
+            | Update -> just world
+            | UpdateEye -> just world
             | Nop -> just world
 
         // here we describe the content of the game including the level, the hud, and the player
@@ -99,7 +70,5 @@ module Gameplay =
              match gameplay with
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-                    [Content.sideViewCharacter Simulants.GameplayPlayer.Name
-                        [Entity.Position == v3 0.0f 24.0f 0.0f
-                         Entity.Size == v3 108.0f 108.0f 0.0f]]
+                    []
              | Quit -> ()]
