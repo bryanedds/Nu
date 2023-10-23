@@ -1,0 +1,67 @@
+[GroupDispatcher
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Scene]
+  [Persistent True]
+  [Visible True]]
+ [[SideViewCharacterDispatcher
+   [[Name Player]
+    [Position [0 24 0]]
+    [Size [108 108 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0002]
+    [Position [348 -204 0]]
+    [Size [192 192 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0004]
+    [Position [252 -396 0]]
+    [Size [192 192 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0005]
+    [Position [444 -396 0]]
+    [Size [192 192 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0006]
+    [Position [60 -372 0]]
+    [Size [192 192 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0007]
+    [Position [-132 -408 0]]
+    [Size [192 192 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0008]
+    [Position [-276 -216 0]]
+    [Size [192 192 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0009]
+    [Position [-348 -24 0]]
+    [Size [192 192 0]]]
+   []]
+  [BlockDispatcher2d
+   [[Name Block2d-0010]
+    [Position [-420 -408 0]]
+    [Size [192 192 0]]]
+   []]
+  [StaticModelDispatcher
+   [[Name StaticModelLeft]
+    [Position [-2 1.5 0]]
+    [Size [3.833142 5.769598 5.354998]]]
+   []]
+  [StaticModelDispatcher
+   [[Name StaticModelRight]
+    [Position [2 1.5 0]]
+    [Size [3.833142 5.769598 5.354998]]]
+   []]
+  [LightDispatcher3d
+   [[Name Light3d-0001]
+    [Position [0 5 2]]]
+   []]
+  [SkyBoxDispatcher
+   [[Name SkyBox-0002]]
+   []]]]

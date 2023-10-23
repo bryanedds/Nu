@@ -1,0 +1,14 @@
+# Blender MTL File: 'None'
+# Material Count: 1
+
+newmtl Material
+Kd 1.000000 1.000000 1.000000
+Pm 1.000000 0.000000 0.000000
+Pr 1.000000
+Ka 1.000000 0.000000 0.000000
+map_Kd HighlightModelAlbedo.png
+map_Pm MaterialMetallic.png
+map_Pr MaterialRoughness.png
+map_Ka MaterialAmbientOcclusion.png
+map_Ke HighlightModelEmission.png
+norm MaterialNormal.png
