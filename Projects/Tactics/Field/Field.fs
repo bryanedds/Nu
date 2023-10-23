@@ -331,7 +331,7 @@ module Field =
             intersectionMap |>
             Seq.map (fun (kvp : KeyValuePair<_, _>) -> (kvp.Key, kvp.Value)) |>
             Seq.filter (fun (_, opt) -> opt.IsSome) |>
-            Seq.map (fun (key, Some (a, b)) -> (key, a, b)) |>
+            Seq.map (function (key, Some (a, b)) -> (key, a, b) | (_, None) -> failwithumf ()) |>
             Seq.toArray |>
             Array.sortBy Triple.snd |>
             Array.tryHead
