@@ -335,7 +335,7 @@ module FieldDispatcher =
                 just field
 
             | PartyMenuOpen ->
-                let field = Field.updatePartyMenu (fun partyMenu -> { partyMenu with PartyMenuState = PartyMenuOpened; PartyMenuSelections = [0] }) field
+                let field = Field.updatePartyMenu (fun partyMenu -> { partyMenu with PartyMenuState = PartyMenuOpened; PartyMenuSelections = [] }) field
                 just field
 
             | PartyMenuSelect teamIndex ->
@@ -350,9 +350,7 @@ module FieldDispatcher =
             | PartyMenuDeselect teamIndex ->
                 let field =
                     Field.updatePartyMenu (fun partyMenu ->
-                        if teamIndex <> 0
-                        then { partyMenu with PartyMenuSelections = List.remove ((=) teamIndex) partyMenu.PartyMenuSelections }
-                        else partyMenu)
+                        { partyMenu with PartyMenuSelections = List.remove ((=) teamIndex) partyMenu.PartyMenuSelections })
                         field
                 just field
 
@@ -980,7 +978,6 @@ module FieldDispatcher =
                             let y = 339.0f - single i * 81.0f
                             Content.button ("Selected+" + string teamIndex)
                                 [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
-                                 Entity.EnabledLocal == (teamIndex <> 0)
                                  Entity.Text := CharacterType.getName teammate.CharacterType
                                  Entity.UpImage == Assets.Gui.ButtonBigUpImage
                                  Entity.DownImage == Assets.Gui.ButtonBigDownImage
