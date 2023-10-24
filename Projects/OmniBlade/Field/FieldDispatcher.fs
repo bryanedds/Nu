@@ -617,7 +617,13 @@ module FieldDispatcher =
                  if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue then
                     Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                         [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
-                         Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; ShowUnopenedChests = Field.getShowUnopenedChests field; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
+                         Entity.SpiritOrb :=
+                            { AvatarLowerCenter = field.Avatar.LowerCenter
+                              ShowUnopenedChests = Field.getShowUnopenedChests field
+                              Chests = Field.getChests field
+                              Portals = Field.getNonWarpPortals field
+                              Narratives = Field.getNarratives field
+                              Spirits = field.Spirits }]
 
                  // backdrop sprite
                  Content.staticSprite "Backdrop"
