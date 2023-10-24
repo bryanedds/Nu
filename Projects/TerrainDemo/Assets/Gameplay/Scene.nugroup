@@ -11,6 +11,7 @@
   [StaticModelDispatcher
    [[Name StaticModelRight]
     [Position [2 1.5 0]]
+    [Presence Omnipresent]
     [Size [3.833142 5.769598 5.354998]]]
    []]
   [LightDispatcher3d
@@ -19,4 +20,13 @@
    []]
   [SkyBoxDispatcher
    [[Name SkyBox-0002]]
+   []]
+  [TerrainDispatcher
+   [[HeightMap
+     [RawHeightMap
+      [[32 32] [RawUInt16 BigEndian] [Gameplay HeightMapRaw]]]]
+    [Name Terrain-0001]
+    [Position [0 1 2.5]]
+    [Presence Omnipresent]
+    [Size [64 9 64]]]
    []]]]

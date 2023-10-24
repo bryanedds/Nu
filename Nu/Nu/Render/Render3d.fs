@@ -1671,6 +1671,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         ((single x) * quadSizeX)
                                                         (normalized * terrainHeight + terrainBottom)
                                                         ((single y) * quadSizeY)
+                                          
+                                          // NOTE: this is broken.
+                                          // TODO: find out how to process a (signed) float value!
                                           | RawSingle endianness ->
                                             for y in 0 .. dec map.Resolution.Y do
                                                 for x in 0 .. dec map.Resolution.X do
