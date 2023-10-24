@@ -261,6 +261,20 @@ module Field =
             | Portal (portalType, _, _, _, _, _, requirements) when portalType <> WarpPortal -> Some (Portal.make prop.Perimeter (field.Advents.IsSupersetOf requirements))
             | _ -> None)
 
+    let getNarratives field =
+        field.Props_ |>
+        Map.toValueArray |>
+        Array.choose (fun prop ->
+            let activeOpt =
+                match prop.PropData with
+                | Character (_, _, _, _, _, requirements) -> Some (field.Advents.IsSupersetOf requirements)
+                | Npc (npcType, _, _, requirements) -> Some (field.Advents.IsSupersetOf requirements && NpcType.exists field.Advents npcType)
+                | NpcBranching (npcType, _, _, requirements) -> Some (field.Advents.IsSupersetOf requirements && NpcType.exists field.Advents npcType)
+                | _ -> None
+            match activeOpt with
+            | Some active -> Some (Narrative.make prop.Perimeter active)
+            | None -> None)
+
     let getShowUnopenedChests (field : Field) =
         match Map.tryFind field.FieldType Data.Value.Fields with
         | Some fieldData -> fieldData.ShowUnopenedChests

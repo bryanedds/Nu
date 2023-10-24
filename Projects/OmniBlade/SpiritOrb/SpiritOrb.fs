@@ -10,6 +10,7 @@ open Nu
 type SpiritOrbInhabitant =
     | ChestInhabitant of Chest
     | PortalInhabitant of Portal
+    | NarrativeInhabitant of Narrative
     | SpiritInhabitant of Spirit
 
 // TODO: consider making this an abstract data type.
@@ -18,4 +19,5 @@ type [<ReferenceEquality>] SpiritOrb =
       ShowUnopenedChests : bool
       Chests : Chest array
       Portals : Portal array
+      Narratives : Narrative array
       Spirits : Spirit array }
