@@ -82,5 +82,5 @@ module SpiritOrbDispatcher =
             let portalViews = makeViews world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals)
             let narrativeViews = makeViews world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map NarrativeInhabitant spiritOrb.Narratives)
             let spiritViews = makeViews world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits)
-            let views = orbView :: avatarView :: chestViews @ portalViews @ narrativeViews @ spiritViews
+            let views = orbView :: chestViews @ portalViews @ narrativeViews @ avatarView :: spiritViews
             Views (List.toArray views)
