@@ -122,6 +122,7 @@ module Constants =
         let SwiftSpeedScalar = 0.75f
         let PacedSpeedScalar = 0.5f
         let DefendingScalar = 0.5f
+        let TechProbabilityReductionScalar = 0.667f // for when Jinn isn't in battle to cancel
         let PoisonDrainRateSlow = 0.05f
         let PoisonDrainRateMedium = 0.1f
         let PoisonDrainRateFast = 0.15f
