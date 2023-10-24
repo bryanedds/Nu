@@ -41,7 +41,7 @@ module SpiritOrbDispatcher =
                         let image = if narrative.Active then Assets.Field.SpiritNarrativeImage else Assets.Default.ImageEmpty
                         let color = Color.One.WithA 0.5f
                         let column = time % 48L / 12L
-                        let inset = box2 (v2 (7.0f * single column) 0.0f) (v2 7.0f 7.0f)
+                        let inset = box2 (v2 (7.0f * single column) 0.0f) (v2Dup 7.0f)
                         (narrative.Center, image, color, ValueSome inset)
                     | SpiritInhabitant spirit ->
                         let color = SpiritType.getColor spirit.SpiritType
