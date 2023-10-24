@@ -44,11 +44,11 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
 
     static member private toPhysicsPolygonDiameter value =
         let value = AetherPhysicsEngine.toPhysics value
-        value - Settings.PolygonRadius * 2.0f
+        max Settings.PolygonRadius (value - Settings.PolygonRadius * 2.0f)
 
     static member private toPhysicsPolygonRadius value =
         let value = AetherPhysicsEngine.toPhysics value
-        value - Settings.PolygonRadius
+        max Settings.PolygonRadius (value - Settings.PolygonRadius)
 
     static member private toPhysicsBodyType bodyType =
         match bodyType with
@@ -255,8 +255,9 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         // configure body
         AetherPhysicsEngine.configureBodyProperties bodyProperties body
 
-        // attach body shape
-        AetherPhysicsEngine.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
+        // attempt to attach body shape
+        try AetherPhysicsEngine.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
+        with :? ArgumentOutOfRangeException -> ()
 
         // always listen for collisions if not internal body
         if not (bodyId.BodyIndex = Constants.Physics.InternalIndex) then
