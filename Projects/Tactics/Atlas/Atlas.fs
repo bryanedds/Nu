@@ -29,9 +29,11 @@ module Atlas =
         { atlas with FieldOpt_ = updater atlas.FieldOpt_ }
 
     let synchronizeFromField field atlas =
+        ignore field // TODO: implement synchronization.
         atlas
 
     let tryLoad saveSlot world =
+        ignore (saveSlot, world) // TODO: implement load.
         None
 
     let empty =
