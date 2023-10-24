@@ -125,6 +125,7 @@ module TacticsGame =
                     | Gui gui ->
                         match gui with
                         | Intro slot ->
+                            ignore slot // TODO: utilize slot.
                             match Simulants.Intro5.GetTransitionState world with
                             | OutgoingState _ -> Atlas (Atlas.debug world)
                             | _ -> model
