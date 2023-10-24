@@ -536,7 +536,7 @@ module Character =
             | Some _ | None ->
                 let techProbability =
                     source.CharacterState_.TechProbabilityOpt |>
-                    Option.map (fun techProbability -> techProbability * if jinnInParty then 1.0f else 0.667f) |>
+                    Option.map (fun techProbability -> techProbability * if jinnInParty then 1.0f else Constants.Battle.TechProbabilityReductionScalar) |>
                     Option.defaultValue 0.0f 
                 if  Gen.randomf < techProbability &&
                     not (Map.containsKey Silence source.Statuses) then
