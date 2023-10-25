@@ -1778,15 +1778,33 @@ type [<ReferenceEquality>] GlRenderer3d =
                             match positionsAndTexCoordsesOpt with
                             | Some positionsAndTexCoordses ->
 
+                                let normals =
+                                    [|for y in 0 .. dec map.Resolution.Y do
+                                        for x in 0 .. dec map.Resolution.X do
+                                            if  inc x = map.Resolution.X ||
+                                                inc y = map.Resolution.Y then
+                                                v3Up
+                                            else
+                                                let a = fst' positionsAndTexCoordses.[x * map.Resolution.X + y]
+                                                let b = fst' positionsAndTexCoordses.[inc x * map.Resolution.X + y]
+                                                let c = fst' positionsAndTexCoordses.[x * map.Resolution.X + inc y]
+                                                let ab = b - a
+                                                let ac = c - a
+                                                let normal = Vector3.Cross (ab, ac) |> Vector3.Normalize
+                                                normal|]
+
+                                // TODO: smooth vertices with averaging?
+
                                 // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
                                 // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
 
                                 // TODO: use verts and splat map to construct terrain geometry
 
                                 let vertices =
-                                    Array.collect (fun struct (position : Vector3, texCoords : Vector2) ->
-                                        [|position.X; position.Y; position.Z; texCoords.X; texCoords.Y; 0.5f; 0.5f; 1.0f|])
-                                        positionsAndTexCoordses
+                                    (positionsAndTexCoordses, normals) ||>
+                                    Array.map2 (fun struct (p, t) n -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z|]) |>
+                                    Array.concat
+                                        
 
                                 // TODO: write CreatePhysicallyBasedTerrainGeometry function
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
