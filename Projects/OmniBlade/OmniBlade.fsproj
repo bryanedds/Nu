@@ -55,6 +55,7 @@
 		<Compile Include="Battle\BattleDispatcher.fs" />
 		<Compile Include="SpiritOrb\Chest.fs" />
 		<Compile Include="SpiritOrb\Portal.fs" />
+		<Compile Include="SpiritOrb\Narrative.fs" />
 		<Compile Include="SpiritOrb\Spirit.fs" />
 		<Compile Include="SpiritOrb\SpiritOrb.fs" />
 		<Compile Include="SpiritOrb\SpiritOrbDispatcher.fs" />

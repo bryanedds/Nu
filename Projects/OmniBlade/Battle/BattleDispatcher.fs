@@ -335,7 +335,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v3 192.0f 192.0f 0.0f) (Bottom (target.Bottom - v3 0.0f 100.0f 0.0f)) Over EffectDescriptors.purify screen world |> just
                 | None -> just world
-                
+
             | DisplayInferno delay ->
                 displayEffect delay (v3 48.0f 48.0f 0.0f) (Position (v3 0.0f 0.0f 0.0f)) Over EffectDescriptors.inferno screen world |> just
 

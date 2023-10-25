@@ -519,7 +519,7 @@ module Character =
              | None -> None)
             character
 
-    let autoBattle (alliesHealthy : Map<_, _>) alliesWounded enemiesStanding enemiesSwooning (source : Character) =
+    let autoBattle jinnInParty (alliesHealthy : Map<_, _>) alliesWounded enemiesStanding enemiesSwooning (source : Character) =
 
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (alliesWounded, enemiesSwooning)
@@ -534,7 +534,11 @@ module Character =
             match source.TechChargeOpt with
             | Some (_, chargeAmount, chargeTech) when chargeAmount >= Constants.Battle.ChargeMax -> (Some chargeTech, true)
             | Some _ | None ->
-                if  Gen.randomf < Option.defaultValue 0.0f source.CharacterState_.TechProbabilityOpt &&
+                let techProbability =
+                    source.CharacterState_.TechProbabilityOpt |>
+                    Option.map (fun techProbability -> techProbability * if jinnInParty then 1.0f else Constants.Battle.TechProbabilityReductionScalar) |>
+                    Option.defaultValue 0.0f 
+                if  Gen.randomf < techProbability &&
                     not (Map.containsKey Silence source.Statuses) then
                     let techOpt = CharacterState.tryGetTechRandom source.CharacterState_
                     (techOpt, false)

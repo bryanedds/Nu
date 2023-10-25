@@ -335,7 +335,7 @@ module FieldDispatcher =
                 just field
 
             | PartyMenuOpen ->
-                let field = Field.updatePartyMenu (fun partyMenu -> { partyMenu with PartyMenuState = PartyMenuOpened; PartyMenuSelections = [0] }) field
+                let field = Field.updatePartyMenu (fun partyMenu -> { partyMenu with PartyMenuState = PartyMenuOpened; PartyMenuSelections = [] }) field
                 just field
 
             | PartyMenuSelect teamIndex ->
@@ -350,9 +350,7 @@ module FieldDispatcher =
             | PartyMenuDeselect teamIndex ->
                 let field =
                     Field.updatePartyMenu (fun partyMenu ->
-                        if teamIndex <> 0
-                        then { partyMenu with PartyMenuSelections = List.remove ((=) teamIndex) partyMenu.PartyMenuSelections }
-                        else partyMenu)
+                        { partyMenu with PartyMenuSelections = List.remove ((=) teamIndex) partyMenu.PartyMenuSelections })
                         field
                 just field
 
@@ -617,7 +615,13 @@ module FieldDispatcher =
                  if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue then
                     Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                         [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
-                         Entity.SpiritOrb := { AvatarLowerCenter = field.Avatar.LowerCenter; ShowUnopenedChests = Field.getShowUnopenedChests field; Spirits = field.Spirits; Chests = Field.getChests field; Portals = Field.getNonWarpPortals field }]
+                         Entity.SpiritOrb :=
+                            { AvatarLowerCenter = field.Avatar.LowerCenter
+                              ShowUnopenedChests = Field.getShowUnopenedChests field
+                              Chests = Field.getChests field
+                              Portals = Field.getNonWarpPortals field
+                              Narratives = Field.getNarratives field
+                              Spirits = field.Spirits }]
 
                  // backdrop sprite
                  Content.staticSprite "Backdrop"
@@ -974,7 +978,6 @@ module FieldDispatcher =
                             let y = 339.0f - single i * 81.0f
                             Content.button ("Selected+" + string teamIndex)
                                 [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
-                                 Entity.EnabledLocal == (teamIndex <> 0)
                                  Entity.Text := CharacterType.getName teammate.CharacterType
                                  Entity.UpImage == Assets.Gui.ButtonBigUpImage
                                  Entity.DownImage == Assets.Gui.ButtonBigDownImage

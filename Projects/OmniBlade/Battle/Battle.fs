@@ -202,6 +202,10 @@ module Battle =
         getAllies battle |>
         Map.filter (fun _ character -> character.Wounded)
 
+    let getJinnInParty battle =
+        getAllies battle |>
+        Seq.exists (fun entry -> entry.Value.CharacterType = Ally Jinn)
+
     let getEnemies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
@@ -321,11 +325,12 @@ module Battle =
             battle
 
     let private autoBattleEnemies battle =
+        let jinnInParty = getJinnInParty battle
         let alliesHealthy = getAlliesHealthy battle
         let alliesWounded = getAlliesWounded battle
         let enemiesStanding = getEnemiesStanding battle
         let enemiesSwooning = getEnemiesSwooning battle
-        updateEnemies (Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning) battle
+        updateEnemies (Character.autoBattle jinnInParty alliesHealthy alliesWounded enemiesStanding enemiesSwooning) battle
 
     (* Individual Character Operations *)
 
@@ -1905,11 +1910,12 @@ module Battle =
                     else character
                 let character =
                     if character.Healthy && Character.readyForAutoBattle character then
+                        let jinnInParty = getJinnInParty battle
                         let alliesHealthy = getAlliesHealthy battle
                         let alliesWounded = getAlliesWounded battle
                         let enemiesStanding = getEnemiesStanding battle
                         let enemiesSwooning = getEnemiesSwooning battle
-                        Character.autoBattle alliesHealthy alliesWounded enemiesStanding enemiesSwooning character
+                        Character.autoBattle jinnInParty alliesHealthy alliesWounded enemiesStanding enemiesSwooning character
                     else character
                 character)
                 battle
