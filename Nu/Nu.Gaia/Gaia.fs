@@ -2756,9 +2756,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // discover the desired nu plugin for editing
         let (gaiaState, targetDir, plugin) = selectNuPlugin gaiaPlugin
 
-        // ensure imgui ini file exists before initialising imgui
+        // ensure imgui ini file exists and was created by Gaia before initialising imgui
         let imguiIniFilePath = targetDir + "/imgui.ini"
-        if not (File.Exists imguiIniFilePath) then
+        if  not (File.Exists imguiIniFilePath) ||
+            (File.ReadAllLines imguiIniFilePath).[0] <> "[Window][Gaia]" then
             File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
 
         // attempt to create SDL dependencies
