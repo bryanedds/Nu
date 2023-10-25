@@ -668,7 +668,7 @@ module PhysicallyBased =
         (vertexData, indexData, bounds)
 
     /// Create physically-based geometry from a mesh.
-    let CreatePhysicallyBasedGeometry (renderable, vertexData : single Memory, indexData : int Memory, bounds) =
+    let CreatePhysicallyBasedGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
         let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
@@ -812,7 +812,7 @@ module PhysicallyBased =
         // make physically-based geometry
         let geometry =
             { Bounds = bounds
-              PrimitiveType = PrimitiveType.Triangles
+              PrimitiveType = primitiveType
               ElementCount = indexData.Length
               Vertices = vertices
               Indices = indices
@@ -1254,9 +1254,21 @@ module PhysicallyBased =
         (view : single array,
          projection : single array,
          eyeCenter : Vector3,
+         surfacesCount : int,
+         modelsFields : single array,
+         texCoordsOffsetsFields : single array,
+         albedosFields : single array,
+         materialsFields : single array,
+         heightsFields : single array,
+         invertRoughnessesFields : int array,
          blending,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
+         brdfTexture : uint,
+         irradianceMap : uint,
+         environmentFilterMap : uint,
+         irradianceMaps : uint array,
+         environmentFilterMaps : uint array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
@@ -1273,7 +1285,8 @@ module PhysicallyBased =
          lightConeOuters : single array,
          lightsCount : int,
          numStrips : int,
-         numVertsPerStrip : int,
+         numElementsPerStrip : int,
+         material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
@@ -1284,7 +1297,7 @@ module PhysicallyBased =
             Gl.BlendEquation BlendEquationMode.FuncAdd
             Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
             Gl.Enable EnableCap.Blend
-        Gl.Enable EnableCap.CullFace // correct default?
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // setup shader
@@ -1324,7 +1337,97 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         Hl.Assert ()
-                
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture)
+        Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
+        Gl.ActiveTexture TextureUnit.Texture8
+        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i])
+        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i])
+        Hl.Assert ()
+
+        // setup pbr texture filters
+        // TODO: will need to do this for each terrain material.
+        // TODO: remove unused types of pbr textures (which I think would be metalness, at least?)
+        for i in 0 .. dec 5 do
+            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
+            match material.TextureMinFilterOpt with
+            | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+            | None -> ()
+            match material.TextureMagFilterOpt with
+            | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+            | None -> ()
+        Hl.Assert ()
+
+        // update models buffer
+        let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally modelsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update texCoordsOffsets buffer
+        let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally texCoordsOffsetsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update albedos buffer
+        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally albedosFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update materials buffer
+        let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally materialsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update heights buffer
+        let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally heightsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update invert roughnesses buffer
+        let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<int>), invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally invertRoughnessesFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
         // setup geometry
         Gl.BindVertexArray geometry.PhysicallyBasedVao
         Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
@@ -1333,12 +1436,53 @@ module PhysicallyBased =
 
         // draw geometry
         for i in 0 .. dec numStrips do
-            let offset = sizeof<uint> * numVertsPerStrip * i
-            Gl.DrawElements (OpenGL.PrimitiveType.TriangleStrip, numVertsPerStrip, DrawElementsType.UnsignedInt, nativeint offset)
+            let offset = sizeof<uint> * numElementsPerStrip * i
+            Gl.DrawElementsInstanced (OpenGL.PrimitiveType.TriangleStrip, numElementsPerStrip, DrawElementsType.UnsignedInt, nativeint offset, 1)
             Hl.Assert ()
 
         // teardown geometry
         Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown pbr texture filters
+        // TODO: will need to do this for each terrain material.
+        // TODO: remove unused types of pbr textures (which I think would be metalness, at least?)
+        for i in 0 .. dec 5 do
+            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
+            if material.TextureMinFilterOpt.IsSome then
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
+            if material.TextureMagFilterOpt.IsSome then
+                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            Hl.Assert ()
+
+        // teardown textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture3
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture4
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture5
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture6
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture8
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Gl.ActiveTexture TextureUnit.Texture9
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
         
         // teardown shader
@@ -1352,8 +1496,7 @@ module PhysicallyBased =
             Gl.Disable EnableCap.Blend
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.BlendEquation BlendEquationMode.FuncAdd
-        Gl.Disable EnableCap.CullFace // correct default?
-
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based surfaces.
     let DrawPhysicallyBasedSurfaces
@@ -1471,7 +1614,7 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i])
         Hl.Assert ()
 
-        // setup texture filters
+        // setup pbr texture filters
         for i in 0 .. dec 5 do
             Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
             match material.TextureMinFilterOpt with
@@ -1544,7 +1687,7 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown texture filters
+        // teardown pbr texture filters
         for i in 0 .. dec 5 do
             Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
             if material.TextureMinFilterOpt.IsSome then
