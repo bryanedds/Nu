@@ -839,23 +839,23 @@ module PhysicallyBased =
             TryCreatePhysicallyBasedMesh mesh
 #endif
         match meshOpt with
-        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds))
+        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
         | Left error -> Left error
 
     /// Create physically-based quad.
     let CreatePhysicallyBasedQuad renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedQuadMesh ()
-        CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based billboard.
     let CreatePhysicallyBasedBillboard renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedBillboardMesh ()
-        CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based cube.
     let CreatePhysicallyBasedCube renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedCubeMesh ()
-        CreatePhysicallyBasedGeometry (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create a physically-based surface.
     let CreatePhysicallyBasedSurface (surfaceNames, surfaceMatrix, surfaceBounds, physicallyBasedMaterial, physicallyBasedGeometry) =
