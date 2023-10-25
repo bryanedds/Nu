@@ -791,7 +791,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let indexData = surfaceDescriptor.Indices.AsMemory ()
 
                 // create geometry
-                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, vertexData, indexData, surfaceDescriptor.Bounds)
+                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry (true, OpenGL.PrimitiveType.Triangles, vertexData, indexData, surfaceDescriptor.Bounds) // TODO: consider letting user specify primitive drawing type.
 
                 // create surface
                 let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], surfaceDescriptor.ModelMatrix, surfaceDescriptor.Bounds, material, geometry)
@@ -1788,7 +1788,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; Gen.randomf; Gen.randomf; 0.5f; 0.5f; 1.0f|]) positions
 
                                 // TODO: write CreatePhysicallyBasedTerrainGeometry function
-                                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
+                                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
                                 renderer.PhysicallyBasedTerrainGeometries.Add (terrainId, geometry)
 
