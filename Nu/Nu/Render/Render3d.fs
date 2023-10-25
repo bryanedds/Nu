@@ -1418,7 +1418,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let numElementsPerStrip = map.Resolution.X * 2
                     let parameters = SList.singleton struct (m4Identity, box2Zero, MaterialProperties.defaultProperties) // TODO: see if we need to take in the material properties from the render terrain call, or if these should be different defaults or what.
                     GlRenderer3d.renderPhysicallyBasedTerrain
-                        viewAbsoluteArray geometryProjectionArray eyeCenter parameters false
+                        viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
                         lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
                         numStrips numElementsPerStrip renderer.RenderPhysicallyBasedMaterial geometry renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
@@ -1785,7 +1785,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                                 // TODO: use verts and splat map to construct terrain geometry
                                 
-                                let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; Gen.randomf; Gen.randomf; 0.5f; 0.5f; 1.0f|]) positions
+                                let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; Gen.randomf; Gen.randomf; 0.5f; 0.5f; 1.0f|]) positions // TODO: obv don't use random tex coords :)
 
                                 // TODO: write CreatePhysicallyBasedTerrainGeometry function
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
