@@ -26,7 +26,6 @@
      [RawHeightMap
       [[32 32] [RawUInt16 BigEndian] [Gameplay HeightMapRaw]]]]
     [Name Terrain-0001]
-    [Position [0 1 2.5]]
     [Presence Omnipresent]
     [Size [64 9 64]]]
    []]]]

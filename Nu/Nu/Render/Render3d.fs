@@ -1009,6 +1009,86 @@ type [<ReferenceEquality>] GlRenderer3d =
         Array.sortByDescending (fun struct (subsort, sort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
+    static member private renderPhysicallyBasedTerrain
+        viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
+        lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
+        numStrips numElementsPerStrip (material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial) geometry shader renderer =
+
+        // ensure there are surfaces to render
+        // TODO: figure out how to deal with the code duplication between here and in renderPhysicallyBasedSurfaces.
+        if parameters.Length > 0 then
+
+            // ensure we have a large enough models fields array
+            let mutable length = renderer.RenderModelsFields.Length
+            while parameters.Length * 16 > length do length <- length * 2
+            if renderer.RenderModelsFields.Length < length then
+                renderer.RenderModelsFields <- Array.zeroCreate<single> length
+
+            // ensure we have a large enough texCoordsOffsets fields array
+            let mutable length = renderer.RenderTexCoordsOffsetsFields.Length
+            while parameters.Length * 4 > length do length <- length * 2
+            if renderer.RenderTexCoordsOffsetsFields.Length < length then
+                renderer.RenderTexCoordsOffsetsFields <- Array.zeroCreate<single> length
+
+            // ensure we have a large enough abledos fields array
+            let mutable length = renderer.RenderAlbedosFields.Length
+            while parameters.Length * 4 > length do length <- length * 2
+            if renderer.RenderAlbedosFields.Length < length then
+                renderer.RenderAlbedosFields <- Array.zeroCreate<single> length
+
+            // ensure we have a large enough materials fields array
+            let mutable length = renderer.PhysicallyBasedMaterialsFields.Length
+            while parameters.Length * 4 > length do length <- length * 2
+            if renderer.PhysicallyBasedMaterialsFields.Length < length then
+                renderer.PhysicallyBasedMaterialsFields <- Array.zeroCreate<single> length
+
+            // ensure we have a large enough heights fields array
+            let mutable length = renderer.PhysicallyBasedHeightsFields.Length
+            while parameters.Length > length do length <- length * 2
+            if renderer.PhysicallyBasedHeightsFields.Length < length then
+                renderer.PhysicallyBasedHeightsFields <- Array.zeroCreate<single> length
+
+            // ensure we have a large enough invert roughnesses fields array
+            let mutable length = renderer.PhysicallyBasedInvertRoughnessesFields.Length
+            while parameters.Length > length do length <- length * 2
+            if renderer.PhysicallyBasedInvertRoughnessesFields.Length < length then
+                renderer.PhysicallyBasedInvertRoughnessesFields <- Array.zeroCreate<int> length
+
+            // blit parameters to field arrays
+            for i in 0 .. dec parameters.Length do
+                let struct (model, texCoordsOffset, properties) = parameters.[i]
+                model.ToArray (renderer.RenderModelsFields, i * 16)
+                renderer.RenderTexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Min.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Albedo
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Metallic
+                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Roughness
+                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.AmbientOcclusion
+                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Emission
+                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Height
+                let invertRoughness = match properties.InvertRoughnessOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.InvertRoughness
+                renderer.RenderAlbedosFields.[i * 4] <- albedo.R
+                renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
+                renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
+                renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
+                renderer.PhysicallyBasedMaterialsFields.[i * 4] <- metallic
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- roughness
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
+                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
+                renderer.PhysicallyBasedHeightsFields.[i] <- material.AlbedoMetadata.TextureTexelHeight * height
+                renderer.PhysicallyBasedInvertRoughnessesFields.[i] <- if invertRoughness then 1 else 0
+
+            // draw surfaces
+            OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
+                (viewArray, projectionArray, eyeCenter,
+                 1, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
+                 lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
+                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
+                 numStrips, numElementsPerStrip, material, geometry, shader)
+
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
         lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
@@ -1335,11 +1415,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match entry.Value.HeightMap with
                 | RawHeightMap map ->
                     let numStrips = map.Resolution.Y - 1
-                    let numVertsPerStrip = map.Resolution.X * 2
-                    OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
-                        (viewRelativeArray, geometryProjectionArray, eyeCenter, false, lightAmbientColor, lightAmbientBrightness, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
-                        lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
-                        numStrips, numVertsPerStrip, geometry, renderer.RenderPhysicallyBasedDeferredGeometryShader)
+                    let numElementsPerStrip = map.Resolution.X * 2
+                    let parameters = SList.singleton struct (m4Identity, box2Zero, MaterialProperties.defaultProperties) // TODO: see if we need to take in the material properties from the render terrain call, or if these should be different defaults or what.
+                    GlRenderer3d.renderPhysicallyBasedTerrain
+                        viewAbsoluteArray geometryProjectionArray eyeCenter parameters false
+                        lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+                        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
+                        numStrips numElementsPerStrip renderer.RenderPhysicallyBasedMaterial geometry renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
@@ -1703,7 +1785,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                                 // TODO: use verts and splat map to construct terrain geometry
                                 
-                                let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; single 0; single 0; single 0; single 0; single 0|]) positions
+                                let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; Gen.randomf; Gen.randomf; 0.5f; 0.5f; 1.0f|]) positions
 
                                 // TODO: write CreatePhysicallyBasedTerrainGeometry function
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
