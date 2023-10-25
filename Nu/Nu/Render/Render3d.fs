@@ -1706,15 +1706,17 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match rt.TerrainDescriptor.HeightMap with
                     | RawHeightMap map ->
 
-                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / (single map.Resolution.X)
-                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / (single map.Resolution.Y)
+                        let texelWidth = 1.0f / single map.Resolution.X
+                        let texelHeight = 1.0f / single map.Resolution.Y
+                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X * texelWidth
+                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z * texelHeight
 
                         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
                         | ValueSome (RawAsset rawAsset) ->
 
                             use rawMemory = new MemoryStream (rawAsset)
                             use rawReader = new BinaryReader (rawMemory)
-                            let positionsOpt =
+                            let positionsAndTexCoordsesOpt =
                                 try
                                     Some
                                         [|match map.RawFormat with
@@ -1723,10 +1725,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                 for x in 0 .. dec map.Resolution.X do
                                                     let divisor = single Byte.MaxValue
                                                     let normalized = (rawReader.ReadByte () |> single) / divisor
-                                                    v3
-                                                        ((single x) * quadSizeX)
-                                                        (normalized * terrainHeight + terrainBottom)
-                                                        ((single y) * quadSizeY)
+                                                    let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    struct (position, texCoords)
                                           | RawUInt16 endianness ->
                                             for y in 0 .. dec map.Resolution.Y do
                                                 for x in 0 .. dec map.Resolution.X do
@@ -1736,10 +1737,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
                                                     let divisor = single UInt16.MaxValue
                                                     let normalized = (value |> single) / divisor
-                                                    v3
-                                                        ((single x) * quadSizeX)
-                                                        (normalized * terrainHeight + terrainBottom)
-                                                        ((single y) * quadSizeY)
+                                                    let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    struct (position, texCoords)
                                           | RawUInt32 endianness ->
                                             for y in 0 .. dec map.Resolution.Y do
                                                 for x in 0 .. dec map.Resolution.X do
@@ -1749,10 +1749,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
                                                     let divisor = single UInt32.MaxValue
                                                     let normalized = (value |> single) / divisor
-                                                    v3
-                                                        ((single x) * quadSizeX)
-                                                        (normalized * terrainHeight + terrainBottom)
-                                                        ((single y) * quadSizeY)
+                                                    let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    struct (position, texCoords)
                                           
                                           // NOTE: this is broken.
                                           // TODO: find out how to process a (signed) float value!
@@ -1763,10 +1762,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         match endianness with
                                                         | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
                                                         | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
-                                                    v3
-                                                        ((single x) * quadSizeX)
-                                                        (value * terrainHeight + terrainBottom)
-                                                        ((single y) * quadSizeY)|]
+                                                    let position = v3 (single x * quadSizeX) (value * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    struct (position, texCoords)|]
                                 with exn ->
                                     // TODO: log error.
                                     None
@@ -1777,15 +1775,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         for k in 0 .. 1 do
                                             j + map.Resolution.X * (i + k)|]
                         
-                            match positionsOpt with
-                            | Some positions ->
+                            match positionsAndTexCoordsesOpt with
+                            | Some positionsAndTexCoordses ->
 
                                 // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
                                 // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
 
                                 // TODO: use verts and splat map to construct terrain geometry
-                                
-                                let vertices = Array.collect (fun (x : Vector3) -> [|x.X; x.Y; x.Z; Gen.randomf; Gen.randomf; 0.5f; 0.5f; 1.0f|]) positions // TODO: obv don't use random tex coords :)
+
+                                let vertices =
+                                    Array.collect (fun struct (position : Vector3, texCoords : Vector2) ->
+                                        [|position.X; position.Y; position.Z; texCoords.X; texCoords.Y; 0.5f; 0.5f; 1.0f|])
+                                        positionsAndTexCoordses
 
                                 // TODO: write CreatePhysicallyBasedTerrainGeometry function
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
