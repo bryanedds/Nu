@@ -31,6 +31,6 @@
     [TerrainMaterial
      [SplatMaterial
       [[Gameplay ColorMap]
-       []
+       [[[Gameplay Texture0Albedo] [Gameplay Texture0Roughness] [Gameplay Texture0Ao] [Gameplay Texture0Normal] [1 1]]]
        [RgbaMap [Gameplay SplatMap]]]]]]
    []]]]
