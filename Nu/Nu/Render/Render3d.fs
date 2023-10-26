@@ -63,7 +63,7 @@ type [<StructuralEquality; NoComparison>] FlatMaterial =
 
 /// Blend-weighted material for a 3d terrain.
 type [<StructuralEquality; NoComparison>] SplatMaterial =
-    { AlbedoImage : Image Asset
+    { AlbedoImage : Image AssetTag
       TerrainLayers : TerrainLayer array
       SplatMap : SplatMap }
 
