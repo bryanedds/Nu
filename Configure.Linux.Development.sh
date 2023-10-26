@@ -2,12 +2,13 @@
 echo Configuring Linux for Nu development...
 
 # configure sdl2 and components
+# NOTE: due to what we suspect is a regression in sdl2 ttf, we explictly install 2.0.15 for that dependency.
 sudo apt update
 sudo apt install \
   libsdl2-dev libsdl2-2.0-0 \
   libjpeg-dev libwebp-dev libtiff5-dev libsdl2-image-dev libsdl2-image-2.0-0 \
   libmikmod-dev libfishsound1-dev libsmpeg-dev liboggz2-dev libflac-dev libfluidsynth-dev libsdl2-mixer-dev libsdl2-mixer-2.0-0 \
-  libfreetype6-dev libsdl2-ttf-dev libsdl2-ttf-2.0-0
+  libfreetype6-dev libsdl2-ttf-dev=2.0.15* libsdl2-ttf-2.0-0=2.0.15*
 
 # configure .net
 # if this reports that the package can't be found, try the advice here - https://dev.to/solrevdev/unable-to-locate-package-dotnet-sdk-3-1-4b6
