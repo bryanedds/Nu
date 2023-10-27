@@ -579,7 +579,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         if textSurfacePtr <> IntPtr.Zero then
 
                             // construct mvp matrix
-                            let textSurfaceWidth = single (textSurface.w * Constants.Render.VirtualScalar)
+                            let textSurfaceWidth = single (textSurface.pitch / 4 * Constants.Render.VirtualScalar)
                             let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
                             let translation = (position + offset).V3
                             let scale = v3 textSurfaceWidth textSurfaceHeight 1.0f
@@ -591,7 +591,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // upload texture
                             let textTexture = OpenGL.Gl.GenTexture ()
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
-                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGl.UncompressedTextureFormat, textSurface.w, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGl.UncompressedTextureFormat, textSurface.pitch / 4, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
