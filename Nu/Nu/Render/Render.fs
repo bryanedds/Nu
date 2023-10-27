@@ -7,10 +7,10 @@ open Prime
 
 /// An asset that is used for rendering.
 type RenderAsset =
-    | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
-    | FontAsset of string * int * nativeint
-    | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
-    | StaticModelAsset of bool * OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+    | TextureAsset of FilePath : string * TextureMetadata : OpenGL.Texture.TextureMetadata * Texture : uint
+    | FontAsset of FilePath : string * PointSize : int * Font : nativeint
+    | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapMemoKey * CubeMap : uint * IrradianceAndEnvironmentMapOptRef : (uint * uint) option ref
+    | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
 
 /// The type of rendering used on a surface.
 type [<StructuralEquality; NoComparison; Struct>] RenderType =
