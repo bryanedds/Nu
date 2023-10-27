@@ -544,6 +544,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                             colorSdl.b <- color.B8
                             colorSdl.a <- color.A8
 
+                            // HACK: convert 3 dots to underscores in text to avoid automatic ellipsis promotion
+                            let text = text.Replace ("...", "___")
+
                             // render text to surface
                             match justification with
                             | Unjustified wrapped ->
