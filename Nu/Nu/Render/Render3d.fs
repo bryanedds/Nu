@@ -508,7 +508,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          PhysicallyBasedTerrainGeometries : Dictionary<string, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>
+          PhysicallyBasedTerrainGeometriesAndMaterials : Dictionary<string, (OpenGL.PhysicallyBased.PhysicallyBasedGeometry * OpenGL.PhysicallyBased.PhysicallyBasedMaterial array)>
           RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
@@ -1410,8 +1410,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // render terrain
         for entry in renderer.RenderTasks.RenderTerrain do
-            match renderer.PhysicallyBasedTerrainGeometries.TryGetValue entry.Key with
-            | (true, geometry) ->
+            match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue entry.Key with
+            | (true, (geometry, _)) ->
                 match entry.Value.HeightMap with
                 | RawHeightMap map ->
                     let numStrips = map.Resolution.Y - 1
@@ -1694,7 +1694,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 let terrainId = "terrain"
 
-                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue terrainId with
+                match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue terrainId with
                 | (true, _) -> ()
                 | (false, _) ->
                 
@@ -1809,7 +1809,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // TODO: write CreatePhysicallyBasedTerrainGeometry function
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
-                                renderer.PhysicallyBasedTerrainGeometries.Add (terrainId, geometry)
+                                let material =
+                                    match rt.TerrainDescriptor.Material with
+                                    | SplatMaterial splatMaterial ->
+                                        if splatMaterial.TerrainLayers.Length > 0 then
+                                            renderer.RenderPhysicallyBasedMaterial
+                                        else renderer.RenderPhysicallyBasedMaterial
+                                    | _ -> renderer.RenderPhysicallyBasedMaterial
+                                
+                                renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (terrainId, (geometry, [|material|]))
 
                             | None -> ()
 
@@ -1817,7 +1825,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     | _ -> ()
 
-                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue terrainId with
+                match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue terrainId with
                 | (true, _) ->
                     renderer.RenderTasks.RenderTerrain.Add (terrainId, rt.TerrainDescriptor)
                 | (false, _) -> ()
@@ -2114,7 +2122,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              PhysicallyBasedTerrainGeometries = Dictionary HashIdentity.Structural
+              PhysicallyBasedTerrainGeometriesAndMaterials = Dictionary HashIdentity.Structural
               RenderMessages = List () }
 
         // fin
