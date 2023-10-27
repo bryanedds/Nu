@@ -903,7 +903,7 @@ type PropData =
     | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
     | Door of DoorType * KeyItemType option * CueSystem.Cue * CueSystem.Cue * Advent Set // for simplicity, we just have north / south doors
     | Chest of ChestType * ItemType * Guid * BattleType option * CueSystem.Cue * Advent Set
-    | Switch of SwitchType * CueSystem.Cue * CueSystem.Cue * Advent Set
+    | Switch of SwitchType * CueSystem.Cue * CueSystem.Cue * Advent Set * Advent Set
     | Sensor of SensorType * BodyShape option * CueSystem.Cue * CueSystem.Cue * Advent Set
     | Character of CharacterType * Direction * bool * bool * CueSystem.Cue * Advent Set
     | Npc of NpcType * Direction option * CueSystem.Cue * Advent Set

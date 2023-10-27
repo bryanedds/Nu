@@ -160,13 +160,13 @@ module PropDispatcher =
                                 then Assets.Field.BrassChestOpenedImage
                                 else Assets.Field.BrassChestClosedImage
                         (true, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
-                    | Switch (switchType, _, _, _) ->
+                    | Switch (switchType, _, _, onRequirements, _) ->
                         let image =
                             match switchType with
                             | ThrowSwitch ->
-                                match prop.Prop.PropState with
-                                | SwitchState on -> if on then Assets.Field.ThrowSwitchOnImage else Assets.Field.ThrowSwitchOffImage
-                                | _ -> failwithumf ()
+                                if prop.Advents.IsSupersetOf onRequirements
+                                then Assets.Field.ThrowSwitchOnImage
+                                else Assets.Field.ThrowSwitchOffImage
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Sensor (sensorType, _, _, _, _) ->
                         match sensorType with

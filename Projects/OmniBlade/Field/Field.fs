@@ -162,7 +162,7 @@ module Field =
         match propDescriptor.PropData with
         | Sprite (_, image, color, blend, emission, flip, visible) -> SpriteState (image, color, blend, emission, flip, visible)
         | Door _ -> DoorState false
-        | Switch _ -> SwitchState false
+        | Switch (_, _, _, _, _) -> NilState
         | Character (characterType, direction, _, _, _, _) ->
             let animationSheet =
                 match Data.Value.Characters.TryGetValue characterType with
@@ -286,7 +286,7 @@ module Field =
         | Portal (_, _, _, _, _, _, _) -> None
         | Door _ -> Some "Open"
         | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) field.Advents then None else Some "Open"
-        | Switch (_, _, _, _) -> Some "Use"
+        | Switch (_, _, _, _, _) -> Some "Use"
         | Sensor (_, _, _, _, _) -> None
         | Character (_, _, _, isRising, _, _) ->
             if isRising then
@@ -634,20 +634,16 @@ module Field =
                 withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
         | _ -> failwithumf ()
 
-    let private interactSwitch cue cue2 requirements (prop : Prop) (field : Field) =
-        match prop.PropState with
-        | SwitchState on ->
-            if field.Advents_.IsSupersetOf requirements then
-                let on = not on
-                let field = updateAvatar (Avatar.lookAt prop.Center) field
-                let field = updatePropState (constant (SwitchState on)) prop.PropId field
-                let field = updateCue (constant (if on then cue else cue2)) field
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
-            else
-                let field = updateAvatar (Avatar.lookAt prop.Center) field
-                let field = updateDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
-        | _ -> failwithumf ()
+    let private interactSwitch cue cue2 onRequirements requirements (prop : Prop) (field : Field) =
+        let on = field.Advents_.IsSupersetOf onRequirements
+        if field.Advents_.IsSupersetOf requirements then
+            let field = updateAvatar (Avatar.lookAt prop.Center) field
+            let field = updateCue (constant (if on then cue2 else cue)) field
+            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
+        else
+            let field = updateAvatar (Avatar.lookAt prop.Center) field
+            let field = updateDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
+            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
 
     let private interactCharacter cue (prop : Prop) (field : Field) =
         let field = updateAvatar (Avatar.lookAt prop.BottomInset) field
@@ -692,7 +688,7 @@ module Field =
                     | Portal _ -> just field
                     | Door (_, keyItemTypeOpt, cue, _, requirements) -> interactDoor keyItemTypeOpt cue requirements prop field
                     | Chest (_, itemType, chestId, battleTypeOpt, cue, requirements) -> interactChest itemType chestId battleTypeOpt cue requirements prop field
-                    | Switch (_, cue, cue2, requirements) -> interactSwitch cue cue2 requirements prop field
+                    | Switch (_, cue, cue2, onRequirements, requirements) -> interactSwitch cue cue2 onRequirements requirements prop field
                     | Sensor _ -> just field
                     | Character (_, _, _, _, cue, _) -> interactCharacter cue prop field
                     | Npc (_, _, cue, requirements) -> interactNpc [{ CueSystem.Cue = cue; CueSystem.Requirements = Set.empty }] requirements prop field
