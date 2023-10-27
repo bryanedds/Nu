@@ -7,7 +7,7 @@ open System.IO
 open SDL2
 open Nu
 module Program =
-    
+
     let [<EntryPoint; STAThread>] main _ =
         let sdlWindowConfig =
             { SdlWindowConfig.defaultConfig with
