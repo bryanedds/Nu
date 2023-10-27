@@ -432,6 +432,8 @@ type [<ReferenceEquality>] GlRenderer2d =
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer) =
+
+        // gather context for rendering tiles
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
         let min = perimeter.Min.V2 * Constants.Render.VirtualScalar2
@@ -448,11 +450,16 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | ValueSome _ -> None
                 | ValueNone -> None) |>
             Array.definitizePlus
+
+        // render only when all needed textures are found
         if allFound then
+
             // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
             let tilesLength = tiles.Length
             let mutable tileIndex = 0
             while tileIndex < tilesLength do
+
+                // gather context for rendering tile
                 let tile = tiles.[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
                     let mapRun = mapSize.X
@@ -502,6 +509,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent emission flip renderer
                         | None -> ()
 
+                // fin
                 tileIndex <- inc tileIndex
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
@@ -515,10 +523,14 @@ type [<ReferenceEquality>] GlRenderer2d =
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer : GlRenderer2d) =
+
+        // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
         let color = color // copy to local for proprety access
-        if color.A8 <> 0uy then // HACK: SDL_TTF doesn't handle zero alpha text as expected, at least in the current version.
+        if color.A8 <> 0uy then
             let transform = transform // copy to local to make visible from lambda
             flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.RenderSpriteBatchEnv $ fun () ->
+
+                // gather context for rendering text
                 let mutable transform = transform
                 let absolute = transform.Absolute
                 let perimeter = transform.Perimeter
@@ -576,6 +588,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                                 let offset = v2 offsetX offsetY
                                 (offset, textSurface, textSurfacePtr)
 
+                        // render only when a valid surface was created
                         if textSurfacePtr <> IntPtr.Zero then
 
                             // construct mvp matrix
@@ -609,6 +622,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             OpenGL.Gl.DeleteTextures textTexture
                             OpenGL.Hl.Assert ()
 
+                    // fin
                     | _ -> Log.debug "Cannot render text with a non-font asset."
                 | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
             OpenGL.Hl.Assert ()
