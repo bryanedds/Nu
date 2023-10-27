@@ -579,10 +579,10 @@ type [<ReferenceEquality>] GlRenderer2d =
                         if textSurfacePtr <> IntPtr.Zero then
 
                             // construct mvp matrix
-                            let textSurfaceWidth = single (textSurface.pitch / 4 * Constants.Render.VirtualScalar)
-                            let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
+                            let textSurfaceWidth = textSurface.pitch / 4 // NOTE: textSurface.w may be an innacurate representation of texture width in SDL2_ttf versions beyond v2.0.15 because... I don't know why.
+                            let textSurfaceHeight = textSurface.h
                             let translation = (position + offset).V3
-                            let scale = v3 textSurfaceWidth textSurfaceHeight 1.0f
+                            let scale = v3 (single (textSurfaceWidth * Constants.Render.VirtualScalar)) (single (textSurfaceHeight * Constants.Render.VirtualScalar)) 1.0f
                             let modelTranslation = Matrix4x4.CreateTranslation translation
                             let modelScale = Matrix4x4.CreateScale scale
                             let modelMatrix = modelScale * modelTranslation
@@ -591,7 +591,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // upload texture
                             let textTexture = OpenGL.Gl.GenTexture ()
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
-                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGl.UncompressedTextureFormat, textSurface.pitch / 4, textSurface.h, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGl.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
@@ -601,7 +601,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices, vao) = renderer.RenderTextQuad
                             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.RenderSpriteShader
-                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurface.w, textSurface.h, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
                             OpenGL.Hl.Assert ()
 
                             // destroy texture
