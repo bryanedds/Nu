@@ -939,7 +939,8 @@ type FieldData =
       FieldSongOpt : Song AssetTag option
       ShowUnopenedChests : bool
       UseWindPortal : bool
-      UseAlternativeSegments : bool
+      UseAlternativeNormalSegments : bool
+      UseAlternativeSpecialSegments : bool
       EncounterTypeOpt : EncounterType option
       EncounterRate : single
       Definitions : CueSystem.CueDefinitions
@@ -985,7 +986,7 @@ module FieldData =
                     let rand = Rand.makeFromSeedState rotatedSeedState
                     let (cursor, randMap, _) = RandMap.makeFromRand walkCount walkLength bias Constants.Field.RandMapSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
-                    let tileMap = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal fieldData.UseAlternativeSegments randMap
+                    let tileMap = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal fieldData.UseAlternativeNormalSegments fieldData.UseAlternativeSpecialSegments randMap
                     Some (Choice3Of4 (tileMap, origin))
                 | FieldRoom fieldAsset ->
                     match Metadata.tryGetTileMapMetadata fieldAsset with

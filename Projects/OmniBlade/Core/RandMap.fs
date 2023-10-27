@@ -80,7 +80,8 @@ type SpecialSegment =
     | BossSegment
 
 type Segments =
-    { Segment0 : TmxMap
+    { SegmentF : TmxMap
+      Segment0 : TmxMap
       Segment1N : TmxMap
       Segment1E : TmxMap
       Segment1S : TmxMap
@@ -99,32 +100,30 @@ type Segments =
       SegmentNN : TmxMap
       SegmentNS : TmxMap
       SegmentBN : TmxMap
-      SegmentBS : TmxMap
-      SegmentF : TmxMap }
+      SegmentBS : TmxMap }
 
-    static member load (floor : int) useAlternativeSegments (filePath : string) =
-        let suffix = if useAlternativeSegments then "+B" else ""
-        { Segment0 = TmxMap (filePath + "+0A" + suffix + ".tmx")
-          Segment1N = TmxMap (filePath + "+1N" + suffix + ".tmx")
-          Segment1E = TmxMap (filePath + "+1E" + suffix + ".tmx")
-          Segment1S = TmxMap (filePath + "+1S" + suffix + ".tmx")
-          Segment1W = TmxMap (filePath + "+1W" + suffix + ".tmx")
-          Segment2NE = TmxMap (filePath + "+2NE" + suffix + ".tmx")
-          Segment2NW = TmxMap (filePath + "+2NW" + suffix + ".tmx")
-          Segment2SE = TmxMap (filePath + "+2SE" + suffix + ".tmx")
-          Segment2SW = TmxMap (filePath + "+2SW" + suffix + ".tmx")
-          Segment2NS = TmxMap (filePath + "+2NS" + suffix + ".tmx")
-          Segment2EW = TmxMap (filePath + "+2EW" + suffix + ".tmx")
-          Segment3N = TmxMap (filePath + "+3N" + suffix + ".tmx")
-          Segment3E = TmxMap (filePath + "+3E" + suffix + ".tmx")
-          Segment3S = TmxMap (filePath + "+3S" + suffix + ".tmx")
-          Segment3W = TmxMap (filePath + "+3W" + suffix + ".tmx")
-          Segment4 = TmxMap (filePath + "+4A" + suffix + ".tmx")
-          SegmentNN = TmxMap (filePath + "+NN+" + string floor + suffix + ".tmx")
-          SegmentNS = TmxMap (filePath + "+NS+" + string floor + suffix + ".tmx")
-          SegmentBN = TmxMap (filePath + "+BN+" + string floor + suffix + ".tmx")
-          SegmentBS = TmxMap (filePath + "+BS+" + string floor + suffix + ".tmx")
-          SegmentF = TmxMap (filePath + "+F" + suffix + ".tmx") }
+    static member load (floor : int) useAlternativeNormalSegments useAlternativeSpecialSegments (filePath : string) =
+        { SegmentF = TmxMap (filePath + "+F" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment0 = TmxMap (filePath + "+0A" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment1N = TmxMap (filePath + "+1N" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment1E = TmxMap (filePath + "+1E" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment1S = TmxMap (filePath + "+1S" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment1W = TmxMap (filePath + "+1W" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment2NE = TmxMap (filePath + "+2NE" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment2NW = TmxMap (filePath + "+2NW" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment2SE = TmxMap (filePath + "+2SE" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment2SW = TmxMap (filePath + "+2SW" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment2NS = TmxMap (filePath + "+2NS" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment2EW = TmxMap (filePath + "+2EW" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment3N = TmxMap (filePath + "+3N" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment3E = TmxMap (filePath + "+3E" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment3S = TmxMap (filePath + "+3S" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment3W = TmxMap (filePath + "+3W" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          Segment4 = TmxMap (filePath + "+4A" + (if useAlternativeNormalSegments then "+B" else "") + ".tmx")
+          SegmentNN = TmxMap (filePath + "+NN+" + string floor + (if useAlternativeSpecialSegments then "+B" else "") + ".tmx")
+          SegmentNS = TmxMap (filePath + "+NS+" + string floor + (if useAlternativeSpecialSegments then "+B" else "") + ".tmx")
+          SegmentBN = TmxMap (filePath + "+BN+" + string floor + (if useAlternativeSpecialSegments then "+B" else "") + ".tmx")
+          SegmentBS = TmxMap (filePath + "+BS+" + string floor + (if useAlternativeSpecialSegments then "+B" else "") + ".tmx") }
 
 type RandMap =
     { RandMapSize : Vector2i
@@ -375,12 +374,12 @@ type RandMap =
           Segments = Array.init size.X (fun _ -> Array.init size.Y (constant Segment.Segment0))
           OriginOpt = None }
 
-    static member toTmx fieldName abstractPath origin (cursor : Vector2i) floor useWindPortal useAlternativeSegments map =
+    static member toTmx fieldName abstractPath origin (cursor : Vector2i) floor useWindPortal useAlternativeNormalSegments useAlternativeSpecialSegments map =
 
         // locals
         let mapTmx = TmxMap (abstractPath + "+9x9.tmx")
         let objects = mapTmx.ObjectGroups.[0].Objects
-        let segments = Segments.load floor useAlternativeSegments abstractPath
+        let segments = Segments.load floor useAlternativeNormalSegments useAlternativeSpecialSegments abstractPath
         let slop = 12 // extra translation so that collision doesn't happen due to portal being directly aligned with a wall
         let entryId = 0
         
