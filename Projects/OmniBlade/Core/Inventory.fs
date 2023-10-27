@@ -22,6 +22,8 @@ type Advent =
     | FactorySealed
     | SwampSealed
     | LakeSealed
+    | CastlePlusSealed
+    | FactoryPlusSealed
     | VolcanoSealed
     | KylaAdvent of int
     | OranAdvent of int
