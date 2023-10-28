@@ -1411,7 +1411,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // render terrain
         for entry in renderer.RenderTasks.RenderTerrain do
             match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue entry.Key with
-            | (true, (geometry, _)) ->
+            | (true, (geometry, [|material|])) ->
                 match entry.Value.HeightMap with
                 | RawHeightMap map ->
                     let numStrips = map.Resolution.Y - 1
@@ -1421,7 +1421,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
                         lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
-                        numStrips numElementsPerStrip renderer.RenderPhysicallyBasedMaterial geometry renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
+                        numStrips numElementsPerStrip material geometry renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
@@ -1810,12 +1810,48 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
                                 let material =
+                                    let defaultMaterial = renderer.RenderPhysicallyBasedMaterial
+                                    
                                     match rt.TerrainDescriptor.Material with
                                     | SplatMaterial splatMaterial ->
                                         if splatMaterial.TerrainLayers.Length > 0 then
-                                            renderer.RenderPhysicallyBasedMaterial
-                                        else renderer.RenderPhysicallyBasedMaterial
-                                    | _ -> renderer.RenderPhysicallyBasedMaterial
+                                            let layer = splatMaterial.TerrainLayers.[0]
+                                            let (albedoMetadata, albedoTexture) =
+                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AlbedoImage) renderer with
+                                                | ValueSome renderAsset ->
+                                                    match renderAsset with
+                                                    | TextureAsset (_, metadata, texture) -> (metadata, texture)
+                                                    | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                                | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                            let roughnessTexture =
+                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.RoughnessImage) renderer with
+                                                | ValueSome renderAsset ->
+                                                    match renderAsset with
+                                                    | TextureAsset (_, _, texture) -> texture
+                                                    | _ -> defaultMaterial.RoughnessTexture
+                                                | ValueNone -> defaultMaterial.RoughnessTexture
+                                            let ambientOcclusionTexture =
+                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AmbientOcclusionImage) renderer with
+                                                | ValueSome renderAsset ->
+                                                    match renderAsset with
+                                                    | TextureAsset (_, _, texture) -> texture
+                                                    | _ -> defaultMaterial.AmbientOcclusionTexture
+                                                | ValueNone -> defaultMaterial.AmbientOcclusionTexture
+                                            let normalTexture =
+                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.NormalImage) renderer with
+                                                | ValueSome renderAsset ->
+                                                    match renderAsset with
+                                                    | TextureAsset (_, _, texture) -> texture
+                                                    | _ -> defaultMaterial.NormalTexture
+                                                | ValueNone -> defaultMaterial.NormalTexture
+                                            { defaultMaterial with
+                                                AlbedoMetadata = albedoMetadata
+                                                AlbedoTexture = albedoTexture
+                                                RoughnessTexture = roughnessTexture
+                                                AmbientOcclusionTexture = ambientOcclusionTexture
+                                                NormalTexture = normalTexture }
+                                        else defaultMaterial
+                                    | _ -> defaultMaterial
                                 
                                 renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (terrainId, (geometry, [|material|]))
 
