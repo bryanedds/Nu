@@ -476,6 +476,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
           RenderPhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
           RenderPhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
+          RenderPhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedFxaaShader : OpenGL.PhysicallyBased.PhysicallyBasedFxaaShader
           RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
@@ -1421,7 +1422,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
                         lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
-                        numStrips numElementsPerStrip material geometry renderer.RenderPhysicallyBasedDeferredGeometryShader renderer
+                        numStrips numElementsPerStrip material geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
@@ -1957,6 +1958,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath)
         OpenGL.Hl.Assert ()
 
+        // create terrain shader
+        let deferredTerrainShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
+        OpenGL.Hl.Assert ()
+        
         // create forward shader
         let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
         OpenGL.Hl.Assert ()
@@ -2126,6 +2131,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
               RenderPhysicallyBasedDeferredSsaoShader = deferredSsaoShader
               RenderPhysicallyBasedDeferredLightingShader = deferredLightingShader
+              RenderPhysicallyBasedDeferredTerrainShader = deferredTerrainShader
               RenderPhysicallyBasedFxaaShader = fxaaShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderGeometryBuffers = geometryBuffers
