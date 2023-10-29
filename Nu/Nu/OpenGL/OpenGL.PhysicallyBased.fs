@@ -149,6 +149,42 @@ module PhysicallyBased =
           Surfaces : PhysicallyBasedSurface array
           PhysicallyBasedStaticHierarchy : PhysicallyBasedPart array TreeNode }
 
+    /// Describes a physically-based deferred terrain shader that's loaded into GPU.
+    type PhysicallyBasedDeferredTerrainShader =
+        { ViewUniform : int
+          ProjectionUniform : int
+          EyeCenterUniform : int
+          LightAmbientColorUniform : int
+          LightAmbientBrightnessUniform : int
+          AlbedoTextureUniform : int
+          MetallicTextureUniform : int
+          RoughnessTextureUniform : int
+          AmbientOcclusionTextureUniform : int
+          EmissionTextureUniform : int
+          NormalTextureUniform : int
+          HeightTextureUniform : int
+          BrdfTextureUniform : int
+          IrradianceMapUniform : int
+          EnvironmentFilterMapUniform : int
+          IrradianceMapsUniforms : int array
+          EnvironmentFilterMapsUniforms : int array
+          LightMapOriginsUniform : int
+          LightMapMinsUniform : int
+          LightMapSizesUniform : int
+          LightMapsCountUniform : int
+          LightOriginsUniform : int
+          LightDirectionsUniform : int
+          LightColorsUniform : int
+          LightBrightnessesUniform : int
+          LightAttenuationLinearsUniform : int
+          LightAttenuationQuadraticsUniform : int
+          LightCutoffsUniform : int
+          LightDirectionalsUniform : int
+          LightConeInnersUniform : int
+          LightConeOutersUniform : int
+          LightsCountUniform : int
+          PhysicallyBasedShader : uint }
+
     /// Describes a physically-based shader that's loaded into GPU.
     type PhysicallyBasedShader =
         { ViewUniform : int
@@ -988,6 +1024,85 @@ module PhysicallyBased =
                 | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
+
+    /// Create a physically-based deferred terrain shader.
+    let CreatePhysicallyBasedDeferredTerrainShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
+        let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
+        let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
+        let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
+        let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
+        let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
+        let emissionTextureUniform = Gl.GetUniformLocation (shader, "emissionTexture")
+        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
+        let heightTextureUniform = Gl.GetUniformLocation (shader, "heightTexture")
+        let brdfTextureUniform = Gl.GetUniformLocation (shader, "brdfTexture")
+        let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
+        let environmentFilterMapUniform = Gl.GetUniformLocation (shader, "environmentFilterMap")
+        let irradianceMapsUniforms =
+            Array.init Constants.Render.LightMapsMaxForward $ fun i ->
+                Gl.GetUniformLocation (shader, "irradianceMaps[" + string i + "]")
+        let environmentFilterMapsUniforms =
+            Array.init Constants.Render.LightMapsMaxForward $ fun i ->
+                Gl.GetUniformLocation (shader, "environmentFilterMaps[" + string i + "]")
+        let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
+        let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
+        let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
+        let lightMapsCountUniform = Gl.GetUniformLocation (shader, "lightMapsCount")
+        let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
+        let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
+        let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
+        let lightBrightnessesUniform = Gl.GetUniformLocation (shader, "lightBrightnesses")
+        let lightAttenuationLinearsUniform = Gl.GetUniformLocation (shader, "lightAttenuationLinears")
+        let lightAttenuationQuadraticsUniform = Gl.GetUniformLocation (shader, "lightAttenuationQuadratics")
+        let lightCutoffsUniform = Gl.GetUniformLocation (shader, "lightCutoffs")
+        let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
+        let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
+        let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
+        let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
+
+        // make shader record
+        { ViewUniform = viewUniform
+          ProjectionUniform = projectionUniform
+          EyeCenterUniform = eyeCenterUniform
+          LightAmbientColorUniform = lightAmbientColorUniform
+          LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
+          AlbedoTextureUniform = albedoTextureUniform
+          MetallicTextureUniform = metallicTextureUniform
+          RoughnessTextureUniform = roughnessTextureUniform
+          AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
+          EmissionTextureUniform = emissionTextureUniform
+          NormalTextureUniform = normalTextureUniform
+          HeightTextureUniform = heightTextureUniform
+          BrdfTextureUniform = brdfTextureUniform
+          IrradianceMapUniform = irradianceMapUniform
+          EnvironmentFilterMapUniform = environmentFilterMapUniform
+          IrradianceMapsUniforms = irradianceMapsUniforms
+          EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
+          LightMapOriginsUniform = lightMapOriginsUniform
+          LightMapMinsUniform = lightMapMinsUniform
+          LightMapSizesUniform = lightMapSizesUniform
+          LightMapsCountUniform = lightMapsCountUniform
+          LightOriginsUniform = lightOriginsUniform
+          LightDirectionsUniform = lightDirectionsUniform
+          LightColorsUniform = lightColorsUniform
+          LightBrightnessesUniform = lightBrightnessesUniform
+          LightAttenuationLinearsUniform = lightAttenuationLinearsUniform
+          LightAttenuationQuadraticsUniform = lightAttenuationQuadraticsUniform
+          LightCutoffsUniform = lightCutoffsUniform
+          LightDirectionalsUniform = lightDirectionalsUniform
+          LightConeInnersUniform = lightConeInnersUniform
+          LightConeOutersUniform = lightConeOutersUniform
+          LightsCountUniform = lightsCountUniform
+          PhysicallyBasedShader = shader }
 
     /// Create a physically-based shader.
     let CreatePhysicallyBasedShader (shaderFilePath : string) =

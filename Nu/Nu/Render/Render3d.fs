@@ -1959,7 +1959,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create terrain shader
-        let deferredTerrainShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
+        let deferredTerrainShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredTerrainShader Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
         OpenGL.Hl.Assert ()
         
         // create forward shader
