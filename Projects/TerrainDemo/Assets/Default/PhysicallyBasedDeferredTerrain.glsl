@@ -70,6 +70,8 @@ uniform sampler2D emissionTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D heightTexture;
+uniform vec2 terrainSize;
+uniform vec2 layerScale;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
