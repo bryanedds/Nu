@@ -476,7 +476,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
           RenderPhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
           RenderPhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
-          RenderPhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedFxaaShader : OpenGL.PhysicallyBased.PhysicallyBasedFxaaShader
           RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
@@ -1014,7 +1014,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
         lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
-        numStrips numElementsPerStrip (material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial) geometry shader renderer =
+        numStrips numElementsPerStrip layerScale (material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial) geometry shader renderer =
 
         // ensure there are surfaces to render
         // TODO: figure out how to deal with the code duplication between here and in renderPhysicallyBasedSurfaces.
@@ -1088,7 +1088,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                  1, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
                  lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
-                 numStrips, numElementsPerStrip, material, geometry, shader)
+                 numStrips, numElementsPerStrip, layerScale, material, geometry, shader)
 
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
@@ -1412,17 +1412,21 @@ type [<ReferenceEquality>] GlRenderer3d =
         // render terrain
         for entry in renderer.RenderTasks.RenderTerrain do
             match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue entry.Key with
-            | (true, (geometry, [|material|])) ->
+            | (true, (geometry, [|material|])) -> // TODO: figure out how to organize terrain layer data properly.
                 match entry.Value.HeightMap with
                 | RawHeightMap map ->
                     let numStrips = map.Resolution.Y - 1
                     let numElementsPerStrip = map.Resolution.X * 2
+                    let layerScale =
+                        match entry.Value.Material with
+                        | SplatMaterial splatMaterial -> splatMaterial.TerrainLayers.[0].LayerScale
+                        | _ -> v2 1.0f 1.0f
                     let parameters = SList.singleton struct (m4Identity, box2Zero, MaterialProperties.defaultProperties) // TODO: see if we need to take in the material properties from the render terrain call, or if these should be different defaults or what.
                     GlRenderer3d.renderPhysicallyBasedTerrain
                         viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
                         lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
-                        numStrips numElementsPerStrip material geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+                        numStrips numElementsPerStrip layerScale material geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
