@@ -43,10 +43,7 @@ type [<StructuralEquality; NoComparison>] TerrainLayer =
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
-      // TODO: figure out the precise relationship between layer scale and tile size
-      // TODO: figure out if 'Scale' is the right nomenclature or if it should be 'Repeat' or 'Tile' or something else.
-      LayerScale : Vector2 }
+      HeightImage : Image AssetTag }
 
 /// Blend-weights for a 3d terrain.
 type [<StructuralEquality; NoComparison>] SplatMap =
@@ -136,6 +133,7 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 and [<StructuralEquality; NoComparison>] TerrainDescriptor =
     { Bounds : Box3
       Segments : Vector2i
+      TextureScale : Vector2
       HeightMap : HeightMap
       Material : TerrainMaterial }
 
@@ -1032,7 +1030,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
         lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
-        numStrips numElementsPerStrip layerScale (material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial) geometry shader renderer =
+        numStrips numElementsPerStrip (material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial) geometry shader renderer =
 
         // ensure there are surfaces to render
         // TODO: figure out how to deal with the code duplication between here and in renderPhysicallyBasedSurfaces.
@@ -1106,7 +1104,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                  1, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
                  lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
-                 numStrips, numElementsPerStrip, layerScale, material, geometry, shader)
+                 numStrips, numElementsPerStrip, material, geometry, shader)
 
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
@@ -1435,10 +1433,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | RawHeightMap map ->
                     let numStrips = map.Resolution.Y - 1
                     let numElementsPerStrip = map.Resolution.X * 2
-                    let layerScale =
-                        match entry.Value.Material with
-                        | SplatMaterial splatMaterial -> splatMaterial.TerrainLayers.[0].LayerScale
-                        | _ -> v2 1.0f 1.0f
                     let materialProperties : MaterialProperties =
                         { AlbedoOpt = ValueSome material.MaterialProperties.Albedo
                           MetallicOpt = ValueSome material.MaterialProperties.Metallic
@@ -1452,7 +1446,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
                         lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
-                        numStrips numElementsPerStrip layerScale material geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+                        numStrips numElementsPerStrip material geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
@@ -1728,7 +1722,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue rt.TerrainDescriptor with
                 | (true, _) -> ()
                 | (false, _) ->
-                
+
                     let terrainHeight = rt.TerrainDescriptor.Bounds.Size.Y
                     let terrainBottom = rt.TerrainDescriptor.Bounds.Min.Y
                                 
@@ -1757,7 +1751,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let divisor = single Byte.MaxValue
                                                     let normalized = (rawReader.ReadByte () |> single) / divisor
                                                     let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           | RawUInt16 endianness ->
                                             for y in 0 .. dec map.Resolution.Y do
@@ -1769,7 +1763,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let divisor = single UInt16.MaxValue
                                                     let normalized = (value |> single) / divisor
                                                     let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           | RawUInt32 endianness ->
                                             for y in 0 .. dec map.Resolution.Y do
@@ -1781,7 +1775,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let divisor = single UInt32.MaxValue
                                                     let normalized = (value |> single) / divisor
                                                     let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           
                                           // NOTE: this is broken.
@@ -1794,7 +1788,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
                                                         | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
                                                     let position = v3 (single x * quadSizeX) (value * terrainHeight + terrainBottom) (single y * quadSizeY)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight)
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)|]
                                 with exn ->
                                     // TODO: log error.

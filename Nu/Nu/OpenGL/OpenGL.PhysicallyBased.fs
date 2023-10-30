@@ -183,8 +183,6 @@ module PhysicallyBased =
           LightConeInnersUniform : int
           LightConeOutersUniform : int
           LightsCountUniform : int
-          TerrainSizeUniform : int
-          LayerScaleUniform : int
           PhysicallyBasedShader : uint }
 
     /// Describes a physically-based shader that's loaded into GPU.
@@ -1070,8 +1068,6 @@ module PhysicallyBased =
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
-        let terrainSizeUniform = Gl.GetUniformLocation (shader, "terrainSize")
-        let layerScaleUniform = Gl.GetUniformLocation (shader, "layerScale")
 
         // make shader record
         { ViewUniform = viewUniform
@@ -1106,9 +1102,7 @@ module PhysicallyBased =
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
           LightsCountUniform = lightsCountUniform
-          TerrainSizeUniform = terrainSizeUniform
-          LayerScaleUniform = layerScaleUniform
-          PhysicallyBasedShader = shader }
+          PhysicallyBasedShader = shader } : PhysicallyBasedDeferredTerrainShader
 
     /// Create a physically-based shader.
     let CreatePhysicallyBasedShader (shaderFilePath : string) =
@@ -1407,7 +1401,6 @@ module PhysicallyBased =
          lightsCount : int,
          numStrips : int,
          numElementsPerStrip : int,
-         layerScale : Vector2,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredTerrainShader) =
@@ -1458,8 +1451,6 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
-        Gl.Uniform2 (shader.TerrainSizeUniform, geometry.Bounds.Size.X, geometry.Bounds.Size.Z)
-        Gl.Uniform2 (shader.LayerScaleUniform, layerScale.X, layerScale.Y)
         Hl.Assert ()
 
         // setup textures

@@ -72,8 +72,6 @@ uniform sampler2D emissionTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D heightTexture;
-uniform vec2 terrainSize;
-uniform vec2 layerScale;
 
 in vec3 positionLocalOut;
 in vec4 positionOut;
@@ -94,12 +92,6 @@ void main()
     // forward position
     position = positionOut;
 
-    // compute scaled tex coords
-    vec2 tileSize = terrainSize * layerScale;
-    float texCoordsScaledX = tileSize.x == 0.0f ? 0.0f : mod(positionLocalOut.x, tileSize.x) / tileSize.x;
-    float texCoordsScaledY = tileSize.y == 0.0f ? 0.0f : mod(positionLocalOut.z, tileSize.y) / tileSize.y;
-    vec2 texCoordsScaled = vec2(texCoordsScaledX, texCoordsScaledY);
-
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
     vec3 q2 = dFdy(positionOut.xyz);
@@ -117,7 +109,7 @@ void main()
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).r * heightOut;
     vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoordsScaled - parallax;
+    vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo, discarding on zero alpha
     vec4 albedoSample = texture(albedoTexture, texCoords);
