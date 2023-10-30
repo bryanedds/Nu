@@ -34,7 +34,6 @@ layout (location = 9) in vec4 material;
 layout (location = 10) in float height;
 layout (location = 11) in int invertRoughness;
 
-out vec3 positionLocalOut;
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
@@ -45,7 +44,6 @@ flat out int invertRoughnessOut;
 
 void main()
 {
-    positionLocalOut = position;
     positionOut = model * vec4(position, 1.0);
     int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
@@ -73,7 +71,6 @@ uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D heightTexture;
 
-in vec3 positionLocalOut;
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
