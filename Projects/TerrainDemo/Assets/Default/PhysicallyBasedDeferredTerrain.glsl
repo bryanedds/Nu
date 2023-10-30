@@ -34,6 +34,7 @@ layout (location = 9) in vec4 material;
 layout (location = 10) in float height;
 layout (location = 11) in int invertRoughness;
 
+out vec3 positionLocalOut;
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
@@ -44,6 +45,7 @@ flat out int invertRoughnessOut;
 
 void main()
 {
+    positionLocalOut = position;
     positionOut = model * vec4(position, 1.0);
     int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
@@ -73,6 +75,7 @@ uniform sampler2D heightTexture;
 uniform vec2 terrainSize;
 uniform vec2 layerScale;
 
+in vec3 positionLocalOut;
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
@@ -91,6 +94,12 @@ void main()
     // forward position
     position = positionOut;
 
+    // compute scaled tex coords
+    vec2 tileSize = terrainSize * layerScale;
+    float texCoordsScaledX = tileSize.x == 0.0f ? 0.0f : mod(positionLocalOut.x, tileSize.x) / tileSize.x;
+    float texCoordsScaledY = tileSize.y == 0.0f ? 0.0f : mod(positionLocalOut.z, tileSize.y) / tileSize.y;
+    vec2 texCoordsScaled = vec2(texCoordsScaledX, texCoordsScaledY);
+
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
     vec3 q2 = dFdy(positionOut.xyz);
@@ -108,7 +117,7 @@ void main()
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).r * heightOut;
     vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoordsOut - parallax;
+    vec2 texCoords = texCoordsScaled - parallax;
 
     // compute albedo, discarding on zero alpha
     vec4 albedoSample = texture(albedoTexture, texCoords);
