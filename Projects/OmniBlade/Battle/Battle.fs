@@ -106,7 +106,6 @@ module Battle =
     type [<ReferenceEquality; SymbolicExpansion>] Battle =
         private
             { UpdateTime_ : int64
-              BattleState_ : BattleState
               Characters_ : Map<CharacterIndex, Character>
               Inventory_ : Inventory
               PrizePool_ : PrizePool
@@ -118,12 +117,12 @@ module Battle =
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue
               MessageOpt_ : (int64 * int64 * Dialog) option
-              DialogOpt_ : Dialog option }
+              DialogOpt_ : Dialog option
+              BattleState_ : BattleState }
 
         (* Local Properties *)
         member this.UpdateTime = this.UpdateTime_
         member this.Running = match this.BattleState with BattleRunning _ -> true | _ -> false
-        member this.BattleState = this.BattleState_
         member this.Characters = this.Characters_
         member this.Inventory = this.Inventory_
         member this.PrizePool = this.PrizePool_
@@ -136,6 +135,7 @@ module Battle =
         member this.ActionCommands = this.ActionCommands_
         member this.MessageOpt = this.MessageOpt_
         member this.DialogOpt = this.DialogOpt_
+        member this.BattleState = this.BattleState_
 
     (* Low-Level Operations *)
 
@@ -2033,7 +2033,6 @@ module Battle =
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         let battle =
             { UpdateTime_ = 0L
-              BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
               PrizePool_ = prizePool
@@ -2045,14 +2044,14 @@ module Battle =
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
               MessageOpt_ = None
-              DialogOpt_ = None }
+              DialogOpt_ = None
+              BattleState_ = BattleReady time }
         battle
 
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
         | Some battle ->
             { UpdateTime_ = 0L
-              BattleState_ = BattleQuit
               Characters_ = Map.empty
               Inventory_ = Inventory.empty
               PrizePool_ = PrizePool.empty
@@ -2064,7 +2063,8 @@ module Battle =
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
               MessageOpt_ = None
-              DialogOpt_ = None }
+              DialogOpt_ = None
+              BattleState_ = BattleQuit }
         | None -> failwith "Expected data for DebugBattle to be available."
 
 type Battle = Battle.Battle
