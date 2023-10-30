@@ -2672,6 +2672,9 @@ module TerrainFacetModule =
         member this.GetSegments world : Vector2i = this.Get (nameof this.Segments) world
         member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
         member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
+        member this.GetTextureScale world : Vector2 = this.Get (nameof this.TextureScale) world
+        member this.SetTextureScale (value : Vector2) world = this.Set (nameof this.TextureScale) value world
+        member this.TextureScale = lens (nameof this.TextureScale) this this.GetTextureScale this.SetTextureScale
         member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
         member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
         member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
@@ -2697,6 +2700,7 @@ module TerrainFacetModule =
         static member Properties =
             [define Entity.Size (v3Dup 48.0f)
              define Entity.Segments v2iOne
+             define Entity.TextureScale v2One
              define Entity.HeightMap (RawHeightMap { Resolution = v2i 256 256; RawFormat = RawSingle LittleEndian; RawAsset = asset "Default" "HeightMapRaw" }) //(ImageHeightMap Assets.Default.HeightMap)
              define Entity.TerrainMaterial
                 (FlatMaterial
@@ -2736,6 +2740,7 @@ module TerrainFacetModule =
                 { Bounds = transform.Bounds
                   Segments = entity.GetSegments world
                   HeightMap = entity.GetHeightMap world
+                  TextureScale = entity.GetTextureScale world
                   Material = entity.GetTerrainMaterial world }
             World.enqueueRenderMessage3d
                 (RenderTerrain
