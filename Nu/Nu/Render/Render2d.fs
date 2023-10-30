@@ -338,7 +338,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let mx = borderWidth
                 let my = 1.0f - borderHeight
                 let sx = 1.0f - borderWidth * 2.0f
-                let sy = -1.0f + borderWidth * -2.0f
+                let sy = -1.0f + borderHeight * 2.0f
                 Box2 (mx, my, sx, sy)
 
         // compute a flipping flags
