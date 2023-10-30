@@ -101,14 +101,14 @@ type [<StructuralEquality; NoComparison>] HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
     | DynamicHeightMap of DynamicHeightMap
-
+    
 /// An asset that is used for rendering.
-type [<StructuralEquality; NoComparison>] RenderAsset =
-    | TextureAsset of string * OpenGL.Texture.TextureMetadata * uint
-    | FontAsset of string * int * nativeint
-    | CubeMapAsset of OpenGL.CubeMap.CubeMapMemoKey * uint * (uint * uint) option ref
-    | StaticModelAsset of bool * OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
-    | RawAsset of byte array
+type RenderAsset =
+    | TextureAsset of FilePath : string * TextureMetadata : OpenGL.Texture.TextureMetadata * Texture : uint
+    | FontAsset of FilePath : string * PointSize : int * Font : nativeint
+    | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapMemoKey * CubeMap : uint * IrradianceAndEnvironmentMapOptRef : (uint * uint) option ref
+    | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+    | RawAsset of RawAsset : byte array
 
 /// The type of rendering used on a surface.
 type [<StructuralEquality; NoComparison; Struct>] RenderType =
