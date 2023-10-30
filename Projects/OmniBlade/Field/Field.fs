@@ -96,7 +96,6 @@ module Field =
             { UpdateTime_ : int64
               ViewBoundsAbsolute_ : Box2
               FieldType_ : FieldType
-              FieldState_ : FieldState
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
@@ -123,13 +122,13 @@ module Field =
               ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               BattleOpt_ : Battle option
-              FieldSongTimeOpt_ : int64 option }
+              FieldSongTimeOpt_ : int64 option
+              FieldState_ : FieldState }
 
         (* Local Properties *)
         member this.UpdateTime = this.UpdateTime_
         member this.ViewBoundsAbsolute = this.ViewBoundsAbsolute_
         member this.FieldType = this.FieldType_
-        member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.AvatarWarped = this.AvatarWarped_
@@ -155,6 +154,7 @@ module Field =
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
+        member this.FieldState = this.FieldState_
 
     (* Low-Level Operations *)
 
@@ -1259,8 +1259,8 @@ module Field =
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
         let props = makeProps time fieldType omniSeedState
         { UpdateTime_ = 0L
+          ViewBoundsAbsolute_ = viewBounds2dAbsolute
           FieldType_ = fieldType
-          FieldState_ = Playing
           SaveSlot_ = saveSlot
           OmniSeedState_ = omniSeedState
           Avatar_ = avatar
@@ -1288,13 +1288,12 @@ module Field =
           DialogOpt_ = None
           BattleOpt_ = None
           FieldSongTimeOpt_ = None
-          ViewBoundsAbsolute_ = viewBounds2dAbsolute }
+          FieldState_ = Playing }
 
     let empty viewBounds2dAbsolute =
         { UpdateTime_ = 0L
           ViewBoundsAbsolute_ = viewBounds2dAbsolute
           FieldType_ = EmptyField
-          FieldState_ = Quit
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty ()
@@ -1321,7 +1320,8 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None
-          FieldSongTimeOpt_ = None }
+          FieldSongTimeOpt_ = None
+          FieldState_ = Quit }
 
     let initial time viewBounds2dAbsolute saveSlot =
         make time viewBounds2dAbsolute TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
