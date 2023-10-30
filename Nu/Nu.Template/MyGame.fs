@@ -47,7 +47,7 @@ module MyGame =
                 | Title -> Desire Simulants.Title
                 | Credits -> Desire Simulants.Credits
                 | Gameplay gameplay ->
-                    match gameplay with
+                    match gameplay.State with
                     | Playing -> Desire Simulants.Gameplay
                     | Quitting | Quit -> Desire Simulants.Title
              match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
@@ -63,7 +63,7 @@ module MyGame =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay Playing)
+            | ShowGameplay -> just (Gameplay { Score = 0; State = Playing })
             | Update ->
                 match model with
                 | Gameplay gameplay ->

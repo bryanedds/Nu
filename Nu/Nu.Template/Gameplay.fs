@@ -6,11 +6,16 @@ open Nu
 [<AutoOpen>]
 module Gameplay =
 
-    // this is our MMCC model type representing gameplay.
-    type Gameplay =
+    // this represents that state of the simulation during gameplay.
+    type GameplayState =
         | Playing
         | Quitting
         | Quit
+
+    // this is our MMCC model type representing gameplay.
+    type Gameplay =
+        { Score : int
+          State : GameplayState }
 
     // this is our MMCC message type.
     type GameplayMessage =
@@ -35,7 +40,7 @@ module Gameplay =
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Quit)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ Score = 0; State = Quit })
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
@@ -48,10 +53,10 @@ module Gameplay =
                 else Nop]
 
         // here we handle the above messages
-        override this.Message (_, message, _, _) =
+        override this.Message (gameplay, message, _, _) =
             match message with
-            | StartQutting -> just Quitting
-            | FinishQuitting -> just Quit
+            | StartQutting -> just { gameplay with State = Quitting }
+            | FinishQuitting -> just { gameplay with State = Quit }
 
         // here we handle the above commands
         override this.Command (_, command, _, world) =
@@ -95,8 +100,8 @@ module Gameplay =
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQutting]]
 
-             // the scene group
-             match gameplay with
+             // the scene group while playing or quitting
+             match gameplay.State with
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                     [Content.sideViewCharacter Simulants.GameplayPlayer.Name
