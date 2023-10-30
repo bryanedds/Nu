@@ -120,18 +120,23 @@ module Sprite =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
+            let texelWidth = 1.0f / single textureWidth
+            let texelHeight = 1.0f / single textureHeight
+            let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
+            let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
             match insetOpt with
             | ValueSome inset ->
-                let texelWidth = 1.0f / single textureWidth
-                let texelHeight = 1.0f / single textureHeight
-                let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
-                let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
                 let px = inset.Min.X * texelWidth + borderWidth
                 let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (px, py, sx, sy)
-            | ValueNone -> Box2 (0.0f, 1.0f, 1.0f, -1.0f) // TODO: shouldn't we still be using borders?
+            | ValueNone ->
+                let mx = borderWidth
+                let my = 1.0f - borderHeight
+                let sx = 1.0f - borderWidth * 2.0f
+                let sy = -1.0f + borderWidth * -2.0f
+                Box2 (mx, my, sx, sy)
         
         // compute a flipping flags
         let struct (flipH, flipV) =
