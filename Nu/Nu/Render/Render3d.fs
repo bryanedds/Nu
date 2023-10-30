@@ -149,7 +149,7 @@ and [<ReferenceEquality>] RenderTasks =
       RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderTerrain : Dictionary<TerrainDescriptor, TerrainDescriptor> }
+      RenderTerrain : Dictionary<TerrainDescriptor, TerrainDescriptor> } // TODO: let's figure out why this representation is so strange... it's seems definitely wrong.
 
 /// The parameters for completing a render pass.
 and [<ReferenceEquality>] RenderPassParameters3d =
