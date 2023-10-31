@@ -1212,6 +1212,7 @@ module Color =
     let inline colorDup (a : single) = color a a a a
     let inline color8 (r : byte) (g : byte) (b : byte) (a : byte) = Color (r, g, b, a)
     let inline color8Dup (a : byte) = color8 a a a a
+    let inline colorPacked (u : uint) = Color u
     let inline colorEq (x : Color) (y : Color) = x.R = y.R && x.G = y.G && x.B = y.B && x.A = y.A
     let inline colorNeq (x : Color) (y : Color) = x.R <> y.R || x.G <> y.G || x.B <> y.B || x.A <> y.A
     let colorZero = Color.Zero
