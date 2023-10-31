@@ -497,7 +497,7 @@ module Stream =
 
     /// Transform a stream into a running average of its event's numeric data.
     let [<DebuggerHidden; DebuggerStepThrough>] inline average (stream : Stream<'a>) : Stream<'a> =
-        foldMap
+        foldThen
             (fun (avg : 'a, den : 'a) a ->
                 let den' = den + one ()
                 let dod' = den / den'
