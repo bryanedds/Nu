@@ -1717,8 +1717,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderTerrain rt ->
 
-                // TODO: destroy any terrain resources for any terrain that went unrendered this frame.
-
                 match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue rt.TerrainDescriptor with
                 | (true, _) -> ()
                 | (false, _) ->
@@ -1735,8 +1733,13 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         let texelWidth = 1.0f / single map.Resolution.X
                         let texelHeight = 1.0f / single map.Resolution.Y
-                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single map.Resolution.X
-                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single map.Resolution.Y
+                        
+                        // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
+                        // the geometry produced here is slightly different, with the border slightly clipped,
+                        // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
+                        // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
+                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single (dec map.Resolution.X)
+                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single (dec map.Resolution.Y)
 
                         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
                         | ValueSome (RawAsset rawAsset) ->
@@ -1812,6 +1815,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                 inc y = map.Resolution.Y then
                                                 v3Up
                                             else
+                                                // TODO: prevent exceptions here (and elsewhere?) when editing resolution in gaia
                                                 let a = fst' positionsAndTexCoordses.[x * map.Resolution.X + y]
                                                 let b = fst' positionsAndTexCoordses.[inc x * map.Resolution.X + y]
                                                 let c = fst' positionsAndTexCoordses.[x * map.Resolution.X + inc y]
