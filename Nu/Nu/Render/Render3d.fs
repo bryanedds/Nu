@@ -1724,7 +1724,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | (false, _) ->
 
                     let terrainHeight = rt.TerrainDescriptor.Bounds.Size.Y
-                    let terrainBottom = rt.TerrainDescriptor.Bounds.Min.Y
+                    let terrainPositionX = rt.TerrainDescriptor.Bounds.Min.X
+                    let terrainPositionY = rt.TerrainDescriptor.Bounds.Min.Y
+                    let terrainPositionZ = rt.TerrainDescriptor.Bounds.Min.Z
                                 
                     // NOTE: this code expects a normalized heightmap i.e. lowest point = 00, highest = ff;
                     // otherwise extra work will be required to find these points and scale accordingly.
@@ -1733,8 +1735,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         let texelWidth = 1.0f / single map.Resolution.X
                         let texelHeight = 1.0f / single map.Resolution.Y
-                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X * texelWidth
-                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z * texelHeight
+                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single map.Resolution.X
+                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single map.Resolution.Y
 
                         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
                         | ValueSome (RawAsset rawAsset) ->
@@ -1750,7 +1752,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                 for x in 0 .. dec map.Resolution.X do
                                                     let divisor = single Byte.MaxValue
                                                     let normalized = (rawReader.ReadByte () |> single) / divisor
-                                                    let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           | RawUInt16 endianness ->
@@ -1762,7 +1764,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
                                                     let divisor = single UInt16.MaxValue
                                                     let normalized = (value |> single) / divisor
-                                                    let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           | RawUInt32 endianness ->
@@ -1774,7 +1776,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
                                                     let divisor = single UInt32.MaxValue
                                                     let normalized = (value |> single) / divisor
-                                                    let position = v3 (single x * quadSizeX) (normalized * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           
@@ -1787,7 +1789,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         match endianness with
                                                         | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
                                                         | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
-                                                    let position = v3 (single x * quadSizeX) (value * terrainHeight + terrainBottom) (single y * quadSizeY)
+                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (value * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)|]
                                 with exn ->
@@ -1894,6 +1896,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         else defaultMaterial
                                     | _ -> defaultMaterial
                                 
+                                renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Clear ()
                                 renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (rt.TerrainDescriptor, (geometry, [|material|]))
 
                             | None -> ()
