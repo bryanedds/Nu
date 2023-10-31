@@ -14,6 +14,7 @@ module Vector2 =
 
     type Vector2 with
 
+        member this.V2i = Vector2i (int this.X, int this.Y)
         member this.V3 = Vector3 (this.X, this.Y, 0.0f)
         member this.Normalized = Vector2.Normalize this
         member this.Magnitude = this.Length ()
@@ -130,6 +131,7 @@ module Vector3 =
 
     type Vector3 with
 
+        member this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
         member this.V2 = Vector2 (this.X, this.Y)
         member this.Normalized = Vector3.Normalize this
         member this.Magnitude = this.Length ()
@@ -379,6 +381,7 @@ module Vector2i =
 
     type Vector2i with
 
+        member this.V2 = Vector2 (single this.X, single this.Y)
         member this.V3i = Vector3i (this.X, this.Y, 0)
         member this.MapX mapper = Vector2i (mapper this.X, this.Y)
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
@@ -484,6 +487,7 @@ module Vector3i =
 
     type Vector3i with
 
+        member this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
         member this.V2i = Vector2i (this.X, this.Y)
         member this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
         member this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
