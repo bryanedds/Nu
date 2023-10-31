@@ -42,3 +42,12 @@ module CoreOperators =
     /// OPTIMIZATION: always tests reference inequality first.
     let inline (=/=) (a : obj) (b : obj) =
         objNeq a b
+
+// TODO: P1: remove this after updating Prime.
+[<RequireQualifiedAccess>]
+module List =
+
+    /// Combines map and fold. Builds a new list whose elements are the results of applying the given function to each
+    /// of the elements of the input list. The function is also used to accumulate a final value.
+    let foldMap<'T, 'State, 'Result> folder state list =
+        List.mapFold<'T, 'State, 'Result> (flip folder) state list

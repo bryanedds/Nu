@@ -127,7 +127,7 @@ module Stream =
         { Subscribe = subscribe }
 
     /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldMapEffect (f : 'b -> Event<'a, Simulant> -> World -> 'b * World) g s (stream : Stream<'a>) : Stream<'c> =
+    let [<DebuggerHidden; DebuggerStepThrough>] foldThenEffect (f : 'b -> Event<'a, Simulant> -> World -> 'b * World) g s (stream : Stream<'a>) : Stream<'c> =
         trackEffect4 (fun b a w -> (Triple.insert true (f b a w))) g s stream
 
     /// Fold over a stream, aggegating the result.
@@ -267,8 +267,8 @@ module Stream =
         trackEffect (fun state world -> Triple.append world (tracker state world)) state stream
 
     /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldMapEvent (f : 'b -> Event<'a, Simulant> -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldMapEffect (fun state evt world -> (f state evt world, world)) g s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldThenEvent (f : 'b -> Event<'a, Simulant> -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
+        foldThenEffect (fun state evt world -> (f state evt world, world)) g s stream
 
     /// Fold over a stream, aggegating the result.
     let [<DebuggerHidden; DebuggerStepThrough>] foldEvent (f : 'b -> Event<'a, Simulant> -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
@@ -308,8 +308,8 @@ module Stream =
         trackEvent tracker state stream
 
     /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldMapWorld (f : 'b -> 'a -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldMapEvent (fun b evt world -> f b evt.Data world) g s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldThenWorld (f : 'b -> 'a -> World -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
+        foldThenEvent (fun b evt world -> f b evt.Data world) g s stream
 
     /// Fold over a stream, aggegating the result.
     let [<DebuggerHidden; DebuggerStepThrough>] foldWorld (f : 'b -> 'a -> World -> 'b) s (stream : Stream<'a>) : Stream<'b> =
@@ -346,9 +346,8 @@ module Stream =
         (tracker : 'b -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
         trackWorld (fun b _ -> tracker b) state stream
 
-    /// Fold over a stream, then map the result.
-    let [<DebuggerHidden; DebuggerStepThrough>] foldMap (f : 'b -> 'a -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
-        foldMapWorld (fun b a _ -> f b a) g s stream
+    let [<DebuggerHidden; DebuggerStepThrough>] foldThen (f : 'b -> 'a -> 'b) g s (stream : Stream<'a>) : Stream<'c> =
+        foldThenWorld (fun b a _ -> f b a) g s stream
 
     /// Fold over a stream, aggegating the result.
     let [<DebuggerHidden; DebuggerStepThrough>] fold (f : 'b -> 'a -> 'b) s (stream : Stream<'a>) : Stream<'b> =
