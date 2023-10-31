@@ -266,6 +266,7 @@ module Vector4 =
         member this.V2i = Vector2i (int this.X, int this.Y)
         member this.V3 = Vector3 (this.X, this.Y, this.Z)
         member this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
+        member this.V4i = Vector4i (int this.X, int this.Y, int this.Z, int this.W)
         member this.Magnitude = this.Magnitude
         member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
@@ -606,7 +607,12 @@ type Vector3iConverter () =
 module Vector4i =
 
     type Vector4i with
-
+    
+        member this.V2 = Vector2 (single this.X, single this.Y)
+        member this.V2i = Vector2i (this.X, this.Y)
+        member this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
+        member this.V3i = Vector3i (this.X, this.Y, this.Z)
+        member this.V4 = Vector4 (single this.X, single this.Y, single this.Z, single this.W)
         member this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
