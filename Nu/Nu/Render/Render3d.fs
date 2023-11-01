@@ -9,6 +9,7 @@ open System.Numerics
 open System.Buffers.Binary
 open SDL2
 open Prime
+open System.Runtime.InteropServices
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // TODO: add TwoSidedOpt as render message parameter.                                   //
@@ -1840,9 +1841,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                                             match renderAsset with
                                             | TextureAsset (filePath, _, _) ->
                                                 match OpenGL.Texture.TryCreateImageData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
-                                                | Some (metadata, imageData, disposer) ->
+                                                | Some (metadata, imageDataPtr, disposer) ->
                                                     use _ = disposer
-                                                    ()
+                                                    let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
+                                                    Marshal.Copy (imageDataPtr, bytes, 0, bytes.Length)
                                                 | _ -> ()
                                             | _ -> ()
                                         | _ -> ()
