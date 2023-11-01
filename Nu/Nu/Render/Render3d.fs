@@ -1833,12 +1833,10 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                                 let vertices =
                                     (positionsAndTexCoordses, normals) ||>
-                                    Array.map2 (fun struct (p, t) n -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z|]) |>
+                                    Array.map2 (fun struct (p, t) n -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f|]) |>
                                     Array.concat
                                         
-
-                                // TODO: write CreatePhysicallyBasedTerrainGeometry function
-                                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
+                                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
                                 let material =
                                     let defaultMaterial = renderer.RenderPhysicallyBasedMaterial
