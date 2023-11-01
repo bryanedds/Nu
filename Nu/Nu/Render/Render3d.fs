@@ -1831,6 +1831,24 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                                 // TODO: use verts and splat map to construct terrain geometry
 
+                                match rt.TerrainDescriptor.Material with
+                                | SplatMaterial splatMaterial ->
+                                    match splatMaterial.SplatMap with
+                                    | RgbaMap rgbaMap ->
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize rgbaMap) renderer with
+                                        | ValueSome renderAsset ->
+                                            match renderAsset with
+                                            | TextureAsset (filePath, _, _) ->
+                                                match OpenGL.Texture.TryCreateImageData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
+                                                | Some (metadata, imageData, disposer) ->
+                                                    use _ = disposer
+                                                    ()
+                                                | _ -> ()
+                                            | _ -> ()
+                                        | _ -> ()
+                                    | _ -> ()
+                                | _ -> ()
+                                
                                 let vertices =
                                     (positionsAndTexCoordses, normals) ||>
                                     Array.map2 (fun struct (p, t) n -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f|]) |>
