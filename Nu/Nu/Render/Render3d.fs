@@ -715,6 +715,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
+    static member private tryGetImageData assetTag renderer =
+        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize assetTag) renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | TextureAsset (filePath, _, _) ->
+                match OpenGL.Texture.TryCreateImageData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
+                | Some (metadata, imageDataPtr, disposer) ->
+                    use _ = disposer
+                    let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
+                    Marshal.Copy (imageDataPtr, bytes, 0, bytes.Length)
+                    Some (bytes, metadata)
+                | None -> None
+            | _ -> None
+        | ValueNone -> None
+    
     static member private tryDestroyUserDefinedStaticModel assetTag renderer =
 
         // ensure target package is loaded if possible
@@ -1836,18 +1851,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 | SplatMaterial splatMaterial ->
                                     match splatMaterial.SplatMap with
                                     | RgbaMap rgbaMap ->
-                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize rgbaMap) renderer with
-                                        | ValueSome renderAsset ->
-                                            match renderAsset with
-                                            | TextureAsset (filePath, _, _) ->
-                                                match OpenGL.Texture.TryCreateImageData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
-                                                | Some (metadata, imageDataPtr, disposer) ->
-                                                    use _ = disposer
-                                                    let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
-                                                    Marshal.Copy (imageDataPtr, bytes, 0, bytes.Length)
-                                                | _ -> ()
-                                            | _ -> ()
-                                        | _ -> ()
+                                        match GlRenderer3d.tryGetImageData rgbaMap renderer with
+                                        | Some (bytes, metadata) ->
+                                            ()
+                                        | None -> ()
                                     | _ -> ()
                                 | _ -> ()
                                 
