@@ -810,7 +810,7 @@ type TechData =
       Split : bool
       Curative : bool
       Cancels : bool
-      Absorb : single // percentage of outcome that is absorbed by the caster
+      // Absorb : single - maybe implement in sequal. percentage of outcome that is absorbed by the caster.
       AffinityOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
