@@ -154,11 +154,27 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
-          AlbedoTextureUniform : int
-          RoughnessTextureUniform : int
-          AmbientOcclusionTextureUniform : int
-          NormalTextureUniform : int
-          HeightTextureUniform : int
+          AlbedoTexture0Uniform : int
+          RoughnessTexture0Uniform : int
+          AmbientOcclusionTexture0Uniform : int
+          NormalTexture0Uniform : int
+          HeightTexture0Uniform : int
+          AlbedoTexture1Uniform : int
+          RoughnessTexture1Uniform : int
+          AmbientOcclusionTexture1Uniform : int
+          NormalTexture1Uniform : int
+          HeightTexture1Uniform : int
+          AlbedoTexture2Uniform : int
+          RoughnessTexture2Uniform : int
+          AmbientOcclusionTexture2Uniform : int
+          NormalTexture2Uniform : int
+          HeightTexture2Uniform : int
+          AlbedoTexture3Uniform : int
+          RoughnessTexture3Uniform : int
+          AmbientOcclusionTexture3Uniform : int
+          NormalTexture3Uniform : int
+          HeightTexture3Uniform : int
+          LayerCountUniform : int
           PhysicallyBasedShader : uint }
 
     /// Describes a physically-based shader that's loaded into GPU.
@@ -1179,21 +1195,53 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
-        let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
-        let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
-        let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
-        let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
-        let heightTextureUniform = Gl.GetUniformLocation (shader, "heightTexture")
+        let albedoTexture0Uniform = Gl.GetUniformLocation (shader, "albedoTexture0")
+        let roughnessTexture0Uniform = Gl.GetUniformLocation (shader, "roughnessTexture0")
+        let ambientOcclusionTexture0Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture0")
+        let normalTexture0Uniform = Gl.GetUniformLocation (shader, "normalTexture0")
+        let heightTexture0Uniform = Gl.GetUniformLocation (shader, "heightTexture0")
+        let albedoTexture1Uniform = Gl.GetUniformLocation (shader, "albedoTexture1")
+        let roughnessTexture1Uniform = Gl.GetUniformLocation (shader, "roughnessTexture1")
+        let ambientOcclusionTexture1Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture1")
+        let normalTexture1Uniform = Gl.GetUniformLocation (shader, "normalTexture1")
+        let heightTexture1Uniform = Gl.GetUniformLocation (shader, "heightTexture1")
+        let albedoTexture2Uniform = Gl.GetUniformLocation (shader, "albedoTexture2")
+        let roughnessTexture2Uniform = Gl.GetUniformLocation (shader, "roughnessTexture2")
+        let ambientOcclusionTexture2Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture2")
+        let normalTexture2Uniform = Gl.GetUniformLocation (shader, "normalTexture2")
+        let heightTexture2Uniform = Gl.GetUniformLocation (shader, "heightTexture2")
+        let albedoTexture3Uniform = Gl.GetUniformLocation (shader, "albedoTexture3")
+        let roughnessTexture3Uniform = Gl.GetUniformLocation (shader, "roughnessTexture3")
+        let ambientOcclusionTexture3Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture3")
+        let normalTexture3Uniform = Gl.GetUniformLocation (shader, "normalTexture3")
+        let heightTexture3Uniform = Gl.GetUniformLocation (shader, "heightTexture3")
+        let layerCountUniform = Gl.GetUniformLocation (shader, "layerCount")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
-          AlbedoTextureUniform = albedoTextureUniform
-          RoughnessTextureUniform = roughnessTextureUniform
-          AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
-          NormalTextureUniform = normalTextureUniform
-          HeightTextureUniform = heightTextureUniform
+          AlbedoTexture0Uniform = albedoTexture0Uniform
+          RoughnessTexture0Uniform = roughnessTexture0Uniform
+          AmbientOcclusionTexture0Uniform = ambientOcclusionTexture0Uniform
+          NormalTexture0Uniform = normalTexture0Uniform
+          HeightTexture0Uniform = heightTexture0Uniform
+          AlbedoTexture1Uniform = albedoTexture1Uniform
+          RoughnessTexture1Uniform = roughnessTexture1Uniform
+          AmbientOcclusionTexture1Uniform = ambientOcclusionTexture1Uniform
+          NormalTexture1Uniform = normalTexture1Uniform
+          HeightTexture1Uniform = heightTexture1Uniform
+          AlbedoTexture2Uniform = albedoTexture2Uniform
+          RoughnessTexture2Uniform = roughnessTexture2Uniform
+          AmbientOcclusionTexture2Uniform = ambientOcclusionTexture2Uniform
+          NormalTexture2Uniform = normalTexture2Uniform
+          HeightTexture2Uniform = heightTexture2Uniform
+          AlbedoTexture3Uniform = albedoTexture3Uniform
+          RoughnessTexture3Uniform = roughnessTexture3Uniform
+          AmbientOcclusionTexture3Uniform = ambientOcclusionTexture3Uniform
+          NormalTexture3Uniform = normalTexture3Uniform
+          HeightTexture3Uniform = heightTexture3Uniform
+          LayerCountUniform = layerCountUniform
           PhysicallyBasedShader = shader } : PhysicallyBasedDeferredTerrainShader
 
     /// Create a physically-based shader.
@@ -1490,11 +1538,27 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
-        Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
-        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 2)
-        Gl.Uniform1 (shader.NormalTextureUniform, 3)
-        Gl.Uniform1 (shader.HeightTextureUniform, 4)
+        Gl.Uniform1 (shader.AlbedoTexture0Uniform, 0)
+        Gl.Uniform1 (shader.RoughnessTexture0Uniform, 1)
+        Gl.Uniform1 (shader.AmbientOcclusionTexture0Uniform, 2)
+        Gl.Uniform1 (shader.NormalTexture0Uniform, 3)
+        Gl.Uniform1 (shader.HeightTexture0Uniform, 4)
+        Gl.Uniform1 (shader.AlbedoTexture1Uniform, 5)
+        Gl.Uniform1 (shader.RoughnessTexture1Uniform, 6)
+        Gl.Uniform1 (shader.AmbientOcclusionTexture1Uniform, 7)
+        Gl.Uniform1 (shader.NormalTexture1Uniform, 8)
+        Gl.Uniform1 (shader.HeightTexture1Uniform, 9)
+        Gl.Uniform1 (shader.AlbedoTexture2Uniform, 10)
+        Gl.Uniform1 (shader.RoughnessTexture2Uniform, 11)
+        Gl.Uniform1 (shader.AmbientOcclusionTexture2Uniform, 12)
+        Gl.Uniform1 (shader.NormalTexture2Uniform, 13)
+        Gl.Uniform1 (shader.HeightTexture2Uniform, 14)
+        Gl.Uniform1 (shader.AlbedoTexture3Uniform, 15)
+        Gl.Uniform1 (shader.RoughnessTexture3Uniform, 16)
+        Gl.Uniform1 (shader.AmbientOcclusionTexture3Uniform, 17)
+        Gl.Uniform1 (shader.NormalTexture3Uniform, 18)
+        Gl.Uniform1 (shader.HeightTexture3Uniform, 19)
+        Gl.Uniform1 (shader.LayerCountUniform, 1)
         Hl.Assert ()
 
         // setup textures
