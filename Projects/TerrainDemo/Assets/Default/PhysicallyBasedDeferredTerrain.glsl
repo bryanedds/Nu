@@ -65,11 +65,27 @@ void main()
 const float GAMMA = 2.2;
 
 uniform vec3 eyeCenter;
-uniform sampler2D albedoTexture;
-uniform sampler2D roughnessTexture;
-uniform sampler2D ambientOcclusionTexture;
-uniform sampler2D normalTexture;
-uniform sampler2D heightTexture;
+uniform sampler2D albedoTexture0;
+uniform sampler2D roughnessTexture0;
+uniform sampler2D ambientOcclusionTexture0;
+uniform sampler2D normalTexture0;
+uniform sampler2D heightTexture0;
+uniform sampler2D albedoTexture1;
+uniform sampler2D roughnessTexture1;
+uniform sampler2D ambientOcclusionTexture1;
+uniform sampler2D normalTexture1;
+uniform sampler2D heightTexture1;
+uniform sampler2D albedoTexture2;
+uniform sampler2D roughnessTexture2;
+uniform sampler2D ambientOcclusionTexture2;
+uniform sampler2D normalTexture2;
+uniform sampler2D heightTexture2;
+uniform sampler2D albedoTexture3;
+uniform sampler2D roughnessTexture3;
+uniform sampler2D ambientOcclusionTexture3;
+uniform sampler2D normalTexture3;
+uniform sampler2D heightTexture3;
+uniform int layerCount;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -104,25 +120,25 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).r * heightOut;
+    float height = texture(heightTexture0, texCoordsOut).r * heightOut;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo, discarding on zero alpha
-    vec4 albedoSample = texture(albedoTexture, texCoords);
+    vec4 albedoSample = texture(albedoTexture0, texCoords);
     if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties
     float metallic = 0.0f;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
-    vec4 roughnessSample = texture(roughnessTexture, texCoords);
+    float ambientOcclusion = texture(ambientOcclusionTexture0, texCoords).b * materialOut.b;
+    vec4 roughnessSample = texture(roughnessTexture0, texCoords);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
     float emission = 0.0f;
     material = vec4(metallic, roughness, ambientOcclusion, emission);
 
     // compute normal and height
-    normalAndHeight.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    normalAndHeight.xyz = normalize(toWorld * (texture(normalTexture0, texCoords).xyz * 2.0 - 1.0));
     normalAndHeight.a = height;
 }
