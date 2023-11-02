@@ -1782,7 +1782,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
                                                         | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
                                                     let divisor = single UInt16.MaxValue
-                                                    let normalized = (value |> single) / divisor
+                                                    let normalized = (single value) / divisor
                                                     let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
@@ -1794,7 +1794,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
                                                         | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
                                                     let divisor = single UInt32.MaxValue
-                                                    let normalized = (value |> single) / divisor
+                                                    let normalized = (single value) / divisor
                                                     let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
@@ -1847,20 +1847,29 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                                 // TODO: use verts and splat map to construct terrain geometry
 
-                                match rt.TerrainDescriptor.Material with
-                                | SplatMaterial splatMaterial ->
-                                    match splatMaterial.SplatMap with
-                                    | RgbaMap rgbaMap ->
-                                        match GlRenderer3d.tryGetImageData rgbaMap renderer with
-                                        | Some (bytes, metadata) ->
-                                            ()
-                                        | None -> ()
-                                    | _ -> ()
-                                | _ -> ()
+                                let splat0 =
+                                    match rt.TerrainDescriptor.Material with
+                                    | SplatMaterial splatMaterial ->
+                                        match splatMaterial.SplatMap with
+                                        | RgbaMap rgbaMap ->
+                                            match GlRenderer3d.tryGetImageData rgbaMap renderer with
+                                            | Some (bytes, metadata) ->
+                                                // check that the image size matches that of the heightmap
+                                                if metadata.TextureWidth * metadata.TextureHeight = map.Resolution.X * map.Resolution.Y then
+                                                    bytes |>
+                                                    Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
+                                                    Array.chunkBySize 4 |>
+                                                    Array.chunkBySize metadata.TextureWidth |>
+                                                    Array.rev |>
+                                                    Array.concat
+                                                else Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
+                                            | None -> Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
+                                        | _ -> Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
+                                    | _ -> Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
                                 
                                 let vertices =
-                                    (positionsAndTexCoordses, normals) ||>
-                                    Array.map2 (fun struct (p, t) n -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f; 0.0f|]) |>
+                                    (positionsAndTexCoordses, normals, splat0) |||>
+                                    Array.map3 (fun struct (p, t) n s0 -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0[1]; s0[2]; s0[3]; s0[0]; 0.0f; 0.0f; 0.0f; 0.0f|]) |>
                                     Array.concat
                                         
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
