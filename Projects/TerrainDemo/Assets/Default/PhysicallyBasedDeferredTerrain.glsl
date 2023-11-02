@@ -66,9 +66,7 @@ const float GAMMA = 2.2;
 
 uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
-uniform sampler2D metallicTexture;
 uniform sampler2D roughnessTexture;
-uniform sampler2D emissionTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D heightTexture;
@@ -116,12 +114,12 @@ void main()
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties
-    float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
+    float metallic = 0.0f;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec4 roughnessSample = texture(roughnessTexture, texCoords);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
-    float emission = texture(emissionTexture, texCoords).r * materialOut.a;
+    float emission = 0.0f;
     material = vec4(metallic, roughness, ambientOcclusion, emission);
 
     // compute normal and height

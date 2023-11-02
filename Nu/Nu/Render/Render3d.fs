@@ -1044,8 +1044,6 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedTerrain
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
-        lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
         numStrips numElementsPerStrip (material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial) geometry shader renderer =
 
         // ensure there are surfaces to render
@@ -1118,8 +1116,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
                 (viewArray, projectionArray, eyeCenter,
                  1, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
-                 lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
-                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
                  numStrips, numElementsPerStrip, material, geometry, shader)
 
     static member private renderPhysicallyBasedSurfaces
@@ -1460,8 +1456,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let parameters = SList.singleton struct (m4Identity, box2Zero, materialProperties)
                     GlRenderer3d.renderPhysicallyBasedTerrain
                         viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
-                        lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
                         numStrips numElementsPerStrip material geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
