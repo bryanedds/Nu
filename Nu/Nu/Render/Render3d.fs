@@ -1044,12 +1044,14 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedTerrain
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
-        numStrips numElementsPerStrip (material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial) geometry shader renderer =
+        numStrips numElementsPerStrip (materials : OpenGL.PhysicallyBased.PhysicallyBasedMaterial array) geometry shader renderer =
 
         // ensure there are surfaces to render
         // TODO: figure out how to deal with the code duplication between here and in renderPhysicallyBasedSurfaces.
         if parameters.Length > 0 then
 
+            let material = materials[0]
+            
             // ensure we have a large enough models fields array
             let mutable length = renderer.RenderModelsFields.Length
             while parameters.Length * 16 > length do length <- length * 2
@@ -1116,7 +1118,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
                 (viewArray, projectionArray, eyeCenter,
                  1, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
-                 numStrips, numElementsPerStrip, material, geometry, shader)
+                 numStrips, numElementsPerStrip, materials, geometry, shader)
 
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
@@ -1440,9 +1442,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         // render terrain
         for entry in renderer.RenderTasks.RenderTerrain do
             match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue entry.Key with
-            | (true, (geometry, [|material|])) -> // TODO: figure out how to organize terrain layer data properly.
+            | (true, (geometry, materials)) ->
                 match entry.Value.HeightMap with
                 | RawHeightMap map ->
+                    let material = materials[0] // TODO: figure out how to pass material properties per layer.
                     let numStrips = map.Resolution.Y - 1
                     let numElementsPerStrip = map.Resolution.X * 2
                     let materialProperties : MaterialProperties =
@@ -1456,7 +1459,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let parameters = SList.singleton struct (m4Identity, box2Zero, materialProperties)
                     GlRenderer3d.renderPhysicallyBasedTerrain
                         viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
-                        numStrips numElementsPerStrip material geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+                        numStrips numElementsPerStrip materials geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
@@ -1868,13 +1871,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         
                                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
-                                let material =
+                                let materials =
                                     let defaultMaterial = renderer.RenderPhysicallyBasedMaterial
                                     
                                     match rt.TerrainDescriptor.Material with
                                     | SplatMaterial splatMaterial ->
-                                        if splatMaterial.TerrainLayers.Length > 0 then
-                                            let layer = splatMaterial.TerrainLayers.[0]
+                                        [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
+                                            let layer = splatMaterial.TerrainLayers.[i]
                                             let materialProperties =
                                                 defaultMaterial.MaterialProperties
                                             let materialProperties =
@@ -1924,12 +1927,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                 RoughnessTexture = roughnessTexture
                                                 AmbientOcclusionTexture = ambientOcclusionTexture
                                                 NormalTexture = normalTexture
-                                                HeightTexture = heightTexture }
-                                        else defaultMaterial
-                                    | _ -> defaultMaterial
+                                                HeightTexture = heightTexture }|]
+                                    | _ -> [||]
                                 
                                 renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Clear ()
-                                renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (rt.TerrainDescriptor, (geometry, [|material|]))
+                                renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (rt.TerrainDescriptor, (geometry, materials))
 
                             | None -> ()
 
