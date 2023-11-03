@@ -23,6 +23,7 @@ const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform int layerCount;
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
@@ -39,6 +40,7 @@ layout (location = 13) in int invertRoughness;
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
+out vec4 splat0Out;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
@@ -46,6 +48,16 @@ flat out int invertRoughnessOut;
 
 void main()
 {
+    if (layerCount == 1) {
+        splat0Out = vec4(splat0.r, 0.0, 0.0, 0.0);
+    } else if (layerCount == 2) {
+        splat0Out = vec4(splat0.r, splat0.g, 0.0, 0.0);
+    } else if (layerCount == 3) {
+        splat0Out = vec4(splat0.r, splat0.g, splat0.b, 0.0);
+    } else if (layerCount == 4) {
+        splat0Out = vec4(splat0.r, splat0.g, splat0.b, splat0.a);
+    }
+    
     positionOut = model * vec4(position, 1.0);
     int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
@@ -85,11 +97,11 @@ uniform sampler2D roughnessTexture3;
 uniform sampler2D ambientOcclusionTexture3;
 uniform sampler2D normalTexture3;
 uniform sampler2D heightTexture3;
-uniform int layerCount;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
+in vec4 splat0Out;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
@@ -116,6 +128,13 @@ void main()
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
+    // blend height
+    float heightBlend =
+        texture(heightTexture0, texCoordsOut).r * splat0Out.r +
+        texture(heightTexture1, texCoordsOut).r * splat0Out.g +
+        texture(heightTexture2, texCoordsOut).r * splat0Out.b +
+        texture(heightTexture3, texCoordsOut).r * splat0Out.a;
+    
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
@@ -124,6 +143,31 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
+    // blend other materials
+    vec4 albedoBlend =
+        texture(albedoTexture0, texCoords) * splat0Out.r +
+        texture(albedoTexture1, texCoords) * splat0Out.g +
+        texture(albedoTexture2, texCoords) * splat0Out.b +
+        texture(albedoTexture3, texCoords) * splat0Out.a;
+
+    vec4 roughnessBlend =
+        texture(roughnessTexture0, texCoords) * splat0Out.r +
+        texture(roughnessTexture1, texCoords) * splat0Out.g +
+        texture(roughnessTexture2, texCoords) * splat0Out.b +
+        texture(roughnessTexture3, texCoords) * splat0Out.a;
+
+    float ambientOcclusionBlend =
+        texture(ambientOcclusionTexture0, texCoords).b * splat0Out.r +
+        texture(ambientOcclusionTexture1, texCoords).b * splat0Out.g +
+        texture(ambientOcclusionTexture2, texCoords).b * splat0Out.b +
+        texture(ambientOcclusionTexture3, texCoords).b * splat0Out.a;
+
+    vec3 normalBlend =
+        texture(normalTexture0, texCoords).xyz * splat0Out.r +
+        texture(normalTexture1, texCoords).xyz * splat0Out.g +
+        texture(normalTexture2, texCoords).xyz * splat0Out.b +
+        texture(normalTexture3, texCoords).xyz * splat0Out.a;
+    
     // compute albedo, discarding on zero alpha
     vec4 albedoSample = texture(albedoTexture0, texCoords);
     if (albedoSample.a == 0.0f) discard;
