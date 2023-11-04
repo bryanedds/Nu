@@ -153,7 +153,7 @@ module Gaia =
         reloadAllRequested <> 0
 
     (* Memoization *)
-    let mutable toSymbolMemo = new ForgetfulDictionary<obj, Symbol> (HashIdentity.FromFunctions LanguagePrimitives.PhysicalHash objEq)
+    let mutable toSymbolMemo = new ForgetfulDictionary<obj, Symbol> (HashIdentity.FromFunctions hash objEq)
     let mutable ofSymbolMemo = new ForgetfulDictionary<Symbol, obj> (HashIdentity.Structural)
 
     (* Initial imgui.ini File Content *)
