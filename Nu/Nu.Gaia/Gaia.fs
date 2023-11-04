@@ -134,7 +134,7 @@ module Gaia =
     let mutable private reloadAllRequested = 0
     let modal () =
         messageBoxOpt.IsSome ||
-        recoverableExceptionOpt.IsSome
+        recoverableExceptionOpt.IsSome ||
         showEntityContextMenu ||
         showAssetPickerDialog ||
         showNewProjectDialog ||
