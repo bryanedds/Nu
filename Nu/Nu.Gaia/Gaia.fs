@@ -129,9 +129,12 @@ module Gaia =
     let mutable private showConfirmExitDialog = false
     let mutable private showRestartDialog = false
     let mutable private showInspector = false
+    let mutable private reloadAssetsRequested = 0
+    let mutable private reloadCodeRequested = 0
+    let mutable private reloadAllRequested = 0
     let modal () =
         messageBoxOpt.IsSome ||
-        recoverableExceptionOpt.IsSome ||
+        recoverableExceptionOpt.IsSome
         showEntityContextMenu ||
         showAssetPickerDialog ||
         showNewProjectDialog ||
@@ -144,7 +147,10 @@ module Gaia =
         showRenameGroupDialog ||
         showRenameEntityDialog ||
         showConfirmExitDialog ||
-        showRestartDialog
+        showRestartDialog ||
+        reloadAssetsRequested <> 0 ||
+        reloadCodeRequested <> 0 ||
+        reloadAllRequested <> 0
 
     (* Memoization *)
     let mutable toSymbolMemo = new ForgetfulDictionary<obj, Symbol> (HashIdentity.FromFunctions LanguagePrimitives.PhysicalHash objEq)
@@ -278,7 +284,7 @@ Pos=661,488
 Size=621,105
 Collapsed=0
 
-[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
+[Window][Choose a game .dll... *EDITOR RESTART REQUIRED!*]
 Pos=662,475
 Size=592,125
 Collapsed=0
@@ -311,6 +317,21 @@ Collapsed=0
 [Window][Rename entity...]
 Pos=734,514
 Size=444,94
+Collapsed=0
+
+[Window][Reloading assets...]
+Pos=700,500
+Size=520,110
+Collapsed=0
+
+[Window][Reloading code...]
+Pos=700,500
+Size=520,110
+Collapsed=0
+
+[Window][Reloading assets and code...]
+Pos=700,500
+Size=520,110
 Collapsed=0
 
 [Docking][Data]
@@ -1157,15 +1178,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
             elif ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
-            elif ImGui.IsKeyPressed ImGuiKey.F8 then tryReloadAssets ()
-            elif ImGui.IsKeyPressed ImGuiKey.F9 then tryReloadCode ()
+            elif ImGui.IsKeyPressed ImGuiKey.F8 then reloadAssetsRequested <- 1
+            elif ImGui.IsKeyPressed ImGuiKey.F9 then reloadCodeRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then showOpenProjectDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
-            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then tryReloadAll ()
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then reloadAllRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
             elif not (ImGui.GetIO ()).WantCaptureKeyboardPlus || entityHierarchyFocused then
@@ -1887,9 +1908,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
                                 else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Reload Assets", "F8") then tryReloadAssets ()
-                                if ImGui.MenuItem ("Reload Code", "F9") then tryReloadCode ()
-                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then tryReloadAll ()
+                                if ImGui.MenuItem ("Reload Assets", "F8") then reloadAssetsRequested <- 1
+                                if ImGui.MenuItem ("Reload Code", "F9") then reloadCodeRequested <- 1
+                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then reloadAllRequested <- 1
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
                         if ImGui.Button "Create" then createEntity false false
@@ -1970,11 +1991,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SameLine ()
                         ImGui.Text "Reload:"
                         ImGui.SameLine ()
-                        if ImGui.Button "Assets" then tryReloadAssets ()
+                        if ImGui.Button "Assets" then reloadAssetsRequested <- 1
                         ImGui.SameLine ()
-                        if ImGui.Button "Code" then tryReloadCode ()
+                        if ImGui.Button "Code" then reloadCodeRequested <- 1
                         ImGui.SameLine ()
-                        if ImGui.Button "All" then tryReloadAll ()
+                        if ImGui.Button "All" then reloadAllRequested <- 1
                         ImGui.SameLine ()
                         ImGui.Text "|"
                         ImGui.SameLine ()
@@ -2670,10 +2691,46 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if showInspector then
                     ImGui.ShowStackToolWindow ()
 
-                // process non-widget mouse input and hotkey at the end of the loop
+                // process non-widget mouse input and hotkeys
                 updateEntityContext ()
                 updateEntityDrag ()
                 updateHotkeys entityHierarchyFocused
+
+                // reloading assets dialog
+                if reloadAssetsRequested > 0 then
+                    let title = "Reloading assets..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal title then
+                        ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
+                        ImGui.EndPopup ()
+                    reloadAssetsRequested <- inc reloadAssetsRequested
+                    if reloadAssetsRequested = 4 then // NOTE: takes multiple frames to see dialog.
+                        tryReloadAssets ()
+                        reloadAssetsRequested <- 0
+
+                // reloading code dialog
+                if reloadCodeRequested > 0 then
+                    let title = "Reloading code..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal title then
+                        ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
+                        ImGui.EndPopup ()
+                    reloadCodeRequested <- inc reloadCodeRequested
+                    if reloadCodeRequested = 4 then // NOTE: takes multiple frames to see dialog.
+                        tryReloadCode ()
+                        reloadCodeRequested <- 0
+
+                // reloading assets and code dialog
+                if reloadAllRequested > 0 then
+                    let title = "Reloading assets and code..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal title then
+                        ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
+                        ImGui.EndPopup ()
+                    reloadAllRequested <- inc reloadAllRequested
+                    if reloadAllRequested = 4 then // NOTE: takes multiple frames to see dialog.
+                        tryReloadAll ()
+                        reloadAllRequested <- 0
 
                 // fin
                 world
