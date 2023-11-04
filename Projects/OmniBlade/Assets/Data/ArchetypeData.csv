@@ -1,18 +1,18 @@
 Type,Stamina,Strength,Intelligence,Defense,Absorb,Focus,Wealth,Mythos,WeaponSubtype,ArmorSubtype,Techs,ChargeTechs,AffinityOpt,Immunities,Stature,Description
-Apprentice,1,1,1,1,1,1.2,1,1,Sword,Vest,[],[],None,[],SmallStature,Generic character.
+Apprentice,1,1,1,1,1,1.2,1,1,Sword,Vest,[],[],None,[],SmallStature,Generic ally for reference.
 Fighter,1.2,1.1,0.8,1,1,1.1,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 HeavyCritical] [8 Cyclone] [12 CriticalSlash]],[],None,[],SmallStature,
 Ninja,1.1,1,0.9,1,1,1.2,1,1,Knife,Vest,[[2 PoisonCut] [4 PowerCut] [6 DispelCut] [8 DoubleCut]],[],None,[],SmallStature,
 Wizard,0.9,0.8,1.1,1,1,1.4,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],[],None,[],SmallStature,
 Conjuror,0.9,0.8,1.1,1,1,1.4,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 Slow] [8 Bolt] [12 ConjureRamuh]],[],None,[],SmallStature,
 Cleric,1.1,1,1,1,1,1,1,1,Bow,Vest,[[2 Cure] [4 Empower] [6 Aura] [8 Enlighten] [12 Protect]],[],None,[],SmallStature,
-Bat,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],None,[],SmallStature,Weak physical attacks and Drain Techs.
-Snake,0.5,1.1,0.9,1,1,1,0.5,0.5,Melee,Pelt,[[1 PoisonCut]],[],None,[Poison],SmallStature,Weak physical attacks with Status effects.
-Gorgon,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[2 Muddle]],[],None,[],SmallStature,Physical attacks and Debuff magic.
-Goblin,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Fire]],[],None,[],NormalStature,Normal physical attacks with normal Elemental magic.
-Soldier,1,1.4,1.3,1,1,1,1,1,Melee,Pelt,[[2 Empower] [2 PowerCut]],[],None,[],NormalStature,Physical attacks with ???.
-Shaman,1,1.3,1.5,1,1,1,1,1,Melee,Pelt,[[3 Ice] [4 Enlighten]],[],None,[],NormalStature,Elemental and buff magic.
-Trixter,1,1.3,1.5,1,1,1,1,1,Melee,Pelt,[[4 Snowball]],[[3 3 Ice]],None,[],NormalStature,Ice magician.
-Avian,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[3 Aura]],[],[Some Wind],[],LargeStature,Strong physical attacks with Curative magic.
-Minotaur,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],[],None,[],LargeStature,Physical attacks.
-Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash]],[[4 3 HeavyCritical]],[Some Metal],[Poison Sleep],LargeStature,Strong physical attacks with Buff magic.
-Arachnos,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 PoisonCut] [3 Slow]],[[3 6 ConjureRamuh]],None,[],BossStature,Strong physical attacks with Debuff magic.
+Bat,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],[],None,[],SmallStature,
+Snake,0.5,1.1,0.9,1,1,1,0.5,0.5,Melee,Pelt,[[1 PoisonCut]],[],None,[Poison],SmallStature,
+Gorgon,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[2 Muddle]],[],None,[],SmallStature,
+Goblin,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Fire]],[],None,[],NormalStature,
+Soldier,1,1.4,1.3,1,1,1,1,1,Melee,Pelt,[[2 Empower] [2 PowerCut]],[],None,[],NormalStature,
+Shaman,1,1.3,1.5,1,1,1,1,1,Melee,Pelt,[[3 Ice] [4 Enlighten]],[],None,[],NormalStature,
+Trixter,1,1.3,1.5,1,1,1,1,1,Melee,Pelt,[[4 Snowball]],[[3 3 Ice]],None,[],NormalStature,
+Avian,1.4,1.5,1.6,1,1,1,1.5,1.5,Melee,Pelt,[[3 Aura]],[],[Some Wind],[],LargeStature,
+Minotaur,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],[],None,[],LargeStature,
+Armoros,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[2 Slash]],[[4 3 HeavyCritical]],[Some Metal],[Poison Sleep],LargeStature,
+Arachnos,1.8,1.7,1.7,1,1,1,2,2,Melee,Pelt,[[1 PoisonCut] [1 Silk]],[[3 6 ConjureRamuh]],None,[],BossStature,

@@ -82,25 +82,25 @@ module EffectDescriptors =
                       { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                 Nil) }
 
-    let twisterCut =
-        { EffectName = "TwisterCut"
+    let critical =
+        { EffectName = "Critical"
           LifeTimeOpt = Some 24L
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.TwisterAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.CriticalAnimationSheet),
                  v2i 32 32, 8, 8, 3L, Once,
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
 
-    let tornadoCut =
-        { EffectName = "TornadoCut"
-          LifeTimeOpt = Some 32L
+    let heavyCritical =
+        { EffectName = "HeavyCritical"
+          LifeTimeOpt = Some 42L
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.TornadoAnimationSheet),
-                 v2i 32 32, 16, 8, 2L, Once,
+                (Resource (AssetTag.toPair Assets.Battle.HeavyCriticalAnimationSheet),
+                 v2i 32 32, 14, 14, 3L, Once,
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
 
@@ -162,8 +162,8 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content = emit }
 
-    let slashTwister position position2 =
-        let twister = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.TwisterAnimationSheet), v2i 32 32, 8, 8, 3L, Once, [||], Nil)
+    let slashWind position position2 =
+        let twister = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CriticalSlashAnimationSheet), v2i 32 32, 8, 8, 3L, Once, [||], Nil)
         let emit =
             Emit
                 (Shift 0.1f,
@@ -521,3 +521,14 @@ module EffectDescriptors =
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f 168.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 -144.0f -111.0f 0.0f)|]
                      fireSpin [|fireSpinSize; PositionAbsolute (v3 144.0f -111.0f 0.0f)|]|]) }
+
+    let silk =
+        { EffectName = "Silk"
+          LifeTimeOpt = Some 63L
+          Definitions = Map.empty
+          Content =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.SilkAnimationSheet),
+                 v2i 48 48, 21, 21, 3L, Once,
+                 [|Size (v3 144.0f 144.0f 0.0f)|],
+                 Nil) }
