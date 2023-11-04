@@ -33,8 +33,8 @@ type BattleCommand =
     | DisplayHitPointsChange of CharacterIndex * int
     | DisplayCancel of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
-    | DisplayTwisterCut of int64 * CharacterIndex
-    | DisplayTornadoCut of int64 * CharacterIndex
+    | DisplayCritical of int64 * CharacterIndex
+    | DisplayHeavyCritical of int64 * CharacterIndex
     | DisplayPoisonCut of int64 * CharacterIndex
     | DisplayPowerCut of int64 * CharacterIndex
     | DisplayDispelCut of int64 * CharacterIndex
@@ -56,6 +56,7 @@ type BattleCommand =
     | DisplayCure of int64 * CharacterIndex
     | DisplayProtect of int64 * CharacterIndex
     | DisplayPurify of int64 * CharacterIndex
+    | DisplaySilk of int64 * CharacterIndex
     | DisplayInferno of int64
     | DisplayScatterBolt of int64
     interface Command
@@ -450,10 +451,11 @@ module Battle =
     let updateCharacterBottom updater characterIndex battle =
         updateCharacter (Character.updateBottom updater) characterIndex battle
 
-    let updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle =
+    let updateCharacterHitPoints directAction cancelled affectsWounded hitPointsChange characterIndex battle =
         let alliesHealthy = getAlliesHealthy battle
         let character = getCharacter characterIndex battle
         let character = Character.updateHitPoints (fun hitPoints -> (cancelled, hitPoints + hitPointsChange)) affectsWounded alliesHealthy character
+        let character = if directAction then Character.updateStatuses (Map.remove Sleep) character else character
         updateCharacter (constant character) characterIndex battle
 
     let updateCharacterTechPoints techPointsChange characterIndex battle =
@@ -1031,7 +1033,7 @@ module Battle =
                         else just (abortCharacterInteraction time sourceIndex battle)
                     | 15L ->
                         let damage = evalAttack EffectType.Physical sourceIndex targetIndex battle
-                        let battle = updateCharacterHitPoints false false -damage targetIndex battle
+                        let battle = updateCharacterHitPoints true false false -damage targetIndex battle
                         let battle = animateCharacter time DamageAnimation targetIndex battle
                         let battle =
                             if getCharacterWounded targetIndex battle then
@@ -1109,7 +1111,7 @@ module Battle =
                                 let battle =
                                     if consumableData.Techative
                                     then updateCharacterTechPoints healing targetIndex battle
-                                    else updateCharacterHitPoints false consumableData.Revive healing targetIndex battle
+                                    else updateCharacterHitPoints true false consumableData.Revive healing targetIndex battle
                                 let battle = applyCharacterStatuses consumableData.StatusesAdded consumableData.StatusesRemoved targetIndex battle
                                 let battle = animateCharacter time SpinAnimation targetIndex battle
                                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
@@ -1189,10 +1191,10 @@ module Battle =
                                     match techType with
                                     | Critical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let twisterCut = DisplayTwisterCut (13L, targetIndex)
+                                        let critical = DisplayCritical (13L, targetIndex)
                                         let displayCut = DisplayCut (20L, true, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; twisterCut; displayCut] battle
+                                        withSignals [playHit; critical; displayCut] battle
                                     | Slash ->
                                         let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                                         let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -1203,20 +1205,20 @@ module Battle =
                                         withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
                                     | HeavyCritical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let tornadoCut = DisplayTornadoCut (10L, targetIndex)
+                                        let heavyCritical = DisplayHeavyCritical (10L, targetIndex)
                                         let displayCut = DisplayCut (20L, true, targetIndex)
                                         let impactSplash = DisplayImpactSplash (34L, targetIndex)
                                         let battle = animateCharacter time AttackAnimation sourceIndex battle
-                                        withSignals [playHit; tornadoCut; displayCut; impactSplash] battle
+                                        withSignals [playHit; heavyCritical; displayCut; impactSplash] battle
                                     | Cyclone ->
                                         let radius = 64.0f
                                         let perimeter = getCharacterPerimeter sourceIndex battle
                                         let position = perimeter.Bottom
                                         let playHits =
                                             [PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
-                                             PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
-                                             PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal
-                                             PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound) |> signal]
+                                             PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                             PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                                             PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)]
                                         let sigs =
                                             signal (DisplayCircle (position, radius)) ::
                                             signal (DisplayCycloneBlur (0L, sourceIndex, radius)) ::
@@ -1329,9 +1331,9 @@ module Battle =
                                         let playThunder = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ThunderSound)
                                         let displayScatterBolts =
                                             [DisplayScatterBolt 0L |> signal
-                                             DisplayScatterBolt 15L |> signal
-                                             DisplayScatterBolt 30L |> signal
-                                             DisplayScatterBolt 45L |> signal]
+                                             DisplayScatterBolt 15L
+                                             DisplayScatterBolt 30L
+                                             DisplayScatterBolt 45L]
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals (playThunder :: displayScatterBolts) battle
                                     | Inferno ->
@@ -1339,6 +1341,11 @@ module Battle =
                                         let displayInferno = DisplayInferno 0L
                                         let battle = animateCharacter time Cast2Animation sourceIndex battle
                                         withSignals [playInferno; displayInferno] battle
+                                    | Silk ->
+                                        let playSilk = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SilkSound)
+                                        let displaySilk = DisplaySilk (0L, targetIndex)
+                                        let battle = animateCharacter time Cast2Animation sourceIndex battle
+                                        withSignals [playSilk; displaySilk] battle
                                 elif localTime = techAnimationData.AffectingStart then
                                     let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
@@ -1386,7 +1393,7 @@ module Battle =
                                     let source = getCharacter sourceIndex battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
-                                            let battle = updateCharacterHitPoints cancelled affectsWounded hitPointsChange characterIndex battle
+                                            let battle = updateCharacterHitPoints true cancelled affectsWounded hitPointsChange characterIndex battle
                                             let vulnerabilities = getCharacterVulnerabilities characterIndex battle
                                             let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong vulnerabilities else StatusType.randomizeWeak vulnerabilities
                                             let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
