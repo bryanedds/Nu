@@ -893,8 +893,8 @@ module Battle =
                 | Some archetypeData ->
                     let (w, h) = (layout.Length, layout.[0].Length)
                     let (x, y) =
-                        if index = 0 && characterData.Boss // HACK: put boss enemy 0 in center.
-                        then (w / 2 - 1, h / 2 - 1)
+                        if index = 0 && characterData.Boss
+                        then (w / 2, h / 2 - 1) // HACK: put boss enemy 0 in center.
                         else (Gen.random1 w, Gen.random1 h)
                     let stature = archetypeData.Stature
                     match stature with
@@ -980,9 +980,10 @@ module Battle =
                 while not spawned && tries < 100 do
                     let (i, j) = (Gen.random1 w, Gen.random1 h)
                     let position = v3 (origin.X + single i * tile.X) (origin.Y + single j * tile.Y) 0.0f
-                    let positions = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> enemy.PerimeterOriginal.BottomLeft)
+                    let bottom = position + v3 72.0f 0.f 0.0f // HACK: assume spawning character has 144.0f width.
+                    let bottoms = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> enemy.PerimeterOriginal.Bottom)
                     let notOnSides = i <> 0 && i <> w - 1
-                    let notOverlapping = Array.notExists (fun position' -> Vector3.Distance (position, position') < tile.X * 2.0f) positions
+                    let notOverlapping = Array.notExists (fun bottom' -> Vector3.Distance (bottom, bottom') < tile.X * 1.5f) bottoms
                     if notOnSides && notOverlapping then
                         let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
                         let enemyPosition = Option.defaultValue position spawnType.PositionOpt
