@@ -1383,7 +1383,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (focusProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName
-        let converter = SymbolicConverter ty
+        let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType, toSymbolMemo, ofSymbolMemo)
         let propertyValue = getProperty propertyDescriptor simulant
         let propertyValueStr = converter.ConvertToString propertyValue
         match propertyValue with
