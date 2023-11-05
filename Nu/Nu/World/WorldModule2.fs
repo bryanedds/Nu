@@ -1299,7 +1299,13 @@ module WorldModule2 =
                                                                 // avoid updating faster than desired
                                                                 if FrameTimer.IsRunning then
                                                                     while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                        Thread.Yield () |> ignore<bool>
+                                                                        let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - FrameTimer.Elapsed.TotalSeconds
+                                                                        if timeToSleep > 0.016 then Thread.Sleep 16
+                                                                        elif timeToSleep > 0.008 then Thread.Sleep 8
+                                                                        elif timeToSleep > 0.004 then Thread.Sleep 4
+                                                                        elif timeToSleep > 0.002 then Thread.Sleep 2
+                                                                        elif timeToSleep > 0.001 then Thread.Sleep 1
+                                                                        else Thread.Yield () |> ignore<bool>
                                                                 FrameTimer.Restart ()
 
                                                                 // process rendering (2/2)
