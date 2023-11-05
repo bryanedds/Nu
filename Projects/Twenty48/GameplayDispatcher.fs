@@ -125,5 +125,6 @@ module GameplayDispatcher =
                              Entity.ElevationLocal == 1.0f
                              Entity.Text := string tile.Value
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Font := if tile.Value < 16384 then Assets.Gui.ClearSans18Font else Assets.Gui.ClearSans12Font
                              Entity.TextColor := if tile.Value < 8 then Color.Gray else Color.GhostWhite
                              Entity.BackdropImageOpt := Some (Assets.Gameplay.TileImage tile.Value)]]]]
