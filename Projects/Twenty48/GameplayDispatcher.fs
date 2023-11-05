@@ -44,11 +44,11 @@ module GameplayDispatcher =
                   else Nil]
 
         // here we handle the above messages
-        override this.Message (gameplay, message, _, _) =
+        override this.Message (gameplay, message, _, world) =
             match message with
             | ShiftBoard direction ->
                 match gameplay.State with
-                | Playing ->
+                | Playing when world.Advancing ->
                     let gameplay' =
                         match direction with
                         | Upward -> Gameplay.shiftUp gameplay
@@ -56,19 +56,16 @@ module GameplayDispatcher =
                         | Downward -> Gameplay.shiftDown gameplay
                         | Leftward -> Gameplay.shiftLeft gameplay
                     if Gameplay.hasDifferentTiles gameplay gameplay' then
-                        let gameplay' = Gameplay.addTile gameplay'
-                        if not (Gameplay.hasAvailableMoves gameplay')
-                        then just { gameplay' with State = GameOver }
-                        else just gameplay'
-                    else just gameplay'
-                | GameOver -> just gameplay
-                | Quitting -> just gameplay
-                | Quit -> just gameplay
+                        let gameplay = Gameplay.addTile gameplay'
+                        if not (Gameplay.hasAvailableMoves gameplay)
+                        then just { gameplay with State = GameOver }
+                        else just gameplay
+                    else just gameplay
+                | _ -> just gameplay
             | StartQuitting ->
                 match gameplay.State with
                 | Playing | GameOver -> just { gameplay with State = Quitting }
-                | Quitting -> just gameplay
-                | Quit -> just gameplay
+                | Quitting | Quit -> just gameplay
             | FinishQuitting -> just { gameplay with State = Quit }
             | Nil -> just gameplay
 
