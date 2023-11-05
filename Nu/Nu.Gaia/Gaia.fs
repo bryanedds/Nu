@@ -504,7 +504,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some screen ->
             let groups = World.getGroups screen world
             let group =
-                match Seq.tryHead groups with
+                match Seq.tryLast groups with // NOTE: get the last group since it's more likely to be the scene the player wants to edit.
                 | Some group -> group
                 | None ->
                     let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
