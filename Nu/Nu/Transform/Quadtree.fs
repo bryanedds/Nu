@@ -86,18 +86,18 @@ module internal Quadnode =
                     removeElement bounds &element &node
             | ValueRight elements -> elements.Remove element |> ignore
 
-    let rec internal updateElement oldBounds newBounds (element : 'e Quadelement inref) (node : 'e Quadnode inref) =
+    let rec internal updateElement boundsOld boundsNew (element : 'e Quadelement inref) (node : 'e Quadnode inref) =
         match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
-                if isIntersectingBounds oldBounds &node || isIntersectingBounds newBounds &node then
-                    updateElement oldBounds newBounds &element &node
+                if isIntersectingBounds boundsOld &node || isIntersectingBounds boundsNew &node then
+                    updateElement boundsOld boundsNew &element &node
         | ValueRight elements ->
-            if isIntersectingBounds newBounds &node then
+            if isIntersectingBounds boundsNew &node then
                 elements.Remove element |> ignore
                 elements.Add element |> ignore
-            elif isIntersectingBounds oldBounds &node then
+            elif isIntersectingBounds boundsOld &node then
                 elements.Remove element |> ignore
 
     let rec internal getElementsAtPoint point (set : 'e Quadelement HashSet) (node : 'e Quadnode inref) =
@@ -260,26 +260,26 @@ module Quadtree =
                 Quadnode.removeElement bounds &element &node
 
     /// Update an existing element in the tree.
-    let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
+    let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
         tree.ElementsModified <- true
-        let wasInNode = not oldPresence.OmnipresentType && Quadnode.isIntersectingBounds oldBounds &tree.Node
-        let isInNode = not newPresence.OmnipresentType && Quadnode.isIntersectingBounds newBounds &tree.Node
+        let wasInNode = not presenceOld.OmnipresentType && Quadnode.isIntersectingBounds boundsOld &tree.Node
+        let isInNode = not presenceNew.OmnipresentType && Quadnode.isIntersectingBounds boundsNew &tree.Node
         if wasInNode then
             if isInNode then
-                let oldNode = findNode oldBounds tree
-                let newNode = findNode newBounds tree
-                if oldNode.Id <> newNode.Id then
-                    Quadnode.removeElement oldBounds &element &oldNode
-                    Quadnode.addElement newBounds &element &newNode
-                else Quadnode.updateElement oldBounds newBounds &element &oldNode
+                let nodeOld = findNode boundsOld tree
+                let nodeNew = findNode boundsNew tree
+                if nodeOld.Id <> nodeNew.Id then
+                    Quadnode.removeElement boundsOld &element &nodeOld
+                    Quadnode.addElement boundsNew &element &nodeNew
+                else Quadnode.updateElement boundsOld boundsNew &element &nodeOld
             else
-                Quadnode.removeElement oldBounds &element &tree.Node |> ignore
+                Quadnode.removeElement boundsOld &element &tree.Node |> ignore
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
                 tree.Omnipresent.Remove element |> ignore
-                Quadnode.addElement newBounds &element &tree.Node
+                Quadnode.addElement boundsNew &element &tree.Node
             else
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore

@@ -43,6 +43,12 @@ module OmniBlade =
     type OmniBladeDispatcher () =
         inherit GameDispatcher<Model, Message, Command> (Gui Splash)
 
+        override this.Register (game, world) =
+            // HACK: since I incorrectly assumed that master song volume was 0.5f while mixing songs in the editor
+            // (it's 1.0f, not 0.5f...), I have to override the default master song volume here...
+            let world = if world.Unaccompanied then World.setMasterSongVolume 0.5f world else world
+            base.Register (game, world)
+
         override this.Initialize (model, _) =
             [Game.DesiredScreen :=
                 match model with

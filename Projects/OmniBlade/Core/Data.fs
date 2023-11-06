@@ -120,7 +120,7 @@ type AffinityType =
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
     | Silence
-    | Sleep // TODO: implement effect in battle.
+    | Sleep
     | Confuse // NOTE: dummied out. maybe implement in the sequel. effect of disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
     //| Curse - maybe implement in the sequel. effect of 'can't gain HP' in battle.
     //| Blind - maybe implement in the sequel
@@ -149,7 +149,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
             match this with
             | Poison -> Gen.random1 2 = 0
             | Silence -> Gen.random1 2 = 0
-            | Sleep -> Gen.random1 3 = 0
+            | Sleep -> Gen.random1 2 = 0
             | Confuse -> Gen.random1 3 = 0
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
@@ -170,7 +170,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
             match this with
             | Poison -> Gen.random1 5 <> 0
             | Silence -> Gen.random1 4 <> 0
-            | Sleep -> Gen.random1 2 <> 0
+            | Sleep -> Gen.random1 3 <> 0
             | Confuse -> Gen.random1 2 <> 0
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
@@ -291,6 +291,7 @@ type TechType =
     | Bolt
     | ConjureRamuh
     | Inferno
+    | Silk
 
     // TODO: put this in TechData.
     member this.ConjureTech =
@@ -357,7 +358,7 @@ type FieldType =
 
     member this.Connector =
         match this with
-        | CastleConnector -> true
+        | CastleConnector
         | _ -> false
 
     static member toFieldName (fieldType : FieldType) =
@@ -375,7 +376,7 @@ type BattleType =
     | HeavyArmorosBattle
     | Castle3Battle | Castle3Battle2 | Castle3Battle3 | Castle3Battle4 | Castle3Battle5 | Castle3Battle6 | Castle3Battle7 | Castle3Battle8 | Castle3Battle9
     | AraneaImplicitumBattle
-    
+
 type EncounterType =
     | DebugEncounter
     | CastleEncounter
@@ -810,7 +811,7 @@ type TechData =
       Split : bool
       Curative : bool
       Cancels : bool
-      Absorb : single // percentage of outcome that is absorbed by the caster
+      // Absorb : single - maybe implement in sequal. percentage of outcome that is absorbed by the caster.
       AffinityOpt : AffinityType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
@@ -833,7 +834,7 @@ type ArchetypeData =
       Mythos : single // exp scalar
       WeaponSubtype : WeaponSubtype
       ArmorSubtype : ArmorSubtype
-      Techs : Map<int, TechType> // tech availability according to level
+      Techs : (int * TechType) list // tech availability according to level
       ChargeTechs : (int * int * TechType) list
       AffinityOpt : AffinityType option
       Immunities : StatusType Set

@@ -129,6 +129,9 @@ module Gaia =
     let mutable private showConfirmExitDialog = false
     let mutable private showRestartDialog = false
     let mutable private showInspector = false
+    let mutable private reloadAssetsRequested = 0
+    let mutable private reloadCodeRequested = 0
+    let mutable private reloadAllRequested = 0
     let modal () =
         messageBoxOpt.IsSome ||
         recoverableExceptionOpt.IsSome ||
@@ -144,10 +147,13 @@ module Gaia =
         showRenameGroupDialog ||
         showRenameEntityDialog ||
         showConfirmExitDialog ||
-        showRestartDialog
+        showRestartDialog ||
+        reloadAssetsRequested <> 0 ||
+        reloadCodeRequested <> 0 ||
+        reloadAllRequested <> 0
 
     (* Memoization *)
-    let mutable toSymbolMemo = new ForgetfulDictionary<obj, Symbol> (HashIdentity.FromFunctions LanguagePrimitives.PhysicalHash objEq)
+    let mutable toSymbolMemo = new ForgetfulDictionary<obj, Symbol> (HashIdentity.FromFunctions hash objEq)
     let mutable ofSymbolMemo = new ForgetfulDictionary<Symbol, obj> (HashIdentity.Structural)
 
     (* Initial imgui.ini File Content *)
@@ -278,7 +284,7 @@ Pos=661,488
 Size=621,105
 Collapsed=0
 
-[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
+[Window][Choose a game .dll... *EDITOR RESTART REQUIRED!*]
 Pos=662,475
 Size=592,125
 Collapsed=0
@@ -311,6 +317,21 @@ Collapsed=0
 [Window][Rename entity...]
 Pos=734,514
 Size=444,94
+Collapsed=0
+
+[Window][Reloading assets...]
+Pos=700,500
+Size=520,110
+Collapsed=0
+
+[Window][Reloading code...]
+Pos=700,500
+Size=520,110
+Collapsed=0
+
+[Window][Reloading assets and code...]
+Pos=700,500
+Size=520,110
 Collapsed=0
 
 [Docking][Data]
@@ -483,11 +504,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some screen ->
             let groups = World.getGroups screen world
             let group =
-                match Seq.tryHead groups with
+                match Seq.tryFind (fun (group : Group) -> group.Name = "Scene") groups with // NOTE: try to get the Scene group since it's more likely to be the group the user wants to edit.
                 | Some group -> group
                 | None ->
-                    let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
-                    group
+                    match Seq.tryHead groups with
+                    | Some group -> group
+                    | None ->
+                        let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
+                        group
             selectEntityOpt None
             selectGroup group
             selectScreen screen
@@ -694,7 +718,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // attempt to load group
             match groupAndDescriptorOpt with
             | Right (group, groupDescriptor) ->
-                let oldWorld = world
+                let worldOld = world
                 try if group.Exists world then
                         world <- World.destroyGroupImmediate selectedGroup world
                     let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
@@ -706,7 +730,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     groupFileDialogState.FileName <- ""
                     true
                 with exn ->
-                    world <- World.choose oldWorld
+                    world <- World.choose worldOld
                     messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
                     false
 
@@ -817,7 +841,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private tryReloadCode () =
         if World.getAllowCodeReload world then
             snapshot ()
-            let oldWorld = world
+            let worldOld = world
             selectEntityOpt None // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
             let workingDirPath = targetDir + "/../../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
@@ -886,10 +910,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     with _ ->
                         let error = string errorStream
                         Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
-                        world <- World.choose oldWorld
+                        world <- World.choose worldOld
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
-                world <- World.choose oldWorld
+                world <- World.choose worldOld
         else messageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
     let private tryReloadAll () =
@@ -1157,15 +1181,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
             elif ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
-            elif ImGui.IsKeyPressed ImGuiKey.F8 then tryReloadAssets ()
-            elif ImGui.IsKeyPressed ImGuiKey.F9 then tryReloadCode ()
+            elif ImGui.IsKeyPressed ImGuiKey.F8 then reloadAssetsRequested <- 1
+            elif ImGui.IsKeyPressed ImGuiKey.F9 then reloadCodeRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then showOpenProjectDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
-            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then tryReloadAll ()
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then reloadAllRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
             elif not (ImGui.GetIO ()).WantCaptureKeyboardPlus || entityHierarchyFocused then
@@ -1362,7 +1386,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (focusProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName
-        let converter = SymbolicConverter ty
+        let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType, toSymbolMemo, ofSymbolMemo)
         let propertyValue = getProperty propertyDescriptor simulant
         let propertyValueStr = converter.ConvertToString propertyValue
         match propertyValue with
@@ -1887,9 +1911,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
                                 else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Reload Assets", "F8") then tryReloadAssets ()
-                                if ImGui.MenuItem ("Reload Code", "F9") then tryReloadCode ()
-                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then tryReloadAll ()
+                                if ImGui.MenuItem ("Reload Assets", "F8") then reloadAssetsRequested <- 1
+                                if ImGui.MenuItem ("Reload Code", "F9") then reloadCodeRequested <- 1
+                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then reloadAllRequested <- 1
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
                         if ImGui.Button "Create" then createEntity false false
@@ -1970,11 +1994,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SameLine ()
                         ImGui.Text "Reload:"
                         ImGui.SameLine ()
-                        if ImGui.Button "Assets" then tryReloadAssets ()
+                        if ImGui.Button "Assets" then reloadAssetsRequested <- 1
                         ImGui.SameLine ()
-                        if ImGui.Button "Code" then tryReloadCode ()
+                        if ImGui.Button "Code" then reloadCodeRequested <- 1
                         ImGui.SameLine ()
-                        if ImGui.Button "All" then tryReloadAll ()
+                        if ImGui.Button "All" then reloadAllRequested <- 1
                         ImGui.SameLine ()
                         ImGui.Text "|"
                         ImGui.SameLine ()
@@ -2527,14 +2551,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         newGroupDispatcherName <- dispatcherName
                                 ImGui.EndCombo ()
                             if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
-                                let oldWorld = world
+                                let worldOld = world
                                 try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
                                     selectEntityOpt None
                                     selectGroup newGroup
                                     showNewGroupDialog <- false
                                     newGroupName <- ""
                                 with exn ->
-                                    world <- World.choose oldWorld
+                                    world <- World.choose worldOld
                                     messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
                             if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
                             ImGui.EndPopup ()
@@ -2670,10 +2694,46 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if showInspector then
                     ImGui.ShowStackToolWindow ()
 
-                // process non-widget mouse input and hotkey at the end of the loop
+                // process non-widget mouse input and hotkeys
                 updateEntityContext ()
                 updateEntityDrag ()
                 updateHotkeys entityHierarchyFocused
+
+                // reloading assets dialog
+                if reloadAssetsRequested > 0 then
+                    let title = "Reloading assets..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal title then
+                        ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
+                        ImGui.EndPopup ()
+                    reloadAssetsRequested <- inc reloadAssetsRequested
+                    if reloadAssetsRequested = 4 then // NOTE: takes multiple frames to see dialog.
+                        tryReloadAssets ()
+                        reloadAssetsRequested <- 0
+
+                // reloading code dialog
+                if reloadCodeRequested > 0 then
+                    let title = "Reloading code..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal title then
+                        ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
+                        ImGui.EndPopup ()
+                    reloadCodeRequested <- inc reloadCodeRequested
+                    if reloadCodeRequested = 4 then // NOTE: takes multiple frames to see dialog.
+                        tryReloadCode ()
+                        reloadCodeRequested <- 0
+
+                // reloading assets and code dialog
+                if reloadAllRequested > 0 then
+                    let title = "Reloading assets and code..."
+                    if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                    if ImGui.BeginPopupModal title then
+                        ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
+                        ImGui.EndPopup ()
+                    reloadAllRequested <- inc reloadAllRequested
+                    if reloadAllRequested = 4 then // NOTE: takes multiple frames to see dialog.
+                        tryReloadAll ()
+                        reloadAllRequested <- 0
 
                 // fin
                 world
@@ -2685,7 +2745,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world
 
         // exception handling dialog
-        | Some (exn, oldWorld) ->
+        | Some (exn, worldOld) ->
             let title = "Unhandled Exception!"
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
             if ImGui.BeginPopupModal title then
@@ -2693,7 +2753,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.TextWrapped (scstring exn)
                 ImGui.Text "How would you like to handle this exception?"
                 if ImGui.Button "Ignore exception and revert to old world." then
-                    world <- World.unshelve oldWorld
+                    world <- World.unshelve worldOld
                     recoverableExceptionOpt <- None
                 if ImGui.Button "Ignore exception and proceed with current world." then
                     recoverableExceptionOpt <- None

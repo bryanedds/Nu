@@ -44,6 +44,8 @@ module Advents =
              FactorySealed
              SwampSealed
              LakeSealed
+             CastlePlusSealed
+             FactoryPlusSealed
              VolcanoSealed
              KylaAdvent 0
              OranAdvent 0
@@ -54,43 +56,47 @@ module Advents =
 type WeaponType =
     | Bare
     | ShortSword
-    | Dagger
-    | OakRod
-    | OakBow
-    | Paws
     | BronzeSword
-    | BronzeKatana
-    | BronzeRod
-    | LightBow
-    | Claws
     | IronSword
+    | Dagger
+    | BronzeKatana
     | IronKatana
-    | SightedBow
+    | OakRod
+    | BronzeRod
     | IvoryRod
+    | OakBow
+    | LightBow
+    | SightedBow
+    | Paws
+    | Claws
     | Fangs
 
 type ArmorType =
-    | MicroFur
     | TinMail
-    | CottonVest
-    | CottonRobe
-    | ThinFur
     | BronzeMail
-    | LeatherVest
-    | LeatherRobe
-    | ThickFur
     | IronMail
-    | RubberVest
-    | SilkRobe
-    | ToughHide
     | SteelMail
+    | CottonVest
+    | LeatherVest
+    | RubberVest
     | HuntingVest
+    | CottonRobe
+    | LeatherRobe
+    | SilkRobe
     | FeatherRobe
+    | MicroFur
+    | ThinFur
+    | ThickFur
+    | ToughHide
     | StoneHide
 
 type AccessoryType =
+
+    // defensive
     | SteelRing
     | IronBrace
+
+    // preventative
     | SnakeCharm
     | SilverRing
     | SilverWatch

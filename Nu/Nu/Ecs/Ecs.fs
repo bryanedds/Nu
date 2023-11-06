@@ -416,7 +416,7 @@ and Ecs () =
         // when 'w is a reference type that has null as a proper value because we have no way to efficiently
         // detect that case. Option would be an example of a reference type with null as a proper value.
         let event = { event with EcsEventName = event.EcsEventName + Constants.Ecs.UnscheduledEventSuffix }
-        let oldWorld = world
+        let worldOld = world
         let mutable world = world
         match subscriptions.TryGetValue event with
         | (true, callbacks) ->
@@ -424,10 +424,10 @@ and Ecs () =
                 match entry.Value with
                 | :? EcsCallbackUnscheduled<obj, 'w> as objCallback ->
                     let evt = { EcsEventData = eventData :> obj }
-                    world <- match objCallback evt this world :> obj with null -> oldWorld | world -> world :?> 'w
+                    world <- match objCallback evt this world :> obj with null -> worldOld | world -> world :?> 'w
                 | :? EcsCallbackUnscheduled<obj, obj> as objCallback ->
                     let evt = { EcsEventData = eventData } : EcsEvent<obj, obj>
-                    world <- match objCallback evt this world with null -> oldWorld | world -> world :?> 'w
+                    world <- match objCallback evt this world with null -> worldOld | world -> world :?> 'w
                 | _ -> ()
             let mutable operation = Unchecked.defaultof<_>
             while postEventOperations.TryDequeue &operation do
