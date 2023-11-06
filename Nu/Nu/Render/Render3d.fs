@@ -1857,7 +1857,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
                                                     Array.chunkBySize 4 |>
                                                     Array.chunkBySize metadata.TextureWidth |>
-                                                    Array.rev |>
                                                     Array.concat
                                                 else Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
                                             | None -> Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4

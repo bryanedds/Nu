@@ -139,7 +139,7 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture0, texCoordsOut).r * heightOut;
+    float height = heightBlend * heightOut;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
@@ -169,20 +169,20 @@ void main()
         texture(normalTexture3, texCoords).xyz * splat0Out.a;
     
     // compute albedo, discarding on zero alpha
-    vec4 albedoSample = texture(albedoTexture0, texCoords);
+    vec4 albedoSample = albedoBlend;
     if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties
     float metallic = 0.0f;
-    float ambientOcclusion = texture(ambientOcclusionTexture0, texCoords).b * materialOut.b;
-    vec4 roughnessSample = texture(roughnessTexture0, texCoords);
+    float ambientOcclusion = ambientOcclusionBlend * materialOut.b;
+    vec4 roughnessSample = roughnessBlend;
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
     float emission = 0.0f;
     material = vec4(metallic, roughness, ambientOcclusion, emission);
 
     // compute normal and height
-    normalAndHeight.xyz = normalize(toWorld * (texture(normalTexture0, texCoords).xyz * 2.0 - 1.0));
+    normalAndHeight.xyz = normalize(toWorld * (normalBlend * 2.0 - 1.0));
     normalAndHeight.a = height;
 }
