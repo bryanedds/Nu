@@ -17,7 +17,7 @@ module Gameplay =
 
     type GameplayMessage =
         | Score of int
-        | StartQutting
+        | StartQuitting
         | FinishQuitting
         interface Message
 
@@ -41,14 +41,14 @@ module Gameplay =
             [Screen.SelectEvent => CreateSections
              Screen.DeselectingEvent => DestroySections
              Screen.PostUpdateEvent => UpdateEye
-             Simulants.GameplayQuit.ClickEvent => StartQutting
+             Simulants.GameplayQuit.ClickEvent => StartQuitting
              for i in 0 .. dec SectionCount do
                 Events.DieEvent --> Simulants.GameplaySection i --> Address.Wildcard => Score 100]
 
         override this.Message (gameplay, message, _, _) =
             match message with
             | Score score -> just { gameplay with Score = gameplay.Score + score }
-            | StartQutting -> just { gameplay with State = Quitting }
+            | StartQuitting -> just { gameplay with State = Quitting }
             | FinishQuitting -> just { gameplay with State = Quit }
 
         override this.Command (_, command, _, world) =
@@ -109,7 +109,7 @@ module Gameplay =
                     [Entity.Position == v3 336.0f -216.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Text == "Quit"
-                     Entity.ClickEvent => StartQutting]]
+                     Entity.ClickEvent => StartQuitting]]
 
              // the scene group while playing
              match gameplay.State with
@@ -118,5 +118,5 @@ module Gameplay =
                     [Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Position == v3 -876.0f -127.6805f 0.0f
                          Entity.Elevation == 1.0f
-                         Entity.DieEvent => StartQutting]]
+                         Entity.DieEvent => StartQuitting]]
              | Quit -> ()]

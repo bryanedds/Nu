@@ -352,31 +352,6 @@ module WorldModuleEntity =
                 let entityState = { entityState with Content = value }
                 World.setEntityState entityState entity world
 
-        static member internal getEntityScriptFrame entity world =
-            let entityState = World.getEntityState entity world
-            match entityState.ScriptFrameOpt with
-            | null ->
-                let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
-                let scriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
-                entityState.ScriptFrameOpt <- scriptFrame
-                scriptFrame
-            | scriptFrame -> scriptFrame
-
-        static member internal setEntityScriptFrame value entity world =
-            let entityState = World.getEntityState entity world
-            let previous = entityState.ScriptFrameOpt
-            if value <> previous then
-                let struct (entityState, world) =
-                    if entityState.Imperative then
-                        entityState.ScriptFrameOpt <- value
-                        struct (entityState, world)
-                    else
-                        let entityState = { entityState with ScriptFrameOpt = value }
-                        struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.ScriptFrameOpt) previous value entityState.PublishChangeEvents entity world
-                struct (true, world)
-            else struct (false, world)
-
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
         static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position

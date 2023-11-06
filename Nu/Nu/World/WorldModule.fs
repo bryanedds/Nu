@@ -28,22 +28,6 @@ module WorldModule =
     /// Track if we're in the portion of the frame before tasklet processing has started or after.
     let mutable internal TaskletProcessingStarted = false
 
-    /// F# reach-around for evaluating a script expression.
-    let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World) =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for evaluating script expressions.
-    let mutable internal evalMany : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for evaluating a script expression.
-    let mutable internal evalWithLogging : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World) =
-        Unchecked.defaultof<_>
-
-    /// F# reach-around for evaluating script expressions.
-    let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
-        Unchecked.defaultof<_>
-
     /// F# reach-around for adding script unsubscriptions to simulants.
     let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =
         Unchecked.defaultof<_>
@@ -810,49 +794,6 @@ module WorldModule =
         static member sense<'a>
             (callback : Event<'a, Entity> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
             World.sensePlus callback eventAddress subscriber facetName world |> snd
-
-    type World with // Scripting
-
-        static member internal getGlobalFrame (world : World) =
-            ScriptingSystem.getGlobalFrame world
-
-        static member internal getLocalFrame (world : World) =
-            ScriptingSystem.getLocalFrame world
-
-        static member internal setLocalFrame localFrame (world : World) =
-            ScriptingSystem.setLocalFrame localFrame world
-
-        /// Get the context of the script system.
-        static member internal getScriptContext (world : World) =
-            world.WorldExtension.ScriptingContext
-
-        /// Set the context of the script system.
-        static member internal setScriptContext context (world : World) =
-            World.choose { world with WorldExtension = { world.WorldExtension with ScriptingContext = context }}
-
-        /// Evaluate a script expression.
-        static member eval expr localFrame simulant world =
-            eval expr localFrame simulant world
-
-        /// Evaluate a script expression, with logging on violation result.
-        static member evalWithLogging expr localFrame simulant world =
-            evalWithLogging expr localFrame simulant world
-
-        /// Evaluate a series of script expressions.
-        static member evalMany exprs localFrame simulant world =
-            evalMany exprs localFrame simulant world
-
-        /// Evaluate a series of script expressions, with logging on violation results.
-        static member evalManyWithLogging exprs localFrame simulant world =
-            evalManyWithLogging exprs localFrame simulant world
-
-        /// Attempt to read a script.
-        static member tryReadScript scriptFilePath =
-            ScriptingSystem.tryReadScript scriptFilePath
-
-        /// Attempt to evaluate a script.
-        static member tryEvalScript scriptFilePath world =
-            ScriptingSystem.tryEvalScript World.choose scriptFilePath world
 
     type World with // Plugin
 

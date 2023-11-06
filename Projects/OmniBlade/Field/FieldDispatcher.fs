@@ -66,9 +66,7 @@ module FieldDispatcher =
             | Update ->
 
                 // advance field when needed
-                if world.Advancing
-                then Field.advance world.UpdateTime field
-                else just field
+                Field.advance world.UpdateTime field
 
             | UpdateFieldTransition ->
 

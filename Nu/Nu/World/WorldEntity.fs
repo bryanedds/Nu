@@ -69,7 +69,6 @@ module WorldEntityModule =
         let mutable Physical = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Optimized = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Destroying = Unchecked.defaultof<Lens<bool, Entity>>
-        let mutable ScriptFrame = Unchecked.defaultof<Lens<Scripting.DeclarationFrame, Entity>>
         let mutable OverlayNameOpt = Unchecked.defaultof<Lens<string option, Entity>>
         let mutable FacetNames = Unchecked.defaultof<Lens<string Set, Entity>>
         let mutable Order = Unchecked.defaultof<Lens<int64, Entity>>
@@ -236,8 +235,6 @@ module WorldEntityModule =
         member this.Optimized = if notNull (this :> obj) then lensReadOnly (nameof this.Optimized) this this.GetOptimized else Cached.Optimized
         member this.GetDestroying world = World.getEntityDestroying this world
         member this.Destroying = if notNull (this :> obj) then lensReadOnly (nameof this.Destroying) this this.GetDestroying else Cached.Destroying
-        member this.GetScriptFrame world = World.getEntityScriptFrame this world
-        member this.ScriptFrame = if notNull (this :> obj) then lensReadOnly (nameof this.ScriptFrame) this this.GetScriptFrame else Cached.ScriptFrame
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
         member this.OverlayNameOpt = if notNull (this :> obj) then lensReadOnly (nameof this.OverlayNameOpt) this this.GetOverlayNameOpt else Cached.OverlayNameOpt
         member this.GetFacetNames world = World.getEntityFacetNames this world
@@ -302,7 +299,6 @@ module WorldEntityModule =
             Cached.Physical <- lensReadOnly (nameof Cached.Physical) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Optimized <- lensReadOnly (nameof Cached.Optimized) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Destroying <- lensReadOnly (nameof Cached.Destroying) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.ScriptFrame <- lensReadOnly (nameof Cached.ScriptFrame) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.OverlayNameOpt <- lensReadOnly (nameof Cached.OverlayNameOpt) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.FacetNames <- lensReadOnly (nameof Cached.FacetNames) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Order <- lensReadOnly (nameof Cached.Order) Unchecked.defaultof<_> Unchecked.defaultof<_>

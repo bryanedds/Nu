@@ -13,7 +13,6 @@ module Assets =
 
         let [<Literal>] AssetGraphFilePath = Assets.Global.AssetGraphFilePath
         let [<Literal>] OverlayerFilePath = Assets.Global.OverlayerFilePath
-        let [<Literal>] PreludeFilePath = Assets.Global.PreludeFilePath
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Default =
