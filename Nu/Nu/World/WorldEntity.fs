@@ -540,14 +540,14 @@ module WorldEntityModule =
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =
-            let mutable oldTransform = this.GetTransform world
-            let mutable newTransform = oldTransform
+            let mutable transformOld = this.GetTransform world
+            let mutable transformNew = transformOld
             let world =
-                if  v3Neq oldTransform.Center center ||
-                    quatNeq oldTransform.Rotation rotation then
-                    newTransform.Center <- center
-                    newTransform.Rotation <- rotation
-                    this.SetTransformByRefWithoutEvent (&newTransform, world)
+                if  v3Neq transformOld.Center center ||
+                    quatNeq transformOld.Rotation rotation then
+                    transformNew.Center <- center
+                    transformNew.Rotation <- rotation
+                    this.SetTransformByRefWithoutEvent (&transformNew, world)
                 else world
             let world = this.SetXtensionPropertyWithoutEvent "LinearVelocity" linearVelocity world
             let world = this.SetXtensionPropertyWithoutEvent "AngularVelocity" angularVelocity world

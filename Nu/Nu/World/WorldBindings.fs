@@ -70,7 +70,7 @@ module WorldBindings =
         "getAllowCodeReload getEditModes trySetEditMode tryMakeEmitter"
 
     let resolve relation world =
-        let oldWorld = world
+        let worldOld = world
         try
             let relation =
                 match ScriptingSystem.tryExport typeof<Relation<Object>> relation world with
@@ -82,10 +82,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'resolve' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let relate address world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (address, world) =
                 let context = World.getScriptContext world
@@ -103,10 +103,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'relate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let selectScreen transitionState screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let transitionState =
                 match ScriptingSystem.tryExport typeof<TransitionState> transitionState world with
@@ -126,10 +126,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'selectScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetSelectedScreenIdling world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryGetSelectedScreenIdling world
             let value = result
@@ -137,10 +137,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetSelectedScreenIdling' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetSelectedScreenTransitioning world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryGetSelectedScreenTransitioning world
             let value = result
@@ -148,10 +148,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetSelectedScreenTransitioning' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getSelectedScreenIdling world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getSelectedScreenIdling world
             let value = result
@@ -159,10 +159,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreenIdling' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getSelectedScreenTransitioning world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getSelectedScreenTransitioning world
             let value = result
@@ -170,10 +170,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreenTransitioning' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryTransitionScreen destination world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (destination, world) =
                 let context = World.getScriptContext world
@@ -191,10 +191,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryTransitionScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let transitionScreen destination world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (destination, world) =
                 let context = World.getScriptContext world
@@ -210,10 +210,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'transitionScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setScreenSlide slideDescriptor destination screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let slideDescriptor =
                 match ScriptingSystem.tryExport typeof<SlideDescriptor> slideDescriptor world with
@@ -243,10 +243,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenSlide' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createDissolveScreenFromGroupFile6 dispatcherName nameOpt dissolveDescriptor songOpt groupFilePath world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
@@ -274,10 +274,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromGroupFile6' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createDissolveScreenFromGroupFile nameOpt dissolveDescriptor songOpt groupFilePath world =
-        let oldWorld = world
+        let worldOld = world
         try
             let nameOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
@@ -301,10 +301,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromGroupFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createSlideScreen6 dispatcherName nameOpt slideDescriptor destination world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
@@ -334,10 +334,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSlideScreen6' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createSlideScreen nameOpt slideDescriptor destination world =
-        let oldWorld = world
+        let worldOld = world
         try
             let nameOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
@@ -363,19 +363,19 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSlideScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let reloadExistingAssets world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.reloadExistingAssets world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadExistingAssets' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryReloadAssets world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryReloadAssets world
             let (value, world) = result
@@ -383,10 +383,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryReloadAssets' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getCurrentSongOpt world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getCurrentSongOpt world
             let value = result
@@ -394,10 +394,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getCurrentSongOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getCurrentSongPosition world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getCurrentSongPosition world
             let value = result
@@ -405,10 +405,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getCurrentSongPosition' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMasterAudioVolume world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getMasterAudioVolume world
             let value = result
@@ -416,10 +416,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMasterAudioVolume' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMasterSoundVolume world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getMasterSoundVolume world
             let value = result
@@ -427,10 +427,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMasterSoundVolume' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMasterSongVolume world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getMasterSongVolume world
             let value = result
@@ -438,10 +438,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMasterSongVolume' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setMasterAudioVolume volume world =
-        let oldWorld = world
+        let worldOld = world
         try
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
@@ -451,10 +451,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterAudioVolume' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setMasterSoundVolume volume world =
-        let oldWorld = world
+        let worldOld = world
         try
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
@@ -464,10 +464,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSoundVolume' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setMasterSongVolume volume world =
-        let oldWorld = world
+        let worldOld = world
         try
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
@@ -477,10 +477,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let playSong fadeInTime fadeOutTime startTime volume song world =
-        let oldWorld = world
+        let worldOld = world
         try
             let fadeInTime =
                 match ScriptingSystem.tryExport typeof<GameTime> fadeInTime world with
@@ -506,10 +506,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let playSound volume sound world =
-        let oldWorld = world
+        let worldOld = world
         try
             let volume =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
@@ -523,10 +523,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSound' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let fadeOutSong fadeOutTime world =
-        let oldWorld = world
+        let worldOld = world
         try
             let fadeOutTime =
                 match ScriptingSystem.tryExport typeof<GameTime> fadeOutTime world with
@@ -536,19 +536,19 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'fadeOutSong' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let stopSong world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.stopSong world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'stopSong' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let loadAudioPackage packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
@@ -558,10 +558,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'loadAudioPackage' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let unloadAudioPackage packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
@@ -571,19 +571,19 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'unloadAudioPackage' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let reloadAudioAssets world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.reloadAudioAssets world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadAudioAssets' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let loadRenderPackage2d packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
@@ -593,10 +593,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'loadRenderPackage2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let unloadRenderPackage2d packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
@@ -606,19 +606,19 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'unloadRenderPackage2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let reloadRenderAssets2d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.reloadRenderAssets2d world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadRenderAssets2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let loadRenderPackage3d packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
@@ -628,10 +628,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'loadRenderPackage3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let unloadRenderPackage3d packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
@@ -641,19 +641,19 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'unloadRenderPackage3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let reloadRenderAssets3d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.reloadRenderAssets3d world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadRenderAssets3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let localizeBodyShape size bodyShape world =
-        let oldWorld = world
+        let worldOld = world
         try
             let size =
                 match ScriptingSystem.tryExport typeof<Vector3> size world with
@@ -669,10 +669,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'localizeBodyShape' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getBodyExists bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
@@ -684,10 +684,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyExists' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getBodyContactNormals bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
@@ -699,10 +699,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyContactNormals' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getBodyLinearVelocity bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
@@ -714,10 +714,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyLinearVelocity' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getBodyToGroundContactNormals bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
@@ -729,10 +729,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactNormals' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getBodyToGroundContactNormalOpt bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
@@ -744,10 +744,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactNormalOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getBodyToGroundContactTangentOpt bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
@@ -759,10 +759,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyToGroundContactTangentOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getBodyGrounded bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bodyId =
                 match ScriptingSystem.tryExport typeof<BodyId> bodyId world with
@@ -774,10 +774,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getBodyGrounded' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createBody is2d bodyId bodyProperties world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -795,10 +795,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBody' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createBodies is2d bodySource bodiesProperties world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -831,10 +831,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createBodies' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyBody is2d bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -848,10 +848,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBody' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyBodies is2d bodyIds world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -874,10 +874,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyBodies' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createJoint is2d jointSource jointProperties world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -901,10 +901,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoint' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createJoints is2d jointSource jointsProperties world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -937,10 +937,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createJoints' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyJoint is2d jointId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -954,10 +954,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoint' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyJoints is2d jointIds world =
-        let oldWorld = world
+        let worldOld = world
         try
             let is2d =
                 match ScriptingSystem.tryExport typeof<Boolean> is2d world with
@@ -980,10 +980,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setBodyEnabled enabled bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let enabled =
                 match ScriptingSystem.tryExport typeof<Boolean> enabled world with
@@ -997,10 +997,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyEnabled' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setBodyCenter center bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let center =
                 match ScriptingSystem.tryExport typeof<Vector3> center world with
@@ -1014,10 +1014,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyCenter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setBodyRotation rotation bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let rotation =
                 match ScriptingSystem.tryExport typeof<Quaternion> rotation world with
@@ -1031,10 +1031,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyRotation' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setBodyLinearVelocity linearVelocity bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let linearVelocity =
                 match ScriptingSystem.tryExport typeof<Vector3> linearVelocity world with
@@ -1048,10 +1048,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyLinearVelocity' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setBodyAngularVelocity angularVelocity bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let angularVelocity =
                 match ScriptingSystem.tryExport typeof<Vector3> angularVelocity world with
@@ -1065,10 +1065,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyAngularVelocity' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let applyBodyLinearImpulse linearImpulse offset bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let linearImpulse =
                 match ScriptingSystem.tryExport typeof<Vector3> linearImpulse world with
@@ -1086,10 +1086,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyLinearImpulse' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let applyBodyAngularImpulse angularImpulse bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let angularImpulse =
                 match ScriptingSystem.tryExport typeof<Vector3> angularImpulse world with
@@ -1103,10 +1103,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyAngularImpulse' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let applyBodyForce force offset bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let force =
                 match ScriptingSystem.tryExport typeof<Vector3> force world with
@@ -1124,10 +1124,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyForce' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let applyBodyTorque torque bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let torque =
                 match ScriptingSystem.tryExport typeof<Vector3> torque world with
@@ -1141,10 +1141,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'applyBodyTorque' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setBodyObservable observable bodyId world =
-        let oldWorld = world
+        let worldOld = world
         try
             let observable =
                 match ScriptingSystem.tryExport typeof<Boolean> observable world with
@@ -1158,10 +1158,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyObservable' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isMouseButtonDown mouseButton world =
-        let oldWorld = world
+        let worldOld = world
         try
             let mouseButton =
                 match ScriptingSystem.tryExport typeof<MouseButton> mouseButton world with
@@ -1173,10 +1173,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isMouseButtonDown' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isMouseButtonUp mouseButton world =
-        let oldWorld = world
+        let worldOld = world
         try
             let mouseButton =
                 match ScriptingSystem.tryExport typeof<MouseButton> mouseButton world with
@@ -1188,10 +1188,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isMouseButtonUp' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMousePosition world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getMousePosition world
             let value = result
@@ -1199,10 +1199,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePosition' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMousePosition2dScreen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getMousePosition2dScreen world
             let value = result
@@ -1210,10 +1210,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePosition2dScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMousePostion2dWorld absolute world =
-        let oldWorld = world
+        let worldOld = world
         try
             let absolute =
                 match ScriptingSystem.tryExport typeof<Boolean> absolute world with
@@ -1225,10 +1225,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePostion2dWorld' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMousePosition3dScreen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getMousePosition3dScreen world
             let value = result
@@ -1236,10 +1236,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePosition3dScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getMouseRay3dWorld absolute world =
-        let oldWorld = world
+        let worldOld = world
         try
             let absolute =
                 match ScriptingSystem.tryExport typeof<Boolean> absolute world with
@@ -1251,10 +1251,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMouseRay3dWorld' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardKeyDown key world =
-        let oldWorld = world
+        let worldOld = world
         try
             let key =
                 match ScriptingSystem.tryExport typeof<KeyboardKey> key world with
@@ -1266,10 +1266,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardKeyDown' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardKeyUp key world =
-        let oldWorld = world
+        let worldOld = world
         try
             let key =
                 match ScriptingSystem.tryExport typeof<KeyboardKey> key world with
@@ -1281,10 +1281,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardKeyUp' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardAltDown world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.isKeyboardAltDown world
             let value = result
@@ -1292,10 +1292,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardAltDown' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardAltUp world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.isKeyboardAltUp world
             let value = result
@@ -1303,10 +1303,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardAltUp' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardCtrlDown world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.isKeyboardCtrlDown world
             let value = result
@@ -1314,10 +1314,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardCtrlDown' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardCtrlUp world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.isKeyboardCtrlUp world
             let value = result
@@ -1325,10 +1325,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardCtrlUp' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardShiftDown world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.isKeyboardShiftDown world
             let value = result
@@ -1336,10 +1336,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardShiftDown' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let isKeyboardShiftUp world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.isKeyboardShiftUp world
             let value = result
@@ -1347,10 +1347,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardShiftUp' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyImmediate simulant world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (simulant, world) =
                 let context = World.getScriptContext world
@@ -1366,10 +1366,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyImmediate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroy simulant world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (simulant, world) =
                 let context = World.getScriptContext world
@@ -1385,10 +1385,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroy' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetParent simulant world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (simulant, world) =
                 let context = World.getScriptContext world
@@ -1406,10 +1406,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetParent' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getParent simulant world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (simulant, world) =
                 let context = World.getScriptContext world
@@ -1427,10 +1427,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getParent' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getChildren simulant world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (simulant, world) =
                 let context = World.getScriptContext world
@@ -1448,10 +1448,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getChildren' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getExists simulant world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (simulant, world) =
                 let context = World.getScriptContext world
@@ -1469,10 +1469,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getExists' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getSelected simulant world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (simulant, world) =
                 let context = World.getScriptContext world
@@ -1490,10 +1490,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelected' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEntitiesFlattened0 world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEntitiesFlattened1 world
             let value = result
@@ -1501,10 +1501,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesFlattened0' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getGroups0 world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getGroups1 world
             let value = result
@@ -1512,10 +1512,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getGroups0' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let writeGameToFile filePath world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -1527,10 +1527,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeGameToFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let readGameFromFile filePath world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -1540,10 +1540,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readGameFromFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getScreens world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getScreens world
             let value = result
@@ -1551,10 +1551,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getScreens' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setScreenDissolve dissolveDescriptor songOpt screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dissolveDescriptor =
                 match ScriptingSystem.tryExport typeof<DissolveDescriptor> dissolveDescriptor world with
@@ -1578,10 +1578,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenDissolve' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyScreenImmediate screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (screen, world) =
                 let context = World.getScriptContext world
@@ -1597,10 +1597,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyScreenImmediate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyScreen screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (screen, world) =
                 let context = World.getScriptContext world
@@ -1616,10 +1616,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createScreen dispatcherName nameOpt world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
@@ -1635,10 +1635,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createDissolveScreen dispatcherName nameOpt dissolveDescriptor songOpt world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
@@ -1662,10 +1662,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let writeScreenToFile filePath screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -1687,10 +1687,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeScreenToFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let readScreenFromFile filePath nameOpt world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -1706,10 +1706,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readScreenFromFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getGroups screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (screen, world) =
                 let context = World.getScriptContext world
@@ -1727,10 +1727,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getGroups' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createGroup dispatcherName nameOpt screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
@@ -1756,10 +1756,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createGroup' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyGroupImmediate group world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (group, world) =
                 let context = World.getScriptContext world
@@ -1775,10 +1775,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyGroupImmediate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyGroup group world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (group, world) =
                 let context = World.getScriptContext world
@@ -1794,10 +1794,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyGroup' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyGroupsImmediate groups world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (groups, world) =
                 let context = World.getScriptContext world
@@ -1820,10 +1820,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyGroupsImmediate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyGroups groups world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (groups, world) =
                 let context = World.getScriptContext world
@@ -1846,10 +1846,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyGroups' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let renameGroup source destination world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (source, world) =
                 let context = World.getScriptContext world
@@ -1875,10 +1875,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'renameGroup' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let writeGroupToFile filePath group world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -1900,10 +1900,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeGroupToFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let readGroupFromFile filePath nameOpt screen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -1929,10 +1929,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readGroupFromFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEntitiesFlattened group world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (group, world) =
                 let context = World.getScriptContext world
@@ -1950,10 +1950,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesFlattened' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEntitiesSovereign group world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (group, world) =
                 let context = World.getScriptContext world
@@ -1971,10 +1971,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesSovereign' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyEntity entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (entity, world) =
                 let context = World.getScriptContext world
@@ -1990,10 +1990,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntity' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyEntitiesImmediate entities world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (entities, world) =
                 let context = World.getScriptContext world
@@ -2016,10 +2016,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntitiesImmediate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyEntities entities world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (entities, world) =
                 let context = World.getScriptContext world
@@ -2042,10 +2042,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntities' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryPickEntity2d position entities world =
-        let oldWorld = world
+        let worldOld = world
         try
             let position =
                 match ScriptingSystem.tryExport typeof<Vector2> position world with
@@ -2074,10 +2074,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryPickEntity3d position entities world =
-        let oldWorld = world
+        let worldOld = world
         try
             let position =
                 match ScriptingSystem.tryExport typeof<Vector2> position world with
@@ -2106,10 +2106,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let writeEntityToFile filePath enity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -2131,10 +2131,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeEntityToFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let readEntityFromFile filePath nameOpt group world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filePath =
                 match ScriptingSystem.tryExport typeof<String> filePath world with
@@ -2160,10 +2160,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readEntityFromFile' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEntityChildren entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (entity, world) =
                 let context = World.getScriptContext world
@@ -2181,10 +2181,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntityChildren' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let traverseEntityChildren effect entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let effect =
                 match ScriptingSystem.tryExport typeof<FSharpFunc<Nu.Entity, FSharpFunc<Nu.Entity, FSharpFunc<World, World>>>> effect world with
@@ -2204,10 +2204,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'traverseEntityChildren' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEntityMounters entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (entity, world) =
                 let context = World.getScriptContext world
@@ -2225,10 +2225,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntityMounters' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let traverseEntityMounters effect entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let effect =
                 match ScriptingSystem.tryExport typeof<FSharpFunc<Nu.Entity, FSharpFunc<Nu.Entity, FSharpFunc<World, World>>>> effect world with
@@ -2248,10 +2248,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'traverseEntityMounters' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let destroyEntityImmediate entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (entity, world) =
                 let context = World.getScriptContext world
@@ -2267,10 +2267,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntityImmediate' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let createEntity dispatcherName overlayDescriptor surnames group world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
@@ -2300,10 +2300,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createEntity' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let renameEntity source destination world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (source, world) =
                 let context = World.getScriptContext world
@@ -2329,10 +2329,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'renameEntity' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let trySetEntityOverlayNameOpt overlayNameOpt entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let overlayNameOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> overlayNameOpt world with
@@ -2352,10 +2352,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityOverlayNameOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let trySetEntityFacetNames facetNames entity world =
-        let oldWorld = world
+        let worldOld = world
         try
             let facetNames =
                 match ScriptingSystem.tryExport typeof<FSharpSet<String>> facetNames world with
@@ -2375,10 +2375,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNames' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeCenter2d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeCenter2d world
             let value = result
@@ -2386,10 +2386,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeCenter2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setEyeCenter2d value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<Vector2> value world with
@@ -2399,10 +2399,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeCenter2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeSize2d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeSize2d world
             let value = result
@@ -2410,10 +2410,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeSize2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setEyeSize2d value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<Vector2> value world with
@@ -2423,10 +2423,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeSize2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeBounds2d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeBounds2d world
             let value = result
@@ -2434,10 +2434,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeBounds2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeCenter3d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeCenter3d world
             let value = result
@@ -2445,10 +2445,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeCenter3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setEyeCenter3d value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<Vector3> value world with
@@ -2458,10 +2458,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeCenter3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeRotation3d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeRotation3d world
             let value = result
@@ -2469,10 +2469,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeRotation3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setEyeRotation3d value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<Quaternion> value world with
@@ -2482,10 +2482,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeRotation3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeFrustum3dEnclosed world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeFrustum3dEnclosed world
             let value = result
@@ -2493,10 +2493,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dEnclosed' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeFrustum3dExposed world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeFrustum3dExposed world
             let value = result
@@ -2504,10 +2504,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dExposed' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEyeFrustum3dImposter world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEyeFrustum3dImposter world
             let value = result
@@ -2515,10 +2515,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeFrustum3dImposter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getLightBox3d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getLightBox3d world
             let value = result
@@ -2526,10 +2526,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLightBox3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getOmniScreenOpt world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getOmniScreenOpt world
             let value = result
@@ -2537,10 +2537,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniScreenOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setOmniScreenOpt value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<FSharpOption<Nu.Screen>> value world with
@@ -2550,10 +2550,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniScreenOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getOmniScreen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getOmniScreen world
             let value = result
@@ -2561,10 +2561,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setOmniScreen value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (value, world) =
                 let context = World.getScriptContext world
@@ -2580,10 +2580,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let constrainEyeBounds2d bounds world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bounds =
                 match ScriptingSystem.tryExport typeof<Box2> bounds world with
@@ -2593,10 +2593,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'constrainEyeBounds2d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getSelectedScreenOpt world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getSelectedScreenOpt world
             let value = result
@@ -2604,10 +2604,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreenOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getSelectedScreen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getSelectedScreen world
             let value = result
@@ -2615,10 +2615,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setSelectedScreen value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let struct (value, world) =
                 let context = World.getScriptContext world
@@ -2634,10 +2634,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setSelectedScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getDesiredScreen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getDesiredScreen world
             let value = result
@@ -2645,10 +2645,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getDesiredScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setDesiredScreen value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<DesiredScreen> value world with
@@ -2658,10 +2658,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setDesiredScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getScreenTransitionDestinationOpt world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getScreenTransitionDestinationOpt world
             let value = result
@@ -2669,10 +2669,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getScreenTransitionDestinationOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setScreenTransitionDestinationOpt value world =
-        let oldWorld = world
+        let worldOld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<FSharpOption<Nu.Screen>> value world with
@@ -2684,10 +2684,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenTransitionDestinationOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getViewBounds2dAbsolute world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getViewBounds2dAbsolute world
             let value = result
@@ -2695,10 +2695,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBounds2dAbsolute' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getViewBounds2dRelative world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getViewBounds2dRelative world
             let value = result
@@ -2706,10 +2706,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBounds2dRelative' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getPlayBounds2dAbsolute world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getPlayBounds2dAbsolute world
             let value = result
@@ -2717,10 +2717,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBounds2dAbsolute' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getPlayBounds2dRelative world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getPlayBounds2dRelative world
             let value = result
@@ -2728,10 +2728,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBounds2dRelative' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let boundsInView2dAbsolute bounds world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bounds =
                 match ScriptingSystem.tryExport typeof<Box2> bounds world with
@@ -2743,10 +2743,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'boundsInView2dAbsolute' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let boundsInView2dRelative bounds world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bounds =
                 match ScriptingSystem.tryExport typeof<Box2> bounds world with
@@ -2758,10 +2758,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'boundsInView2dRelative' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getPlayBounds3d world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getPlayBounds3d world
             let value = result
@@ -2769,10 +2769,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getPlayBounds3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let boundsInView3d lightProbe light presence bounds world =
-        let oldWorld = world
+        let worldOld = world
         try
             let lightProbe =
                 match ScriptingSystem.tryExport typeof<Boolean> lightProbe world with
@@ -2796,10 +2796,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'boundsInView3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let boundsInPlay3d bounds world =
-        let oldWorld = world
+        let worldOld = world
         try
             let bounds =
                 match ScriptingSystem.tryExport typeof<Box3> bounds world with
@@ -2811,10 +2811,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'boundsInPlay3d' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetTextureSize assetTag world =
-        let oldWorld = world
+        let worldOld = world
         try
             let assetTag =
                 match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
@@ -2826,10 +2826,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSize' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getTextureSize assetTag world =
-        let oldWorld = world
+        let worldOld = world
         try
             let assetTag =
                 match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
@@ -2841,10 +2841,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSize' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetTextureSizeF assetTag world =
-        let oldWorld = world
+        let worldOld = world
         try
             let assetTag =
                 match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
@@ -2856,10 +2856,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetTextureSizeF' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getTextureSizeF assetTag world =
-        let oldWorld = world
+        let worldOld = world
         try
             let assetTag =
                 match ScriptingSystem.tryExport typeof<AssetTag<Image>> assetTag world with
@@ -2871,10 +2871,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeF' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getAdvancing world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getAdvancing world
             let value = result
@@ -2882,10 +2882,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getAdvancing' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getHalted world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getHalted world
             let value = result
@@ -2893,10 +2893,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getHalted' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setAdvancing advancing world =
-        let oldWorld = world
+        let worldOld = world
         try
             let advancing =
                 match ScriptingSystem.tryExport typeof<Boolean> advancing world with
@@ -2906,10 +2906,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setAdvancing' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getImperative world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getImperative world
             let value = result
@@ -2917,10 +2917,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getImperative' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getFunctional world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getFunctional world
             let value = result
@@ -2928,10 +2928,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getFunctional' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getAccompanied world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getAccompanied world
             let value = result
@@ -2939,10 +2939,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getAccompanied' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getUnaccompanied world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getUnaccompanied world
             let value = result
@@ -2950,10 +2950,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUnaccompanied' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getCollectionConfig world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getCollectionConfig world
             let value = result
@@ -2961,10 +2961,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getCollectionConfig' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getLiveness world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getLiveness world
             let value = result
@@ -2972,10 +2972,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLiveness' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getUpdateTime world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getUpdateTime world
             let value = result
@@ -2983,10 +2983,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUpdateTime' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getClockDelta world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getClockDelta world
             let value = result
@@ -2994,10 +2994,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockDelta' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getClockTime world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getClockTime world
             let value = result
@@ -3005,10 +3005,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockTime' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getGameDelta world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getGameDelta world
             let value = result
@@ -3016,10 +3016,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getGameDelta' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getGameTime world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getGameTime world
             let value = result
@@ -3027,19 +3027,19 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getGameTime' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let exit world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.exit world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'exit' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetWindowFlags world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryGetWindowFlags world
             let value = result
@@ -3047,10 +3047,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowFlags' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetWindowMinimized world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryGetWindowMinimized world
             let value = result
@@ -3058,10 +3058,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowMinimized' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetWindowMaximized world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryGetWindowMaximized world
             let value = result
@@ -3069,10 +3069,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowMaximized' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetWindowFullScreen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryGetWindowFullScreen world
             let value = result
@@ -3080,10 +3080,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowFullScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let trySetWindowFullScreen fullScreen world =
-        let oldWorld = world
+        let worldOld = world
         try
             let fullScreen =
                 match ScriptingSystem.tryExport typeof<Boolean> fullScreen world with
@@ -3093,10 +3093,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetWindowFullScreen' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetWindowSize world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.tryGetWindowSize world
             let value = result
@@ -3104,10 +3104,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetWindowSize' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getWindowSize world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getWindowSize world
             let value = result
@@ -3115,10 +3115,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getWindowSize' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getViewport world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getViewport world
             let value = result
@@ -3126,10 +3126,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewport' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getViewportOffset world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getViewportOffset world
             let value = result
@@ -3137,10 +3137,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewportOffset' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryLoadSymbolPackage implicitDelimiters packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let implicitDelimiters =
                 match ScriptingSystem.tryExport typeof<String> implicitDelimiters world with
@@ -3156,10 +3156,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryLoadSymbolPackage' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let unloadSymbolPackage packageName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let packageName =
                 match ScriptingSystem.tryExport typeof<String> packageName world with
@@ -3171,10 +3171,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'unloadSymbolPackage' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetSymbol assetTag metadata world =
-        let oldWorld = world
+        let worldOld = world
         try
             let assetTag =
                 match ScriptingSystem.tryExport typeof<AssetTag<Symbol>> assetTag world with
@@ -3190,10 +3190,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetSymbol' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetSymbols implicitDelimiters assetTags world =
-        let oldWorld = world
+        let worldOld = world
         try
             let implicitDelimiters =
                 match ScriptingSystem.tryExport typeof<AssetTag<Symbol>> implicitDelimiters world with
@@ -3218,19 +3218,19 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetSymbols' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let reloadSymbols world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.reloadSymbols world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getOverlays world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getOverlays world
             let value = result
@@ -3238,10 +3238,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOverlays' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryGetRoutedOverlayNameOpt dispatcherName world =
-        let oldWorld = world
+        let worldOld = world
         try
             let dispatcherName =
                 match ScriptingSystem.tryExport typeof<String> dispatcherName world with
@@ -3253,10 +3253,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetRoutedOverlayNameOpt' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getUnculledRenderRequested world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getUnculledRenderRequested world
             let value = result
@@ -3264,19 +3264,19 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUnculledRenderRequested' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let requestUnculledRender world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.requestUnculledRender world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'requestUnculledRender' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEventFilter world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEventFilter world
             let value = result
@@ -3284,10 +3284,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEventFilter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let setEventFilter filter world =
-        let oldWorld = world
+        let worldOld = world
         try
             let filter =
                 match ScriptingSystem.tryExport typeof<EventFilter> filter world with
@@ -3297,10 +3297,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEventFilter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getAllowCodeReload world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getAllowCodeReload world
             let value = result
@@ -3308,10 +3308,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getAllowCodeReload' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let getEditModes world =
-        let oldWorld = world
+        let worldOld = world
         try
             let result = World.getEditModes world
             let value = result
@@ -3319,10 +3319,10 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEditModes' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let trySetEditMode editMode world =
-        let oldWorld = world
+        let worldOld = world
         try
             let editMode =
                 match ScriptingSystem.tryExport typeof<String> editMode world with
@@ -3332,10 +3332,10 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEditMode' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
-        let oldWorld = world
+        let worldOld = world
         try
             let time =
                 match ScriptingSystem.tryExport typeof<GameTime> time world with
@@ -3367,7 +3367,7 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryMakeEmitter' due to: " + scstring exn, ValueNone)
-            struct (violation, World.choose oldWorld)
+            struct (violation, World.choose worldOld)
 
     let evalResolveBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world

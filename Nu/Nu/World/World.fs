@@ -170,28 +170,28 @@ module Nu =
                     // OPTIMIZATION: don't bother evaluating unit
                     struct (Scripting.Unit, world)
                 | _ ->
-                    let oldLocalFrame = World.getLocalFrame world
-                    let oldScriptContext = World.getScriptContext world
+                    let localFrameOld = World.getLocalFrame world
+                    let scriptContextOld = World.getScriptContext world
                     World.setLocalFrame localFrame world
                     let world = World.setScriptContext scriptContext world
                     ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                     let struct (evaled, world) = World.evalInternal expr world
                     ScriptingSystem.removeProceduralBindings world
-                    let world = World.setScriptContext oldScriptContext world
-                    World.setLocalFrame oldLocalFrame world
+                    let world = World.setScriptContext scriptContextOld world
+                    World.setLocalFrame localFrameOld world
                     struct (evaled, world)
 
             // init evalMany F# reach-around
             WorldModule.evalMany <- fun exprs localFrame scriptContext world ->
-                let oldLocalFrame = World.getLocalFrame world
-                let oldScriptContext = World.getScriptContext world
+                let localFrameOld = World.getLocalFrame world
+                let scriptContextOld = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
                 ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaleds, world) = World.evalManyInternal exprs world
                 ScriptingSystem.removeProceduralBindings world
-                let world = World.setScriptContext oldScriptContext world
-                World.setLocalFrame oldLocalFrame world
+                let world = World.setScriptContext scriptContextOld world
+                World.setLocalFrame localFrameOld world
                 struct (evaleds, world)
 
             // init evalWithLogging F# reach-around
@@ -201,28 +201,28 @@ module Nu =
                     // OPTIMIZATION: don't bother evaluating unit
                     struct (Scripting.Unit, world)
                 | _ ->
-                    let oldLocalFrame = World.getLocalFrame world
-                    let oldScriptContext = World.getScriptContext world
+                    let localFrameOld = World.getLocalFrame world
+                    let scriptContextOld = World.getScriptContext world
                     World.setLocalFrame localFrame world
                     let world = World.setScriptContext scriptContext world
                     ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                     let struct (evaled, world) = World.evalWithLoggingInternal expr world
                     ScriptingSystem.removeProceduralBindings world
-                    let world = World.setScriptContext oldScriptContext world
-                    World.setLocalFrame oldLocalFrame world
+                    let world = World.setScriptContext scriptContextOld world
+                    World.setLocalFrame localFrameOld world
                     struct (evaled, world)
 
             // init evalMany F# reach-around
             WorldModule.evalManyWithLogging <- fun exprs localFrame scriptContext world ->
-                let oldLocalFrame = World.getLocalFrame world
-                let oldScriptContext = World.getScriptContext world
+                let localFrameOld = World.getLocalFrame world
+                let scriptContextOld = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
                 ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaleds, world) = World.evalManyWithLoggingInternal exprs world
                 ScriptingSystem.removeProceduralBindings world
-                let world = World.setScriptContext oldScriptContext world
-                World.setLocalFrame oldLocalFrame world
+                let world = World.setScriptContext scriptContextOld world
+                World.setLocalFrame localFrameOld world
                 struct (evaleds, world)
 
             // TODO: P1: implement!
@@ -259,10 +259,10 @@ module Nu =
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SList.ofSeq
                 let (entities2d, entities3d) = SList.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
-                let oldWorld = world
+                let worldOld = world
                 let quadtree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
@@ -273,7 +273,7 @@ module Nu =
                 let world = World.setQuadtree quadtree world
                 let octree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
@@ -288,10 +288,10 @@ module Nu =
             WorldModule.evictScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SArray.ofSeq
                 let (entities2d, entities3d) = SArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
-                let oldWorld = world
+                let worldOld = world
                 let quadtree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildQuadtree oldWorld)
+                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
@@ -302,7 +302,7 @@ module Nu =
                 let world = World.setQuadtree quadtree world
                 let octree =
                     MutantCache.mutateMutant
-                        (fun () -> oldWorld.WorldExtension.Dispatchers.RebuildOctree oldWorld)
+                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
