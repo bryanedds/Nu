@@ -42,8 +42,7 @@ module GameplayDispatcher =
 
             match message with
             | ShiftBoard direction ->
-                match gameplay.State with
-                | Playing when world.Advancing ->
+                if world.Advancing && gameplay.State = Playing then
                     let gameplay' =
                         match direction with
                         | Upward -> Gameplay.shiftUp gameplay
@@ -56,12 +55,12 @@ module GameplayDispatcher =
                         then just { gameplay with State = GameOver }
                         else just gameplay
                     else just gameplay
-                | _ -> just gameplay
+                else just gameplay
 
             | StartQuitting ->
                 match gameplay.State with
                 | Playing | GameOver -> just { gameplay with State = Quitting }
-                | _ -> just gameplay
+                | Quitting | Quit -> just gameplay
 
             | FinishQuitting ->
                 just { gameplay with State = Quit }
