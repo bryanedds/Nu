@@ -58,7 +58,7 @@ module Gameplay =
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
 
-                [// score
+                [// time
                  Content.text Simulants.GameplayTime.Name
                     [Entity.Position == v3 0.0f 232.0f 0.0f
                      Entity.Elevation == 10.0f
