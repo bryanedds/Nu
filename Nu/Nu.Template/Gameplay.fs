@@ -41,12 +41,10 @@ module Gameplay =
              Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the above messages
-        override this.Message (gameplay, message, _, world) =
+        override this.Message (gameplay, message, _, _) =
             match message with
             | Update ->
-                if world.Advancing
-                then just { gameplay with Time = inc gameplay.Time }
-                else just gameplay
+                just { gameplay with Time = inc gameplay.Time }
             | StartQuitting ->
                 just { gameplay with State = Quitting }
             | FinishQuitting ->
