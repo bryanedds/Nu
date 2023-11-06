@@ -1,0 +1,22 @@
+[GroupDispatcher
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Scene]
+  [Persistent True]
+  [Visible True]]
+ [[StaticModelDispatcher
+   [[Name StaticModelLeft]
+    [Position [-2 1.5 0]]
+    [Size [3.833142 5.769598 5.354998]]]
+   []]
+  [StaticModelDispatcher
+   [[Name StaticModelRight]
+    [Position [2 1.5 0]]
+    [Size [3.833142 5.769598 5.354998]]]
+   []]
+  [LightDispatcher3d
+   [[Name Light3d-0001]
+    [Position [0 5 2]]]
+   []]
+  [SkyBoxDispatcher
+   [[Name SkyBox-0002]]
+   []]]]
