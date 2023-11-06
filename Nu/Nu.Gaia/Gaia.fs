@@ -275,9 +275,9 @@ Pos=661,488
 Size=621,105
 Collapsed=0
 
-[Window][Choose a game .dll... *EDITOR RESTART REQUIRED!*]
-Pos=662,475
-Size=592,125
+[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
+Pos=628,476
+Size=674,128
 Collapsed=0
 
 [Window][Create a group...]
@@ -1004,12 +1004,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let (screen, world) = World.createScreen (Some "Screen") world
                     let world = World.setSelectedScreen screen world
                     (screen, world)
-
-            // create default group if no group exists
-            let world =
-                if Seq.isEmpty (World.getGroups screen world)
-                then World.createGroup (Some "Group") screen world |> snd
-                else world
 
             // proceed directly to idle state
             let world = World.selectScreen (IdlingState world.GameTime) screen world
