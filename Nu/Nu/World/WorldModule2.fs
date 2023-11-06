@@ -469,7 +469,7 @@ module WorldModule2 =
             try File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
 
                 // cache old overlayer and make new one
-                let oldOverlayer = World.getOverlayer world
+                let overlayerOld = World.getOverlayer world
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
                 let intrinsicOverlays = World.makeIntrinsicOverlays facets entityDispatchers
@@ -488,7 +488,7 @@ module WorldModule2 =
 
                     // apply overlays to all entities
                     let entities = World.getEntitiesFlattened1 world
-                    let world = Seq.fold (World.applyEntityOverlay oldOverlayer overlayer) world entities
+                    let world = Seq.fold (World.applyEntityOverlay overlayerOld overlayer) world entities
                     (Right overlayer, world)
 
                 // propagate errors

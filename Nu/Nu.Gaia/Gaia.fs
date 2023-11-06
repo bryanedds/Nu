@@ -718,7 +718,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // attempt to load group
             match groupAndDescriptorOpt with
             | Right (group, groupDescriptor) ->
-                let oldWorld = world
+                let worldOld = world
                 try if group.Exists world then
                         world <- World.destroyGroupImmediate selectedGroup world
                     let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
@@ -730,7 +730,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     groupFileDialogState.FileName <- ""
                     true
                 with exn ->
-                    world <- World.choose oldWorld
+                    world <- World.choose worldOld
                     messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
                     false
 
@@ -841,7 +841,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private tryReloadCode () =
         if World.getAllowCodeReload world then
             snapshot ()
-            let oldWorld = world
+            let worldOld = world
             selectEntityOpt None // NOTE: makes sure old dispatcher doesn't hang around in old cached entity state.
             let workingDirPath = targetDir + "/../../.."
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
@@ -910,10 +910,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     with _ ->
                         let error = string errorStream
                         Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
-                        world <- World.choose oldWorld
+                        world <- World.choose worldOld
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
-                world <- World.choose oldWorld
+                world <- World.choose worldOld
         else messageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
     let private tryReloadAll () =
@@ -2551,14 +2551,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         newGroupDispatcherName <- dispatcherName
                                 ImGui.EndCombo ()
                             if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
-                                let oldWorld = world
+                                let worldOld = world
                                 try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
                                     selectEntityOpt None
                                     selectGroup newGroup
                                     showNewGroupDialog <- false
                                     newGroupName <- ""
                                 with exn ->
-                                    world <- World.choose oldWorld
+                                    world <- World.choose worldOld
                                     messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
                             if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
                             ImGui.EndPopup ()
@@ -2745,7 +2745,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world
 
         // exception handling dialog
-        | Some (exn, oldWorld) ->
+        | Some (exn, worldOld) ->
             let title = "Unhandled Exception!"
             if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
             if ImGui.BeginPopupModal title then
@@ -2753,7 +2753,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.TextWrapped (scstring exn)
                 ImGui.Text "How would you like to handle this exception?"
                 if ImGui.Button "Ignore exception and revert to old world." then
-                    world <- World.unshelve oldWorld
+                    world <- World.unshelve worldOld
                     recoverableExceptionOpt <- None
                 if ImGui.Button "Ignore exception and proceed with current world." then
                     recoverableExceptionOpt <- None

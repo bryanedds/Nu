@@ -112,18 +112,18 @@ module internal Octnode =
                     removeElement bounds &element &node
             | ValueRight elements -> elements.Remove element |> ignore
 
-    let rec internal updateElement oldBounds newBounds (element : 'e Octelement inref) (node : 'e Octnode inref) =
+    let rec internal updateElement boundsOld boundsNew (element : 'e Octelement inref) (node : 'e Octnode inref) =
         match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
-                if isIntersectingBox oldBounds &node || isIntersectingBox newBounds &node then
-                    updateElement oldBounds newBounds &element &node
+                if isIntersectingBox boundsOld &node || isIntersectingBox boundsNew &node then
+                    updateElement boundsOld boundsNew &element &node
         | ValueRight elements ->
-            if isIntersectingBox newBounds &node then
+            if isIntersectingBox boundsNew &node then
                 elements.Remove element |> ignore
                 elements.Add element |> ignore
-            elif isIntersectingBox oldBounds &node then
+            elif isIntersectingBox boundsOld &node then
                 elements.Remove element |> ignore
 
     let rec internal getElementsAtPoint point (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
@@ -398,26 +398,26 @@ module Octree =
                 Octnode.removeElement bounds &element &node
 
     /// Update an existing element in the tree.
-    let updateElement (oldPresence : Presence) oldBounds (newPresence : Presence) newBounds element tree =
+    let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
         tree.ElementsModified <- true
-        let wasInNode = not oldPresence.OmnipresentType && Octnode.isIntersectingBox oldBounds &tree.Node
-        let isInNode = not newPresence.OmnipresentType && Octnode.isIntersectingBox newBounds &tree.Node
+        let wasInNode = not presenceOld.OmnipresentType && Octnode.isIntersectingBox boundsOld &tree.Node
+        let isInNode = not presenceNew.OmnipresentType && Octnode.isIntersectingBox boundsNew &tree.Node
         if wasInNode then
             if isInNode then
-                let oldNode = findNode oldBounds tree
-                let newNode = findNode newBounds tree
-                if oldNode.Id <> newNode.Id then
-                    Octnode.removeElement oldBounds &element &oldNode
-                    Octnode.addElement newBounds &element &newNode
-                else Octnode.updateElement oldBounds newBounds &element &newNode
+                let nodeOld = findNode boundsOld tree
+                let nodeNew = findNode boundsNew tree
+                if nodeOld.Id <> nodeNew.Id then
+                    Octnode.removeElement boundsOld &element &nodeOld
+                    Octnode.addElement boundsNew &element &nodeNew
+                else Octnode.updateElement boundsOld boundsNew &element &nodeNew
             else
-                Octnode.removeElement oldBounds &element &tree.Node |> ignore
+                Octnode.removeElement boundsOld &element &tree.Node |> ignore
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
                 tree.Omnipresent.Remove element |> ignore
-                Octnode.addElement newBounds &element &tree.Node
+                Octnode.addElement boundsNew &element &tree.Node
             else
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore

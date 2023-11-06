@@ -384,18 +384,18 @@ module WorldScripting =
 
         /// Attempt to evaluate the scripting prelude.
         static member tryEvalPrelude world =
-            let oldLocalFrame = World.getLocalFrame world
-            let oldScriptContext = World.getScriptContext world
+            let localFrameOld = World.getLocalFrame world
+            let scriptContextOld = World.getScriptContext world
             let globalFrame = World.getGlobalFrame world
             World.setLocalFrame globalFrame world
             match World.tryEvalScript Assets.Global.PreludeFilePath world with
             | Right (scriptStr, _, world) ->
-                World.setLocalFrame oldLocalFrame world
-                let world = World.setScriptContext oldScriptContext world
+                World.setLocalFrame localFrameOld world
+                let world = World.setScriptContext scriptContextOld world
                 Right (scriptStr, world)
             | Left (error, world) ->
-                World.setLocalFrame oldLocalFrame world
-                let world = World.setScriptContext oldScriptContext world
+                World.setLocalFrame localFrameOld world
+                let world = World.setScriptContext scriptContextOld world
                 Left (error, world)
 
         static member internal evalV2Extrinsic fnName exprs originOpt world =
