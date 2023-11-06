@@ -166,15 +166,6 @@ module WorldSimulantModule =
             | :? Game as game -> World.editGame operation game world
             | _ -> failwithumf ()
 
-        /// Get the script frame in which the given simulant's script code will run.
-        static member internal tryGetScriptFrame (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> Some (World.getEntityScriptFrame entity world)
-            | :? Group as group -> Some (World.getGroupScriptFrame group world)
-            | :? Screen as screen -> Some (World.getScreenScriptFrame screen world)
-            | :? Game as game -> Some (World.getGameScriptFrame game world)
-            | _ -> failwithumf ()
-
         /// Attempt to get the parent of the given simulant.
         [<FunctionBinding>]
         static member tryGetParent (simulant : Simulant) world =

@@ -772,7 +772,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       EyeFrustum3dEnclosed : Frustum // OPTIMIZATION: cached value
       EyeFrustum3dExposed : Frustum // OPTIMIZATION: cached value
       EyeFrustum3dImposter : Frustum // OPTIMIZATION: cached value
-      ScriptFrame : Scripting.DeclarationFrame
       Order : int64
       Id : Guid }
 
@@ -796,7 +795,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyeCenter3d, eyeRotation3d)
           EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyeCenter3d, eyeRotation3d)
           EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyeCenter3d, eyeRotation3d)
-          ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
           Order = Core.getTimeStampUnique ()
           Id = Gen.id }
 
@@ -847,7 +845,6 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       SlideOpt : Slide option
       Protected : bool
       Persistent : bool
-      ScriptFrame : Scripting.DeclarationFrame
       Order : int64
       Id : uint64
       Name : string }
@@ -866,7 +863,6 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           SlideOpt = None
           Protected = false
           Persistent = true
-          ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
           Order = Core.getTimeStampUnique ()
           Id = id
           Name = name }
@@ -914,7 +910,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
       Visible : bool
       Protected : bool
       Persistent : bool
-      ScriptFrame : Scripting.DeclarationFrame
       Order : int64
       Id : uint64
       Name : string }
@@ -929,7 +924,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Visible = true
           Protected = false
           Persistent = true
-          ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
           Order = Core.getTimeStampUnique ()
           Id = id
           Name = name }
@@ -983,7 +977,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
       mutable AnglesLocal : Vector3
       mutable ElevationLocal : single
       mutable MountOpt : Entity Relation option
-      mutable ScriptFrameOpt : Scripting.DeclarationFrame
       mutable OverlayNameOpt : string option
       mutable FacetNames : string Set
       mutable Order : int64
@@ -1007,7 +1000,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           AnglesLocal = Vector3.Zero
           ElevationLocal = 0.0f
           MountOpt = None
-          ScriptFrameOpt = Unchecked.defaultof<_>
           OverlayNameOpt = overlayNameOpt
           FacetNames = Set.empty
           Order = Core.getTimeStampUnique ()
@@ -1532,7 +1524,6 @@ and [<ReferenceEquality>] Dispatchers =
       GroupDispatchers : Map<string, GroupDispatcher>
       ScreenDispatchers : Map<string, ScreenDispatcher>
       GameDispatchers : Map<string, GameDispatcher>
-      TryGetExtrinsic : string -> World ScriptingTrinsic option
       UpdateEntityInEntityTree : bool -> bool -> bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
       RebuildQuadtree : World -> Entity Quadtree
       RebuildOctree : World -> Entity Octree }
@@ -1549,9 +1540,7 @@ and [<ReferenceEquality>] internal Subsystems =
 and [<ReferenceEquality>] internal WorldExtension =
     { DestructionListRev : Simulant list
       Dispatchers : Dispatchers
-      Plugin : NuPlugin
-      ScriptingEnv : Scripting.Env
-      ScriptingContext : Simulant }
+      Plugin : NuPlugin }
 
 /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
 /// to implement a game, messages to by consumed by the various engine sub-systems, and general
@@ -1646,48 +1635,6 @@ and [<ReferenceEquality>] World =
         internal this.AssertChosen () =
         if refNeq (this :> obj) WorldTypes.Chosen then
             Console.WriteLine "Fault"
-
-    interface World ScriptingSystem with
-
-        member this.GetEnv () =
-            this.WorldExtension.ScriptingEnv
-
-        member this.TryGetExtrinsic fnName =
-            this.WorldExtension.Dispatchers.TryGetExtrinsic fnName
-
-        member this.TryImport ty value =
-            match (ty.Name, value) with
-            | ("Vector2", (:? Vector2 as v2)) -> let v2p = { Vector2 = v2 } in v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Vector3", (:? Vector3 as v3)) -> let v3p = { Vector3 = v3 } in v3p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Vector4", (:? Vector4 as v4)) -> let v4p = { Vector4 = v4 } in v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Vector2i", (:? Vector2i as v2i)) -> let v2ip = { Vector2i = v2i } in v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Vector3i", (:? Vector3i as v3i)) -> let v3ip = { Vector3i = v3i } in v3ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Vector4i", (:? Vector4i as v4i)) -> let v4ip = { Vector4i = v4i } in v4ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Quaternion", (:? Quaternion as quat)) -> let quatp = { Quaternion = quat } in quatp :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Color", (:? Color as color)) -> let colorp = { Color = color } in colorp :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-            | ("Game", (:? Game as game)) -> game.GameAddress |> atos |> Scripting.Keyword |> Some
-            | ("Screen", (:? Screen as screen)) -> screen.ScreenAddress |> atos |> Scripting.Keyword |> Some
-            | ("Group", (:? Group as group)) -> group.GroupAddress |> atos |> Scripting.Keyword |> Some
-            | ("Entity", (:? Entity as entity)) -> entity.EntityAddress |> atos |> Scripting.Keyword |> Some
-            | ("Simulant", (:? Simulant as simulant)) -> simulant.SimulantAddress |> atos |> Scripting.Keyword |> Some
-            | (_, _) -> None
-
-        member this.TryExport ty value =
-            match (ty.Name, value) with
-            | ("Vector2", Scripting.Pluggable pluggable) -> let v2 = pluggable :?> Vector2Pluggable in v2.Vector2 :> obj |> Some
-            | ("Vector3", Scripting.Pluggable pluggable) -> let v3 = pluggable :?> Vector3Pluggable in v3.Vector3 :> obj |> Some
-            | ("Vector4", Scripting.Pluggable pluggable) -> let v4 = pluggable :?> Vector4Pluggable in v4.Vector4 :> obj |> Some
-            | ("Vector2i", Scripting.Pluggable pluggable) -> let v2i = pluggable :?> Vector2iPluggable in v2i.Vector2i :> obj |> Some
-            | ("Vector3i", Scripting.Pluggable pluggable) -> let v3i = pluggable :?> Vector3iPluggable in v3i.Vector3i :> obj |> Some
-            | ("Vector4i", Scripting.Pluggable pluggable) -> let v4i = pluggable :?> Vector4iPluggable in v4i.Vector4i :> obj |> Some
-            | ("Quaternion", Scripting.Pluggable pluggable) -> let quat = pluggable :?> QuaternionPluggable in quat.Quaternion :> obj |> Some
-            | ("Color", Scripting.Pluggable pluggable) -> let color = pluggable :?> ColorPluggable in color.Color :> obj |> Some
-            | ("Game", Scripting.String str) | ("Game", Scripting.Keyword str) -> str |> stoa |> Game :> obj |> Some
-            | ("Screen", Scripting.String str) | ("Screen", Scripting.Keyword str) -> str |> stoa |> Screen :> obj |> Some
-            | ("Group", Scripting.String str) | ("Group", Scripting.Keyword str) -> str |> stoa |> Group :> obj |> Some
-            | ("Entity", Scripting.String str) | ("Entity", Scripting.Keyword str) -> str |> stoa |> Entity :> obj |> Some
-            | ("Simulant", Scripting.String _) | ("Simulant", Scripting.Keyword _) -> None // TODO: see if this should be failwithumf or a violation instead.
-            | (_, _) -> None
 
     override this.ToString () =
         ""
