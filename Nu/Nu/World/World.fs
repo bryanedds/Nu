@@ -434,7 +434,7 @@ module WorldModule3 =
                     world (World.getSimulants world)
             let world =
                 UMap.fold
-                    (fun world simulant _ -> World.trySynchronize false simulant world)
+                    (fun world simulant _ -> World.trySynchronize true simulant world)
                     world (World.getSimulants world)
             world
 
