@@ -137,12 +137,13 @@ and Gameplay =
         let position = Gen.randomItem gameplay.PositionsUnoccupied
         { gameplay with Tiles = Tile.make position (if Gen.random1 10 = 0 then 4 else 2) :: gameplay.Tiles }
 
-    static member hasDifferentTiles (gameplay : Gameplay) (gameplay2 : Gameplay) =
+    static member detectTileChange (gameplay : Gameplay) (gameplay2 : Gameplay) =
          gameplay.TilesOrdered <> gameplay2.TilesOrdered
 
-    static member hasAvailableMoves gameplay =
-        let possibleMoves = [Gameplay.shiftUp; Gameplay.shiftRight; Gameplay.shiftDown; Gameplay.shiftLeft]
-        List.exists (fun shift -> Gameplay.hasDifferentTiles gameplay (shift gameplay)) possibleMoves
+    static member detectMoveAvailability gameplay =
+        let movesPossible = [Gameplay.shiftUp; Gameplay.shiftRight; Gameplay.shiftDown; Gameplay.shiftLeft]
+        let movesAvailable = List.filter (fun shift -> Gameplay.detectTileChange gameplay (shift gameplay)) movesPossible
+        List.notEmpty movesAvailable
 
     static member empty =
         { BoardSize = v2iDup 4
