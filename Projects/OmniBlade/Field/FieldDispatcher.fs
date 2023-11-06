@@ -45,8 +45,8 @@ module FieldDispatcher =
             else false
 
         override this.Initialize (_, _) =
-            [Screen.UpdateEvent => ProcessKeyInput
-             Screen.UpdateEvent => Update
+            [Screen.UpdateEvent => Update
+             Screen.UpdateEvent => ProcessKeyInput
              Screen.PostUpdateEvent => UpdateFieldTransition
              Screen.PostUpdateEvent => UpdateEye
              Screen.PostUpdateEvent => UpdateAvatarBodyTracking
