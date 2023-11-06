@@ -869,11 +869,12 @@ module WorldModule2 =
         static member getEntities3d set world =
             World.getEntities3dBy (Octree.getElements set) world
 
-        static member private preUpdateSimulants world =
+        static member private preUpdateSimulants (world : World) =
 
             // gather simulants
             PreUpdateGatherTimer.Start ()
             let game = Nu.Game.Handle
+            let advancing = world.Advancing
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -886,17 +887,17 @@ module WorldModule2 =
 
             // pre-update game
             PreUpdateGameTimer.Start ()
-            let world = World.preUpdateGame game world
+            let world = if advancing then World.preUpdateGame game world else world
             PreUpdateGameTimer.Stop ()
 
             // pre-update screens
             PreUpdateScreensTimer.Start ()
-            let world = List.fold (fun world screen -> World.preUpdateScreen screen world) world screens
+            let world = List.fold (fun world screen -> if advancing then World.preUpdateScreen screen world else world) world screens
             PreUpdateScreensTimer.Stop ()
 
             // pre-update groups
             PreUpdateGroupsTimer.Start ()
-            let world = Seq.fold (fun world group -> World.preUpdateGroup group world) world groups
+            let world = Seq.fold (fun world group -> if advancing then World.preUpdateGroup group world else world) world groups
             PreUpdateGroupsTimer.Stop ()
 
 #if !DISABLE_ENTITY_PRE_UPDATE
@@ -915,11 +916,12 @@ module WorldModule2 =
             // fin
             world
 
-        static member private updateSimulants world =
+        static member private updateSimulants (world : World) =
 
             // gather simulants
             UpdateGatherTimer.Start ()
             let game = Nu.Game.Handle
+            let advancing = world.Advancing
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -930,22 +932,21 @@ module WorldModule2 =
 
             // update game
             UpdateGameTimer.Start ()
-            let world = World.updateGame game world
+            let world = if advancing then World.updateGame game world else world
             UpdateGameTimer.Stop ()
             
             // update screens
             UpdateScreensTimer.Start ()
-            let world = List.fold (fun world screen -> World.updateScreen screen world) world screens
+            let world = List.fold (fun world screen -> if advancing then World.updateScreen screen world else world) world screens
             UpdateScreensTimer.Stop ()
 
             // update groups
             UpdateGroupsTimer.Start ()
-            let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
+            let world = Seq.fold (fun world group -> if advancing then World.updateGroup group world else world) world groups
             UpdateGroupsTimer.Stop ()
 
             // update entities
             UpdateEntitiesTimer.Start ()
-            let advancing = world.Advancing
             let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements3d
             let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements2d
             UpdateEntitiesTimer.Stop ()
@@ -957,11 +958,12 @@ module WorldModule2 =
             // fin
             world
 
-        static member private postUpdateSimulants world =
+        static member private postUpdateSimulants (world : World) =
 
             // gather simulants
             PostUpdateGatherTimer.Start ()
             let game = Nu.Game.Handle
+            let advancing = world.Advancing
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
@@ -974,17 +976,17 @@ module WorldModule2 =
 
             // post-update game
             PostUpdateGameTimer.Start ()
-            let world = World.postUpdateGame game world
+            let world = if advancing then World.postUpdateGame game world else world
             PostUpdateGameTimer.Stop ()
 
             // post-update screens
             PostUpdateScreensTimer.Start ()
-            let world = List.fold (fun world screen -> World.postUpdateScreen screen world) world screens
+            let world = List.fold (fun world screen -> if advancing then World.postUpdateScreen screen world else world) world screens
             PostUpdateScreensTimer.Stop ()
 
             // post-update groups
             PostUpdateGroupsTimer.Start ()
-            let world = Seq.fold (fun world group -> World.postUpdateGroup group world) world groups
+            let world = Seq.fold (fun world group -> if advancing then World.postUpdateGroup group world else world) world groups
             PostUpdateGroupsTimer.Stop ()
 
 #if !DISABLE_ENTITY_POST_UPDATE
