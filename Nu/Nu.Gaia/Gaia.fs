@@ -82,7 +82,7 @@ module Gaia =
 
     let mutable private fullScreen = false
     let mutable private editWhileAdvancing = false
-    let mutable private snaps2dSelected = true
+    let mutable private snaps2dSelected = false
     let mutable private snaps2d = (Constants.Gaia.Position2dSnapDefault, Constants.Gaia.Degrees2dSnapDefault, Constants.Gaia.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Gaia.Position3dSnapDefault, Constants.Gaia.Degrees3dSnapDefault, Constants.Gaia.Scale3dSnapDefault)
     let mutable private snapDrag = 0.1f

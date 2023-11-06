@@ -63,7 +63,7 @@ module MyGame =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay { Score = 0; State = Playing })
+            | ShowGameplay -> just (Gameplay { Time = 0L; State = Playing })
             | Update ->
                 match model with
                 | Gameplay gameplay ->
