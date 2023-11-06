@@ -14,6 +14,8 @@ module Vector2 =
 
     type Vector2 with
 
+        member this.V2i = Vector2i (int this.X, int this.Y)
+        member this.V3i = Vector3i (int this.X, int this.Y, 0)
         member this.V3 = Vector3 (this.X, this.Y, 0.0f)
         member this.Normalized = Vector2.Normalize this
         member this.Magnitude = this.Length ()
@@ -130,6 +132,8 @@ module Vector3 =
 
     type Vector3 with
 
+        member this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
+        member this.V2i = Vector2i (int this.X, int this.Y)
         member this.V2 = Vector2 (this.X, this.Y)
         member this.Normalized = Vector3.Normalize this
         member this.Magnitude = this.Length ()
@@ -258,7 +262,11 @@ module Vector4 =
 
     type Vector4 with
 
-        member this.V3 = v3 this.X this.Y this.Z
+        member this.V2 = Vector2 (this.X, this.Y)
+        member this.V2i = Vector2i (int this.X, int this.Y)
+        member this.V3 = Vector3 (this.X, this.Y, this.Z)
+        member this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
+        member this.V4i = Vector4i (int this.X, int this.Y, int this.Z, int this.W)
         member this.Magnitude = this.Magnitude
         member this.MagnitudeSquared = this.LengthSquared ()
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
@@ -379,6 +387,8 @@ module Vector2i =
 
     type Vector2i with
 
+        member this.V2 = Vector2 (single this.X, single this.Y)
+        member this.V3 = Vector3 (single this.X, single this.Y, 0.0f)
         member this.V3i = Vector3i (this.X, this.Y, 0)
         member this.MapX mapper = Vector2i (mapper this.X, this.Y)
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
@@ -484,6 +494,8 @@ module Vector3i =
 
     type Vector3i with
 
+        member this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
+        member this.V2 = Vector2 (single this.X, single this.Y)
         member this.V2i = Vector2i (this.X, this.Y)
         member this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
         member this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
@@ -595,7 +607,12 @@ type Vector3iConverter () =
 module Vector4i =
 
     type Vector4i with
-
+    
+        member this.V2 = Vector2 (single this.X, single this.Y)
+        member this.V2i = Vector2i (this.X, this.Y)
+        member this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
+        member this.V3i = Vector3i (this.X, this.Y, this.Z)
+        member this.V4 = Vector4 (single this.X, single this.Y, single this.Z, single this.W)
         member this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
@@ -1195,6 +1212,7 @@ module Color =
     let inline colorDup (a : single) = color a a a a
     let inline color8 (r : byte) (g : byte) (b : byte) (a : byte) = Color (r, g, b, a)
     let inline color8Dup (a : byte) = color8 a a a a
+    let inline colorPacked (u : uint) = Color u
     let inline colorEq (x : Color) (y : Color) = x.R = y.R && x.G = y.G && x.B = y.B && x.A = y.A
     let inline colorNeq (x : Color) (y : Color) = x.R <> y.R || x.G <> y.G || x.B <> y.B || x.A <> y.A
     let colorZero = Color.Zero

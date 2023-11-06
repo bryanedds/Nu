@@ -230,7 +230,7 @@ let generateBindingFunction binding =
     
     let functionAndExceptionHeader =
         "    let " + binding.FunctionBindingName + " " + generateParameterList binding.FunctionParameters + " =\n" +
-        "        let oldWorld = world\n" +
+        "        let worldOld = world\n" +
         "        try\n"
     
     let conversions =
@@ -284,7 +284,7 @@ let generateBindingFunction binding =
     let exceptionHandler =
         "        with exn ->\n" +
         "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionBindingName + "' due to: \" + scstring exn, ValueNone)\n" +
-        "            struct (violation, World.choose oldWorld)\n"
+        "            struct (violation, World.choose worldOld)\n"
     
     functionAndExceptionHeader +
     conversions +

@@ -1,0 +1,12 @@
+[[EffectName Effect]
+ [LifeTimeOpt None]
+ [Definitions []]
+ [Content
+  [Emit
+   [Shift 0.1]
+   [Rate 1]
+   [[Degreeses Sum Ease Bounce [[[0 0 -60] 180] [[0 0 60] 0]]]]
+   [[PositionLocals Sum EaseOut Once [[[0 0 0] 180] [[80 500 0] 0]]]
+    [Sizes Scalar Linear Once [[[0.1 0.1 0] 180] [[5 3 0] 0]]]
+    [Colors Set Linear Once [[[0 1 1 1] 180] [[1 0 0 0] 30]]]]
+   [StaticSprite [Resource Default Image] [] Nil]]]]

@@ -52,8 +52,8 @@ module Algorithms =
         | (true, archetypeData) ->
             let level = expPointsToLevel expPoints
             archetypeData.Techs |>
-            Map.filter (fun key _ -> key <= level)  |>
-            Map.toValueList |>
+            List.filter (fun (levelReq, _) -> levelReq <= level)  |>
+            List.map snd |>
             Set.ofList
         | (false, _) -> Set.empty
 
@@ -201,9 +201,9 @@ module Algorithms =
         let techs =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Techs
-            | None -> Map.empty
-        match techs |> Map.toList |> List.tryFindIndexBack (fun (levelReq, _) -> level >= levelReq) with
-        | Some index -> techs |> Map.toList |> List.take (inc index) |> List.map snd |> Set.ofList
+            | None -> []
+        match techs |> List.tryFindIndexBack (fun (levelReq, _) -> level >= levelReq) with
+        | Some index -> techs |> List.take (inc index) |> List.map snd |> Set.ofList
         | None -> Set.empty
 
     let chargeTechs archetypeType level =

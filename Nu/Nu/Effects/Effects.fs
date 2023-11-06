@@ -889,7 +889,7 @@ module EffectSystem =
         let effectSystem =
             Seq.foldi
                 (fun i effectSystem (slice : Slice) ->
-                    let oldEffectTime = effectSystem.EffectLocalTime
+                    let effectTimeOld = effectSystem.EffectLocalTime
                     let timePassed = effectSystem.EffectDelta * GameTime.make (int64 i) (single i)
                     let slice = { slice with Elevation = slice.Elevation + shift }
                     let slice = evalAspects emitterAspects slice { effectSystem with EffectLocalTime = effectSystem.EffectLocalTime - timePassed }
@@ -906,7 +906,7 @@ module EffectSystem =
                                 else effectSystem)
                             effectSystem
                             [|0 .. emitCount - 1|]
-                    { effectSystem with EffectLocalTime = oldEffectTime })
+                    { effectSystem with EffectLocalTime = effectTimeOld })
                 effectSystem
                 history
         effectSystem

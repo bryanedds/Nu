@@ -525,7 +525,7 @@ type RendererThread () =
         member this.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             swap <- true
-            while swap do Thread.Yield () |> ignore<bool>
+            while swap do Thread.Sleep 1
 
         member this.Terminate () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

@@ -203,14 +203,14 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) Over (EffectDescriptors.cut light) screen world |> just
                 | None -> just world
 
-            | DisplayTwisterCut (delay, targetIndex) ->
+            | DisplayCritical (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom (target.Bottom + v3Up * 3.0f)) Over EffectDescriptors.twisterCut screen world |> just
+                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom (target.Bottom + v3Up * 3.0f)) Over EffectDescriptors.critical screen world |> just
                 | None -> just world
 
-            | DisplayTornadoCut (delay, targetIndex) ->
+            | DisplayHeavyCritical (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.tornadoCut screen world |> just
+                | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.heavyCritical screen world |> just
                 | None -> just world
 
             | DisplayPoisonCut (delay, targetIndex) ->
@@ -245,7 +245,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let projection = Vector3.Normalize (target.Bottom - bottom) * single Constants.Render.VirtualResolutionX + target.Bottom
-                    let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) Over (EffectDescriptors.slashTwister bottom projection) screen world
+                    let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) Over (EffectDescriptors.slashWind bottom projection) screen world
                     just world
                 | None -> just world
 
@@ -330,7 +330,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.protect screen world |> just
                 | None -> just world
-
+            
             | DisplayPurify (delay, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target -> displayEffect delay (v3 192.0f 192.0f 0.0f) (Bottom (target.Bottom - v3 0.0f 100.0f 0.0f)) Over EffectDescriptors.purify screen world |> just
@@ -345,6 +345,11 @@ module BattleDispatcher =
                 let (w, h) = (14, 8)
                 let position = v3 (origin.X + single (Gen.random1 w) * tile.X) (origin.Y + single (Gen.random1 h) * tile.Y) 0.0f
                 displayEffect delay (v3 192.0f 758.0f 0.0f) (Bottom position) Over EffectDescriptors.bolt screen world |> just
+
+            | DisplaySilk (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.silk screen world |> just
+                | None -> just world
 
         override this.Content (battle, _) =
 
