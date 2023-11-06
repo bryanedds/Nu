@@ -117,28 +117,6 @@ module WorldModule2 =
                     Octree.addElement presence bounds element octree
             octree
 
-        /// Resolve a relation to an address in the current script context.
-        static member resolve<'a> (relation : 'a Relation) world =
-            let scriptContext = World.getScriptContext world
-            let address = Relation.resolve scriptContext.SimulantAddress relation
-            address
-    
-        /// Relate an address to the current script context.
-        static member relate<'a> (address : 'a Address) world =
-            let scriptContext = World.getScriptContext world
-            let address = Relation.relate scriptContext.SimulantAddress address
-            address
-
-        /// Resolve a relation to an address in the current script context in script.
-        [<FunctionBinding "resolve">]
-        static member internal resolveViaScript (relation : obj Relation) world =
-            World.resolve relation world
-
-        /// Relate an address to the current script context in script.
-        [<FunctionBinding "relate">]
-        static member internal relateViaScript (address : obj Address) world =
-            World.relate address world
-
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             let world =
@@ -493,16 +471,6 @@ module WorldModule2 =
 
                 // propagate errors
                 | Left error -> (Left error, world)
-            with exn -> (Left (scstring exn), World.choose world)
-
-        /// Try to reload the prelude currently in use by the world.
-        static member tryReloadPrelude inputDirectory outputDirectory world =
-            let inputPreludeFilePath = inputDirectory + "/" + Assets.Global.PreludeFilePath
-            let outputPreludeFilePath = outputDirectory + "/" + Assets.Global.PreludeFilePath
-            try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
-                match World.tryEvalPrelude world with
-                | Right (preludeStr, world) -> (Right preludeStr, world)
-                | Left (error, world) -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)
 
         /// Send a message to the subsystems to reload their existing assets.

@@ -162,69 +162,6 @@ module Nu =
             WorldTypes.getEntityIs2d <- fun entityObj worldObj ->
                 World.getEntityIs2d (entityObj :?> Entity) (worldObj :?> World)
 
-            // init eval F# reach-around
-            // TODO: remove duplicated code with the following 4 functions...
-            WorldModule.eval <- fun expr localFrame scriptContext world ->
-                match expr with
-                | Scripting.Unit ->
-                    // OPTIMIZATION: don't bother evaluating unit
-                    struct (Scripting.Unit, world)
-                | _ ->
-                    let localFrameOld = World.getLocalFrame world
-                    let scriptContextOld = World.getScriptContext world
-                    World.setLocalFrame localFrame world
-                    let world = World.setScriptContext scriptContext world
-                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
-                    let struct (evaled, world) = World.evalInternal expr world
-                    ScriptingSystem.removeProceduralBindings world
-                    let world = World.setScriptContext scriptContextOld world
-                    World.setLocalFrame localFrameOld world
-                    struct (evaled, world)
-
-            // init evalMany F# reach-around
-            WorldModule.evalMany <- fun exprs localFrame scriptContext world ->
-                let localFrameOld = World.getLocalFrame world
-                let scriptContextOld = World.getScriptContext world
-                World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
-                let struct (evaleds, world) = World.evalManyInternal exprs world
-                ScriptingSystem.removeProceduralBindings world
-                let world = World.setScriptContext scriptContextOld world
-                World.setLocalFrame localFrameOld world
-                struct (evaleds, world)
-
-            // init evalWithLogging F# reach-around
-            WorldModule.evalWithLogging <- fun expr localFrame scriptContext world ->
-                match expr with
-                | Scripting.Unit ->
-                    // OPTIMIZATION: don't bother evaluating unit
-                    struct (Scripting.Unit, world)
-                | _ ->
-                    let localFrameOld = World.getLocalFrame world
-                    let scriptContextOld = World.getScriptContext world
-                    World.setLocalFrame localFrame world
-                    let world = World.setScriptContext scriptContext world
-                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
-                    let struct (evaled, world) = World.evalWithLoggingInternal expr world
-                    ScriptingSystem.removeProceduralBindings world
-                    let world = World.setScriptContext scriptContextOld world
-                    World.setLocalFrame localFrameOld world
-                    struct (evaled, world)
-
-            // init evalMany F# reach-around
-            WorldModule.evalManyWithLogging <- fun exprs localFrame scriptContext world ->
-                let localFrameOld = World.getLocalFrame world
-                let scriptContextOld = World.getScriptContext world
-                World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
-                let struct (evaleds, world) = World.evalManyWithLoggingInternal exprs world
-                ScriptingSystem.removeProceduralBindings world
-                let world = World.setScriptContext scriptContextOld world
-                World.setLocalFrame localFrameOld world
-                struct (evaleds, world)
-
             // TODO: P1: implement!
             WorldModule.addSimulantScriptUnsubscription <- fun _ _ _ ->
                 failwithnie ()
@@ -352,10 +289,6 @@ module Nu =
 
             // init miscellaneous F# reach-arounds
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
-
-            // init scripting
-            WorldScripting.init ()
-            WorldBindings.init ()
 
             // init vsync
             Vsync.Init nuConfig.RunSynchronously
@@ -506,7 +439,7 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member make config plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init config.NuConfig // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
@@ -515,7 +448,7 @@ module WorldModule3 =
             let gameState = GameState.make activeGameDispatcher
             let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
-            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game }
+            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin }
             let world =
                 { EventGraph = eventGraph
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
@@ -556,7 +489,6 @@ module WorldModule3 =
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
                   GameDispatchers = Map.ofList [defaultGameDispatcher]
-                  TryGetExtrinsic = World.tryGetExtrinsic
                   UpdateEntityInEntityTree = World.updateEntityInEntityTree
                   RebuildQuadtree = World.rebuildQuadtree
                   RebuildOctree = World.rebuildOctree }
@@ -568,9 +500,6 @@ module WorldModule3 =
             let rendererProcess = RendererInline () :> RendererProcess
             rendererProcess.Start imGui.Fonts None // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
-
-            // make the world's scripting environment
-            let scriptingEnv = Scripting.Env.make ()
 
             // make the world's ambient state
             let ambientState =
@@ -585,7 +514,7 @@ module WorldModule3 =
             let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make config plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame Game world
@@ -629,7 +558,6 @@ module WorldModule3 =
                       GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
                       GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher])
-                      TryGetExtrinsic = World.tryGetExtrinsic
                       UpdateEntityInEntityTree = World.updateEntityInEntityTree
                       RebuildQuadtree = World.rebuildQuadtree
                       RebuildOctree = World.rebuildOctree }
@@ -668,9 +596,6 @@ module WorldModule3 =
                 match Overlayer.tryMakeFromFile intrinsicOverlays Assets.Global.OverlayerFilePath with
                 | Right overlayer ->
 
-                    // make the world's scripting environment
-                    let scriptingEnv = Scripting.Env.make ()
-
                     // make the world's ambient state
                     let ambientState =
                         let overlays = Overlayer.getIntrinsicOverlays overlayer @ Overlayer.getExtrinsicOverlays overlayer
@@ -689,29 +614,17 @@ module WorldModule3 =
                     let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make config plugin eventGraph dispatchers scriptingEnv quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make config plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
                     let world = List.fold (fun world (key, value) -> World.addKeyedValue key value world) world kvps
 
-                    // try to load the prelude for the scripting language
-                    match World.tryEvalPrelude world with
-                    | Right (_, world) ->
+                    // register the game
+                    let world = World.registerGame Game world
+                    Right world
 
-                        // register the game
-                        let world = World.registerGame Game world
-
-#if DEBUG
-                        // attempt to hookup the console if debugging
-                        let world = WorldConsole.tryHookUp world |> snd
-#endif
-
-                        // fin
-                        Right world
-
-                    // forward error messages
-                    | Left (error, _) -> Left error
+                // forward error messages
                 | Left error -> Left error
             | Left error -> Left error
 

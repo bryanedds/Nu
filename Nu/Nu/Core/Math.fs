@@ -54,49 +54,6 @@ module Vector2 =
     let v2Down = v2 0.0f -1.0f
     let v2Left = v2 -1.0f 0.0f
 
-/// The Vector2 value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector2Pluggable =
-    { Vector2 : Vector2 }
-
-    static member equals left right =
-        v2Eq left.Vector2 right.Vector2
-
-    static member compare left right =
-        compare
-            struct (left.Vector2.X, left.Vector2.Y)
-            struct (right.Vector2.X, right.Vector2.Y)
-
-    override this.GetHashCode () =
-        hash this.Vector2
-
-    override this.Equals that =
-        match that with
-        | :? Vector2Pluggable as that -> Vector2Pluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface Vector2Pluggable IComparable with
-        member this.CompareTo that =
-            Vector2Pluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? Vector2Pluggable as that -> (this :> Vector2Pluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Vector2"
-
-        member this.FSharpType =
-            getType this.Vector2
-
-        member this.ToSymbol () =
-            let v2 = Symbol.Atom ("v2", ValueNone)
-            let x = Symbol.Number (string this.Vector2.X, ValueNone)
-            let y = Symbol.Number (string this.Vector2.Y, ValueNone)
-            Symbol.Symbols ([v2; x; y], ValueNone)
-
 /// Converts Vector2 types.
 type Vector2Converter () =
     inherit TypeConverter ()
@@ -180,50 +137,6 @@ module Vector3 =
     let v3Forward = v3 0.0f 0.0f -1.0f
     let v3Back = v3 0.0f 0.0f 1.0f
 
-/// The Vector3 value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector3Pluggable =
-    { Vector3 : Vector3 }
-
-    static member equals left right =
-        v3Eq left.Vector3 right.Vector3
-
-    static member compare left right =
-        compare
-            struct (left.Vector3.X, left.Vector3.Y, left.Vector3.Z)
-            struct (right.Vector3.X, right.Vector3.Y, right.Vector3.Z)
-
-    override this.GetHashCode () =
-        hash this.Vector3
-
-    override this.Equals that =
-        match that with
-        | :? Vector3Pluggable as that -> Vector3Pluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface Vector3Pluggable IComparable with
-        member this.CompareTo that =
-            Vector3Pluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? Vector3Pluggable as that -> (this :> Vector3Pluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Vector3"
-
-        member this.FSharpType =
-            getType this.Vector3
-
-        member this.ToSymbol () =
-            let v3 = Symbol.Atom ("v3", ValueNone)
-            let x = Symbol.Number (string this.Vector3.X, ValueNone)
-            let y = Symbol.Number (string this.Vector3.Y, ValueNone)
-            let z = Symbol.Number (string this.Vector3.Z, ValueNone)
-            Symbol.Symbols ([v3; x; y; z], ValueNone)
-
 /// Converts Vector3 types.
 type Vector3Converter () =
     inherit TypeConverter ()
@@ -303,51 +216,6 @@ module Vector4 =
     let v4UnitZ = Vector4.UnitZ
     let v4UnitW = Vector4.UnitW
 
-/// The Vector4 value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector4Pluggable =
-    { Vector4 : Vector4 }
-
-    static member equals left right =
-        v4Eq left.Vector4 right.Vector4
-
-    static member compare left right =
-        compare
-            struct (left.Vector4.X, left.Vector4.Y, left.Vector4.Z, left.Vector4.W)
-            struct (right.Vector4.X, right.Vector4.Y, right.Vector4.Z, right.Vector4.W)
-
-    override this.GetHashCode () =
-        hash this.Vector4
-
-    override this.Equals that =
-        match that with
-        | :? Vector4Pluggable as that -> Vector4Pluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface Vector4Pluggable IComparable with
-        member this.CompareTo that =
-            Vector4Pluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? Vector4Pluggable as that -> (this :> Vector4Pluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Vector4"
-
-        member this.FSharpType =
-            getType this.Vector4
-
-        member this.ToSymbol () =
-            let v4 = Symbol.Atom ("v4", ValueNone)
-            let x = Symbol.Number (string this.Vector4.X, ValueNone)
-            let y = Symbol.Number (string this.Vector4.Y, ValueNone)
-            let z = Symbol.Number (string this.Vector4.Z, ValueNone)
-            let w = Symbol.Number (string this.Vector4.W, ValueNone)
-            Symbol.Symbols ([v4; x; y; z; w], ValueNone)
-
 /// Converts Vector4 types.
 type Vector4Converter () =
     inherit TypeConverter ()
@@ -418,49 +286,6 @@ module Vector2i =
     let v2iDown = Vector2i.Down
     let v2iLeft = Vector2i.Left
 
-/// The Vector2i value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector2iPluggable =
-    { Vector2i : Vector2i }
-
-    static member equals left right =
-        v2iEq left.Vector2i right.Vector2i
-
-    static member compare left right =
-        compare
-            struct (left.Vector2i.X, left.Vector2i.Y)
-            struct (right.Vector2i.X, right.Vector2i.Y)
-
-    override this.GetHashCode () =
-        hash this.Vector2i
-
-    override this.Equals that =
-        match that with
-        | :? Vector2iPluggable as that -> Vector2iPluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface Vector2iPluggable IComparable with
-        member this.CompareTo that =
-            Vector2iPluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? Vector2iPluggable as that -> (this :> Vector2iPluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Vector2i"
-
-        member this.FSharpType =
-            getType this.Vector2i
-
-        member this.ToSymbol () =
-            let v2i = Symbol.Atom ("v2i", ValueNone)
-            let x = Symbol.Number (string this.Vector2i.X, ValueNone)
-            let y = Symbol.Number (string this.Vector2i.Y, ValueNone)
-            Symbol.Symbols ([v2i; x; y], ValueNone)
-
 /// Converts Vector2i types.
 type Vector2iConverter () =
     inherit TypeConverter ()
@@ -525,50 +350,6 @@ module Vector3i =
     let v3iUnitX = Vector3i.UnitX
     let v3iUnitY = Vector3i.UnitY
     let v3iUnitZ = Vector3i.UnitZ
-
-/// The Vector3i value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector3iPluggable =
-    { Vector3i : Vector3i }
-
-    static member equals left right =
-        v3iEq left.Vector3i right.Vector3i
-
-    static member compare left right =
-        compare
-            struct (left.Vector3i.X, left.Vector3i.Y, left.Vector3i.Z)
-            struct (right.Vector3i.X, right.Vector3i.Y, right.Vector3i.Z)
-
-    override this.GetHashCode () =
-        hash this.Vector3i
-
-    override this.Equals that =
-        match that with
-        | :? Vector3iPluggable as that -> Vector3iPluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface Vector3iPluggable IComparable with
-        member this.CompareTo that =
-            Vector3iPluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? Vector3iPluggable as that -> (this :> Vector3iPluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Vector3i"
-
-        member this.FSharpType =
-            getType this.Vector3i
-
-        member this.ToSymbol () =
-            let v3i = Symbol.Atom ("v3i", ValueNone)
-            let x = Symbol.Number (string this.Vector3i.X, ValueNone)
-            let y = Symbol.Number (string this.Vector3i.Y, ValueNone)
-            let z = Symbol.Number (string this.Vector3i.Z, ValueNone)
-            Symbol.Symbols ([v3i; x; y; z], ValueNone)
 
 /// Converts Vector3i types.
 type Vector3iConverter () =
@@ -647,51 +428,6 @@ module Vector4i =
     let v4iUnitZ = Vector4i.UnitZ
     let v4iUnitW = Vector4i.UnitW
 
-/// The Vector4i value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector4iPluggable =
-    { Vector4i : Vector4i }
-
-    static member equals left right =
-        v4iEq left.Vector4i right.Vector4i
-
-    static member compare left right =
-        compare
-            struct (left.Vector4i.X, left.Vector4i.Y, left.Vector4i.Z, left.Vector4i.W)
-            struct (right.Vector4i.X, right.Vector4i.Y, right.Vector4i.Z, right.Vector4i.W)
-
-    override this.GetHashCode () =
-        hash this.Vector4i
-
-    override this.Equals that =
-        match that with
-        | :? Vector4iPluggable as that -> Vector4iPluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface Vector4iPluggable IComparable with
-        member this.CompareTo that =
-            Vector4iPluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? Vector4iPluggable as that -> (this :> Vector4iPluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Vector4i"
-
-        member this.FSharpType =
-            getType this.Vector4i
-
-        member this.ToSymbol () =
-            let v4i = Symbol.Atom ("v4i", ValueNone)
-            let x = Symbol.Number (string this.Vector4i.X, ValueNone)
-            let y = Symbol.Number (string this.Vector4i.Y, ValueNone)
-            let z = Symbol.Number (string this.Vector4i.Z, ValueNone)
-            let w = Symbol.Number (string this.Vector4i.W, ValueNone)
-            Symbol.Symbols ([v4i; x; y; z; w], ValueNone)
-
 /// Converts Vector4i types.
 type Vector4iConverter () =
     inherit TypeConverter ()
@@ -759,51 +495,6 @@ module Quaternion =
     let inline quat x y z w = Quaternion (x, y, z, w)
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
-
-/// The Quaternion value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] QuaternionPluggable =
-    { Quaternion : Quaternion }
-
-    static member equals left right =
-        quatEq left.Quaternion right.Quaternion
-
-    static member compare left right =
-        compare
-            struct (left.Quaternion.X, left.Quaternion.Y, left.Quaternion.Z, left.Quaternion.W)
-            struct (right.Quaternion.X, right.Quaternion.Y, right.Quaternion.Z, right.Quaternion.W)
-
-    override this.GetHashCode () =
-        hash this.Quaternion
-
-    override this.Equals that =
-        match that with
-        | :? QuaternionPluggable as that -> QuaternionPluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface QuaternionPluggable IComparable with
-        member this.CompareTo that =
-            QuaternionPluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? QuaternionPluggable as that -> (this :> QuaternionPluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Quaternion"
-
-        member this.FSharpType =
-            getType this.Quaternion
-
-        member this.ToSymbol () =
-            let quat = Symbol.Atom ("quat", ValueNone)
-            let x = Symbol.Number (string this.Quaternion.X, ValueNone)
-            let y = Symbol.Number (string this.Quaternion.Y, ValueNone)
-            let z = Symbol.Number (string this.Quaternion.Z, ValueNone)
-            let w = Symbol.Number (string this.Quaternion.W, ValueNone)
-            Symbol.Symbols ([quat; x; y; z; w], ValueNone)
 
 /// Converts Quaternion types.
 type QuaternionConverter () =
@@ -1217,51 +908,6 @@ module Color =
     let inline colorNeq (x : Color) (y : Color) = x.R <> y.R || x.G <> y.G || x.B <> y.B || x.A <> y.A
     let colorZero = Color.Zero
     let colorOne = Color.One
-
-/// The Color value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] ColorPluggable =
-    { Color : Color }
-
-    static member equals left right =
-        colorEq left.Color right.Color
-
-    static member compare left right =
-        compare
-            struct (left.Color.R, left.Color.G, left.Color.B, left.Color.A)
-            struct (right.Color.R, right.Color.G, right.Color.B, right.Color.A)
-
-    override this.GetHashCode () =
-        hash this.Color
-
-    override this.Equals that =
-        match that with
-        | :? ColorPluggable as that -> ColorPluggable.equals this that
-        | _ -> failwithumf ()
-
-    interface ColorPluggable IComparable with
-        member this.CompareTo that =
-            ColorPluggable.compare this that
-
-    interface Scripting.Pluggable with
-
-        member this.CompareTo that =
-            match that with
-            | :? ColorPluggable as that -> (this :> ColorPluggable IComparable).CompareTo that
-            | _ -> failwithumf ()
-
-        member this.TypeName =
-            "Color"
-
-        member this.FSharpType =
-            getType this.Color
-
-        member this.ToSymbol () =
-            let color = Symbol.Atom ("color", ValueNone)
-            let r = Symbol.Number (string this.Color.R, ValueNone)
-            let g = Symbol.Number (string this.Color.G, ValueNone)
-            let b = Symbol.Number (string this.Color.B, ValueNone)
-            let a = Symbol.Number (string this.Color.A, ValueNone)
-            Symbol.Symbols ([color; r; g; b; a], ValueNone)
 
 /// Converts Color types.
 type ColorConverter () =

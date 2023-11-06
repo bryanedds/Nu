@@ -107,9 +107,6 @@ module Gaia =
     let mutable private groupFilePaths = Map.empty<Group Address, string>
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
-    let mutable private preludeStr = null // this will be initialized on start
-    let mutable private consoleStr = ""
-    let mutable private outputStr = ""
 
     (* Modal Activity States *)
 
@@ -260,12 +257,6 @@ Pos=1624,56
 Size=296,1024
 Collapsed=0
 DockId=0x0000000E,0
-
-[Window][Prelude]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,5
 
 [Window][Console]
 Pos=998,874
@@ -2228,62 +2219,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             with _ -> ()
                         ImGui.End ()
 
-                    // prelude window
-                    if ImGui.Begin ("Prelude", ImGuiWindowFlags.NoNav) then
-                        let preludeSourceDir = targetDir + "/../../.."
-                        if ImGui.Button "Save" then
-                            let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
-                            try File.WriteAllText (preludeFilePath, preludeStr)
-                                match World.tryReloadPrelude preludeSourceDir targetDir world with
-                                | (Right preludeStr', wtemp) ->
-                                    world <- wtemp
-                                    preludeStr <- preludeStr'
-                                | (Left error, wtemp) ->
-                                    world <- wtemp
-                                    messageBoxOpt <- Some ("Prelude reload error due to: " + error + "'.")
-                            with exn -> messageBoxOpt <- Some ("Could not save prelude due to: " + scstring exn)
-                        ImGui.SameLine ()
-                        if ImGui.Button "Load" then
-                            try match World.tryReloadPrelude preludeSourceDir targetDir world with
-                                | (Right preludeStr', wtemp) ->
-                                    world <- wtemp
-                                    preludeStr <- preludeStr'
-                                | (Left error, wtemp) ->
-                                    world <- wtemp
-                                    messageBoxOpt <- Some ("Prelude load error due to: " + error + "'.")
-                            with exn -> messageBoxOpt <- Some ("Could not load prelude due to: " + scstring exn)
-                        ImGui.InputTextMultiline ("##preludeStr", &preludeStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
-                        ImGui.End ()
-
-                    // console window
-                    if ImGui.Begin ("Console", ImGuiWindowFlags.NoNav) then
-                        let eval = ImGui.Button "Eval (Ctrl+Enter)"
-                        ImGui.SameLine ()
-                        let clear = ImGui.Button "Clear (Shift+Esc)"
-                        ImGui.SameLine ()
-                        let (selectedSimulant, localFrame) =
-                            match selectedEntityOpt with
-                            | Some entity when entity.Exists world -> (entity :> Simulant, entity.GetScriptFrame world)
-                            | Some _ | None -> (Game :> Simulant, Game.GetScriptFrame world)
-                        let contextStr = match selectedSimulant with :? Game -> "(Game)" | _ -> scstring selectedSimulant
-                        ImGui.Text ("Context: " + contextStr)
-                        ImGui.InputTextMultiline ("##consoleStr", &consoleStr, 131072u, v2 350.0f -1.0f) |> ignore<bool>
-                        if eval || ImGui.IsItemFocused () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then
-                            let exprsStr = Symbol.OpenSymbolsStr + "\n" + consoleStr + "\n" + Symbol.CloseSymbolsStr
-                            try let exprs = scvalue<Scripting.Expr array> exprsStr
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Scripting.Expr>).PrettyPrinter
-                                let struct (evaleds, wtemp) = World.evalManyWithLogging exprs localFrame selectedSimulant world
-                                world <- wtemp
-                                let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
-                                outputStr <- outputStr + "> " + consoleStr + "\n"
-                                outputStr <- outputStr + String.concat "\n" evaledStrs + "\n"
-                                consoleStr <- ""
-                            with exn -> messageBoxOpt <- Some ("Could not evaluate input due to: " + scstring exn)
-                        if clear || ImGui.IsKeyPressed ImGuiKey.Escape && ImGui.IsShiftDown () then outputStr <- ""
-                        ImGui.SameLine ()
-                        ImGui.InputTextMultiline ("##outputStr", &outputStr, 131072u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                        ImGui.End ()
-
                     // renderer window
                     if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Light-Mapping (local light mapping)"
@@ -2794,15 +2729,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
-                ""
-        preludeStr <-
-            try match World.tryReadPrelude () with
-                | Right (preludeStr, _) -> preludeStr
-                | Left error ->
-                    messageBoxOpt <- Some ("Prelude reload error due to: " + error + "'.")
-                    ""
-            with exn ->
-                messageBoxOpt <- Some ("Could not save prelude due to: " + scstring exn)
                 ""
         let result = World.runWithCleanUp tautology id id id imGuiProcess Live true world
         world <- Unchecked.defaultof<_>

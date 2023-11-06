@@ -114,13 +114,9 @@
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />
 		<Compile Include="World\WorldContent.fs" />
-		<Compile Include="World\WorldScripting.fs" />
-		<Compile Include="World\WorldConsole.fs" />
 		<Compile Include="World\WorldModule2.fs" />
-		<Compile Include="World\WorldBindings.fs" />
 		<Compile Include="World\World.fs" />
 		<None Include="Scripts\GenerateInputBindings.fsx" />
-		<None Include="Scripts\GenerateWorldBindings.fsx" />
 		<None Include="Scripts\EntityDispatcher2dTemplate.fsx" />
 		<None Include="Scripts\EntityDispatcher3dTemplate.fsx" />
 		<None Include="Scripts\FacetTemplate.fsx" />
@@ -210,7 +206,6 @@
 		<PackageReference Include="Aether.Physics2D" Version="1.7.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
 		<PackageReference Include="Prime" Version="9.13.2" />
-		<PackageReference Include="Prime.Scripting" Version="9.12.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
 	</ItemGroup>

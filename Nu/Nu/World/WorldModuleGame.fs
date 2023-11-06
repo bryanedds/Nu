@@ -35,7 +35,6 @@ module WorldModuleGame =
         static member internal getGameDispatcher game world = (World.getGameState game world).Dispatcher
         static member internal getGameModelProperty game world = (World.getGameState game world).Model
         static member internal getGameContent game world = (World.getGameState game world).Content
-        static member internal getGameScriptFrame game world = (World.getGameState game world).ScriptFrame
 
         static member internal setGameModelProperty initializing (value : DesignerProperty) game world =
             let gameState = World.getGameState game world
@@ -472,13 +471,6 @@ module WorldModuleGame =
                 containment = ContainmentType.Contains ||
                 containment = ContainmentType.Intersects
 
-        static member internal setGameScriptFrame value game world =
-            let gameState = World.getGameState game world
-            let previous = gameState.ScriptFrame
-            if value <> previous
-            then struct (true, world |> World.setGameState { gameState with ScriptFrame = value } game |> World.publishGameChange (nameof gameState.ScriptFrame) previous value game)
-            else struct (false, world)
-
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> assetTag metadata world =
             match World.tryGetSymbol assetTag metadata world with
@@ -609,7 +601,6 @@ module WorldModuleGame =
         GameGetters.Add ("EyeSize2d", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEyeSize2d game world })
         GameGetters.Add ("EyeCenter3d", fun game world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getGameEyeCenter3d game world })
         GameGetters.Add ("EyeRotation3d", fun game world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getGameEyeRotation3d game world })
-        GameGetters.Add ("ScriptFrame", fun game world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame game world })
         GameGetters.Add ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
         GameGetters.Add ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
 
