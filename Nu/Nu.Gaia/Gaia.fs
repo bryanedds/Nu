@@ -82,7 +82,7 @@ module Gaia =
 
     let mutable private fullScreen = false
     let mutable private editWhileAdvancing = false
-    let mutable private snaps2dSelected = true
+    let mutable private snaps2dSelected = false
     let mutable private snaps2d = (Constants.Gaia.Position2dSnapDefault, Constants.Gaia.Degrees2dSnapDefault, Constants.Gaia.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Gaia.Position3dSnapDefault, Constants.Gaia.Degrees3dSnapDefault, Constants.Gaia.Scale3dSnapDefault)
     let mutable private snapDrag = 0.1f
@@ -107,9 +107,6 @@ module Gaia =
     let mutable private groupFilePaths = Map.empty<Group Address, string>
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
-    let mutable private preludeStr = null // this will be initialized on start
-    let mutable private consoleStr = ""
-    let mutable private outputStr = ""
 
     (* Modal Activity States *)
 
@@ -261,12 +258,6 @@ Size=296,1024
 Collapsed=0
 DockId=0x0000000E,0
 
-[Window][Prelude]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,5
-
 [Window][Console]
 Pos=998,874
 Size=624,206
@@ -284,9 +275,9 @@ Pos=661,488
 Size=621,105
 Collapsed=0
 
-[Window][Choose a game .dll... *EDITOR RESTART REQUIRED!*]
-Pos=662,475
-Size=592,125
+[Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
+Pos=628,476
+Size=674,128
 Collapsed=0
 
 [Window][Create a group...]
@@ -346,8 +337,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
           DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,816 CentralNode=1
           DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,206 Split=X Selected=0xD4E24632
-            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=712,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=624,205 Selected=0xD4E24632
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=667,205 Selected=0x61D81DE4
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0x8C60D014
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
@@ -372,6 +363,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if group <> selectedGroup then
             ImGui.SetWindowFocus null
             selectedGroup <- group
+
+    let private selectGroupInitial screen =
+        let groups = World.getGroups screen world
+        let group =
+            match Seq.tryFind (fun (group : Group) -> group.Name = "Scene") groups with // NOTE: try to get the Scene group since it's more likely to be the group the user wants to edit.
+            | Some group -> group
+            | None ->
+                match Seq.tryHead groups with
+                | Some group -> group
+                | None ->
+                    let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
+                    group
+        selectGroup group
 
     let private selectEntityOpt entityOpt =
 
@@ -502,19 +506,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         match evt.Data.Value :?> Screen option with
         | Some screen ->
-            let groups = World.getGroups screen world
-            let group =
-                match Seq.tryFind (fun (group : Group) -> group.Name = "Scene") groups with // NOTE: try to get the Scene group since it's more likely to be the group the user wants to edit.
-                | Some group -> group
-                | None ->
-                    match Seq.tryHead groups with
-                    | Some group -> group
-                    | None ->
-                        let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
-                        group
-            selectEntityOpt None
-            selectGroup group
             selectScreen screen
+            selectGroupInitial screen
+            selectEntityOpt None
             (Cascade, world)
         | None ->
             // just keep current group selection and screen if no screen selected
@@ -1010,12 +1004,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let (screen, world) = World.createScreen (Some "Screen") world
                     let world = World.setSelectedScreen screen world
                     (screen, world)
-
-            // create default group if no group exists
-            let world =
-                if Seq.isEmpty (World.getGroups screen world)
-                then World.createGroup (Some "Group") screen world |> snd
-                else world
 
             // proceed directly to idle state
             let world = World.selectScreen (IdlingState world.GameTime) screen world
@@ -2228,62 +2216,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             with _ -> ()
                         ImGui.End ()
 
-                    // prelude window
-                    if ImGui.Begin ("Prelude", ImGuiWindowFlags.NoNav) then
-                        let preludeSourceDir = targetDir + "/../../.."
-                        if ImGui.Button "Save" then
-                            let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
-                            try File.WriteAllText (preludeFilePath, preludeStr)
-                                match World.tryReloadPrelude preludeSourceDir targetDir world with
-                                | (Right preludeStr', wtemp) ->
-                                    world <- wtemp
-                                    preludeStr <- preludeStr'
-                                | (Left error, wtemp) ->
-                                    world <- wtemp
-                                    messageBoxOpt <- Some ("Prelude reload error due to: " + error + "'.")
-                            with exn -> messageBoxOpt <- Some ("Could not save prelude due to: " + scstring exn)
-                        ImGui.SameLine ()
-                        if ImGui.Button "Load" then
-                            try match World.tryReloadPrelude preludeSourceDir targetDir world with
-                                | (Right preludeStr', wtemp) ->
-                                    world <- wtemp
-                                    preludeStr <- preludeStr'
-                                | (Left error, wtemp) ->
-                                    world <- wtemp
-                                    messageBoxOpt <- Some ("Prelude load error due to: " + error + "'.")
-                            with exn -> messageBoxOpt <- Some ("Could not load prelude due to: " + scstring exn)
-                        ImGui.InputTextMultiline ("##preludeStr", &preludeStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
-                        ImGui.End ()
-
-                    // console window
-                    if ImGui.Begin ("Console", ImGuiWindowFlags.NoNav) then
-                        let eval = ImGui.Button "Eval (Ctrl+Enter)"
-                        ImGui.SameLine ()
-                        let clear = ImGui.Button "Clear (Shift+Esc)"
-                        ImGui.SameLine ()
-                        let (selectedSimulant, localFrame) =
-                            match selectedEntityOpt with
-                            | Some entity when entity.Exists world -> (entity :> Simulant, entity.GetScriptFrame world)
-                            | Some _ | None -> (Game :> Simulant, Game.GetScriptFrame world)
-                        let contextStr = match selectedSimulant with :? Game -> "(Game)" | _ -> scstring selectedSimulant
-                        ImGui.Text ("Context: " + contextStr)
-                        ImGui.InputTextMultiline ("##consoleStr", &consoleStr, 131072u, v2 350.0f -1.0f) |> ignore<bool>
-                        if eval || ImGui.IsItemFocused () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then
-                            let exprsStr = Symbol.OpenSymbolsStr + "\n" + consoleStr + "\n" + Symbol.CloseSymbolsStr
-                            try let exprs = scvalue<Scripting.Expr array> exprsStr
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Scripting.Expr>).PrettyPrinter
-                                let struct (evaleds, wtemp) = World.evalManyWithLogging exprs localFrame selectedSimulant world
-                                world <- wtemp
-                                let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
-                                outputStr <- outputStr + "> " + consoleStr + "\n"
-                                outputStr <- outputStr + String.concat "\n" evaledStrs + "\n"
-                                consoleStr <- ""
-                            with exn -> messageBoxOpt <- Some ("Could not evaluate input due to: " + scstring exn)
-                        if clear || ImGui.IsKeyPressed ImGuiKey.Escape && ImGui.IsShiftDown () then outputStr <- ""
-                        ImGui.SameLine ()
-                        ImGui.InputTextMultiline ("##outputStr", &outputStr, 131072u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                        ImGui.End ()
-
                     // renderer window
                     if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Light-Mapping (local light mapping)"
@@ -2586,11 +2518,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         match selectedGroup with
                         | group when group.Exists world ->
                             let title = "Rename group..."
-                            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                            let opening = not (ImGui.IsPopupOpen title)
+                            if opening then ImGui.OpenPopup title
                             if ImGui.BeginPopupModal (title, &showRenameGroupDialog) then
                                 groupRename <- group.Name
                                 ImGui.Text "Group Name:"
                                 ImGui.SameLine ()
+                                if opening then ImGui.SetKeyboardFocusHere ()
                                 ImGui.InputTextWithHint ("##groupName", "[enter group name]", &groupRename, 4096u) |> ignore<bool>
                                 let group' = group.Screen / groupRename
                                 if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
@@ -2607,11 +2541,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         match selectedEntityOpt with
                         | Some entity when entity.Exists world ->
                             let title = "Rename entity..."
-                            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+                            let opening = not (ImGui.IsPopupOpen title)
+                            if opening then ImGui.OpenPopup title
                             if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
                                 entityRename <- entity.Name
                                 ImGui.Text "Entity Name:"
                                 ImGui.SameLine ()
+                                if opening then ImGui.SetKeyboardFocusHere ()
                                 ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &entityRename, 4096u) |> ignore<bool>
                                 let entity' = Nu.Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
                                 if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
@@ -2774,7 +2710,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         projectImperativeExecution <- openProjectImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
-        selectGroup (Nu.World.getGroups screen world |> Seq.head)
+        selectGroupInitial screen
         newEntityDispatcherName <- Nu.World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         assetGraphStr <-
             match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
@@ -2794,15 +2730,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
-                ""
-        preludeStr <-
-            try match World.tryReadPrelude () with
-                | Right (preludeStr, _) -> preludeStr
-                | Left error ->
-                    messageBoxOpt <- Some ("Prelude reload error due to: " + error + "'.")
-                    ""
-            with exn ->
-                messageBoxOpt <- Some ("Could not save prelude due to: " + scstring exn)
                 ""
         let result = World.runWithCleanUp tautology id id id imGuiProcess Live true world
         world <- Unchecked.defaultof<_>

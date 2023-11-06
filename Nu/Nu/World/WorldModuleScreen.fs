@@ -100,7 +100,6 @@ module WorldModuleScreen =
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) (World.getDestructionListRev world)
         static member internal getScreenOrder screen world = (World.getScreenState screen world).Order
-        static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
 
@@ -187,13 +186,6 @@ module WorldModuleScreen =
             let previous = screenState.Persistent
             if value <> previous
             then struct (true, world |> World.setScreenState { screenState with Persistent = value } screen |> World.publishScreenChange (nameof screenState.Persistent) previous value screen)
-            else struct (false, world)
-
-        static member internal setScreenScriptFrame value screen world =
-            let screenState = World.getScreenState screen world
-            let previous = screenState.ScriptFrame
-            if value <> previous
-            then struct (true, world |> World.setScreenState { screenState with ScriptFrame = value } screen |> World.publishScreenChange (nameof screenState.ScriptFrame) previous value screen)
             else struct (false, world)
 
         static member internal tryGetScreenXtensionProperty (propertyName, screen, world, property : _ outref) =
@@ -364,7 +356,6 @@ module WorldModuleScreen =
         ScreenGetters.Add ("SlideOpt", fun screen world -> { PropertyType = typeof<Slide option>; PropertyValue = World.getScreenSlideOpt screen world })
         ScreenGetters.Add ("Protected", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenProtected screen world })
         ScreenGetters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
-        ScreenGetters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
         ScreenGetters.Add ("Order", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenOrder screen world })
         ScreenGetters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
         ScreenGetters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
