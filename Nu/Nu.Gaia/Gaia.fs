@@ -364,6 +364,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.SetWindowFocus null
             selectedGroup <- group
 
+    let private selectGroupInitial screen =
+        let groups = World.getGroups screen world
+        let group =
+            match Seq.tryFind (fun (group : Group) -> group.Name = "Scene") groups with // NOTE: try to get the Scene group since it's more likely to be the group the user wants to edit.
+            | Some group -> group
+            | None ->
+                match Seq.tryHead groups with
+                | Some group -> group
+                | None ->
+                    let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
+                    group
+        selectGroup group
+
     let private selectEntityOpt entityOpt =
 
         if entityOpt <> selectedEntityOpt then
@@ -493,19 +506,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         match evt.Data.Value :?> Screen option with
         | Some screen ->
-            let groups = World.getGroups screen world
-            let group =
-                match Seq.tryFind (fun (group : Group) -> group.Name = "Scene") groups with // NOTE: try to get the Scene group since it's more likely to be the group the user wants to edit.
-                | Some group -> group
-                | None ->
-                    match Seq.tryHead groups with
-                    | Some group -> group
-                    | None ->
-                        let (group, wtemp) = World.createGroup (Some "Group") screen world in world <- wtemp
-                        group
-            selectEntityOpt None
-            selectGroup group
             selectScreen screen
+            selectGroupInitial screen
+            selectEntityOpt None
             (Cascade, world)
         | None ->
             // just keep current group selection and screen if no screen selected
@@ -2709,7 +2712,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         projectImperativeExecution <- openProjectImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
-        selectGroup (Nu.World.getGroups screen world |> Seq.head)
+        selectGroupInitial screen
         newEntityDispatcherName <- Nu.World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         assetGraphStr <-
             match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
