@@ -45,16 +45,16 @@ and Gameplay =
     member this.Columns =
         let columns = List.init this.BoardSize.X (fun _ -> List ())
         for tile in this.Tiles do columns.[tile.Position.X].Add tile
-        columns
-        |> List.map List.ofSeq
-        |> List.map (List.sortBy (fun tile -> -tile.Position.Y))
+        columns |>
+        List.map List.ofSeq |>
+        List.map (List.sortBy (fun tile -> -tile.Position.Y))
 
     member this.Rows =
         let rows = List.init this.BoardSize.Y (fun _ -> List())
         for tile in this.Tiles do rows.[tile.Position.Y].Add tile
-        rows
-        |> List.map List.ofSeq
-        |> List.map (List.sortBy (fun tile -> tile.Position.X))
+        rows |>
+        List.map List.ofSeq |>
+        List.map (List.sortBy (fun tile -> tile.Position.X))
 
     member this.Positions =
         Set.ofList
@@ -133,16 +133,16 @@ and Gameplay =
             Tiles = List.concat rows
             Score = score }
 
+    static member addTile (gameplay : Gameplay) =
+        let position = Gen.randomItem gameplay.PositionsUnoccupied
+        { gameplay with Tiles = Tile.make position (if Gen.random1 10 = 0 then 4 else 2) :: gameplay.Tiles }
+
     static member hasDifferentTiles (gameplay : Gameplay) (gameplay2 : Gameplay) =
          gameplay.TilesOrdered <> gameplay2.TilesOrdered
 
     static member hasAvailableMoves gameplay =
         let possibleMoves = [Gameplay.shiftUp; Gameplay.shiftRight; Gameplay.shiftDown; Gameplay.shiftLeft]
         List.exists (fun shift -> Gameplay.hasDifferentTiles gameplay (shift gameplay)) possibleMoves
-
-    static member addTile (gameplay : Gameplay) =
-        let position = Gen.randomItem gameplay.PositionsUnoccupied
-        { gameplay with Tiles = Tile.make position (if Gen.random1 10 = 0 then 4 else 2) :: gameplay.Tiles }
 
     static member empty =
         { BoardSize = v2iDup 4
