@@ -8,7 +8,7 @@ module GameplayDispatcher =
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | ShiftBoard of Direction
+        | TryShift of Direction
         | StartQuitting
         | FinishQuitting
         | Nil
@@ -30,10 +30,10 @@ module GameplayDispatcher =
              Game.KeyboardKeyDownEvent =|> fun evt ->
                 if not evt.Data.Repeated then
                     match evt.Data.KeyboardKey with
-                    | KeyboardKey.Up -> ShiftBoard Upward
-                    | KeyboardKey.Down -> ShiftBoard Downward
-                    | KeyboardKey.Left -> ShiftBoard Leftward
-                    | KeyboardKey.Right -> ShiftBoard Rightward
+                    | KeyboardKey.Up -> TryShift Upward
+                    | KeyboardKey.Down -> TryShift Downward
+                    | KeyboardKey.Left -> TryShift Leftward
+                    | KeyboardKey.Right -> TryShift Rightward
                     | _ -> Nil
                 else Nil]
 
@@ -41,7 +41,7 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | ShiftBoard direction ->
+            | TryShift direction ->
                 if world.Advancing && gameplay.State = Playing then
                     let gameplay' =
                         match direction with
