@@ -1808,8 +1808,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           
-                                            // NOTE: this is broken.
-                                            // TODO: find out how to process a (signed) float value!
+                                          // NOTE: this expects singles to be normalized between 0.0 and 1.0.
+                                          // TODO: normalize singles.
                                           | RawSingle endianness ->
                                             for y in 0 .. dec resolutionY do
                                                 for x in 0 .. dec resolutionX do
