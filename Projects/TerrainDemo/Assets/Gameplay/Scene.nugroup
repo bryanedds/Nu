@@ -24,7 +24,7 @@
   [TerrainDispatcher
    [[HeightMap
      [RawHeightMap
-      [[32 32] [RawUInt16 BigEndian] [Gameplay HeightMapRaw]]]]
+      [[32 32] [RawSingle BigEndian] [Gameplay HeightMapRawFloatNormalized]]]]
     [Name Terrain-0001]
     [Presence Omnipresent]
     [Size [64 9 64]]
