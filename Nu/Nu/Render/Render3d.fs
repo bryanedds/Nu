@@ -1734,6 +1734,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | (true, _) -> ()
                 | (false, _) ->
 
+                    let (resolutionX, resolutionY) =
+                        match rt.TerrainDescriptor.HeightMap with
+                        | ImageHeightMap image ->
+                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize image) renderer with
+                            | ValueSome renderAsset ->
+                                match renderAsset with
+                                | TextureAsset (_, metadata, _) -> (metadata.TextureWidth, metadata.TextureHeight)
+                                | _ -> (0, 0)
+                            | ValueNone -> (0, 0)
+                        | RawHeightMap map -> (map.Resolution.X, map.Resolution.Y)
+                        | DynamicHeightMap _ -> (0, 0)
+                    
                     let terrainHeight = rt.TerrainDescriptor.Bounds.Size.Y
                     let terrainPositionX = rt.TerrainDescriptor.Bounds.Min.X
                     let terrainPositionY = rt.TerrainDescriptor.Bounds.Min.Y
@@ -1741,39 +1753,39 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 
                     // NOTE: this code expects a normalized heightmap i.e. lowest point = 00, highest = ff;
                     // otherwise extra work will be required to find these points and scale accordingly.
-                    match rt.TerrainDescriptor.HeightMap with
-                    | RawHeightMap map ->
+                    let positionsAndTexCoordsesOpt =
+                        match rt.TerrainDescriptor.HeightMap with
+                        | RawHeightMap map ->
 
-                        let texelWidth = 1.0f / single map.Resolution.X
-                        let texelHeight = 1.0f / single map.Resolution.Y
+                            let texelWidth = 1.0f / single resolutionX
+                            let texelHeight = 1.0f / single resolutionY
                         
-                        // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
-                        // the geometry produced here is slightly different, with the border slightly clipped,
-                        // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
-                        // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
-                        let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single (dec map.Resolution.X)
-                        let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single (dec map.Resolution.Y)
+                            // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
+                            // the geometry produced here is slightly different, with the border slightly clipped,
+                            // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
+                            // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
+                            let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single (dec resolutionX)
+                            let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single (dec resolutionY)
 
-                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
-                        | ValueSome (RawAsset rawAsset) ->
+                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
+                            | ValueSome (RawAsset rawAsset) ->
 
-                            use rawMemory = new MemoryStream (rawAsset)
-                            use rawReader = new BinaryReader (rawMemory)
-                            let positionsAndTexCoordsesOpt =
+                                use rawMemory = new MemoryStream (rawAsset)
+                                use rawReader = new BinaryReader (rawMemory)
                                 try
                                     Some
                                         [|match map.RawFormat with
                                           | RawUInt8 ->
-                                            for y in 0 .. dec map.Resolution.Y do
-                                                for x in 0 .. dec map.Resolution.X do
+                                            for y in 0 .. dec resolutionY do
+                                                for x in 0 .. dec resolutionX do
                                                     let divisor = single Byte.MaxValue
                                                     let normalized = (rawReader.ReadByte () |> single) / divisor
                                                     let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           | RawUInt16 endianness ->
-                                            for y in 0 .. dec map.Resolution.Y do
-                                                for x in 0 .. dec map.Resolution.X do
+                                            for y in 0 .. dec resolutionY do
+                                                for x in 0 .. dec resolutionX do
                                                     let value =
                                                         match endianness with
                                                         | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
@@ -1784,8 +1796,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           | RawUInt32 endianness ->
-                                            for y in 0 .. dec map.Resolution.Y do
-                                                for x in 0 .. dec map.Resolution.X do
+                                            for y in 0 .. dec resolutionY do
+                                                for x in 0 .. dec resolutionX do
                                                     let value =
                                                         match endianness with
                                                         | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
@@ -1796,11 +1808,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
                                                     struct (position, texCoords)
                                           
-                                          // NOTE: this is broken.
-                                          // TODO: find out how to process a (signed) float value!
+                                            // NOTE: this is broken.
+                                            // TODO: find out how to process a (signed) float value!
                                           | RawSingle endianness ->
-                                            for y in 0 .. dec map.Resolution.Y do
-                                                for x in 0 .. dec map.Resolution.X do
+                                            for y in 0 .. dec resolutionY do
+                                                for x in 0 .. dec resolutionX do
                                                     let value =
                                                         match endianness with
                                                         | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
@@ -1812,131 +1824,133 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     // TODO: log error.
                                     None
 
-                            let indices = 
-                                [|for i in 0 .. dec map.Resolution.Y do
-                                    for j in 0 .. dec map.Resolution.X do
-                                        for k in 0 .. 1 do
-                                            j + map.Resolution.X * (i + k)|]
+                            | ValueNone -> None
+
+                        | _ -> None
+
+                    let indices = 
+                        [|for i in 0 .. dec resolutionY do
+                            for j in 0 .. dec resolutionX do
+                                for k in 0 .. 1 do
+                                    j + resolutionX * (i + k)|]
                         
-                            match positionsAndTexCoordsesOpt with
-                            | Some positionsAndTexCoordses ->
+                    match positionsAndTexCoordsesOpt with
+                    | Some positionsAndTexCoordses ->
 
-                                let normals =
-                                    [|for y in 0 .. dec map.Resolution.Y do
-                                        for x in 0 .. dec map.Resolution.X do
-                                            if  inc x = map.Resolution.X ||
-                                                inc y = map.Resolution.Y then
-                                                v3Up
-                                            else
-                                                // TODO: prevent exceptions here (and elsewhere?) when editing resolution in gaia
-                                                let a = fst' positionsAndTexCoordses.[x * map.Resolution.X + y]
-                                                let b = fst' positionsAndTexCoordses.[inc x * map.Resolution.X + y]
-                                                let c = fst' positionsAndTexCoordses.[x * map.Resolution.X + inc y]
-                                                let ab = b - a
-                                                let ac = c - a
-                                                let normal = Vector3.Cross (ab, ac) |> Vector3.Normalize
-                                                normal|]
+                        let normals =
+                            [|for y in 0 .. dec resolutionY do
+                                for x in 0 .. dec resolutionX do
+                                    if  inc x = resolutionX ||
+                                        inc y = resolutionY then
+                                        v3Up
+                                    else
+                                        // TODO: prevent exceptions here (and elsewhere?) when editing resolution in gaia
+                                        let a = fst' positionsAndTexCoordses.[x * resolutionX + y]
+                                        let b = fst' positionsAndTexCoordses.[inc x * resolutionX + y]
+                                        let c = fst' positionsAndTexCoordses.[x * resolutionX + inc y]
+                                        let ab = b - a
+                                        let ac = c - a
+                                        let normal = Vector3.Cross (ab, ac) |> Vector3.Normalize
+                                        normal|]
 
-                                // TODO: smooth vertices with averaging?
+                        // TODO: smooth vertices with averaging?
 
-                                // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
-                                // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
+                        // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
+                        // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
 
-                                // TODO: use verts and splat map to construct terrain geometry
+                        // TODO: use verts and splat map to construct terrain geometry
 
-                                let splat0 =
-                                    match rt.TerrainDescriptor.Material with
-                                    | SplatMaterial splatMaterial ->
-                                        match splatMaterial.SplatMap with
-                                        | RgbaMap rgbaMap ->
-                                            match GlRenderer3d.tryGetImageData rgbaMap renderer with
-                                            | Some (bytes, metadata) ->
-                                                // check that the image size matches that of the heightmap
-                                                if metadata.TextureWidth * metadata.TextureHeight = map.Resolution.X * map.Resolution.Y then
-                                                    bytes |>
-                                                    Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
-                                                    Array.chunkBySize 4 |>
-                                                    Array.chunkBySize metadata.TextureWidth |>
-                                                    Array.concat
-                                                else Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
-                                            | None -> Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
-                                        | _ -> Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
-                                    | _ -> Array.zeroCreate<single> (map.Resolution.X * map.Resolution.Y * sizeof<uint>) |> Array.chunkBySize 4
+                        let splat0 =
+                            match rt.TerrainDescriptor.Material with
+                            | SplatMaterial splatMaterial ->
+                                match splatMaterial.SplatMap with
+                                | RgbaMap rgbaMap ->
+                                    match GlRenderer3d.tryGetImageData rgbaMap renderer with
+                                    | Some (bytes, metadata) ->
+                                        // check that the image size matches that of the heightmap
+                                        if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
+                                            bytes |>
+                                            Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
+                                            Array.chunkBySize 4 |>
+                                            Array.chunkBySize metadata.TextureWidth |>
+                                            Array.concat
+                                        else Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
+                                    | None -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
+                                | _ -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
+                            | _ -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
                                 
-                                let vertices =
-                                    (positionsAndTexCoordses, normals, splat0) |||>
-                                    Array.map3 (fun struct (p, t) n s0 -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0[1]; s0[2]; s0[3]; s0[0]; 0.0f; 0.0f; 0.0f; 0.0f|]) |>
-                                    Array.concat
+                        let vertices =
+                            (positionsAndTexCoordses, normals, splat0) |||>
+                            Array.map3 (fun struct (p, t) n s0 -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0[1]; s0[2]; s0[3]; s0[0]; 0.0f; 0.0f; 0.0f; 0.0f|]) |>
+                            Array.concat
                                         
-                                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
+                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
-                                let materials =
-                                    let defaultMaterial = renderer.RenderPhysicallyBasedMaterial
+                        let materials =
+                            let defaultMaterial = renderer.RenderPhysicallyBasedMaterial
                                     
-                                    match rt.TerrainDescriptor.Material with
-                                    | SplatMaterial splatMaterial ->
-                                        [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
-                                            let layer = splatMaterial.TerrainLayers.[i]
-                                            let materialProperties =
-                                                defaultMaterial.MaterialProperties
-                                            let materialProperties =
-                                                match layer.TerrainLayerProperties.AlbedoOpt with
-                                                | ValueSome albedo -> { materialProperties with Albedo = albedo }
-                                                | ValueNone -> materialProperties
-                                            let materialProperties =
-                                                match layer.TerrainLayerProperties.RoughnessOpt with
-                                                | ValueSome roughness -> { materialProperties with Roughness = roughness }
-                                                | ValueNone -> materialProperties
-                                            let materialProperties =
-                                                match layer.TerrainLayerProperties.AmbientOcclusionOpt with
-                                                | ValueSome ambientOcclusion -> { materialProperties with AmbientOcclusion = ambientOcclusion }
-                                                | ValueNone -> materialProperties
-                                            let materialProperties =
-                                                match layer.TerrainLayerProperties.HeightOpt with
-                                                | ValueSome height -> { materialProperties with Height = height }
-                                                | ValueNone -> materialProperties
-                                            let materialProperties =
-                                                match layer.TerrainLayerProperties.InvertRoughnessOpt with
-                                                | ValueSome invertRoughness -> { materialProperties with InvertRoughness = invertRoughness }
-                                                | ValueNone -> materialProperties
-                                            let (albedoMetadata, albedoTexture) =
-                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AlbedoImage) renderer with
-                                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                                                | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                                            let roughnessTexture =
-                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.RoughnessImage) renderer with
-                                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
-                                                | ValueNone -> defaultMaterial.RoughnessTexture
-                                            let ambientOcclusionTexture =
-                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AmbientOcclusionImage) renderer with
-                                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
-                                                | ValueNone -> defaultMaterial.AmbientOcclusionTexture
-                                            let normalTexture =
-                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.NormalImage) renderer with
-                                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.NormalTexture
-                                                | ValueNone -> defaultMaterial.NormalTexture
-                                            let heightTexture =
-                                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.HeightImage) renderer with
-                                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.HeightTexture
-                                                | ValueNone -> defaultMaterial.HeightTexture
-                                            { defaultMaterial with
-                                                MaterialProperties = materialProperties
-                                                AlbedoMetadata = albedoMetadata
-                                                AlbedoTexture = albedoTexture
-                                                RoughnessTexture = roughnessTexture
-                                                AmbientOcclusionTexture = ambientOcclusionTexture
-                                                NormalTexture = normalTexture
-                                                HeightTexture = heightTexture }|]
-                                    | _ -> [||]
+                            match rt.TerrainDescriptor.Material with
+                            | SplatMaterial splatMaterial ->
+                                [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
+                                    let layer = splatMaterial.TerrainLayers.[i]
+                                    let materialProperties =
+                                        defaultMaterial.MaterialProperties
+                                    let materialProperties =
+                                        match layer.TerrainLayerProperties.AlbedoOpt with
+                                        | ValueSome albedo -> { materialProperties with Albedo = albedo }
+                                        | ValueNone -> materialProperties
+                                    let materialProperties =
+                                        match layer.TerrainLayerProperties.RoughnessOpt with
+                                        | ValueSome roughness -> { materialProperties with Roughness = roughness }
+                                        | ValueNone -> materialProperties
+                                    let materialProperties =
+                                        match layer.TerrainLayerProperties.AmbientOcclusionOpt with
+                                        | ValueSome ambientOcclusion -> { materialProperties with AmbientOcclusion = ambientOcclusion }
+                                        | ValueNone -> materialProperties
+                                    let materialProperties =
+                                        match layer.TerrainLayerProperties.HeightOpt with
+                                        | ValueSome height -> { materialProperties with Height = height }
+                                        | ValueNone -> materialProperties
+                                    let materialProperties =
+                                        match layer.TerrainLayerProperties.InvertRoughnessOpt with
+                                        | ValueSome invertRoughness -> { materialProperties with InvertRoughness = invertRoughness }
+                                        | ValueNone -> materialProperties
+                                    let (albedoMetadata, albedoTexture) =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AlbedoImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                        | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                    let roughnessTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.RoughnessImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
+                                        | ValueNone -> defaultMaterial.RoughnessTexture
+                                    let ambientOcclusionTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AmbientOcclusionImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                                        | ValueNone -> defaultMaterial.AmbientOcclusionTexture
+                                    let normalTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.NormalImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.NormalTexture
+                                        | ValueNone -> defaultMaterial.NormalTexture
+                                    let heightTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.HeightImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.HeightTexture
+                                        | ValueNone -> defaultMaterial.HeightTexture
+                                    { defaultMaterial with
+                                        MaterialProperties = materialProperties
+                                        AlbedoMetadata = albedoMetadata
+                                        AlbedoTexture = albedoTexture
+                                        RoughnessTexture = roughnessTexture
+                                        AmbientOcclusionTexture = ambientOcclusionTexture
+                                        NormalTexture = normalTexture
+                                        HeightTexture = heightTexture }|]
+                            | _ -> [||]
                                 
-                                renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Clear ()
-                                renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (rt.TerrainDescriptor, (geometry, materials))
+                        renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Clear ()
+                        renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (rt.TerrainDescriptor, (geometry, materials))
 
-                            | None -> ()
+                    | None -> ()
 
-                        | ValueNone -> ()
-
-                    | _ -> ()
+                        
 
                 match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue rt.TerrainDescriptor with
                 | (true, _) ->
