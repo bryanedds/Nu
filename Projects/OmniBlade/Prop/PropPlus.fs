@@ -28,12 +28,14 @@ type [<CustomEquality; NoComparison>] PropPlus =
     override this.Equals (that : obj) =
         match that with
         | :? PropPlus as that ->
-            this.Prop = that.Prop &&
+            this.UpdateTime = that.UpdateTime &&
+            v3Eq this.PointOfInterest that.PointOfInterest &&
             refEq this.Advents that.Advents && // OPTIMIZATION: presume advents come from a relatively static source.
-            v3Eq this.PointOfInterest that.PointOfInterest
+            this.Prop = that.Prop
         | _ -> false
 
     override this.GetHashCode () =
+        hash this.UpdateTime ^^^
         hash this.PointOfInterest ^^^
         hash this.Advents ^^^
         hash this.Prop
