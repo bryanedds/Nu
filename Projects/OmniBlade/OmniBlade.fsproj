@@ -48,6 +48,7 @@
 		<Compile Include="Character\CharacterInputState.fs" />
 		<Compile Include="Character\CharacterState.fs" />
 		<Compile Include="Character\Character.fs" />
+		<Compile Include="Character\CharacterPlus.fs" />
 		<Compile Include="Character\CharacterDispatcher.fs" />
 		<Compile Include="Battle\Dialog.fs" />
 		<Compile Include="Battle\DialogContent.fs" />

@@ -65,8 +65,8 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // advance field when needed
-                Field.advance world.UpdateTime field
+                // advance field
+                Field.advance field
 
             | UpdateFieldTransition ->
 
@@ -440,7 +440,7 @@ module FieldDispatcher =
                     let playTime = Option.defaultValue time field.FieldSongTimeOpt
                     let startTime = time - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    let field = Field.enterBattle world.UpdateTime startTime prizePool battleData field
+                    let field = Field.enterBattle startTime prizePool battleData field
                     withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 
@@ -607,7 +607,7 @@ module FieldDispatcher =
                  // props
                  for (index, prop) in field.Props.Pairs do
                     Content.entity<PropDispatcher> ("Prop+" + string index)
-                        [Entity.PropPlus := PropPlus.make prop field.Advents field.Avatar.Bottom]
+                        [Entity.PropPlus := PropPlus.make field.UpdateTime field.Avatar.Bottom field.Advents prop]
 
                  // spirit orb
                  if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue then

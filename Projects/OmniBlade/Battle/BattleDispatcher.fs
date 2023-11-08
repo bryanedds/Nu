@@ -41,11 +41,11 @@ module BattleDispatcher =
              Screen.PostUpdateEvent => UpdateEye
              Simulants.BattleRide.EffectTags.ChangeEvent =|> fun evt -> UpdateRideTags (evt.Data.Value :?> Map<string, Effects.Slice>)]
 
-        override this.Message (battle, message, _, world) =
+        override this.Message (battle, message, _, _) =
 
             match message with
             | Update ->
-                Battle.advance world.UpdateTime battle
+                Battle.advance battle
 
             | UpdateRideTags tags ->
                 match Map.tryFind "Tag" tags with
@@ -385,7 +385,8 @@ module BattleDispatcher =
                  for (index, character) in (Battle.getCharacters battle).Pairs do
 
                     // character
-                    Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character := character]
+                    let characterPlus = CharacterPlus.make battle.UpdateTime character
+                    Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.CharacterPlus := characterPlus]
 
                  // hud
                  for (index, character) in (Battle.getCharactersHudded battle).Pairs do
