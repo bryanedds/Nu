@@ -8,19 +8,22 @@ open Prime
 open Nu
 
 type [<CustomEquality; NoComparison>] PropPlus =
-    { Prop : Prop
+    { UpdateTime : int64
+      PointOfInterest : Vector3
       Advents : Advent Set
-      PointOfInterest : Vector3 }
+      Prop : Prop }
 
-    static member make prop advents pointOfInterest =
-        { Prop = prop
+    static member make time pointOfInterest advents prop =
+        { UpdateTime = time
+          PointOfInterest = pointOfInterest
           Advents = advents
-          PointOfInterest = pointOfInterest }
+          Prop = prop }
 
     static member empty =
-        { Prop = Prop.empty
+        { UpdateTime = 0L
+          PointOfInterest = v3Zero
           Advents = Set.empty
-          PointOfInterest = v3Zero }
+          Prop = Prop.empty }
 
     override this.Equals (that : obj) =
         match that with
@@ -31,6 +34,6 @@ type [<CustomEquality; NoComparison>] PropPlus =
         | _ -> false
 
     override this.GetHashCode () =
-        hash this.Prop ^^^
+        hash this.PointOfInterest ^^^
         hash this.Advents ^^^
-        hash this.PointOfInterest
+        hash this.Prop

@@ -21,19 +21,19 @@ module PropDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initialize (prop, entity) =
-            [entity.Perimeter := prop.Prop.Perimeter
+        override this.Initialize (propPlus, entity) =
+            [entity.Perimeter := propPlus.Prop.Perimeter
              entity.BodyType == Static
              entity.Friction == 0.0f
              entity.LinearDamping == 0.0f
              entity.AngularFactor == v3Zero
              entity.GravityOverride == Some v3Zero
              entity.Sensor :=
-                match prop.Prop.PropData with
+                match propPlus.Prop.PropData with
                 | Portal _ | Sensor _ | SavePoint -> true
                 | _ -> false
              entity.BodyShape :=
-                match prop.Prop.PropData with
+                match propPlus.Prop.PropData with
                 | Sprite _ ->
                     BodyEmpty
                 | Portal _ ->
@@ -43,7 +43,7 @@ module PropDispatcher =
                 | SavePoint _ ->
                     BodySphere { Radius = 0.1f; TransformOpt = None; PropertiesOpt = None }
                 | Door (doorType, _, _, _, _) ->
-                    match prop.Prop.PropState with
+                    match propPlus.Prop.PropState with
                     | DoorState true -> BodyEmpty
                     | _ ->
                         match doorType with
@@ -56,15 +56,15 @@ module PropDispatcher =
                     | Some shape -> shape
                     | None -> BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                 | Seal (_, _, requirements) ->
-                    if prop.Advents.IsSupersetOf requirements
+                    if propPlus.Advents.IsSupersetOf requirements
                     then BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                     else BodyEmpty
                 | Character (_, _, _, _, _, requirements) ->
-                    if prop.Advents.IsSupersetOf requirements
+                    if propPlus.Advents.IsSupersetOf requirements
                     then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Npc (npcType, _, _, requirements) | NpcBranching (npcType, _, _, requirements) ->
-                    if prop.Advents.IsSupersetOf requirements && NpcType.exists prop.Advents npcType then
+                    if propPlus.Advents.IsSupersetOf requirements && NpcType.exists propPlus.Advents npcType then
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
                         | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
@@ -72,31 +72,31 @@ module PropDispatcher =
                         | AraneaImplicitumNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Shopkeep (_, _, _, requirements) ->
-                    if prop.Advents.IsSupersetOf requirements
+                    if propPlus.Advents.IsSupersetOf requirements
                     then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Flame _ | ChestSpawn | PortalSpawn | EmptyProp ->
                     BodyEmpty]
 
-        override this.View (prop, entity, world) =
+        override this.View (propPlus, entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let (background, image, color, blend, emission, insetOpt, flip) =
-                    match prop.Prop.PropData with
+                    match propPlus.Prop.PropData with
                     | Sprite _ ->
-                        match prop.Prop.PropState with
+                        match propPlus.Prop.PropState with
                         | SpriteState (image, color, blend, emission, flip, visible) ->
                             let image = if visible then image else Assets.Default.ImageEmpty
                             (false, image, color, blend, emission, ValueNone, flip)
                         | _ ->
                             (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Portal (portalType, _, direction, _, _, _, requirements) ->
-                        if prop.Advents.IsSupersetOf requirements then
+                        if propPlus.Advents.IsSupersetOf requirements then
                             match portalType with
                             | AirPortal ->
                                 (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                             | WarpPortal ->
-                                let time = world.UpdateTime
+                                let time = propPlus.UpdateTime
                                 let localTime = time / 10L
                                 let celSize = Constants.Gameplay.TileCelSize
                                 let celColumn = single (localTime % 4L)
@@ -115,7 +115,7 @@ module PropDispatcher =
                                     let offset = v2 offsetX offsetY
                                     (true, Assets.Field.StairsImage, Color.One, Transparent, Color.Zero, ValueSome (box2 offset Constants.Gameplay.TileCelSize), FlipNone)
                                 else
-                                    let time = world.UpdateTime
+                                    let time = propPlus.UpdateTime
                                     let localTime = time / 10L
                                     let celSize = Constants.Gameplay.TileCelSize
                                     let celColumn = single (localTime % 4L)
@@ -127,24 +127,24 @@ module PropDispatcher =
                         let image =
                             match doorType with
                             | WoodenDoor ->
-                                match prop.Prop.PropState with
+                                match propPlus.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.WoodenDoorOpenedImage else Assets.Field.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                             | SteelDoor ->
-                                match prop.Prop.PropState with
+                                match propPlus.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.SteelDoorOpenedImage else Assets.Field.SteelDoorClosedImage
                                 | _ -> failwithumf ()
                             | OldDoor ->
-                                match prop.Prop.PropState with
+                                match propPlus.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.OldDoorOpenedImage else Assets.Field.OldDoorClosedImage
                                 | _ -> failwithumf ()
                             | BarredDoor ->
-                                match prop.Prop.PropState with
+                                match propPlus.Prop.PropState with
                                 | DoorState opened -> if opened then Assets.Field.BarredDoorOpenedImage else Assets.Field.BarredDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Chest (chestType, _, id, _, _, _) ->
-                        let opened = prop.Advents.Contains (Opened id)
+                        let opened = propPlus.Advents.Contains (Opened id)
                         let image =
                             match chestType with
                             | WoodenChest ->
@@ -164,7 +164,7 @@ module PropDispatcher =
                         let image =
                             match switchType with
                             | ThrowSwitch ->
-                                if prop.Advents.IsSupersetOf onRequirements
+                                if propPlus.Advents.IsSupersetOf onRequirements
                                 then Assets.Field.ThrowSwitchOnImage
                                 else Assets.Field.ThrowSwitchOffImage
                         (false, image, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
@@ -174,8 +174,8 @@ module PropDispatcher =
                         | HiddenSensor -> (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                         | StepPlateSensor -> (true, Assets.Field.StepPlateImage, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Seal (color, _, requirements) ->
-                        if prop.Advents.IsSupersetOf requirements then
-                            let time = world.UpdateTime
+                        if propPlus.Advents.IsSupersetOf requirements then
+                            let time = propPlus.UpdateTime
                             let localTime = time / 20L
                             let celSize = v2 32.0f 32.0f // TODO: put this in Constants.
                             let celColumn = single (localTime % 4L)
@@ -184,9 +184,9 @@ module PropDispatcher =
                             (false, image, color, Transparent, Color.Zero, ValueSome inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Character (_, _, isEcho, _, _, requirements) ->
-                        match prop.Prop.PropState with
-                        | CharacterState (characterColor, animationState) when prop.Advents.IsSupersetOf requirements->
-                            let time = world.UpdateTime
+                        match propPlus.Prop.PropState with
+                        | CharacterState (characterColor, animationState) when propPlus.Advents.IsSupersetOf requirements->
+                            let time = propPlus.UpdateTime
                             let inset = CharacterAnimationState.inset time Constants.Gameplay.CharacterCelSize animationState
                             let (color, emission) =
                                 if isEcho then
@@ -199,7 +199,7 @@ module PropDispatcher =
                             (false, animationState.AnimationSheet, color, Transparent, emission, ValueSome inset, FlipNone)
                         | _ -> (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Npc (npcType, directionOpt, _, requirements) | NpcBranching (npcType, directionOpt, _, requirements) ->
-                        if prop.Advents.IsSupersetOf requirements && NpcType.exists prop.Advents npcType then
+                        if propPlus.Advents.IsSupersetOf requirements && NpcType.exists propPlus.Advents npcType then
                             let (image, size) =
                                 match npcType with
                                 | ShadeNpc -> (Assets.Field.ShadeAnimationSheet, Constants.Gameplay.CharacterSize)
@@ -226,7 +226,7 @@ module PropDispatcher =
                                 match directionOpt with
                                 | Some direction -> direction
                                 | None ->
-                                    let delta = prop.PointOfInterest - prop.Prop.Bottom
+                                    let delta = propPlus.PointOfInterest - propPlus.Prop.Bottom
                                     let direction = Direction.ofVector3 delta
                                     if direction <> Upward && delta.Length () <= 288.0f // TODO: make constant.
                                     then direction
@@ -238,14 +238,14 @@ module PropDispatcher =
                             (false, image, Color.One, Transparent, Color.Zero, ValueSome inset, FlipNone)
                         else (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                     | Shopkeep (shopkeepType, directionOpt, _, requirements) ->
-                        if prop.Advents.IsSupersetOf requirements then
+                        if propPlus.Advents.IsSupersetOf requirements then
                             let image = Assets.Field.ShopkeepAnimationSheet
                             let row = match shopkeepType with RobehnShopkeep -> 0 | SchaalShopkeep -> 1
                             let direction =
                                 match directionOpt with
                                 | Some direction -> direction
                                 | None ->
-                                    let delta = prop.PointOfInterest - prop.Prop.Bottom
+                                    let delta = propPlus.PointOfInterest - propPlus.Prop.Bottom
                                     let direction = Direction.ofVector3 delta
                                     if direction <> Upward && delta.Length () <= 360.0f // TODO: make constant.
                                     then direction
@@ -259,14 +259,14 @@ module PropDispatcher =
                         let image = Assets.Field.FlameImage
                         let column = match flameType with FatFlame -> 0 | SkinnyFlame -> 3 | SmallFlame -> 1 | LargeFlame -> 2
                         let row = if mirror then 4 else 0
-                        let cel = int (world.UpdateTime / 10L % 4L) // TODO: put this in Constants.
+                        let cel = int (propPlus.UpdateTime / 10L % 4L) // TODO: put this in Constants.
                         let inset =
                             box2 // TODO: put the following hard-coded values in Constants.
                                 (v2 (single column * 16.0f) (single (row + cel) * 16.0f))
                                 (v2 16.0f 16.0f)
                         (false, image, Color.One, Transparent, Color.Zero, ValueSome inset, FlipNone)
                     | SavePoint ->
-                        let time = world.UpdateTime
+                        let time = propPlus.UpdateTime
                         let image = Assets.Field.SavePointImage
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize
