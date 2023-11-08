@@ -13,6 +13,9 @@ module Gameplay =
         | Quit
 
     // this is our MMCC model type representing gameplay.
+    // this model representation uses update time, that is, time based on number of engine updates.
+    // if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
+    // you could use `Time : single` instead.
     type Gameplay =
         { Time : int64
           State : GameplayState }
