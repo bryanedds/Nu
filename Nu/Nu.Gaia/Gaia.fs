@@ -1139,7 +1139,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyDown ImGuiKey.Enter then 0.5f
                 else 0.12f
             let turnSpeed =
-                if ImGui.IsShiftDown () then 0.025f
+                if ImGui.IsShiftDown () && not (ImGui.IsKeyDown ImGuiKey.Enter) then 0.025f
                 else 0.05f
             if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
