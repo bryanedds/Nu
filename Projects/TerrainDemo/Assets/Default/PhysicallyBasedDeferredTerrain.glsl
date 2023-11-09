@@ -150,11 +150,15 @@ void main()
         texture(albedoTexture2, texCoords) * splat0Out.b +
         texture(albedoTexture3, texCoords) * splat0Out.a;
 
-    vec4 roughnessBlend =
-        texture(roughnessTexture0, texCoords) * splat0Out.r +
-        texture(roughnessTexture1, texCoords) * splat0Out.g +
-        texture(roughnessTexture2, texCoords) * splat0Out.b +
-        texture(roughnessTexture3, texCoords) * splat0Out.a;
+    vec4 roughness0 = texture(roughnessTexture0, texCoords);
+    vec4 roughness1 = texture(roughnessTexture1, texCoords);
+    vec4 roughness2 = texture(roughnessTexture2, texCoords);
+    vec4 roughness3 = texture(roughnessTexture3, texCoords);
+    float roughnessBlend =
+        roughness0.a == 1.0f ? roughness0.g : roughness0.a * splat0Out.r +
+        roughness1.a == 1.0f ? roughness1.g : roughness1.a * splat0Out.g +
+        roughness2.a == 1.0f ? roughness2.g : roughness2.a * splat0Out.b +
+        roughness3.a == 1.0f ? roughness3.g : roughness3.a * splat0Out.a;
 
     float ambientOcclusionBlend =
         texture(ambientOcclusionTexture0, texCoords).b * splat0Out.r +
@@ -176,9 +180,7 @@ void main()
     // compute material properties
     float metallic = 0.0f;
     float ambientOcclusion = ambientOcclusionBlend * materialOut.b;
-    vec4 roughnessSample = roughnessBlend;
-    float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
-    roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
+    float roughness = (invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g;
     float emission = 0.0f;
     material = vec4(metallic, roughness, ambientOcclusion, emission);
 
