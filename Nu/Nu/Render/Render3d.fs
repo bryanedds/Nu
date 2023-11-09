@@ -1878,11 +1878,29 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     | None -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
                                 | _ -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
                             | _ -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
-                                
-                        let vertices =
-                            (positionsAndTexCoordses, normals, splat0) |||>
-                            Array.map3 (fun struct (p, t) n s0 -> [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0[1]; s0[2]; s0[3]; s0[0]; 0.0f; 0.0f; 0.0f; 0.0f|]) |>
-                            Array.concat
+
+                        let vertices = Array.zeroCreate<single> (positionsAndTexCoordses.Length * 16)
+                        for i in 0 .. dec positionsAndTexCoordses.Length do
+                            let j = i * 16
+                            let struct (p, t) = positionsAndTexCoordses.[i]
+                            let n = normals.[i]
+                            let s0 = splat0.[i]
+                            vertices.[j] <- p.X
+                            vertices.[j+1] <- p.Y
+                            vertices.[j+2] <- p.Z
+                            vertices.[j+3] <- t.X
+                            vertices.[j+4] <- t.Y
+                            vertices.[j+5] <- n.X
+                            vertices.[j+6] <- n.Y
+                            vertices.[j+7] <- n.Z
+                            vertices.[j+8] <- s0.[0]
+                            vertices.[j+9] <- s0.[1]
+                            vertices.[j+10] <- s0.[2]
+                            vertices.[j+11] <- s0.[3]
+                            vertices.[j+12] <- 0.0f // s1.[0]
+                            vertices.[j+13] <- 0.0f // s1.[1]
+                            vertices.[j+14] <- 0.0f // s1.[2]
+                            vertices.[j+15] <- 0.0f // s1.[3]
                                         
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
