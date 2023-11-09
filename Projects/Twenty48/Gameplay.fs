@@ -43,7 +43,7 @@ type Gameplay =
         List.map (List.sortBy (fun tile -> -tile.Position.Y))
 
     member this.Rows =
-        let rows = List.init this.BoardSize.Y (fun _ -> List())
+        let rows = List.init this.BoardSize.Y (fun _ -> List ())
         for tile in this.Tiles do rows.[tile.Position.Y].Add tile
         rows |>
         List.map List.ofSeq |>
