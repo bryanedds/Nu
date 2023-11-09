@@ -187,7 +187,7 @@ module Field =
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
-    let private makeBattleFromTeam time inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData =
+    let private makeBattleFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData =
         let party = team |> Map.toList |> List.tryTake 3
         let allyPositions =
             if List.length party < 3
@@ -214,7 +214,7 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = Battle.makeFromParty time inventory prizePool party battleSpeed battleData
+        let battle = Battle.makeFromParty inventory prizePool party battleSpeed battleData
         battle
         
     let rec detokenize (field : Field) (text : string) =
@@ -290,7 +290,7 @@ module Field =
         | Sensor (_, _, _, _, _) -> None
         | Character (_, _, _, isRising, _, _) ->
             if isRising then
-                if prop.Bottom.Y - field.Avatar.Bottom.Y > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
+                if prop.Bottom.Y - field.Avatar_.Bottom.Y > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
                 then Some "Talk"
                 else None
             else Some "Talk"
@@ -302,9 +302,9 @@ module Field =
     let facingProp propId (field : Field) =
         match field.Props_.TryGetValue propId with
         | (true, prop) ->
-            let v = prop.Bottom - field.Avatar.Bottom
+            let v = prop.Bottom - field.Avatar_.Bottom
             let direction = Direction.ofVector3 v
-            direction <> field.Avatar.Direction.Opposite
+            direction <> field.Avatar_.Direction.Opposite
         | (false, _) -> false
 
     let getFacingProps (field : Field) =
@@ -559,8 +559,8 @@ module Field =
         let field = updateAvatarIntersectedPropIds (constant []) field
         field
 
-    let enterBattle time songTime prizePool battleData (field : Field) =
-        let battle = makeBattleFromTeam time field.Inventory prizePool field.Team field.Options.BattleSpeed battleData
+    let enterBattle songTime prizePool battleData (field : Field) =
+        let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData
         let field = updateFieldSongTimeOpt (constant (Some songTime)) field
         updateBattleOpt (constant (Some battle)) field
 
@@ -1090,7 +1090,7 @@ module Field =
             | _ :: _ -> (Sequence haltedCues, definitions, (signals, field))
             | [] -> (Fin, definitions, (signals, field))
 
-    let private advanceSpirits time (field : Field) =
+    let private advanceSpirits (field : Field) =
         match field.FieldTransitionOpt with
         | None ->
             let field =
@@ -1099,20 +1099,20 @@ module Field =
             let field =
                 { field with
                     Spirits_ =
-                        Array.map (Spirit.advance time field.Avatar.Center) field.Spirits_ }
+                        Array.map (Spirit.advance field.UpdateTime_ field.Avatar_.Center) field.Spirits_ }
             let field =
                 { field with
                     Spirits_ =
                         Array.filter (fun (spirit : Spirit) ->
-                            let delta = field.Avatar.Bottom - spirit.Center
+                            let delta = field.Avatar_.Bottom - spirit.Center
                             let distance = delta.Magnitude
                             distance < Constants.Field.SpiritRadius * 1.25f)
                             field.Spirits }
             let field =
                 let spiritsNeeded = int (field.SpiritActivity_ / single Constants.Field.SpiritActivityThreshold)
-                let spiritsDeficient = spiritsNeeded - Array.length field.Spirits
+                let spiritsDeficient = spiritsNeeded - Array.length field.Spirits_
                 let spiritsSpawned =
-                    match Data.Value.Fields.TryGetValue field.FieldType with
+                    match Data.Value.Fields.TryGetValue field.FieldType_ with
                     | (true, fieldData) ->
                         [|0 .. spiritsDeficient - 1|] |>
                         Array.map (fun _ ->
@@ -1120,18 +1120,18 @@ module Field =
                                 if spiritsNeeded >= Constants.Field.SpiritActivityAggressionThreshold
                                 then SpiritPattern.generate ()
                                 else SpiritPattern.Confused
-                            match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData with
+                            match FieldData.tryGetSpiritType field.OmniSeedState_ field.Avatar_.Bottom fieldData with
                             | Some spiritType ->
                                 let spiritMovement = SpiritPattern.toSpiritMovement spiritPattern
-                                let spirit = Spirit.spawn time field.Avatar.Bottom spiritType spiritMovement
+                                let spirit = Spirit.spawn field.UpdateTime_ field.Avatar_.Bottom spiritType spiritMovement
                                 Some spirit
                             | None -> None) |>
                         Array.definitize
                     | (false, _) -> [||]
                 { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
-            match Array.tryFind (fun (spirit : Spirit) -> Vector3.Distance (field.Avatar.LowerCenter, spirit.Bottom) < Constants.Field.SpiritCollisionRadius) field.Spirits_ with
+            match Array.tryFind (fun (spirit : Spirit) -> Vector3.Distance (field.Avatar_.LowerCenter, spirit.Bottom) < Constants.Field.SpiritCollisionRadius) field.Spirits_ with
             | Some spirit ->
-                match Data.Value.Fields.TryGetValue field.FieldType with
+                match Data.Value.Fields.TryGetValue field.FieldType_ with
                 | (true, fieldData) ->
                     match fieldData.EncounterTypeOpt with
                     | Some encounterType ->
@@ -1152,7 +1152,7 @@ module Field =
             | None -> Right field
         | Some _ -> Right field
 
-    let advance time (field : Field) =
+    let advance (field : Field) =
 
         // advance when battle is inactive
         match field.BattleOpt_ with
@@ -1163,15 +1163,15 @@ module Field =
 
             // warp avatar when needed
             let (signals, field) =
-                if not field.AvatarWarped
-                then withSignal (WarpAvatar field.Avatar.Bottom) field
+                if not field.AvatarWarped_
+                then withSignal (WarpAvatar field.Avatar_.Bottom) field
                 else just field
 
             // advance dialog
             let field =
                 match field.DialogOpt_ with
                 | Some dialog ->
-                    let dialog = Dialog.advance (detokenize field) time dialog
+                    let dialog = Dialog.advance (detokenize field) field.UpdateTime_ dialog
                     updateDialogOpt (constant (Some dialog)) field
                 | None -> field
 
@@ -1230,13 +1230,13 @@ module Field =
                     Option.isNone field.DialogOpt_ &&
                     Option.isNone field.ShopOpt_ &&
                     Option.isNone field.FieldTransitionOpt_ then
-                    match advanceSpirits time field with
+                    match advanceSpirits field with
                     | Left (battleData, field) ->
                         let fieldTime = field.UpdateTime_
                         let playTime = Option.defaultValue fieldTime field.FieldSongTimeOpt_
                         let startTime = fieldTime - playTime
                         let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                        let field = enterBattle time startTime prizePool battleData field
+                        let field = enterBattle startTime prizePool battleData field
                         let fade = FadeOutSong 60L
                         let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
                         (signal fade :: signal beastGrowl :: signals, field)
@@ -1339,7 +1339,7 @@ module Field =
                     Map.singleton 0 (Teammate.make level 0 Jinn) |>
                     Map.add 1 (Teammate.make level 1 Mael) |>
                     Map.add 2 (Teammate.make level 2 Riain)
-                makeBattleFromTeam time Inventory.initial PrizePool.empty team PacedSpeed battle
+                makeBattleFromTeam Inventory.initial PrizePool.empty team PacedSpeed battle
             | None -> Battle.empty
         updateBattleOpt (constant (Some battle)) field
 

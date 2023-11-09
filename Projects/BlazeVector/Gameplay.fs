@@ -12,8 +12,8 @@ module Gameplay =
         | Quit
 
     type [<SymbolicExpansion>] Gameplay =
-        { State : GameplayState
-          Score : int }
+        { Score : int
+          State : GameplayState }
 
     type GameplayMessage =
         | Score of int
@@ -33,7 +33,7 @@ module Gameplay =
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ State = Quit; Score = 0 })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ Score = 0; State = Quit })
 
         static let [<Literal>] SectionCount = 16
 

@@ -10,14 +10,14 @@ open Nu
 module CharacterDispatcher =
 
     type Entity with
-        member this.GetCharacter world = this.GetModelGeneric<Character> world
-        member this.SetCharacter value world = this.SetModelGeneric<Character> value world
-        member this.Character = this.ModelGeneric<Character> ()
+        member this.GetCharacterPlus world = this.GetModelGeneric<CharacterPlus> world
+        member this.SetCharacterPlus value world = this.SetModelGeneric<CharacterPlus> value world
+        member this.CharacterPlus = this.ModelGeneric<CharacterPlus> ()
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher2d<Character, Message, Command> (true, Character.empty)
+        inherit EntityDispatcher2d<CharacterPlus, Message, Command> (true, CharacterPlus.empty)
 
-        static let getAfflictionInsetOpt (character : Character) (world : World) =
+        static let getAfflictionInsetOpt time (character : Character) =
             if character.Standing then
                 let statuses = character.Statuses
                 let celYOpt =
@@ -33,7 +33,6 @@ module CharacterDispatcher =
                     else None
                 match celYOpt with
                 | Some afflictionY ->
-                    let time = world.UpdateTime
                     let afflictionX = time / 8L % 8L |> int
                     let afflictionPosition = v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y)
                     let inset = box2 afflictionPosition Constants.Battle.AfflictionCelSize
@@ -41,7 +40,7 @@ module CharacterDispatcher =
                 | None -> None
             else None
 
-        static let getChargeOrbInsetOpt (character : Character) (world : World) =
+        static let getChargeOrbInsetOpt time (character : Character) =
             if character.Standing then
                 let celXOpt =
                     match (character.ConjureChargeOpt, character.TechChargeOpt |> Option.map Triple.snd) with
@@ -51,7 +50,7 @@ module CharacterDispatcher =
                         elif chargeAmount < 6 then Some 1
                         elif chargeAmount < 9 then Some 2
                         elif chargeAmount < 12 then Some 3
-                        else world.UpdateTime / 12L % 4L + 4L |> int |> Some
+                        else time / 12L % 4L + 4L |> int |> Some
                     | (None, None) -> None
                 match celXOpt with
                 | Some celX ->
@@ -61,14 +60,16 @@ module CharacterDispatcher =
                 | None -> None
             else None
 
-        override this.Initialize (character, _) =
+        override this.Initialize (characterPlus, _) =
+            let character = characterPlus.Character
             [Entity.Presence == Omnipresent
              Entity.Perimeter := character.Perimeter
              Entity.Elevation == Constants.Battle.ForegroundElevation]
 
-        override this.View (character, entity, world) =
+        override this.View (characterPlus, entity, world) =
+            let time = characterPlus.UpdateTime
+            let character = characterPlus.Character
             if entity.GetVisible world then
-                let time = world.UpdateTime
                 let mutable transform = entity.GetTransform world
                 let perimeter = transform.Perimeter
                 let characterView =
@@ -82,7 +83,7 @@ module CharacterDispatcher =
                               Emission = Character.getAnimationEmission time character
                               Flip = FlipNone })
                 let afflictionView =
-                    match getAfflictionInsetOpt character world with
+                    match getAfflictionInsetOpt time character with
                     | Some afflictionInset ->
                         let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
                         let afflictionPosition =
@@ -108,7 +109,7 @@ module CharacterDispatcher =
                                   Flip = FlipNone })
                     | None -> View.empty
                 let chargeOrbView =
-                    match getChargeOrbInsetOpt character world with
+                    match getChargeOrbInsetOpt time character with
                     | Some chargeOrbInset ->
                         let chargeOrbImage = Assets.Battle.ChargeOrbAnimationSheet
                         let chargeOrbPosition =
