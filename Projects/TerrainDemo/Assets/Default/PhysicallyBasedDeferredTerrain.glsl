@@ -149,10 +149,10 @@ void main()
     vec4 roughness2 = texture(roughnessTexture2, texCoords);
     vec4 roughness3 = texture(roughnessTexture3, texCoords);
     float roughnessBlend =
-        roughness0.a == 1.0f ? roughness0.g : roughness0.a * splat0Out.r +
-        roughness1.a == 1.0f ? roughness1.g : roughness1.a * splat0Out.g +
-        roughness2.a == 1.0f ? roughness2.g : roughness2.a * splat0Out.b +
-        roughness3.a == 1.0f ? roughness3.g : roughness3.a * splat0Out.a;
+        (roughness0.a == 1.0f ? roughness0.g : roughness0.a) * splat0Out.r +
+        (roughness1.a == 1.0f ? roughness1.g : roughness1.a) * splat0Out.g +
+        (roughness2.a == 1.0f ? roughness2.g : roughness2.a) * splat0Out.b +
+        (roughness3.a == 1.0f ? roughness3.g : roughness3.a) * splat0Out.a;
 
     float ambientOcclusionBlend =
         texture(ambientOcclusionTexture0, texCoords).b * splat0Out.r +
