@@ -8,7 +8,7 @@ module GameplayDispatcher =
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | ShiftBoard of Direction
+        | TryShift of Direction
         | StartQuitting
         | FinishQuitting
         | Nil
@@ -30,10 +30,10 @@ module GameplayDispatcher =
              Game.KeyboardKeyDownEvent =|> fun evt ->
                 if not evt.Data.Repeated then
                     match evt.Data.KeyboardKey with
-                    | KeyboardKey.Up -> ShiftBoard Upward
-                    | KeyboardKey.Down -> ShiftBoard Downward
-                    | KeyboardKey.Left -> ShiftBoard Leftward
-                    | KeyboardKey.Right -> ShiftBoard Rightward
+                    | KeyboardKey.Up -> TryShift Upward
+                    | KeyboardKey.Down -> TryShift Downward
+                    | KeyboardKey.Left -> TryShift Leftward
+                    | KeyboardKey.Right -> TryShift Rightward
                     | _ -> Nil
                 else Nil]
 
@@ -41,9 +41,8 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | ShiftBoard direction ->
-                match gameplay.State with
-                | Playing when world.Advancing ->
+            | TryShift direction ->
+                if world.Advancing && gameplay.State = Playing then
                     let gameplay' =
                         match direction with
                         | Upward -> Gameplay.shiftUp gameplay
@@ -56,12 +55,12 @@ module GameplayDispatcher =
                         then just { gameplay with State = GameOver }
                         else just gameplay
                     else just gameplay
-                | _ -> just gameplay
+                else just gameplay
 
             | StartQuitting ->
                 match gameplay.State with
                 | Playing | GameOver -> just { gameplay with State = Quitting }
-                | _ -> just gameplay
+                | Quitting | Quit -> just gameplay
 
             | FinishQuitting ->
                 just { gameplay with State = Quit }

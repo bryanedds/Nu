@@ -26,15 +26,8 @@ type GameplayState =
     | Quitting
     | Quit
 
-type Animation =
-    { StartTime : int64
-      KeyFrameBegin : Gameplay
-      KeyFrameEnd : Gameplay }
-
-// this is our MMCC model type representing gameplay.
-and Gameplay =
+type Gameplay =
     { BoardSize : Vector2i
-      AnimationOpt : Animation option
       Tiles : Tile list
       Score : int
       State : GameplayState }
@@ -147,7 +140,6 @@ and Gameplay =
 
     static member empty =
         { BoardSize = v2iDup 4
-          AnimationOpt = None
           Tiles = []
           Score = 0
           State = Quit }
