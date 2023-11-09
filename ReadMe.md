@@ -2,7 +2,7 @@ Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](h
 =
 
 **Live Discord Support Here -**
-https://discord.gg/hfPAjtHpb
+[https://discord.gg/hfPAjtHpb](https://discord.gg/jf96NA4)
 
 What is the **Nu Game Engine**?
 
