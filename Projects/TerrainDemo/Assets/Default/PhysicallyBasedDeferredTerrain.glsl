@@ -41,6 +41,7 @@ out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 out vec4 splat0Out;
+out vec4 splat1Out;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
@@ -48,16 +49,6 @@ flat out int invertRoughnessOut;
 
 void main()
 {
-    if (layerCount == 1) {
-        splat0Out = vec4(splat0.r, 0.0, 0.0, 0.0);
-    } else if (layerCount == 2) {
-        splat0Out = vec4(splat0.r, splat0.g, 0.0, 0.0);
-    } else if (layerCount == 3) {
-        splat0Out = vec4(splat0.r, splat0.g, splat0.b, 0.0);
-    } else if (layerCount == 4) {
-        splat0Out = vec4(splat0.r, splat0.g, splat0.b, splat0.a);
-    }
-    
     positionOut = model * vec4(position, 1.0);
     int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
@@ -68,6 +59,8 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
+    splat0Out = vec4(splat0.r, splat0.g, splat0.b, splat0.a);
+    splat1Out = vec4(splat1.r, splat1.g, splat1.b, splat1.a);
     gl_Position = projection * view * positionOut;
 }
 
@@ -102,6 +95,7 @@ in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
 in vec4 splat0Out;
+in vec4 splat1Out;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
