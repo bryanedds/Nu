@@ -67,13 +67,13 @@ namespace Nu
             ((uint)(A * 255.0f));
 
         /// <summary>
-        /// The packed value in ABGR order.
+        /// The packed value in ARGB order.
         /// </summary>
-        public uint Abgr =>
+        public uint Argb =>
             ((uint)(A * 255.0f)) << 24 |
-            ((uint)(B * 255.0f)) << 16 |
+            ((uint)(R * 255.0f)) << 16 |
             ((uint)(G * 255.0f)) << 8 |
-            ((uint)(R * 255.0f));
+            ((uint)(B * 255.0f));
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Color"/> struct.
