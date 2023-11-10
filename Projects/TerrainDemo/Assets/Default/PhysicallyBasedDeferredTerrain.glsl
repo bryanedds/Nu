@@ -23,7 +23,6 @@ const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
 
 uniform mat4 view;
 uniform mat4 projection;
-uniform int layerCount;
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
@@ -68,28 +67,15 @@ void main()
 #version 410 core
 
 const float GAMMA = 2.2;
+const int TERRAIN_LAYERS_MAX = 4;
 
 uniform vec3 eyeCenter;
-uniform sampler2D albedoTexture0;
-uniform sampler2D roughnessTexture0;
-uniform sampler2D ambientOcclusionTexture0;
-uniform sampler2D normalTexture0;
-uniform sampler2D heightTexture0;
-uniform sampler2D albedoTexture1;
-uniform sampler2D roughnessTexture1;
-uniform sampler2D ambientOcclusionTexture1;
-uniform sampler2D normalTexture1;
-uniform sampler2D heightTexture1;
-uniform sampler2D albedoTexture2;
-uniform sampler2D roughnessTexture2;
-uniform sampler2D ambientOcclusionTexture2;
-uniform sampler2D normalTexture2;
-uniform sampler2D heightTexture2;
-uniform sampler2D albedoTexture3;
-uniform sampler2D roughnessTexture3;
-uniform sampler2D ambientOcclusionTexture3;
-uniform sampler2D normalTexture3;
-uniform sampler2D heightTexture3;
+uniform int layerCount;
+uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
+uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
+uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
+uniform sampler2D normalTextures[TERRAIN_LAYERS_MAX];
+uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -123,12 +109,12 @@ void main()
     mat3 toTangent = transpose(toWorld);
 
     // blend height
-    float heightBlend =
-        texture(heightTexture0, texCoordsOut).r * splat0Out.r +
-        texture(heightTexture1, texCoordsOut).r * splat0Out.g +
-        texture(heightTexture2, texCoordsOut).r * splat0Out.b +
-        texture(heightTexture3, texCoordsOut).r * splat0Out.a;
-    
+    float heightBlend = 0.0;
+    for (int i = 0; i < layerCount; ++i)
+    {
+        heightBlend += texture(heightTextures[i], texCoordsOut).r * splat0Out[i];
+    }
+
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
@@ -138,34 +124,31 @@ void main()
     vec2 texCoords = texCoordsOut - parallax;
 
     // blend other materials
-    vec4 albedoBlend =
-        texture(albedoTexture0, texCoords) * splat0Out.r +
-        texture(albedoTexture1, texCoords) * splat0Out.g +
-        texture(albedoTexture2, texCoords) * splat0Out.b +
-        texture(albedoTexture3, texCoords) * splat0Out.a;
+    vec4 albedoBlend = vec4(0.0);
+    for (int i = 0; i < layerCount; ++i)
+    {
+        albedoBlend += texture(albedoTextures[i], texCoords) * splat0Out[i];
+    }
 
-    vec4 roughness0 = texture(roughnessTexture0, texCoords);
-    vec4 roughness1 = texture(roughnessTexture1, texCoords);
-    vec4 roughness2 = texture(roughnessTexture2, texCoords);
-    vec4 roughness3 = texture(roughnessTexture3, texCoords);
-    float roughnessBlend =
-        (roughness0.a == 1.0f ? roughness0.g : roughness0.a) * splat0Out.r +
-        (roughness1.a == 1.0f ? roughness1.g : roughness1.a) * splat0Out.g +
-        (roughness2.a == 1.0f ? roughness2.g : roughness2.a) * splat0Out.b +
-        (roughness3.a == 1.0f ? roughness3.g : roughness3.a) * splat0Out.a;
+    float roughnessBlend = 0.0;
+    for (int i = 0; i < layerCount; ++i)
+    {
+        vec4 roughness = texture(roughnessTextures[i], texCoords);
+        roughnessBlend += (roughness.a == 1.0f ? roughness.g : roughness.a) * splat0Out[i];
+    }
 
-    float ambientOcclusionBlend =
-        texture(ambientOcclusionTexture0, texCoords).b * splat0Out.r +
-        texture(ambientOcclusionTexture1, texCoords).b * splat0Out.g +
-        texture(ambientOcclusionTexture2, texCoords).b * splat0Out.b +
-        texture(ambientOcclusionTexture3, texCoords).b * splat0Out.a;
+    float ambientOcclusionBlend = 0.0;
+    for (int i = 0; i < layerCount; ++i)
+    {
+        ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * splat0Out[i];
+    }
 
-    vec3 normalBlend =
-        texture(normalTexture0, texCoords).xyz * splat0Out.r +
-        texture(normalTexture1, texCoords).xyz * splat0Out.g +
-        texture(normalTexture2, texCoords).xyz * splat0Out.b +
-        texture(normalTexture3, texCoords).xyz * splat0Out.a;
-    
+    vec3 normalBlend = vec3(0.0);
+    for (int i = 0; i < layerCount; ++i)
+    {
+        normalBlend += texture(normalTextures[i], texCoords).xyz * splat0Out[i];
+    }
+
     // compute albedo, discarding on zero alpha
     vec4 albedoSample = albedoBlend;
     if (albedoSample.a == 0.0f) discard;

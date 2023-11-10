@@ -154,26 +154,11 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
-          AlbedoTexture0Uniform : int
-          RoughnessTexture0Uniform : int
-          AmbientOcclusionTexture0Uniform : int
-          NormalTexture0Uniform : int
-          HeightTexture0Uniform : int
-          AlbedoTexture1Uniform : int
-          RoughnessTexture1Uniform : int
-          AmbientOcclusionTexture1Uniform : int
-          NormalTexture1Uniform : int
-          HeightTexture1Uniform : int
-          AlbedoTexture2Uniform : int
-          RoughnessTexture2Uniform : int
-          AmbientOcclusionTexture2Uniform : int
-          NormalTexture2Uniform : int
-          HeightTexture2Uniform : int
-          AlbedoTexture3Uniform : int
-          RoughnessTexture3Uniform : int
-          AmbientOcclusionTexture3Uniform : int
-          NormalTexture3Uniform : int
-          HeightTexture3Uniform : int
+          AlbedoTexturesUniforms : int array
+          RoughnessTexturesUniforms : int array
+          AmbientOcclusionTexturesUniforms : int array
+          NormalTexturesUniforms : int array
+          HeightTexturesUniforms : int array
           LayerCountUniform : int
           PhysicallyBasedShader : uint }
 
@@ -1195,52 +1180,32 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
-        let albedoTexture0Uniform = Gl.GetUniformLocation (shader, "albedoTexture0")
-        let roughnessTexture0Uniform = Gl.GetUniformLocation (shader, "roughnessTexture0")
-        let ambientOcclusionTexture0Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture0")
-        let normalTexture0Uniform = Gl.GetUniformLocation (shader, "normalTexture0")
-        let heightTexture0Uniform = Gl.GetUniformLocation (shader, "heightTexture0")
-        let albedoTexture1Uniform = Gl.GetUniformLocation (shader, "albedoTexture1")
-        let roughnessTexture1Uniform = Gl.GetUniformLocation (shader, "roughnessTexture1")
-        let ambientOcclusionTexture1Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture1")
-        let normalTexture1Uniform = Gl.GetUniformLocation (shader, "normalTexture1")
-        let heightTexture1Uniform = Gl.GetUniformLocation (shader, "heightTexture1")
-        let albedoTexture2Uniform = Gl.GetUniformLocation (shader, "albedoTexture2")
-        let roughnessTexture2Uniform = Gl.GetUniformLocation (shader, "roughnessTexture2")
-        let ambientOcclusionTexture2Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture2")
-        let normalTexture2Uniform = Gl.GetUniformLocation (shader, "normalTexture2")
-        let heightTexture2Uniform = Gl.GetUniformLocation (shader, "heightTexture2")
-        let albedoTexture3Uniform = Gl.GetUniformLocation (shader, "albedoTexture3")
-        let roughnessTexture3Uniform = Gl.GetUniformLocation (shader, "roughnessTexture3")
-        let ambientOcclusionTexture3Uniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture3")
-        let normalTexture3Uniform = Gl.GetUniformLocation (shader, "normalTexture3")
-        let heightTexture3Uniform = Gl.GetUniformLocation (shader, "heightTexture3")
+        let albedoTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "albedoTextures[" + string i + "]")
+        let roughnessTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "roughnessTextures[" + string i + "]")
+        let ambientOcclusionTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "ambientOcclusionTextures[" + string i + "]")
+        let normalTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "normalTextures[" + string i + "]")
+        let heightTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "heightTextures[" + string i + "]")
         let layerCountUniform = Gl.GetUniformLocation (shader, "layerCount")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
-          AlbedoTexture0Uniform = albedoTexture0Uniform
-          RoughnessTexture0Uniform = roughnessTexture0Uniform
-          AmbientOcclusionTexture0Uniform = ambientOcclusionTexture0Uniform
-          NormalTexture0Uniform = normalTexture0Uniform
-          HeightTexture0Uniform = heightTexture0Uniform
-          AlbedoTexture1Uniform = albedoTexture1Uniform
-          RoughnessTexture1Uniform = roughnessTexture1Uniform
-          AmbientOcclusionTexture1Uniform = ambientOcclusionTexture1Uniform
-          NormalTexture1Uniform = normalTexture1Uniform
-          HeightTexture1Uniform = heightTexture1Uniform
-          AlbedoTexture2Uniform = albedoTexture2Uniform
-          RoughnessTexture2Uniform = roughnessTexture2Uniform
-          AmbientOcclusionTexture2Uniform = ambientOcclusionTexture2Uniform
-          NormalTexture2Uniform = normalTexture2Uniform
-          HeightTexture2Uniform = heightTexture2Uniform
-          AlbedoTexture3Uniform = albedoTexture3Uniform
-          RoughnessTexture3Uniform = roughnessTexture3Uniform
-          AmbientOcclusionTexture3Uniform = ambientOcclusionTexture3Uniform
-          NormalTexture3Uniform = normalTexture3Uniform
-          HeightTexture3Uniform = heightTexture3Uniform
+          AlbedoTexturesUniforms = albedoTexturesUniforms
+          RoughnessTexturesUniforms = roughnessTexturesUniforms
+          AmbientOcclusionTexturesUniforms = ambientOcclusionTexturesUniforms
+          NormalTexturesUniforms = normalTexturesUniforms
+          HeightTexturesUniforms = heightTexturesUniforms
           LayerCountUniform = layerCountUniform
           PhysicallyBasedShader = shader } : PhysicallyBasedDeferredTerrainShader
 
@@ -1538,55 +1503,48 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.AlbedoTexture0Uniform, 0)
-        Gl.Uniform1 (shader.RoughnessTexture0Uniform, 1)
-        Gl.Uniform1 (shader.AmbientOcclusionTexture0Uniform, 2)
-        Gl.Uniform1 (shader.NormalTexture0Uniform, 3)
-        Gl.Uniform1 (shader.HeightTexture0Uniform, 4)
-        Gl.Uniform1 (shader.AlbedoTexture1Uniform, 5)
-        Gl.Uniform1 (shader.RoughnessTexture1Uniform, 6)
-        Gl.Uniform1 (shader.AmbientOcclusionTexture1Uniform, 7)
-        Gl.Uniform1 (shader.NormalTexture1Uniform, 8)
-        Gl.Uniform1 (shader.HeightTexture1Uniform, 9)
-        Gl.Uniform1 (shader.AlbedoTexture2Uniform, 10)
-        Gl.Uniform1 (shader.RoughnessTexture2Uniform, 11)
-        Gl.Uniform1 (shader.AmbientOcclusionTexture2Uniform, 12)
-        Gl.Uniform1 (shader.NormalTexture2Uniform, 13)
-        Gl.Uniform1 (shader.HeightTexture2Uniform, 14)
-        Gl.Uniform1 (shader.AlbedoTexture3Uniform, 15)
-        Gl.Uniform1 (shader.RoughnessTexture3Uniform, 16)
-        Gl.Uniform1 (shader.AmbientOcclusionTexture3Uniform, 17)
-        Gl.Uniform1 (shader.NormalTexture3Uniform, 18)
-        Gl.Uniform1 (shader.HeightTexture3Uniform, 19)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.RoughnessTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.AmbientOcclusionTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 2)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.NormalTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 3)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.HeightTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 4)
         Gl.Uniform1 (shader.LayerCountUniform, materials.Length)
         Hl.Assert ()
-        
+
         // setup textures
         for i in 0 .. dec materials.Length do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i * 5 |> Branchless.reinterpret)
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture)
-            Gl.ActiveTexture (int TextureUnit.Texture1 + i * 5 |> Branchless.reinterpret)
+        for i in 0 .. dec materials.Length do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture)
-            Gl.ActiveTexture (int TextureUnit.Texture2 + i * 5 |> Branchless.reinterpret)
+        for i in 0 .. dec materials.Length do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture)
-            Gl.ActiveTexture (int TextureUnit.Texture3 + i * 5 |> Branchless.reinterpret)
+        for i in 0 .. dec materials.Length do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture)
-            Gl.ActiveTexture (int TextureUnit.Texture4 + i * 5 |> Branchless.reinterpret)
+        for i in 0 .. dec materials.Length do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture)
         Hl.Assert ()
 
         // setup pbr texture filters
-        // TODO: remove unused types of pbr textures (which I think would be metalness, at least?)
         for i in 0 .. dec materials.Length do
-            for j in 0 .. dec 3 do
-                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + j + i * 5))
+            for j in 0 .. dec 5 do
+                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
                 match materials[i].TextureMinFilterOpt with
                 | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                 | None -> ()
                 match materials[i].TextureMagFilterOpt with
                 | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                 | None -> ()
-        Hl.Assert ()
+                Hl.Assert ()
 
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
@@ -1653,19 +1611,18 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown pbr texture filters
-        // TODO: remove unused types of pbr textures (which I think would be metalness, at least?)
         for i in 0 .. dec materials.Length do
-            for j in 0 .. dec 3 do
-                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + j + i * 5))
+            for j in 0 .. dec 5 do
+                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
                 if materials[i].TextureMinFilterOpt.IsSome then
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
                 if materials[i].TextureMagFilterOpt.IsSome then
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
                 Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                Hl.Assert () // inconsistency w/ above?
+                Hl.Assert ()
 
         // teardown textures
-        for i in 0 .. (dec materials.Length * 5) do
+        for i in 0 .. dec materials.Length * 5 do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
@@ -1808,7 +1765,7 @@ module PhysicallyBased =
             match material.TextureMagFilterOpt with
             | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             | None -> ()
-        Hl.Assert ()
+            Hl.Assert ()
 
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)

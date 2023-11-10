@@ -101,6 +101,7 @@ module Render =
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256
     let [<Literal>] GeometryBatchPrealloc = 1024
+    let [<Literal>] TerrainLayersMax = 4 // TODO: ensure this constant is in the right order in this module.
     let [<Literal>] LightMapsMaxDeferred = 27
     let [<Literal>] LightMapsMaxForward = 2
     let [<Literal>] LightsMaxDeferred = 64
