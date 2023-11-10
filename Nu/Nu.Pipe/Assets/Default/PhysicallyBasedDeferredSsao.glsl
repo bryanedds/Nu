@@ -94,13 +94,17 @@ void main()
         vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
 
-        // sample position in view space
-        vec3 samplePosition = texture(positionTexture, samplingPositionScreen).rgb;
-        vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
+        // ensure we're not using empty space as indicated by sample normal
+        if (texture(normalAndHeightTexture, samplingPositionScreen).rgb != vec3(1))
+        {
+            // sample position in view space
+            vec3 samplePosition = texture(positionTexture, samplingPositionScreen).rgb;
+            vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
 
-        // perform range check and accumulate if occluded
-        float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
-        ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
+            // perform range check and accumulate if occluded
+            float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
+            ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
+        }
     }
     ssao *= ssaoSampleCountInverse;
     ssao *= ssaoIntensity;
