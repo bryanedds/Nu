@@ -108,7 +108,7 @@ module GameplayDispatcher =
                  let gutter = v3 5.0f 5.0f 0.0f
                  let tileSize = v3 48.0f 48.0f 0.0f
                  let tileOffset = (gameplay.BoardSize.V3 * tileSize + gutter * (gameplay.BoardSize.V3 - v3One)) * -0.5f
-                 Content.panel "Board"
+                 Content.panel Simulants.GameplayBoard.Name
                     [Entity.Size == v3 217.0f 217.0f 0.0f
                      Entity.Elevation == 1.0f
                      Entity.LabelImage == Assets.Gameplay.BoardImage]
