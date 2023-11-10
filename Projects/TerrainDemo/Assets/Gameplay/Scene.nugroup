@@ -4,7 +4,7 @@
   [Persistent True]
   [Visible True]]
  [[LightDispatcher3d
-   [[Brightness 1.5]
+   [[Brightness 1.8]
     [Cutoff 1000000]
     [LightType DirectionalLight]
     [Name Sun]
@@ -13,7 +13,7 @@
     [Rotation [0.34547663 0 0 0.9384274]]]
    []]
   [SkyBoxDispatcher
-   [[AmbientBrightness 0.5] [Name SkyBox]]
+   [[AmbientBrightness 0.8] [Name SkyBox]]
    []]
   [TerrainDispatcher
    [[HeightMap
