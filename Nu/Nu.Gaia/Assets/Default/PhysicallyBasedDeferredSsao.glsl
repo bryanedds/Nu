@@ -80,22 +80,22 @@ void main()
     // compute screen space ambient occlusion
     float ssao = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
+    vec3 normalView = mat3(view) * normal;
     for (int i = 0; i < ssaoSampleCountCeil; ++i)
     {
-        // compute sampling direction in world space
-        vec3 samplingDirection = SSAO_SAMPLING_DIRECTIONS[i];
-        samplingDirection *= ssaoRadius; // scale by radius
-        samplingDirection *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
-        samplingDirection = dot(samplingDirection, normal) > 0.0f ? samplingDirection : -samplingDirection; // only sampling upper hemisphere
+        // compute sampling direction in view space
+        vec3 samplingDirectionView = SSAO_SAMPLING_DIRECTIONS[i];
+        samplingDirectionView *= ssaoRadius; // scale by radius
+        samplingDirectionView *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
+        samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0f ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
 
         // compute sampling position in screen space
-        vec3 samplingPosition = position + samplingDirection;
-        vec3 samplingPositionView = (view * vec4(samplingPosition, 1.0)).xyz;
+        vec3 samplingPositionView = positionView + samplingDirectionView;
         vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
 
-        // ensure we're not using empty space as indicated by sample normal
-        if (texture(normalAndHeightTexture, samplingPositionScreen).rgb != vec3(1))
+        // ensure we're not using empty space as indicated by normal sample
+        if (texture(normalAndHeightTexture, samplingPositionScreen).rgb != vec3(1.0))
         {
             // sample position in view space
             vec3 samplePosition = texture(positionTexture, samplingPositionScreen).rgb;
