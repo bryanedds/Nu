@@ -1896,9 +1896,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                             vertices.[j+5] <- n.X
                             vertices.[j+6] <- n.Y
                             vertices.[j+7] <- n.Z
-                            vertices.[j+8] <- s0.[0]
-                            vertices.[j+9] <- s0.[1]
-                            vertices.[j+10] <- s0.[2]
+                            vertices.[j+8] <- s0.[2] // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                            vertices.[j+9] <- s0.[1] // TODO: confirm it is the same for SDL (linux).
+                            vertices.[j+10] <- s0.[0]
                             vertices.[j+11] <- s0.[3]
                             vertices.[j+12] <- 0.0f // s1.[0]
                             vertices.[j+13] <- 0.0f // s1.[1]
