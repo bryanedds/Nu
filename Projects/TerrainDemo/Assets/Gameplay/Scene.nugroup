@@ -24,9 +24,9 @@
     [Size [2048 195 2048]]
     [TerrainMaterial
      [SplatMaterial
-      [[[[Gameplay Texture0Albedo] [Gameplay Texture0Roughness] [Gameplay Texture0Ao] [Gameplay Texture0Normal] [Gameplay Texture0Height]]
+      [[[[Gameplay Texture2Albedo] [Gameplay Texture2Roughness] [Gameplay Texture2Ao] [Gameplay Texture2Normal] [Gameplay Texture2Height]]
         [[Gameplay Texture1Albedo] [Gameplay Texture1Roughness] [Gameplay Texture1Ao] [Gameplay Texture1Normal] [Gameplay Texture1Height]]
-        [[Gameplay Texture2Albedo] [Gameplay Texture2Roughness] [Gameplay Texture2Ao] [Gameplay Texture2Normal] [Gameplay Texture2Height]]
+        [[Gameplay Texture0Albedo] [Gameplay Texture0Roughness] [Gameplay Texture0Ao] [Gameplay Texture0Normal] [Gameplay Texture0Height]]
         [[Gameplay Texture3Albedo] [Gameplay Texture3Roughness] [Gameplay Texture3Ao] [Gameplay Texture3Normal] [Gameplay Texture3Height]]]
        [RgbaMap [Gameplay TwoKSplatMap]]]]]
     [TerrainMaterialProperties
@@ -37,4 +37,9 @@
       [HeightOpt [ValueSome 8]]
       [InvertRoughnessOpt [ValueSome False]]]]
     [TextureScale [0.001953125 0.001953125]]]
+   []]
+  [FpsDispatcher
+   [[Name Fps-0001]
+    [Position [-361 -223 0]]
+    [Text "FPS: 0.00"]]
    []]]]
