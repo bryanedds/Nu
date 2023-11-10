@@ -20,27 +20,10 @@ open System.Runtime.InteropServices
 // TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-/// Terrain layer properties for terrain surfaces.
-type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainLayerProperties =
-    { AlbedoOpt : Color voption
-      RoughnessOpt : single voption
-      AmbientOcclusionOpt : single voption
-      HeightOpt : single voption
-      InvertRoughnessOpt : bool voption }
-    static member defaultProperties =
-        { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
-          RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
-          AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
-          HeightOpt = ValueSome Constants.Render.HeightDefault
-          InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault }
-    static member empty =
-        Unchecked.defaultof<TerrainLayerProperties>
-
 /// A layer from which a 3d terrain's material is composed.
 /// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
 type [<StructuralEquality; NoComparison>] TerrainLayer =
-    { TerrainLayerProperties : TerrainLayerProperties
-      AlbedoImage : Image AssetTag
+    { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       NormalImage : Image AssetTag
@@ -55,12 +38,13 @@ type [<StructuralEquality; NoComparison>] SplatMap =
 type [<StructuralEquality; NoComparison>] FlatMaterial =
     { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
-      NormalImage : Image AssetTag }
+      AmbientOcclusionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      HeightImage : Image AssetTag }
 
 /// Blend-weighted material for a 3d terrain.
 type [<StructuralEquality; NoComparison>] SplatMaterial =
-    { TintImage : Image AssetTag
-      TerrainLayers : TerrainLayer array
+    { TerrainLayers : TerrainLayer array
       SplatMap : SplatMap }
 
 /// Dynamically specified blend-weighted 3d terrain material.
@@ -73,6 +57,22 @@ type [<StructuralEquality; NoComparison>] TerrainMaterial =
     | FlatMaterial of FlatMaterial
     | SplatMaterial of SplatMaterial
     | DynamicMaterial of DynamicMaterial
+
+/// Material properties for terrain surfaces.
+type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMaterialProperties =
+    { AlbedoOpt : Color voption
+      RoughnessOpt : single voption
+      AmbientOcclusionOpt : single voption
+      HeightOpt : single voption
+      InvertRoughnessOpt : bool voption }
+    static member defaultProperties =
+        { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
+          RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
+          AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
+          HeightOpt = ValueSome Constants.Render.HeightDefault
+          InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault }
+    static member empty =
+        Unchecked.defaultof<TerrainMaterialProperties>
 
 /// Material properties for surfaces.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
@@ -133,8 +133,11 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
 /// Describes a static 3d terrain.
 and [<StructuralEquality; NoComparison>] TerrainDescriptor =
     { Bounds : Box3
+      MaterialProperties : TerrainMaterialProperties
       Segments : Vector2i
-      TextureScale : Vector2
+      TextureScale : Vector2 // TODO: consider putting this in TerrainMaterialProperties.
+      TintImage : Image AssetTag
+      NormalImage : Image AssetTag
       HeightMap : HeightMap
       Material : TerrainMaterial }
 
@@ -1905,34 +1908,35 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
                         let materials =
-                            let defaultMaterial = renderer.RenderPhysicallyBasedMaterial
-                                    
+                            let defaultMaterial =
+                                renderer.RenderPhysicallyBasedMaterial
+                            let materialProperties =
+                                defaultMaterial.MaterialProperties
+                            let materialProperties =
+                                match rt.TerrainDescriptor.MaterialProperties.AlbedoOpt with
+                                | ValueSome albedo -> { materialProperties with Albedo = albedo }
+                                | ValueNone -> materialProperties
+                            let materialProperties =
+                                match rt.TerrainDescriptor.MaterialProperties.RoughnessOpt with
+                                | ValueSome roughness -> { materialProperties with Roughness = roughness }
+                                | ValueNone -> materialProperties
+                            let materialProperties =
+                                match rt.TerrainDescriptor.MaterialProperties.AmbientOcclusionOpt with
+                                | ValueSome ambientOcclusion -> { materialProperties with AmbientOcclusion = ambientOcclusion }
+                                | ValueNone -> materialProperties
+                            let materialProperties =
+                                match rt.TerrainDescriptor.MaterialProperties.HeightOpt with
+                                | ValueSome height -> { materialProperties with Height = height }
+                                | ValueNone -> materialProperties
+                            let materialProperties =
+                                match rt.TerrainDescriptor.MaterialProperties.InvertRoughnessOpt with
+                                | ValueSome invertRoughness -> { materialProperties with InvertRoughness = invertRoughness }
+                                | ValueNone -> materialProperties
+
                             match rt.TerrainDescriptor.Material with
                             | SplatMaterial splatMaterial ->
                                 [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
                                     let layer = splatMaterial.TerrainLayers.[i]
-                                    let materialProperties =
-                                        defaultMaterial.MaterialProperties
-                                    let materialProperties =
-                                        match layer.TerrainLayerProperties.AlbedoOpt with
-                                        | ValueSome albedo -> { materialProperties with Albedo = albedo }
-                                        | ValueNone -> materialProperties
-                                    let materialProperties =
-                                        match layer.TerrainLayerProperties.RoughnessOpt with
-                                        | ValueSome roughness -> { materialProperties with Roughness = roughness }
-                                        | ValueNone -> materialProperties
-                                    let materialProperties =
-                                        match layer.TerrainLayerProperties.AmbientOcclusionOpt with
-                                        | ValueSome ambientOcclusion -> { materialProperties with AmbientOcclusion = ambientOcclusion }
-                                        | ValueNone -> materialProperties
-                                    let materialProperties =
-                                        match layer.TerrainLayerProperties.HeightOpt with
-                                        | ValueSome height -> { materialProperties with Height = height }
-                                        | ValueNone -> materialProperties
-                                    let materialProperties =
-                                        match layer.TerrainLayerProperties.InvertRoughnessOpt with
-                                        | ValueSome invertRoughness -> { materialProperties with InvertRoughness = invertRoughness }
-                                        | ValueNone -> materialProperties
                                     let (albedoMetadata, albedoTexture) =
                                         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AlbedoImage) renderer with
                                         | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
@@ -1961,7 +1965,35 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         AmbientOcclusionTexture = ambientOcclusionTexture
                                         NormalTexture = normalTexture
                                         HeightTexture = heightTexture }|]
-                            | _ -> [||]
+                            | FlatMaterial flatMaterial ->
+                                let (albedoMetadata, albedoTexture) =
+                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AlbedoImage) renderer with
+                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                    | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                let roughnessTexture =
+                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.RoughnessImage) renderer with
+                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
+                                    | ValueNone -> defaultMaterial.RoughnessTexture
+                                let ambientOcclusionTexture =
+                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AmbientOcclusionImage) renderer with
+                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                                    | ValueNone -> defaultMaterial.AmbientOcclusionTexture
+                                let normalTexture =
+                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.NormalImage) renderer with
+                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.NormalTexture
+                                    | ValueNone -> defaultMaterial.NormalTexture
+                                let heightTexture =
+                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.HeightImage) renderer with
+                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.HeightTexture
+                                    | ValueNone -> defaultMaterial.HeightTexture
+                                [|{ defaultMaterial with
+                                        MaterialProperties = materialProperties
+                                        AlbedoMetadata = albedoMetadata
+                                        AlbedoTexture = albedoTexture
+                                        RoughnessTexture = roughnessTexture
+                                        AmbientOcclusionTexture = ambientOcclusionTexture
+                                        NormalTexture = normalTexture
+                                        HeightTexture = heightTexture }|]
                                 
                         renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Clear ()
                         renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (rt.TerrainDescriptor, (geometry, materials))
