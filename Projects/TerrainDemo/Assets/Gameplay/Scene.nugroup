@@ -21,7 +21,7 @@
       [[2048 2048] [RawUInt16 BigEndian] [Gameplay TwoKHeightMapRaw]]]]
     [Name Terrain]
     [Presence Omnipresent]
-    [Size [2048 256 2048]]
+    [Size [2048 195 2048]]
     [TerrainMaterial
      [SplatMaterial
       [[[[Gameplay Texture0Albedo] [Gameplay Texture0Roughness] [Gameplay Texture0Ao] [Gameplay Texture0Normal] [Gameplay Texture0Height]]
