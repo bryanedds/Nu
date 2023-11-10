@@ -1900,9 +1900,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                             vertices.[j+9] <- s0.[1] // TODO: confirm it is the same for SDL (linux).
                             vertices.[j+10] <- s0.[0]
                             vertices.[j+11] <- s0.[3]
-                            vertices.[j+12] <- 0.0f // s1.[0]
+                            vertices.[j+12] <- 0.0f // s1.[2]
                             vertices.[j+13] <- 0.0f // s1.[1]
-                            vertices.[j+14] <- 0.0f // s1.[2]
+                            vertices.[j+14] <- 0.0f // s1.[0]
                             vertices.[j+15] <- 0.0f // s1.[3]
                                         
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
