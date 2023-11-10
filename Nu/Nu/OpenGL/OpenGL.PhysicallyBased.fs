@@ -154,12 +154,12 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
+          LayerCountUniform : int
           AlbedoTexturesUniforms : int array
           RoughnessTexturesUniforms : int array
           AmbientOcclusionTexturesUniforms : int array
           NormalTexturesUniforms : int array
           HeightTexturesUniforms : int array
-          LayerCountUniform : int
           PhysicallyBasedShader : uint }
 
     /// Describes a physically-based shader that's loaded into GPU.
@@ -1180,6 +1180,7 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let layerCountUniform = Gl.GetUniformLocation (shader, "layerCount")
         let albedoTexturesUniforms =
             Array.init Constants.Render.TerrainLayersMax $ fun i ->
                 Gl.GetUniformLocation (shader, "albedoTextures[" + string i + "]")
@@ -1195,18 +1196,17 @@ module PhysicallyBased =
         let heightTexturesUniforms =
             Array.init Constants.Render.TerrainLayersMax $ fun i ->
                 Gl.GetUniformLocation (shader, "heightTextures[" + string i + "]")
-        let layerCountUniform = Gl.GetUniformLocation (shader, "layerCount")
 
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
+          LayerCountUniform = layerCountUniform
           AlbedoTexturesUniforms = albedoTexturesUniforms
           RoughnessTexturesUniforms = roughnessTexturesUniforms
           AmbientOcclusionTexturesUniforms = ambientOcclusionTexturesUniforms
           NormalTexturesUniforms = normalTexturesUniforms
           HeightTexturesUniforms = heightTexturesUniforms
-          LayerCountUniform = layerCountUniform
           PhysicallyBasedShader = shader } : PhysicallyBasedDeferredTerrainShader
 
     /// Create a physically-based shader.
@@ -1503,6 +1503,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LayerCountUniform, materials.Length)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
             Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
@@ -1513,7 +1514,6 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.NormalTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 3)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
             Gl.Uniform1 (shader.HeightTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 4)
-        Gl.Uniform1 (shader.LayerCountUniform, materials.Length)
         Hl.Assert ()
 
         // setup textures
