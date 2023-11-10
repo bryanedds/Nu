@@ -24,10 +24,10 @@
   [TerrainDispatcher
    [[HeightMap
      [RawHeightMap
-      [[4096 4096] [RawUInt16 BigEndian] [Gameplay FourKHeightMapRaw]]]]
+      [[2048 2048] [RawUInt16 BigEndian] [Gameplay TwoKHeightMapRaw]]]]
     [Name Terrain-0001]
     [Presence Omnipresent]
-    [Size [4096 195 4096]]
+    [Size [2048 195 2048]]
     [TerrainMaterial
      [SplatMaterial
       [[Gameplay ColorMap]
@@ -71,6 +71,6 @@
          [Gameplay FourKTexture3Ao]
          [Gameplay FourKTexture3Normal]
          [Gameplay FourKTexture3Height]]]
-       [RgbaMap [Gameplay FourKSplatMap]]]]]
-    [TextureScale [0.001953125 0.001953125]]]
+       [RgbaMap [Gameplay TwoKSplatMap]]]]]
+    [TextureScale [0.00390625 0.00390625]]]
    []]]]
