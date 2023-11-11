@@ -84,8 +84,8 @@ module TeammateDispatcher =
             let mutable transform = entity.GetTransform world
             let mutable hitPointsTransform = transform
             let downOffset = if entity.GetDown world then entity.GetDownOffset world else v2Zero
-            hitPointsTransform.Position <- v3 (hitPointsTransform.Min.X + 102.0f) (hitPointsTransform.Min.Y + 16.0f + downOffset.Y) 0.0f
             hitPointsTransform.Size <- v3 48.0f 6.0f 0.0f
+            hitPointsTransform.Position <- v3 (transform.Min.X + (transform.Size.X + hitPointsTransform.Size.X) * 0.5f - hitPointsTransform.Size.X) (hitPointsTransform.Min.Y + 16.0f + downOffset.Y) 0.0f
             hitPointsTransform.Elevation <- hitPointsTransform.Elevation + 0.25f
             let hitPointsView =
                 viewFillBar
@@ -97,8 +97,8 @@ module TeammateDispatcher =
                     (1.0f / 12.0f)
                     (single character.HitPoints / single character.HitPointsMax)
             let mutable techPointsTransform = transform
-            techPointsTransform.Position <- v3 (techPointsTransform.Min.X + 102.0f) (techPointsTransform.Min.Y + 12.0f + downOffset.Y) 0.0f
             techPointsTransform.Size <- v3 48.0f 6.0f 0.0f
+            techPointsTransform.Position <- v3 (transform.Min.X + (transform.Size.X + techPointsTransform.Size.X) * 0.5f - techPointsTransform.Size.X) (techPointsTransform.Min.Y + 12.0f + downOffset.Y) 0.0f
             techPointsTransform.Elevation <- techPointsTransform.Elevation + 0.25f
             let techPointsView =
                 viewFillBar
