@@ -282,6 +282,11 @@ module BattleDispatcher =
                 | Some source -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom source.Bottom) Over EffectDescriptors.dimensionalCast screen world |> just
                 | None -> just world
 
+            | DisplayGenericCast (delay, sourceIndex) ->
+                match Battle.tryGetCharacter sourceIndex battle with
+                | Some source -> displayEffect delay (v3 98.0f 98.0f 0.0f) (Bottom source.Bottom) Over EffectDescriptors.genericCast screen world |> just
+                | None -> just world
+
             | DisplayFire (delay, sourceIndex, targetIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
                 | Some source ->
