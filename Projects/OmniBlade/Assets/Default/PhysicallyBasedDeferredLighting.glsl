@@ -165,16 +165,20 @@ void main()
         lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
     }
 
+    // compute light ambient terms
+    vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
+    vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
+
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 diffuse = irradiance * albedo * lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
+    vec3 diffuse = irradiance * albedo * lightAmbientDiffuse;
 
     // compute specular term
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness * ambientOcclusion * ambientOcclusion;
+    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
     // compute ambient term
     vec3 ambient = kD * diffuse + specular;

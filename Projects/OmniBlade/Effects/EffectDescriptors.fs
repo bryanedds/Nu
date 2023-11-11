@@ -250,22 +250,31 @@ module EffectDescriptors =
                      Nil)|]) }
 
     let arcaneCast =
-        let halfWidth = 50.0f
-        let altitude = halfWidth * 2.0f * 0.866f
-        let candle position = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 5L, Loop, [|Size (v3 64.0f 80.0f 0.0f); position|], Nil)
-        let staticEffect position degrees = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.StaticAnimationSheet), v2i 64 64, 5, 5, 3L, Loop, [|Size (v3 128.0f 128.0f 0.0f); position; degrees|], Nil)
+        let fade =
+            Colors
+               (Set, EaseOut, Once,
+                [|{ TweenValue = Color.One; TweenLength = 30L }
+                  { TweenValue = Color.One; TweenLength = 30L }
+                  { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])
+        let candle position =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 5L, Loop,
+                 [|Size (v3 48.0f 60.0f 0.0f); position; fade|],
+                 Nil)
+        let staticEffect position degrees =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.StaticAnimationSheet), v2i 64 64, 5, 5, 3L, Loop,
+                 [|Size (v3 192.0f 192.0f 0.0f); position; degrees; fade|],
+                 Nil)
         { EffectName = "ArcaneCast"
-          LifeTimeOpt = Some 36L
+          LifeTimeOpt = Some 60L
           Definitions = Map.empty
           Content =
             Contents
                 (Shift 0.0f,
-                 [|candle (Position (v3 0.0f altitude 0.0f))
-                   candle (Position (v3 -halfWidth 0.0f 0.0f))
-                   candle (Position (v3 halfWidth 0.0f 0.0f))
-                   staticEffect (Position (v3 0.0f 0.0f 0.0f)) (Degrees (v3 0.0f 0.0f -90.0f))
-                   staticEffect (Position (v3 -25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f -30.0f))
-                   staticEffect (Position (v3 25.0f 50.0f 0.0f)) (Degrees (v3 0.0f 0.0f 30.0f))|]) }
+                 [|candle (Position (v3 -72.0f 0.0f 0.0f))
+                   candle (Position (v3 72.0f 0.0f 0.0f))
+                   staticEffect (Position (v3 0.0f 18.0f 0.0f)) (Degrees (v3 0.0f 0.0f -90.0f))|]) }
 
     let holyCast =
         { EffectName = "HolyCast"
@@ -275,6 +284,35 @@ module EffectDescriptors =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
                 v2i 100 100, 36, 6, 1L, Once, [||], Nil) }
+
+    let genericCast =
+        let fadeOut =
+            Colors
+               (Set, Linear, Once,
+                [|{ TweenValue = Color.One; TweenLength = 40L }
+                  { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 25L }|])
+        let fadeIn =
+            Colors
+               (Set, Linear, Once,
+                [|{ TweenValue = Color.One.WithA8 (byte 0); TweenLength = 30L }
+                  { TweenValue = Color.One; TweenLength = 35L }
+                  { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])
+        let floorLight =
+            AnimatedSprite
+               (Resource (AssetTag.toPair Assets.Battle.FloorLightAnimationSheet),
+                v2i 64 64, 12, 12, 2L, Loop, [|Size (v3 192.0f 192.0f 0.0f); fadeOut|], Nil)
+        let floorBeam =
+            AnimatedSprite
+               (Resource (AssetTag.toPair Assets.Battle.FloorBeamAnimationSheet),
+                v2i 64 64, 5, 5, 2L, Loop, [|Size (v3 192.0f 192.0f 0.0f); fadeIn|], Nil)
+        { EffectName = "GenericCast"
+          LifeTimeOpt = Some 65L
+          Definitions = Map.empty
+          Content =
+            Contents
+                (Shift 0.0f,
+                 [|floorLight
+                   floorBeam|]) }
 
     let dimensionalCast =
         let length = 60L
@@ -331,14 +369,14 @@ module EffectDescriptors =
                  [|fire Loop [|travel; fireSize; activation|];
                    Emit (Shift 0.0f, Rate 0.3f, [|travel; activation|], [||], fire Once [|fireSize|]) |])
         { EffectName = "Fire"
-          LifeTimeOpt = Some 100L
+          LifeTimeOpt = Some 129L
           Definitions = Map.empty
           Content = 
             Contents
                 (Shift 0.0f,
                  [|fireball (Circle (64.0f, 1.5f, 40L)) (activation 40L 60L)
                    Delay (40L, fireball (Aspects [|linearTravel position position2 20L|]) (activation 20L 40L))
-                   Delay (60L, Emit (Shift 0.0f, Rate 0.1f, [||], [|linearTravel position2 (position2 + (v3 0.0f 70.0f 0.0f)) 20L|], burn))|]) }
+                   Delay (60L, Emit (Shift 0.0f, Rate 0.1f, [||], [|linearTravel position2 (position2 + (v3 0.0f 72.0f 0.0f)) 20L|], burn))|]) }
 
     let flame position position2 =
         { EffectName = "Flame"

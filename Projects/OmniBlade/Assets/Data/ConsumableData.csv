@@ -1,9 +1,9 @@
 Type,Scalar,Curative,Techative,Revive,StatusesAdded,StatusRemoved,AimType,Cost,Description
 GreenHerb,30,True,False,False,[],[],[AllyAim True],10,Heals minor injuries.
 RedHerb,100,True,False,False,[],[],[AllyAim True],50,Heals medium injuries.
-GoldHerb,500,True,False,False,[],[],[AllyAim True],150,Heals all injuries.
-Remedy,15,True,False,False,[],[Poison Silence Sleep Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],[AllyAim True],25,Cures status ailments & trivial injuries.
+GoldHerb,500,True,False,False,[],[],[AllyAim True],150,Heals life-threatening injuries.
+Remedy,15,True,False,False,[],[Poison Silence Sleep Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],[AllyAim True],25,Heals status ailments & trivial injuries.
 Ether,30,True,True,False,[],[],[AllyAim True],50,Restores a small amount of TP.
 HighEther,100,True,True,False,[],[],[AllyAim True],150,Restores a decent amount of TP.
-TurboEther,500,True,True,False,[],[],[AllyAim True],500,Restores all TP.
+TurboEther,500,True,True,False,[],[],[AllyAim True],500,Restores a massive amount of TP.
 Revive,30,True,False,True,[],[],[AllyAim False],50,Revives a wounded character.
