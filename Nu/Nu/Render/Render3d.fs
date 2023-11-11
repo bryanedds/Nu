@@ -1866,10 +1866,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     bytes |>
                                     Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
                                     Array.chunkBySize 4 |>
-                                    Array.map (fun x -> v3 x.[2] x.[1] x.[0])
+                                    Array.map (fun x ->
+                                        let tangent = v3 x.[2] x.[1] x.[0]
+                                        let normal = v3 tangent.X tangent.Z -tangent.Y
+                                        normal)
                                 else fallback ()
                             | None -> fallback ()
-                            
+
                         // TODO: smooth vertices with averaging?
 
                         let splat0 =
