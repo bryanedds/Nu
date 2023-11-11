@@ -107,10 +107,10 @@ module FieldContent =
         let team (position : Vector3) rows (field : Field) filter fieldMsg =
             [for (index, teammateValue) in field.Team.Pairs do
                 let teammateName = "Teammate+" + string teammateValue.TeamIndex
-                let w =
+                let (w, upImage, downImage) =
                     match field.Menu.MenuState with
-                    | MenuTechs _ -> 336.0f
-                    | MenuTeam _ | _ -> 252.0f
+                    | MenuTechs _ -> (336.0f, Assets.Gui.ButtonLongUpImage, Assets.Gui.ButtonLongDownImage)
+                    | MenuTeam _ | _ -> (252.0f, Assets.Gui.ButtonBigUpImage, Assets.Gui.ButtonBigDownImage)
                 let h = 72.0f
                 let x = position.X + if index < rows then 0.0f else w + 48.0f
                 let y = position.Y - single (index % rows) * 81.0f
@@ -118,6 +118,8 @@ module FieldContent =
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
                      Entity.EnabledLocal := filter teammateValue field.Menu
                      Entity.Teammate := teammateValue
+                     Entity.UpImage := upImage
+                     Entity.DownImage := downImage
                      Entity.ClickEvent => fieldMsg index]]
 
         let items (position : Vector3) pageSize rows field fieldMsg =

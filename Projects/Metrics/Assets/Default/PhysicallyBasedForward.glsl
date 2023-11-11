@@ -313,17 +313,21 @@ void main()
         environmentFilter = environmentFilter1 * scalar1 + environmentFilter2 * scalar2;
     }
 
+    // compute light ambient terms
+    vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
+    vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
+
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(max(dot(n, v), 0.0), f0, roughness);
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 diffuse = irradiance * albedo.rgb * lightAmbientColor * lightAmbientBrightness;
+    vec3 diffuse = irradiance * albedo.rgb * lightAmbientDiffuse;
     float alpha = albedo.a;
 
     // compute specular term
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
-    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientColor * lightAmbientBrightness;
+    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
     // compute ambient term
     vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
