@@ -1867,9 +1867,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
                                     Array.chunkBySize 4 |>
                                     Array.map (fun x ->
-                                        let tangent = v3 x.[2] x.[1] x.[0] * 2.0f - v3One
+                                        let tangent = (v3 x.[2] x.[1] x.[0] * 2.0f - v3One).Normalized
                                         let normal = v3 tangent.X tangent.Z -tangent.Y
-                                        normal.Normalized)
+                                        normal)
                                 else fallback ()
                             | None -> fallback ()
 
