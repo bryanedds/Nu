@@ -48,6 +48,7 @@ type BattleCommand =
     | DisplayArcaneCast of int64 * CharacterIndex
     | DisplayHolyCast of int64 * CharacterIndex
     | DisplayDimensionalCast of int64 * CharacterIndex
+    | DisplayGenericCast of int64 * CharacterIndex
     | DisplayFire of int64 * CharacterIndex * CharacterIndex
     | DisplayFlame of int64 * CharacterIndex * CharacterIndex
     | DisplayIce of int64 * CharacterIndex
@@ -1174,9 +1175,13 @@ module Battle =
                                                 let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
                                                 let displayCast = DisplayArcaneCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
-                                            | _ ->
+                                            | Conjuror ->
                                                 let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
                                                 let displayCast = DisplayDimensionalCast (0L, sourceIndex)
+                                                Right [playCharge; displayCast]
+                                            | _ ->
+                                                let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
+                                                let displayCast = DisplayGenericCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                     match effectOpt with
                                     | Left hopEffect ->
