@@ -1841,27 +1841,36 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | Some positionsAndTexCoordses ->
 
                         let normals =
-                            [|for y in 0 .. dec resolutionY do
-                                for x in 0 .. dec resolutionX do
-                                    if  inc x = resolutionX ||
-                                        inc y = resolutionY then
-                                        v3Up
-                                    else
-                                        // TODO: prevent exceptions here (and elsewhere?) when editing resolution in gaia
-                                        let a = fst' positionsAndTexCoordses.[x * resolutionX + y]
-                                        let b = fst' positionsAndTexCoordses.[inc x * resolutionX + y]
-                                        let c = fst' positionsAndTexCoordses.[x * resolutionX + inc y]
-                                        let ab = b - a
-                                        let ac = c - a
-                                        let normal = Vector3.Cross (ab, ac) |> Vector3.Normalize
-                                        normal|]
+                            
+                            // define as function so it's only called when needed.
+                            let fallback () =
+                                [|for y in 0 .. dec resolutionY do
+                                    for x in 0 .. dec resolutionX do
+                                        if  inc x = resolutionX ||
+                                            inc y = resolutionY then
+                                            v3Up
+                                        else
+                                            // TODO: prevent exceptions here (and elsewhere?) when editing resolution in gaia
+                                            let a = fst' positionsAndTexCoordses.[x * resolutionX + y]
+                                            let b = fst' positionsAndTexCoordses.[inc x * resolutionX + y]
+                                            let c = fst' positionsAndTexCoordses.[x * resolutionX + inc y]
+                                            let ab = b - a
+                                            let ac = c - a
+                                            let normal = Vector3.Cross (ab, ac) |> Vector3.Normalize
+                                            normal|]
 
+                            match GlRenderer3d.tryGetImageData rt.TerrainDescriptor.NormalImage renderer with
+                            | Some (bytes, metadata) ->
+                                // check that the image size matches that of the heightmap
+                                if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
+                                    bytes |>
+                                    Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
+                                    Array.chunkBySize 4 |>
+                                    Array.map (fun x -> v3 x.[2] x.[1] x.[0])
+                                else fallback ()
+                            | None -> fallback ()
+                            
                         // TODO: smooth vertices with averaging?
-
-                        // TODO: construct splat map textures as needed (this WON'T use TextureAsset, but rather uses
-                        // OpenGL.Texture.TryCreateImageData to get the raw rgba array).
-
-                        // TODO: use verts and splat map to construct terrain geometry
 
                         let splat0 =
                             match rt.TerrainDescriptor.Material with
@@ -1872,15 +1881,25 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     | Some (bytes, metadata) ->
                                         // check that the image size matches that of the heightmap
                                         if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
+                                            
+                                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                                            // TODO: confirm it is the same for SDL (linux).
+                                            let splatMask =
+                                                match splatMaterial.TerrainLayers.Length with
+                                                | 4 -> (fun (x : single array) -> v4 x.[2] x.[1] x.[0] x.[3])
+                                                | 3 -> (fun (x : single array) -> v4 x.[2] x.[1] x.[0] 0.0f)
+                                                | 2 -> (fun (x : single array) -> v4 x.[2] x.[1] 0.0f 0.0f)
+                                                | 1 -> (fun (x : single array) -> v4 x.[2] 0.0f 0.0f 0.0f)
+                                                | _ -> (fun (_ : single array) -> v4Zero)
+                                            
                                             bytes |>
                                             Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
                                             Array.chunkBySize 4 |>
-                                            Array.chunkBySize metadata.TextureWidth |>
-                                            Array.concat
-                                        else Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
-                                    | None -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
-                                | _ -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
-                            | _ -> Array.zeroCreate<single> (resolutionX * resolutionY * sizeof<uint>) |> Array.chunkBySize 4
+                                            Array.map splatMask
+                                        else Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
+                                    | None -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
+                                | _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
+                            | _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
 
                         let vertices = Array.zeroCreate<single> (positionsAndTexCoordses.Length * 16)
                         for i in 0 .. dec positionsAndTexCoordses.Length do
@@ -1896,14 +1915,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                             vertices.[j+5] <- n.X
                             vertices.[j+6] <- n.Y
                             vertices.[j+7] <- n.Z
-                            vertices.[j+8] <- s0.[2] // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                            vertices.[j+9] <- s0.[1] // TODO: confirm it is the same for SDL (linux).
-                            vertices.[j+10] <- s0.[0]
-                            vertices.[j+11] <- s0.[3]
-                            vertices.[j+12] <- 0.0f // s1.[2]
-                            vertices.[j+13] <- 0.0f // s1.[1]
-                            vertices.[j+14] <- 0.0f // s1.[0]
-                            vertices.[j+15] <- 0.0f // s1.[3]
+                            vertices.[j+8] <- s0.X
+                            vertices.[j+9] <- s0.Y
+                            vertices.[j+10] <- s0.Z
+                            vertices.[j+11] <- s0.W
+                            vertices.[j+12] <- 0.0f
+                            vertices.[j+13] <- 0.0f
+                            vertices.[j+14] <- 0.0f
+                            vertices.[j+15] <- 0.0f
                                         
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
 
