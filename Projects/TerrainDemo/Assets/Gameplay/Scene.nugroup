@@ -20,6 +20,7 @@
      [RawHeightMap
       [[2048 2048] [RawUInt16 BigEndian] [Gameplay TwoKHeightMapRaw]]]]
     [Name Terrain]
+    [NormalImage [Gameplay TwoKNormalMap]]
     [Presence Omnipresent]
     [Size [2048 195 2048]]
     [TerrainMaterial
