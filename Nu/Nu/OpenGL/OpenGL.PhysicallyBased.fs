@@ -236,9 +236,11 @@ module PhysicallyBased =
           ProjectionUniform : int
           PositionTextureUniform : int
           NormalAndHeightTextureUniform : int
+          SsaoResolution : int
           SsaoIntensity : int
           SsaoBias : int
           SsaoRadius : int
+          SsaoDistanceMax : int
           SsaoSampleCount : int
           PhysicallyBasedDeferredSsaoShader : uint }
 
@@ -267,6 +269,11 @@ module PhysicallyBased =
           LightConeOutersUniform : int
           LightsCountUniform : int
           PhysicallyBasedDeferredLightingShader : uint }
+
+    /// Describes a blur pass of a physically-based shader that's loaded into GPU.
+    type PhysicallyBasedBlurShader =
+        { InputTextureUniform : int
+          PhysicallyBasedBlurShader : uint }
 
     /// Describes an fxaa pass of a physically-based shader that's loaded into GPU.
     type PhysicallyBasedFxaaShader =
@@ -1376,9 +1383,11 @@ module PhysicallyBased =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let ssaoResolution = Gl.GetUniformLocation (shader, "ssaoResolution")
         let ssaoIntensity = Gl.GetUniformLocation (shader, "ssaoIntensity")
         let ssaoBias = Gl.GetUniformLocation (shader, "ssaoBias")
         let ssaoRadius = Gl.GetUniformLocation (shader, "ssaoRadius")
+        let ssaoDistanceMax = Gl.GetUniformLocation (shader, "ssaoDistanceMax")
         let ssaoSampleCount = Gl.GetUniformLocation (shader, "ssaoSampleCount")
 
         // make shader record
@@ -1386,9 +1395,11 @@ module PhysicallyBased =
           ProjectionUniform = projectionUniform
           PositionTextureUniform = positionTextureUniform
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          SsaoResolution = ssaoResolution
           SsaoIntensity = ssaoIntensity
           SsaoBias = ssaoBias
           SsaoRadius = ssaoRadius
+          SsaoDistanceMax = ssaoDistanceMax
           SsaoSampleCount = ssaoSampleCount
           PhysicallyBasedDeferredSsaoShader = shader }
 
@@ -1446,6 +1457,19 @@ module PhysicallyBased =
           LightConeOutersUniform = lightConeOutersUniform
           LightsCountUniform = lightsCountUniform
           PhysicallyBasedDeferredLightingShader = shader }
+
+    /// Create a physically-based shader for the blur pass of rendering.
+    let CreatePhysicallyBasedBlurShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
+
+        // make shader record
+        { InputTextureUniform = inputTextureUniform
+          PhysicallyBasedBlurShader = shader }
 
     /// Create a physically-based shader for the fxaa pass of rendering.
     let CreatePhysicallyBasedFxaaShader (shaderFilePath : string) =
@@ -2077,9 +2101,11 @@ module PhysicallyBased =
          projection : single array,
          positionTexture : uint,
          normalAndHeightTexture : uint,
+         ssaoResolution : int array,
          ssaoIntensity : single,
          ssaoBias : single,
          ssaoRadius : single,
+         ssaoDistanceMax : single,
          ssaoSampleCount : int,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredSsaoShader) =
@@ -2090,9 +2116,11 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 1)
+        Gl.Uniform2 (shader.SsaoResolution, ssaoResolution)
         Gl.Uniform1 (shader.SsaoIntensity, ssaoIntensity)
         Gl.Uniform1 (shader.SsaoBias, ssaoBias)
         Gl.Uniform1 (shader.SsaoRadius, ssaoRadius)
+        Gl.Uniform1 (shader.SsaoDistanceMax, ssaoDistanceMax)
         Gl.Uniform1 (shader.SsaoSampleCount, ssaoSampleCount)
         Hl.Assert ()
 
@@ -2229,6 +2257,44 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+
+    /// Draw the blur pass of a physically-based surface.
+    let DrawPhysicallyBasedBlurSurface
+        (inputTexture : uint,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedBlurShader) =
+
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedBlurShader
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown textures
+        Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 

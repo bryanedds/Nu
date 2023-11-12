@@ -94,6 +94,7 @@ module Gaia =
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
+          SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
     (* Project States *)
@@ -2229,18 +2230,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
                         let mutable ssaoBias = ssaoConfig.SsaoBias
                         let mutable ssaoRadius = ssaoConfig.SsaoRadius
+                        let mutable ssaoDistanceMax = ssaoConfig.SsaoDistanceMax
                         let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
                         ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
                         if ssaoEnabled then
                             ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 4.0f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
+                            ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) |> ignore<bool>
                             ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) |> ignore<bool>
                         ssaoConfig <-
                             { SsaoEnabled = ssaoEnabled
                               SsaoIntensity = ssaoIntensity
                               SsaoBias = ssaoBias
                               SsaoRadius = ssaoRadius
+                              SsaoDistanceMax = ssaoDistanceMax
                               SsaoSampleCount = ssaoSampleCount }
                         world <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
                         ImGui.End ()
