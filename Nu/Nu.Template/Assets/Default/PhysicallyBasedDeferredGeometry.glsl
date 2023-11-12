@@ -115,9 +115,9 @@ void main()
 
     // compute material properties
     float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec4 roughnessSample = texture(roughnessTexture, texCoords);
     float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
     float emission = texture(emissionTexture, texCoords).r * materialOut.a;
     material = vec4(metallic, roughness, ambientOcclusion, emission);
