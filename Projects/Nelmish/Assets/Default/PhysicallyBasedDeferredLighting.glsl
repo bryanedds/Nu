@@ -102,7 +102,7 @@ void main()
     // retrieve data from intermediate buffers
     vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
     vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
-    float ssao = (textureLod(ssaoTexture, texCoordsOut, 0.0).r + textureLod(ssaoTexture, texCoordsOut, 1.0).r) / 2.0;
+    float ssao = texture(ssaoTexture, texCoordsOut).r;
 
     // compute materials
     float metallic = material.r;
