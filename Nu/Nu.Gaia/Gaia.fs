@@ -2234,7 +2234,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
                         ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
                         if ssaoEnabled then
-                            ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) |> ignore<bool>
+                            ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 8.0f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
                             ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) |> ignore<bool>
