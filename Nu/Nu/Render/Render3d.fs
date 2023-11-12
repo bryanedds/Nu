@@ -94,6 +94,17 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
+/// Describes a static 3d terrain.
+and [<StructuralEquality; NoComparison>] TerrainDescriptor =
+    { Bounds : Box3
+      MaterialProperties : TerrainMaterialProperties
+      Material : TerrainMaterial
+      TintImage : Image AssetTag
+      NormalImage : Image AssetTag
+      Tiles : Vector2
+      HeightMap : HeightMap
+      Segments : Vector2i }
+
 /// Describes a static model surface.
 and [<NoEquality; NoComparison>] SurfaceDescriptor =
     { Positions : Vector3 array
@@ -129,17 +140,6 @@ type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
       MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
       Particles : Particle SArray }
-
-/// Describes a static 3d terrain.
-and [<StructuralEquality; NoComparison>] TerrainDescriptor =
-    { Bounds : Box3
-      MaterialProperties : TerrainMaterialProperties
-      Segments : Vector2i
-      TextureScale : Vector2 // TODO: consider putting this in TerrainMaterialProperties.
-      TintImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightMap : HeightMap
-      Material : TerrainMaterial }
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
@@ -1795,7 +1795,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let divisor = single Byte.MaxValue
                                                     let normalized = (rawReader.ReadByte () |> single) / divisor
                                                     let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
                                                     struct (position, texCoords)
                                           | RawUInt16 endianness ->
                                             for y in 0 .. dec resolutionY do
@@ -1807,7 +1807,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let divisor = single UInt16.MaxValue
                                                     let normalized = (single value) / divisor
                                                     let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
                                                     struct (position, texCoords)
                                           | RawUInt32 endianness ->
                                             for y in 0 .. dec resolutionY do
@@ -1819,7 +1819,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let divisor = single UInt32.MaxValue
                                                     let normalized = (single value) / divisor
                                                     let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
                                                     struct (position, texCoords)
                                           
                                           // NOTE: this expects singles to be normalized between 0.0 and 1.0.
@@ -1832,7 +1832,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                         | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
                                                         | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
                                                     let position = v3 (single x * quadSizeX + terrainPositionX) (value * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) / rt.TerrainDescriptor.TextureScale
+                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
                                                     struct (position, texCoords)|]
                                 with exn ->
                                     // TODO: log error.
