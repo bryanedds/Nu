@@ -1492,14 +1492,12 @@ module PhysicallyBased =
         (view : single array,
          projection : single array,
          eyeCenter : Vector3,
-         surfacesCount : int,
          modelsFields : single array,
          texCoordsOffsetsFields : single array,
          albedosFields : single array,
          materialsFields : single array,
          heightsFields : single array,
          invertRoughnessesFields : int array,
-         blending,
          numStrips : int,
          numElementsPerStrip : int,
          materials : PhysicallyBasedMaterial array, // TODO: manage maximum array length.
@@ -1509,10 +1507,6 @@ module PhysicallyBased =
         // setup state
         Gl.DepthFunc DepthFunction.Lequal
         Gl.Enable EnableCap.DepthTest
-        if blending then
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-            Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
-            Gl.Enable EnableCap.Blend
         Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
@@ -1567,7 +1561,7 @@ module PhysicallyBased =
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally modelsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -1575,7 +1569,7 @@ module PhysicallyBased =
         // update texCoordsOffsets buffer
         let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally texCoordsOffsetsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -1583,7 +1577,7 @@ module PhysicallyBased =
         // update albedos buffer
         let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally albedosFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -1591,7 +1585,7 @@ module PhysicallyBased =
         // update materials buffer
         let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally materialsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -1599,7 +1593,7 @@ module PhysicallyBased =
         // update heights buffer
         let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<single>, heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally heightsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -1607,7 +1601,7 @@ module PhysicallyBased =
         // update invert roughnesses buffer
         let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<int>), invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<int>, invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally invertRoughnessesFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
@@ -1621,7 +1615,7 @@ module PhysicallyBased =
         // draw geometry
         for i in 0 .. dec numStrips do
             let offset = sizeof<uint> * numElementsPerStrip * i
-            Gl.DrawElementsInstanced (OpenGL.PrimitiveType.TriangleStrip, numElementsPerStrip, DrawElementsType.UnsignedInt, nativeint offset, 1)
+            Gl.DrawElements (OpenGL.PrimitiveType.TriangleStrip, numElementsPerStrip, DrawElementsType.UnsignedInt, nativeint offset)
             Hl.Assert ()
 
         // teardown geometry
@@ -1652,10 +1646,6 @@ module PhysicallyBased =
         // teardown state
         Gl.DepthFunc DepthFunction.Less
         Gl.Disable EnableCap.DepthTest
-        if blending then
-            Gl.Disable EnableCap.Blend
-            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-            Gl.BlendEquation BlendEquationMode.FuncAdd
         Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based surfaces.

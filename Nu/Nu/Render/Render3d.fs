@@ -94,6 +94,15 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
+/// Describes a static 3d terrain geometry.
+and [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
+    { Bounds : Box3
+      TintImage : Image AssetTag
+      NormalImage : Image AssetTag
+      Tiles : Vector2
+      HeightMap : HeightMap
+      Segments : Vector2i }
+
 /// Describes a static 3d terrain.
 and [<StructuralEquality; NoComparison>] TerrainDescriptor =
     { Bounds : Box3
@@ -104,6 +113,14 @@ and [<StructuralEquality; NoComparison>] TerrainDescriptor =
       Tiles : Vector2
       HeightMap : HeightMap
       Segments : Vector2i }
+
+    member this.TerrainGeometryDescriptor =
+        { Bounds = this.Bounds
+          TintImage = this.TintImage
+          NormalImage = this.NormalImage
+          Tiles = this.Tiles
+          HeightMap = this.HeightMap
+          Segments = this.Segments }
 
 /// Describes a static model surface.
 and [<NoEquality; NoComparison>] SurfaceDescriptor =
@@ -153,7 +170,7 @@ and [<ReferenceEquality>] RenderTasks =
       RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderTerrain : Dictionary<TerrainDescriptor, TerrainDescriptor> } // TODO: let's figure out why this representation is so strange... it's seems definitely wrong.
+      RenderTerrains : TerrainDescriptor SList }
 
 /// The parameters for completing a render pass.
 and [<ReferenceEquality>] RenderPassParameters3d =
@@ -532,7 +549,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
-          PhysicallyBasedTerrainGeometriesAndMaterials : Dictionary<TerrainDescriptor, (OpenGL.PhysicallyBased.PhysicallyBasedGeometry * OpenGL.PhysicallyBased.PhysicallyBasedMaterial array)>
+          PhysicallyBasedTerrainGeometries : Dictionary<TerrainGeometryDescriptor, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>
           RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
@@ -1049,82 +1066,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
     static member private renderPhysicallyBasedTerrain
-        viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
-        numStrips numElementsPerStrip (materials : OpenGL.PhysicallyBased.PhysicallyBasedMaterial array) geometry shader renderer =
-
-        // ensure there are surfaces to render
-        // TODO: figure out how to deal with the code duplication between here and in renderPhysicallyBasedSurfaces.
-        if parameters.Length > 0 then
-
-            let material = materials[0]
-            
-            // ensure we have a large enough models fields array
-            let mutable length = renderer.RenderModelsFields.Length
-            while parameters.Length * 16 > length do length <- length * 2
-            if renderer.RenderModelsFields.Length < length then
-                renderer.RenderModelsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough texCoordsOffsets fields array
-            let mutable length = renderer.RenderTexCoordsOffsetsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.RenderTexCoordsOffsetsFields.Length < length then
-                renderer.RenderTexCoordsOffsetsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough abledos fields array
-            let mutable length = renderer.RenderAlbedosFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.RenderAlbedosFields.Length < length then
-                renderer.RenderAlbedosFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough materials fields array
-            let mutable length = renderer.PhysicallyBasedMaterialsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.PhysicallyBasedMaterialsFields.Length < length then
-                renderer.PhysicallyBasedMaterialsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough heights fields array
-            let mutable length = renderer.PhysicallyBasedHeightsFields.Length
-            while parameters.Length > length do length <- length * 2
-            if renderer.PhysicallyBasedHeightsFields.Length < length then
-                renderer.PhysicallyBasedHeightsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough invert roughnesses fields array
-            let mutable length = renderer.PhysicallyBasedInvertRoughnessesFields.Length
-            while parameters.Length > length do length <- length * 2
-            if renderer.PhysicallyBasedInvertRoughnessesFields.Length < length then
-                renderer.PhysicallyBasedInvertRoughnessesFields <- Array.zeroCreate<int> length
-
-            // blit parameters to field arrays
-            for i in 0 .. dec parameters.Length do
-                let struct (model, texCoordsOffset, properties) = parameters.[i]
-                model.ToArray (renderer.RenderModelsFields, i * 16)
-                renderer.RenderTexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Min.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
-                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
-                renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Albedo
-                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Metallic
-                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Roughness
-                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.AmbientOcclusion
-                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Emission
-                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.Height
-                let invertRoughness = match properties.InvertRoughnessOpt with ValueSome value -> value | ValueNone -> material.MaterialProperties.InvertRoughness
-                renderer.RenderAlbedosFields.[i * 4] <- albedo.R
-                renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
-                renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
-                renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.PhysicallyBasedMaterialsFields.[i * 4] <- metallic
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- roughness
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
-                renderer.PhysicallyBasedHeightsFields.[i] <- material.AlbedoMetadata.TextureTexelHeight * height
-                renderer.PhysicallyBasedInvertRoughnessesFields.[i] <- if invertRoughness then 1 else 0
-
-            // draw surfaces
-            OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
-                (viewArray, projectionArray, eyeCenter,
-                 1, renderer.RenderModelsFields, renderer.RenderTexCoordsOffsetsFields, renderer.RenderAlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
-                 numStrips, numElementsPerStrip, materials, geometry, shader)
+        viewArray projectionArray eyeCenter numStrips numElementsPerStrip texelHeightAvg
+        (materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties)
+        (materials : OpenGL.PhysicallyBased.PhysicallyBasedMaterial array) geometry shader (_ : GlRenderer3d) =
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
+            (viewArray, projectionArray, eyeCenter,
+             m4Identity.ToArray (),
+             [|0.0f; 0.0f; 0.0f; 0.0f|],
+             [|materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A|],
+             [|materialProperties.Metallic; materialProperties.Roughness; materialProperties.AmbientOcclusion; materialProperties.Emission|],
+             [|texelHeightAvg * materialProperties.Height|],
+             [|if materialProperties.InvertRoughness then 1 else 0|],
+             numStrips, numElementsPerStrip, materials, geometry, shader)
 
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
@@ -1446,26 +1399,99 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // render terrain
-        for entry in renderer.RenderTasks.RenderTerrain do
-            match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue entry.Key with
-            | (true, (geometry, materials)) ->
-                match entry.Value.HeightMap with
+        for descriptor in renderer.RenderTasks.RenderTerrains do
+            match renderer.PhysicallyBasedTerrainGeometries.TryGetValue descriptor.TerrainGeometryDescriptor with
+            | (true, geometry) ->
+                match descriptor.HeightMap with
                 | RawHeightMap map ->
-                    let material = materials[0] // TODO: figure out how to pass material properties per layer.
                     let numStrips = map.Resolution.Y - 1
                     let numElementsPerStrip = map.Resolution.X * 2
-                    let materialProperties : MaterialProperties =
-                        { AlbedoOpt = ValueSome material.MaterialProperties.Albedo
-                          MetallicOpt = ValueSome material.MaterialProperties.Metallic
-                          RoughnessOpt = ValueSome material.MaterialProperties.Roughness
-                          AmbientOcclusionOpt = ValueSome material.MaterialProperties.AmbientOcclusion
-                          EmissionOpt = ValueSome material.MaterialProperties.Emission
-                          HeightOpt = ValueSome material.MaterialProperties.Height
-                          InvertRoughnessOpt = ValueSome material.MaterialProperties.InvertRoughness }
-                    let parameters = SList.singleton struct (m4Identity, box2Zero, materialProperties)
+                    let terrainMaterialProperties = descriptor.MaterialProperties
+                    let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
+                        { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
+                          Metallic = Constants.Render.MetallicDefault
+                          Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault terrainMaterialProperties.RoughnessOpt
+                          AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
+                          Emission = Constants.Render.EmissionDefault
+                          Height = ValueOption.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
+                          InvertRoughness = ValueOption.defaultValue Constants.Render.InvertRoughnessDefault terrainMaterialProperties.InvertRoughnessOpt }
+                    let (texelHeightAvg, materials) =
+                        match descriptor.Material with
+                        | SplatMaterial splatMaterial ->
+                            let mutable texelHeightAvg = 0.0f
+                            let materials =
+                                [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
+                                    let layer =
+                                        splatMaterial.TerrainLayers.[i]
+                                    let defaultMaterial =
+                                        renderer.RenderPhysicallyBasedMaterial
+                                    let (albedoMetadata, albedoTexture) =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AlbedoImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                        | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                    let roughnessTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.RoughnessImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
+                                        | ValueNone -> defaultMaterial.RoughnessTexture
+                                    let ambientOcclusionTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AmbientOcclusionImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                                        | ValueNone -> defaultMaterial.AmbientOcclusionTexture
+                                    let normalTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.NormalImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.NormalTexture
+                                        | ValueNone -> defaultMaterial.NormalTexture
+                                    let heightTexture =
+                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.HeightImage) renderer with
+                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.HeightTexture
+                                        | ValueNone -> defaultMaterial.HeightTexture
+                                    texelHeightAvg <- texelHeightAvg + albedoMetadata.TextureTexelHeight
+                                    { defaultMaterial with
+                                        MaterialProperties = materialProperties
+                                        AlbedoMetadata = albedoMetadata
+                                        AlbedoTexture = albedoTexture
+                                        RoughnessTexture = roughnessTexture
+                                        AmbientOcclusionTexture = ambientOcclusionTexture
+                                        NormalTexture = normalTexture
+                                        HeightTexture = heightTexture }|]
+                            texelHeightAvg <- texelHeightAvg / single materials.Length
+                            (texelHeightAvg, materials)
+                        | FlatMaterial flatMaterial ->
+                            let defaultMaterial =
+                                renderer.RenderPhysicallyBasedMaterial
+                            let (albedoMetadata, albedoTexture) =
+                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AlbedoImage) renderer with
+                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                                | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                            let roughnessTexture =
+                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.RoughnessImage) renderer with
+                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
+                                | ValueNone -> defaultMaterial.RoughnessTexture
+                            let ambientOcclusionTexture =
+                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AmbientOcclusionImage) renderer with
+                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                                | ValueNone -> defaultMaterial.AmbientOcclusionTexture
+                            let normalTexture =
+                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.NormalImage) renderer with
+                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.NormalTexture
+                                | ValueNone -> defaultMaterial.NormalTexture
+                            let heightTexture =
+                                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.HeightImage) renderer with
+                                | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.HeightTexture
+                                | ValueNone -> defaultMaterial.HeightTexture
+                            let material =
+                                { defaultMaterial with
+                                    MaterialProperties = materialProperties
+                                    AlbedoMetadata = albedoMetadata
+                                    AlbedoTexture = albedoTexture
+                                    RoughnessTexture = roughnessTexture
+                                    AmbientOcclusionTexture = ambientOcclusionTexture
+                                    NormalTexture = normalTexture
+                                    HeightTexture = heightTexture }
+                            (albedoMetadata.TextureTexelHeight, [|material|])
                     GlRenderer3d.renderPhysicallyBasedTerrain
-                        viewRelativeArray geometryProjectionArray eyeCenter parameters false // TODO: set viewRelativeArray based on Absolute field in render descriptor.
-                        numStrips numElementsPerStrip materials geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+                        viewRelativeArray geometryProjectionArray eyeCenter // TODO: set viewRelativeArray based on Absolute field in render descriptor.
+                        numStrips numElementsPerStrip texelHeightAvg materialProperties materials geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
@@ -1744,7 +1770,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderTerrain rt ->
 
-                match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue rt.TerrainDescriptor with
+                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue rt.TerrainDescriptor.TerrainGeometryDescriptor with
                 | (true, _) -> ()
                 | (false, _) ->
 
@@ -1939,105 +1965,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                             vertices.[j+15] <- 0.0f
                                         
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
-
-                        let materials =
-                            let defaultMaterial =
-                                renderer.RenderPhysicallyBasedMaterial
-                            let materialProperties =
-                                defaultMaterial.MaterialProperties
-                            let materialProperties =
-                                match rt.TerrainDescriptor.MaterialProperties.AlbedoOpt with
-                                | ValueSome albedo -> { materialProperties with Albedo = albedo }
-                                | ValueNone -> materialProperties
-                            let materialProperties =
-                                match rt.TerrainDescriptor.MaterialProperties.RoughnessOpt with
-                                | ValueSome roughness -> { materialProperties with Roughness = roughness }
-                                | ValueNone -> materialProperties
-                            let materialProperties =
-                                match rt.TerrainDescriptor.MaterialProperties.AmbientOcclusionOpt with
-                                | ValueSome ambientOcclusion -> { materialProperties with AmbientOcclusion = ambientOcclusion }
-                                | ValueNone -> materialProperties
-                            let materialProperties =
-                                match rt.TerrainDescriptor.MaterialProperties.HeightOpt with
-                                | ValueSome height -> { materialProperties with Height = height }
-                                | ValueNone -> materialProperties
-                            let materialProperties =
-                                match rt.TerrainDescriptor.MaterialProperties.InvertRoughnessOpt with
-                                | ValueSome invertRoughness -> { materialProperties with InvertRoughness = invertRoughness }
-                                | ValueNone -> materialProperties
-
-                            match rt.TerrainDescriptor.Material with
-                            | SplatMaterial splatMaterial ->
-                                [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
-                                    let layer = splatMaterial.TerrainLayers.[i]
-                                    let (albedoMetadata, albedoTexture) =
-                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AlbedoImage) renderer with
-                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                                        | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                                    let roughnessTexture =
-                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.RoughnessImage) renderer with
-                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
-                                        | ValueNone -> defaultMaterial.RoughnessTexture
-                                    let ambientOcclusionTexture =
-                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AmbientOcclusionImage) renderer with
-                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
-                                        | ValueNone -> defaultMaterial.AmbientOcclusionTexture
-                                    let normalTexture =
-                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.NormalImage) renderer with
-                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.NormalTexture
-                                        | ValueNone -> defaultMaterial.NormalTexture
-                                    let heightTexture =
-                                        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.HeightImage) renderer with
-                                        | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.HeightTexture
-                                        | ValueNone -> defaultMaterial.HeightTexture
-                                    { defaultMaterial with
-                                        MaterialProperties = materialProperties
-                                        AlbedoMetadata = albedoMetadata
-                                        AlbedoTexture = albedoTexture
-                                        RoughnessTexture = roughnessTexture
-                                        AmbientOcclusionTexture = ambientOcclusionTexture
-                                        NormalTexture = normalTexture
-                                        HeightTexture = heightTexture }|]
-                            | FlatMaterial flatMaterial ->
-                                let (albedoMetadata, albedoTexture) =
-                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AlbedoImage) renderer with
-                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                                    | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                                let roughnessTexture =
-                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.RoughnessImage) renderer with
-                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
-                                    | ValueNone -> defaultMaterial.RoughnessTexture
-                                let ambientOcclusionTexture =
-                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AmbientOcclusionImage) renderer with
-                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
-                                    | ValueNone -> defaultMaterial.AmbientOcclusionTexture
-                                let normalTexture =
-                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.NormalImage) renderer with
-                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.NormalTexture
-                                    | ValueNone -> defaultMaterial.NormalTexture
-                                let heightTexture =
-                                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.HeightImage) renderer with
-                                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, _, texture) -> texture | _ -> defaultMaterial.HeightTexture
-                                    | ValueNone -> defaultMaterial.HeightTexture
-                                [|{ defaultMaterial with
-                                        MaterialProperties = materialProperties
-                                        AlbedoMetadata = albedoMetadata
-                                        AlbedoTexture = albedoTexture
-                                        RoughnessTexture = roughnessTexture
-                                        AmbientOcclusionTexture = ambientOcclusionTexture
-                                        NormalTexture = normalTexture
-                                        HeightTexture = heightTexture }|]
-                                
-                        renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Clear ()
-                        renderer.PhysicallyBasedTerrainGeometriesAndMaterials.Add (rt.TerrainDescriptor, (geometry, materials))
+                        renderer.PhysicallyBasedTerrainGeometries.Add (rt.TerrainDescriptor.TerrainGeometryDescriptor, geometry)
 
                     | None -> ()
 
-                        
-
-                match renderer.PhysicallyBasedTerrainGeometriesAndMaterials.TryGetValue rt.TerrainDescriptor with
-                | (true, _) ->
-                    renderer.RenderTasks.RenderTerrain.Add (rt.TerrainDescriptor, rt.TerrainDescriptor)
+                match renderer.PhysicallyBasedTerrainGeometries.TryGetValue rt.TerrainDescriptor.TerrainGeometryDescriptor with
+                | (true, _) -> renderer.RenderTasks.RenderTerrains.Add rt.TerrainDescriptor
                 | (false, _) -> ()
                 
 
@@ -2099,7 +2032,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderTasks.RenderSurfacesDeferredRelative.Clear ()
         renderer.RenderTasks.RenderSurfacesForwardAbsoluteSorted.Clear ()
         renderer.RenderTasks.RenderSurfacesForwardRelativeSorted.Clear ()
-        renderer.RenderTasks.RenderTerrain.Clear ()
+        renderer.RenderTasks.RenderTerrains.Clear ()
 
         // destroy user-defined static models
         for staticModel in userDefinedStaticModelsToDestroy do
@@ -2302,7 +2235,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderSurfacesForwardRelative = SList.make ()
               RenderSurfacesForwardAbsoluteSorted = SList.make ()
               RenderSurfacesForwardRelativeSorted = SList.make ()
-              RenderTerrain = Dictionary HashIdentity.Structural }
+              RenderTerrains = SList.make () }
 
         // make renderer
         let renderer =
@@ -2351,7 +2284,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
-              PhysicallyBasedTerrainGeometriesAndMaterials = Dictionary HashIdentity.Structural
+              PhysicallyBasedTerrainGeometries = Dictionary HashIdentity.Structural
               RenderMessages = List () }
 
         // fin
