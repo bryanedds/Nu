@@ -812,11 +812,8 @@ module PhysicallyBased =
                 Gl.BindVertexArray 0u
                 Hl.Assert ()
 
-                // create indices
-                let indices = indexData.ToArray ()
-
                 // fin
-                ([||], indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -974,11 +971,8 @@ module PhysicallyBased =
                 Gl.BindVertexArray 0u
                 Hl.Assert ()
 
-                // create indices
-                let indices = indexData.ToArray ()
-
                 // fin
-                ([||], indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
 
             // fake buffers
             else
