@@ -255,6 +255,11 @@ module PhysicallyBased =
           LightsCountUniform : int
           PhysicallyBasedDeferredLightingShader : uint }
 
+    /// Describes a blur pass of a physically-based shader that's loaded into GPU.
+    type PhysicallyBasedBlurShader =
+        { InputTextureUniform : int
+          PhysicallyBasedBlurShader : uint }
+
     /// Describes an fxaa pass of a physically-based shader that's loaded into GPU.
     type PhysicallyBasedFxaaShader =
         { InputTextureUniform : int
@@ -1227,6 +1232,19 @@ module PhysicallyBased =
           LightsCountUniform = lightsCountUniform
           PhysicallyBasedDeferredLightingShader = shader }
 
+    /// Create a physically-based shader for the blur pass of rendering.
+    let CreatePhysicallyBasedBlurShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
+
+        // make shader record
+        { InputTextureUniform = inputTextureUniform
+          PhysicallyBasedBlurShader = shader }
+
     /// Create a physically-based shader for the fxaa pass of rendering.
     let CreatePhysicallyBasedFxaaShader (shaderFilePath : string) =
 
@@ -1839,6 +1857,44 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture6
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture7
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+
+    /// Draw the blur pass of a physically-based surface.
+    let DrawPhysicallyBasedBlurSurface
+        (inputTexture : uint,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedBlurShader) =
+
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedBlurShader
+        Gl.Uniform1 (shader.InputTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, inputTexture)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown textures
+        Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
