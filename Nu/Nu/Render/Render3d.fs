@@ -124,6 +124,7 @@ and [<ReferenceEquality>] SsaoConfig =
       SsaoIntensity : single
       SsaoBias : single
       SsaoRadius : single
+      SsaoDistanceMax : single
       SsaoSampleCount : int }
 
 /// An internally cached static model used to reduce GC promotion or pressure.
@@ -1353,7 +1354,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSsaoSurface
                     (viewRelativeArray, rasterProjectionArray,
                      positionTexture, normalAndHeightTexture,
-                     renderer.RenderSsaoConfig.SsaoIntensity, renderer.RenderSsaoConfig.SsaoBias, renderer.RenderSsaoConfig.SsaoRadius, renderer.RenderSsaoConfig.SsaoSampleCount,
+                     [|Constants.Render.SsaoResolution.X; Constants.Render.SsaoResolution.Y|],
+                     renderer.RenderSsaoConfig.SsaoIntensity, renderer.RenderSsaoConfig.SsaoBias, renderer.RenderSsaoConfig.SsaoRadius, renderer.RenderSsaoConfig.SsaoDistanceMax, renderer.RenderSsaoConfig.SsaoSampleCount,
                      renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredSsaoShader)
                 OpenGL.Hl.Assert ()
 
@@ -1767,6 +1769,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               SsaoIntensity = Constants.Render.SsaoIntensityDefault
               SsaoBias = Constants.Render.SsaoBiasDefault
               SsaoRadius = Constants.Render.SsaoRadiusDefault
+              SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
               SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
         // create render tasks

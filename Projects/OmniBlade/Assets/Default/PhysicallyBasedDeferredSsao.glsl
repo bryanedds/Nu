@@ -61,9 +61,11 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform sampler2D positionTexture;
 uniform sampler2D normalAndHeightTexture;
+uniform ivec2 ssaoResolution;
 uniform float ssaoIntensity;
 uniform float ssaoBias;
 uniform float ssaoRadius;
+uniform float ssaoDistanceMax;
 uniform int ssaoSampleCount;
 
 in vec2 texCoordsOut;
@@ -95,6 +97,9 @@ void main()
     // retrieve remaining data from geometry buffers
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
 
+    // pre-compute resolution inverse
+    vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssaoResolution);
+
     // ensure sample count is in range and pre-compute sample count inverse
     int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssaoSampleCount));
     float ssaoSampleCountInverse = 1.0 / float(ssaoSampleCountCeil);
@@ -120,7 +125,7 @@ void main()
         samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0f ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
 
         // compute position and sampling position in screen space along with distance from origin
-        vec2 positionScreen = gl_FragCoord.xy / vec2(1920.0, 1080.0);
+        vec2 positionScreen = gl_FragCoord.xy * ssaoResolutionInverse;
         vec3 samplingPositionView = positionView + samplingDirectionView;
         vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
@@ -128,7 +133,7 @@ void main()
 
         // ensure we're not sampling too far from origin and thus blowing the texture cache and that we're not using
         // empty space as indicated by normal sample
-        if (distanceScreen < 0.125 && texture(normalAndHeightTexture, samplingPositionScreen).rgb != vec3(1.0))
+        if (distanceScreen < ssaoDistanceMax && texture(normalAndHeightTexture, samplingPositionScreen).rgb != vec3(1.0))
         {
             // sample position in view space
             vec3 samplePosition = texture(positionTexture, samplingPositionScreen).rgb;
