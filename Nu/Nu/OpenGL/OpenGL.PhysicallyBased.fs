@@ -223,9 +223,11 @@ module PhysicallyBased =
           ProjectionUniform : int
           PositionTextureUniform : int
           NormalAndHeightTextureUniform : int
+          SsaoResolution : int
           SsaoIntensity : int
           SsaoBias : int
           SsaoRadius : int
+          SsaoDistanceMax : int
           SsaoSampleCount : int
           PhysicallyBasedDeferredSsaoShader : uint }
 
@@ -1161,9 +1163,11 @@ module PhysicallyBased =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let normalAndHeightTextureUniform = Gl.GetUniformLocation (shader, "normalAndHeightTexture")
+        let ssaoResolution = Gl.GetUniformLocation (shader, "ssaoResolution")
         let ssaoIntensity = Gl.GetUniformLocation (shader, "ssaoIntensity")
         let ssaoBias = Gl.GetUniformLocation (shader, "ssaoBias")
         let ssaoRadius = Gl.GetUniformLocation (shader, "ssaoRadius")
+        let ssaoDistanceMax = Gl.GetUniformLocation (shader, "ssaoDistanceMax")
         let ssaoSampleCount = Gl.GetUniformLocation (shader, "ssaoSampleCount")
 
         // make shader record
@@ -1171,9 +1175,11 @@ module PhysicallyBased =
           ProjectionUniform = projectionUniform
           PositionTextureUniform = positionTextureUniform
           NormalAndHeightTextureUniform = normalAndHeightTextureUniform
+          SsaoResolution = ssaoResolution
           SsaoIntensity = ssaoIntensity
           SsaoBias = ssaoBias
           SsaoRadius = ssaoRadius
+          SsaoDistanceMax = ssaoDistanceMax
           SsaoSampleCount = ssaoSampleCount
           PhysicallyBasedDeferredSsaoShader = shader }
 
@@ -1705,9 +1711,11 @@ module PhysicallyBased =
          projection : single array,
          positionTexture : uint,
          normalAndHeightTexture : uint,
+         ssaoResolution : int array,
          ssaoIntensity : single,
          ssaoBias : single,
          ssaoRadius : single,
+         ssaoDistanceMax : single,
          ssaoSampleCount : int,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredSsaoShader) =
@@ -1718,9 +1726,11 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 1)
+        Gl.Uniform2 (shader.SsaoResolution, ssaoResolution)
         Gl.Uniform1 (shader.SsaoIntensity, ssaoIntensity)
         Gl.Uniform1 (shader.SsaoBias, ssaoBias)
         Gl.Uniform1 (shader.SsaoRadius, ssaoRadius)
+        Gl.Uniform1 (shader.SsaoDistanceMax, ssaoDistanceMax)
         Gl.Uniform1 (shader.SsaoSampleCount, ssaoSampleCount)
         Hl.Assert ()
 
