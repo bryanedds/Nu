@@ -37,7 +37,7 @@
       [AmbientOcclusionOpt [ValueSome 1]]
       [HeightOpt [ValueSome 8]]
       [InvertRoughnessOpt [ValueSome False]]]]
-    [TextureScale [0.001953125 0.001953125]]]
+    [Tiles [128 128]]]
    []]
   [FpsDispatcher
    [[Name Fps-0001]

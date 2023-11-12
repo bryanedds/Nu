@@ -2669,24 +2669,24 @@ module StaticModelSurfaceFacetModule =
 module TerrainFacetModule =
 
     type Entity with
-        member this.GetSegments world : Vector2i = this.Get (nameof this.Segments) world
-        member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
-        member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
-        member this.GetTextureScale world : Vector2 = this.Get (nameof this.TextureScale) world
-        member this.SetTextureScale (value : Vector2) world = this.Set (nameof this.TextureScale) value world
-        member this.TextureScale = lens (nameof this.TextureScale) this this.GetTextureScale this.SetTextureScale
-        member this.GetTintImage world : Image AssetTag = this.Get (nameof this.TintImage) world
-        member this.SetTintImage (value : Image AssetTag) world = this.Set (nameof this.TintImage) value world
-        member this.TintImage = lens (nameof this.TintImage) this this.GetTintImage this.SetTintImage
-        member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
-        member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
-        member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
         member this.GetTerrainMaterialProperties world : TerrainMaterialProperties = this.Get (nameof this.TerrainMaterialProperties) world
         member this.SetTerrainMaterialProperties (value : TerrainMaterialProperties) world = this.Set (nameof this.TerrainMaterialProperties) value world
         member this.TerrainMaterialProperties = lens (nameof this.TerrainMaterialProperties) this this.GetTerrainMaterialProperties this.SetTerrainMaterialProperties
         member this.GetTerrainMaterial world : TerrainMaterial = this.Get (nameof this.TerrainMaterial) world
         member this.SetTerrainMaterial (value : TerrainMaterial) world = this.Set (nameof this.TerrainMaterial) value world
         member this.TerrainMaterial = lens (nameof this.TerrainMaterial) this this.GetTerrainMaterial this.SetTerrainMaterial
+        member this.GetTintImage world : Image AssetTag = this.Get (nameof this.TintImage) world
+        member this.SetTintImage (value : Image AssetTag) world = this.Set (nameof this.TintImage) value world
+        member this.TintImage = lens (nameof this.TintImage) this this.GetTintImage this.SetTintImage
+        member this.GetTiles world : Vector2 = this.Get (nameof this.Tiles) world
+        member this.SetTiles (value : Vector2) world = this.Set (nameof this.Tiles) value world
+        member this.Tiles = lens (nameof this.Tiles) this this.GetTiles this.SetTiles
+        member this.GetHeightMap world : HeightMap = this.Get (nameof this.HeightMap) world
+        member this.SetHeightMap (value : HeightMap) world = this.Set (nameof this.HeightMap) value world
+        member this.HeightMap = lens (nameof this.HeightMap) this this.GetHeightMap this.SetHeightMap
+        member this.GetSegments world : Vector2i = this.Get (nameof this.Segments) world
+        member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
+        member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
 
         member this.GetTerrainResolution world =
             match this.GetHeightMap world with
@@ -2706,11 +2706,6 @@ module TerrainFacetModule =
         static member Properties =
             [define Entity.Size (v3Dup 48.0f)
              define Entity.Presence Omnipresent
-             define Entity.Segments v2iOne
-             define Entity.TextureScale v2One
-             define Entity.TintImage Assets.Default.MaterialAlbedo
-             define Entity.NormalImage Assets.Default.MaterialNormal
-             define Entity.HeightMap (RawHeightMap { Resolution = v2i 256 256; RawFormat = RawSingle LittleEndian; RawAsset = asset "Default" "HeightMapRaw" }) //(ImageHeightMap Assets.Default.HeightMap)
              define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
              define Entity.TerrainMaterial
                 (FlatMaterial
@@ -2718,7 +2713,12 @@ module TerrainFacetModule =
                       RoughnessImage = Assets.Default.MaterialRoughness
                       AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
                       NormalImage = Assets.Default.MaterialNormal
-                      HeightImage = Assets.Default.MaterialHeight })]
+                      HeightImage = Assets.Default.MaterialHeight })
+             define Entity.TintImage Assets.Default.MaterialAlbedo
+             define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.Tiles v2One
+             define Entity.HeightMap (RawHeightMap { Resolution = v2i 256 256; RawFormat = RawSingle LittleEndian; RawAsset = asset "Default" "HeightMapRaw" }) //(ImageHeightMap Assets.Default.HeightMap)
+             define Entity.Segments v2iOne]
 
         override this.Register (entity, world) =
             ignore entity
@@ -2751,12 +2751,12 @@ module TerrainFacetModule =
             let terrainDescriptor =
                 { Bounds = transform.Bounds
                   MaterialProperties = entity.GetTerrainMaterialProperties world
-                  Segments = entity.GetSegments world
-                  TextureScale = entity.GetTextureScale world
+                  Material = entity.GetTerrainMaterial world
                   TintImage = entity.GetTintImage world
                   NormalImage = entity.GetNormalImage world
+                  Tiles = entity.GetTiles world
                   HeightMap = entity.GetHeightMap world
-                  Material = entity.GetTerrainMaterial world }
+                  Segments = entity.GetSegments world }
             World.enqueueRenderMessage3d
                 (RenderTerrain
                     { Absolute = absolute
