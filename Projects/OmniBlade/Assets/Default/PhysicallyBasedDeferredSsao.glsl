@@ -124,12 +124,11 @@ void main()
         vec3 samplingPositionView = positionView + samplingDirectionView;
         vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
-        float samplingPositionDistanceScreen = length(samplingPositionScreen - positionScreen);
+        float distanceScreen = length(samplingPositionScreen - positionScreen);
 
         // ensure we're not sampling too far from origin and thus blowing the texture cache and that we're not using
         // empty space as indicated by normal sample
-        if (samplingPositionDistanceScreen < 0.125 &&
-            texture(normalAndHeightTexture, samplingPositionScreen).rgb != vec3(1.0))
+        if (distanceScreen < 0.125 && texture(normalAndHeightTexture, samplingPositionScreen).rgb != vec3(1.0))
         {
             // sample position in view space
             vec3 samplePosition = texture(positionTexture, samplingPositionScreen).rgb;
