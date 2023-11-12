@@ -424,12 +424,14 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
           RenderPhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
           RenderPhysicallyBasedForwardShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedBlurShader : OpenGL.PhysicallyBased.PhysicallyBasedBlurShader
           RenderPhysicallyBasedFxaaShader : OpenGL.PhysicallyBased.PhysicallyBasedFxaaShader
           RenderGeometryBuffers : uint * uint * uint * uint * uint * uint
           RenderLightMappingBuffers : uint * uint * uint
           RenderIrradianceBuffers : uint * uint * uint
           RenderEnvironmentFilterBuffers : uint * uint * uint
           RenderSsaoBuffers : uint * uint * uint
+          RenderSsaoBlurBuffers : uint * uint * uint
           RenderFilterBuffers : uint * uint * uint
           RenderCubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           RenderBillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -1333,7 +1335,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // run ssao pass
-        let ssaoTexture =
+        let ssaoBlurTexture =
 
             // but only if needed
             if renderer.RenderSsaoConfig.SsaoEnabled then
@@ -1355,12 +1357,19 @@ type [<ReferenceEquality>] GlRenderer3d =
                      renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredSsaoShader)
                 OpenGL.Hl.Assert ()
 
-                // generate ssao mips
-                OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, ssaoTexture)
-                OpenGL.Gl.GenerateMipmap OpenGL.TextureTarget.Texture2d
-                OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+                // setup ssao blur buffer and viewport
+                let (ssaoBlurTexture, ssaoBlurRenderbuffer, ssaoBlurFramebuffer) = renderer.RenderSsaoBlurBuffers
+                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ssaoBlurRenderbuffer)
+                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ssaoBlurFramebuffer)
+                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+                OpenGL.Gl.Viewport (ssaoViewport.Bounds.Min.X, ssaoViewport.Bounds.Min.Y, ssaoViewport.Bounds.Size.X, ssaoViewport.Bounds.Size.Y)
                 OpenGL.Hl.Assert ()
-                ssaoTexture
+
+                // deferred render ssao blur quad
+                OpenGL.PhysicallyBased.DrawPhysicallyBasedBlurSurface (ssaoTexture, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedBlurShader)
+                OpenGL.Hl.Assert ()
+                ssaoBlurTexture
 
             // just use white texture
             else renderer.RenderWhiteTexture
@@ -1393,7 +1402,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render lighting quad to filter buffer
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, lightAmbientColor, lightAmbientBrightness,
-             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, renderer.RenderBrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTexture,
+             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, renderer.RenderBrdfTexture, irradianceTexture, environmentFilterTexture, ssaoBlurTexture,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
              renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
@@ -1610,6 +1619,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         let forwardShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardShaderFilePath
         OpenGL.Hl.Assert ()
 
+        // create blur shader
+        let blurShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedBlurShader Constants.Paths.PhysicallyBasedBlurShaderFilePath
+        OpenGL.Hl.Assert ()
+
         // create fxaa shader
         let fxaaShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedFxaaShader Constants.Paths.PhysicallyBasedFxaaShaderFilePath
         OpenGL.Hl.Assert ()
@@ -1646,6 +1659,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssaoBuffers =
             match OpenGL.Framebuffer.TryCreateSsaoBuffers () with
             | Right ssaoBuffers -> ssaoBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create blur buffers
+        let ssaoBlurBuffers =
+            match OpenGL.Framebuffer.TryCreateSsaoBlurBuffers () with
+            | Right ssaoBlurBuffers -> ssaoBlurBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
@@ -1774,6 +1794,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
               RenderPhysicallyBasedDeferredSsaoShader = deferredSsaoShader
               RenderPhysicallyBasedDeferredLightingShader = deferredLightingShader
+              RenderPhysicallyBasedBlurShader = blurShader
               RenderPhysicallyBasedFxaaShader = fxaaShader
               RenderPhysicallyBasedForwardShader = forwardShader
               RenderGeometryBuffers = geometryBuffers
@@ -1781,6 +1802,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderIrradianceBuffers = irradianceBuffers
               RenderEnvironmentFilterBuffers = environmentFilterBuffers
               RenderSsaoBuffers = ssaoBuffers
+              RenderSsaoBlurBuffers = ssaoBlurBuffers
               RenderFilterBuffers = filterBuffers
               RenderCubeMapGeometry = cubeMapGeometry
               RenderBillboardGeometry = billboardGeometry
@@ -1860,4 +1882,5 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Framebuffer.DestroyIrradianceBuffers renderer.RenderIrradianceBuffers
             OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers renderer.RenderEnvironmentFilterBuffers
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.RenderSsaoBuffers
+            OpenGL.Framebuffer.DestroySsaoBlurBuffers renderer.RenderSsaoBlurBuffers
             OpenGL.Framebuffer.DestroyFilterBuffers renderer.RenderFilterBuffers

@@ -17,6 +17,12 @@ void main()
 
 const float PI = 3.141592654;
 const int SSAO_SAMPLES_MAX = 128;
+const float SSAO_SAMPLING_ANGLES[25] = float[](
+    4.4969575, 5.2307380, 2.4965059, 1.0937309, 3.9373241,
+    5.8075777, 2.1917731, 3.5731674, 5.9864803, 1.5461461,
+    0.5736624, 5.0692194, 2.7529615, 4.4798282, 4.1854371,
+    3.4072130, 3.0481559, 4.7628750, 1.1246019, 0.3490351,
+    5.8329164, 5.1977364, 4.3651479, 1.6525684, 2.9340809);
 const vec3[SSAO_SAMPLES_MAX] SSAO_SAMPLING_DIRECTIONS = vec3[](
     vec3(0.935, -0.0272, -0.351),   vec3(0.821, -0.568, 0.0404),    vec3(-0.553, -0.247, -0.795),   vec3(-0.968, -0.114, -0.224),
     vec3(0.276, 0.950, -0.145),     vec3(-0.069, 0.994, -0.0841),   vec3(0.417, -0.884, -0.206),    vec3(0.108, -0.986, 0.115),
@@ -64,6 +70,22 @@ in vec2 texCoordsOut;
 
 out float frag;
 
+float randomAngle()
+{
+    float x = gl_FragCoord.x;
+    float xlow = floor(x);
+    float xhigh = ceil(x);
+    float y = gl_FragCoord.y;
+    float ylow = floor(y);
+    float yhigh = ceil(y);
+    float result =
+        mix(
+            SSAO_SAMPLING_ANGLES[int(xlow) % 5 + int(ylow) % 5 * 5],
+            SSAO_SAMPLING_ANGLES[int(xhigh) % 5 + int(yhigh) % 5 * 5],
+            length(vec2(x, y) - vec2(xlow, ylow)));
+    return result;
+}
+
 void main()
 {
     // retrieve normal value first, allowing for early-out
@@ -77,6 +99,14 @@ void main()
     int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssaoSampleCount));
     float ssaoSampleCountInverse = 1.0 / float(ssaoSampleCountCeil);
 
+    // contrive sampling rotation
+    float samplingAngle = randomAngle();
+    mat3 samplingRotation =
+        mat3(
+            cos(samplingAngle), -sin(samplingAngle), 0.0,
+            sin(samplingAngle), cos(samplingAngle), 0.0,
+            0.0, 0.0, 1.0);
+
     // compute screen space ambient occlusion
     float ssao = 0.0;
     vec3 positionView = (view * vec4(position, 1.0)).xyz;
@@ -84,7 +114,7 @@ void main()
     for (int i = 0; i < ssaoSampleCountCeil; ++i)
     {
         // compute sampling direction in view space
-        vec3 samplingDirectionView = SSAO_SAMPLING_DIRECTIONS[i];
+        vec3 samplingDirectionView = samplingRotation * SSAO_SAMPLING_DIRECTIONS[i];
         samplingDirectionView *= ssaoRadius; // scale by radius
         samplingDirectionView *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
         samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0f ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
