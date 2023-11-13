@@ -1066,7 +1066,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
     static member private renderPhysicallyBasedTerrain
-        viewArray projectionArray eyeCenter numStrips numElementsPerStrip texelHeightAvg
+        viewArray projectionArray eyeCenter numElements texelHeightAvg
         (materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties)
         (materials : OpenGL.PhysicallyBased.PhysicallyBasedMaterial array) geometry shader (_ : GlRenderer3d) =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
@@ -1077,7 +1077,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              [|materialProperties.Metallic; materialProperties.Roughness; materialProperties.AmbientOcclusion; materialProperties.Emission|],
              [|texelHeightAvg * materialProperties.Height|],
              [|if materialProperties.InvertRoughness then 1 else 0|],
-             numStrips, numElementsPerStrip, materials, geometry, shader)
+             numElements, materials, geometry, shader)
 
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
@@ -1404,8 +1404,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | (true, geometry) ->
                 match descriptor.HeightMap with
                 | RawHeightMap map ->
-                    let numStrips = map.Resolution.Y - 1
-                    let numElementsPerStrip = map.Resolution.X * 2
+                    let numElements = (map.Resolution.X - 1) * (map.Resolution.Y - 1) * 6
                     let terrainMaterialProperties = descriptor.MaterialProperties
                     let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
                         { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
@@ -1491,7 +1490,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             (albedoMetadata.TextureTexelHeight, [|material|])
                     GlRenderer3d.renderPhysicallyBasedTerrain
                         viewRelativeArray geometryProjectionArray eyeCenter // TODO: set viewRelativeArray based on Absolute field in render descriptor.
-                        numStrips numElementsPerStrip texelHeightAvg materialProperties materials geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+                        numElements texelHeightAvg materialProperties materials geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
                     OpenGL.Hl.Assert ()
                 | _ -> ()
             | (false, _) -> ()
@@ -1869,10 +1868,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | _ -> None
 
                     let indices = 
-                        [|for i in 0 .. dec resolutionY do
-                            for j in 0 .. dec resolutionX do
-                                for k in 0 .. 1 do
-                                    j + resolutionX * (i + k)|]
+                        [|for i in 0 .. dec resolutionY - 1 do
+                            for j in 0 .. dec resolutionX - 1 do
+                                [|j + resolutionX * i
+                                  j + resolutionX * (i + 1)
+                                  j + 1 + resolutionX * i
+                                  j + resolutionX * (i + 1)
+                                  j + 1 + resolutionX * (i + 1)
+                                  j + 1 + resolutionX * i|]|]
+
+                    let indices = Array.concat indices
                         
                     match positionsAndTexCoordsesOpt with
                     | Some positionsAndTexCoordses ->
