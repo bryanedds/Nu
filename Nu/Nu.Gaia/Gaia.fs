@@ -164,8 +164,8 @@ Collapsed=0
 DockId=0x00000002,0
 
 [Window][Property Editor]
-Pos=284,874
-Size=712,206
+Pos=284,854
+Size=667,226
 Collapsed=0
 DockId=0x00000001,0
 
@@ -176,32 +176,32 @@ Collapsed=0
 DockId=0x0000000C,1
 
 [Window][Asset Graph]
-Pos=998,874
-Size=624,206
+Pos=953,854
+Size=669,226
 Collapsed=0
 DockId=0x00000009,2
 
 [Window][Overlayer]
-Pos=998,874
-Size=624,206
+Pos=953,854
+Size=669,226
 Collapsed=0
 DockId=0x00000009,3
 
 [Window][Event Tracing]
-Pos=998,874
-Size=624,206
+Pos=953,854
+Size=669,226
 Collapsed=0
 DockId=0x00000009,4
 
 [Window][Renderer]
-Pos=998,874
-Size=624,206
+Pos=953,854
+Size=669,226
 Collapsed=0
 DockId=0x00000009,1
 
 [Window][Audio Player]
-Pos=998,874
-Size=624,206
+Pos=953,854
+Size=669,226
 Collapsed=0
 DockId=0x00000009,0
 
@@ -326,6 +326,16 @@ Pos=700,500
 Size=520,110
 Collapsed=0
 
+[Window][DockSpaceViewport_11111111]
+Pos=0,0
+Size=1920,1080
+Collapsed=0
+
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
 [Docking][Data]
 DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
   DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
@@ -336,10 +346,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Selected=0xAE464409
       DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1338,1080 Split=X
         DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
-          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,816 CentralNode=1
-          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,206 Split=X Selected=0xD4E24632
+          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,796 CentralNode=1
+          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,226 Split=X Selected=0xD4E24632
             DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=667,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0x8C60D014
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0xD4E24632
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
