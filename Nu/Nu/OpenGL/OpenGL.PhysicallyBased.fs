@@ -1498,8 +1498,7 @@ module PhysicallyBased =
          materialsFields : single array,
          heightsFields : single array,
          invertRoughnessesFields : int array,
-         numStrips : int,
-         numElementsPerStrip : int,
+         numElements : int,
          materials : PhysicallyBasedMaterial array, // TODO: manage maximum array length.
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredTerrainShader) =
@@ -1613,10 +1612,8 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // draw geometry
-        for i in 0 .. dec numStrips do
-            let offset = sizeof<uint> * numElementsPerStrip * i
-            Gl.DrawElements (OpenGL.PrimitiveType.TriangleStrip, numElementsPerStrip, DrawElementsType.UnsignedInt, nativeint offset)
-            Hl.Assert ()
+        Gl.DrawElements (OpenGL.PrimitiveType.Triangles, numElements, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
 
         // teardown geometry
         Gl.BindVertexArray 0u
