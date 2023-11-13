@@ -1785,27 +1785,37 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | RawHeightMap map -> (map.Resolution.X, map.Resolution.Y)
                         | DynamicHeightMap _ -> (0, 0)
                     
+                    // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
+                    // the geometry produced here is slightly different, with the border slightly clipped,
+                    // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
+                    // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
+                    let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single (dec resolutionX)
+                    let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single (dec resolutionY)
                     let terrainHeight = rt.TerrainDescriptor.Bounds.Size.Y
                     let terrainPositionX = rt.TerrainDescriptor.Bounds.Min.X
                     let terrainPositionY = rt.TerrainDescriptor.Bounds.Min.Y
                     let terrainPositionZ = rt.TerrainDescriptor.Bounds.Min.Z
+                    let texelWidth = 1.0f / single resolutionX
+                    let texelHeight = 1.0f / single resolutionY
                                 
                     // NOTE: this code expects a normalized heightmap i.e. lowest point = 00, highest = ff;
                     // otherwise extra work will be required to find these points and scale accordingly.
                     let positionsAndTexCoordsesOpt =
                         match rt.TerrainDescriptor.HeightMap with
+                        | ImageHeightMap image ->
+                            match GlRenderer3d.tryGetImageData (AssetTag.generalize image) renderer with
+                            | Some (bytes, _) ->
+                                Some
+                                    [|for y in 0 .. dec resolutionY do
+                                        for x in 0 .. dec resolutionX do
+                                            let divisor = single Byte.MaxValue
+                                            let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
+                                            let normalized = (bytes[index] |> single) / divisor
+                                            let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                            let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
+                                            struct (position, texCoords)|]
+                            | None -> None
                         | RawHeightMap map ->
-
-                            let texelWidth = 1.0f / single resolutionX
-                            let texelHeight = 1.0f / single resolutionY
-                        
-                            // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
-                            // the geometry produced here is slightly different, with the border slightly clipped,
-                            // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
-                            // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
-                            let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single (dec resolutionX)
-                            let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single (dec resolutionY)
-
                             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
                             | ValueSome (RawAsset rawAsset) ->
 
