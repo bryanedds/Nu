@@ -1404,7 +1404,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | (true, geometry) ->
                 match descriptor.HeightMap with
                 | RawHeightMap map ->
-                    let numElements = (map.Resolution.X - 1) * (map.Resolution.Y - 1) * 6
+                    let numElements = dec map.Resolution.X * dec map.Resolution.Y * 6
                     let terrainMaterialProperties = descriptor.MaterialProperties
                     let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
                         { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
@@ -1868,17 +1868,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | _ -> None
 
                     let indices = 
-                        [|for i in 0 .. dec resolutionY - 1 do
-                            for j in 0 .. dec resolutionX - 1 do
-                                [|j + resolutionX * i
-                                  j + resolutionX * (i + 1)
-                                  j + 1 + resolutionX * i
-                                  j + resolutionX * (i + 1)
-                                  j + 1 + resolutionX * (i + 1)
-                                  j + 1 + resolutionX * i|]|]
+                        [|for j in 0 .. dec resolutionY - 1 do
+                            for i in 0 .. dec resolutionX - 1 do
+                                yield resolutionX * j + i
+                                yield resolutionX * inc j + i
+                                yield resolutionX * j + inc i
+                                yield resolutionX * inc j + i
+                                yield resolutionX * inc j + inc i
+                                yield resolutionX * j + inc i|]
 
-                    let indices = Array.concat indices
-                        
                     match positionsAndTexCoordsesOpt with
                     | Some positionsAndTexCoordses ->
 
