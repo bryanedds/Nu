@@ -1867,16 +1867,6 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         | _ -> None
 
-                    let indices = 
-                        [|for j in 0 .. dec resolutionY - 1 do
-                            for i in 0 .. dec resolutionX - 1 do
-                                yield resolutionX * j + i
-                                yield resolutionX * inc j + i
-                                yield resolutionX * j + inc i
-                                yield resolutionX * inc j + i
-                                yield resolutionX * inc j + inc i
-                                yield resolutionX * j + inc i|]
-
                     match positionsAndTexCoordsesOpt with
                     | Some positionsAndTexCoordses ->
 
@@ -1967,6 +1957,33 @@ type [<ReferenceEquality>] GlRenderer3d =
                             vertices.[j+14] <- 0.0f
                             vertices.[j+15] <- 0.0f
                                         
+                        let indices = 
+                            [|for j in 0 .. dec resolutionY - 1 do
+                                for i in 0 .. dec resolutionX - 1 do
+                                    let struct (topLeft, _) = positionsAndTexCoordses.[resolutionX * j + i]
+                                    let struct (bottomLeft, _) = positionsAndTexCoordses.[resolutionX * inc j + i]
+                                    let struct (topRight, _) = positionsAndTexCoordses.[resolutionX * j + inc i]
+                                    let struct (bottomRight, _) = positionsAndTexCoordses.[resolutionX * inc j + inc i]
+                                    
+                                    // triangulate quad along the longest edge
+                                    // TODO: allow the user to decide triangulation policy?
+                                    if ((topLeft - bottomRight).Magnitude > (bottomLeft - topRight).Magnitude) then
+                                        // divide quad from top-left to bottom-right
+                                        yield resolutionX * inc j + i
+                                        yield resolutionX * inc j + inc i
+                                        yield resolutionX * j + i
+                                        yield resolutionX * inc j + inc i
+                                        yield resolutionX * j + inc i
+                                        yield resolutionX * j + i
+                                    else
+                                        // divide quad from bottom-left to top-right
+                                        yield resolutionX * j + i
+                                        yield resolutionX * inc j + i
+                                        yield resolutionX * j + inc i
+                                        yield resolutionX * inc j + i
+                                        yield resolutionX * inc j + inc i
+                                        yield resolutionX * j + inc i|]
+                        
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
                         renderer.PhysicallyBasedTerrainGeometries.Add (rt.TerrainDescriptor.TerrainGeometryDescriptor, geometry)
 
