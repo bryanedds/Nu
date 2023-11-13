@@ -1934,40 +1934,25 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 | _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
                             | _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
 
-                        let vertices = Array.zeroCreate<single> (positionsAndTexCoordses.Length * 16)
-                        for i in 0 .. dec positionsAndTexCoordses.Length do
-                            let j = i * 16
-                            let struct (p, t) = positionsAndTexCoordses.[i]
-                            let n = normals.[i]
-                            let s0 = splat0.[i]
-                            vertices.[j] <- p.X
-                            vertices.[j+1] <- p.Y
-                            vertices.[j+2] <- p.Z
-                            vertices.[j+3] <- t.X
-                            vertices.[j+4] <- t.Y
-                            vertices.[j+5] <- n.X
-                            vertices.[j+6] <- n.Y
-                            vertices.[j+7] <- n.Z
-                            vertices.[j+8] <- s0.X
-                            vertices.[j+9] <- s0.Y
-                            vertices.[j+10] <- s0.Z
-                            vertices.[j+11] <- s0.W
-                            vertices.[j+12] <- 0.0f
-                            vertices.[j+13] <- 0.0f
-                            vertices.[j+14] <- 0.0f
-                            vertices.[j+15] <- 0.0f
-                                        
+                        let vertices =
+                            [|for i in 0 .. dec positionsAndTexCoordses.Length do
+                                let struct (p, t) = positionsAndTexCoordses.[i]
+                                let n = normals.[i]
+                                let s0 = splat0.[i]
+                                yield! [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f|]|]
+
                         let indices = 
                             [|for j in 0 .. dec resolutionY - 1 do
                                 for i in 0 .. dec resolutionX - 1 do
-                                    let struct (topLeft, _) = positionsAndTexCoordses.[resolutionX * j + i]
-                                    let struct (bottomLeft, _) = positionsAndTexCoordses.[resolutionX * inc j + i]
-                                    let struct (topRight, _) = positionsAndTexCoordses.[resolutionX * j + inc i]
-                                    let struct (bottomRight, _) = positionsAndTexCoordses.[resolutionX * inc j + inc i]
-                                    
+                                    let topLeft = fst' positionsAndTexCoordses.[resolutionX * j + i]
+                                    let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc j + i]
+                                    let topRight = fst' positionsAndTexCoordses.[resolutionX * j + inc i]
+                                    let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc j + inc i]
+                                    let edgeA = topLeft - bottomRight
+                                    let edgeB = bottomLeft - topRight
                                     // triangulate quad along the longest edge
                                     // TODO: allow the user to decide triangulation policy?
-                                    if ((topLeft - bottomRight).Magnitude > (bottomLeft - topRight).Magnitude) then
+                                    if edgeA.Magnitude > edgeB.Magnitude then
                                         // divide quad from top-left to bottom-right
                                         yield resolutionX * inc j + i
                                         yield resolutionX * inc j + inc i
@@ -1983,7 +1968,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         yield resolutionX * inc j + i
                                         yield resolutionX * inc j + inc i
                                         yield resolutionX * j + inc i|]
-                        
+
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
                         renderer.PhysicallyBasedTerrainGeometries.Add (rt.TerrainDescriptor.TerrainGeometryDescriptor, geometry)
 
