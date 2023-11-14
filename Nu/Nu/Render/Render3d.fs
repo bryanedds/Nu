@@ -1902,9 +1902,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                                             inc y = resolutionY then
                                             v3Up
                                         else
-                                            let a = fst' positionsAndTexCoordses.[x + resolutionX * y]
-                                            let b = fst' positionsAndTexCoordses.[inc x + resolutionX * y]
-                                            let c = fst' positionsAndTexCoordses.[x + resolutionX * inc y]
+                                            let topLeft = fst' positionsAndTexCoordses.[resolutionX * y + x]
+                                            let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc y + x]
+                                            let topRight = fst' positionsAndTexCoordses.[resolutionX * y + inc x]
+                                            let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc y + inc x]
+                                            
+                                            // triangulation conscious code left in place in case of experimentation,
+                                            // obviously must be kept in sync with triangulation policy.
+                                            let edgeA = topLeft - bottomRight
+                                            let edgeB = bottomLeft - topRight
+                                            let a = topLeft
+                                            let b = topRight
+                                            let c = if edgeA.Magnitude > edgeB.Magnitude then bottomLeft else bottomLeft
                                             let ab = b - a
                                             let ac = c - a
                                             let normal = Vector3.Cross (ac, ab) |> Vector3.Normalize
@@ -1956,32 +1965,32 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 yield! [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f|]|]
 
                         let indices = 
-                            [|for j in 0 .. dec resolutionY - 1 do
-                                for i in 0 .. dec resolutionX - 1 do
-                                    let topLeft = fst' positionsAndTexCoordses.[resolutionX * j + i]
-                                    let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc j + i]
-                                    let topRight = fst' positionsAndTexCoordses.[resolutionX * j + inc i]
-                                    let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc j + inc i]
+                            [|for y in 0 .. dec resolutionY - 1 do
+                                for x in 0 .. dec resolutionX - 1 do
+                                    let topLeft = fst' positionsAndTexCoordses.[resolutionX * y + x]
+                                    let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc y + x]
+                                    let topRight = fst' positionsAndTexCoordses.[resolutionX * y + inc x]
+                                    let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc y + inc x]
                                     let edgeA = topLeft - bottomRight
                                     let edgeB = bottomLeft - topRight
                                     // triangulate quad along the longest edge
                                     // TODO: allow the user to decide triangulation policy?
                                     if edgeA.Magnitude > edgeB.Magnitude then
                                         // divide quad from top-left to bottom-right
-                                        yield resolutionX * inc j + i
-                                        yield resolutionX * inc j + inc i
-                                        yield resolutionX * j + i
-                                        yield resolutionX * inc j + inc i
-                                        yield resolutionX * j + inc i
-                                        yield resolutionX * j + i
+                                        yield resolutionX * inc y + x
+                                        yield resolutionX * inc y + inc x
+                                        yield resolutionX * y + x
+                                        yield resolutionX * inc y + inc x
+                                        yield resolutionX * y + inc x
+                                        yield resolutionX * y + x
                                     else
                                         // divide quad from bottom-left to top-right
-                                        yield resolutionX * j + i
-                                        yield resolutionX * inc j + i
-                                        yield resolutionX * j + inc i
-                                        yield resolutionX * inc j + i
-                                        yield resolutionX * inc j + inc i
-                                        yield resolutionX * j + inc i|]
+                                        yield resolutionX * y + x
+                                        yield resolutionX * inc y + x
+                                        yield resolutionX * y + inc x
+                                        yield resolutionX * inc y + x
+                                        yield resolutionX * inc y + inc x
+                                        yield resolutionX * y + inc x|]
 
                         let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
                         renderer.PhysicallyBasedTerrainGeometries.Add (rt.TerrainDescriptor.TerrainGeometryDescriptor, geometry)
