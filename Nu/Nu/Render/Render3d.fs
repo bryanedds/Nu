@@ -1984,7 +1984,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         yield resolutionX * inc j + inc i
                                         yield resolutionX * j + inc i|]
 
-                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.TriangleStrip, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
+                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
                         renderer.PhysicallyBasedTerrainGeometries.Add (rt.TerrainDescriptor.TerrainGeometryDescriptor, geometry)
 
                     | None -> ()

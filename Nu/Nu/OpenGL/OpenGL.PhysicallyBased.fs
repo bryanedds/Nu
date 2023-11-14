@@ -1612,7 +1612,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // draw geometry
-        Gl.DrawElements (OpenGL.PrimitiveType.Triangles, numElements, DrawElementsType.UnsignedInt, nativeint 0)
+        Gl.DrawElements (geometry.PrimitiveType, numElements, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.Assert ()
 
         // teardown geometry
