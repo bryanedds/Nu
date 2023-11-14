@@ -1802,6 +1802,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // otherwise extra work will be required to find these points and scale accordingly.
                     let positionsAndTexCoordsesOpt =
                         match rt.TerrainDescriptor.HeightMap with
+                        
+                        // this is failing to render despite the fact that debugging reveals no apparent anomaly
+                        // in the resulting data between here and geometry creation. even the vertices and indices
+                        // that are passed to geometry appear completely legitimate and are the same length as
+                        // those of the raw height map!
                         | ImageHeightMap image ->
                             match GlRenderer3d.tryGetImageData (AssetTag.generalize image) renderer with
                             | Some (bytes, _) ->
