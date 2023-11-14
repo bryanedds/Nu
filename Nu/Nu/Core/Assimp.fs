@@ -77,100 +77,103 @@ module AssimpAnimation =
                 m.A3, m.B3, m.C3, m.D3,
                 m.A4, m.B4, m.C4, m.D4)
 
-    let FindNodeAnim (pAnimation : Assimp.Animation, nodeName : string) =
+    let TryGetAnimationChannel (pAnimation : Assimp.Animation, nodeName : string) =
         let mutable resultOpt = None
         let mutable i = 0
         while resultOpt.IsNone && i < pAnimation.NodeAnimationChannels.Count do
-            let pNodeAnim = pAnimation.NodeAnimationChannels.[i]
-            if (pNodeAnim.NodeName = nodeName) then resultOpt <- Some pNodeAnim
+            let channel = pAnimation.NodeAnimationChannels.[i]
+            if (channel.NodeName = nodeName) then resultOpt <- Some channel
             i <- inc i
         resultOpt
 
-    let FindPosition (animationTime : single, pNodeAnim : Assimp.NodeAnimationChannel) =
+    let FindPosition (animationTime : single, channel : Assimp.NodeAnimationChannel) =
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec pNodeAnim.PositionKeyCount do
-            if animationTime < single pNodeAnim.PositionKeys.[inc i].Time then found <- true
+        while not found && i < dec channel.PositionKeyCount do
+            if animationTime < single channel.PositionKeys.[inc i].Time then found <- true
             else i <- inc i
         i
 
-    let FindRotation (animationTime : single, pNodeAnim : Assimp.NodeAnimationChannel) =
+    let FindRotation (animationTime : single, channel : Assimp.NodeAnimationChannel) =
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec pNodeAnim.RotationKeyCount do
-            if animationTime < single pNodeAnim.RotationKeys.[inc i].Time then found <- true
+        while not found && i < dec channel.RotationKeyCount do
+            if animationTime < single channel.RotationKeys.[inc i].Time then found <- true
             else i <- inc i
         i
 
-    let FindScaling (animationTime : single, pNodeAnim : Assimp.NodeAnimationChannel) =
+    let FindScaling (animationTime : single, channel : Assimp.NodeAnimationChannel) =
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec pNodeAnim.ScalingKeyCount do
-            if animationTime < single pNodeAnim.ScalingKeys.[inc i].Time then found <- true
+        while not found && i < dec channel.ScalingKeyCount do
+            if animationTime < single channel.ScalingKeys.[inc i].Time then found <- true
             else i <- inc i
         i
 
-    let CalcInterpolatedPosition (animationTime : single, pNodeAnim : Assimp.NodeAnimationChannel) =
-        if pNodeAnim.PositionKeys.Count = 1 then
-            pNodeAnim.PositionKeys.[0].Value
+    let CalcInterpolatedPosition (animationTime : single, channel : Assimp.NodeAnimationChannel) =
+        if channel.PositionKeys.Count = 1 then
+            channel.PositionKeys.[0].Value
         else
-            let PositionIndex = FindPosition (animationTime, pNodeAnim)
+            let PositionIndex = FindPosition (animationTime, channel)
             let NextPositionIndex = inc PositionIndex
-            assert (NextPositionIndex < pNodeAnim.PositionKeys.Count)
-            let DeltaTime = single (pNodeAnim.PositionKeys.[NextPositionIndex].Time - pNodeAnim.PositionKeys.[PositionIndex].Time)
-            let Factor = (animationTime - single pNodeAnim.PositionKeys.[PositionIndex].Time) / DeltaTime
+            assert (NextPositionIndex < channel.PositionKeys.Count)
+            let DeltaTime = single (channel.PositionKeys.[NextPositionIndex].Time - channel.PositionKeys.[PositionIndex].Time)
+            let Factor = (animationTime - single channel.PositionKeys.[PositionIndex].Time) / DeltaTime
             assert (Factor >= 0.0f && Factor <= 1.0f)
-            let Start = pNodeAnim.PositionKeys.[PositionIndex].Value
-            let End = pNodeAnim.PositionKeys.[NextPositionIndex].Value
+            let Start = channel.PositionKeys.[PositionIndex].Value
+            let End = channel.PositionKeys.[NextPositionIndex].Value
             let Delta = End - Start
             let Result = Start + Factor * Delta
             Result
 
-    let CalcInterpolatedRotation (animationTime : single, pNodeAnim : Assimp.NodeAnimationChannel) =
-        if pNodeAnim.RotationKeys.Count = 1 then
-            pNodeAnim.RotationKeys.[0].Value
+    let CalcInterpolatedRotation (animationTime : single, channel : Assimp.NodeAnimationChannel) =
+        if channel.RotationKeys.Count = 1 then
+            channel.RotationKeys.[0].Value
         else
-            let RotationIndex = FindRotation (animationTime, pNodeAnim)
+            let RotationIndex = FindRotation (animationTime, channel)
             let NextRotationIndex = inc RotationIndex
-            assert (NextRotationIndex < pNodeAnim.RotationKeys.Count)
-            let DeltaTime = single (pNodeAnim.RotationKeys.[NextRotationIndex].Time - pNodeAnim.RotationKeys.[RotationIndex].Time)
-            let Factor = (animationTime - single pNodeAnim.RotationKeys.[RotationIndex].Time) / DeltaTime
+            assert (NextRotationIndex < channel.RotationKeys.Count)
+            let DeltaTime = single (channel.RotationKeys.[NextRotationIndex].Time - channel.RotationKeys.[RotationIndex].Time)
+            let Factor = (animationTime - single channel.RotationKeys.[RotationIndex].Time) / DeltaTime
             assert (Factor >= 0.0f && Factor <= 1.0f)
-            let StartRotationQ = pNodeAnim.RotationKeys.[RotationIndex].Value
-            let EndRotationQ = pNodeAnim.RotationKeys.[NextRotationIndex].Value
+            let StartRotationQ = channel.RotationKeys.[RotationIndex].Value
+            let EndRotationQ = channel.RotationKeys.[NextRotationIndex].Value
             let Result = Assimp.Quaternion.Slerp (StartRotationQ, EndRotationQ, Factor)
             Result.Normalize ()
             Result
 
-    let CalcInterpolatedScaling (animationTime : single, pNodeAnim : Assimp.NodeAnimationChannel) =
-        if pNodeAnim.ScalingKeys.Count = 1 then
-            pNodeAnim.ScalingKeys.[0].Value
+    let CalcInterpolatedScaling (animationTime : single, channel : Assimp.NodeAnimationChannel) =
+        if channel.ScalingKeys.Count = 1 then
+            channel.ScalingKeys.[0].Value
         else
-            let ScalingIndex = FindScaling (animationTime, pNodeAnim)
+            let ScalingIndex = FindScaling (animationTime, channel)
             let NextScalingIndex = inc ScalingIndex
-            assert (NextScalingIndex < pNodeAnim.ScalingKeys.Count)
-            let DeltaTime = single (pNodeAnim.ScalingKeys.[NextScalingIndex].Time - pNodeAnim.ScalingKeys.[ScalingIndex].Time)
-            let Factor = (animationTime - single pNodeAnim.ScalingKeys.[ScalingIndex].Time) / DeltaTime
+            assert (NextScalingIndex < channel.ScalingKeys.Count)
+            let DeltaTime = single (channel.ScalingKeys.[NextScalingIndex].Time - channel.ScalingKeys.[ScalingIndex].Time)
+            let Factor = (animationTime - single channel.ScalingKeys.[ScalingIndex].Time) / DeltaTime
             assert (Factor >= 0.0f && Factor <= 1.0f)
-            let Start = pNodeAnim.ScalingKeys.[ScalingIndex].Value
-            let End = pNodeAnim.ScalingKeys.[NextScalingIndex].Value
+            let Start = channel.ScalingKeys.[ScalingIndex].Value
+            let End = channel.ScalingKeys.[NextScalingIndex].Value
             let Delta = End - Start
             let Result = Start + Factor * Delta
             Result
 
-    let rec ReadNodeHierarchy (boneMapping : Dictionary<string, int>, boneInfos : BoneInfo array, animationTime : single, animationIndex : int, node : Assimp.Node, parentTransform : Assimp.Matrix4x4, GlobalInverseTransform : Assimp.Matrix4x4, scene : Assimp.Scene) =
+    let rec ReadNodeHierarchy (boneMapping : Dictionary<string, int>, boneInfos : BoneInfo array, animationTime : single, animationIndex : int, node : Assimp.Node, parentTransform : Assimp.Matrix4x4, rootTransformInverse : Assimp.Matrix4x4, scene : Assimp.Scene) =
 
         // compute bone's local transform
         let name = node.Name
         let transformLocal =
-            match FindNodeAnim (scene.Animations.[animationIndex], name) with
-            | Some nodeAnim ->
-                //let scale = Assimp.Matrix4x4.FromScaling (CalcInterpolatedScaling (animationTime, nodeAnim))
-                //let rotation = Assimp.Matrix4x4 ((CalcInterpolatedRotation (animationTime, nodeAnim)).GetMatrix ())
-                //let translation = Assimp.Matrix4x4.FromTranslation (CalcInterpolatedPosition (animationTime, nodeAnim))
-                let scale = Assimp.Matrix4x4.FromScaling (nodeAnim.ScalingKeys.[FindScaling (animationTime, nodeAnim)].Value)
-                let rotation = Assimp.Matrix4x4 (nodeAnim.RotationKeys.[FindRotation (animationTime, nodeAnim)].Value.GetMatrix ())
-                let translation = Assimp.Matrix4x4.FromTranslation (nodeAnim.PositionKeys.[FindPosition (animationTime, nodeAnim)].Value)
+            match TryGetAnimationChannel (scene.Animations.[animationIndex], name) with
+            | Some channel ->
+                let scale = Assimp.Matrix4x4.FromScaling (CalcInterpolatedScaling (animationTime, channel))
+                let rotation = Assimp.Matrix4x4 ((CalcInterpolatedRotation (animationTime, channel)).GetMatrix ())
+                let translation = Assimp.Matrix4x4.FromTranslation (CalcInterpolatedPosition (animationTime, channel))
+                //let scale = Assimp.Matrix4x4.FromScaling (channel.ScalingKeys.[FindScaling (animationTime, channel)].Value)
+                //let rotation = Assimp.Matrix4x4 (channel.RotationKeys.[FindRotation (animationTime, channel)].Value.GetMatrix ())
+                //let translation = Assimp.Matrix4x4.FromTranslation (channel.PositionKeys.[FindPosition (animationTime, channel)].Value)
+                //let scale = Assimp.Matrix4x4.FromScaling (channel.ScalingKeys.[0].Value)
+                //let rotation = Assimp.Matrix4x4 (channel.RotationKeys.[0].Value.GetMatrix ())
+                //let translation = Assimp.Matrix4x4.FromTranslation (channel.PositionKeys.[0].Value)
                 translation * rotation * scale
             | None -> node.Transform
 
@@ -179,13 +182,13 @@ module AssimpAnimation =
         match boneMapping.TryGetValue name with
         | (true, boneId) ->
             let boneOffset = boneInfos.[boneId].BoneOffset
-            boneInfos.[boneId].FinalTransform <- GlobalInverseTransform * transformWorld * boneOffset
+            boneInfos.[boneId].FinalTransform <- rootTransformInverse * transformWorld * boneOffset
         | (false, _) -> ()
 
         // recur
         for i in 0 .. dec node.Children.Count do
             let child = node.Children.[i]
-            ReadNodeHierarchy (boneMapping, boneInfos, animationTime, animationIndex, child, transformWorld, GlobalInverseTransform, scene)
+            ReadNodeHierarchy (boneMapping, boneInfos, animationTime, animationIndex, child, transformWorld, rootTransformInverse, scene)
 
     let AnimateBones (animationTime, animationIndex, mesh : Assimp.Mesh, scene : Assimp.Scene) =
         
@@ -197,9 +200,9 @@ module AssimpAnimation =
             boneInfos.[i] <- BoneInfo.make bone.OffsetMatrix
             boneIds.[boneName] <- i
 
-        let globalInverseTransform = scene.RootNode.Transform
-        globalInverseTransform.Inverse ()
-        ReadNodeHierarchy (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, Assimp.Matrix4x4.Identity, globalInverseTransform, scene)
+        let rootTransformInverse = scene.RootNode.Transform
+        rootTransformInverse.Inverse ()
+        ReadNodeHierarchy (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, Assimp.Matrix4x4.Identity, rootTransformInverse, scene)
 
         Array.map (fun (boneInfo : BoneInfo) ->
             ImportMatrix boneInfo.FinalTransform)
