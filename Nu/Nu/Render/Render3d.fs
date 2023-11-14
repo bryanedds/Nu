@@ -1814,10 +1814,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let positionsAndTexCoordsesOpt =
                         match rt.TerrainDescriptor.HeightMap with
                         
-                        // this is failing to render despite the fact that debugging reveals no apparent anomaly
-                        // in the resulting data between here and geometry creation. even the vertices and indices
-                        // that are passed to geometry appear completely legitimate and are the same length as
-                        // those of the raw height map!
                         | ImageHeightMap image ->
                             match GlRenderer3d.tryGetImageData (AssetTag.generalize image) renderer with
                             | Some (bytes, _) ->
@@ -1874,7 +1870,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     struct (position, texCoords)
                                           
                                           // NOTE: this expects singles to be normalized between 0.0 and 1.0.
-                                          // TODO: normalize singles.
+                                          // TODO: normalize singles?
                                           | RawSingle endianness ->
                                             for y in 0 .. dec resolutionY do
                                                 for x in 0 .. dec resolutionX do
@@ -1891,7 +1887,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                             | ValueNone -> None
 
-                        | _ -> None
+                        | DynamicHeightMap _ -> None
 
                     match positionsAndTexCoordsesOpt with
                     | Some positionsAndTexCoordses ->
@@ -1949,8 +1945,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                             Array.map (fun x -> v4 x.[2] x.[1] x.[0] x.[3])
                                         else Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
                                     | None -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
-                                | _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
-                            | _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
+                                | RedsMap _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
+                            | FlatMaterial _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
+                            | DynamicMaterial _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
 
                         let vertices =
                             [|for i in 0 .. dec positionsAndTexCoordses.Length do
