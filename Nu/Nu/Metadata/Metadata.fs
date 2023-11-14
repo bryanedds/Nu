@@ -77,9 +77,9 @@ module Metadata =
             use assimp = new Assimp.AssimpContext ()
             match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimp) with
             | Right model ->
-                if model.Animations.Count = 0
-                then Some (StaticModelMetadata model)
-                else Some (AnimatedModelMetadata model)
+                if model.AnimatedSceneOpt.IsSome
+                then Some (AnimatedModelMetadata model)
+                else Some (StaticModelMetadata model)
             | Left error ->
                 let errorMessage = "Failed to load model '" + asset.FilePath + "' due to: " + error
                 Log.trace errorMessage

@@ -671,9 +671,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ".fbx" | ".dae" | ".obj" ->
             match GlRenderer3d.tryLoadModelAsset packageState asset renderer with
             | Some model ->
-                if model.Animations.Count = 0
-                then Some (StaticModelAsset (false, model))
-                else Some (AnimatedModelAsset model)
+                if model.AnimatedSceneOpt.IsSome
+                then Some (AnimatedModelAsset model)
+                else Some (StaticModelAsset (false, model))
             | None -> None
         | ".raw" ->
             match GlRenderer3d.tryLoadRawAsset asset with
@@ -910,8 +910,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 { Bounds = bounds
                   LightProbes = [||]
                   Lights = [||]
-                  Animations = List ()
                   Surfaces = surfaces
+                  AnimatedSceneOpt = None
                   PhysicallyBasedHierarchy = hierarchy }
 
             // assign model as appropriate render package asset
@@ -1115,70 +1115,68 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
                     let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence then
-                        
-                        let texCoordsOffset =
-                            match insetOpt with
-                            | ValueSome inset ->
-                                let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
-                                let texelWidth = albedoMetadata.TextureTexelWidth
-                                let texelHeight = albedoMetadata.TextureTexelHeight
-                                let px = inset.Min.X * texelWidth
-                                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
-                                let sx = inset.Size.X * texelWidth
-                                let sy = -inset.Size.Y * texelHeight
-                                Box2 (px, py, sx, sy)
-                            | ValueNone -> box2 v2Zero v2Zero
 
-                        if animationIndex > -1 && animationIndex < modelAsset.Animations.Count then
+                        // 
+                        match modelAsset.AnimatedSceneOpt with
+                        | Some scene when animationIndex > -1 && animationIndex < scene.Animations.Count ->
 
-                            let rec InterpolateBoneTransform (channel : Assimp.NodeAnimationChannel) (time : float) =
-                                let keyframeIndex = 
-                                    channel.PositionKeys
-                                    |> Seq.findIndex (fun keyframe -> time < keyframe.Time)
+                            // compute tex coords offset
+                            let texCoordsOffset =
+                                match insetOpt with
+                                | ValueSome inset ->
+                                    let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
+                                    let texelWidth = albedoMetadata.TextureTexelWidth
+                                    let texelHeight = albedoMetadata.TextureTexelHeight
+                                    let px = inset.Min.X * texelWidth
+                                    let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                                    let sx = inset.Size.X * texelWidth
+                                    let sy = -inset.Size.Y * texelHeight
+                                    Box2 (px, py, sx, sy)
+                                | ValueNone -> box2 v2Zero v2Zero
 
-                                if keyframeIndex = -1 then
-                                    ((Seq.last channel.PositionKeys).Value, Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f), (Seq.last channel.ScalingKeys).Value)
+                            for mesh in scene.Meshes do
+
+                                let mutable bonesCount = 0
+                                let boneMapping = dictPlus StringComparer.Ordinal []
+                                let boneInfos = Array.zeroCreate<AssimpAnimation.BoneInfo> mesh.Bones.Count
+                                for i in 0 .. dec mesh.Bones.Count do
+                                    let mutable boneIndex = 0
+                                    let boneName = mesh.Bones.[i].Name
+                                    boneIndex <- bonesCount
+                                    bonesCount <- inc bonesCount
+                                    boneInfos.[boneIndex] <- AssimpAnimation.BoneInfo.make mesh.Bones.[i].OffsetMatrix
+                                    boneMapping.[boneName] <- boneIndex
+
+                                let globalInverseTransform = scene.RootNode.Transform
+                                globalInverseTransform.Inverse ()
+                                AssimpAnimation.ReadNodeHierarchy (boneMapping, boneInfos, animationTime, animationIndex, scene.RootNode, Assimp.Matrix4x4.Identity, globalInverseTransform, scene)
+
+                                let bones =
+                                    Array.map (fun (boneInfo : AssimpAnimation.BoneInfo) ->
+
+                                        /// Convert a matrix from an Assimp representation to Nu's.
+                                        let ImportMatrix (m : Assimp.Matrix4x4) =
+                                            Matrix4x4
+                                                (m.A1, m.B1, m.C1, m.D1,
+                                                 m.A2, m.B2, m.C2, m.D2,
+                                                 m.A3, m.B3, m.C3, m.D3,
+                                                 m.A4, m.B4, m.C4, m.D4)
+
+                                        ImportMatrix boneInfo.FinalTransform)
+                                        boneInfos
+
+                                if modelAbsolute then
+                                    let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (animationTime, animationIndex, surface), &renderTasks)
+                                    then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
+                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (animationTime, animationIndex, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
                                 else
-                                    let startPosition = channel.PositionKeys.[keyframeIndex].Value
-                                    let endPosition = channel.PositionKeys.[keyframeIndex + 1].Value
-                                    let interpPosition = 
-                                        startPosition +
-                                        (endPosition - startPosition) *
-                                        (single (time - channel.PositionKeys.[keyframeIndex].Time) /
-                                            single (channel.PositionKeys.[keyframeIndex + 1].Time - channel.PositionKeys.[keyframeIndex].Time))
+                                    let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (animationTime, animationIndex, surface), &renderTasks)
+                                    then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
+                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (animationTime, animationIndex, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
 
-                                    // Interpolate rotation and scaling similarly if needed
-                                    (interpPosition, Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f), Assimp.Vector3D (1.0f, 1.0f, 1.0f))
-
-                            let GetBoneTransformsAtPose (animation : Assimp.Animation) (time : float) =
-                                let boneTransforms = 
-                                    [|for channel in animation.NodeAnimationChannels do
-                                        let boneTransform = InterpolateBoneTransform channel time
-
-                                        // Apply additional transformations here
-
-                                        yield boneTransform|]
-
-                                boneTransforms
-
-                            // Call the function to get bone transformations at the desired pose (P and T)
-                            let animation = modelAsset.Animations.[animationIndex]
-                            let boneTransformations = GetBoneTransformsAtPose animation (double animationTime)
-                            let bones =
-                                boneTransformations |>
-                                Array.tryTake Constants.Render.BonesMax |>
-                                Array.map (fun (t : Assimp.Vector3D, r : Assimp.Quaternion, s : Assimp.Vector3D) -> Matrix4x4.CreateFromTrs (v3 t.X t.Y t.Z, quat r.X r.Y r.Z r.W, v3 s.X s.Y s.Z)) 
-
-                            if modelAbsolute then
-                                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (animationTime, animationIndex, surface), &renderTasks)
-                                then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
-                                else renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (animationTime, animationIndex, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
-                            else
-                                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                if renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (animationTime, animationIndex, surface), &renderTasks)
-                                then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
-                                else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (animationTime, animationIndex, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                        | Some _ | None -> ()
 
             | _ -> Log.debug "Cannot render animated model with a non-animated model asset."
         | _ -> Log.info ("Cannot render animated model due to unloadable assets for '" + scstring animatedModel + "'.")
