@@ -1,10 +1,10 @@
 #shader vertex
 #version 410 core
 
-const int TexCoordsOffsetVerts = 6;
+const int TEX_COORDS_OFFSET_VERTS = 6;
 
-const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
-    vec2[TexCoordsOffsetVerts](
+const vec2 TexCoordsOffsetFilters[TEX_COORDS_OFFSET_VERTS] =
+    vec2[TEX_COORDS_OFFSET_VERTS](
         vec2(1,1),
         vec2(0,1),
         vec2(0,0),
@@ -12,8 +12,8 @@ const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
         vec2(0,0),
         vec2(1,0));
 
-const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
-    vec2[TexCoordsOffsetVerts](
+const vec2 TexCoordsOffsetFilters2[TEX_COORDS_OFFSET_VERTS] =
+    vec2[TEX_COORDS_OFFSET_VERTS](
         vec2(0,0),
         vec2(1,0),
         vec2(1,1),
@@ -45,7 +45,7 @@ flat out int invertRoughnessOut;
 void main()
 {
     positionOut = model * vec4(position, 1.0);
-    int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
+    int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;

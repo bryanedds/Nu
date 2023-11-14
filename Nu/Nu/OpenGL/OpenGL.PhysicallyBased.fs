@@ -3,6 +3,7 @@
 
 namespace OpenGL
 open System
+open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
@@ -141,13 +142,14 @@ module PhysicallyBased =
         | PhysicallyBasedLight of PhysicallyBasedLight
         | PhysicallyBasedSurface of PhysicallyBasedSurface
 
-    /// A physically-based static model.
-    type PhysicallyBasedStaticModel =
+    /// A physically-based model.
+    type PhysicallyBasedModel =
         { Bounds : Box3
           LightProbes : PhysicallyBasedLightProbe array
           Lights : PhysicallyBasedLight array
+          Animations : Assimp.Animation List
           Surfaces : PhysicallyBasedSurface array
-          PhysicallyBasedStaticHierarchy : PhysicallyBasedPart array TreeNode }
+          PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
     /// Describes a physically-based deferred terrain shader that's loaded into GPU.
     type PhysicallyBasedDeferredTerrainShader =
@@ -166,6 +168,7 @@ module PhysicallyBased =
     type PhysicallyBasedShader =
         { ViewUniform : int
           ProjectionUniform : int
+          BonesUniforms : int array
           EyeCenterUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
@@ -494,8 +497,8 @@ module PhysicallyBased =
           TextureMagFilterOpt = magFilterOpt
           TwoSided = material.IsTwoSided }
 
-    /// Attempt to create physically-based from an assimp mesh.
-    let TryCreatePhysicallyBasedMesh (mesh : Assimp.Mesh) =
+    /// Attempt to create physically-based static mesh from an assimp mesh.
+    let TryCreatePhysicallyBasedStaticMesh (mesh : Assimp.Mesh) =
 
         // ensure required data is available
         if  mesh.HasVertices &&
@@ -529,6 +532,86 @@ module PhysicallyBased =
                     positionMax.Y <- max positionMax.Y position.Y
                     positionMax.Z <- max positionMax.Z position.Z
                 let bounds = box3 positionMin (positionMax - positionMin)
+
+                // populate triangle index data
+                let indexList = SList.make ()
+                for face in mesh.Faces do
+                    let indices = face.Indices
+                    if indices.Count = 3 then
+                        indexList.Add indices.[0]
+                        indexList.Add indices.[1]
+                        indexList.Add indices.[2]
+                let indexData = Seq.toArray indexList
+
+                // fin
+                Right (vertexData, indexData, bounds)
+                    
+            // error
+            else Left ("Vertex / normal / tex coords count mismatch.")
+
+        // error
+        else Left "Mesh is missing vertices, normals, or texCoords."
+
+    /// Attempt to create physically-based animated mesh from an assimp mesh.
+    let TryCreatePhysicallyBasedAnimatedMesh (mesh : Assimp.Mesh) =
+
+        // ensure required data is available
+        if  mesh.HasVertices &&
+            mesh.HasNormals &&
+            mesh.HasTextureCoords 0 then
+
+            // attempt to populate geometry data
+            if mesh.Vertices.Count = mesh.Normals.Count && mesh.Vertices.Count = mesh.TextureCoordinateChannels.[0].Count then
+
+                // populate vertex data (except bone) and bounds
+                let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 16)
+                let mutable positionMin = v3Zero
+                let mutable positionMax = v3Zero
+                for i in 0 .. dec mesh.Vertices.Count do
+                    let v = i * 16
+                    let position = mesh.Vertices.[i]
+                    let texCoords = mesh.TextureCoordinateChannels.[0].[i]
+                    let normal = mesh.Normals.[i]
+                    vertexData.[v] <- position.X
+                    vertexData.[v+1] <- position.Y
+                    vertexData.[v+2] <- position.Z
+                    vertexData.[v+3] <- texCoords.X
+                    vertexData.[v+4] <- 1.0f - texCoords.Y
+                    vertexData.[v+5] <- normal.X
+                    vertexData.[v+6] <- normal.Y
+                    vertexData.[v+7] <- normal.Z
+                    vertexData.[v+8] <- -1.0f
+                    vertexData.[v+9] <- -1.0f
+                    vertexData.[v+10] <- -1.0f
+                    vertexData.[v+11] <- -1.0f
+                    vertexData.[v+12] <- 0.0f
+                    vertexData.[v+13] <- 0.0f
+                    vertexData.[v+14] <- 0.0f
+                    vertexData.[v+15] <- 0.0f
+                    positionMin.X <- min positionMin.X position.X
+                    positionMin.Y <- min positionMin.Y position.Y
+                    positionMin.Z <- min positionMin.Z position.Z
+                    positionMax.X <- max positionMax.X position.X
+                    positionMax.Y <- max positionMax.Y position.Y
+                    positionMax.Z <- max positionMax.Z position.Z
+                let bounds = box3 positionMin (positionMax - positionMin)
+
+                // populate vertex bone data
+                for boneIndex in 0 .. dec mesh.Bones.Count do
+                    let weights = mesh.Bones.[boneIndex].VertexWeights
+                    let weightsCount = mesh.Bones.[boneIndex].VertexWeights.Count
+                    for weightIndex in 0 .. dec weightsCount do
+                        let vertexId = weights.[weightIndex].VertexID
+                        let weight = weights.[weightIndex].Weight
+                        let mutable found = false
+                        let mutable i = 0
+                        while not found && i < Constants.Render.BonesInfluenceMax do
+                            let v = vertexId * 16
+                            if not found && vertexData.[v+8+i] < 0.0f then
+                                vertexData.[v+8+i] <- single boneIndex
+                                vertexData.[v+12+i] <- weight
+                                found <- true
+                            i <- inc i
 
                 // populate triangle index data
                 let indexList = SList.make ()
@@ -852,8 +935,8 @@ module PhysicallyBased =
         // fin
         geometry
 
-    /// Create physically-based geometry from a mesh.
-    let CreatePhysicallyBasedGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
+    /// Create physically-based static geometry from a mesh.
+    let CreatePhysicallyBasedStaticGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
         let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
@@ -1011,33 +1094,197 @@ module PhysicallyBased =
         // fin
         geometry
 
-    /// Attempt to create physically-based geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedGeometry (renderable, mesh : Assimp.Mesh) =
-        let meshOpt =
-#if DEBUG_RENDERING_CUBE
-            ignore<Assimp.Mesh> mesh
-            Right (CreatePhysicallyBasedCubeMesh ())
-#else
-            TryCreatePhysicallyBasedMesh mesh
-#endif
-        match meshOpt with
-        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
+    /// Attempt to create physically-based static geometry from an assimp mesh.
+    let TryCreatePhysicallyBasedStaticGeometry (renderable, mesh : Assimp.Mesh) =
+        match TryCreatePhysicallyBasedStaticMesh mesh with
+        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
+        | Left error -> Left error
+
+    /// Create physically-based animated geometry from a mesh.
+    let CreatePhysicallyBasedAnimatedGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
+
+        // make buffers
+        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
+
+            // make renderable
+            if renderable then
+
+                // initialize vao
+                let vao = Gl.GenVertexArray ()
+                Gl.BindVertexArray vao
+                Hl.Assert ()
+
+                // create vertex buffer
+                let vertexBuffer = Gl.GenBuffer ()
+                let texCoordsOffset =   (3 (*position*)) * sizeof<single>
+                let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+                let boneIdsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+                let weightsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
+                use vertexDataHnd = vertexData.Pin () in
+                    let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
+                Gl.EnableVertexAttribArray 0u
+                Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
+                Gl.EnableVertexAttribArray 1u
+                Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint texCoordsOffset)
+                Gl.EnableVertexAttribArray 2u
+                Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
+                Gl.EnableVertexAttribArray 3u
+                Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint boneIdsOffset)
+                Gl.EnableVertexAttribArray 4u
+                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint weightsOffset)
+                Hl.Assert ()
+
+                // create model buffer
+                let modelBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, modelBuffer)
+                let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally modelDataPtr.Free ()
+                Gl.EnableVertexAttribArray 5u
+                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (5u, 1u)
+                Gl.EnableVertexAttribArray 6u
+                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                Gl.VertexAttribDivisor (6u, 1u)
+                Gl.EnableVertexAttribArray 7u
+                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                Gl.VertexAttribDivisor (7u, 1u)
+                Gl.EnableVertexAttribArray 8u
+                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                Gl.VertexAttribDivisor (8u, 1u)
+                Hl.Assert ()
+
+                // create tex coords offset buffer
+                let texCoordsOffsetBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, texCoordsOffsetBuffer)
+                let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally texCoordsOffsetDataPtr.Free ()
+                Gl.EnableVertexAttribArray 9u
+                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (9u, 1u)
+                Hl.Assert ()
+
+                // create albedo buffer
+                let albedoBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, albedoBuffer)
+                let albedoDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedoDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally albedoDataPtr.Free ()
+                Gl.EnableVertexAttribArray 10u
+                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (10u, 1u)
+                Hl.Assert ()
+
+                // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
+                let materialBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
+                let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally materialDataPtr.Free ()
+                Gl.EnableVertexAttribArray 11u
+                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (11u, 1u)
+                Hl.Assert ()
+
+                // create height buffer
+                let heightBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, heightBuffer)
+                let heightDataPtr = GCHandle.Alloc ([|1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<single>), heightDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally heightDataPtr.Free ()
+                Gl.EnableVertexAttribArray 12u
+                Gl.VertexAttribPointer (12u, 1, VertexAttribPointerType.Float, false, sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (12u, 1u)
+                Hl.Assert ()
+
+                // create invert roughness buffer
+                let invertRoughnessBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
+                let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally invertRoughnessDataPtr.Free ()
+                Gl.EnableVertexAttribArray 13u
+                Gl.VertexAttribIPointer (13u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
+                Gl.VertexAttribDivisor (13u, 1u)
+                Hl.Assert ()
+
+                // create index buffer
+                let indexBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
+                let indexDataSize = uint (indexData.Length * sizeof<uint>)
+                use indexDataHnd = indexData.Pin () in
+                    let indexDataNint = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
+                Hl.Assert ()
+
+                // finalize vao
+                Gl.BindVertexArray 0u
+                Hl.Assert ()
+
+                // fin
+                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
+
+            // fake buffers
+            else
+
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 16)
+                let vertexData = vertexData.Span
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 16
+                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                    vertices.[i] <- vertex
+
+                // create indices
+                let indices = indexData.ToArray ()
+
+                // fin
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+
+        // make physically-based geometry
+        let geometry =
+            { Bounds = bounds
+              PrimitiveType = primitiveType
+              ElementCount = indexData.Length
+              Vertices = vertices
+              Indices = indices
+              VertexBuffer = vertexBuffer
+              ModelBuffer = modelBuffer
+              TexCoordsOffsetBuffer = texCoordsOffsetBuffer
+              AlbedoBuffer = albedoBuffer
+              MaterialBuffer = materialBuffer
+              HeightBuffer = heightBuffer
+              InvertRoughnessBuffer = invertRoughnessBuffer
+              IndexBuffer = indexBuffer
+              PhysicallyBasedVao = vao }
+
+        // fin
+        geometry
+
+    /// Attempt to create physically-based animated geometry from an assimp mesh.
+    let TryCreatePhysicallyBasedAnimatedGeometry (renderable, mesh : Assimp.Mesh) =
+        match TryCreatePhysicallyBasedAnimatedMesh mesh with
+        | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedAnimatedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
         | Left error -> Left error
 
     /// Create physically-based quad.
     let CreatePhysicallyBasedQuad renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedQuadMesh ()
-        CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based billboard.
     let CreatePhysicallyBasedBillboard renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedBillboardMesh ()
-        CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create physically-based cube.
     let CreatePhysicallyBasedCube renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedCubeMesh ()
-        CreatePhysicallyBasedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+        CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create a physically-based surface.
     let CreatePhysicallyBasedSurface (surfaceNames, surfaceMatrix, surfaceBounds, physicallyBasedMaterial, physicallyBasedGeometry) =
@@ -1055,28 +1302,45 @@ module PhysicallyBased =
         | Some error -> Left error
         | None -> Right materials
 
-    /// Attempt to create physically-based geometries from an assimp scene.
-    let TryCreatePhysicallyBasedGeometries (renderable, filePath, scene : Assimp.Scene) =
+    /// Attempt to create physically-based static geometries from an assimp scene.
+    let TryCreatePhysicallyBasedStaticGeometries (renderable, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let geometries = SList.make ()
         for mesh in scene.Meshes do
             if Option.isNone errorOpt then
-                match TryCreatePhysicallyBasedGeometry (renderable, mesh) with
-                | Right geometry -> geometries.Add geometry 
-                | Left error -> errorOpt <- Some ("Could not load geometry for mesh in file name '" + filePath + "' due to: " + error)
+                match TryCreatePhysicallyBasedStaticGeometry (renderable, mesh) with
+                | Right geometry -> geometries.Add geometry
+                | Left error -> errorOpt <- Some ("Could not load static geometries for mesh in file name '" + filePath + "' due to: " + error)
+        match errorOpt with
+        | Some error -> Left error
+        | None -> Right geometries
+
+    /// Attempt to create physically-based animated geometries from an assimp scene.
+    let TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene : Assimp.Scene) =
+        let mutable errorOpt = None
+        let geometries = SList.make ()
+        for mesh in scene.Meshes do
+            if Option.isNone errorOpt then
+                match TryCreatePhysicallyBasedAnimatedGeometry (renderable, mesh) with
+                | Right geometry -> geometries.Add geometry
+                | Left error -> errorOpt <- Some ("Could not load animated geometries for mesh in file name '" + filePath + "' due to: " + error)
         match errorOpt with
         | Some error -> Left error
         | None -> Right geometries
 
     /// Attempt to create physically-based model from a model file with assimp.
-    let TryCreatePhysicallyBasedStaticModel (renderable, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
+    let TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
 
         // attempt to import from assimp scene
         try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
             | Right materials ->
-                match TryCreatePhysicallyBasedGeometries (renderable, filePath, scene) with
+                let geometriesEir =
+                    if scene.Animations.Count = 0
+                    then TryCreatePhysicallyBasedStaticGeometries (renderable, filePath, scene)
+                    else TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene)
+                match geometriesEir with
                 | Right geometries ->
 
                     // collect light nodes
@@ -1163,8 +1427,9 @@ module PhysicallyBased =
                         { Bounds = bounds
                           LightProbes = Array.ofSeq lightProbes
                           Lights = Array.ofSeq lights
+                          Animations = scene.Animations
                           Surfaces = Array.ofSeq surfaces
-                          PhysicallyBasedStaticHierarchy = hierarchy }
+                          PhysicallyBasedHierarchy = hierarchy }
 
                 // error
                 | Left error -> Left error
@@ -1219,6 +1484,9 @@ module PhysicallyBased =
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let bonesUniforms =
+            Array.init Constants.Render.BonesMax $ fun i ->
+                Gl.GetUniformLocation (shader, "bones[" + string i + "]")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
@@ -1257,6 +1525,7 @@ module PhysicallyBased =
         // make shader record
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
+          BonesUniforms = bonesUniforms
           EyeCenterUniform = eyeCenterUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
@@ -1478,15 +1747,16 @@ module PhysicallyBased =
         { InputTextureUniform = inputTextureUniform
           PhysicallyBasedFxaaShader = shader }
 
-    /// Create the first and second shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders (shaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
-        let shaderGeometry = CreatePhysicallyBasedShader shaderFilePath
+    /// Create the shaders for physically-based deferred rendering.
+    let CreatePhysicallyBasedDeferredShaders (shaderStaticFilePath, shaderAnimatedFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
+        let shaderStatic = CreatePhysicallyBasedShader shaderStaticFilePath
+        let shaderAnimated = CreatePhysicallyBasedShader shaderAnimatedFilePath
         let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath
         let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath
         let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath
         let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath
         let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
-        (shaderGeometry, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
+        (shaderStatic, shaderAnimated, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
 
     let DrawPhysicallyBasedTerrain
         (view : single array,
@@ -1649,6 +1919,7 @@ module PhysicallyBased =
     let DrawPhysicallyBasedSurfaces
         (view : single array,
          projection : single array,
+         bones : single array array,
          eyeCenter : Vector3,
          surfacesCount : int,
          modelsFields : single array,
@@ -1698,6 +1969,8 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        for i in 0 .. dec bones.Length do
+            Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
@@ -2333,7 +2606,7 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Gl.DeleteVertexArrays [|geometry.PhysicallyBasedVao|]
 
-    /// Destroy physically-based static model resources.
-    let DestroyPhysicallyBasedStaticModel staticModel =
-        for surface in staticModel.Surfaces do
+    /// Destroy physically-based model resources.
+    let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel) =
+        for surface in model.Surfaces do
             DestroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry

@@ -2559,7 +2559,7 @@ module StaticModelFacetModule =
             let inverseMatrixOffset = Matrix4x4.Invert affineMatrixOffset |> snd
             let rayEntity = ray.Transform inverseMatrixOffset
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-            | Some staticModel ->
+            | Some staticModelMetadata ->
                 let intersectionses =
                     Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
                         let geometry = surface.PhysicallyBasedGeometry
@@ -2575,15 +2575,15 @@ module StaticModelFacetModule =
                             Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
                             Seq.toArray
                         else [||])
-                        staticModel.Surfaces
+                        staticModelMetadata.Surfaces
                 Array.concat intersectionses
             | None -> [||]
 
         override this.TryGetHighlightBounds (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-            | Some staticModel ->
+            | Some staticModelMetadata ->
                 let mutable boundsOpt = None
-                for surface in staticModel.Surfaces do
+                for surface in staticModelMetadata.Surfaces do
                     let bounds2 = surface.SurfaceBounds.Transform surface.SurfaceMatrix
                     match boundsOpt with
                     | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
@@ -2629,10 +2629,10 @@ module StaticModelSurfaceFacetModule =
                 World.renderStaticModelSurfaceFast (absolute, &affineMatrixOffset, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
 
         override this.GetQuickSize (entity, world) =
-            let staticModel = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
+            let staticModelMetadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
             let surfaceIndex = entity.GetSurfaceIndex world
-            if surfaceIndex > -1 && surfaceIndex < staticModel.Surfaces.Length then
-                let bounds = staticModel.Surfaces.[surfaceIndex].SurfaceBounds
+            if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
+                let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
                 let boundsExtended = bounds.Combine bounds.Mirror
                 boundsExtended.Size
             else Constants.Engine.EntitySize3dDefault
@@ -2640,10 +2640,10 @@ module StaticModelSurfaceFacetModule =
         override this.RayCast (ray, entity, world) =
             let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrixOffset world) |> snd)
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-            | Some staticModel ->
+            | Some staticModelMetadata ->
                 let surfaceIndex = entity.GetSurfaceIndex world
-                if surfaceIndex < staticModel.Surfaces.Length then
-                    let surface = staticModel.Surfaces.[surfaceIndex]
+                if surfaceIndex < staticModelMetadata.Surfaces.Length then
+                    let surface = staticModelMetadata.Surfaces.[surfaceIndex]
                     let geometry = surface.PhysicallyBasedGeometry
                     let mutable bounds = geometry.Bounds
                     let boundsIntersectionOpt = rayEntity.Intersects bounds
@@ -2656,13 +2656,89 @@ module StaticModelSurfaceFacetModule =
 
         override this.TryGetHighlightBounds (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-            | Some staticModel ->
+            | Some staticModelMetadata ->
                 let surfaceIndex = entity.GetSurfaceIndex world
-                if surfaceIndex < staticModel.Surfaces.Length then
-                    let surface = staticModel.Surfaces.[surfaceIndex]
+                if surfaceIndex < staticModelMetadata.Surfaces.Length then
+                    let surface = staticModelMetadata.Surfaces.[surfaceIndex]
                     let bounds = surface.PhysicallyBasedGeometry.Bounds
                     Some (bounds.Transform (entity.GetAffineMatrixOffset world))
                 else None
+            | None -> None
+
+[<AutoOpen>]
+module AnimatedModelFacetModule =
+
+    type Entity with
+
+        member this.GetAnimatedModel world : AnimatedModel AssetTag = this.Get (nameof this.AnimatedModel) world
+        member this.SetAnimatedModel (value : AnimatedModel AssetTag) world = this.Set (nameof this.AnimatedModel) value world
+        member this.AnimatedModel = lens (nameof this.AnimatedModel) this this.GetAnimatedModel this.SetAnimatedModel
+
+    /// Augments an entity with an animated model.
+    type AnimatedModelFacet () =
+        inherit Facet (false)
+
+        static member Properties =
+            [define Entity.InsetOpt None
+             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.AnimatedModel Assets.Default.AnimatedModel]
+
+        override this.Render (entity, world) =
+            let mutable transform = entity.GetTransform world
+            let absolute = transform.Absolute
+            let affineMatrixOffset = transform.AffineMatrixOffset
+            let presence = transform.Presence
+            let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
+            let properties = entity.GetMaterialProperties world
+            let animatedModel = entity.GetAnimatedModel world
+            World.renderAnimatedModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, world.ClockTime * 0.1f, 0, animatedModel, world)
+
+        override this.GetQuickSize (entity, world) =
+            let animatedModel = entity.GetAnimatedModel world
+            let animatedModelMetadata = Metadata.getAnimatedModelMetadata animatedModel
+            let bounds = animatedModelMetadata.Bounds
+            let boundsExtended = bounds.Combine bounds.Mirror
+            boundsExtended.Size
+
+        override this.RayCast (ray, entity, world) =
+            let affineMatrixOffset = entity.GetAffineMatrixOffset world
+            let inverseMatrixOffset = Matrix4x4.Invert affineMatrixOffset |> snd
+            let rayEntity = ray.Transform inverseMatrixOffset
+            match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
+            | Some animatedModelMetadata ->
+                let intersectionses =
+                    Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
+                        // TODO: include animation state.
+                        let geometry = surface.PhysicallyBasedGeometry
+                        let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
+                        let raySurface = rayEntity.Transform inverse
+                        let mutable bounds = geometry.Bounds
+                        let boundsIntersectionOpt = raySurface.Intersects bounds
+                        if boundsIntersectionOpt.HasValue then
+                            raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
+                            Seq.map snd' |>
+                            Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
+                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrixOffset)) |>
+                            Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
+                            Seq.toArray
+                        else [||])
+                        animatedModelMetadata.Surfaces
+                Array.concat intersectionses
+            | None -> [||]
+
+        override this.TryGetHighlightBounds (entity, world) =
+            match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
+            | Some animatedModelMetadata ->
+                // TODO: include animation state.
+                let mutable boundsOpt = None
+                for surface in animatedModelMetadata.Surfaces do
+                    let bounds2 = surface.SurfaceBounds.Transform surface.SurfaceMatrix
+                    match boundsOpt with
+                    | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
+                    | None -> boundsOpt <- Some bounds2
+                match boundsOpt with
+                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrixOffset world))
+                | None -> None
             | None -> None
 
 [<AutoOpen>]

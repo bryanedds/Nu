@@ -29,6 +29,9 @@ type Sound = private { __ : unit }
 /// A static model. Currently just used as a phantom type.
 type StaticModel = private { __ : unit }
 
+/// An animated model. Currently just used as a phantom type.
+type AnimatedModel = private { __ : unit }
+
 /// A raw data asset. Currently just used as a phantom type.
 type Raw = private { __ : unit }
 

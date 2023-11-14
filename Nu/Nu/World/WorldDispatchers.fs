@@ -517,9 +517,25 @@ module StaticModelDispatcherModule =
             [typeof<StaticModelFacet>]
 
         static member Properties =
-            [define Entity.MaterialProperties MaterialProperties.defaultProperties
+            [define Entity.InsetOpt None
+             define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
+
+[<AutoOpen>]
+module AnimatedModelDispatcherModule =
+
+    /// Gives an entity the base behavior of an animated model.
+    type AnimatedModelDispatcher () =
+        inherit EntityDispatcher3d (true, false)
+
+        static member Facets =
+            [typeof<AnimatedModelFacet>]
+
+        static member Properties =
+            [define Entity.InsetOpt None
+             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
 [<AutoOpen>]
 module RigidModelDispatcherModule =
@@ -565,7 +581,8 @@ module StaticModelSurfaceDispatcherModule =
             [typeof<StaticModelSurfaceFacet>]
 
         static member Properties =
-            [define Entity.MaterialProperties MaterialProperties.defaultProperties
+            [define Entity.InsetOpt None
+             define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -593,7 +610,8 @@ module RigidModelSurfaceDispatcherModule =
              typeof<StaticModelSurfaceFacet>]
 
         static member Properties =
-            [define Entity.BodyType Dynamic
+            [define Entity.InsetOpt None
+             define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModelSurface { SurfaceIndex = 0; StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.SurfaceIndex 0
@@ -616,7 +634,7 @@ module StaticModelHierarchyDispatcherModule =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
-                staticModelMetadata.PhysicallyBasedStaticHierarchy.Traverse (fun nodes ->
+                staticModelMetadata.PhysicallyBasedHierarchy.Traverse (fun nodes ->
                     for node in nodes do
                         match node with
                         | OpenGL.PhysicallyBased.PhysicallyBasedNode names ->
@@ -764,7 +782,8 @@ module RigidModelHierarchyDispatcherModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.StaticModel Assets.Default.StaticModel
+            [define Entity.InsetOpt None
+             define Entity.StaticModel Assets.Default.StaticModel
              define Entity.PresenceConferred Exposed
              define Entity.Loaded false]
 

@@ -347,6 +347,7 @@ module WorldModule3 =
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
                  RigidModelSurfaceDispatcher () :> EntityDispatcher
                  StaticModelDispatcher () :> EntityDispatcher
+                 AnimatedModelDispatcher () :> EntityDispatcher
                  RigidModelDispatcher () :> EntityDispatcher
                  StaticModelHierarchyDispatcher () :> EntityDispatcher
                  RigidModelHierarchyDispatcher () :> EntityDispatcher
@@ -381,6 +382,7 @@ module WorldModule3 =
                  StaticBillboardFacet () :> Facet
                  StaticModelSurfaceFacet () :> Facet
                  StaticModelFacet () :> Facet
+                 AnimatedModelFacet () :> Facet
                  TerrainFacet () :> Facet]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.

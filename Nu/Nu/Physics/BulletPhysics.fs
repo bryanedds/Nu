@@ -34,7 +34,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolver : ConstraintSolver
-          StaticModels : Dictionary<StaticModel AssetTag, OpenGL.PhysicallyBased.PhysicallyBasedStaticModel>
+          StaticModels : Dictionary<StaticModel AssetTag, OpenGL.PhysicallyBased.PhysicallyBasedModel>
           PhysicsMessages : PhysicsMessage UList
           IntegrationMessages : IntegrationMessage List }
 
