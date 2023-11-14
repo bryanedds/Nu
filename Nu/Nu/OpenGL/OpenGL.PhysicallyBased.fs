@@ -147,8 +147,8 @@ module PhysicallyBased =
         { Bounds : Box3
           LightProbes : PhysicallyBasedLightProbe array
           Lights : PhysicallyBasedLight array
-          Animations : Assimp.Animation List
           Surfaces : PhysicallyBasedSurface array
+          AnimatedSceneOpt : Assimp.Scene option
           PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
     /// Describes a physically-based deferred terrain shader that's loaded into GPU.
@@ -1336,10 +1336,11 @@ module PhysicallyBased =
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
             | Right materials ->
+                let animated = scene.Animations.Count <> 0
                 let geometriesEir =
-                    if scene.Animations.Count = 0
-                    then TryCreatePhysicallyBasedStaticGeometries (renderable, filePath, scene)
-                    else TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene)
+                    if animated
+                    then TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene)
+                    else TryCreatePhysicallyBasedStaticGeometries (renderable, filePath, scene)
                 match geometriesEir with
                 | Right geometries ->
 
@@ -1427,8 +1428,8 @@ module PhysicallyBased =
                         { Bounds = bounds
                           LightProbes = Array.ofSeq lightProbes
                           Lights = Array.ofSeq lights
-                          Animations = scene.Animations
                           Surfaces = Array.ofSeq surfaces
+                          AnimatedSceneOpt = if animated then Some scene else None
                           PhysicallyBasedHierarchy = hierarchy }
 
                 // error

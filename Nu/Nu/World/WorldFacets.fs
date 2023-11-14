@@ -2691,7 +2691,7 @@ module AnimatedModelFacetModule =
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let animatedModel = entity.GetAnimatedModel world
-            World.renderAnimatedModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, world.ClockTime * 0.1f, 0, animatedModel, world)
+            World.renderAnimatedModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, world.ClockTime * 1.0f, 0, animatedModel, world)
 
         override this.GetQuickSize (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
