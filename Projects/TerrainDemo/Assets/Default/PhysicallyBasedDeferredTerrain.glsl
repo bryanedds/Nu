@@ -58,8 +58,8 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
-    splat0Out = vec4(splat0.r, splat0.g, splat0.b, splat0.a);
-    splat1Out = vec4(splat1.r, splat1.g, splat1.b, splat1.a);
+    splat0Out = splat0;
+    splat1Out = splat1;
     gl_Position = projection * view * positionOut;
 }
 
