@@ -191,7 +191,7 @@ module AssimpAnimation =
             ReadNodeHierarchy (boneMapping, boneInfos, animationTime, animationIndex, child, transformWorld, rootTransformInverse, scene)
 
     let AnimateBones (animationTime, animationIndex, mesh : Assimp.Mesh, scene : Assimp.Scene) =
-        
+
         let boneIds = dictPlus StringComparer.Ordinal []
         let boneInfos = Array.zeroCreate<BoneInfo> mesh.Bones.Count
         for i in 0 .. dec mesh.Bones.Count do

@@ -53,7 +53,8 @@ void main()
     mat4 boneBlended = mat4(0.0);
     for (int i = 0; i < BONES_INFLUENCE_MAX; ++i)
     {
-        boneBlended += bones[int(boneIds[i])] * weights[i];
+        int boneId = int(boneIds[i]);
+        if (boneId >= 0) boneBlended += bones[boneId] * weights[i];
     }
 
     // compute blended position and normal
