@@ -69,6 +69,14 @@ module AssimpAnimation =
             { BoneOffset = offset
               FinalTransform = Assimp.Matrix4x4.Identity }
 
+    /// Convert a matrix from an Assimp representation to Nu's.
+    let ImportMatrix (m : Assimp.Matrix4x4) =
+        Matrix4x4
+            (m.A1, m.B1, m.C1, m.D1,
+                m.A2, m.B2, m.C2, m.D2,
+                m.A3, m.B3, m.C3, m.D3,
+                m.A4, m.B4, m.C4, m.D4)
+
     let FindNodeAnim (pAnimation : Assimp.Animation, nodeName : string) =
         let mutable resultOpt = None
         let mutable i = 0
@@ -82,7 +90,7 @@ module AssimpAnimation =
         let mutable found = false
         let mutable i = 0
         while not found && i < dec pNodeAnim.PositionKeyCount do
-            if animationTime < single pNodeAnim.PositionKeys.[i + 1].Time then found <- true
+            if animationTime < single pNodeAnim.PositionKeys.[inc i].Time then found <- true
             else i <- inc i
         i
 
@@ -90,7 +98,7 @@ module AssimpAnimation =
         let mutable found = false
         let mutable i = 0
         while not found && i < dec pNodeAnim.RotationKeyCount do
-            if animationTime < single pNodeAnim.RotationKeys.[i + 1].Time then found <- true
+            if animationTime < single pNodeAnim.RotationKeys.[inc i].Time then found <- true
             else i <- inc i
         i
 
@@ -98,7 +106,7 @@ module AssimpAnimation =
         let mutable found = false
         let mutable i = 0
         while not found && i < dec pNodeAnim.ScalingKeyCount do
-            if animationTime < single pNodeAnim.ScalingKeys.[i + 1].Time then found <- true
+            if animationTime < single pNodeAnim.ScalingKeys.[inc i].Time then found <- true
             else i <- inc i
         i
 
@@ -150,23 +158,49 @@ module AssimpAnimation =
             let Result = Start + Factor * Delta
             Result
 
-    let rec ReadNodeHierarchy (boneMapping : Dictionary<string, int>, boneInfos : BoneInfo array, animationTime : single, animationIndex : int, node : Assimp.Node, ParentTransform : Assimp.Matrix4x4, GlobalInverseTransform : Assimp.Matrix4x4, scene : Assimp.Scene) =
-        let nodeName = node.Name
-        let animation = scene.Animations.[animationIndex]
-        let NodeTransform =
-            match FindNodeAnim (animation, nodeName) with
-            | Some pNodeAnim ->
-                let Scaling = Assimp.Matrix4x4.FromScaling (CalcInterpolatedScaling (animationTime, pNodeAnim))
-                let Rotation = (CalcInterpolatedRotation (animationTime, pNodeAnim)).GetMatrix () |> Assimp.Matrix4x4
-                let Translation = Assimp.Matrix4x4.FromTranslation (CalcInterpolatedPosition (animationTime, pNodeAnim))
-                Translation * Rotation * Scaling
+    let rec ReadNodeHierarchy (boneMapping : Dictionary<string, int>, boneInfos : BoneInfo array, animationTime : single, animationIndex : int, node : Assimp.Node, parentTransform : Assimp.Matrix4x4, GlobalInverseTransform : Assimp.Matrix4x4, scene : Assimp.Scene) =
+
+        // compute bone's local transform
+        let name = node.Name
+        let transformLocal =
+            match FindNodeAnim (scene.Animations.[animationIndex], name) with
+            | Some nodeAnim ->
+                //let scale = Assimp.Matrix4x4.FromScaling (CalcInterpolatedScaling (animationTime, nodeAnim))
+                //let rotation = Assimp.Matrix4x4 ((CalcInterpolatedRotation (animationTime, nodeAnim)).GetMatrix ())
+                //let translation = Assimp.Matrix4x4.FromTranslation (CalcInterpolatedPosition (animationTime, nodeAnim))
+                let scale = Assimp.Matrix4x4.FromScaling (nodeAnim.ScalingKeys.[FindScaling (animationTime, nodeAnim)].Value)
+                let rotation = Assimp.Matrix4x4 (nodeAnim.RotationKeys.[FindRotation (animationTime, nodeAnim)].Value.GetMatrix ())
+                let translation = Assimp.Matrix4x4.FromTranslation (nodeAnim.PositionKeys.[FindPosition (animationTime, nodeAnim)].Value)
+                translation * rotation * scale
             | None -> node.Transform
 
-        let GlobalTransformation = ParentTransform * NodeTransform
+        // compute bone's world transform
+        let transformWorld = parentTransform * transformLocal
+        match boneMapping.TryGetValue name with
+        | (true, boneId) ->
+            let boneOffset = boneInfos.[boneId].BoneOffset
+            boneInfos.[boneId].FinalTransform <- GlobalInverseTransform * transformWorld * boneOffset
+        | (false, _) -> ()
 
-        if boneMapping.ContainsKey nodeName then
-            let BoneIndex = boneMapping.[nodeName]
-            boneInfos.[BoneIndex].FinalTransform <- GlobalInverseTransform * GlobalTransformation * boneInfos.[BoneIndex].BoneOffset
-
+        // recur
         for i in 0 .. dec node.Children.Count do
-            ReadNodeHierarchy (boneMapping, boneInfos, animationTime, animationIndex, node.Children.[i], GlobalTransformation, GlobalInverseTransform, scene)
+            let child = node.Children.[i]
+            ReadNodeHierarchy (boneMapping, boneInfos, animationTime, animationIndex, child, transformWorld, GlobalInverseTransform, scene)
+
+    let AnimateBones (animationTime, animationIndex, mesh : Assimp.Mesh, scene : Assimp.Scene) =
+        
+        let boneIds = dictPlus StringComparer.Ordinal []
+        let boneInfos = Array.zeroCreate<BoneInfo> mesh.Bones.Count
+        for i in 0 .. dec mesh.Bones.Count do
+            let bone = mesh.Bones.[i]
+            let boneName = bone.Name
+            boneInfos.[i] <- BoneInfo.make bone.OffsetMatrix
+            boneIds.[boneName] <- i
+
+        let globalInverseTransform = scene.RootNode.Transform
+        globalInverseTransform.Inverse ()
+        ReadNodeHierarchy (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, Assimp.Matrix4x4.Identity, globalInverseTransform, scene)
+
+        Array.map (fun (boneInfo : BoneInfo) ->
+            ImportMatrix boneInfo.FinalTransform)
+            boneInfos
