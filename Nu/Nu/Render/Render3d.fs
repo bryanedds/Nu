@@ -1136,34 +1136,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                             for mesh in scene.Meshes do
 
-                                let mutable bonesCount = 0
-                                let boneMapping = dictPlus StringComparer.Ordinal []
-                                let boneInfos = Array.zeroCreate<AssimpAnimation.BoneInfo> mesh.Bones.Count
-                                for i in 0 .. dec mesh.Bones.Count do
-                                    let mutable boneIndex = 0
-                                    let boneName = mesh.Bones.[i].Name
-                                    boneIndex <- bonesCount
-                                    bonesCount <- inc bonesCount
-                                    boneInfos.[boneIndex] <- AssimpAnimation.BoneInfo.make mesh.Bones.[i].OffsetMatrix
-                                    boneMapping.[boneName] <- boneIndex
-
-                                let globalInverseTransform = scene.RootNode.Transform
-                                globalInverseTransform.Inverse ()
-                                AssimpAnimation.ReadNodeHierarchy (boneMapping, boneInfos, animationTime, animationIndex, scene.RootNode, Assimp.Matrix4x4.Identity, globalInverseTransform, scene)
-
                                 let bones =
-                                    Array.map (fun (boneInfo : AssimpAnimation.BoneInfo) ->
-
-                                        /// Convert a matrix from an Assimp representation to Nu's.
-                                        let ImportMatrix (m : Assimp.Matrix4x4) =
-                                            Matrix4x4
-                                                (m.A1, m.B1, m.C1, m.D1,
-                                                 m.A2, m.B2, m.C2, m.D2,
-                                                 m.A3, m.B3, m.C3, m.D3,
-                                                 m.A4, m.B4, m.C4, m.D4)
-
-                                        ImportMatrix boneInfo.FinalTransform)
-                                        boneInfos
+                                    AssimpAnimation.AnimateBones (animationTime, animationIndex, mesh, scene)
 
                                 if modelAbsolute then
                                     let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
