@@ -16,7 +16,8 @@ Metadata from another thread. *)
 type Metadata =
     | TextureMetadata of Vector2i
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
-    | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+    | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
+    | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -28,6 +29,7 @@ module Metadata =
     let private TextureTimer = Stopwatch ()
     let private TmxTimer = Stopwatch ()
     let private FbxTimer = Stopwatch ()
+    let private DaeTimer = Stopwatch ()
     let private ObjTimer = Stopwatch ()
     let private WavTimer = Stopwatch ()
     let private OggTimer = Stopwatch ()
@@ -69,18 +71,21 @@ module Metadata =
             Log.trace errorMessage
             None
 
-    let private tryGenerateStaticModelMetadata asset =
+    let private tryGenerateModelMetadata asset =
         if File.Exists asset.FilePath then
             let textureMemo = OpenGL.Texture.TextureMemo.make () // unused
             use assimp = new Assimp.AssimpContext ()
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedStaticModel (false, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimp) with
-            | Right model -> Some (StaticModelMetadata model)
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimp) with
+            | Right model ->
+                if model.Animations.Count = 0
+                then Some (StaticModelMetadata model)
+                else Some (AnimatedModelMetadata model)
             | Left error ->
-                let errorMessage = "Failed to load static model '" + asset.FilePath + "' due to: " + error
+                let errorMessage = "Failed to load model '" + asset.FilePath + "' due to: " + error
                 Log.trace errorMessage
                 None
         else
-            let errorMessage = "Failed to load static model due to missing file '" + asset.FilePath + "'."
+            let errorMessage = "Failed to load model due to missing file '" + asset.FilePath + "'."
             Log.trace errorMessage
             None
 
@@ -100,12 +105,17 @@ module Metadata =
                 metadataOpt
             | ".fbx" ->
                 FbxTimer.Start ()
-                let metadataOpt = tryGenerateStaticModelMetadata asset
+                let metadataOpt = tryGenerateModelMetadata asset
                 FbxTimer.Stop ()
+                metadataOpt
+            | ".dae" ->
+                DaeTimer.Start ()
+                let metadataOpt = tryGenerateModelMetadata asset
+                DaeTimer.Stop ()
                 metadataOpt
             | ".obj" ->
                 ObjTimer.Start ()
-                let metadataOpt = tryGenerateStaticModelMetadata asset
+                let metadataOpt = tryGenerateModelMetadata asset
                 ObjTimer.Stop ()
                 metadataOpt
             | ".wav" ->
@@ -210,6 +220,17 @@ module Metadata =
     /// Forcibly get the static model metadata of the given asset (throwing on failure).
     let getStaticModelMetadata assetTag =
         Option.get (tryGetStaticModelMetadata assetTag)
+
+    /// Attempt to get the animated model metadata of the given asset.
+    let tryGetAnimatedModelMetadata (assetTag : AnimatedModel AssetTag) =
+        match tryGetMetadata (AssetTag.generalize assetTag) with
+        | Some (AnimatedModelMetadata model) -> Some model
+        | None -> None
+        | _ -> None
+
+    /// Forcibly get the animated cmodel metadata of the given asset (throwing on failure).
+    let getAnimatedModelMetadata assetTag =
+        Option.get (tryGetAnimatedModelMetadata assetTag)
 
     /// Get a copy of the metadata packages.
     let getMetadataPackages () =

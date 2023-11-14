@@ -107,7 +107,8 @@ type RenderAsset =
     | TextureAsset of FilePath : string * TextureMetadata : OpenGL.Texture.TextureMetadata * Texture : uint
     | FontAsset of FilePath : string * PointSize : int * Font : nativeint
     | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapMemoKey * CubeMap : uint * IrradianceAndEnvironmentMapOptRef : (uint * uint) option ref
-    | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedStaticModel
+    | StaticModelAsset of UserDefined : bool * Model : OpenGL.PhysicallyBased.PhysicallyBasedModel
+    | AnimatedModelAsset of Model : OpenGL.PhysicallyBased.PhysicallyBasedModel
     | RawAsset of RawAsset : byte array
 
 /// The type of rendering used on a surface.

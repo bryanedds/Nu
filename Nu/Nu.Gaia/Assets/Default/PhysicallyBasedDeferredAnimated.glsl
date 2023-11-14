@@ -1,10 +1,12 @@
 #shader vertex
 #version 410 core
 
-const int TexCoordsOffsetVerts = 6;
+const int TEX_COORDS_OFFSET_VERTS = 6;
+const int BONES_MAX = 96;
+const int BONES_INFLUENCE_MAX = 4;
 
-const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
-    vec2[TexCoordsOffsetVerts](
+const vec2 TexCoordsOffsetFilters[TEX_COORDS_OFFSET_VERTS] =
+    vec2[TEX_COORDS_OFFSET_VERTS](
         vec2(1,1),
         vec2(0,1),
         vec2(0,0),
@@ -12,8 +14,8 @@ const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
         vec2(0,0),
         vec2(1,0));
 
-const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
-    vec2[TexCoordsOffsetVerts](
+const vec2 TexCoordsOffsetFilters2[TEX_COORDS_OFFSET_VERTS] =
+    vec2[TEX_COORDS_OFFSET_VERTS](
         vec2(0,0),
         vec2(1,0),
         vec2(1,1),
@@ -23,16 +25,19 @@ const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 bones[BONES_MAX];
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in mat4 model;
-layout (location = 7) in vec4 texCoordsOffset;
-layout (location = 8) in vec4 albedo;
-layout (location = 9) in vec4 material;
-layout (location = 10) in float height;
-layout (location = 11) in int invertRoughness;
+layout (location = 3) in vec4 boneIds;
+layout (location = 4) in vec4 weights;
+layout (location = 5) in mat4 model;
+layout (location = 9) in vec4 texCoordsOffset;
+layout (location = 10) in vec4 albedo;
+layout (location = 11) in vec4 material;
+layout (location = 12) in float height;
+layout (location = 13) in int invertRoughness;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -44,8 +49,22 @@ flat out int invertRoughnessOut;
 
 void main()
 {
-    positionOut = model * vec4(position, 1.0);
-    int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
+    // compute boned position
+    vec4 positionBoned = vec4(0.0);
+    for (int i = 0; i < BONES_INFLUENCE_MAX; ++i)
+    {
+        int boneId = int(boneIds[i]);
+        if (boneId > -1 && boneId < BONES_MAX) // NOTE: defensive programming here... not sure if worth the potential perf cost.
+        {
+            mat4 bone = bones[boneId];
+            float weight = weights[i];
+            positionBoned += bone * vec4(position, 1.0) * weight;
+        }
+    }
+
+    // compute remaining values
+    positionOut = model * positionBoned;
+    int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
