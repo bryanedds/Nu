@@ -49,28 +49,26 @@ flat out int invertRoughnessOut;
 
 void main()
 {
-    // compute boned position
-    vec4 positionBoned = vec4(0.0);
+    // compute blended bone influences
+    mat4 boneBlended = mat4(0.0);
     for (int i = 0; i < BONES_INFLUENCE_MAX; ++i)
     {
-        int boneId = int(boneIds[i]);
-        if (boneId > -1 && boneId < BONES_MAX) // NOTE: defensive programming here... not sure if worth the potential perf cost.
-        {
-            mat4 bone = bones[boneId];
-            float weight = weights[i];
-            positionBoned += bone * vec4(position, 1.0) * weight;
-        }
+        boneBlended += bones[int(boneIds[i])] * weights[i];
     }
 
+    // compute blended position and normal
+    vec4 positionBlended = boneBlended * vec4(position, 1.0);
+    vec4 normalBlended = boneBlended * vec4(normal, 0.0);
+
     // compute remaining values
-    positionOut = model * positionBoned;
+    positionOut = model * positionBlended;
     int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
     albedoOut = albedo;
     materialOut = material;
-    normalOut = transpose(inverse(mat3(model))) * normal;
+    normalOut = transpose(inverse(mat3(model))) * normalBlended.xyz;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
     gl_Position = projection * view * positionOut;
