@@ -1902,13 +1902,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                                             inc y = resolutionY then
                                             v3Up
                                         else
-                                            // TODO: prevent exceptions here (and elsewhere?) when editing resolution in gaia
-                                            let a = fst' positionsAndTexCoordses.[x * resolutionX + y]
-                                            let b = fst' positionsAndTexCoordses.[inc x * resolutionX + y]
-                                            let c = fst' positionsAndTexCoordses.[x * resolutionX + inc y]
+                                            let a = fst' positionsAndTexCoordses.[x + resolutionX * y]
+                                            let b = fst' positionsAndTexCoordses.[inc x + resolutionX * y]
+                                            let c = fst' positionsAndTexCoordses.[x + resolutionX * inc y]
                                             let ab = b - a
                                             let ac = c - a
-                                            let normal = Vector3.Cross (ab, ac) |> Vector3.Normalize
+                                            let normal = Vector3.Cross (ac, ab) |> Vector3.Normalize
                                             normal|]
 
                             match GlRenderer3d.tryGetImageData rt.TerrainDescriptor.NormalImage renderer with
