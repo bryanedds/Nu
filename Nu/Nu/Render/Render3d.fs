@@ -1940,21 +1940,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     | Some (bytes, metadata) ->
                                         // check that the image size matches that of the heightmap
                                         if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
-                                            
-                                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                                            // TODO: confirm it is the same for SDL (linux).
-                                            let splatMask =
-                                                match splatMaterial.TerrainLayers.Length with
-                                                | 4 -> (fun (x : single array) -> v4 x.[2] x.[1] x.[0] x.[3])
-                                                | 3 -> (fun (x : single array) -> v4 x.[2] x.[1] x.[0] 0.0f)
-                                                | 2 -> (fun (x : single array) -> v4 x.[2] x.[1] 0.0f 0.0f)
-                                                | 1 -> (fun (x : single array) -> v4 x.[2] 0.0f 0.0f 0.0f)
-                                                | _ -> (fun (_ : single array) -> v4Zero)
-                                            
                                             bytes |>
                                             Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
                                             Array.chunkBySize 4 |>
-                                            Array.map splatMask
+                                            
+                                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                                            // TODO: confirm it is the same for SDL (linux).
+                                            Array.map (fun x -> v4 x.[2] x.[1] x.[0] x.[3])
                                         else Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
                                     | None -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
                                 | _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
