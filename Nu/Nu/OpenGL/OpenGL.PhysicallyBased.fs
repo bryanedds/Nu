@@ -1499,7 +1499,7 @@ module PhysicallyBased =
          heightsFields : single array,
          invertRoughnessesFields : int array,
          numElements : int,
-         materials : PhysicallyBasedMaterial array, // TODO: manage maximum array length.
+         materials : PhysicallyBasedMaterial array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredTerrainShader) =
 
@@ -1509,12 +1509,15 @@ module PhysicallyBased =
         Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
+        // enforce layer limit
+        let layerCount = min materials.Length 4
+        
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.LayerCountUniform, materials.Length)
+        Gl.Uniform1 (shader.LayerCountUniform, layerCount)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
             Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
@@ -1528,25 +1531,25 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layerCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layerCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layerCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layerCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layerCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture)
         Hl.Assert ()
 
         // setup pbr texture filters
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layerCount do
             for j in 0 .. dec 5 do
                 Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
                 match materials[i].TextureMinFilterOpt with
@@ -1620,7 +1623,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown pbr texture filters
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layerCount do
             for j in 0 .. dec 5 do
                 Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
                 if materials[i].TextureMinFilterOpt.IsSome then
@@ -1631,7 +1634,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
         // teardown textures
-        for i in 0 .. dec materials.Length * 5 do
+        for i in 0 .. dec layerCount * 5 do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
