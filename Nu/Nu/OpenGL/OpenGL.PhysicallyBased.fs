@@ -1389,7 +1389,7 @@ module PhysicallyBased =
                                     let (light, lightNode) = lightNodes.[i]
                                     if lightNode = node then
                                         let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
-                                        let lightMatrix = node.ImportMatrix node.TransformWorld
+                                        let lightMatrix = AssimpExtensions.AssimpToNu node.TransformWorld
                                         let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
                                         let lightType =
                                             match light.LightType with

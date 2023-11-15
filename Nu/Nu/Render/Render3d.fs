@@ -1135,10 +1135,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 | ValueNone -> box2 v2Zero v2Zero
 
                             for mesh in scene.Meshes do
-
                                 let bones =
-                                    AssimpAnimation.AnimateBones (animationTime, animationIndex, mesh, scene)
-
+                                    mesh.AnimateBones (animationTime, animationIndex, scene)
                                 if modelAbsolute then
                                     let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
                                     if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (animationTime, animationIndex, surface), &renderTasks)
