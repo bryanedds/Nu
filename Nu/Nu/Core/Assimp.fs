@@ -7,6 +7,8 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+/// Additional assimp functionality.
+/// Intentionally prevents the original Assimp namespace from being opened.
 [<RequireQualifiedAccess>]
 module Assimp =
 
