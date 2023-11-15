@@ -83,7 +83,7 @@ module AssimpAnimation =
         while resultOpt.IsNone && i < pAnimation.NodeAnimationChannels.Count do
             let channel = pAnimation.NodeAnimationChannels.[i]
             if (channel.NodeName = nodeName) then resultOpt <- Some channel
-            i <- inc i
+            else i <- inc i
         resultOpt
 
     let FindPosition (animationTime : single, channel : Assimp.NodeAnimationChannel) =

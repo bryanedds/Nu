@@ -611,7 +611,7 @@ module PhysicallyBased =
                                 vertexData.[v+8+i] <- single boneIndex
                                 vertexData.[v+12+i] <- weight
                                 found <- true
-                            i <- inc i
+                            else i <- inc i
 
                 // populate triangle index data
                 let indexList = SList.make ()
