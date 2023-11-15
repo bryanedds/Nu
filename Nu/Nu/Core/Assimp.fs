@@ -66,11 +66,9 @@ module Assimp =
             channel.PositionKeys.[0].Value
         else
             let PositionIndex = ComputePositionKeyFrameIndex (animationTime, channel)
-            let NextPositionIndex = inc PositionIndex
-            assert (NextPositionIndex < channel.PositionKeys.Count)
+            let NextPositionIndex = min (inc PositionIndex) (dec channel.PositionKeys.Count)
             let DeltaTime = single (channel.PositionKeys.[NextPositionIndex].Time - channel.PositionKeys.[PositionIndex].Time)
             let Factor = (animationTime - single channel.PositionKeys.[PositionIndex].Time) / DeltaTime
-            assert (Factor >= 0.0f && Factor <= 1.0f)
             let Start = channel.PositionKeys.[PositionIndex].Value
             let End = channel.PositionKeys.[NextPositionIndex].Value
             let Delta = End - Start
@@ -82,11 +80,9 @@ module Assimp =
             channel.RotationKeys.[0].Value
         else
             let RotationIndex = ComputeRotationKeyFrameIndex (animationTime, channel)
-            let NextRotationIndex = inc RotationIndex
-            assert (NextRotationIndex < channel.RotationKeys.Count)
+            let NextRotationIndex = min (inc RotationIndex) (dec channel.RotationKeys.Count)
             let DeltaTime = single (channel.RotationKeys.[NextRotationIndex].Time - channel.RotationKeys.[RotationIndex].Time)
             let Factor = (animationTime - single channel.RotationKeys.[RotationIndex].Time) / DeltaTime
-            assert (Factor >= 0.0f && Factor <= 1.0f)
             let StartRotationQ = channel.RotationKeys.[RotationIndex].Value
             let EndRotationQ = channel.RotationKeys.[NextRotationIndex].Value
             let Result = Assimp.Quaternion.Slerp (StartRotationQ, EndRotationQ, Factor)
@@ -98,11 +94,9 @@ module Assimp =
             channel.ScalingKeys.[0].Value
         else
             let ScalingIndex = ComputeScalingKeyFrameIndex (animationTime, channel)
-            let NextScalingIndex = inc ScalingIndex
-            assert (NextScalingIndex < channel.ScalingKeys.Count)
+            let NextScalingIndex = min (inc ScalingIndex) (dec channel.ScalingKeys.Count)
             let DeltaTime = single (channel.ScalingKeys.[NextScalingIndex].Time - channel.ScalingKeys.[ScalingIndex].Time)
             let Factor = (animationTime - single channel.ScalingKeys.[ScalingIndex].Time) / DeltaTime
-            assert (Factor >= 0.0f && Factor <= 1.0f)
             let Start = channel.ScalingKeys.[ScalingIndex].Value
             let End = channel.ScalingKeys.[NextScalingIndex].Value
             let Delta = End - Start
