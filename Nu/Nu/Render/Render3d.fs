@@ -1882,7 +1882,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                                     let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
                                                     struct (position, texCoords)|]
                                 with exn ->
-                                    // TODO: log error.
+                                    Log.info ("Attempt to read raw height map failed with the following exception: " + exn.Message)
                                     None
 
                             | ValueNone -> None
@@ -1973,9 +1973,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc y + inc x]
                                     let edgeA = topLeft - bottomRight
                                     let edgeB = bottomLeft - topRight
+                                    
                                     // triangulate quad along the longest edge
                                     // TODO: allow the user to decide triangulation policy?
                                     if edgeA.Magnitude > edgeB.Magnitude then
+                                        
                                         // divide quad from top-left to bottom-right
                                         yield resolutionX * inc y + x
                                         yield resolutionX * inc y + inc x
@@ -1984,6 +1986,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         yield resolutionX * y + inc x
                                         yield resolutionX * y + x
                                     else
+                                        
                                         // divide quad from bottom-left to top-right
                                         yield resolutionX * y + x
                                         yield resolutionX * inc y + x
