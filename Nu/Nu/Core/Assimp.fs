@@ -66,7 +66,7 @@ module Assimp =
             channel.PositionKeys.[0].Value
         else
             let PositionIndex = ComputePositionKeyFrameIndex (animationTime, channel)
-            let NextPositionIndex = min (inc PositionIndex) (dec channel.PositionKeys.Count)
+            let NextPositionIndex = inc PositionIndex % channel.PositionKeys.Count
             let DeltaTime = single (channel.PositionKeys.[NextPositionIndex].Time - channel.PositionKeys.[PositionIndex].Time)
             let Factor = (animationTime - single channel.PositionKeys.[PositionIndex].Time) / DeltaTime
             let Start = channel.PositionKeys.[PositionIndex].Value
@@ -80,7 +80,7 @@ module Assimp =
             channel.RotationKeys.[0].Value
         else
             let RotationIndex = ComputeRotationKeyFrameIndex (animationTime, channel)
-            let NextRotationIndex = min (inc RotationIndex) (dec channel.RotationKeys.Count)
+            let NextRotationIndex = inc RotationIndex % channel.RotationKeys.Count
             let DeltaTime = single (channel.RotationKeys.[NextRotationIndex].Time - channel.RotationKeys.[RotationIndex].Time)
             let Factor = (animationTime - single channel.RotationKeys.[RotationIndex].Time) / DeltaTime
             let StartRotationQ = channel.RotationKeys.[RotationIndex].Value
@@ -94,7 +94,7 @@ module Assimp =
             channel.ScalingKeys.[0].Value
         else
             let ScalingIndex = ComputeScalingKeyFrameIndex (animationTime, channel)
-            let NextScalingIndex = min (inc ScalingIndex) (dec channel.ScalingKeys.Count)
+            let NextScalingIndex = inc ScalingIndex % channel.ScalingKeys.Count
             let DeltaTime = single (channel.ScalingKeys.[NextScalingIndex].Time - channel.ScalingKeys.[ScalingIndex].Time)
             let Factor = (animationTime - single channel.ScalingKeys.[ScalingIndex].Time) / DeltaTime
             let Start = channel.ScalingKeys.[ScalingIndex].Value
