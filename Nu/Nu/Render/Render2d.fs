@@ -183,7 +183,6 @@ type [<ReferenceEquality>] GlRenderer2d =
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
         | _ -> None
 
-    // TODO: split this into two functions instead of passing reloading boolean.
     static member private tryLoadRenderPackage reloading packageName renderer =
 
         // attempt to make new asset graph and load its assets
