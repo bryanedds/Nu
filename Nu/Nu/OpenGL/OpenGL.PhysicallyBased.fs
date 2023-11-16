@@ -1510,7 +1510,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // enforce layer limit
-        let layerCount = min materials.Length 4
+        let layerCount = min materials.Length Constants.Render.TerrainLayersMax
         
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedShader
