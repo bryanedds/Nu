@@ -866,4 +866,7 @@ module TerrainDispatcher3dModule =
             [typeof<TerrainFacet>]
 
         static member Properties =
-            []
+            [define Entity.Size (v3 1024.0f 128.0f 1024.0f)
+             define Entity.Presence Omnipresent]
+
+        // TODO: implement quick size for this or TerrainFacet.
