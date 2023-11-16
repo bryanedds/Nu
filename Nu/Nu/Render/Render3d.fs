@@ -1046,8 +1046,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
                     GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &insetOpt, &properties, renderType, surface, renderer)
-            | _ -> Log.debug "Cannot render static model surface with a non-static model asset."
-        | _ -> Log.info ("Cannot render static model surface due to unloadable assets for '" + scstring staticModel + "'.")
+            | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
+        | _ -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
     static member private categorizeStaticModel
         (skipCulling : bool,
@@ -1089,8 +1089,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence then
                         GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, renderType, surface, renderer)
-            | _ -> Log.debug "Cannot render static model with a non-static model asset."
-        | _ -> Log.info ("Cannot render static model due to unloadable assets for '" + scstring staticModel + "'.")
+            | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
+        | _ -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
     static member private categorizeAnimatedModel
         (skipCulling : bool,
@@ -1150,8 +1150,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         | Some _ | None -> ()
 
-            | _ -> Log.debug "Cannot render animated model with a non-animated model asset."
-        | _ -> Log.info ("Cannot render animated model due to unloadable assets for '" + scstring animatedModel + "'.")
+            | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
+        | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
     static member private getLastSkyBoxOpt renderer =
         match Seq.tryLast renderer.RenderTasks.RenderSkyBoxes with

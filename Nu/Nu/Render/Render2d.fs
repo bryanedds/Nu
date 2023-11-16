@@ -397,8 +397,8 @@ type [<ReferenceEquality>] GlRenderer2d =
             match renderAsset with
             | TextureAsset (_, textureMetadata, texture) ->
                 GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend emission flip renderer
-            | _ -> Log.trace "Cannot render sprite with a non-texture asset."
-        | _ -> Log.info ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
+            | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
+        | _ -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render sprite particles.
     static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
@@ -423,8 +423,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let insetOpt = &particle.InsetOpt
                     GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend emission flip renderer
                     index <- inc index
-            | _ -> Log.trace "Cannot render sprite particle with a non-texture asset."
-        | _ -> Log.info ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
+            | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
+        | _ -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render tiles.
     static member renderTiles
@@ -518,7 +518,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                 // fin
                 tileIndex <- inc tileIndex
-        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
+        else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render text.
     static member renderText
@@ -630,8 +630,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                             OpenGL.Hl.Assert ()
 
                     // fin
-                    | _ -> Log.debug "Cannot render text with a non-font asset."
-                | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
+                    | _ -> Log.infoOnce ("Cannot render text with a non-font asset for '" + scstring font + "'.")
+                | _ -> Log.infoOnce ("TextDescriptor failed due to unloadable asset for '" + scstring font + "'.")
             OpenGL.Hl.Assert ()
 
     static member
