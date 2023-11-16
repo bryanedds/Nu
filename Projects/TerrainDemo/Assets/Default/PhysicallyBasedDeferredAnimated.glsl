@@ -2,6 +2,8 @@
 #version 410 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
+const int BONES_MAX = 96;
+const int BONES_INFLUENCE_MAX = 4;
 
 const vec2 TexCoordsOffsetFilters[TEX_COORDS_OFFSET_VERTS] =
     vec2[TEX_COORDS_OFFSET_VERTS](
@@ -23,12 +25,13 @@ const vec2 TexCoordsOffsetFilters2[TEX_COORDS_OFFSET_VERTS] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 bones[BONES_MAX];
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
-layout (location = 3) in vec4 splat0;
-layout (location = 4) in vec4 splat1;
+layout (location = 3) in vec4 boneIds;
+layout (location = 4) in vec4 weights;
 layout (location = 5) in mat4 model;
 layout (location = 9) in vec4 texCoordsOffset;
 layout (location = 10) in vec4 albedo;
@@ -39,8 +42,6 @@ layout (location = 13) in int invertRoughness;
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
-out vec4 splat0Out;
-out vec4 splat1Out;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
@@ -48,18 +49,29 @@ flat out int invertRoughnessOut;
 
 void main()
 {
-    positionOut = model * vec4(position, 1.0);
+    // compute blended bone influences
+    mat4 boneBlended = mat4(0.0);
+    for (int i = 0; i < BONES_INFLUENCE_MAX; ++i)
+    {
+        int boneId = int(boneIds[i]);
+        if (boneId >= 0) boneBlended += bones[boneId] * weights[i];
+    }
+
+    // compute blended position and normal
+    vec4 positionBlended = boneBlended * vec4(position, 1.0);
+    vec4 normalBlended = boneBlended * vec4(normal, 0.0);
+
+    // compute remaining values
+    positionOut = model * positionBlended;
     int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
     albedoOut = albedo;
     materialOut = material;
-    normalOut = transpose(inverse(mat3(model))) * normal;
+    normalOut = transpose(inverse(mat3(model))) * normalBlended.xyz;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
-    splat0Out = splat0;
-    splat1Out = splat1;
     gl_Position = projection * view * positionOut;
 }
 
@@ -67,21 +79,19 @@ void main()
 #version 410 core
 
 const float GAMMA = 2.2;
-const int TERRAIN_LAYERS_MAX = 4;
 
 uniform vec3 eyeCenter;
-uniform int layersCount;
-uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D normalTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
+uniform sampler2D albedoTexture;
+uniform sampler2D metallicTexture;
+uniform sampler2D roughnessTexture;
+uniform sampler2D emissionTexture;
+uniform sampler2D ambientOcclusionTexture;
+uniform sampler2D normalTexture;
+uniform sampler2D heightTexture;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
-in vec4 splat0Out;
-in vec4 splat1Out;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
@@ -108,35 +118,29 @@ void main()
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
-    // compute height blend and height
-    float heightBlend = 0.0;
-    for (int i = 0; i < layersCount; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splat0Out[i];
-    float height = heightBlend * heightOut;
-
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
+    float height = texture(heightTexture, texCoordsOut).r * heightOut;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
-    // compute albedo and material blends
-    vec4 albedoBlend = vec4(0.0);
-    float roughnessBlend = 0.0;
-    float ambientOcclusionBlend = 0.0;
-    vec3 normalBlend = vec3(0.0);
-    for (int i = 0; i < layersCount; ++i)
-    {
-        albedoBlend += texture(albedoTextures[i], texCoords) * splat0Out[i];
-        vec4 roughness = texture(roughnessTextures[i], texCoords);
-        roughnessBlend += (roughness.a == 1.0f ? roughness.g : roughness.a) * splat0Out[i];
-        ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * splat0Out[i];
-        normalBlend += texture(normalTextures[i], texCoords).xyz * splat0Out[i];
-    }
+    // compute albedo, discarding on zero alpha
+    vec4 albedoSample = texture(albedoTexture, texCoords);
+    if (albedoSample.a == 0.0f) discard;
+    albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
-    // populate albedo, material, and normalAndHeight
-    albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * albedoOut.rgb;
-    material = vec4(0.0, (invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g, ambientOcclusionBlend * materialOut.b, 0.0);
-    normalAndHeight.xyz = normalize(toWorld * (normalBlend * 2.0 - 1.0));
+    // compute material properties
+    float metallic = texture(metallicTexture, texCoords).r * materialOut.r;
+    vec4 roughnessSample = texture(roughnessTexture, texCoords);
+    float roughness = roughnessSample.a == 1.0f ? roughnessSample.g : roughnessSample.a;
+    roughness = (invertRoughnessOut == 0 ? roughness : 1.0f - roughness) * materialOut.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
+    float emission = texture(emissionTexture, texCoords).r * materialOut.a;
+    material = vec4(metallic, roughness, ambientOcclusion, emission);
+
+    // compute normal and height
+    normalAndHeight.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     normalAndHeight.a = height;
 }

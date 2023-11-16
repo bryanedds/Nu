@@ -1,10 +1,10 @@
 #shader vertex
 #version 410 core
 
-const int TexCoordsOffsetVerts = 6;
+const int TEX_COORDS_OFFSET_VERTS = 6;
 
-const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
-    vec2[TexCoordsOffsetVerts](
+const vec2 TexCoordsOffsetFilters[TEX_COORDS_OFFSET_VERTS] =
+    vec2[TEX_COORDS_OFFSET_VERTS](
         vec2(1,1),
         vec2(0,1),
         vec2(0,0),
@@ -12,8 +12,8 @@ const vec2 TexCoordsOffsetFilters[TexCoordsOffsetVerts] =
         vec2(0,0),
         vec2(1,0));
 
-const vec2 TexCoordsOffsetFilters2[TexCoordsOffsetVerts] =
-    vec2[TexCoordsOffsetVerts](
+const vec2 TexCoordsOffsetFilters2[TEX_COORDS_OFFSET_VERTS] =
+    vec2[TEX_COORDS_OFFSET_VERTS](
         vec2(0,0),
         vec2(1,0),
         vec2(1,1),
@@ -49,7 +49,7 @@ flat out int invertRoughnessOut;
 void main()
 {
     positionOut = model * vec4(position, 1.0);
-    int texCoordsOffsetIndex = gl_VertexID % TexCoordsOffsetVerts;
+    int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
     vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
@@ -58,8 +58,8 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
-    splat0Out = vec4(splat0.r, splat0.g, splat0.b, splat0.a);
-    splat1Out = vec4(splat1.r, splat1.g, splat1.b, splat1.a);
+    splat0Out = splat0;
+    splat1Out = splat1;
     gl_Position = projection * view * positionOut;
 }
 
@@ -70,7 +70,7 @@ const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 4;
 
 uniform vec3 eyeCenter;
-uniform int layerCount;
+uniform int layersCount;
 uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
 uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
 uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
@@ -110,7 +110,7 @@ void main()
 
     // compute height blend and height
     float heightBlend = 0.0;
-    for (int i = 0; i < layerCount; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splat0Out[i];
+    for (int i = 0; i < layersCount; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splat0Out[i];
     float height = heightBlend * heightOut;
 
     // compute tex coords in parallax space
@@ -125,7 +125,7 @@ void main()
     float roughnessBlend = 0.0;
     float ambientOcclusionBlend = 0.0;
     vec3 normalBlend = vec3(0.0);
-    for (int i = 0; i < layerCount; ++i)
+    for (int i = 0; i < layersCount; ++i)
     {
         albedoBlend += texture(albedoTextures[i], texCoords) * splat0Out[i];
         vec4 roughness = texture(roughnessTextures[i], texCoords);

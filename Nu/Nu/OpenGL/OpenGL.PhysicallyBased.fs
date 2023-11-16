@@ -156,7 +156,7 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
-          LayerCountUniform : int
+          LayersCountUniform : int
           AlbedoTexturesUniforms : int array
           RoughnessTexturesUniforms : int array
           AmbientOcclusionTexturesUniforms : int array
@@ -1447,7 +1447,7 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
-        let layerCountUniform = Gl.GetUniformLocation (shader, "layerCount")
+        let layersCountUniform = Gl.GetUniformLocation (shader, "layersCount")
         let albedoTexturesUniforms =
             Array.init Constants.Render.TerrainLayersMax $ fun i ->
                 Gl.GetUniformLocation (shader, "albedoTextures[" + string i + "]")
@@ -1468,7 +1468,7 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
-          LayerCountUniform = layerCountUniform
+          LayersCountUniform = layersCountUniform
           AlbedoTexturesUniforms = albedoTexturesUniforms
           RoughnessTexturesUniforms = roughnessTexturesUniforms
           AmbientOcclusionTexturesUniforms = ambientOcclusionTexturesUniforms
@@ -1749,7 +1749,8 @@ module PhysicallyBased =
           PhysicallyBasedFxaaShader = shader }
 
     /// Create the shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders (shaderStaticFilePath, shaderAnimatedFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
+    let CreatePhysicallyBasedDeferredShaders (terrainShaderFilePath, shaderStaticFilePath, shaderAnimatedFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
+        let shaderTerrain = CreatePhysicallyBasedDeferredTerrainShader terrainShaderFilePath
         let shaderStatic = CreatePhysicallyBasedShader shaderStaticFilePath
         let shaderAnimated = CreatePhysicallyBasedShader shaderAnimatedFilePath
         let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath
@@ -1757,7 +1758,7 @@ module PhysicallyBased =
         let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath
         let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath
         let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
-        (shaderStatic, shaderAnimated, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
+        (shaderTerrain, shaderStatic, shaderAnimated, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
 
     let DrawPhysicallyBasedTerrain
         (view : single array,
@@ -1769,8 +1770,8 @@ module PhysicallyBased =
          materialsFields : single array,
          heightsFields : single array,
          invertRoughnessesFields : int array,
-         numElements : int,
-         materials : PhysicallyBasedMaterial array, // TODO: manage maximum array length.
+         elementsCount : int,
+         materials : PhysicallyBasedMaterial array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredTerrainShader) =
 
@@ -1780,12 +1781,15 @@ module PhysicallyBased =
         Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
+        // enforce layer limit
+        let layersCount = min materials.Length Constants.Render.TerrainLayersMax
+        
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.LayerCountUniform, materials.Length)
+        Gl.Uniform1 (shader.LayersCountUniform, layersCount)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
             Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
@@ -1799,25 +1803,25 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture)
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture)
         Hl.Assert ()
 
         // setup pbr texture filters
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layersCount do
             for j in 0 .. dec 5 do
                 Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
                 match materials[i].TextureMinFilterOpt with
@@ -1883,7 +1887,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // draw geometry
-        Gl.DrawElements (OpenGL.PrimitiveType.Triangles, numElements, DrawElementsType.UnsignedInt, nativeint 0)
+        Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.Assert ()
 
         // teardown geometry
@@ -1891,7 +1895,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // teardown pbr texture filters
-        for i in 0 .. dec materials.Length do
+        for i in 0 .. dec layersCount do
             for j in 0 .. dec 5 do
                 Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
                 if materials[i].TextureMinFilterOpt.IsSome then
@@ -1902,7 +1906,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
         // teardown textures
-        for i in 0 .. dec materials.Length * 5 do
+        for i in 0 .. dec layersCount * 5 do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()

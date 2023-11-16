@@ -2779,7 +2779,6 @@ module TerrainFacetModule =
             match this.GetHeightMap world with
             | ImageHeightMap map -> Metadata.getTextureSize map
             | RawHeightMap map -> map.Resolution
-            | DynamicHeightMap map -> map.Resolution
 
         member this.GetTerrainQuadSize world =
             let bounds = this.GetBounds world
@@ -2791,7 +2790,7 @@ module TerrainFacetModule =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.Size (v3Dup 48.0f)
+            [define Entity.Size (v3 1024.0f 128.0f 1024.0f)
              define Entity.Presence Omnipresent
              define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
              define Entity.TerrainMaterial
@@ -2804,7 +2803,7 @@ module TerrainFacetModule =
              define Entity.TintImage Assets.Default.MaterialAlbedo
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.Tiles v2One
-             define Entity.HeightMap (RawHeightMap { Resolution = v2i 256 256; RawFormat = RawSingle LittleEndian; RawAsset = asset "Default" "HeightMapRaw" }) //(ImageHeightMap Assets.Default.HeightMap)
+             define Entity.HeightMap (ImageHeightMap Assets.Default.HeightMap)
              define Entity.Segments v2iOne]
 
         override this.Register (entity, world) =
