@@ -18,7 +18,7 @@
   [[Asset Font "Assets/Default/FreeMonoBold.024.ttf" [Render2d] []]
    [Assets Assets/Default [psd] [Render2d Render3d] [PsdToPng]]
    [Assets Assets/Default [bmp jpeg jpg png] [Render2d Render3d] []]
-   [Assets Assets/Default [tga tif tiff cbm fbx obj mtl glsl raw] [Render3d] []]
+   [Assets Assets/Default [tga tif tiff cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Default [ogg wav] [Audio] []]
    [Assets Assets/Default [csv nueffect nuscript] [Symbol] []]
    [Assets Assets/Default [nugroup tmx tsx] [] []]]]
