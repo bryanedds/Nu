@@ -56,7 +56,6 @@ type [<StructuralEquality; NoComparison>] DynamicMaterial =
 type [<StructuralEquality; NoComparison>] TerrainMaterial =
     | FlatMaterial of FlatMaterial
     | SplatMaterial of SplatMaterial
-    | DynamicMaterial of DynamicMaterial
 
 /// Material properties for terrain surfaces.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMaterialProperties =
@@ -97,6 +96,7 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
 /// Describes a static 3d terrain geometry.
 and [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
     { Bounds : Box3
+      Material : TerrainMaterial
       TintImage : Image AssetTag
       NormalImage : Image AssetTag
       Tiles : Vector2
@@ -116,6 +116,7 @@ and [<StructuralEquality; NoComparison>] TerrainDescriptor =
 
     member this.TerrainGeometryDescriptor =
         { Bounds = this.Bounds
+          Material = this.Material
           TintImage = this.TintImage
           NormalImage = this.NormalImage
           Tiles = this.Tiles
@@ -642,7 +643,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> None
         | _ -> None
 
-    // TODO: split this into two functions instead of passing reloading boolean.
     static member private tryLoadRenderPackage reloading packageName renderer =
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
@@ -753,6 +753,17 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | None -> None
             | _ -> None
         | ValueNone -> None
+
+    static member private tryGetHeightMapResolution heightMap renderer =
+        match heightMap with
+        | ImageHeightMap image ->
+            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize image) renderer with
+            | ValueSome renderAsset ->
+                match renderAsset with
+                | TextureAsset (_, metadata, _) -> Some (metadata.TextureWidth, metadata.TextureHeight)
+                | _ -> None
+            | ValueNone -> None
+        | RawHeightMap map -> Some (map.Resolution.X, map.Resolution.Y)
     
     static member private tryDestroyUserDefinedStaticModel assetTag renderer =
 
@@ -875,6 +886,179 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // attempted to replace a loaded asset
         else Log.debug ("Cannot replace a loaded asset '" + scstring assetTag + "' with a user-created static model.")
+
+    static member private createPhysicallyBasedTerrainNormals resolutionX resolutionY (positionsAndTexCoordses : struct (Vector3 * Vector2) array) =
+        // TODO: let's have another pass over this code, removing the edge discrimination based on magnitude and just use standard orientation.
+        [|for y in 0 .. dec resolutionY do
+            for x in 0 .. dec resolutionX do
+                if inc x < resolutionX && inc y < resolutionY then
+                    let topLeft = fst' positionsAndTexCoordses.[resolutionX * y + x]
+                    let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc y + x]
+                    let topRight = fst' positionsAndTexCoordses.[resolutionX * y + inc x]
+                    let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc y + inc x]
+                    let edgeA = topLeft - bottomRight
+                    let edgeB = bottomLeft - topRight
+                    let a = topLeft
+                    let b = topRight
+                    let c = if edgeA.Magnitude > edgeB.Magnitude then bottomLeft else bottomRight
+                    let ab = b - a
+                    let ac = c - a
+                    let normal = Vector3.Cross (ac, ab) |> Vector3.Normalize
+                    normal
+                else v3Up|]
+
+    static member private tryCreatePhysicallyBasedTerrainGeometry (geometryDescriptor : TerrainGeometryDescriptor) renderer =
+
+        // attempt to compute positions and tex coords
+        // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
+        // the geometry produced here is slightly different, with the border slightly clipped,
+        // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
+        // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
+        let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution geometryDescriptor.HeightMap renderer)
+        let quadSizeX = geometryDescriptor.Bounds.Size.X / single (dec resolutionX)
+        let quadSizeY = geometryDescriptor.Bounds.Size.Z / single (dec resolutionY)
+        let terrainHeight = geometryDescriptor.Bounds.Size.Y
+        let terrainPositionX = geometryDescriptor.Bounds.Min.X
+        let terrainPositionY = geometryDescriptor.Bounds.Min.Y
+        let terrainPositionZ = geometryDescriptor.Bounds.Min.Z
+        let texelWidth = 1.0f / single resolutionX
+        let texelHeight = 1.0f / single resolutionY
+        let positionsAndTexCoordsesOpt =
+            match geometryDescriptor.HeightMap with
+
+            // attempt to read height values from human-readable source
+            | ImageHeightMap image ->
+                match GlRenderer3d.tryGetImageData (AssetTag.generalize image) renderer with
+                | Some (bytes, _) ->
+                    Some
+                        [|for y in 0 .. dec resolutionY do
+                            for x in 0 .. dec resolutionX do
+                                let divisor = single Byte.MaxValue
+                                let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
+                                let normalized = (bytes[index] |> single) / divisor
+                                let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * geometryDescriptor.Tiles
+                                struct (position, texCoords)|]
+                | None -> None
+
+            // attempt to read height values from a non-human-readable source
+            | RawHeightMap map ->
+                match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
+                | ValueSome (RawAsset rawAsset) ->
+                    try use rawMemory = new MemoryStream (rawAsset)
+                        use rawReader = new BinaryReader (rawMemory)
+                        Some
+                            [|match map.RawFormat with
+                              | RawUInt8 ->
+                                for y in 0 .. dec resolutionY do
+                                    for x in 0 .. dec resolutionX do
+                                        let divisor = single Byte.MaxValue
+                                        let normalized = (rawReader.ReadByte () |> single) / divisor
+                                        let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                        let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * geometryDescriptor.Tiles
+                                        struct (position, texCoords)
+                              | RawUInt16 endianness ->
+                                for y in 0 .. dec resolutionY do
+                                    for x in 0 .. dec resolutionX do
+                                        let value =
+                                            match endianness with
+                                            | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
+                                            | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
+                                        let divisor = single UInt16.MaxValue
+                                        let normalized = (single value) / divisor
+                                        let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                        let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * geometryDescriptor.Tiles
+                                        struct (position, texCoords)
+                              | RawUInt32 endianness ->
+                                for y in 0 .. dec resolutionY do
+                                    for x in 0 .. dec resolutionX do
+                                        let value =
+                                            match endianness with
+                                            | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
+                                            | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
+                                        let divisor = single UInt32.MaxValue
+                                        let normalized = (single value) / divisor
+                                        let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                        let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * geometryDescriptor.Tiles
+                                        struct (position, texCoords)
+                              | RawSingle endianness -> // NOTE: this expects singles to be normalized between 0.0 and 1.0.
+                                for y in 0 .. dec resolutionY do
+                                    for x in 0 .. dec resolutionX do
+                                        let value =
+                                            match endianness with
+                                            | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
+                                            | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
+                                        let position = v3 (single x * quadSizeX + terrainPositionX) (value * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                        let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * geometryDescriptor.Tiles
+                                        struct (position, texCoords)|]
+
+                    // error
+                    with exn -> Log.info ("Attempt to read raw height map failed with the following exception: " + exn.Message); None
+                | _ -> None
+
+        // on success, continue terrain geometry generation attempt
+        match positionsAndTexCoordsesOpt with
+        | Some positionsAndTexCoordses ->
+
+            // compute normals
+            let normals =
+                match GlRenderer3d.tryGetImageData geometryDescriptor.NormalImage renderer with
+                | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY ->
+                    bytes |>
+                    Array.map (fun x -> single x / single Byte.MaxValue) |>
+                    Array.chunkBySize 4 |>
+                    Array.map (fun x ->
+                        let tangent = (v3 x.[2] x.[1] x.[0] * 2.0f - v3One).Normalized
+                        let normal = v3 tangent.X tangent.Z -tangent.Y
+                        normal)
+                | _ -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolutionX resolutionY positionsAndTexCoordses
+
+            // compute values for splat0 shader input
+            let splat0 =
+                match geometryDescriptor.Material with
+                | SplatMaterial splatMaterial ->
+                    match splatMaterial.SplatMap with
+                    | RgbaMap rgbaMap ->
+                        match GlRenderer3d.tryGetImageData rgbaMap renderer with
+                        | Some (bytes, metadata) ->
+                            // check that the image size matches that of the heightmap
+                            if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
+                                bytes |>
+                                Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
+                                Array.chunkBySize 4 |>
+                                // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                                // TODO: confirm it is the same for SDL (linux).
+                                Array.map (fun x -> v4 x.[2] x.[1] x.[0] x.[3])
+                            else Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
+                        | None -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
+                    | RedsMap _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
+                | FlatMaterial _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
+
+            // compute vertices
+            let vertices =
+                [|for i in 0 .. dec positionsAndTexCoordses.Length do
+                    let struct (p, t) = positionsAndTexCoordses.[i]
+                    let n = normals.[i]
+                    let s0 = splat0.[i]
+                    yield! [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f|]|]
+
+            // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
+            let indices = 
+                [|for y in 0 .. dec resolutionY - 1 do
+                    for x in 0 .. dec resolutionX - 1 do
+                        yield resolutionX * y + x
+                        yield resolutionX * inc y + x
+                        yield resolutionX * y + inc x
+                        yield resolutionX * inc y + x
+                        yield resolutionX * inc y + inc x
+                        yield resolutionX * y + inc x|]
+
+            // create the actual geometry
+            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), geometryDescriptor.Bounds)
+            Some geometry
+
+        // error
+        | None -> None
 
     static member private handleLoadRenderPackage hintPackageName renderer =
         GlRenderer3d.tryLoadRenderPackage false hintPackageName renderer
@@ -1083,17 +1267,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private tryRenderPhysicallyBasedTerrain viewArray geometryProjectionArray eyeCenter (terrainDescriptor : TerrainDescriptor) renderer =
         match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue terrainDescriptor.TerrainGeometryDescriptor with
         | (true, geometry) ->
-            let (resolutionX, resolutionY) =
-                match terrainDescriptor.HeightMap with
-                | ImageHeightMap image ->
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize image) renderer with
-                    | ValueSome renderAsset ->
-                        match renderAsset with
-                        | TextureAsset (_, metadata, _) -> (metadata.TextureWidth, metadata.TextureHeight)
-                        | _ -> (0, 0)
-                    | ValueNone -> (0, 0)
-                | RawHeightMap map -> (map.Resolution.X, map.Resolution.Y)
-                | DynamicHeightMap _ -> (0, 0)
+            let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution terrainDescriptor.HeightMap renderer)
             let elementsCount = dec resolutionX * dec resolutionY * 6
             let terrainMaterialProperties = terrainDescriptor.MaterialProperties
             let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
@@ -1178,8 +1352,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                             NormalTexture = normalTexture
                             HeightTexture = heightTexture }
                     (albedoMetadata.TextureTexelHeight, [|material|])
-                | DynamicMaterial _ ->
-                    failwithnie ()
             GlRenderer3d.renderPhysicallyBasedTerrain
                 viewArray geometryProjectionArray eyeCenter
                 elementsCount texelHeightAvg materialProperties materials geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
@@ -1787,230 +1959,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rudsm.Absolute, &rudsm.ModelMatrix, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, rudsm.RenderType, assetTag, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderTerrain rt ->
-
-                // TODO: P0: reorganize this code.
-
-                match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue rt.TerrainDescriptor.TerrainGeometryDescriptor with
+                let geometryDescriptor = rt.TerrainDescriptor.TerrainGeometryDescriptor
+                match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
                 | (true, _) -> ()
                 | (false, _) ->
-
-                    let (resolutionX, resolutionY) =
-                        match rt.TerrainDescriptor.HeightMap with
-                        | ImageHeightMap image ->
-                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize image) renderer with
-                            | ValueSome renderAsset ->
-                                match renderAsset with
-                                | TextureAsset (_, metadata, _) -> (metadata.TextureWidth, metadata.TextureHeight)
-                                | _ -> (0, 0)
-                            | ValueNone -> (0, 0)
-                        | RawHeightMap map -> (map.Resolution.X, map.Resolution.Y)
-                        | DynamicHeightMap _ -> (0, 0)
-                    
-                    // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
-                    // the geometry produced here is slightly different, with the border slightly clipped,
-                    // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
-                    // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
-                    let quadSizeX = rt.TerrainDescriptor.Bounds.Size.X / single (dec resolutionX)
-                    let quadSizeY = rt.TerrainDescriptor.Bounds.Size.Z / single (dec resolutionY)
-                    let terrainHeight = rt.TerrainDescriptor.Bounds.Size.Y
-                    let terrainPositionX = rt.TerrainDescriptor.Bounds.Min.X
-                    let terrainPositionY = rt.TerrainDescriptor.Bounds.Min.Y
-                    let terrainPositionZ = rt.TerrainDescriptor.Bounds.Min.Z
-                    let texelWidth = 1.0f / single resolutionX
-                    let texelHeight = 1.0f / single resolutionY
-                                
-                    // NOTE: this code expects a normalized heightmap i.e. lowest point = 00, highest = ff;
-                    // otherwise extra work will be required to find these points and scale accordingly.
-                    let positionsAndTexCoordsesOpt =
-                        match rt.TerrainDescriptor.HeightMap with
-                        
-                        | ImageHeightMap image ->
-                            match GlRenderer3d.tryGetImageData (AssetTag.generalize image) renderer with
-                            | Some (bytes, _) ->
-                                Some
-                                    [|for y in 0 .. dec resolutionY do
-                                        for x in 0 .. dec resolutionX do
-                                            let divisor = single Byte.MaxValue
-                                            let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
-                                            let normalized = (bytes[index] |> single) / divisor
-                                            let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                            let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
-                                            struct (position, texCoords)|]
-                            | None -> None
-                        | RawHeightMap map ->
-                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize map.RawAsset) renderer with
-                            | ValueSome (RawAsset rawAsset) ->
-
-                                use rawMemory = new MemoryStream (rawAsset)
-                                use rawReader = new BinaryReader (rawMemory)
-                                try
-                                    Some
-                                        [|match map.RawFormat with
-                                          | RawUInt8 ->
-                                            for y in 0 .. dec resolutionY do
-                                                for x in 0 .. dec resolutionX do
-                                                    let divisor = single Byte.MaxValue
-                                                    let normalized = (rawReader.ReadByte () |> single) / divisor
-                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
-                                                    struct (position, texCoords)
-                                          | RawUInt16 endianness ->
-                                            for y in 0 .. dec resolutionY do
-                                                for x in 0 .. dec resolutionX do
-                                                    let value =
-                                                        match endianness with
-                                                        | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
-                                                        | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
-                                                    let divisor = single UInt16.MaxValue
-                                                    let normalized = (single value) / divisor
-                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
-                                                    struct (position, texCoords)
-                                          | RawUInt32 endianness ->
-                                            for y in 0 .. dec resolutionY do
-                                                for x in 0 .. dec resolutionX do
-                                                    let value =
-                                                        match endianness with
-                                                        | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
-                                                        | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
-                                                    let divisor = single UInt32.MaxValue
-                                                    let normalized = (single value) / divisor
-                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
-                                                    struct (position, texCoords)
-                                          
-                                          // NOTE: this expects singles to be normalized between 0.0 and 1.0.
-                                          // TODO: normalize singles?
-                                          | RawSingle endianness ->
-                                            for y in 0 .. dec resolutionY do
-                                                for x in 0 .. dec resolutionX do
-                                                    let value =
-                                                        match endianness with
-                                                        | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
-                                                        | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
-                                                    let position = v3 (single x * quadSizeX + terrainPositionX) (value * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * rt.TerrainDescriptor.Tiles
-                                                    struct (position, texCoords)|]
-                                with exn ->
-                                    Log.info ("Attempt to read raw height map failed with the following exception: " + exn.Message)
-                                    None
-
-                            | ValueNone -> None
-
-                        | DynamicHeightMap _ -> None
-
-                    match positionsAndTexCoordsesOpt with
-                    | Some positionsAndTexCoordses ->
-
-                        let normals =
-                            
-                            // define as function so it's only called when needed.
-                            let fallback () =
-                                [|for y in 0 .. dec resolutionY do
-                                    for x in 0 .. dec resolutionX do
-                                        if  inc x = resolutionX ||
-                                            inc y = resolutionY then
-                                            v3Up
-                                        else
-                                            let topLeft = fst' positionsAndTexCoordses.[resolutionX * y + x]
-                                            let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc y + x]
-                                            let topRight = fst' positionsAndTexCoordses.[resolutionX * y + inc x]
-                                            let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc y + inc x]
-                                            
-                                            // triangulation conscious code left in place in case of experimentation,
-                                            // obviously must be kept in sync with triangulation policy.
-                                            let edgeA = topLeft - bottomRight
-                                            let edgeB = bottomLeft - topRight
-                                            let a = topLeft
-                                            let b = topRight
-                                            let c = if edgeA.Magnitude > edgeB.Magnitude then bottomLeft else bottomLeft
-                                            let ab = b - a
-                                            let ac = c - a
-                                            let normal = Vector3.Cross (ac, ab) |> Vector3.Normalize
-                                            normal|]
-
-                            match GlRenderer3d.tryGetImageData rt.TerrainDescriptor.NormalImage renderer with
-                            | Some (bytes, metadata) ->
-                                // check that the image size matches that of the heightmap
-                                if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
-                                    bytes |>
-                                    Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
-                                    Array.chunkBySize 4 |>
-                                    Array.map (fun x ->
-                                        let tangent = (v3 x.[2] x.[1] x.[0] * 2.0f - v3One).Normalized
-                                        let normal = v3 tangent.X tangent.Z -tangent.Y
-                                        normal)
-                                else fallback ()
-                            | None -> fallback ()
-
-                        // TODO: smooth vertices with averaging?
-
-                        let splat0 =
-                            match rt.TerrainDescriptor.Material with
-                            | SplatMaterial splatMaterial ->
-                                match splatMaterial.SplatMap with
-                                | RgbaMap rgbaMap ->
-                                    match GlRenderer3d.tryGetImageData rgbaMap renderer with
-                                    | Some (bytes, metadata) ->
-                                        // check that the image size matches that of the heightmap
-                                        if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
-                                            bytes |>
-                                            Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
-                                            Array.chunkBySize 4 |>
-                                            
-                                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                                            // TODO: confirm it is the same for SDL (linux).
-                                            Array.map (fun x -> v4 x.[2] x.[1] x.[0] x.[3])
-                                        else Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
-                                    | None -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
-                                | RedsMap _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
-                            | FlatMaterial _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
-                            | DynamicMaterial _ -> Array.zeroCreate<single> (resolutionX * resolutionY) |> Array.map (fun _ -> v4Zero)
-
-                        let vertices =
-                            [|for i in 0 .. dec positionsAndTexCoordses.Length do
-                                let struct (p, t) = positionsAndTexCoordses.[i]
-                                let n = normals.[i]
-                                let s0 = splat0.[i]
-                                yield! [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f|]|]
-
-                        let indices = 
-                            [|for y in 0 .. dec resolutionY - 1 do
-                                for x in 0 .. dec resolutionX - 1 do
-                                    let topLeft = fst' positionsAndTexCoordses.[resolutionX * y + x]
-                                    let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc y + x]
-                                    let topRight = fst' positionsAndTexCoordses.[resolutionX * y + inc x]
-                                    let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc y + inc x]
-                                    let edgeA = topLeft - bottomRight
-                                    let edgeB = bottomLeft - topRight
-                                    
-                                    // triangulate quad along the longest edge
-                                    // TODO: allow the user to decide triangulation policy?
-                                    if edgeA.Magnitude > edgeB.Magnitude then
-                                        
-                                        // divide quad from top-left to bottom-right
-                                        yield resolutionX * inc y + x
-                                        yield resolutionX * inc y + inc x
-                                        yield resolutionX * y + x
-                                        yield resolutionX * inc y + inc x
-                                        yield resolutionX * y + inc x
-                                        yield resolutionX * y + x
-                                    else
-                                        
-                                        // divide quad from bottom-left to top-right
-                                        yield resolutionX * y + x
-                                        yield resolutionX * inc y + x
-                                        yield resolutionX * y + inc x
-                                        yield resolutionX * inc y + x
-                                        yield resolutionX * inc y + inc x
-                                        yield resolutionX * y + inc x|]
-
-                        let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry(true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), rt.TerrainDescriptor.Bounds)
-                        renderer.RenderPhysicallyBasedTerrainGeometries.Add (rt.TerrainDescriptor.TerrainGeometryDescriptor, geometry)
-
+                    match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry geometryDescriptor renderer with
+                    | Some geometry -> renderer.RenderPhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
                     | None -> ()
 
-                match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue rt.TerrainDescriptor.TerrainGeometryDescriptor with
+                match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
                 | (true, _) ->
                     if rt.Absolute
                     then renderer.RenderTasks.RenderTerrainsAbsolute.Add rt.TerrainDescriptor

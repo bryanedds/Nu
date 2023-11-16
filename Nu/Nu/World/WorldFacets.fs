@@ -2692,7 +2692,6 @@ module TerrainFacetModule =
             match this.GetHeightMap world with
             | ImageHeightMap map -> Metadata.getTextureSize map
             | RawHeightMap map -> map.Resolution
-            | DynamicHeightMap map -> map.Resolution
 
         member this.GetTerrainQuadSize world =
             let bounds = this.GetBounds world
