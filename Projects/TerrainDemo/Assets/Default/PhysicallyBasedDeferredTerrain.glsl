@@ -70,7 +70,7 @@ const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 4;
 
 uniform vec3 eyeCenter;
-uniform int layerCount;
+uniform int layersCount;
 uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
 uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
 uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
@@ -110,7 +110,7 @@ void main()
 
     // compute height blend and height
     float heightBlend = 0.0;
-    for (int i = 0; i < layerCount; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splat0Out[i];
+    for (int i = 0; i < layersCount; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splat0Out[i];
     float height = heightBlend * heightOut;
 
     // compute tex coords in parallax space
@@ -125,7 +125,7 @@ void main()
     float roughnessBlend = 0.0;
     float ambientOcclusionBlend = 0.0;
     vec3 normalBlend = vec3(0.0);
-    for (int i = 0; i < layerCount; ++i)
+    for (int i = 0; i < layersCount; ++i)
     {
         albedoBlend += texture(albedoTextures[i], texCoords) * splat0Out[i];
         vec4 roughness = texture(roughnessTextures[i], texCoords);
