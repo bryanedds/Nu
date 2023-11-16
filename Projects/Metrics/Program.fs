@@ -34,7 +34,7 @@ type [<StructuralEquality; NoComparison; Struct>] Shake =
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 type MetricsEntityDispatcher () =
-    inherit EntityDispatcher3d<Model AssetTag, Message, Command> (true, false, Assets.Default.StaticModel)
+    inherit EntityDispatcher3d<StaticModel AssetTag, Message, Command> (true, false, Assets.Default.StaticModel)
 
 #if !MMCC
     override this.Update (entity, world) =
@@ -51,7 +51,7 @@ type MetricsEntityDispatcher () =
 
     override this.GetQuickSize (entity, world) =
         let staticModel = entity.GetModelGeneric world
-        let bounds = (Metadata.getModelMetadata staticModel).Bounds
+        let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
         let boundsExtended = bounds.Combine bounds.Mirror
         boundsExtended.Size
 
