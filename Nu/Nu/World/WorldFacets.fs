@@ -2690,12 +2690,12 @@ module AnimatedModelFacetModule =
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
-            let animationTime = world.ClockTime * 500.0f % 5000.0f
+            let animationTime = world.ClockTime * 60.0f % 120.0f
             let animationIndex = 0
             let animatedModel = entity.GetAnimatedModel world
             let world = World.renderAnimatedModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, animationTime, animationIndex, animatedModel, world)
             let scene = (Metadata.getAnimatedModelMetadata animatedModel).AnimatedSceneOpt.Value
-            let mesh = scene.Meshes.[1]
+            let mesh = scene.Meshes.[0]
             let bones = mesh.AnimateBones (animationTime, animationIndex, scene)
             Array.fold (fun world bone ->
                 World.renderStaticModelFast (absolute, &bone, presence, insetOpt, &properties, DeferredRenderType, Assets.Default.StaticModel, world))
