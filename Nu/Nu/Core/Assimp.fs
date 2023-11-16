@@ -115,6 +115,7 @@ module AssimpExtensions =
              animationTime : single,
              animationIndex : int,
              node : Assimp.Node,
+             rootTransformInverse : Assimp.Matrix4x4,
              parentTransform : Assimp.Matrix4x4,
              scene : Assimp.Scene) =
 
@@ -136,12 +137,12 @@ module AssimpExtensions =
             match boneIds.TryGetValue name with
             | (true, boneId) ->
                 let boneTransformOffset = boneInfos.[boneId].BoneTransformOffset
-                boneInfos.[boneId].BoneTransformFinal <- accumulatedTransform * boneTransformOffset
+                boneInfos.[boneId].BoneTransformFinal <- rootTransformInverse * accumulatedTransform * boneTransformOffset
             | (false, _) -> ()
 
             for i in 0 .. dec node.Children.Count do
                 let child = node.Children.[i]
-                Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, child, accumulatedTransform, scene)
+                Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, child, rootTransformInverse, accumulatedTransform, scene)
 
         member this.AnimateBones (animationTime, animationIndex, scene : Assimp.Scene) =
 
@@ -155,7 +156,9 @@ module AssimpExtensions =
                 boneInfos.[i] <- Assimp.BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
-            Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
+            let rootTransformInverse = scene.RootNode.Transform
+            rootTransformInverse.Inverse ()
+            Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, rootTransformInverse, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
             Array.map (fun (boneInfo : Assimp.BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
