@@ -2695,7 +2695,7 @@ module AnimatedModelFacetModule =
             let animatedModel = entity.GetAnimatedModel world
             let world = World.renderAnimatedModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, animationTime, animationIndex, animatedModel, world)
             let scene = (Metadata.getAnimatedModelMetadata animatedModel).AnimatedSceneOpt.Value
-            let mesh = scene.Meshes.[1]
+            let mesh = scene.Meshes.[0]
             let bones = mesh.AnimateBones (animationTime, animationIndex, scene)
             Array.fold (fun world bone ->
                 World.renderStaticModelFast (absolute, &bone, presence, insetOpt, &properties, DeferredRenderType, Assets.Default.StaticModel, world))
