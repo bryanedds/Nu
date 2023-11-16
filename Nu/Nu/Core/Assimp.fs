@@ -13,11 +13,11 @@ open Prime
 module Assimp =
 
     type [<NoEquality; NoComparison; Struct>] BoneInfo =
-        { BoneTransformOffet : Assimp.Matrix4x4
+        { BoneTransformOffset : Assimp.Matrix4x4
           mutable BoneTransformFinal : Assimp.Matrix4x4 }
 
         static member make offset =
-            { BoneTransformOffet = offset
+            { BoneTransformOffset = offset
               BoneTransformFinal = Assimp.Matrix4x4.Identity }
 
     /// Convert a matrix from an Assimp representation to Nu's.
@@ -115,17 +115,13 @@ module AssimpExtensions =
              animationTime : single,
              animationIndex : int,
              node : Assimp.Node,
-             meshTransform : Assimp.Matrix4x4,
              parentTransform : Assimp.Matrix4x4,
              scene : Assimp.Scene) =
 
             let name =
                 node.Name
 
-            let hierarchyTransform =
-                parentTransform * node.Transform
-
-            let animationTransform =
+            let nodeTransform =
                 match Assimp.TryGetAnimationChannel (scene.Animations.[animationIndex], name) with
                 | Some channel ->
                     let translation = Assimp.Matrix4x4.FromTranslation (Assimp.InterpolatePosition (animationTime, channel))
@@ -134,18 +130,18 @@ module AssimpExtensions =
                     translation * rotation * scale // NOTE: there should be a faster way to construct a TRS matrix.
                 | None -> node.Transform
 
-            let boneTransformOffset = 
-                match boneIds.TryGetValue name with
-                | (true, boneId) -> boneInfos.[boneId].BoneTransformOffet
-                | (false, _) -> Assimp.Matrix4x4.Identity
+            let accumulatedTransform =
+                parentTransform * nodeTransform
 
             match boneIds.TryGetValue name with
-            | (true, boneId) -> boneInfos.[boneId].BoneTransformFinal <- hierarchyTransform * boneTransformOffset
+            | (true, boneId) ->
+                let boneTransformOffset = boneInfos.[boneId].BoneTransformOffset
+                boneInfos.[boneId].BoneTransformFinal <- accumulatedTransform * boneTransformOffset
             | (false, _) -> ()
 
             for i in 0 .. dec node.Children.Count do
                 let child = node.Children.[i]
-                Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, child, meshTransform, hierarchyTransform, scene)
+                Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, child, accumulatedTransform, scene)
 
         member this.AnimateBones (animationTime, animationIndex, scene : Assimp.Scene) =
 
@@ -158,14 +154,8 @@ module AssimpExtensions =
                 boneIds.[boneName] <- i
                 boneInfos.[i] <- Assimp.BoneInfo.make bone.OffsetMatrix
 
-            // forcibly locate the mesh node.
-            let meshTransform =
-                match scene.RootNode.FindNode this.Name with
-                | null -> Assimp.Matrix4x4.Identity
-                | meshNode -> meshNode.Transform
-
             // write bone transforms to bone infos array
-            Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, meshTransform, Assimp.Matrix4x4.Identity, scene)
+            Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
             Array.map (fun (boneInfo : Assimp.BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
