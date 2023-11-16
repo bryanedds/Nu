@@ -14,11 +14,11 @@ module Assimp =
 
     type [<NoEquality; NoComparison; Struct>] BoneInfo =
         { BoneTransformLocal : Assimp.Matrix4x4
-          mutable BoneTransformModel : Assimp.Matrix4x4 }
+          mutable BoneTransformFinal : Assimp.Matrix4x4 }
 
         static member make offset =
             { BoneTransformLocal = offset
-              BoneTransformModel = Assimp.Matrix4x4.Identity }
+              BoneTransformFinal = Assimp.Matrix4x4.Identity }
 
     /// Convert a matrix from an Assimp representation to Nu's.
     let ExportMatrix (m : Assimp.Matrix4x4) =
@@ -136,17 +136,17 @@ module AssimpExtensions =
                 | (true, boneId) -> boneInfos.[boneId].BoneTransformLocal
                 | (false, _) -> Assimp.Matrix4x4.Identity
 
-            let boneTransformOut =
+            let boneTransformModel =
                 match boneIds.TryGetValue name with
                 | (true, boneId) ->
-                    let boneTransformModel = animationTransform * boneTransformLocal * parentBoneTransform * scene.RootNode.Transform * meshTransform
-                    boneInfos.[boneId].BoneTransformModel <- boneTransformModel
-                    animationTransform * boneTransformLocal * parentBoneTransform
+                    let boneTransformPartial = parentBoneTransform * animationTransform * boneTransformLocal
+                    boneInfos.[boneId].BoneTransformFinal <- scene.RootNode.Transform * meshTransform * boneTransformPartial
+                    boneTransformPartial
                 | (false, _) -> node.Transform
 
             for i in 0 .. dec node.Children.Count do
                 let child = node.Children.[i]
-                Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, child, meshTransform, boneTransformOut, scene)
+                Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, child, meshTransform, boneTransformModel, scene)
 
         member this.AnimateBones (animationTime, animationIndex, scene : Assimp.Scene) =
 
@@ -169,7 +169,7 @@ module AssimpExtensions =
             Assimp.Mesh.UpdateBoneTransforms (boneIds, boneInfos, animationTime, animationIndex, scene.RootNode, meshTransform, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
-            Array.map (fun (boneInfo : Assimp.BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformModel) boneInfos
+            Array.map (fun (boneInfo : Assimp.BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
 
     /// Node extensions.
     type Assimp.Node with
