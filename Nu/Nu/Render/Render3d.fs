@@ -1966,14 +1966,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match GlRenderer3d.tryCreatePhysicallyBasedTerrainGeometry geometryDescriptor renderer with
                     | Some geometry -> renderer.RenderPhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
                     | None -> ()
-
                 match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
                 | (true, _) ->
                     if rt.Absolute
                     then renderer.RenderTasks.RenderTerrainsAbsolute.Add rt.TerrainDescriptor
                     else renderer.RenderTasks.RenderTerrainsRelative.Add rt.TerrainDescriptor
                 | (false, _) -> ()
-
             | RenderPostPass3d rp ->
                 postPasses.Add rp |> ignore<bool>
             | ConfigureLightMapping lmc ->
