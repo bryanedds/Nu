@@ -939,19 +939,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         else Log.debug ("Cannot replace a loaded asset '" + scstring assetTag + "' with a user-created static model.")
 
     static member private createPhysicallyBasedTerrainNormals resolutionX resolutionY (positionsAndTexCoordses : struct (Vector3 * Vector2) array) =
-        // TODO: let's have another pass over this code, removing the edge discrimination based on magnitude and just use standard orientation.
         [|for y in 0 .. dec resolutionY do
             for x in 0 .. dec resolutionX do
                 if inc x < resolutionX && inc y < resolutionY then
-                    let topLeft = fst' positionsAndTexCoordses.[resolutionX * y + x]
-                    let bottomLeft = fst' positionsAndTexCoordses.[resolutionX * inc y + x]
-                    let topRight = fst' positionsAndTexCoordses.[resolutionX * y + inc x]
-                    let bottomRight = fst' positionsAndTexCoordses.[resolutionX * inc y + inc x]
-                    let edgeA = topLeft - bottomRight
-                    let edgeB = bottomLeft - topRight
-                    let a = topLeft
-                    let b = topRight
-                    let c = if edgeA.Magnitude > edgeB.Magnitude then bottomLeft else bottomRight
+                    let a = fst' positionsAndTexCoordses.[resolutionX * y + x]
+                    let b = fst' positionsAndTexCoordses.[resolutionX * y + inc x]
+                    let c = fst' positionsAndTexCoordses.[resolutionX * inc y + x]
                     let ab = b - a
                     let ac = c - a
                     let normal = Vector3.Cross (ac, ab) |> Vector3.Normalize
