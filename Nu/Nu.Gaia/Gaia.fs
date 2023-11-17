@@ -946,7 +946,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     with _ ->
                         let assembly = Assembly.LoadFrom filePath
                         Right (Some (filePath, dirName, assembly.GetTypes ()))
-                with exn ->
+                with _ ->
+                    Log.info ("Failed to load Nu game project from '" + filePath + "' due to: " + scstring exn)
                     Directory.SetCurrentDirectory gaiaDir
                     Left ()
             else Right None
