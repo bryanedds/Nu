@@ -94,7 +94,7 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
         Unchecked.defaultof<MaterialProperties>
 
 /// Describes a static 3d terrain geometry.
-and [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
+type [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
     { Bounds : Box3
       Material : TerrainMaterial
       TintImage : Image AssetTag
@@ -104,7 +104,7 @@ and [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
       Segments : Vector2i }
 
 /// Describes a static 3d terrain.
-and [<StructuralEquality; NoComparison>] TerrainDescriptor =
+type [<StructuralEquality; NoComparison>] TerrainDescriptor =
     { Bounds : Box3
       MaterialProperties : TerrainMaterialProperties
       Material : TerrainMaterial
@@ -124,7 +124,7 @@ and [<StructuralEquality; NoComparison>] TerrainDescriptor =
           Segments = this.Segments }
 
 /// Describes a static model surface.
-and [<NoEquality; NoComparison>] SurfaceDescriptor =
+type [<NoEquality; NoComparison>] SurfaceDescriptor =
     { Positions : Vector3 array
       TexCoordses : Vector2 array
       Normals : Vector3 array
