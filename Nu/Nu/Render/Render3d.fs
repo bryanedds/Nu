@@ -1076,7 +1076,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             else Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
                         | None -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
                     | RedsMap _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
-                | FlatMaterial _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
+                | FlatMaterial _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4 1.0f 0.0f 0.0f 0.0f)
 
             // compute vertices
             let vertices =
