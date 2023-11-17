@@ -27,13 +27,13 @@
 		<Compile Include="Core\Gen.fs" />
 		<Compile Include="Core\Math.fs" />
 		<Compile Include="Core\Branchless.fs" />
-		<Compile Include="Core\Assimp.fs" />
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\Address.fs" />
 		<Compile Include="Core\Relation.fs" />
 		<Compile Include="Core\EventFilter.fs" />
 		<Compile Include="Core\GameTime.fs" />
 		<Compile Include="Core\Constants.fs" />
+		<Compile Include="Core\Assimp.fs" />
 		<Compile Include="Collections\ListTree.fs" />
 		<Compile Include="Collections\KeyedArray.fs" />
 		<Compile Include="Collections\ForgetfulDictionary.fs" />
@@ -205,7 +205,7 @@
 		<PackageReference Include="FParsec" Version="1.0.3" />
 		<PackageReference Include="Aether.Physics2D" Version="1.7.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
-		<PackageReference Include="Prime" Version="9.13.2" />
+		<PackageReference Include="Prime" Version="9.13.3" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
 	</ItemGroup>

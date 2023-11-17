@@ -2670,6 +2670,9 @@ module AnimatedModelFacetModule =
 
     type Entity with
 
+        member this.GetAnimations world : Animation array = this.Get (nameof this.Animations) world
+        member this.SetAnimations (value : Animation array) world = this.Set (nameof this.Animations) value world
+        member this.Animations = lens (nameof this.Animations) this this.GetAnimations this.SetAnimations
         member this.GetAnimatedModel world : AnimatedModel AssetTag = this.Get (nameof this.AnimatedModel) world
         member this.SetAnimatedModel (value : AnimatedModel AssetTag) world = this.Set (nameof this.AnimatedModel) value world
         member this.AnimatedModel = lens (nameof this.AnimatedModel) this this.GetAnimatedModel this.SetAnimatedModel
@@ -2681,6 +2684,7 @@ module AnimatedModelFacetModule =
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Hips"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BonesOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
         override this.Render (entity, world) =
@@ -2690,19 +2694,9 @@ module AnimatedModelFacetModule =
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
-            let animationTime = world.ClockTime * 600.0f % 3000.0f
-            let animationIndex = 0
+            let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            let world = World.renderAnimatedModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, animationTime, animationIndex, animatedModel, world)
-            match Metadata.tryGetAnimatedModelMetadata animatedModel with
-            | Some animatedModelMetadata ->
-                let scene = animatedModelMetadata.AnimatedSceneOpt.Value
-                let mesh = scene.Meshes.[0]
-                let bones = mesh.AnimateBones (animationTime, animationIndex, scene)
-                Array.fold (fun world bone ->
-                    World.renderStaticModelFast (absolute, &bone, presence, insetOpt, &properties, DeferredRenderType, Assets.Default.StaticModel, world))
-                    world bones
-             | None -> world
+            World.renderAnimatedModelFast (world.GameTime, absolute, &affineMatrixOffset, presence, insetOpt, &properties, animations, animatedModel, world)
 
         override this.GetQuickSize (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
