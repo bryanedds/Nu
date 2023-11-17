@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 
@@ -79,22 +80,6 @@ type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
 type [<StructuralEquality; NoComparison>] HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
-
-/// Determines how an animation is played.
-type [<StructuralEquality; NoComparison>] Playback =
-    | Once
-    | Loop
-    | Bounce
-
-/// Describes an animation.
-type [<NoEquality; NoComparison>] Animation =
-    { StartTime : GameTime
-      LifeTimeOpt : GameTime option
-      Name : string
-      Playback : Playback
-      Rate : single
-      Weight : single
-      BonesOpt : string array option }
 
 /// An asset that is used for rendering.
 type RenderAsset =
