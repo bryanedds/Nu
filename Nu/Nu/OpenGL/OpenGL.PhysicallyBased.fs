@@ -790,7 +790,8 @@ module PhysicallyBased =
                 let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
                 let splat0Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
                 let splat1Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splat0*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splat0*) + 4 (*splat1*)) * sizeof<single>
+                let tintOffset =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splat0*) + 4 (*splat1*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splat0*) + 4 (*splat1*) + 3 (*tint*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
@@ -805,6 +806,8 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splat0Offset)
                 Gl.EnableVertexAttribArray 4u
                 Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splat1Offset)
+                Gl.EnableVertexAttribArray 5u
+                Gl.VertexAttribPointer (5u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint tintOffset)
                 Hl.Assert ()
 
                 // create model buffer
@@ -813,18 +816,18 @@ module PhysicallyBased =
                 let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally modelDataPtr.Free ()
-                Gl.EnableVertexAttribArray 5u
-                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (5u, 1u)
                 Gl.EnableVertexAttribArray 6u
-                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint 0)
                 Gl.VertexAttribDivisor (6u, 1u)
                 Gl.EnableVertexAttribArray 7u
-                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
                 Gl.VertexAttribDivisor (7u, 1u)
                 Gl.EnableVertexAttribArray 8u
-                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
                 Gl.VertexAttribDivisor (8u, 1u)
+                Gl.EnableVertexAttribArray 9u
+                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                Gl.VertexAttribDivisor (9u, 1u)
                 Hl.Assert ()
 
                 // create tex coords offset buffer
@@ -833,9 +836,9 @@ module PhysicallyBased =
                 let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally texCoordsOffsetDataPtr.Free ()
-                Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (9u, 1u)
+                Gl.EnableVertexAttribArray 10u
+                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (10u, 1u)
                 Hl.Assert ()
 
                 // create albedo buffer
@@ -844,9 +847,9 @@ module PhysicallyBased =
                 let albedoDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedoDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally albedoDataPtr.Free ()
-                Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (10u, 1u)
+                Gl.EnableVertexAttribArray 11u
+                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (11u, 1u)
                 Hl.Assert ()
 
                 // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
@@ -855,9 +858,9 @@ module PhysicallyBased =
                 let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally materialDataPtr.Free ()
-                Gl.EnableVertexAttribArray 11u
-                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (11u, 1u)
+                Gl.EnableVertexAttribArray 12u
+                Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (12u, 1u)
                 Hl.Assert ()
 
                 // create height buffer
@@ -866,9 +869,9 @@ module PhysicallyBased =
                 let heightDataPtr = GCHandle.Alloc ([|1.0f|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<single>), heightDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally heightDataPtr.Free ()
-                Gl.EnableVertexAttribArray 12u
-                Gl.VertexAttribPointer (12u, 1, VertexAttribPointerType.Float, false, sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (12u, 1u)
+                Gl.EnableVertexAttribArray 13u
+                Gl.VertexAttribPointer (13u, 1, VertexAttribPointerType.Float, false, sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (13u, 1u)
                 Hl.Assert ()
 
                 // create invert roughness buffer
@@ -877,9 +880,9 @@ module PhysicallyBased =
                 let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally invertRoughnessDataPtr.Free ()
-                Gl.EnableVertexAttribArray 13u
-                Gl.VertexAttribIPointer (13u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
-                Gl.VertexAttribDivisor (13u, 1u)
+                Gl.EnableVertexAttribArray 14u
+                Gl.VertexAttribIPointer (14u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
+                Gl.VertexAttribDivisor (14u, 1u)
                 Hl.Assert ()
 
                 // create index buffer
@@ -902,10 +905,10 @@ module PhysicallyBased =
             else
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 16)
+                let vertices = Array.zeroCreate (vertexData.Length / 19)
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 16
+                    let j = i * 19
                     let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
                     vertices.[i] <- vertex
 

@@ -1084,7 +1084,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let struct (p, t) = positionsAndTexCoordses.[i]
                     let n = normals.[i]
                     let s0 = splat0.[i]
-                    yield! [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f|]|]
+                    yield! [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f; 1.0f; 1.0f; 1.0f|]|]
 
             // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
             let indices = 
