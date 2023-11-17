@@ -73,7 +73,7 @@ type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
 
 /// A height map for 3d terrain.
 [<Syntax
-    ("ImageHeightMap RawHeightMap DynamicHeightMap", "", "", "", "",
+    ("ImageHeightMap RawHeightMap", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison>] HeightMap =
@@ -91,8 +91,8 @@ type [<NoEquality; NoComparison>] Animation =
     { StartTime : GameTime
       LifeTimeOpt : GameTime option
       Name : string
-      Rate : single
       Playback : Playback
+      Rate : single
       Weight : single
       BonesOpt : string array option }
 
