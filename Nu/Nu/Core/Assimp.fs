@@ -162,7 +162,12 @@ module AssimpExtensions =
                                     let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
                                     localTime.Seconds * Constants.Render.AnimatedModelRateScalar % length
                                 | Bounce ->
-                                    localTime.Seconds * Constants.Render.AnimatedModelRateScalar
+                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
+                                    let scaledTime = localTime.Seconds * Constants.Render.AnimatedModelRateScalar
+                                    let remainingTime = scaledTime % length
+                                    if int (scaledTime / length) % 2 = 1
+                                    then length - remainingTime
+                                    else remainingTime
                             let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
                             let rotation = Assimp.InterpolateRotation (localTimeScaled, channel)
                             let scale = Assimp.InterpolateScaling (localTimeScaled, channel)
