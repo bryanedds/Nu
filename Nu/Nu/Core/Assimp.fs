@@ -63,7 +63,7 @@ module Assimp =
     let internal ComputePositionKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec channel.PositionKeyCount do
+        while not found && i < dec channel.PositionKeys.Count do
             if animationTime < single channel.PositionKeys.[inc i].Time then found <- true
             else i <- inc i
         i
@@ -71,7 +71,7 @@ module Assimp =
     let internal ComputeRotationKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec channel.RotationKeyCount do
+        while not found && i < dec channel.RotationKeys.Count do
             if animationTime < single channel.RotationKeys.[inc i].Time then found <- true
             else i <- inc i
         i
@@ -79,7 +79,7 @@ module Assimp =
     let internal ComputeScalingKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec channel.ScalingKeyCount do
+        while not found && i < dec channel.ScalingKeys.Count do
             if animationTime < single channel.ScalingKeys.[inc i].Time then found <- true
             else i <- inc i
         i
@@ -109,7 +109,7 @@ module Assimp =
             let StartRotationQ = channel.RotationKeys.[RotationIndex].Value
             let EndRotationQ = channel.RotationKeys.[NextRotationIndex].Value
             let Result = Assimp.Quaternion.Slerp (StartRotationQ, EndRotationQ, Factor)
-            Result.Normalize () // TODO: consider not normalizing here since we should already have two unit quaternions.
+            Result.Normalize ()
             Result
 
     let internal InterpolateScaling (animationTime : single, channel : Assimp.NodeAnimationChannel) =
