@@ -129,9 +129,9 @@ type RendererInline () =
             | Some _ -> messages3d.Add (RenderStaticModelSurface { Absolute = absolute; ModelMatrix = modelMatrix; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; RenderType = renderType; StaticModel = staticModel; SurfaceIndex = surfaceIndex })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderAnimatedModelFast (localTime, absolute, modelMatrix, presence, insetOpt, materialProperties, animations, animatedModel) =
+        member this.RenderAnimatedModelFast (time, absolute, modelMatrix, presence, insetOpt, materialProperties, animations, animatedModel) =
             match renderersOpt with
-            | Some _ -> messages3d.Add (RenderAnimatedModel { LocalTime = localTime; Absolute = absolute; ModelMatrix = modelMatrix; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Animations = animations; AnimatedModel = animatedModel })
+            | Some _ -> messages3d.Add (RenderAnimatedModel { Time = time; Absolute = absolute; ModelMatrix = modelMatrix; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Animations = animations; AnimatedModel = animatedModel })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.EnqueueMessage2d message =
@@ -272,7 +272,7 @@ type RendererThread () =
             if cachedAnimatedModelMessages.Count = 0 then
                 for _ in 0 .. dec cachedAnimatedModelMessagesCapacity do
                     let animatedModelDescriptor =
-                        { CachedAnimatedModelLocalTime = Unchecked.defaultof<_>
+                        { CachedAnimatedModelTime = Unchecked.defaultof<_>
                           CachedAnimatedModelAbsolute = Unchecked.defaultof<_>
                           CachedAnimatedModelMatrix = Unchecked.defaultof<_>
                           CachedAnimatedModelPresence = Unchecked.defaultof<_>
@@ -470,7 +470,7 @@ type RendererThread () =
                 let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
                 match cachedAnimatedModelMessage with
                 | RenderCachedAnimatedModel cachedMessage ->
-                    cachedMessage.CachedAnimatedModelLocalTime <- ram.LocalTime
+                    cachedMessage.CachedAnimatedModelTime <- ram.Time
                     cachedMessage.CachedAnimatedModelAbsolute <- ram.Absolute
                     cachedMessage.CachedAnimatedModelMatrix <- ram.ModelMatrix
                     cachedMessage.CachedAnimatedModelPresence <- ram.Presence
@@ -512,12 +512,12 @@ type RendererThread () =
                 messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
-        member this.RenderAnimatedModelFast (gameTime, absolute, modelMatrix, presence, insetOpt, materialProperties, animations, animatedModel) =
+        member this.RenderAnimatedModelFast (time, absolute, modelMatrix, presence, insetOpt, materialProperties, animations, animatedModel) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
             match cachedAnimatedModelMessage with
             | RenderCachedAnimatedModel cachedMessage ->
-                cachedMessage.CachedAnimatedModelLocalTime <- gameTime
+                cachedMessage.CachedAnimatedModelTime <- time
                 cachedMessage.CachedAnimatedModelAbsolute <- absolute
                 cachedMessage.CachedAnimatedModelMatrix <- modelMatrix
                 cachedMessage.CachedAnimatedModelPresence <- presence
