@@ -157,15 +157,15 @@ module AssimpExtensions =
                             let localTimeScaled =
                                 match animation.Playback with
                                 | Once ->
-                                    localTime.Seconds * Constants.Render.AnimatedModelRateScalar
+                                    localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
                                 | Loop ->
                                     let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
-                                    localTime.Seconds * Constants.Render.AnimatedModelRateScalar % length
+                                    localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
                                 | Bounce ->
                                     let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
-                                    let scaledTime = localTime.Seconds * Constants.Render.AnimatedModelRateScalar
-                                    let remainingTime = scaledTime % length
-                                    if int (scaledTime / length) % 2 = 1
+                                    let localTimeScaled = localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
+                                    let remainingTime = localTimeScaled % length
+                                    if int (localTimeScaled / length) % 2 = 1
                                     then length - remainingTime
                                     else remainingTime
                             let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
