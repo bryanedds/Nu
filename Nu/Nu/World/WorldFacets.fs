@@ -2684,7 +2684,7 @@ module AnimatedModelFacetModule =
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
-             define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Hips"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BonesOpt = None }|]
+             define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BonesOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
         override this.Render (entity, world) =
