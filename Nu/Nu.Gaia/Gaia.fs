@@ -419,6 +419,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
+            propertyValueStrPrevious <- ""
             selectedScreen <- World.getSelectedScreen world
             if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
@@ -441,6 +442,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
+            propertyValueStrPrevious <- ""
             selectedScreen <- World.getSelectedScreen world
             if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
