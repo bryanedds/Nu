@@ -2529,6 +2529,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
                         if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
                             snapshot ()
+                            if not (Path.HasExtension groupFileDialogState.FilePath) then groupFileDialogState.FilePath <- groupFileDialogState.FilePath + ".nugroup"
                             showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
 
                     // rename group dialog
