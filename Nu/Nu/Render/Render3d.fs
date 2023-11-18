@@ -1064,27 +1064,35 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match splatMaterial.SplatMap with
                     | RgbaMap rgbaMap ->
                         match GlRenderer3d.tryGetImageData rgbaMap renderer with
-                        | Some (bytes, metadata) ->
-                            // check that the image size matches that of the heightmap
-                            if metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY then
-                                bytes |>
-                                Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
-                                Array.chunkBySize 4 |>
-                                // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                                // TODO: confirm it is the same for SDL (linux).
-                                Array.map (fun x -> v4 x.[2] x.[1] x.[0] x.[3])
-                            else Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
-                        | None -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
+                        | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY ->
+                            bytes |>
+                            Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
+                            Array.chunkBySize 4 |>
+                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                            // TODO: confirm it is the same for SDL (linux).
+                            Array.map (fun x -> v4 x.[2] x.[1] x.[0] x.[3])
+                        | _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
                     | RedsMap _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
                 | FlatMaterial _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4 1.0f 0.0f 0.0f 0.0f)
+
+            // compute tint
+            let tint =
+                match GlRenderer3d.tryGetImageData geometryDescriptor.TintImage renderer with
+                | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY ->
+                    bytes |>
+                    Array.map (fun x -> single x / single Byte.MaxValue) |>
+                    Array.chunkBySize 4 |>
+                    Array.map (fun x -> v3 x.[2] x.[1] x.[0])
+                | _ -> Array.init (resolutionX * resolutionY) (fun _ -> v3One)
 
             // compute vertices
             let vertices =
                 [|for i in 0 .. dec positionsAndTexCoordses.Length do
-                    let struct (p, t) = positionsAndTexCoordses.[i]
+                    let struct (p, tc) = positionsAndTexCoordses.[i]
                     let n = normals.[i]
                     let s0 = splat0.[i]
-                    yield! [|p.X; p.Y; p.Z; t.X; t.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f; 1.0f; 1.0f; 1.0f|]|]
+                    let t = tint.[i]
+                    yield! [|p.X; p.Y; p.Z; tc.X; tc.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f; t.X; t.Y; t.Z|]|]
 
             // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
             let indices = 

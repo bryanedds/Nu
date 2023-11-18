@@ -42,6 +42,7 @@ out vec2 texCoordsOut;
 out vec3 normalOut;
 out vec4 splat0Out;
 out vec4 splat1Out;
+out vec3 tintOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
@@ -61,6 +62,7 @@ void main()
     invertRoughnessOut = invertRoughness;
     splat0Out = splat0;
     splat1Out = splat1;
+    tintOut = tint;
     gl_Position = projection * view * positionOut;
 }
 
@@ -83,6 +85,7 @@ in vec2 texCoordsOut;
 in vec3 normalOut;
 in vec4 splat0Out;
 in vec4 splat1Out;
+in vec3 tintOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
@@ -136,7 +139,7 @@ void main()
     }
 
     // populate albedo, material, and normalAndHeight
-    albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * albedoOut.rgb;
+    albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4(0.0, (invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g, ambientOcclusionBlend * materialOut.b, 0.0);
     normalAndHeight.xyz = normalize(toWorld * (normalBlend * 2.0 - 1.0));
     normalAndHeight.a = height;
