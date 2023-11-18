@@ -79,6 +79,9 @@ module StaticSpriteFacetModule =
 module AnimatedSpriteFacetModule =
 
     type Entity with
+        member this.GetStartTime world : GameTime = this.Get (nameof this.StartTime) world
+        member this.SetStartTime (value : GameTime) world = this.Set (nameof this.StartTime) value world
+        member this.StartTime = lens (nameof this.StartTime) this this.GetStartTime this.SetStartTime
         member this.GetCelSize world : Vector2 = this.Get (nameof this.CelSize) world
         member this.SetCelSize (value : Vector2) world = this.Set (nameof this.CelSize) value world
         member this.CelSize = lens (nameof this.CelSize) this this.GetCelSize this.SetCelSize
@@ -103,13 +106,12 @@ module AnimatedSpriteFacetModule =
         inherit Facet (false)
 
         static let getSpriteInsetOpt (entity : Entity) world =
+            let startTime = entity.GetStartTime world
             let celCount = entity.GetCelCount world
             let celRun = entity.GetCelRun world
             if celCount <> 0 && celRun <> 0 then
-                let cel =
-                    match entity.GetAnimationDelay world with
-                    | UpdateTime delay -> int (world.UpdateTime / delay) % celCount * entity.GetAnimationStride world
-                    | ClockTime delay -> int (world.ClockTime / delay) % celCount * entity.GetAnimationStride world
+                let localTime = world.GameTime - startTime
+                let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
                 let celSize = entity.GetCelSize world
                 let celI = cel % celRun
                 let celJ = cel / celRun
@@ -120,7 +122,8 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.CelSize (Vector2 (12.0f, 12.0f))
+            [define Entity.StartTime GameTime.zero
+             define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
@@ -2682,7 +2685,8 @@ module AnimatedModelFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.InsetOpt None
+            [define Entity.StartTime GameTime.zero
+             define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BonesOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
@@ -2692,11 +2696,13 @@ module AnimatedModelFacetModule =
             let absolute = transform.Absolute
             let affineMatrixOffset = transform.AffineMatrixOffset
             let presence = transform.Presence
+            let startTime = entity.GetStartTime world
+            let localTime = world.GameTime - startTime
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            World.renderAnimatedModelFast (world.GameTime, absolute, &affineMatrixOffset, presence, insetOpt, &properties, animations, animatedModel, world)
+            World.renderAnimatedModelFast (localTime, absolute, &affineMatrixOffset, presence, insetOpt, &properties, animations, animatedModel, world)
 
         override this.GetQuickSize (entity, world) =
             let animatedModel = entity.GetAnimatedModel world

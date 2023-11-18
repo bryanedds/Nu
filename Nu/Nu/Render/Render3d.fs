@@ -238,7 +238,7 @@ and [<NoEquality; NoComparison>] CachedStaticModelSurfaceMessage =
 
 /// An internally cached animated model used to reduce GC promotion or pressure.
 and [<NoEquality; NoComparison>] CachedAnimatedModelMessage =
-    { mutable CachedAnimatedModelGameTime : GameTime
+    { mutable CachedAnimatedModelLocalTime : GameTime
       mutable CachedAnimatedModelAbsolute : bool
       mutable CachedAnimatedModelMatrix : Matrix4x4
       mutable CachedAnimatedModelPresence : Presence
@@ -350,7 +350,7 @@ and [<ReferenceEquality>] RenderStaticModels =
       StaticModel : StaticModel AssetTag }
 
 and [<ReferenceEquality>] RenderAnimatedModel =
-    { GameTime : GameTime
+    { LocalTime : GameTime
       Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -360,7 +360,7 @@ and [<ReferenceEquality>] RenderAnimatedModel =
       AnimatedModel : AnimatedModel AssetTag }
 
 and [<ReferenceEquality>] RenderAnimatedModels =
-    { GameTime : GameTime
+    { LocalTime : GameTime
       Absolute : bool
       Animations : Animation array
       AnimatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
@@ -1271,7 +1271,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | _ -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
     static member private categorizeAnimatedModel
-        (gameTime : GameTime,
+        (localTime : GameTime,
          skipCulling : bool,
          frustumEnclosed : Frustum,
          frustumExposed : Frustum,
@@ -1314,17 +1314,17 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                             for mesh in scene.Meshes do
                                 let bones =
-                                    mesh.AnimateBones (gameTime, animations, scene)
+                                    mesh.AnimateBones (localTime, animations, scene)
                                 if modelAbsolute then
                                     let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (gameTime, animations, surface), &renderTasks)
+                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (localTime, animations, surface), &renderTasks)
                                     then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (gameTime, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (localTime, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
                                 else
                                     let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (gameTime, animations, surface), &renderTasks)
+                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (localTime, animations, surface), &renderTasks)
                                     then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (gameTime, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (localTime, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
 
                         | Some _ | None -> ()
 
@@ -2080,13 +2080,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeAnimatedModel (rsm.GameTime, skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.Animations, rsm.AnimatedModel, renderer)
+                GlRenderer3d.categorizeAnimatedModel (rsm.LocalTime, skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.Animations, rsm.AnimatedModel, renderer)
             | RenderAnimatedModels rams ->
                 for (modelMatrix, presence, insetOpt, properties) in rams.AnimatedModels do
                     let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeAnimatedModel (rams.GameTime, skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rams.Absolute, &modelMatrix, presence, &insetOpt, &properties, rams.Animations, rams.AnimatedModel, renderer)
+                    GlRenderer3d.categorizeAnimatedModel (rams.LocalTime, skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rams.Absolute, &modelMatrix, presence, &insetOpt, &properties, rams.Animations, rams.AnimatedModel, renderer)
             | RenderCachedAnimatedModel camm ->
-                GlRenderer3d.categorizeAnimatedModel (camm.CachedAnimatedModelGameTime, skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, camm.CachedAnimatedModelAbsolute, &camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelAnimations, camm.CachedAnimatedModel, renderer)
+                GlRenderer3d.categorizeAnimatedModel (camm.CachedAnimatedModelLocalTime, skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, camm.CachedAnimatedModelAbsolute, &camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelAnimations, camm.CachedAnimatedModel, renderer)
 
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Absolute, rt.TerrainDescriptor, renderer)
