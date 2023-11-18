@@ -154,10 +154,10 @@ module AssimpExtensions =
                         let animationAssimp = scene.Animations.[animationId]
                         match Assimp.TryGetAnimationChannel (animationAssimp, name) with
                         | Some channel ->
-                            let localMilliseconds = localTime.Milliseconds
-                            let translation = Assimp.InterpolatePosition (localMilliseconds, channel)
-                            let rotation = Assimp.InterpolateRotation (localMilliseconds, channel)
-                            let scale = Assimp.InterpolateScaling (localMilliseconds, channel)
+                            let localTimeScaled = localTime.Seconds * 25.0f // some arbitrary scale that mixamo fbx exported from blender seems to like.
+                            let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
+                            let rotation = Assimp.InterpolateRotation (localTimeScaled, channel)
+                            let scale = Assimp.InterpolateScaling (localTimeScaled, channel)
                             Some (translation, rotation, scale, animation.Weight)
                         | None -> None
                     | (false, _) -> None|]
@@ -206,6 +206,10 @@ module AssimpExtensions =
                 let animation = scene.Animations.[animationId]
                 let animationName = animation.Name
                 animationIds.[animationName] <- animationId
+
+            // log if there are more bones than we currently support
+            if this.Bones.Count >= Constants.Render.BonesMax then
+                Log.info ("Assimp mesh bone count exceeded currently supported number of bones for mesh '" + this.Name + "' in scene '" + scene.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []
