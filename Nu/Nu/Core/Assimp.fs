@@ -21,7 +21,7 @@ type [<StructuralEquality; NoComparison>] Animation =
       Playback : Playback
       Rate : single
       Weight : single
-      BonesOpt : string Set option }
+      BoneFilterOpt : string Set option }
 
 /// Additional assimp functionality.
 /// Intentionally prevents the original Assimp namespace from being opened.
