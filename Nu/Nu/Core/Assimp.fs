@@ -154,10 +154,10 @@ module AssimpExtensions =
                         let animationAssimp = scene.Animations.[animationId]
                         match Assimp.TryGetAnimationChannel (animationAssimp, name) with
                         | Some channel ->
-                            let localMilliseconds = localTime.Milliseconds
-                            let translation = Assimp.InterpolatePosition (localMilliseconds, channel)
-                            let rotation = Assimp.InterpolateRotation (localMilliseconds, channel)
-                            let scale = Assimp.InterpolateScaling (localMilliseconds, channel)
+                            let localTimeScaled = localTime.Seconds * 25.0f // some arbitrary scale that mixamo fbx exported from blender seems to like.
+                            let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
+                            let rotation = Assimp.InterpolateRotation (localTimeScaled, channel)
+                            let scale = Assimp.InterpolateScaling (localTimeScaled, channel)
                             Some (translation, rotation, scale, animation.Weight)
                         | None -> None
                     | (false, _) -> None|]
