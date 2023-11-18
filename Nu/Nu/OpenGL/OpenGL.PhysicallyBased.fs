@@ -603,15 +603,18 @@ module PhysicallyBased =
                     for weightIndex in 0 .. dec weightsCount do
                         let vertexId = weights.[weightIndex].VertexID
                         let weight = weights.[weightIndex].Weight
-                        let mutable found = false
-                        let mutable i = 0
-                        while not found && i < Constants.Render.BonesInfluenceMax do
-                            let v = vertexId * 16
-                            if not found && vertexData.[v+8+i] < 0.0f then
-                                vertexData.[v+8+i] <- single boneIndex
-                                vertexData.[v+12+i] <- weight
-                                found <- true
-                            else i <- inc i
+                        if weight > 0.0f then
+                            let mutable found = false
+                            let mutable i = 0
+                            while not found && i < Constants.Render.BonesInfluenceMax do
+                                let v = vertexId * 16
+                                if vertexData.[v+8+i] = single boneIndex then // already found
+                                    found <- true
+                                elif vertexData.[v+8+i] < 0.0f then // found free slot
+                                    vertexData.[v+8+i] <- single boneIndex
+                                    vertexData.[v+12+i] <- weight
+                                    found <- true
+                                else i <- inc i
 
                 // populate triangle index data
                 let indexList = SList.make ()
