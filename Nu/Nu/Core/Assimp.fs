@@ -157,12 +157,12 @@ module AssimpExtensions =
                             let localTimeScaled =
                                 match animation.Playback with
                                 | Once ->
-                                    localTime.Seconds * 30.0f // some arbitrary scale that mixamo fbx exported from blender seems to like.
+                                    localTime.Seconds * Constants.Render.AnimatedModelRateScalar
                                 | Loop ->
                                     let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
-                                    localTime.Seconds * 30.0f % length // some arbitrary scale that mixamo fbx exported from blender seems to like.
+                                    localTime.Seconds * Constants.Render.AnimatedModelRateScalar % length
                                 | Bounce ->
-                                    localTime.Seconds * 30.0f
+                                    localTime.Seconds * Constants.Render.AnimatedModelRateScalar
                             let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
                             let rotation = Assimp.InterpolateRotation (localTimeScaled, channel)
                             let scale = Assimp.InterpolateScaling (localTimeScaled, channel)
