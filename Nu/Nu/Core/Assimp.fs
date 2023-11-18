@@ -207,6 +207,10 @@ module AssimpExtensions =
                 let animationName = animation.Name
                 animationIds.[animationName] <- animationId
 
+            // log if there are more bones than we currently support
+            if this.Bones.Count >= Constants.Render.BonesMax then
+                Log.info ("Assimp mesh bone count exceeded currently supported number of bones for mesh '" + this.Name + "' in scene '" + scene.Name + "'.")
+
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []
             let boneInfos = Array.zeroCreate<Assimp.BoneInfo> this.Bones.Count
