@@ -2685,7 +2685,8 @@ module AnimatedModelFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.StartTime GameTime.zero
+            [define Entity.Overflow 2.0f // extra room for extended verts in animation.
+             define Entity.StartTime GameTime.zero
              define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
