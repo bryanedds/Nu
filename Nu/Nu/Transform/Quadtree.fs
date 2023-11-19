@@ -217,7 +217,7 @@ module Quadtree =
             { mutable ElementsModified : bool // OPTIMIZATION: short-circuit queries if tree has never had its elements modified.
               Leaves : Dictionary<Vector2, 'e Quadnode>
               LeafSize : Vector2 // TODO: consider keeping the inverse of this to avoid divides.
-              Omnipresent : 'e Quadelement HashSet
+              Ubiquitous : 'e Quadelement HashSet
               Node : 'e Quadnode
               Depth : int
               Bounds : Box2 }
@@ -234,14 +234,14 @@ module Quadtree =
     /// Add an element with the given presence and bounds to the tree.
     let addElement (presence : Presence) bounds element tree =
         tree.ElementsModified <- true
-        if presence.OmnipresentType then
-            tree.Omnipresent.Remove element |> ignore
-            tree.Omnipresent.Add element |> ignore
+        if presence.ImposterType || presence.OmnipresentType then
+            tree.Ubiquitous.Remove element |> ignore
+            tree.Ubiquitous.Add element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds &tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is being added redundantly."
-                tree.Omnipresent.Remove element |> ignore
-                tree.Omnipresent.Add element |> ignore
+                tree.Ubiquitous.Remove element |> ignore
+                tree.Ubiquitous.Add element |> ignore
             else
                 let node = findNode bounds tree
                 Quadnode.addElement bounds &element &node
@@ -249,12 +249,12 @@ module Quadtree =
     /// Remove an element with the given presence and bounds from the tree.
     let removeElement (presence : Presence) bounds element tree =
         tree.ElementsModified <- true
-        if presence.OmnipresentType then 
-            tree.Omnipresent.Remove element |> ignore
+        if presence.ImposterType || presence.OmnipresentType then 
+            tree.Ubiquitous.Remove element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds &tree.Node) then
                 Log.info "Element is outside the quadtree's containment area or is not present for removal."
-                tree.Omnipresent.Remove element |> ignore
+                tree.Ubiquitous.Remove element |> ignore
             else
                 let node = findNode bounds tree
                 Quadnode.removeElement bounds &element &node
@@ -262,8 +262,8 @@ module Quadtree =
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
         tree.ElementsModified <- true
-        let wasInNode = not presenceOld.OmnipresentType && Quadnode.isIntersectingBounds boundsOld &tree.Node
-        let isInNode = not presenceNew.OmnipresentType && Quadnode.isIntersectingBounds boundsNew &tree.Node
+        let wasInNode = not presenceOld.ImposterType && presenceOld.OmnipresentType && Quadnode.isIntersectingBounds boundsOld &tree.Node
+        let isInNode = not presenceNew.ImposterType && presenceNew.OmnipresentType && Quadnode.isIntersectingBounds boundsNew &tree.Node
         if wasInNode then
             if isInNode then
                 let nodeOld = findNode boundsOld tree
@@ -274,56 +274,50 @@ module Quadtree =
                 else Quadnode.updateElement boundsOld boundsNew &element &nodeOld
             else
                 Quadnode.removeElement boundsOld &element &tree.Node |> ignore
-                tree.Omnipresent.Remove element |> ignore
-                tree.Omnipresent.Add element |> ignore
+                tree.Ubiquitous.Remove element |> ignore
+                tree.Ubiquitous.Add element |> ignore
         else
             if isInNode then
-                tree.Omnipresent.Remove element |> ignore
+                tree.Ubiquitous.Remove element |> ignore
                 Quadnode.addElement boundsNew &element &tree.Node
             else
-                tree.Omnipresent.Remove element |> ignore
-                tree.Omnipresent.Add element |> ignore
-
-    /// Get all of the omnipresent elements in a tree.
-    let getElementsOmnipresent set tree =
-        if tree.ElementsModified then
-            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
-        else Seq.empty
+                tree.Ubiquitous.Remove element |> ignore
+                tree.Ubiquitous.Add element |> ignore
 
     /// Get all of the elements in a tree that are in a node intersected by the given point.
     let getElementsAtPoint point set tree =
         if tree.ElementsModified then
             let node = findNode (box2 point v2Zero) tree
             Quadnode.getElementsAtPoint point set &node
-            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInBounds bounds set tree =
         if tree.ElementsModified then
             Quadnode.getElementsInBounds bounds set &tree.Node
-            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInView bounds set tree =
         if tree.ElementsModified then
             Quadnode.getElementsInBounds bounds set &tree.Node
-            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInPlay bounds set tree =
         if tree.ElementsModified then
             Quadnode.getElementsInBounds bounds set &tree.Node
-            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     /// Get all of the elements in a tree.
     let getElements (set : _ HashSet) tree =
         if tree.ElementsModified then
             Quadnode.getElements set &tree.Node
-            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Quadelement IEnumerable
+            new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
         else Seq.empty
 
     /// Get the size of the tree's leaves.
@@ -353,7 +347,7 @@ module Quadtree =
         { ElementsModified = false
           Leaves = leaves
           LeafSize = leafSize
-          Omnipresent = HashSet comparer
+          Ubiquitous = HashSet comparer
           Node = Quadnode.make<'e> comparer depth bounds leaves
           Depth = depth
           Bounds = bounds }

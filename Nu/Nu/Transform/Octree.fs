@@ -39,8 +39,6 @@ module Octelement =
         member this.Enclosed = this.Presence_.EnclosedType
         member this.Exposed = this.Presence_.ExposedType
         member this.Imposter = this.Presence_.ImposterType
-        member this.Prominent = this.Presence_.ProminentType
-        member this.Omnipresent = this.Presence_.OmnipresentType
         member this.Presence = this.Presence_
         member this.Bounds = this.Bounds_
         member this.Entry = this.Entry_
@@ -217,15 +215,11 @@ module internal Octnode =
         | ValueRight elements ->
             for element in elements do
                 if enclosed then
-                    if element.Enclosed || element.Exposed || element.Prominent then
+                    if element.Enclosed || element.Exposed then
                         if frustum.Intersects element.Bounds then
                             set.Add element |> ignore
                 elif exposed then
-                    if element.Exposed || element.Prominent then
-                        if frustum.Intersects element.Bounds then
-                            set.Add element |> ignore
-                elif imposter then
-                    if element.Imposter || element.Prominent then
+                    if element.Exposed then
                         if frustum.Intersects element.Bounds then
                             set.Add element |> ignore
 
@@ -355,6 +349,7 @@ module Octree =
             { mutable ElementsModified : bool // OPTIMIZATION: short-circuit queries if tree has never had its elements modified.
               Leaves : Dictionary<Vector3, 'e Octnode>
               LeafSize : Vector3 // TODO: consider keeping the inverse of this to avoid divides.
+              Imposter : 'e Octelement HashSet
               Omnipresent : 'e Octelement HashSet
               Node : 'e Octnode
               Depth : int
@@ -372,7 +367,10 @@ module Octree =
     /// Add an element with the given presence and bounds to the tree.
     let addElement (presence : Presence) bounds (element : 'e Octelement) tree =
         tree.ElementsModified <- true
-        if presence.OmnipresentType then
+        if presence.ImposterType then
+            tree.Imposter.Remove element |> ignore
+            tree.Imposter.Add element |> ignore
+        elif presence.OmnipresentType then
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
         else
@@ -387,7 +385,9 @@ module Octree =
     /// Remove an element with the given presence and bounds from the tree.
     let removeElement (presence : Presence) bounds (element : 'e Octelement) tree =
         tree.ElementsModified <- true
-        if presence.OmnipresentType then 
+        if presence.ImposterType then 
+            tree.Imposter.Remove element |> ignore
+        elif presence.OmnipresentType then 
             tree.Omnipresent.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds &tree.Node) then
@@ -400,8 +400,8 @@ module Octree =
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
         tree.ElementsModified <- true
-        let wasInNode = not presenceOld.OmnipresentType && Octnode.isIntersectingBox boundsOld &tree.Node
-        let isInNode = not presenceNew.OmnipresentType && Octnode.isIntersectingBox boundsNew &tree.Node
+        let wasInNode = not presenceOld.ImposterType && not presenceOld.OmnipresentType && Octnode.isIntersectingBox boundsOld &tree.Node
+        let isInNode = not presenceNew.ImposterType && not presenceNew.OmnipresentType && Octnode.isIntersectingBox boundsNew &tree.Node
         if wasInNode then
             if isInNode then
                 let nodeOld = findNode boundsOld tree
@@ -412,27 +412,24 @@ module Octree =
                 else Octnode.updateElement boundsOld boundsNew &element &nodeNew
             else
                 Octnode.removeElement boundsOld &element &tree.Node |> ignore
-                tree.Omnipresent.Remove element |> ignore
-                tree.Omnipresent.Add element |> ignore
+                if presenceOld.ImposterType then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
+                if presenceNew.ImposterType then tree.Imposter.Add element |> ignore else tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
-                tree.Omnipresent.Remove element |> ignore
+                if presenceOld.ImposterType then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
                 Octnode.addElement boundsNew &element &tree.Node
             else
-                tree.Omnipresent.Remove element |> ignore
-                tree.Omnipresent.Add element |> ignore
-
-    /// Get all of the omnipresent elements in a tree.
-    let getElementsOmnipresent (set : _ HashSet) tree =
-        if tree.ElementsModified
-        then new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
-        else Seq.empty
+                if presenceOld.ImposterType then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
+                if presenceNew.ImposterType then tree.Imposter.Add element |> ignore else tree.Omnipresent.Add element |> ignore
 
     /// Get all of the elements in a tree that are in a node intersected by the given point.
     let getElementsAtPoint point (set : _ HashSet) tree =
         if tree.ElementsModified then
             let node = findNode (box3 point v3Zero) tree
             Octnode.getElementsAtPoint point set &node
+            for imposter in tree.Imposter do
+                if (let ib = imposter.Bounds in ib.Intersects point) then
+                    set.Add imposter |> ignore<bool>
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
@@ -440,6 +437,9 @@ module Octree =
     let getElementsInBounds bounds (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInBox bounds set &tree.Node
+            for imposter in tree.Imposter do
+                if bounds.Intersects imposter.Bounds then
+                    set.Add imposter |> ignore<bool>
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
@@ -447,6 +447,9 @@ module Octree =
     let getElementsInFrustum frustum (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInFrustum frustum set &tree.Node
+            for imposter in tree.Imposter do
+                if frustum.Intersects imposter.Bounds then
+                    set.Add imposter |> ignore<bool>
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
@@ -454,6 +457,9 @@ module Octree =
     let getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox (set : _ HashSet) tree =
         if tree.ElementsModified then
             Octnode.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set &tree.Node
+            for imposter in tree.Imposter do
+                if frustumImposter.Intersects imposter.Bounds then
+                    set.Add imposter |> ignore<bool>
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
 
@@ -519,6 +525,7 @@ module Octree =
         { ElementsModified = false
           Leaves = leaves
           LeafSize = leafSize
+          Imposter = HashSet elementComparer
           Omnipresent = HashSet elementComparer
           Node = Octnode.make<'e> elementComparer depth bounds leaves
           Depth = depth
