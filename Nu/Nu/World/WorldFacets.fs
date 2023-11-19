@@ -2552,10 +2552,12 @@ module StaticModelFacetModule =
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
-            let staticModelMetadata = Metadata.getStaticModelMetadata staticModel
-            let bounds = staticModelMetadata.Bounds
-            let boundsExtended = bounds.Combine bounds.Mirror
-            boundsExtended.Size
+            match Metadata.tryGetStaticModelMetadata staticModel with
+            | Some staticModelMetadata ->
+                let bounds = staticModelMetadata.Bounds
+                let boundsExtended = bounds.Combine bounds.Mirror
+                boundsExtended.Size
+            | None -> base.GetQuickSize (entity, world)
 
         override this.RayCast (ray, entity, world) =
             let affineMatrixOffset = entity.GetAffineMatrixOffset world
@@ -2634,13 +2636,15 @@ module StaticModelSurfaceFacetModule =
                 World.renderStaticModelSurfaceFast (absolute, &affineMatrixOffset, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
 
         override this.GetQuickSize (entity, world) =
-            let staticModelMetadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
-            let surfaceIndex = entity.GetSurfaceIndex world
-            if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
-                let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
-                let boundsExtended = bounds.Combine bounds.Mirror
-                boundsExtended.Size
-            else Constants.Engine.EntitySize3dDefault
+            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
+            | Some staticModelMetadata ->
+                let surfaceIndex = entity.GetSurfaceIndex world
+                if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
+                    let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
+                    let boundsExtended = bounds.Combine bounds.Mirror
+                    boundsExtended.Size
+                else base.GetQuickSize (entity, world)
+            | None -> base.GetQuickSize (entity, world)
 
         override this.RayCast (ray, entity, world) =
             let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrixOffset world) |> snd)
@@ -2710,10 +2714,12 @@ module AnimatedModelFacetModule =
 
         override this.GetQuickSize (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
-            let animatedModelMetadata = Metadata.getAnimatedModelMetadata animatedModel
-            let bounds = animatedModelMetadata.Bounds
-            let boundsExtended = bounds.Combine bounds.Mirror
-            boundsExtended.Size
+            match Metadata.tryGetAnimatedModelMetadata animatedModel with
+            | Some animatedModelMetadata ->
+                let bounds = animatedModelMetadata.Bounds
+                let boundsExtended = bounds.Combine bounds.Mirror
+                boundsExtended.Size
+            | None -> base.GetQuickSize (entity, world)
 
         override this.RayCast (ray, entity, world) =
             let affineMatrixOffset = entity.GetAffineMatrixOffset world
@@ -2781,15 +2787,19 @@ module TerrainFacetModule =
         member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
         member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
 
-        member this.GetTerrainResolution world =
+        member this.TryGetTerrainResolution world =
             match this.GetHeightMap world with
-            | ImageHeightMap map -> Metadata.getTextureSize map
-            | RawHeightMap map -> map.Resolution
+            | ImageHeightMap map ->
+                match Metadata.tryGetTextureSize map with
+                | Some textureSize -> Some textureSize
+                | None -> None
+            | RawHeightMap map -> Some map.Resolution
 
-        member this.GetTerrainQuadSize world =
+        member this.TryGetTerrainQuadSize world =
             let bounds = this.GetBounds world
-            let resolution = this.GetTerrainResolution world
-            v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y)
+            match this.TryGetTerrainResolution world with
+            | Some resolution -> Some (v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y))
+            | None -> None
 
     /// Augments an entity with a rigid 3d terrain.
     type TerrainFacet () =
@@ -2854,3 +2864,8 @@ module TerrainFacetModule =
                     { Absolute = absolute
                       TerrainDescriptor = terrainDescriptor })
                 world
+
+        override this.GetQuickSize (entity, world) =
+            match entity.TryGetTerrainResolution world with
+            | Some resolution -> v3 (single resolution.X) 128.0f (single resolution.Y)
+            | None -> v3 1024.0f 128.0f 1024.0f
