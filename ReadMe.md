@@ -53,9 +53,6 @@ Efficient, detailed 3D with deferred physically-based rendering.
 ![image](https://user-images.githubusercontent.com/1625560/235253590-2f86a584-478a-4406-8df9-3a1e7daafcbe.png)
 Local light probes allow for efficient localized reflection and image-based lighting.
 
-![image](https://user-images.githubusercontent.com/1625560/235415153-726d6354-8a6d-4e82-8d30-fb23819e2786.png)
-Another 3D scene screenshot from editor.
-
 ![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
 And another 3D scene screenshot from editor.
 
