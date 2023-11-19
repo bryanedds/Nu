@@ -533,8 +533,7 @@ module AnimatedModelDispatcherModule =
             [typeof<AnimatedModelFacet>]
 
         static member Properties =
-            [define Entity.Overflow 1.5f // extra room for extended verts in animation.
-             define Entity.InsetOpt None
+            [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
