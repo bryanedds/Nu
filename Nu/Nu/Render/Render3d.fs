@@ -1068,7 +1068,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
 
             // compute splat
-            let s : single [,] = Array2D.zeroCreate positionsAndTexCoordses.Length 8
+            let availableChannels = 8
+            let s : single [,] = Array2D.zeroCreate positionsAndTexCoordses.Length availableChannels
 
             match geometryDescriptor.Material with
             | SplatMaterial splatMaterial ->
@@ -1086,7 +1087,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             s.[i,3] <- (single bytes.[i * 4 + 3]) / (single Byte.MaxValue)
                     | _ -> () // black terrain to clearly indicate error
                 | RedsMap reds ->
-                    for i in 0 .. dec reds.Length do
+                    for i in 0 .. dec (min reds.Length availableChannels) do
                         match GlRenderer3d.tryGetImageData reds.[i] renderer with
                         | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                             for j in 0 .. dec positionsAndTexCoordses.Length do
