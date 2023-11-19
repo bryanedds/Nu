@@ -2592,7 +2592,9 @@ module StaticModelFacetModule =
                     | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
                     | None -> boundsOpt <- Some bounds2
                 match boundsOpt with
-                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrixOffset world))
+                | Some bounds ->
+                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
+                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
                 | None -> None
             | None -> None
 
@@ -2664,7 +2666,8 @@ module StaticModelSurfaceFacetModule =
                 if surfaceIndex < staticModelMetadata.Surfaces.Length then
                     let surface = staticModelMetadata.Surfaces.[surfaceIndex]
                     let bounds = surface.PhysicallyBasedGeometry.Bounds
-                    Some (bounds.Transform (entity.GetAffineMatrixOffset world))
+                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
+                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
                 else None
             | None -> None
 
@@ -2685,7 +2688,7 @@ module AnimatedModelFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.Overflow 2.0f // extra room for extended verts in animation.
+            [define Entity.Overflow 1.5f // extra room for extended verts in animation.
              define Entity.StartTime GameTime.zero
              define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
@@ -2749,7 +2752,9 @@ module AnimatedModelFacetModule =
                     | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
                     | None -> boundsOpt <- Some bounds2
                 match boundsOpt with
-                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrixOffset world))
+                | Some bounds ->
+                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
+                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
                 | None -> None
             | None -> None
 
