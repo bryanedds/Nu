@@ -70,7 +70,7 @@ void main()
 #version 410 core
 
 const float GAMMA = 2.2;
-const int TERRAIN_LAYERS_MAX = 4;
+const int TERRAIN_LAYERS_MAX = 6;
 
 uniform vec3 eyeCenter;
 uniform int layersCount;
@@ -115,6 +115,7 @@ void main()
     // compute height blend and height
     float heightBlend = 0.0;
     for (int i = 0; i < layersCount; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splat0Out[i];
+    for (int i = 4; i < layersCount; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splat1Out[i - 4];
     float height = heightBlend * heightOut;
 
     // compute tex coords in parallax space
@@ -129,6 +130,7 @@ void main()
     float roughnessBlend = 0.0;
     float ambientOcclusionBlend = 0.0;
     vec3 normalBlend = vec3(0.0);
+    
     for (int i = 0; i < layersCount; ++i)
     {
         albedoBlend += texture(albedoTextures[i], texCoords) * splat0Out[i];
@@ -136,6 +138,15 @@ void main()
         roughnessBlend += (roughness.a == 1.0f ? roughness.g : roughness.a) * splat0Out[i];
         ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * splat0Out[i];
         normalBlend += texture(normalTextures[i], texCoords).xyz * splat0Out[i];
+    }
+    
+    for (int i = 4; i < layersCount; ++i)
+    {
+        albedoBlend += texture(albedoTextures[i], texCoords) * splat1Out[i - 4];
+        vec4 roughness = texture(roughnessTextures[i], texCoords);
+        roughnessBlend += (roughness.a == 1.0f ? roughness.g : roughness.a) * splat1Out[i - 4];
+        ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * splat1Out[i - 4];
+        normalBlend += texture(normalTextures[i], texCoords).xyz * splat1Out[i - 4];
     }
 
     // populate albedo, material, and normalAndHeight

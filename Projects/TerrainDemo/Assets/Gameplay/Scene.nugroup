@@ -29,7 +29,7 @@
         [[Gameplay Texture1Albedo] [Gameplay Texture1Roughness] [Gameplay Texture1Ao] [Gameplay Texture1Normal] [Gameplay Texture1Height]]
         [[Gameplay Texture0Albedo] [Gameplay Texture0Roughness] [Gameplay Texture0Ao] [Gameplay Texture0Normal] [Gameplay Texture0Height]]
         [[Gameplay Texture3Albedo] [Gameplay Texture3Roughness] [Gameplay Texture3Ao] [Gameplay Texture3Normal] [Gameplay Texture3Height]]]
-       [RgbaMap [Gameplay TwoKSplatMap]]]]]
+       [RedsMap [[Gameplay TwoKSplatMap0] [Gameplay TwoKSplatMap1] [Gameplay TwoKSplatMap2] [Gameplay TwoKSplatMap3]]]]]]
     [TerrainMaterialProperties
      [[AlbedoOpt
        [ValueSome [1 1 1 1]]]
