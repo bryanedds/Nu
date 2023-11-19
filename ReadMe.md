@@ -41,6 +41,9 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/bryanedds/Nu/assets/1625560/90f304e7-d2c8-4fc1-8548-2a9c81d05a66)
 Editing a 3D scene imported from Unity in the new editor.
 
+![image](https://github.com/bryanedds/Nu/assets/1625560/f9945d52-9ab4-4263-ae08-195c31a45c30)
+Animated 3D model rendering from Mixamo.
+
 ![image](https://user-images.githubusercontent.com/1625560/232184477-dbb1102e-f4f5-4fd1-9008-57a07fe450f7.png)
 Efficient, detailed 3D with deferred physically-based rendering.
 
