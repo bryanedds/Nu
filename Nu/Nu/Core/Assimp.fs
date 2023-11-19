@@ -152,7 +152,8 @@ module AssimpExtensions =
                     | (true, animationId) ->
                         let localTime = time - animation.StartTime
                         if  localTime >= GameTime.zero &&
-                            (match animation.LifeTimeOpt with Some lifeTime -> localTime < animation.StartTime + lifeTime | None -> true) then
+                            (match animation.LifeTimeOpt with Some lifeTime -> localTime < animation.StartTime + lifeTime | None -> true) &&
+                            (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
                             let animationAssimp = scene.Animations.[animationId]
                             match Assimp.TryGetAnimationChannel (animationAssimp, name) with
                             | Some channel ->
