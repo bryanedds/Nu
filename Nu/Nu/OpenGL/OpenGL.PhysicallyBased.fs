@@ -788,10 +788,10 @@ module PhysicallyBased =
                 let vertexBuffer = Gl.GenBuffer ()
                 let texCoordsOffset =   (3 (*position*)) * sizeof<single>
                 let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-                let splat0Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-                let splat1Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splat0*)) * sizeof<single>
-                let tintOffset =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splat0*) + 4 (*splat1*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splat0*) + 4 (*splat1*) + 3 (*tint*)) * sizeof<single>
+                let splatsOffset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+                let splats2Offset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splats*)) * sizeof<single>
+                let tintOffset =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splats*) + 4 (*splats2*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*splats*) + 4 (*splats2*) + 3 (*tint*)) * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
                 use vertexDataHnd = vertexData.Pin () in
                     let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
@@ -803,9 +803,9 @@ module PhysicallyBased =
                 Gl.EnableVertexAttribArray 2u
                 Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
                 Gl.EnableVertexAttribArray 3u
-                Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splat0Offset)
+                Gl.VertexAttribPointer (3u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splatsOffset)
                 Gl.EnableVertexAttribArray 4u
-                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splat1Offset)
+                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splats2Offset)
                 Gl.EnableVertexAttribArray 5u
                 Gl.VertexAttribPointer (5u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint tintOffset)
                 Hl.Assert ()
