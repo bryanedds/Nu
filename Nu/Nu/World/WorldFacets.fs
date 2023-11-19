@@ -2702,14 +2702,13 @@ module AnimatedModelFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrixOffset = transform.AffineMatrixOffset
-            let presence = transform.Presence
             let startTime = entity.GetStartTime world
             let localTime = world.GameTime - startTime
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            World.renderAnimatedModelFast (localTime, absolute, &affineMatrixOffset, presence, insetOpt, &properties, animations, animatedModel, world)
+            World.renderAnimatedModelFast (localTime, absolute, &affineMatrixOffset, insetOpt, &properties, animations, animatedModel, world)
 
         override this.GetQuickSize (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
