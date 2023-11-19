@@ -1791,16 +1791,26 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
-        // attempt to deferred render terrains w/ absolute transforms if in top level render
+        // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsAbsolute do
-                GlRenderer3d.renderPhysicallyBasedTerrain viewAbsoluteArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+            for entry in renderer.RenderTasks.RenderSurfacesDeferredStaticAbsolute do
+                GlRenderer3d.renderPhysicallyBasedSurfaces
+                    viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value false
+                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
+                    entry.Key renderer.RenderPhysicallyBasedDeferredStaticShader renderer
+                OpenGL.Hl.Assert ()
 
-        // attempt to deferred render terrains w/ relative transforms
-        for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsRelative do
-            GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+        // deferred render static surfaces w/ relative transforms
+        for entry in renderer.RenderTasks.RenderSurfacesDeferredStaticRelative do
+            GlRenderer3d.renderPhysicallyBasedSurfaces
+                viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value false
+                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
+                entry.Key renderer.RenderPhysicallyBasedDeferredStaticShader renderer
+            OpenGL.Hl.Assert ()
 
-        // deferred render surfaces w/ absolute transforms if in top level render
+        // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute do
                 let struct (_, _, surface) = entry.Key
@@ -1824,6 +1834,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
                 surface renderer.RenderPhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
+
+        // attempt to deferred render terrains w/ absolute transforms if in top level render
+        if topLevelRender then
+            for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsAbsolute do
+                GlRenderer3d.renderPhysicallyBasedTerrain viewAbsoluteArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+
+        // attempt to deferred render terrains w/ relative transforms
+        for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsRelative do
+            GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
 
         // run light mapping pass
         let lightMappingTexture =
