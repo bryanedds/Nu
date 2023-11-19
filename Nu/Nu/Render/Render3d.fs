@@ -1047,7 +1047,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             // compute normals
             let normals =
                 match GlRenderer3d.tryGetImageData geometryDescriptor.NormalImage renderer with
-                | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY ->
+                | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                     bytes |>
                     Array.map (fun x -> single x / single Byte.MaxValue) |>
                     Array.chunkBySize 4 |>
@@ -1057,42 +1057,44 @@ type [<ReferenceEquality>] GlRenderer3d =
                         normal)
                 | _ -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolutionX resolutionY positionsAndTexCoordses
 
-            // compute values for splat0 shader input
-            let splat0 =
-                match geometryDescriptor.Material with
-                | SplatMaterial splatMaterial ->
-                    match splatMaterial.SplatMap with
-                    | RgbaMap rgbaMap ->
-                        match GlRenderer3d.tryGetImageData rgbaMap renderer with
-                        | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY ->
-                            bytes |>
-                            Array.map (fun x -> (single x) / (single Byte.MaxValue)) |>
-                            Array.chunkBySize 4 |>
-                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                            // TODO: confirm it is the same for SDL (linux).
-                            Array.map (fun x -> v4 x.[2] x.[1] x.[0] x.[3])
-                        | _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
-                    | RedsMap _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4Zero)
-                | FlatMaterial _ -> Array.init (resolutionX * resolutionY) (fun _ -> v4 1.0f 0.0f 0.0f 0.0f)
-
             // compute tint
             let tint =
                 match GlRenderer3d.tryGetImageData geometryDescriptor.TintImage renderer with
-                | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = resolutionX * resolutionY ->
+                | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                     bytes |>
                     Array.map (fun x -> single x / single Byte.MaxValue) |>
                     Array.chunkBySize 4 |>
                     Array.map (fun x -> v3 x.[2] x.[1] x.[0])
-                | _ -> Array.init (resolutionX * resolutionY) (fun _ -> v3One)
+                | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
 
+            // compute splat
+            let s : single [,] = Array2D.zeroCreate positionsAndTexCoordses.Length 8
+
+            match geometryDescriptor.Material with
+            | SplatMaterial splatMaterial ->
+                match splatMaterial.SplatMap with
+                | RgbaMap rgbaMap ->
+                    match GlRenderer3d.tryGetImageData rgbaMap renderer with
+                    | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                        for i in 0 .. dec positionsAndTexCoordses.Length do
+                            
+                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                            // TODO: confirm it is the same for SDL (linux).
+                            s.[i,0] <- (single bytes.[i * 4 + 2]) / (single Byte.MaxValue)
+                            s.[i,1] <- (single bytes.[i * 4 + 1]) / (single Byte.MaxValue)
+                            s.[i,2] <- (single bytes.[i * 4 + 0]) / (single Byte.MaxValue)
+                            s.[i,3] <- (single bytes.[i * 4 + 3]) / (single Byte.MaxValue)
+                    | _ -> () // black terrain to clearly indicate error
+                | RedsMap _ -> ()
+            | FlatMaterial _ -> for i in 0 .. dec positionsAndTexCoordses.Length do s.[i,0] <- 1.0f
+            
             // compute vertices
             let vertices =
                 [|for i in 0 .. dec positionsAndTexCoordses.Length do
                     let struct (p, tc) = positionsAndTexCoordses.[i]
                     let n = normals.[i]
-                    let s0 = splat0.[i]
                     let t = tint.[i]
-                    yield! [|p.X; p.Y; p.Z; tc.X; tc.Y; n.X; n.Y; n.Z; s0.X; s0.Y; s0.Z; s0.W; 0.0f; 0.0f; 0.0f; 0.0f; t.X; t.Y; t.Z|]|]
+                    yield! [|p.X; p.Y; p.Z; tc.X; tc.Y; n.X; n.Y; n.Z; s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]; t.X; t.Y; t.Z|]|]
 
             // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
             let indices = 
