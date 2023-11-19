@@ -1085,7 +1085,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                             s.[i,2] <- (single bytes.[i * 4 + 0]) / (single Byte.MaxValue)
                             s.[i,3] <- (single bytes.[i * 4 + 3]) / (single Byte.MaxValue)
                     | _ -> () // black terrain to clearly indicate error
-                | RedsMap _ -> ()
+                | RedsMap reds ->
+                    for i in 0 .. dec reds.Length do
+                        match GlRenderer3d.tryGetImageData reds.[i] renderer with
+                        | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                            for j in 0 .. dec positionsAndTexCoordses.Length do
+                                s.[j,i] <- (single bytes.[j * 4 + 2]) / (single Byte.MaxValue)
+                        | _ -> ()
             | FlatMaterial _ -> for i in 0 .. dec positionsAndTexCoordses.Length do s.[i,0] <- 1.0f
             
             // compute vertices
