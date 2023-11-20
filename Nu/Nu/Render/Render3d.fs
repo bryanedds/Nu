@@ -1065,10 +1065,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                     Array.map (fun x -> v3 x.[2] x.[1] x.[0])
                 | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
 
-            // compute splatses
+            // compute splatses, logging if more than the safe number of terrain layers is utilized
             let splatses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
             match geometryDescriptor.Material with
             | SplatMaterial splatMaterial ->
+                if splatMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMaxSafe then
+                    Log.infoOnce
+                        ("Terrain has more than " +
+                         string Constants.Render.TerrainLayersMaxSafe +
+                         " which references more than the guaranteed number of supported fragment shader textures.")
                 match splatMaterial.SplatMap with
                 | RgbaMap rgbaMap ->
                     match GlRenderer3d.tryGetImageData rgbaMap renderer with
@@ -1089,8 +1094,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                             for j in 0 .. dec positionsAndTexCoordses.Length do
                                 splatses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
                         | _ -> Log.info ("Could not locate image data for splat map '" + scstring red + "'.")
-            | FlatMaterial _ -> for i in 0 .. dec positionsAndTexCoordses.Length do splatses.[i,0] <- 1.0f
-            
+            | FlatMaterial _ ->
+                for i in 0 .. dec positionsAndTexCoordses.Length do
+                    splatses.[i,0] <- 1.0f
+
             // compute vertices
             let vertices =
                 [|for i in 0 .. dec positionsAndTexCoordses.Length do
@@ -1098,7 +1105,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let n = normals.[i]
                     let s = splatses
                     let t = tint.[i]
-                    yield! [|p.X; p.Y; p.Z; tc.X; tc.Y; n.X; n.Y; n.Z; t.X; t.Y; t.Z; s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
+                    yield!
+                        [|p.X; p.Y; p.Z
+                          tc.X; tc.Y
+                          n.X; n.Y; n.Z
+                          t.X; t.Y; t.Z
+                          s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
 
             // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
             let indices = 
