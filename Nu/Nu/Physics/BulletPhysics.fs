@@ -193,10 +193,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let bounds = bodyTerrain.Bounds
         match HeightMap.tryGetMetadata tryGetAssetFilePath bounds v2One bodyTerrain.HeightMap with
         | Some heightMapMetadata ->
-            let positions = Array.zeroCreate heightMapMetadata.PositionsAndTexCoordses.Length
-            for i in 0 .. dec heightMapMetadata.PositionsAndTexCoordses.Length do
-                positions.[i] <- (fst' heightMapMetadata.PositionsAndTexCoordses.[i]).Y + bounds.Height * 0.5f
-            let handle = GCHandle.Alloc (positions, GCHandleType.Pinned)
+            let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
+            for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
+                heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * bounds.Height
+            let handle = GCHandle.Alloc (heights, GCHandleType.Pinned)
             try let positionsPtr = handle.AddrOfPinnedObject ()
                 let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, bounds.Height, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
                 BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
