@@ -262,8 +262,8 @@ module Quadtree =
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
         tree.ElementsModified <- true
-        let wasInNode = not presenceOld.ImposterType && presenceOld.OmnipresentType && Quadnode.isIntersectingBounds boundsOld &tree.Node
-        let isInNode = not presenceNew.ImposterType && presenceNew.OmnipresentType && Quadnode.isIntersectingBounds boundsNew &tree.Node
+        let wasInNode = not presenceOld.ImposterType && not presenceOld.OmnipresentType && Quadnode.isIntersectingBounds boundsOld &tree.Node
+        let isInNode = not presenceNew.ImposterType && not presenceNew.OmnipresentType && Quadnode.isIntersectingBounds boundsNew &tree.Node
         if wasInNode then
             if isInNode then
                 let nodeOld = findNode boundsOld tree
