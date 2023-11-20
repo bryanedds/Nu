@@ -572,20 +572,10 @@ module WorldModule3 =
                     | Some (_, dispatcher) -> dispatcher
                     | None -> GameDispatcher ()
 
-                // grab the metadata of the static models so they can be provded to BulletPhysicsEngine
-                let staticModelsMetadata =
-                    seq {
-                        for (packageName, package) in (Metadata.getMetadataPackages ()).Pairs do
-                            for (assetName, metadata) in package.Pairs do
-                                match metadata with
-                                | (_, StaticModelMetadata staticModel) -> (asset packageName assetName, staticModel)
-                                | _ -> () } |>
-                    dictPlus HashIdentity.Structural
-
                 // make the world's subsystems
                 let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
-                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault Metadata.tryGetFilePath staticModelsMetadata
+                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
                 let rendererProcess = RendererThread () :> RendererProcess
                 rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
