@@ -14,7 +14,7 @@ Metadata from another thread. *)
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
 type Metadata =
-    | RawMetadata // TODO: consider including byte array here.
+    | RawMetadata
     | TextureMetadata of Vector2i
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
