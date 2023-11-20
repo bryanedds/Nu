@@ -198,9 +198,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * bounds.Height
             let handle = GCHandle.Alloc (heights, GCHandleType.Pinned)
             try let positionsPtr = handle.AddrOfPinnedObject ()
-                let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, bounds.Height, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
+                let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
                 BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
-                //terrain.LocalScaling <- v3 bounds.Width bounds.Height bounds.Depth
                 terrain.UserObject <-
                     { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                       ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
