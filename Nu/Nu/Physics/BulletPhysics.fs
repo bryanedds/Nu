@@ -195,10 +195,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | Some heightMapMetadata ->
             let positions = Array.zeroCreate heightMapMetadata.PositionsAndTexCoordses.Length
             for i in 0 .. dec heightMapMetadata.PositionsAndTexCoordses.Length do
-                positions.[i] <- fst' heightMapMetadata.PositionsAndTexCoordses.[i]
+                positions.[i] <- (fst' heightMapMetadata.PositionsAndTexCoordses.[i]).Y + bounds.Height * 0.5f
             let handle = GCHandle.Alloc (positions, GCHandleType.Pinned)
             try let positionsPtr = handle.AddrOfPinnedObject ()
-                let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, 1.0f, 1, PhyScalarType.Single, false)
+                let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, bounds.Height, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
                 BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
                 //terrain.LocalScaling <- v3 bounds.Width bounds.Height bounds.Depth
                 terrain.UserObject <-
@@ -212,7 +212,11 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let inertia = terrain.CalculateLocalInertia mass
                 compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, terrain)
                 (center, mass, inertia) :: centerMassInertias
-            finally (*handle.Free*) () // freeing the handle seems to cause a crash since bullet doesn't seem to copy the data.
+            finally
+                // freeing the handle seems to cause a crash since bullet doesn't seem to copy the data.
+                // TODO: track this handle so it can be freed when terrain is destroyed.
+                //handle.Free
+                ()
         | None -> centerMassInertias
 
     // TODO: add some error logging.
