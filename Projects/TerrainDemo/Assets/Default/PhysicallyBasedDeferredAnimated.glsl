@@ -2,7 +2,7 @@
 #version 410 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
-const int BONES_MAX = 96;
+const int BONES_MAX = 128;
 const int BONES_INFLUENCE_MAX = 4;
 
 const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =

@@ -18,17 +18,14 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
     | Enclosed
     /// Outside an enclosed structure so visible near and from a distance.
     | Exposed
-    /// Visible for great distances but invisible once as close as Exposed or Enclosed.
+    /// Always visible except when as close as Exposed or Enclosed.
     | Imposter
-    /// Both Exposed and Imposter.
-    | Prominent
     /// Always visible.
     | Omnipresent
 
     member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false
     member this.ExposedType with get () = match this with Exposed -> true | _ -> false
     member this.ImposterType with get () = match this with Imposter -> true | _ -> false
-    member this.ProminentType with get () = match this with Prominent -> true | _ -> false
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
@@ -40,11 +37,10 @@ type [<StructuralEquality; NoComparison; Struct>] Presence =
             | Enclosed -> frustumEnclosed.Intersects bounds
             | Exposed -> frustumExposed.Intersects bounds || frustumEnclosed.Intersects bounds
             | Imposter -> frustumImposter.Intersects bounds
-            | Prominent -> frustumImposter.Intersects bounds || frustumExposed.Intersects bounds || frustumEnclosed.Intersects bounds
             | Omnipresent -> true
         else
             match presence with
-            | Enclosed | Exposed | Imposter | Prominent -> lightBox.Intersects bounds
+            | Enclosed | Exposed | Imposter -> lightBox.Intersects bounds
             | Omnipresent -> true
 
 [<AutoOpen>]
@@ -56,7 +52,6 @@ module PresenceOperators =
         | (Enclosed, Enclosed)
         | (Exposed, Exposed)
         | (Imposter, Imposter)
-        | (Prominent, Prominent)
         | (Omnipresent, Omnipresent) -> true
         | (_, _) -> false
 

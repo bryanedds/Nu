@@ -983,6 +983,62 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
       Id : uint64
       Surnames : string array }
 
+    member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
+    member this.Center with get () = this.Transform.Center and set value = this.Transform.Center <- value
+    member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
+    member this.BottomLeft with get () = this.Transform.BottomLeft and set value = this.Transform.BottomLeft <- value
+    member this.Min with get () = this.Transform.Min and set value = this.Transform.Min <- value
+    member this.Max with get () = this.Transform.Max and set value = this.Transform.Max <- value
+    member this.CenterLocal with get () = this.PositionLocal + (this.Transform.Center - this.Transform.Position)
+    member this.BottomLocal with get () = this.PositionLocal + (this.Transform.Bottom - this.Transform.Position)
+    member this.BottomLeftLocal with get () = this.PositionLocal + (this.Transform.BottomLeft - this.Transform.Position)
+    member this.MinLocal with get () = this.PositionLocal + (this.Transform.Min - this.Transform.Position)
+    member this.MaxLocal with get () = this.PositionLocal + (this.Transform.Max - this.Transform.Position)
+    member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
+    member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
+    member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
+    member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
+    member this.Degrees with get () = this.Transform.Degrees and set value = this.Transform.Degrees <- value
+    member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
+    member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
+    member this.RotationMatrix with get () = this.Transform.RotationMatrix
+    member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
+    member this.Overflow with get () = this.Transform.Overflow and set value = this.Transform.Overflow <- value
+    member this.AffineMatrix with get () = this.Transform.AffineMatrix
+    member this.AffineMatrixOffset with get () = this.Transform.AffineMatrixOffset
+    member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
+    member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
+    member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
+    member this.Bounds with get () = this.Transform.Bounds
+    member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
+    member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
+    member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
+    member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
+    member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
+    member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
+    member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
+    member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
+    member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
+    member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
+    member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
+    member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
+    member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
+    member this.PublishPreUpdates with get () = this.Transform.PublishPreUpdates and set value = this.Transform.PublishPreUpdates <- value
+    member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
+    member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
+    member this.PublishRenders with get () = this.Transform.PublishRenders and set value = this.Transform.PublishRenders <- value
+    member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
+    member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
+    member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
+    member this.Is2d with get () = this.Dispatcher.Is2d
+    member this.Is3d with get () = this.Dispatcher.Is3d
+    member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
+    member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
+    member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
+    member this.LightProbe with get () = this.Transform.LightProbe and set value = this.Transform.LightProbe <- value
+    member this.Light with get () = this.Transform.Light and set value = this.Transform.Light <- value
+    member this.Optimized with get () = this.Transform.Optimized
+
     /// Make an entity state value.
     static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
         let mutable transform = Transform.makeDefault dispatcher.Centered
@@ -1068,61 +1124,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         let xtension = Xtension.detachProperty name entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
-
-    member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
-    member this.Center with get () = this.Transform.Center and set value = this.Transform.Center <- value
-    member this.Bottom with get () = this.Transform.Bottom and set value = this.Transform.Bottom <- value
-    member this.BottomLeft with get () = this.Transform.BottomLeft and set value = this.Transform.BottomLeft <- value
-    member this.Min with get () = this.Transform.Min and set value = this.Transform.Min <- value
-    member this.Max with get () = this.Transform.Max and set value = this.Transform.Max <- value
-    member this.CenterLocal with get () = this.PositionLocal + (this.Transform.Center - this.Transform.Position)
-    member this.BottomLocal with get () = this.PositionLocal + (this.Transform.Bottom - this.Transform.Position)
-    member this.BottomLeftLocal with get () = this.PositionLocal + (this.Transform.BottomLeft - this.Transform.Position)
-    member this.MinLocal with get () = this.PositionLocal + (this.Transform.Min - this.Transform.Position)
-    member this.MaxLocal with get () = this.PositionLocal + (this.Transform.Max - this.Transform.Position)
-    member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
-    member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
-    member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
-    member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
-    member this.Degrees with get () = this.Transform.Degrees and set value = this.Transform.Degrees <- value
-    member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
-    member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
-    member this.RotationMatrix with get () = this.Transform.RotationMatrix
-    member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
-    member this.AffineMatrix with get () = this.Transform.AffineMatrix
-    member this.AffineMatrixOffset with get () = this.Transform.AffineMatrixOffset
-    member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
-    member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
-    member this.PerimeterOriented with get () = this.Transform.PerimeterOriented
-    member this.Bounds with get () = this.Transform.Bounds
-    member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
-    member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
-    member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
-    member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
-    member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
-    member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
-    member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
-    member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
-    member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
-    member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
-    member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
-    member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
-    member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
-    member this.PublishPreUpdates with get () = this.Transform.PublishPreUpdates and set value = this.Transform.PublishPreUpdates <- value
-    member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
-    member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
-    member this.PublishRenders with get () = this.Transform.PublishRenders and set value = this.Transform.PublishRenders <- value
-    member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
-    member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
-    member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
-    member this.Is2d with get () = this.Dispatcher.Is2d
-    member this.Is3d with get () = this.Dispatcher.Is3d
-    member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
-    member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
-    member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
-    member this.LightProbe with get () = this.Transform.LightProbe and set value = this.Transform.LightProbe <- value
-    member this.Light with get () = this.Transform.Light and set value = this.Transform.Light <- value
-    member this.Optimized with get () = this.Transform.Optimized
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension

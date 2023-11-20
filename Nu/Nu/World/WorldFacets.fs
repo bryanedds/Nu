@@ -79,6 +79,9 @@ module StaticSpriteFacetModule =
 module AnimatedSpriteFacetModule =
 
     type Entity with
+        member this.GetStartTime world : GameTime = this.Get (nameof this.StartTime) world
+        member this.SetStartTime (value : GameTime) world = this.Set (nameof this.StartTime) value world
+        member this.StartTime = lens (nameof this.StartTime) this this.GetStartTime this.SetStartTime
         member this.GetCelSize world : Vector2 = this.Get (nameof this.CelSize) world
         member this.SetCelSize (value : Vector2) world = this.Set (nameof this.CelSize) value world
         member this.CelSize = lens (nameof this.CelSize) this this.GetCelSize this.SetCelSize
@@ -103,13 +106,12 @@ module AnimatedSpriteFacetModule =
         inherit Facet (false)
 
         static let getSpriteInsetOpt (entity : Entity) world =
+            let startTime = entity.GetStartTime world
             let celCount = entity.GetCelCount world
             let celRun = entity.GetCelRun world
             if celCount <> 0 && celRun <> 0 then
-                let cel =
-                    match entity.GetAnimationDelay world with
-                    | UpdateTime delay -> int (world.UpdateTime / delay) % celCount * entity.GetAnimationStride world
-                    | ClockTime delay -> int (world.ClockTime / delay) % celCount * entity.GetAnimationStride world
+                let localTime = world.GameTime - startTime
+                let cel = int (localTime / entity.GetAnimationDelay world) % celCount * entity.GetAnimationStride world
                 let celSize = entity.GetCelSize world
                 let celI = cel % celRun
                 let celJ = cel / celRun
@@ -120,7 +122,8 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.CelSize (Vector2 (12.0f, 12.0f))
+            [define Entity.StartTime GameTime.zero
+             define Entity.CelSize (Vector2 (12.0f, 12.0f))
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
@@ -2549,10 +2552,12 @@ module StaticModelFacetModule =
 
         override this.GetQuickSize (entity, world) =
             let staticModel = entity.GetStaticModel world
-            let staticModelMetadata = Metadata.getStaticModelMetadata staticModel
-            let bounds = staticModelMetadata.Bounds
-            let boundsExtended = bounds.Combine bounds.Mirror
-            boundsExtended.Size
+            match Metadata.tryGetStaticModelMetadata staticModel with
+            | Some staticModelMetadata ->
+                let bounds = staticModelMetadata.Bounds
+                let boundsExtended = bounds.Combine bounds.Mirror
+                boundsExtended.Size
+            | None -> base.GetQuickSize (entity, world)
 
         override this.RayCast (ray, entity, world) =
             let affineMatrixOffset = entity.GetAffineMatrixOffset world
@@ -2589,7 +2594,9 @@ module StaticModelFacetModule =
                     | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
                     | None -> boundsOpt <- Some bounds2
                 match boundsOpt with
-                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrixOffset world))
+                | Some bounds ->
+                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
+                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
                 | None -> None
             | None -> None
 
@@ -2629,13 +2636,15 @@ module StaticModelSurfaceFacetModule =
                 World.renderStaticModelSurfaceFast (absolute, &affineMatrixOffset, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
 
         override this.GetQuickSize (entity, world) =
-            let staticModelMetadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
-            let surfaceIndex = entity.GetSurfaceIndex world
-            if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
-                let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
-                let boundsExtended = bounds.Combine bounds.Mirror
-                boundsExtended.Size
-            else Constants.Engine.EntitySize3dDefault
+            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
+            | Some staticModelMetadata ->
+                let surfaceIndex = entity.GetSurfaceIndex world
+                if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
+                    let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
+                    let boundsExtended = bounds.Combine bounds.Mirror
+                    boundsExtended.Size
+                else base.GetQuickSize (entity, world)
+            | None -> base.GetQuickSize (entity, world)
 
         override this.RayCast (ray, entity, world) =
             let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrixOffset world) |> snd)
@@ -2661,7 +2670,8 @@ module StaticModelSurfaceFacetModule =
                 if surfaceIndex < staticModelMetadata.Surfaces.Length then
                     let surface = staticModelMetadata.Surfaces.[surfaceIndex]
                     let bounds = surface.PhysicallyBasedGeometry.Bounds
-                    Some (bounds.Transform (entity.GetAffineMatrixOffset world))
+                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
+                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
                 else None
             | None -> None
 
@@ -2670,6 +2680,9 @@ module AnimatedModelFacetModule =
 
     type Entity with
 
+        member this.GetAnimations world : Animation array = this.Get (nameof this.Animations) world
+        member this.SetAnimations (value : Animation array) world = this.Set (nameof this.Animations) value world
+        member this.Animations = lens (nameof this.Animations) this this.GetAnimations this.SetAnimations
         member this.GetAnimatedModel world : AnimatedModel AssetTag = this.Get (nameof this.AnimatedModel) world
         member this.SetAnimatedModel (value : AnimatedModel AssetTag) world = this.Set (nameof this.AnimatedModel) value world
         member this.AnimatedModel = lens (nameof this.AnimatedModel) this this.GetAnimatedModel this.SetAnimatedModel
@@ -2679,37 +2692,32 @@ module AnimatedModelFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.InsetOpt None
+            [define Entity.StartTime GameTime.zero
+             define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrixOffset = transform.AffineMatrixOffset
-            let presence = transform.Presence
+            let startTime = entity.GetStartTime world
+            let localTime = world.GameTime - startTime
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
-            let animationTime = world.ClockTime * 600.0f % 3000.0f
-            let animationIndex = 0
+            let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            let world = World.renderAnimatedModelFast (absolute, &affineMatrixOffset, presence, insetOpt, &properties, animationTime, animationIndex, animatedModel, world)
-            match Metadata.tryGetAnimatedModelMetadata animatedModel with
-            | Some animatedModelMetadata ->
-                let scene = animatedModelMetadata.AnimatedSceneOpt.Value
-                let mesh = scene.Meshes.[0]
-                let bones = mesh.AnimateBones (animationTime, animationIndex, scene)
-                Array.fold (fun world bone ->
-                    World.renderStaticModelFast (absolute, &bone, presence, insetOpt, &properties, DeferredRenderType, Assets.Default.StaticModel, world))
-                    world bones
-             | None -> world
+            World.renderAnimatedModelFast (localTime, absolute, &affineMatrixOffset, insetOpt, &properties, animations, animatedModel, world)
 
         override this.GetQuickSize (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
-            let animatedModelMetadata = Metadata.getAnimatedModelMetadata animatedModel
-            let bounds = animatedModelMetadata.Bounds
-            let boundsExtended = bounds.Combine bounds.Mirror
-            boundsExtended.Size
+            match Metadata.tryGetAnimatedModelMetadata animatedModel with
+            | Some animatedModelMetadata ->
+                let bounds = animatedModelMetadata.Bounds
+                let boundsExtended = bounds.Combine bounds.Mirror
+                boundsExtended.Size
+            | None -> base.GetQuickSize (entity, world)
 
         override this.RayCast (ray, entity, world) =
             let affineMatrixOffset = entity.GetAffineMatrixOffset world
@@ -2748,7 +2756,9 @@ module AnimatedModelFacetModule =
                     | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
                     | None -> boundsOpt <- Some bounds2
                 match boundsOpt with
-                | Some bounds -> Some (bounds.Transform (entity.GetAffineMatrixOffset world))
+                | Some bounds ->
+                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
+                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
                 | None -> None
             | None -> None
 
@@ -2775,15 +2785,19 @@ module TerrainFacetModule =
         member this.SetSegments (value : Vector2i) world = this.Set (nameof this.Segments) value world
         member this.Segments = lens (nameof this.Segments) this this.GetSegments this.SetSegments
 
-        member this.GetTerrainResolution world =
+        member this.TryGetTerrainResolution world =
             match this.GetHeightMap world with
-            | ImageHeightMap map -> Metadata.getTextureSize map
-            | RawHeightMap map -> map.Resolution
+            | ImageHeightMap map ->
+                match Metadata.tryGetTextureSize map with
+                | Some textureSize -> Some textureSize
+                | None -> None
+            | RawHeightMap map -> Some map.Resolution
 
-        member this.GetTerrainQuadSize world =
+        member this.TryGetTerrainQuadSize world =
             let bounds = this.GetBounds world
-            let resolution = this.GetTerrainResolution world
-            v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y)
+            match this.TryGetTerrainResolution world with
+            | Some resolution -> Some (v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y))
+            | None -> None
 
     /// Augments an entity with a rigid 3d terrain.
     type TerrainFacet () =
@@ -2848,3 +2862,8 @@ module TerrainFacetModule =
                     { Absolute = absolute
                       TerrainDescriptor = terrainDescriptor })
                 world
+
+        override this.GetQuickSize (entity, world) =
+            match entity.TryGetTerrainResolution world with
+            | Some resolution -> v3 (single resolution.X) 128.0f (single resolution.Y)
+            | None -> v3 1024.0f 128.0f 1024.0f

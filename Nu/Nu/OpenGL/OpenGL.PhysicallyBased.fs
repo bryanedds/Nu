@@ -295,6 +295,7 @@ module PhysicallyBased =
             else Constants.Render.AlbedoDefault
         let mutable (_, albedoTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
         if isNull albedoTextureSlot.FilePath then albedoTextureSlot.FilePath <- "" // ensure not null
+        albedoTextureSlot.FilePath <- albedoTextureSlot.FilePath.Trim () // trim
         let (albedoMetadata, albedoTexture) =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + albedoTextureSlot.FilePath, textureMemo) with
@@ -333,6 +334,7 @@ module PhysicallyBased =
         let metallic = Constants.Render.MetallicDefault
         let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
         if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
+        metallicTextureSlot.FilePath <- metallicTextureSlot.FilePath.Trim () // trim
         let metallicTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
@@ -366,6 +368,7 @@ module PhysicallyBased =
         let roughness = Constants.Render.RoughnessDefault
         let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
+        roughnessTextureSlot.FilePath <- roughnessTextureSlot.FilePath // trim
         let roughnessTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
@@ -398,6 +401,7 @@ module PhysicallyBased =
         let ambientOcclusion = Constants.Render.AmbientOcclusionDefault
         let mutable (_, ambientOcclusionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         if isNull ambientOcclusionTextureSlot.FilePath then ambientOcclusionTextureSlot.FilePath <- "" // ensure not null
+        ambientOcclusionTextureSlot.FilePath <- ambientOcclusionTextureSlot.FilePath.Trim () // trim
         let ambientOcclusionTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + ambientOcclusionTextureSlot.FilePath, textureMemo) with
@@ -427,6 +431,7 @@ module PhysicallyBased =
         let emission = Constants.Render.EmissionDefault
         let mutable (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
         if isNull emissionTextureSlot.FilePath then emissionTextureSlot.FilePath <- "" // ensure not null
+        emissionTextureSlot.FilePath <- emissionTextureSlot.FilePath.Trim () // trim
         let emissionTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + emissionTextureSlot.FilePath, textureMemo) with
@@ -443,6 +448,7 @@ module PhysicallyBased =
         // attempt to load normal info
         let mutable (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         if isNull normalTextureSlot.FilePath then normalTextureSlot.FilePath <- "" // ensure not null
+        normalTextureSlot.FilePath <- normalTextureSlot.FilePath.Trim () // trim
         let normalTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.UncompressedTextureFormat, dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
@@ -460,6 +466,7 @@ module PhysicallyBased =
         let height = Constants.Render.HeightDefault
         let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
+        heightTextureSlot.FilePath <- heightTextureSlot.FilePath.Trim () // trim
         let heightTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + heightTextureSlot.FilePath, textureMemo) with
@@ -603,15 +610,18 @@ module PhysicallyBased =
                     for weightIndex in 0 .. dec weightsCount do
                         let vertexId = weights.[weightIndex].VertexID
                         let weight = weights.[weightIndex].Weight
-                        let mutable found = false
-                        let mutable i = 0
-                        while not found && i < Constants.Render.BonesInfluenceMax do
-                            let v = vertexId * 16
-                            if not found && vertexData.[v+8+i] < 0.0f then
-                                vertexData.[v+8+i] <- single boneIndex
-                                vertexData.[v+12+i] <- weight
-                                found <- true
-                            else i <- inc i
+                        if weight > 0.0f then
+                            let mutable found = false
+                            let mutable i = 0
+                            while not found && i < Constants.Render.BonesInfluenceMax do
+                                let v = vertexId * 16
+                                if vertexData.[v+8+i] = single boneIndex then // already found
+                                    found <- true
+                                elif vertexData.[v+8+i] < 0.0f then // found free slot
+                                    vertexData.[v+8+i] <- single boneIndex
+                                    vertexData.[v+12+i] <- weight
+                                    found <- true
+                                else i <- inc i
 
                 // populate triangle index data
                 let indexList = SList.make ()

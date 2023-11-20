@@ -85,8 +85,8 @@ module WorldRender =
             world
 
         /// Send a message to the render system to render an animated model using a fast path.
-        static member renderAnimatedModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, animationTime, animationIndex, animatedModel, world) =
-            (World.getRendererProcess world).RenderAnimatedModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, animationTime, animationIndex, animatedModel)
+        static member renderAnimatedModelFast (time, absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, world) =
+            (World.getRendererProcess world).RenderAnimatedModelFast (time, absolute, &modelMatrix, insetOpt, &materialProperties, animations, animatedModel)
             world
 
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
