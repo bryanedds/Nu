@@ -1065,10 +1065,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     Array.map (fun x -> v3 x.[2] x.[1] x.[0])
                 | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
 
-            // compute splat
-            let availableChannels = 8
-            let s : single [,] = Array2D.zeroCreate positionsAndTexCoordses.Length availableChannels
-
+            // compute splatses
+            let splatses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
             match geometryDescriptor.Material with
             | SplatMaterial splatMaterial ->
                 match splatMaterial.SplatMap with
@@ -1076,30 +1074,31 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match GlRenderer3d.tryGetImageData rgbaMap renderer with
                     | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         for i in 0 .. dec positionsAndTexCoordses.Length do
-                            
                             // ARGB reverse byte order, from Drawing.Bitmap (windows).
                             // TODO: confirm it is the same for SDL (linux).
-                            s.[i,0] <- (single bytes.[i * 4 + 2]) / (single Byte.MaxValue)
-                            s.[i,1] <- (single bytes.[i * 4 + 1]) / (single Byte.MaxValue)
-                            s.[i,2] <- (single bytes.[i * 4 + 0]) / (single Byte.MaxValue)
-                            s.[i,3] <- (single bytes.[i * 4 + 3]) / (single Byte.MaxValue)
-                    | _ -> () // black terrain to clearly indicate error
+                            splatses.[i,0] <- single bytes.[i * 4 + 2] / single Byte.MaxValue
+                            splatses.[i,1] <- single bytes.[i * 4 + 1] / single Byte.MaxValue
+                            splatses.[i,2] <- single bytes.[i * 4 + 0] / single Byte.MaxValue
+                            splatses.[i,3] <- single bytes.[i * 4 + 3] / single Byte.MaxValue
+                    | _ -> Log.info ("Could not locate image data for splat map '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
-                    for i in 0 .. dec (min reds.Length availableChannels) do
-                        match GlRenderer3d.tryGetImageData reds.[i] renderer with
+                    for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
+                        let red = reds.[i]
+                        match GlRenderer3d.tryGetImageData red renderer with
                         | Some (bytes, metadata) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                             for j in 0 .. dec positionsAndTexCoordses.Length do
-                                s.[j,i] <- (single bytes.[j * 4 + 2]) / (single Byte.MaxValue)
-                        | _ -> ()
-            | FlatMaterial _ -> for i in 0 .. dec positionsAndTexCoordses.Length do s.[i,0] <- 1.0f
+                                splatses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
+                        | _ -> Log.info ("Could not locate image data for splat map '" + scstring red + "'.")
+            | FlatMaterial _ -> for i in 0 .. dec positionsAndTexCoordses.Length do splatses.[i,0] <- 1.0f
             
             // compute vertices
             let vertices =
                 [|for i in 0 .. dec positionsAndTexCoordses.Length do
                     let struct (p, tc) = positionsAndTexCoordses.[i]
                     let n = normals.[i]
+                    let s = splatses
                     let t = tint.[i]
-                    yield! [|p.X; p.Y; p.Z; tc.X; tc.Y; n.X; n.Y; n.Z; s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]; t.X; t.Y; t.Z|]|]
+                    yield! [|p.X; p.Y; p.Z; tc.X; tc.Y; n.X; n.Y; n.Z; t.X; t.Y; t.Z; s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
 
             // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
             let indices = 
