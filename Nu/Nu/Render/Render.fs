@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 
@@ -73,13 +74,13 @@ type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
 
 /// A height map for 3d terrain.
 [<Syntax
-    ("ImageHeightMap RawHeightMap DynamicHeightMap", "", "", "", "",
+    ("ImageHeightMap RawHeightMap", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison>] HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
-    
+
 /// An asset that is used for rendering.
 type RenderAsset =
     | TextureAsset of FilePath : string * TextureMetadata : OpenGL.Texture.TextureMetadata * Texture : uint

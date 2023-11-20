@@ -26,7 +26,7 @@ type RendererProcess =
         /// Potential fast-path for rendering static model surfaces.
         abstract RenderStaticModelSurfaceFast : bool * Matrix4x4 inref * Box2 voption * MaterialProperties inref * RenderType * StaticModel AssetTag * int -> unit
         /// Potential fast-path for rendering animated models.
-        abstract RenderAnimatedModelFast : bool * Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * single * int * AnimatedModel AssetTag -> unit
+        abstract RenderAnimatedModelFast : GameTime * bool * Matrix4x4 inref * Box2 voption * MaterialProperties inref * Animation array * AnimatedModel AssetTag -> unit
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
@@ -129,9 +129,9 @@ type RendererInline () =
             | Some _ -> messages3d.Add (RenderStaticModelSurface { Absolute = absolute; ModelMatrix = modelMatrix; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; RenderType = renderType; StaticModel = staticModel; SurfaceIndex = surfaceIndex })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderAnimatedModelFast (absolute, modelMatrix, presence, insetOpt, materialProperties, animationTime, animationIndex, animatedModel) =
+        member this.RenderAnimatedModelFast (time, absolute, modelMatrix, insetOpt, materialProperties, animations, animatedModel) =
             match renderersOpt with
-            | Some _ -> messages3d.Add (RenderAnimatedModel { Absolute = absolute; ModelMatrix = modelMatrix; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; AnimationTime = animationTime; AnimationIndex = animationIndex; AnimatedModel = animatedModel })
+            | Some _ -> messages3d.Add (RenderAnimatedModel { Time = time; Absolute = absolute; ModelMatrix = modelMatrix; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Animations = animations; AnimatedModel = animatedModel })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.EnqueueMessage2d message =
@@ -272,13 +272,12 @@ type RendererThread () =
             if cachedAnimatedModelMessages.Count = 0 then
                 for _ in 0 .. dec cachedAnimatedModelMessagesCapacity do
                     let animatedModelDescriptor =
-                        { CachedAnimatedModelAbsolute = Unchecked.defaultof<_>
+                        { CachedAnimatedModelTime = Unchecked.defaultof<_>
+                          CachedAnimatedModelAbsolute = Unchecked.defaultof<_>
                           CachedAnimatedModelMatrix = Unchecked.defaultof<_>
-                          CachedAnimatedModelPresence = Unchecked.defaultof<_>
                           CachedAnimatedModelInsetOpt = Unchecked.defaultof<_>
                           CachedAnimatedModelMaterialProperties = Unchecked.defaultof<_>
-                          CachedAnimatedModelAnimationTime = Unchecked.defaultof<_>
-                          CachedAnimatedModelAnimationIndex = Unchecked.defaultof<_>
+                          CachedAnimatedModelAnimations = Unchecked.defaultof<_>
                           CachedAnimatedModel = Unchecked.defaultof<_> }
                     let cachedAnimatedModelMessage = RenderCachedAnimatedModel animatedModelDescriptor
                     cachedAnimatedModelMessages.Enqueue cachedAnimatedModelMessage
@@ -470,13 +469,12 @@ type RendererThread () =
                 let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
                 match cachedAnimatedModelMessage with
                 | RenderCachedAnimatedModel cachedMessage ->
+                    cachedMessage.CachedAnimatedModelTime <- ram.Time
                     cachedMessage.CachedAnimatedModelAbsolute <- ram.Absolute
                     cachedMessage.CachedAnimatedModelMatrix <- ram.ModelMatrix
-                    cachedMessage.CachedAnimatedModelPresence <- ram.Presence
                     cachedMessage.CachedAnimatedModelInsetOpt <- ValueOption.ofOption ram.InsetOpt
                     cachedMessage.CachedAnimatedModelMaterialProperties <- ram.MaterialProperties
-                    cachedMessage.CachedAnimatedModelAnimationTime <- ram.AnimationTime
-                    cachedMessage.CachedAnimatedModelAnimationIndex <- ram.AnimationIndex
+                    cachedMessage.CachedAnimatedModelAnimations <- ram.Animations
                     cachedMessage.CachedAnimatedModel <- ram.AnimatedModel
                     messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
                 | _ -> failwithumf ()
@@ -512,18 +510,17 @@ type RendererThread () =
                 messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
-        member this.RenderAnimatedModelFast (absolute, modelMatrix, presence, insetOpt, materialProperties, animationTime, animationIndex, animatedModel) =
+        member this.RenderAnimatedModelFast (time, absolute, modelMatrix, insetOpt, materialProperties, animations, animatedModel) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
             match cachedAnimatedModelMessage with
             | RenderCachedAnimatedModel cachedMessage ->
+                cachedMessage.CachedAnimatedModelTime <- time
                 cachedMessage.CachedAnimatedModelAbsolute <- absolute
                 cachedMessage.CachedAnimatedModelMatrix <- modelMatrix
-                cachedMessage.CachedAnimatedModelPresence <- presence
                 cachedMessage.CachedAnimatedModelInsetOpt <- insetOpt
                 cachedMessage.CachedAnimatedModelMaterialProperties <- materialProperties
-                cachedMessage.CachedAnimatedModelAnimationTime <- animationTime
-                cachedMessage.CachedAnimatedModelAnimationIndex <- animationIndex
+                cachedMessage.CachedAnimatedModelAnimations <- animations
                 cachedMessage.CachedAnimatedModel <- animatedModel
                 messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
             | _ -> failwithumf ()

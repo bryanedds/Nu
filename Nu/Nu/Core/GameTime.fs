@@ -113,6 +113,9 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         | (_, ClockTime time) -> time
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
+    static member toMilliseconds time =
+        GameTime.toSeconds time * 1000.0f
+
     static member equals left right =
         GameTime.binary (=) (=) left right
 
@@ -163,6 +166,9 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
 
     member this.Seconds =
         GameTime.toSeconds this
+
+    member this.Milliseconds =
+        GameTime.toMilliseconds this
 
     member this.IsZero =
         GameTime.isZero this

@@ -57,7 +57,7 @@ module Gaia =
     let mutable private collapseEntityHierarchy = false
     let mutable private showSelectedEntity = false
     let mutable private rightClickPosition = v2Zero
-    let mutable private focusedPropertyDescriptorOpt = None
+    let mutable private focusedPropertyDescriptorOpt = Option<PropertyDescriptor * Simulant>.None
     let mutable private focusPropertyEditorRequested = false
     let mutable private propertyValueStrPrevious = ""
     let mutable private dragDropPayloadOpt = None
@@ -365,6 +365,34 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let io = ImGui.GetIO ()
         not (io.WantCaptureKeyboardPlus) && (world.Halted || editWhileAdvancing)
 
+    let private snapshot () =
+        world <- Nu.World.shelveCurrent world
+        worldsPast <- world :: worldsPast
+        worldsFuture <- []
+
+    let private containsProperty propertyDescriptor simulant =
+        SimulantPropertyDescriptor.containsPropertyDescriptor propertyDescriptor simulant world
+
+    let private getPropertyValue propertyDescriptor simulant =
+        SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
+
+    let private setPropertyValueWithoutUndo (value : obj) propertyDescriptor simulant =
+        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
+        | Right wtemp -> world <- wtemp
+        | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
+
+    let private setPropertyValueIgnoreError (value : obj) propertyDescriptor simulant =
+        snapshot ()
+        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
+        | Right wtemp -> world <- wtemp
+        | Left (_, wtemp) -> world <- wtemp
+
+    let private setPropertyValue (value : obj) propertyDescriptor simulant =
+        if  not (ImGui.IsMouseDragging ImGuiMouseButton.Left) ||
+            not (ImGui.IsMouseDraggingContinued ImGuiMouseButton.Left) then
+            snapshot ()
+        setPropertyValueWithoutUndo value propertyDescriptor simulant
+
     let private selectScreen screen =
         if screen <> selectedScreen then
             ImGui.SetWindowFocus null
@@ -391,7 +419,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private selectEntityOpt entityOpt =
 
         if entityOpt <> selectedEntityOpt then
-            focusedPropertyDescriptorOpt <- None
+
+            // try to focus on same entity property
+            match focusedPropertyDescriptorOpt with
+            | Some (propertyDescriptor, :? Entity) ->
+                match entityOpt with
+                | Some entity when containsProperty propertyDescriptor entity ->
+                    focusedPropertyDescriptorOpt <- Some (propertyDescriptor, entity)
+                | Some _ | None -> focusedPropertyDescriptorOpt <- None
+            | Some _ | None -> ()
+
             // HACK: in order to keep the property of one simulant from being copied to another when the selected
             // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
             // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
@@ -401,11 +438,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
         // actually set the selection
         selectedEntityOpt <- entityOpt
-
-    let private snapshot () =
-        world <- Nu.World.shelveCurrent world
-        worldsPast <- world :: worldsPast
-        worldsFuture <- []
 
     let private tryUndo () =
         if
@@ -419,6 +451,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
+            propertyValueStrPrevious <- ""
             selectedScreen <- World.getSelectedScreen world
             if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
@@ -441,6 +474,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     true
                 | [] -> false
              else false) then
+            propertyValueStrPrevious <- ""
             selectedScreen <- World.getSelectedScreen world
             if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
@@ -533,7 +567,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let lightProbeModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>
-            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Prominent, None, MaterialProperties.defaultProperties)) |>
+            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         world <-
             World.enqueueRenderMessage3d
@@ -550,7 +584,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let lightModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>
-            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Prominent, None, MaterialProperties.defaultProperties)) |>
+            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         world <-
             World.enqueueRenderMessage3d
@@ -594,7 +628,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         (RenderStaticModel
                             { Absolute = absolute
                               ModelMatrix = boundsMatrix
-                              Presence = Prominent
+                              Presence = Omnipresent
                               InsetOpt = None
                               MaterialProperties = MaterialProperties.defaultProperties
                               RenderType = ForwardRenderType (0.0f, Single.MinValue)
@@ -606,29 +640,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         (Cascade, world)
 
     (* Editor Commands *)
-
-    let private containsProperty propertyDescriptor simulant =
-        SimulantPropertyDescriptor.containsPropertyDescriptor propertyDescriptor simulant world
-
-    let private getPropertyValue propertyDescriptor simulant =
-        SimulantPropertyDescriptor.getValue propertyDescriptor simulant world
-
-    let private setPropertyValueWithoutUndo (value : obj) propertyDescriptor simulant =
-        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
-        | Right wtemp -> world <- wtemp
-        | Left (error, wtemp) -> messageBoxOpt <- Some error; world <- wtemp
-
-    let private setPropertyValueIgnoreError (value : obj) propertyDescriptor simulant =
-        snapshot ()
-        match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
-        | Right wtemp -> world <- wtemp
-        | Left (_, wtemp) -> world <- wtemp
-
-    let private setPropertyValue (value : obj) propertyDescriptor simulant =
-        if  not (ImGui.IsMouseDragging ImGuiMouseButton.Left) ||
-            not (ImGui.IsMouseDraggingContinued ImGuiMouseButton.Left) then
-            snapshot ()
-        setPropertyValueWithoutUndo value propertyDescriptor simulant
 
     let private createEntity atMouse inHierarchy =
         snapshot ()
@@ -947,6 +958,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let assembly = Assembly.LoadFrom filePath
                         Right (Some (filePath, dirName, assembly.GetTypes ()))
                 with _ ->
+                    Log.info ("Failed to load Nu game project from '" + filePath + "' due to: " + scstring exn)
                     Directory.SetCurrentDirectory gaiaDir
                     Left ()
             else Right None
@@ -1160,10 +1172,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
             if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Up) < 0.999f then world <- World.setEyeRotation3d rotation' world
-            if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Down) < 0.999f then world <- World.setEyeRotation3d rotation' world
             if ImGui.IsKeyDown ImGuiKey.UpArrow && ImGui.IsAltReleased () then
@@ -2526,6 +2538,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
                         if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
                             snapshot ()
+                            if not (Path.HasExtension groupFileDialogState.FilePath) then groupFileDialogState.FilePath <- groupFileDialogState.FilePath + ".nugroup"
                             showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
 
                     // rename group dialog

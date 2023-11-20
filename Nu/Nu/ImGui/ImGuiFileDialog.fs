@@ -249,6 +249,7 @@ module ImGui =
                     index <- inc index
 
                 // Draw files
+                let mutable filePicked = false
                 for fileEntry in files do
                     let mutable filePath = fileEntry.FullName
                     let mutable fileName = fileEntry.Name
@@ -258,6 +259,10 @@ module ImGui =
                     if ImGui.Selectable (fileName, dialogState.CurrentIndex = index, ImGuiSelectableFlags.AllowDoubleClick, v2 contentRegionWidth 0.0f) then
                         dialogState.CurrentIndex <- index
                         dialogState.FileName <- fileName
+
+                        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left then
+                            filePicked <- true
+
                     ImGui.NextColumn ()
                     ImGui.TextUnformatted size
                     ImGui.NextColumn ()
@@ -288,7 +293,7 @@ module ImGui =
 
                 match dialogState.FileDialogType with
                 | ImGuiFileDialogType.Open ->
-                    if ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                    if ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter || filePicked then
 
                         dialogState.ResultPath <- Path.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
@@ -307,7 +312,7 @@ module ImGui =
                             opened <- false
 
                 | ImGuiFileDialogType.Save ->
-                    if ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                    if ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter || filePicked then
 
                         dialogState.ResultPath <- Path.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 

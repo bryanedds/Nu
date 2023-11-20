@@ -219,6 +219,16 @@ namespace Nu
         }
 
         /// <summary>
+        /// Resize the box by a scalar factor while keeping its center fixed.
+        /// </summary>
+        public Box2 ScaleUniform(float scalar)
+        {
+            Vector2 newSize = Size * scalar;
+            Vector2 displacement = (newSize - Size) * 0.5f;
+            return new Box2(Min - displacement, newSize);
+        }
+
+        /// <summary>
         /// Combine area of box with a point.
         /// </summary>
         /// <param name="box"></param>

@@ -167,8 +167,8 @@ and [<ReferenceEquality>] RenderTasks =
       RenderLights : SortableLight List
       RenderSurfacesDeferredStaticAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
       RenderSurfacesDeferredStaticRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
-      RenderSurfacesDeferredAnimatedAbsolute : Dictionary<struct (single * int * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
-      RenderSurfacesDeferredAnimatedRelative : Dictionary<struct (single * int * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
+      RenderSurfacesDeferredAnimatedAbsolute : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
+      RenderSurfacesDeferredAnimatedRelative : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
       RenderSurfacesForwardAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
@@ -238,13 +238,12 @@ and [<NoEquality; NoComparison>] CachedStaticModelSurfaceMessage =
 
 /// An internally cached animated model used to reduce GC promotion or pressure.
 and [<NoEquality; NoComparison>] CachedAnimatedModelMessage =
-    { mutable CachedAnimatedModelAbsolute : bool
+    { mutable CachedAnimatedModelTime : GameTime
+      mutable CachedAnimatedModelAbsolute : bool
       mutable CachedAnimatedModelMatrix : Matrix4x4
-      mutable CachedAnimatedModelPresence : Presence
       mutable CachedAnimatedModelInsetOpt : Box2 voption
       mutable CachedAnimatedModelMaterialProperties : MaterialProperties
-      mutable CachedAnimatedModelAnimationTime : single
-      mutable CachedAnimatedModelAnimationIndex : int
+      mutable CachedAnimatedModelAnimations : Animation array
       mutable CachedAnimatedModel : AnimatedModel AssetTag }
 
 and [<ReferenceEquality>] CreateUserDefinedStaticModel =
@@ -350,20 +349,19 @@ and [<ReferenceEquality>] RenderStaticModels =
       StaticModel : StaticModel AssetTag }
 
 and [<ReferenceEquality>] RenderAnimatedModel =
-    { Absolute : bool
+    { Time : GameTime
+      Absolute : bool
       ModelMatrix : Matrix4x4
-      Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
-      AnimationTime : single
-      AnimationIndex : int
+      Animations : Animation array
       AnimatedModel : AnimatedModel AssetTag }
 
 and [<ReferenceEquality>] RenderAnimatedModels =
-    { Absolute : bool
-      AnimationTime : single
-      AnimationIndex : int
-      AnimatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
+    { Time : GameTime
+      Absolute : bool
+      Animations : Animation array
+      AnimatedModels : (Matrix4x4 * Box2 option * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag }
 
 and [<ReferenceEquality>] RenderUserDefinedStaticModel =
@@ -1288,63 +1286,115 @@ type [<ReferenceEquality>] GlRenderer3d =
         | _ -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
     static member private categorizeAnimatedModel
-        (skipCulling : bool,
-         frustumEnclosed : Frustum,
-         frustumExposed : Frustum,
-         frustumImposter : Frustum,
-         lightBox : Box3,
+        (time : GameTime,
          modelAbsolute : bool,
          modelMatrix : Matrix4x4 inref,
-         presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
-         animationTime : single,
-         animationIndex : int,
+         animations : Animation array,
          animatedModel : AnimatedModel AssetTag,
          renderer) =
+
+        // ensure we have the required animated model
         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize animatedModel) renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | AnimatedModelAsset modelAsset ->
+
+                // render animated surfaces
                 for surface in modelAsset.Surfaces do
-                    let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
-                    let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
-                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence then
+                    match modelAsset.AnimatedSceneOpt with
+                    | Some scene ->
 
-                        // 
-                        match modelAsset.AnimatedSceneOpt with
-                        | Some scene when animationIndex > -1 && animationIndex < scene.Animations.Count ->
+                        // compute tex coords offset
+                        let texCoordsOffset =
+                            match insetOpt with
+                            | ValueSome inset ->
+                                let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
+                                let texelWidth = albedoMetadata.TextureTexelWidth
+                                let texelHeight = albedoMetadata.TextureTexelHeight
+                                let px = inset.Min.X * texelWidth
+                                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                                let sx = inset.Size.X * texelWidth
+                                let sy = -inset.Size.Y * texelHeight
+                                Box2 (px, py, sx, sy)
+                            | ValueNone -> box2 v2Zero v2Zero
 
-                            // compute tex coords offset
-                            let texCoordsOffset =
-                                match insetOpt with
-                                | ValueSome inset ->
-                                    let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
-                                    let texelWidth = albedoMetadata.TextureTexelWidth
-                                    let texelHeight = albedoMetadata.TextureTexelHeight
-                                    let px = inset.Min.X * texelWidth
-                                    let py = (inset.Min.Y + inset.Size.Y) * texelHeight
-                                    let sx = inset.Size.X * texelWidth
-                                    let sy = -inset.Size.Y * texelHeight
-                                    Box2 (px, py, sx, sy)
-                                | ValueNone -> box2 v2Zero v2Zero
+                        // render animated meshes
+                        for mesh in scene.Meshes do
 
-                            for mesh in scene.Meshes do
-                                let bones =
-                                    mesh.AnimateBones (animationTime, animationIndex, scene)
+                            // render animated surface
+                            let bones = mesh.ComputeBoneTransforms (time, animations, scene)
+                            if modelAbsolute then
+                                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                                if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderTasks)
+                                then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
+                                else renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                            else
+                                let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                                if renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderTasks)
+                                then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
+                                else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+
+                    // unable to render
+                    | Some _ | None -> ()
+            | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
+        | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
+
+    static member private categorizeAnimatedModels
+        (time : GameTime,
+         modelAbsolute : bool,
+         animatedModels : (Matrix4x4 * Box2 option * MaterialProperties) SList,
+         animations : Animation array,
+         animatedModel : AnimatedModel AssetTag,
+         renderer) =
+
+        // ensure we have the required animated model
+        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize animatedModel) renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | AnimatedModelAsset modelAsset ->
+
+                // render animated surfaces
+                for surface in modelAsset.Surfaces do
+                    match modelAsset.AnimatedSceneOpt with
+                    | Some scene ->
+
+                        // render animated meshes
+                        for mesh in scene.Meshes do
+
+                            // render animated surfaces
+                            let bones = mesh.ComputeBoneTransforms (time, animations, scene)
+                            for (modelMatrix, insetOpt, properties) in animatedModels do
+
+                                // compute tex coords offset
+                                let texCoordsOffset =
+                                    match insetOpt with
+                                    | Some inset ->
+                                        let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
+                                        let texelWidth = albedoMetadata.TextureTexelWidth
+                                        let texelHeight = albedoMetadata.TextureTexelHeight
+                                        let px = inset.Min.X * texelWidth
+                                        let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                                        let sx = inset.Size.X * texelWidth
+                                        let sy = -inset.Size.Y * texelHeight
+                                        Box2 (px, py, sx, sy)
+                                    | None -> box2 v2Zero v2Zero
+
+                                // render animated surface
                                 if modelAbsolute then
                                     let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (animationTime, animationIndex, surface), &renderTasks)
+                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderTasks)
                                     then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (animationTime, animationIndex, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
                                 else
                                     let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (animationTime, animationIndex, surface), &renderTasks)
+                                    if renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderTasks)
                                     then (snd' renderTasks).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (animationTime, animationIndex, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
 
-                        | Some _ | None -> ()
-
+                    // unable to render
+                    | Some _ | None -> ()
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
         | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
@@ -1808,16 +1858,26 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
-        // attempt to deferred render terrains w/ absolute transforms if in top level render
+        // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsAbsolute do
-                GlRenderer3d.renderPhysicallyBasedTerrain viewAbsoluteArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+            for entry in renderer.RenderTasks.RenderSurfacesDeferredStaticAbsolute do
+                GlRenderer3d.renderPhysicallyBasedSurfaces
+                    viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value false
+                    lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
+                    entry.Key renderer.RenderPhysicallyBasedDeferredStaticShader renderer
+                OpenGL.Hl.Assert ()
 
-        // attempt to deferred render terrains w/ relative transforms
-        for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsRelative do
-            GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+        // deferred render static surfaces w/ relative transforms
+        for entry in renderer.RenderTasks.RenderSurfacesDeferredStaticRelative do
+            GlRenderer3d.renderPhysicallyBasedSurfaces
+                viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value false
+                lightAmbientColor lightAmbientBrightness renderer.RenderBrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
+                entry.Key renderer.RenderPhysicallyBasedDeferredStaticShader renderer
+            OpenGL.Hl.Assert ()
 
-        // deferred render surfaces w/ absolute transforms if in top level render
+        // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
             for entry in renderer.RenderTasks.RenderSurfacesDeferredAnimatedAbsolute do
                 let struct (_, _, surface) = entry.Key
@@ -1841,6 +1901,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightsCount
                 surface renderer.RenderPhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
+
+        // attempt to deferred render terrains w/ absolute transforms if in top level render
+        if topLevelRender then
+            for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsAbsolute do
+                GlRenderer3d.renderPhysicallyBasedTerrain viewAbsoluteArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
+
+        // attempt to deferred render terrains w/ relative transforms
+        for (descriptor, geometry) in renderer.RenderTasks.RenderTerrainsRelative do
+            GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.RenderPhysicallyBasedDeferredTerrainShader renderer
 
         // run light mapping pass
         let lightMappingTexture =
@@ -2097,14 +2166,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeAnimatedModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.AnimationTime, rsm.AnimationIndex, rsm.AnimatedModel, renderer)
+                GlRenderer3d.categorizeAnimatedModel (rsm.Time, rsm.Absolute, &rsm.ModelMatrix, &insetOpt, &rsm.MaterialProperties, rsm.Animations, rsm.AnimatedModel, renderer)
             | RenderAnimatedModels rams ->
-                for (modelMatrix, presence, insetOpt, properties) in rams.AnimatedModels do
-                    let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeAnimatedModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rams.Absolute, &modelMatrix, presence, &insetOpt, &properties, rams.AnimationTime, rams.AnimationIndex, rams.AnimatedModel, renderer)
+                GlRenderer3d.categorizeAnimatedModels (rams.Time, rams.Absolute, rams.AnimatedModels, rams.Animations, rams.AnimatedModel, renderer)
             | RenderCachedAnimatedModel camm ->
-                GlRenderer3d.categorizeAnimatedModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, camm.CachedAnimatedModelAbsolute, &camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelAnimationTime, camm.CachedAnimatedModelAnimationIndex, camm.CachedAnimatedModel, renderer)
-
+                GlRenderer3d.categorizeAnimatedModel (camm.CachedAnimatedModelTime, camm.CachedAnimatedModelAbsolute, &camm.CachedAnimatedModelMatrix, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelAnimations, camm.CachedAnimatedModel, renderer)
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Absolute, rt.TerrainDescriptor, renderer)
             | RenderPostPass3d rp ->
