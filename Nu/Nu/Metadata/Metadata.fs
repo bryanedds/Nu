@@ -20,7 +20,6 @@ type Metadata =
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
     | SongMetadata
-    | OtherMetadata of obj
 
 [<RequireQualifiedAccess>]
 module Metadata =
