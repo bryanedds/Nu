@@ -2,9 +2,9 @@
 #version 410 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
-const int TERRAIN_LAYERS_MAX = 6;
+const int TERRAIN_LAYERS_MAX = 8;
 
-const vec2 TexCoordsOffsetFilters[TEX_COORDS_OFFSET_VERTS] =
+const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =
     vec2[TEX_COORDS_OFFSET_VERTS](
         vec2(1,1),
         vec2(0,1),
@@ -51,7 +51,7 @@ void main()
 {
     positionOut = model * vec4(position, 1.0);
     int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
-    vec2 texCoordsOffsetFilter = TexCoordsOffsetFilters[texCoordsOffsetIndex];
+    vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TexCoordsOffsetFilters2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
     albedoOut = albedo;
@@ -70,7 +70,7 @@ void main()
 #version 410 core
 
 const float GAMMA = 2.2;
-const int TERRAIN_LAYERS_MAX = 6;
+const int TERRAIN_LAYERS_MAX = 8;
 
 uniform vec3 eyeCenter;
 uniform int layersCount;
