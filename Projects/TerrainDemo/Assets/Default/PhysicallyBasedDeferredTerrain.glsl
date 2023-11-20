@@ -59,7 +59,6 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
-    for (int i = 0; i < TERRAIN_LAYERS_MAX; ++i) splatsOut[i] = splats[i];
     splatsOut[0] = splats[0];
     splatsOut[1] = splats[1];
     tintOut = tint;
