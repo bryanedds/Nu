@@ -116,7 +116,7 @@ void main()
 
     // compute height blend and height
     float heightBlend = 0.0;
-    for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splatsOut[i/4][i];
+    for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splatsOut[i/4][i%4];
     float height = heightBlend * heightOut;
 
     // compute tex coords in parallax space
@@ -133,7 +133,7 @@ void main()
     vec3 normalBlend = vec3(0.0);
     for (int i = 0; i < layersCountCeil; ++i)
     {
-        float splat = splatsOut[i/4][i];
+        float splat = splatsOut[i/4][i%4];
         albedoBlend += texture(albedoTextures[i], texCoords) * splat;
         vec4 roughness = texture(roughnessTextures[i], texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.g : roughness.a) * splat;
