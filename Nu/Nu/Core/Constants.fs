@@ -106,6 +106,7 @@ module Render =
     let [<Literal>] AnimatedModelMessagesPrealloc = 128
     let [<Literal>] AnimatedModelSurfaceMessagesPrealloc = 128
     let [<Literal>] GeometryBatchPrealloc = 1024
+    let [<Literal>] TerrainLayersMaxSafe = 6
     let [<Literal>] TerrainLayersMax = 8
     let [<Literal>] LightMapsMaxDeferred = 27
     let [<Literal>] LightMapsMaxForward = 2
