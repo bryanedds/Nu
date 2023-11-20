@@ -34,7 +34,7 @@ module Metadata =
     let private OggTimer = Stopwatch ()
 
     let mutable private MetadataPackages :
-        UMap<string, UMap<string, Metadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
+        UMap<string, UMap<string, string * Metadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
 
     let private tryGenerateTextureMetadata asset =
         if File.Exists asset.FilePath then
@@ -129,7 +129,7 @@ module Metadata =
                 metadataOpt
             | _ -> None
         match metadataOpt with
-        | Some metadata -> Some (asset.AssetTag.AssetName, metadata)
+        | Some metadata -> Some (asset.AssetTag.AssetName, (asset.FilePath, metadata))
         | None -> None
 
     let private tryGenerateMetadataPackage config packageName assetGraph =
@@ -168,12 +168,21 @@ module Metadata =
                 MetadataPackages
                 packageNames
 
+    /// Attempt to get the file path of the given asset.
+    let tryGetFilePath (assetTag : obj AssetTag) =
+        match UMap.tryFind assetTag.PackageName MetadataPackages with
+        | Some package ->
+            match UMap.tryFind assetTag.AssetName package with
+            | Some (filePath, _) -> Some filePath
+            | None -> None
+        | None -> None
+
     /// Attempt to get the metadata of the given asset.
     let tryGetMetadata (assetTag : obj AssetTag) =
         match UMap.tryFind assetTag.PackageName MetadataPackages with
         | Some package ->
             match UMap.tryFind assetTag.AssetName package with
-            | Some _ as asset -> asset
+            | Some (_, asset) -> Some asset
             | None -> None
         | None -> None
 

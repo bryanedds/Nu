@@ -578,14 +578,14 @@ module WorldModule3 =
                         for (packageName, package) in (Metadata.getMetadataPackages ()).Pairs do
                             for (assetName, metadata) in package.Pairs do
                                 match metadata with
-                                | StaticModelMetadata staticModel -> (asset packageName assetName, staticModel)
+                                | (_, StaticModelMetadata staticModel) -> (asset packageName assetName, staticModel)
                                 | _ -> () } |>
                     dictPlus HashIdentity.Structural
 
                 // make the world's subsystems
                 let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
                 let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
-                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault staticModelsMetadata
+                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault Metadata.tryGetFilePath staticModelsMetadata
                 let rendererProcess = RendererThread () :> RendererProcess
                 rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint

@@ -113,6 +113,8 @@ module TmxMap =
         | BodyConvexHull convexHull ->
             Log.traceIf (Option.isSome convexHull.TransformOpt) "Transform of importing tile map shape should be None."
             BodyConvexHull { convexHull with Vertices = Array.map (fun point -> point * tileSize.V3) convexHull.Vertices; TransformOpt = transformOpt }
+        | BodyTerrain _ as terrain ->
+            terrain
         | BodyStaticModelSurface _ as staticModelSurface ->
             staticModelSurface
         | BodyStaticModel _ as staticModel ->

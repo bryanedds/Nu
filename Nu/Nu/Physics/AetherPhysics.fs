@@ -237,6 +237,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | BodyCapsule bodyCapsule -> AetherPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule body |> Array.ofSeq
         | BodyBoxRounded bodyBoxRounded -> AetherPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded body |> Array.ofSeq
         | BodyConvexHull bodyConvexHull -> AetherPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull body |> Array.singleton
+        | BodyTerrain _ -> [||]
         | BodyStaticModel _ -> [||]
         | BodyStaticModelSurface _ -> [||]
         | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes body
