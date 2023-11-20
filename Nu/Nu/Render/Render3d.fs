@@ -650,18 +650,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         | Left error -> Log.debug ("Could not load model '" + asset.FilePath + "' due to: " + error); None
 
     static member private tryLoadRawAsset (asset : obj Asset) =
-        try let bytes = File.ReadAllBytes asset.FilePath
-            Some bytes
-        with exn ->
-            Log.debug ("Could not load texture '" + asset.FilePath + "' due to: " + scstring exn)
-            None
+        if File.Exists asset.FilePath
+        then Some ()
+        else None
 
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
         | ".raw" ->
             match GlRenderer3d.tryLoadRawAsset asset with
-            | Some bytes -> Some (RawAsset (asset.FilePath, bytes))
+            | Some () -> Some (RawAsset asset.FilePath)
             | None -> None
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
             match GlRenderer3d.tryLoadTextureAsset packageState asset renderer with
@@ -706,14 +704,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         match renderPackage.Assets.TryGetValue asset.AssetTag.AssetName with
                         | (true, renderAsset) ->
                             match renderAsset with
-                            | RawAsset _ ->
-                                match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
-                                | ".raw" ->
-                                    renderPackage.Assets.Remove asset.AssetTag.AssetName |> ignore<bool>
-                                    match GlRenderer3d.tryLoadRawAsset asset with
-                                    | Some bytes -> renderPackage.Assets.Add (asset.AssetTag.AssetName, RawAsset (asset.FilePath, bytes))
-                                    | None -> ()
-                                | _ -> ()
+                            | RawAsset _ -> ()
                             | TextureAsset _ -> () // already reloaded via texture memo
                             | FontAsset _ -> () // not yet used in 3d renderer
                             | CubeMapAsset _ -> () // already reloaded via cube map memo
@@ -955,7 +946,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             HeightMap.tryGetMetadata
                 (fun assetTag ->
                     match GlRenderer3d.tryGetRenderAsset assetTag renderer with
-                    | ValueSome (RawAsset (filePath, _)) -> Some filePath
+                    | ValueSome (RawAsset filePath) -> Some filePath
                     | ValueSome (TextureAsset (filePath, _, _)) -> Some filePath
                     | _ -> None)
                 geometryDescriptor.Bounds
