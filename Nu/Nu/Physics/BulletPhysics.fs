@@ -36,7 +36,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolver : ConstraintSolver
           TryGetAssetFilePath : obj AssetTag -> string option
-          StaticModels : Dictionary<StaticModel AssetTag, OpenGL.PhysicallyBased.PhysicallyBasedModel> // TODO: consider using another try getter lambda here instead.
+          TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
           PhysicsMessages : PhysicsMessage UList
           IntegrationMessages : IntegrationMessage List }
 
@@ -215,8 +215,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     // TODO: add some error logging.
     static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) centerMassInertias physicsEngine =
-        match physicsEngine.StaticModels.TryGetValue bodyStaticModel.StaticModel with
-        | (true, staticModel) ->
+        match physicsEngine.TryGetStaticModelMetadata bodyStaticModel.StaticModel with
+        | Some staticModel ->
             Seq.fold (fun centerMassInertias i ->
                 let surface = staticModel.Surfaces.[i]
                 let transform =
@@ -227,19 +227,19 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertias physicsEngine)
                 centerMassInertias
                 [0 .. dec staticModel.Surfaces.Length]
-        | (false, _) -> centerMassInertias
+        | None -> centerMassInertias
 
     // TODO: add some error logging.
     static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) centerMassInertias physicsEngine =
-        match physicsEngine.StaticModels.TryGetValue bodyStaticModelSurface.StaticModel with
-        | (true, staticModel) ->
+        match physicsEngine.TryGetStaticModelMetadata bodyStaticModelSurface.StaticModel with
+        | Some staticModel ->
             if  bodyStaticModelSurface.SurfaceIndex > -1 &&
                 bodyStaticModelSurface.SurfaceIndex < staticModel.Surfaces.Length then
                 let geometry = staticModel.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
                 let bodyConvexHull = { Vertices = geometry.Vertices; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
                 BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertias
             else centerMassInertias
-        | (false, _) -> centerMassInertias
+        | None -> centerMassInertias
 
     static member private attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine =
         List.fold (fun centerMassInertias bodyShape ->
@@ -536,7 +536,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         for physicsMessage in physicsMessages do
             BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
-    static member make imperative gravity tryGetAssetFilePath staticModels =
+    static member make imperative gravity tryGetAssetFilePath tryGetStaticModelMetadata =
         let config = if imperative then Imperative else Functional
         let physicsMessages = UList.makeEmpty config
         let collisionConfiguration = new DefaultCollisionConfiguration ()
@@ -556,7 +556,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           BroadPhaseInterface = broadPhaseInterface
           ConstraintSolver = constraintSolver
           TryGetAssetFilePath = tryGetAssetFilePath
-          StaticModels = staticModels
+          TryGetStaticModelMetadata = tryGetStaticModelMetadata
           PhysicsMessages = physicsMessages
           IntegrationMessages = List () }
 
