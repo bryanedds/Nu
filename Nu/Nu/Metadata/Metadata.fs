@@ -14,6 +14,7 @@ Metadata from another thread. *)
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
 type Metadata =
+    | RawMetadata // TODO: consider including byte array here.
     | TextureMetadata of Vector2i
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
@@ -25,6 +26,7 @@ type Metadata =
 module Metadata =
 
     (* Performance Timers *)
+    let private RawTimer = Stopwatch ()
     let private TextureTimer = Stopwatch ()
     let private TmxTimer = Stopwatch ()
     let private FbxTimer = Stopwatch ()
@@ -35,6 +37,11 @@ module Metadata =
 
     let mutable private MetadataPackages :
         UMap<string, UMap<string, string * Metadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
+
+    let private tryGenerateRawMetadata asset =
+        if File.Exists asset.FilePath
+        then Some RawMetadata
+        else None
 
     let private tryGenerateTextureMetadata asset =
         if File.Exists asset.FilePath then
@@ -92,6 +99,11 @@ module Metadata =
         let extension = Path.GetExtension(asset.FilePath).ToLowerInvariant()
         let metadataOpt =
             match extension with
+            | ".raw" ->
+                RawTimer.Start ()
+                let metadataOpt = tryGenerateRawMetadata asset
+                RawTimer.Stop ()
+                metadataOpt
             | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
                 TextureTimer.Start ()
                 let metadataOpt = tryGenerateTextureMetadata asset
