@@ -2806,6 +2806,12 @@ module TerrainFacetModule =
         static member Properties =
             [define Entity.Size (v3 1024.0f 128.0f 1024.0f)
              define Entity.Presence Omnipresent
+             define Entity.BodyEnabled true
+             define Entity.Friction 0.0f
+             define Entity.Restitution 0.0f
+             define Entity.CollisionCategories "1"
+             define Entity.CollisionMask Constants.Physics.CollisionWildcard
+             define Entity.ModelDriven false
              define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
              define Entity.TerrainMaterial
                 (FlatMaterial
@@ -2818,32 +2824,55 @@ module TerrainFacetModule =
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.Tiles v2One
              define Entity.HeightMap (ImageHeightMap Assets.Default.HeightMap)
-             define Entity.Segments v2iOne]
+             define Entity.Segments v2iOne
+             computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
         override this.Register (entity, world) =
-            ignore entity
-            // TODO: optionally implement registration behavior for the faceted entity.
-            world
-
-        override this.Unregister (entity, world) =
-            ignore entity
-            // TODO: optionally implement unregistration behavior for the faceted entity.
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TerrainFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TerrainFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TerrainFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity (nameof TerrainFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
             world
 
         override this.RegisterPhysics (entity, world) =
-            ignore entity
-            // TODO: optionally implement registration behavior for the faceted entity.
-            world
+            match entity.TryGetTerrainResolution world with
+            | Some resolution ->
+                let mutable transform = entity.GetTransform world
+                let bodyTerrain =
+                    { Resolution = resolution
+                      Bounds = transform.Bounds
+                      HeightMap = entity.GetHeightMap world
+                      TransformOpt = None
+                      PropertiesOpt = None }
+                let bodyProperties =
+                    { BodyIndex = (entity.GetBodyId world).BodyIndex
+                      Center = transform.Center
+                      Rotation = transform.Rotation
+                      BodyShape = BodyTerrain bodyTerrain
+                      BodyType = Static
+                      SleepingAllowed = true
+                      Enabled = entity.GetBodyEnabled world
+                      Friction = entity.GetFriction world
+                      Restitution = entity.GetRestitution world
+                      LinearVelocity = v3Zero
+                      LinearDamping = 0.0f
+                      AngularVelocity = v3Zero
+                      AngularDamping = 0.0f
+                      AngularFactor = v3Zero
+                      Substance = Mass 0.0f
+                      GravityOverride = None
+                      CollisionDetection = Discontinuous
+                      CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
+                      CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
+                      Sensor = false }
+                World.createBody false (entity.GetBodyId world) bodyProperties world
+            | None -> world
 
         override this.UnregisterPhysics (entity, world) =
-            ignore entity
-            // TODO: optionally implement unregistration behavior for the faceted entity.
-            world
-
-        override this.Update (entity, world) =
-            ignore entity
-            // TODO: optionally implement update code for the faceted entity.
-            world
+            World.destroyBody false (entity.GetBodyId world) world
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world

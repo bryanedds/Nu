@@ -545,7 +545,7 @@ module WorldModule3 =
                     EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
                     
                 // make plug-in facets and dispatchers
-                let pluginAssemblies = [|(plugin.GetType ()).Assembly|]
+                let pluginAssemblies = [|plugin.GetType().Assembly|]
                 let pluginFacets = plugin.Birth<Facet> pluginAssemblies
                 let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
                 let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies

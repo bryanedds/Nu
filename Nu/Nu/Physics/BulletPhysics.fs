@@ -193,12 +193,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let bounds = bodyTerrain.Bounds
         match HeightMap.tryGetMetadata tryGetAssetFilePath bounds v2One bodyTerrain.HeightMap with
         | Some heightMapMetadata ->
-            let positions = Array.map fst' heightMapMetadata.PositionsAndTexCoordses
+            let positions = Array.zeroCreate heightMapMetadata.PositionsAndTexCoordses.Length
+            for i in 0 .. dec heightMapMetadata.PositionsAndTexCoordses.Length do
+                positions.[i] <- fst' heightMapMetadata.PositionsAndTexCoordses.[i]
             let handle = GCHandle.Alloc (positions, GCHandleType.Pinned)
             try let positionsPtr = handle.AddrOfPinnedObject ()
                 let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, 1.0f, 1, PhyScalarType.Single, false)
                 BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
-                terrain.Margin <- Constants.Physics.CollisionMargin3d
+                //terrain.LocalScaling <- v3 bounds.Width bounds.Height bounds.Depth
                 terrain.UserObject <-
                     { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                       ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -210,7 +212,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let inertia = terrain.CalculateLocalInertia mass
                 compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, terrain)
                 (center, mass, inertia) :: centerMassInertias
-            finally handle.Free ()
+            finally (*handle.Free*) () // freeing the handle seems to cause a crash since bullet doesn't seem to copy the data.
         | None -> centerMassInertias
 
     // TODO: add some error logging.
