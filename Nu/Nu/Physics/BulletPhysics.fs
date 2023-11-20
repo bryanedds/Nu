@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Numerics
+open System.Runtime.InteropServices
 open BulletSharp
 open Prime
 
@@ -34,7 +35,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolver : ConstraintSolver
-          StaticModels : Dictionary<StaticModel AssetTag, OpenGL.PhysicallyBased.PhysicallyBasedModel>
+          TryGetAssetFilePath : obj AssetTag -> string option
+          StaticModels : Dictionary<StaticModel AssetTag, OpenGL.PhysicallyBased.PhysicallyBasedModel> // TODO: consider using another try getter lambda here instead.
           PhysicsMessages : PhysicsMessage UList
           IntegrationMessages : IntegrationMessage List }
 
@@ -53,7 +55,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
-    static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (shape : ConvexInternalShape) =
+    static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (shape : CollisionShape) =
         shape.Margin <- Constants.Physics.CollisionMargin3d
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
@@ -158,25 +160,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertias
 
-    static member private attachBodyTerrain bodySource (bodyProperties : BodyProperties) (bodyTerrain : BodyTerrain) (compoundShape : CompoundShape) centerMassInertias =
-        let resolution = bodyTerrain.Resolution
-        let bounds = bodyTerrain.Bounds
-        let minHeight = bounds.Min.Y
-        let maxHeight = bounds.Max.Y
-        let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, nativeint 0, 1.0f, minHeight, maxHeight, 1, PhyScalarType.Single, false)
-        terrain.Margin <- Constants.Physics.CollisionMargin3d
-        terrain.UserObject <-
-            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        let center =
-            match bodyTerrain.TransformOpt with
-            | Some transform -> transform.Translation
-            | None -> v3Zero
-        let mass = 0.0f // infinite mass
-        let inertia = terrain.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, terrain)
-        (center, mass, inertia) :: centerMassInertias
-
     static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) centerMassInertias =
         let hull = new ConvexHullShape (bodyConvexHull.Vertices)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
@@ -204,6 +187,31 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let inertia = hull.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia) :: centerMassInertias
+
+    static member private attachBodyTerrain tryGetAssetFilePath bodySource (bodyProperties : BodyProperties) (bodyTerrain : BodyTerrain) (compoundShape : CompoundShape) centerMassInertias =
+        let resolution = bodyTerrain.Resolution
+        let bounds = bodyTerrain.Bounds
+        match HeightMap.tryGetMetadata tryGetAssetFilePath bounds v2One bodyTerrain.HeightMap with
+        | Some heightMapMetadata ->
+            let positions = Array.map fst' heightMapMetadata.PositionsAndTexCoordses
+            let handle = GCHandle.Alloc (positions, GCHandleType.Pinned)
+            try let positionsPtr = handle.AddrOfPinnedObject ()
+                let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, 1.0f, 1, PhyScalarType.Single, false)
+                BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
+                terrain.Margin <- Constants.Physics.CollisionMargin3d
+                terrain.UserObject <-
+                    { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+                      ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+                let center =
+                    match bodyTerrain.TransformOpt with
+                    | Some transform -> transform.Translation
+                    | None -> v3Zero
+                let mass = 0.0f // infinite mass
+                let inertia = terrain.CalculateLocalInertia mass
+                compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, terrain)
+                (center, mass, inertia) :: centerMassInertias
+            finally handle.Free ()
+        | None -> centerMassInertias
 
     // TODO: add some error logging.
     static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) centerMassInertias physicsEngine =
@@ -233,25 +241,25 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             else centerMassInertias
         | (false, _) -> centerMassInertias
 
-    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine =
+    static member private attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine =
         List.fold (fun centerMassInertias bodyShape ->
-            let centerMassInertias' = BulletPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape compoundShape centerMassInertias physicsEngine
+            let centerMassInertias' = BulletPhysicsEngine.attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertias physicsEngine
             centerMassInertias' @ centerMassInertias)
             centerMassInertias
             bodyShapes
 
-    static member private attachBodyShape bodySource bodyProperties bodyShape compoundShape centerMassInertias physicsEngine =
+    static member private attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertias physicsEngine =
         match bodyShape with
         | BodyEmpty -> centerMassInertias
         | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertias
         | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertias
         | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertias
         | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertias
-        | BodyTerrain bodyTerrain -> BulletPhysicsEngine.attachBodyTerrain bodySource bodyProperties bodyTerrain compoundShape centerMassInertias
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertias
+        | BodyTerrain bodyTerrain -> BulletPhysicsEngine.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertias
         | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertias physicsEngine
         | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertias physicsEngine
-        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine
+        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
         let (shape, centerMassInertias) =
@@ -287,7 +295,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
         BulletPhysicsEngine.createBody3 (fun ps cs cmas ->
-            BulletPhysicsEngine.attachBodyShape bodyId.BodySource ps bodyShape cs cmas physicsEngine)
+            BulletPhysicsEngine.attachBodyShape physicsEngine.TryGetAssetFilePath bodyId.BodySource ps bodyShape cs cmas physicsEngine)
             bodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -528,7 +536,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         for physicsMessage in physicsMessages do
             BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
 
-    static member make imperative gravity staticModels =
+    static member make imperative gravity tryGetAssetFilePath staticModels =
         let config = if imperative then Imperative else Functional
         let physicsMessages = UList.makeEmpty config
         let collisionConfiguration = new DefaultCollisionConfiguration ()
@@ -547,6 +555,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
           ConstraintSolver = constraintSolver
+          TryGetAssetFilePath = tryGetAssetFilePath
           StaticModels = staticModels
           PhysicsMessages = physicsMessages
           IntegrationMessages = List () }

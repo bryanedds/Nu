@@ -268,16 +268,16 @@ type BodyBoxRounded =
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body convex hull.
-type BodyTerrain =
-    { Resolution : Vector2i
-      Bounds : Box3
-      HeightMap : HeightMap
+type BodyConvexHull =
+    { Vertices : Vector3 array
       TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body convex hull.
-type BodyConvexHull =
-    { Vertices : Vector3 array
+type BodyTerrain =
+    { Resolution : Vector2i
+      Bounds : Box3
+      HeightMap : HeightMap
       TransformOpt : Matrix4x4 option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -659,6 +659,7 @@ module Physics =
         | BodyCapsule bodyCapsule -> BodyCapsule { bodyCapsule with Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; TransformOpt = scaleTranslation size bodyCapsule.TransformOpt }
         | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { bodyBoxRounded with Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; TransformOpt = scaleTranslation size bodyBoxRounded.TransformOpt }
         | BodyConvexHull bodyConvexHull -> BodyConvexHull { bodyConvexHull with Vertices = Array.map (fun vertex -> size * vertex) bodyConvexHull.Vertices; TransformOpt = scaleTranslation size bodyConvexHull.TransformOpt }
+        | BodyTerrain _ as bodyTerrain -> bodyTerrain
         | BodyStaticModel _ as bodyStaticModel -> bodyStaticModel
         | BodyStaticModelSurface _ as bodyStaticModelSurface -> bodyStaticModelSurface
         | BodyShapes bodyShapes -> BodyShapes (List.map (localizeBodyShape size) bodyShapes)
