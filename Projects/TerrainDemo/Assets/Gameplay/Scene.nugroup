@@ -21,15 +21,17 @@
       [[2048 2048] [RawUInt16 BigEndian] [Gameplay TwoKHeightMapRaw]]]]
     [Name Terrain]
     [NormalImage [Gameplay TwoKNormalMap]]
-    [Presence Omnipresent]
     [Size [2048 195 2048]]
     [TerrainMaterial
      [SplatMaterial
       [[[[Gameplay Texture2Albedo] [Gameplay Texture2Roughness] [Gameplay Texture2Ao] [Gameplay Texture2Normal] [Gameplay Texture2Height]]
         [[Gameplay Texture1Albedo] [Gameplay Texture1Roughness] [Gameplay Texture1Ao] [Gameplay Texture1Normal] [Gameplay Texture1Height]]
         [[Gameplay Texture0Albedo] [Gameplay Texture0Roughness] [Gameplay Texture0Ao] [Gameplay Texture0Normal] [Gameplay Texture0Height]]
-        [[Gameplay Texture3Albedo] [Gameplay Texture3Roughness] [Gameplay Texture3Ao] [Gameplay Texture3Normal] [Gameplay Texture3Height]]]
-       [RedsMap [[Gameplay TwoKSplatMap0] [Gameplay TwoKSplatMap1] [Gameplay TwoKSplatMap2] [Gameplay TwoKSplatMap3]]]]]]
+        [[Gameplay Texture3Albedo] [Gameplay Texture3Roughness] [Gameplay Texture3Ao] [Gameplay Texture3Normal] [Gameplay Texture3Height]]
+        [[Gameplay Texture2Albedo] [Gameplay Texture2Roughness] [Gameplay Texture2Ao] [Gameplay Texture2Normal] [Gameplay Texture2Height]]
+        [[Gameplay Texture1Albedo] [Gameplay Texture1Roughness] [Gameplay Texture1Ao] [Gameplay Texture1Normal] [Gameplay Texture1Height]]]
+       [RedsMap
+        [[Gameplay Dummy] [Gameplay Dummy] [Gameplay TwoKSplatMap2] [Gameplay TwoKSplatMap3] [Gameplay TwoKSplatMap0] [Gameplay TwoKSplatMap1]]]]]]
     [TerrainMaterialProperties
      [[AlbedoOpt
        [ValueSome [1 1 1 1]]]
