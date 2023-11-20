@@ -2807,7 +2807,7 @@ module TerrainFacetModule =
             [define Entity.Size (v3 1024.0f 128.0f 1024.0f)
              define Entity.Presence Omnipresent
              define Entity.BodyEnabled true
-             define Entity.Friction 0.0f
+             define Entity.Friction 0.5f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask Constants.Physics.CollisionWildcard
