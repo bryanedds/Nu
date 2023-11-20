@@ -8,6 +8,9 @@ open System.IO
 open TiledSharp
 open Prime
 
+/// A raw data asset. Currently just used as a phantom type.
+type Raw = private { __ : unit }
+
 /// An image. Currently just used as a phantom type.
 type Image = private { __ : unit }
 
@@ -31,9 +34,6 @@ type StaticModel = private { __ : unit }
 
 /// An animated model. Currently just used as a phantom type.
 type AnimatedModel = private { __ : unit }
-
-/// A raw data asset. Currently just used as a phantom type.
-type Raw = private { __ : unit }
 
 /// Thrown when a tile set property is not found.
 exception TileSetPropertyNotFoundException of string

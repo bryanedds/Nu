@@ -79,7 +79,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | Kinematic ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
-        //object.IsBullet <- bodyProperties.Bullet // TODO: see if we can find a Bullet equivalent of this to Aether.
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body
@@ -159,6 +158,25 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertias
 
+    static member private attachBodyTerrain bodySource (bodyProperties : BodyProperties) (bodyTerrain : BodyTerrain) (compoundShape : CompoundShape) centerMassInertias =
+        let resolution = bodyTerrain.Resolution
+        let bounds = bodyTerrain.Bounds
+        let minHeight = bounds.Min.Y
+        let maxHeight = bounds.Max.Y
+        let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, nativeint 0, 1.0f, minHeight, maxHeight, 1, PhyScalarType.Single, false)
+        terrain.Margin <- Constants.Physics.CollisionMargin3d
+        terrain.UserObject <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+        let center =
+            match bodyTerrain.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let mass = 0.0f // infinite mass
+        let inertia = terrain.CalculateLocalInertia mass
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, terrain)
+        (center, mass, inertia) :: centerMassInertias
+
     static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) centerMassInertias =
         let hull = new ConvexHullShape (bodyConvexHull.Vertices)
         BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
@@ -229,6 +247,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertias
         | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertias
         | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertias
+        | BodyTerrain bodyTerrain -> BulletPhysicsEngine.attachBodyTerrain bodySource bodyProperties bodyTerrain compoundShape centerMassInertias
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertias
         | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertias physicsEngine
         | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertias physicsEngine
