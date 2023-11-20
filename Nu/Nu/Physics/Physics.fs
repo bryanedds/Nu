@@ -62,106 +62,105 @@ type [<StructuralEquality; NoComparison>] HeightMap =
                 None
         | None -> None
 
-    /// Attempt to compute height map metadata, loading assets as required.
-    static member tryGetMetadata tryGetAssetFilePath (bounds : Box3) tiles heightMap =
+    static member private tryGetImageHeightMapMetadata tryGetAssetFilePath (bounds : Box3) tiles image =
+        match HeightMap.tryGetImageData tryGetAssetFilePath image with
+        | Some (metadata, bytes) ->
+            let resolutionX = metadata.TextureWidth
+            let resolutionY = metadata.TextureHeight
+            let quadSizeX = bounds.Size.X / single (dec resolutionX)
+            let quadSizeY = bounds.Size.Z / single (dec resolutionY)
+            let terrainHeight = bounds.Size.Y
+            let terrainPositionX = bounds.Min.X
+            let terrainPositionY = bounds.Min.Y
+            let terrainPositionZ = bounds.Min.Z
+            let texelWidth = 1.0f / single resolutionX
+            let texelHeight = 1.0f / single resolutionY
+            let positionsAndTexCoordses =
+                [|for y in 0 .. dec resolutionY do
+                    for x in 0 .. dec resolutionX do
+                        let divisor = single Byte.MaxValue
+                        let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
+                        let normalized = (bytes[index] |> single) / divisor
+                        let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                        let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
+                        struct (position, texCoords)|]
+            Some { Resolution = v2i resolutionX resolutionY; PositionsAndTexCoordses = positionsAndTexCoordses }
+        | None -> None
 
-        // NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program,
-        // the geometry produced here is slightly different, with the border slightly clipped,
-        // and the terrain and quad size, slightly larger. i.e if the original map is 32m^2 and the
-        // original quad 1m^2 and the heightmap is 32x32, the quad axes below will be > 1.0.
-
-        // attempt to read height values from human-readable source
-        match heightMap with
-        | ImageHeightMap image ->
-            match HeightMap.tryGetImageData tryGetAssetFilePath image with
-            | Some (metadata, bytes) ->
-                let resolutionX = metadata.TextureWidth
-                let resolutionY = metadata.TextureHeight
-                let quadSizeX = bounds.Size.X / single (dec resolutionX)
-                let quadSizeY = bounds.Size.Z / single (dec resolutionY)
-                let terrainHeight = bounds.Size.Y
-                let terrainPositionX = bounds.Min.X
-                let terrainPositionY = bounds.Min.Y
-                let terrainPositionZ = bounds.Min.Z
-                let texelWidth = 1.0f / single resolutionX
-                let texelHeight = 1.0f / single resolutionY
+    static member private tryGetRawHeightMapMetadata tryGetAssetFilePath (bounds : Box3) tiles map =
+        match HeightMap.tryGetRawAssetData tryGetAssetFilePath map.RawAsset with
+        | Some rawAsset ->
+            let resolutionX = map.Resolution.X
+            let resolutionY = map.Resolution.Y
+            let quadSizeX = bounds.Size.X / single (dec resolutionX)
+            let quadSizeY = bounds.Size.Z / single (dec resolutionY)
+            let terrainHeight = bounds.Size.Y
+            let terrainPositionX = bounds.Min.X
+            let terrainPositionY = bounds.Min.Y
+            let terrainPositionZ = bounds.Min.Z
+            let texelWidth = 1.0f / single resolutionX
+            let texelHeight = 1.0f / single resolutionY
+            try use rawMemory = new MemoryStream (rawAsset)
+                use rawReader = new BinaryReader (rawMemory)
                 let positionsAndTexCoordses =
-                    [|for y in 0 .. dec resolutionY do
-                        for x in 0 .. dec resolutionX do
-                            let divisor = single Byte.MaxValue
-                            let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
-                            let normalized = (bytes[index] |> single) / divisor
-                            let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                            let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
-                            struct (position, texCoords)|]
+                    [|match map.RawFormat with
+                      | RawUInt8 ->
+                        for y in 0 .. dec resolutionX do
+                            for x in 0 .. dec resolutionX do
+                                let divisor = single Byte.MaxValue
+                                let normalized = (rawReader.ReadByte () |> single) / divisor
+                                let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
+                                struct (position, texCoords)
+                      | RawUInt16 endianness ->
+                        for y in 0 .. dec resolutionY do
+                            for x in 0 .. dec resolutionX do
+                                let value =
+                                    match endianness with
+                                    | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
+                                    | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
+                                let divisor = single UInt16.MaxValue
+                                let normalized = (single value) / divisor
+                                let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
+                                struct (position, texCoords)
+                      | RawUInt32 endianness ->
+                        for y in 0 .. dec resolutionY do
+                            for x in 0 .. dec resolutionX do
+                                let value =
+                                    match endianness with
+                                    | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
+                                    | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
+                                let divisor = single UInt32.MaxValue
+                                let normalized = (single value) / divisor
+                                let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
+                                struct (position, texCoords)
+                      | RawSingle endianness -> // NOTE: this expects singles to be normalized between 0.0 and 1.0.
+                        for y in 0 .. dec resolutionY do
+                            for x in 0 .. dec resolutionX do
+                                let value =
+                                    match endianness with
+                                    | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
+                                    | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
+                                let position = v3 (single x * quadSizeX + terrainPositionX) (value * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                                let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
+                                struct (position, texCoords)|]
                 Some { Resolution = v2i resolutionX resolutionY; PositionsAndTexCoordses = positionsAndTexCoordses }
-            | None -> None
 
-        // attempt to read height values from a non-human-readable source
-        | RawHeightMap map ->
-            match HeightMap.tryGetRawAssetData tryGetAssetFilePath map.RawAsset with
-            | Some rawAsset ->
-                let resolutionX = map.Resolution.X
-                let resolutionY = map.Resolution.Y
-                let quadSizeX = bounds.Size.X / single (dec resolutionX)
-                let quadSizeY = bounds.Size.Z / single (dec resolutionY)
-                let terrainHeight = bounds.Size.Y
-                let terrainPositionX = bounds.Min.X
-                let terrainPositionY = bounds.Min.Y
-                let terrainPositionZ = bounds.Min.Z
-                let texelWidth = 1.0f / single resolutionX
-                let texelHeight = 1.0f / single resolutionY
-                try use rawMemory = new MemoryStream (rawAsset)
-                    use rawReader = new BinaryReader (rawMemory)
-                    let positionsAndTexCoordses =
-                        [|match map.RawFormat with
-                          | RawUInt8 ->
-                            for y in 0 .. dec resolutionX do
-                                for x in 0 .. dec resolutionX do
-                                    let divisor = single Byte.MaxValue
-                                    let normalized = (rawReader.ReadByte () |> single) / divisor
-                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
-                                    struct (position, texCoords)
-                          | RawUInt16 endianness ->
-                            for y in 0 .. dec resolutionY do
-                                for x in 0 .. dec resolutionX do
-                                    let value =
-                                        match endianness with
-                                        | LittleEndian -> BinaryPrimitives.ReadUInt16LittleEndian(rawReader.ReadBytes(2))
-                                        | BigEndian -> BinaryPrimitives.ReadUInt16BigEndian(rawReader.ReadBytes(2))
-                                    let divisor = single UInt16.MaxValue
-                                    let normalized = (single value) / divisor
-                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
-                                    struct (position, texCoords)
-                          | RawUInt32 endianness ->
-                            for y in 0 .. dec resolutionY do
-                                for x in 0 .. dec resolutionX do
-                                    let value =
-                                        match endianness with
-                                        | LittleEndian -> BinaryPrimitives.ReadUInt32LittleEndian(rawReader.ReadBytes(4))
-                                        | BigEndian -> BinaryPrimitives.ReadUInt32BigEndian(rawReader.ReadBytes(4))
-                                    let divisor = single UInt32.MaxValue
-                                    let normalized = (single value) / divisor
-                                    let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
-                                    struct (position, texCoords)
-                          | RawSingle endianness -> // NOTE: this expects singles to be normalized between 0.0 and 1.0.
-                            for y in 0 .. dec resolutionY do
-                                for x in 0 .. dec resolutionX do
-                                    let value =
-                                        match endianness with
-                                        | LittleEndian -> BinaryPrimitives.ReadSingleLittleEndian(rawReader.ReadBytes(4))
-                                        | BigEndian -> BinaryPrimitives.ReadSingleBigEndian(rawReader.ReadBytes(4))
-                                    let position = v3 (single x * quadSizeX + terrainPositionX) (value * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                                    let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
-                                    struct (position, texCoords)|]
-                    Some { Resolution = v2i resolutionX resolutionY; PositionsAndTexCoordses = positionsAndTexCoordses }
+            // error
+            with exn -> Log.info ("Attempt to read raw height map failed with the following exception: " + exn.Message); None
+        | None -> None
 
-                // error
-                with exn -> Log.info ("Attempt to read raw height map failed with the following exception: " + exn.Message); None
-            | None -> None
+    /// Attempt to compute height map metadata, loading assets as required.
+    /// NOTE: if the heightmap pixel represents a quad in the terrain geometry in the exporting program, the geometry
+    /// produced here is slightly different, with the border slightly clipped, and the terrain and quad size, slightly
+    /// larger. i.e if the original map is 32m^2 and the original quad 1m^2 and the heightmap is 32x32, the quad axes
+    /// below will be > 1.0.
+    static member tryGetMetadata tryGetAssetFilePath bounds tiles heightMap =
+        match heightMap with
+        | ImageHeightMap image -> HeightMap.tryGetImageHeightMapMetadata tryGetAssetFilePath bounds tiles image
+        | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetAssetFilePath bounds tiles map
 
 /// Identifies a body that can be found in a physics engine.
 type [<CustomEquality; NoComparison>] BodyId =
