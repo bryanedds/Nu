@@ -154,8 +154,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset _ -> ()
-        | TextureAsset (_, _, texture) -> OpenGL.Gl.DeleteTextures [|texture|]
-        | FontAsset (_, _, font) -> SDL_ttf.TTF_CloseFont font
+        | TextureAsset (_, texture) -> OpenGL.Gl.DeleteTextures [|texture|]
+        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
         | AnimatedModelAsset _ -> ()
@@ -166,7 +166,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
             match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.OpenGl.UncompressedTextureFormat, asset.FilePath) with
             | Right (textureMetadata, texture) ->
-                Some (TextureAsset (asset.FilePath, textureMetadata, texture))
+                Some (TextureAsset (textureMetadata, texture))
             | Left error ->
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
@@ -178,7 +178,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 match Int32.TryParse fontSizeText with
                 | (true, fontSize) ->
                     let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                    if fontOpt <> IntPtr.Zero then Some (FontAsset (asset.FilePath, fontSize, fontOpt))
+                    if fontOpt <> IntPtr.Zero then Some (FontAsset (fontSize, fontOpt))
                     else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
                 | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
             else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
@@ -205,17 +205,17 @@ type [<ReferenceEquality>] GlRenderer2d =
                 if reloading then
                     for asset in assets do
                         match renderPackage.Assets.TryGetValue asset.AssetTag.AssetName with
-                        | (true, renderAsset) -> GlRenderer2d.freeRenderAsset renderAsset renderer
+                        | (true, (_, renderAsset)) -> GlRenderer2d.freeRenderAsset renderAsset renderer
                         | (false, _) -> ()
                         match GlRenderer2d.tryLoadRenderAsset asset renderer with
-                        | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- renderAsset
+                        | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, renderAsset)
                         | None -> ()
 
                 // otherwise create assets
                 else
                     for asset in assets do
                         match GlRenderer2d.tryLoadRenderAsset asset renderer with
-                        | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- renderAsset
+                        | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, renderAsset)
                         | None -> ()
 
             // handle error cases
@@ -233,7 +233,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             else
                 let package = snd renderer.RenderPackageCachedOpt
                 match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, asset) ->
+                | (true, (_, asset)) ->
                     renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
                     ValueSome asset
                 | (false, _) -> ValueNone
@@ -242,7 +242,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             | Some package ->
                 renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package)
                 match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, asset) ->
+                | (true, (_, asset)) ->
                     renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
                     ValueSome asset
                 | (false, _) -> ValueNone
@@ -253,7 +253,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | (true, package) ->
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package)
                     match package.Assets.TryGetValue assetTag.AssetName with
-                    | (true, asset) ->
+                    | (true, (_, asset)) ->
                         renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
                         ValueSome asset
                     | (false, _) -> ValueNone
@@ -266,7 +266,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
-            for asset in package.Assets do GlRenderer2d.freeRenderAsset asset.Value renderer
+            for asset in package.Assets do GlRenderer2d.freeRenderAsset (snd asset.Value) renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
@@ -394,7 +394,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset (_, textureMetadata, texture) ->
+            | TextureAsset (textureMetadata, texture) ->
                 GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend emission flip renderer
             | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
         | _ -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
@@ -405,7 +405,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset (_, textureMetadata, texture) ->
+            | TextureAsset (textureMetadata, texture) ->
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles.[index]
@@ -452,7 +452,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
                 match GlRenderer2d.tryGetRenderAsset (AssetTag.generalize tileSetImage) renderer with
-                | ValueSome (TextureAsset (_, tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
                 | ValueSome _ -> None
                 | ValueNone -> None) |>
             Array.definitizePlus
@@ -548,7 +548,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 match GlRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
-                    | FontAsset (_, _, font) ->
+                    | FontAsset (_, font) ->
 
                         // gather rendering resources
                         // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
@@ -735,5 +735,5 @@ type [<ReferenceEquality>] GlRenderer2d =
             OpenGL.Hl.Assert ()
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
-            for renderAsset in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
+            for (_, renderAsset) in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()

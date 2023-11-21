@@ -63,9 +63,9 @@ module Asset =
     let specialize<'a> (asset : obj Asset) : 'a Asset =
         convert<obj, 'a> asset
 
-/// An asset package with additional user-defined state.
+/// Tracks assets as well as their originating file paths.
 type [<ReferenceEquality>] Package<'a, 's> =
-    { Assets : Dictionary<string, 'a>
+    { Assets : Dictionary<string, string * 'a>
       PackageState : 's }
 
 /// A dictionary of asset packages.
