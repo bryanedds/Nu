@@ -1008,7 +1008,7 @@ module Math =
     let mutable private Initialized = false
 
     /// Initializes the type converters found in Math.fs.
-    let init () =
+    let Init () =
         if not Initialized then
             assignTypeConverter<Vector2, Vector2Converter> ()
             assignTypeConverter<Vector3, Vector3Converter> ()
@@ -1024,29 +1024,29 @@ module Math =
             Initialized <- true
 
     /// Convert radians to degrees.
-    let radiansToDegrees (radians : single) =
+    let RadiansToDegrees (radians : single) =
         radians.ToDegrees ()
 
     /// Convert radians to degrees in 3d.
-    let radiansToDegrees3d (radians : Vector3) =
+    let RadiansToDegrees3d (radians : Vector3) =
         v3
-            (radiansToDegrees radians.X)
-            (radiansToDegrees radians.Y)
-            (radiansToDegrees radians.Z)
+            (RadiansToDegrees radians.X)
+            (RadiansToDegrees radians.Y)
+            (RadiansToDegrees radians.Z)
 
     /// Convert degrees to radians.
-    let degreesToRadians (degrees : single) =
+    let DegreesToRadians (degrees : single) =
         degrees.ToRadians ()
 
     /// Convert degrees to radians in 3d.
-    let degreesToRadians3d (degrees : Vector3) =
+    let DegreesToRadians3d (degrees : Vector3) =
         v3
-            (degreesToRadians degrees.X)
-            (degreesToRadians degrees.Y)
-            (degreesToRadians degrees.Z)
+            (DegreesToRadians degrees.X)
+            (DegreesToRadians degrees.Y)
+            (DegreesToRadians degrees.Z)
 
     /// Snap an int value to an offset.
-    let snapI offset (value : int) =
+    let SnapI offset (value : int) =
         if offset <> 0 then
             let (div, rem) = Math.DivRem (value, offset)
             let rem = if single rem < single offset * 0.5f then 0 else offset
@@ -1055,10 +1055,10 @@ module Math =
 
     /// Snap a single value to an offset.
     /// Has a minimum granularity of 0.01f.
-    let snapF (offset : single) (value : single) =
-        single (snapI (int (round (offset * 100.0f))) (int (round (value * 100.0f)))) / 100.0f
+    let SnapF (offset : single) (value : single) =
+        single (SnapI (int (round (offset * 100.0f))) (int (round (value * 100.0f)))) / 100.0f
 
     /// Snap a Vector3 value to an offset.
     /// Has a minimum granularity of 0.001f.
-    let snapF3d offset (v3 : Vector3) =
-        Vector3 (snapF offset v3.X, snapF offset v3.Y, snapF offset v3.Z)
+    let SnapF3d offset (v3 : Vector3) =
+        Vector3 (SnapF offset v3.X, SnapF offset v3.Y, SnapF offset v3.Z)

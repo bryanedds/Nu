@@ -132,9 +132,9 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Degrees
         with get () =
-            Math.radiansToDegrees3d this.Angles
+            Math.RadiansToDegrees3d this.Angles
         and set value =
-            this.Angles <- Math.degreesToRadians3d value
+            this.Angles <- Math.DegreesToRadians3d value
 
     member this.RotationMatrix =
         this.CleanRotationMatrix ()
@@ -320,9 +320,9 @@ type [<NoEquality; NoComparison>] Transform =
             this.PerimeterOrientedDirty <- false
 
     member this.Snap (positionSnap, degreesSnap, scaleSnap) =
-        this.Position <- Math.snapF3d positionSnap this.Position
-        this.Degrees <- Math.snapF3d degreesSnap this.Degrees
-        this.Scale <- Math.snapF3d scaleSnap this.Scale
+        this.Position <- Math.SnapF3d positionSnap this.Position
+        this.Degrees <- Math.SnapF3d degreesSnap this.Degrees
+        this.Scale <- Math.SnapF3d scaleSnap this.Scale
 
     member this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask

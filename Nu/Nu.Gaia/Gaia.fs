@@ -1086,7 +1086,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
                         if snaps2dSelected && ImGui.IsCtrlReleased ()
-                        then Math.snapF3d (Triple.fst (getSnaps ())) entityPosition.V3
+                        then Math.SnapF3d (Triple.fst (getSnaps ())) entityPosition.V3
                         else entityPosition.V3
                     let entityPosition = entity.GetPosition world
                     let entityPositionDelta = entityPositionSnapped - entityPosition
@@ -1108,7 +1108,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
                         if snaps2dSelected && ImGui.IsCtrlReleased ()
-                        then Math.snapF (Triple.snd (getSnaps ())) entityDegree
+                        then Math.SnapF (Triple.snd (getSnaps ())) entityDegree
                         else entityDegree
                     let entityDegree = (entity.GetDegreesLocal world).Z
                     if entity.MountExists world then
@@ -1772,11 +1772,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if  not snaps2dSelected &&
                                         ImGui.IsCtrlReleased () then
                                         snaps3d else (0.0f, 0.0f, 0.0f)
-                                scale <- Math.snapF3d s scale
+                                scale <- Math.SnapF3d s scale
                                 if scale.X < 0.01f then scale.X <- 0.01f
                                 if scale.Y < 0.01f then scale.Y <- 0.01f
                                 if scale.Z < 0.01f then scale.Z <- 0.01f
-                                position <- Math.snapF3d p position
+                                position <- Math.SnapF3d p position
                                 match manipulationOperation with
                                 | OPERATION.SCALE -> world <- entity.SetScale scale world
                                 | OPERATION.ROTATE -> world <- entity.SetRotation rotation world

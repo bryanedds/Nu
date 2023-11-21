@@ -22,7 +22,7 @@ module Hl =
     let mutable private AssertEnabled = false
 
     /// Initialize OpenGL assertion mechanism.
-    let AssertInit assertEnabled =
+    let Init assertEnabled =
         if not Initialized then
             AssertEnabled <- assertEnabled
             Initialized <- true

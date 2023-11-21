@@ -374,7 +374,7 @@ module WorldModuleEntity =
         static member internal getEntityAngles entity world = (World.getEntityState entity world).Angles
         static member internal getEntityAnglesLocal entity world = (World.getEntityState entity world).AnglesLocal
         static member internal getEntityDegrees entity world = (World.getEntityState entity world).Degrees
-        static member internal getEntityDegreesLocal entity world = Math.radiansToDegrees3d (World.getEntityState entity world).AnglesLocal
+        static member internal getEntityDegreesLocal entity world = Math.RadiansToDegrees3d (World.getEntityState entity world).AnglesLocal
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
         static member internal getEntityElevation entity world = (World.getEntityState entity world).Elevation
         static member internal getEntityElevationLocal entity world = (World.getEntityState entity world).ElevationLocal
@@ -1071,7 +1071,7 @@ module WorldModuleEntity =
                             let publishChangeEvents = entityState.PublishChangeEvents
                             let world = World.publishEntityChange (nameof entityState.RotationLocal) previous value publishChangeEvents entity world
                             let world = World.publishEntityChange (nameof entityState.AnglesLocal) previousAnglesLocal anglesLocal publishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.radiansToDegrees3d anglesLocal) publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.RadiansToDegrees3d anglesLocal) publishChangeEvents entity world
                             struct (entityState, world)
                         else struct (entityState, world)
 
@@ -1249,7 +1249,7 @@ module WorldModuleEntity =
                             let publishChangeEvents = entityState.PublishChangeEvents
                             let world = World.publishEntityChange (nameof entityState.RotationLocal) previousRotationLocal rotationLocal publishChangeEvents entity world
                             let world = World.publishEntityChange (nameof entityState.AnglesLocal) previous value publishChangeEvents entity world
-                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.radiansToDegrees3d value) publishChangeEvents entity world
+                            let world = World.publishEntityChange (nameof entityState.DegreesLocal) previousDegreesLocal (Math.RadiansToDegrees3d value) publishChangeEvents entity world
                             struct (entityState, world)
                         else struct (entityState, world)
 
@@ -1268,10 +1268,10 @@ module WorldModuleEntity =
             else struct (false, world)
 
         static member internal setEntityDegrees value entity world =
-            World.setEntityAngles (Math.degreesToRadians3d value) entity world
+            World.setEntityAngles (Math.DegreesToRadians3d value) entity world
 
         static member internal setEntityDegreesLocal value entity world =
-            World.setEntityAnglesLocal (Math.degreesToRadians3d value) entity world
+            World.setEntityAnglesLocal (Math.DegreesToRadians3d value) entity world
 
         static member internal propagateEntityElevation3 mount mounter world =
             let elevationMount = World.getEntityElevation mount world

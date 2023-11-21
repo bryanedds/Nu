@@ -103,6 +103,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
         // ensure raw asset exists
         match HeightMap.tryGetRawAssetData tryGetAssetFilePath map.RawAsset with
         | Some rawAsset ->
+
             try // read normalized heights
                 let resolutionX = map.Resolution.X
                 let resolutionY = map.Resolution.Y
@@ -447,10 +448,7 @@ type JointProperties =
     { JointIndex : int
       JointDevice : JointDevice }
 
-[<RequireQualifiedAccess>]
-module JointProperties =
-
-    let empty =
+    static member empty =
         { JointIndex = 0
           JointDevice = JointEmpty }
 

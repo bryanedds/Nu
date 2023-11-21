@@ -999,7 +999,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Offset with get () = this.Transform.Offset and set value = this.Transform.Offset <- value
     member this.Angles with get () = this.Transform.Angles and set value = this.Transform.Angles <- value
     member this.Degrees with get () = this.Transform.Degrees and set value = this.Transform.Degrees <- value
-    member this.DegreesLocal with get () = Math.radiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.degreesToRadians3d value
+    member this.DegreesLocal with get () = Math.RadiansToDegrees3d this.AnglesLocal and set value = this.AnglesLocal <- Math.DegreesToRadians3d value
     member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
     member this.RotationMatrix with get () = this.Transform.RotationMatrix
     member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
