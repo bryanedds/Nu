@@ -127,7 +127,7 @@ module WorldModuleGroup =
                 try modelObj |> valueToSymbol |> symbolToValue
                 with _ ->
                     Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
-                    match groupState.Dispatcher.TryGetInitialModelValue<'a> world with
+                    match groupState.Dispatcher.TryGetInitialModel<'a> world with
                     | None -> failwithnie ()
                     | Some value -> value
 

@@ -1132,3 +1132,9 @@ module FieldDispatcher =
                                 Entity.Text := shopConfirm.ShopConfirmLine2]]
                     | None -> ()
                  | None -> ()]]
+
+        override this.TruncateModel field =
+            Field.truncate field
+
+        override this.UntruncateModel (field, field') =
+            Field.untruncate field field'

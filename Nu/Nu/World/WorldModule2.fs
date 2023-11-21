@@ -1401,7 +1401,7 @@ module EntityDispatcherModule2 =
                              "This may come about due to sending an incorrect signal type to the entity or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModelValue<'a> world =
+        override this.TryGetInitialModel<'a> world =
             makeInitial world :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, entity, world) =
@@ -1412,6 +1412,18 @@ module EntityDispatcherModule2 =
             let content = Content.composite entity.Name initializers entities
             let world = Content.synchronizeEntity initializing contentOld content entity entity world
             World.setEntityContent content entity world
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, entity, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = entity.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
 
         /// Initialize the game's own properties.
         abstract Initialize : 'model * Entity -> InitializerContent list
@@ -1440,6 +1452,14 @@ module EntityDispatcherModule2 =
         /// Describes how the entity is to be viewed using the View API.
         abstract View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
     and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (centered, physical, makeInitial : World -> 'model) =
@@ -1662,7 +1682,7 @@ module GroupDispatcherModule =
                              "This may come about due to sending an incorrect signal type to the group or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModelValue<'a> world =
+        override this.TryGetInitialModel<'a> world =
             makeInitial world :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, group, world) =
@@ -1673,6 +1693,18 @@ module GroupDispatcherModule =
             let content = Content.group group.Name initializers entities
             let world = Content.synchronizeGroup initializing contentOld content group group world
             World.setGroupContent content group world
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, group, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = group.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
 
         /// Initialize the group's own properties.
         abstract Initialize : 'model * Group -> InitializerContent list
@@ -1697,6 +1729,14 @@ module GroupDispatcherModule =
         /// Implements additional editing behavior for a group via the ImGui API.
         abstract Edit : 'model * EditOperation * Group * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
 [<RequireQualifiedAccess>]
 module GroupPropertyDescriptor =
@@ -1812,7 +1852,7 @@ module ScreenDispatcherModule =
                              "This may come about due to sending an incorrect signal type to the screen or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModelValue<'a> world =
+        override this.TryGetInitialModel<'a> world =
             makeInitial world :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, screen, world) =
@@ -1823,6 +1863,18 @@ module ScreenDispatcherModule =
             let content = Content.screen screen.Name Vanilla initializers group
             let world = Content.synchronizeScreen initializing contentOld content screen screen world
             World.setScreenContent content screen world
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, screen, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = screen.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
 
         /// Initialize the screen's own properties.
         abstract Initialize : 'model * Screen -> InitializerContent list
@@ -1847,6 +1899,14 @@ module ScreenDispatcherModule =
         /// Implements additional editing behavior for a screen via the ImGui API.
         abstract Edit : 'model * EditOperation * Screen * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
@@ -1969,11 +2029,23 @@ module GameDispatcherModule =
                              "This may come about due to sending an incorrect signal type to the game or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModelValue<'a> world =
+        override this.TryGetInitialModel<'a> world =
             makeInitial world :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, game, world) =
             synchronize initializing game world this |> snd
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, game, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = game.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
 
         /// Initialize the game's own properties.
         abstract Initialize : 'model * Game -> InitializerContent list
@@ -1998,6 +2070,14 @@ module GameDispatcherModule =
         /// Implements additional editing behavior for a game via the ImGui API.
         abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
 [<RequireQualifiedAccess>]
 module GamePropertyDescriptor =

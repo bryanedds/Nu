@@ -195,6 +195,16 @@ module WorldGameModule =
             let dispatcher = game.GetDispatcher world
             dispatcher.Edit (operation, game, world)
 
+        /// Attempt to truncate a game model.
+        static member tryTruncateGameModel<'model> (model : 'model) (game : Game) world =
+            let dispatcher = game.GetDispatcher world
+            dispatcher.TryTruncateModel model
+
+        /// Attempt to untruncate a game model.
+        static member tryUntruncateGameModel<'model> (model : 'model) (game : Game) world =
+            let dispatcher = game.GetDispatcher world
+            dispatcher.TryUntruncateModel (model, game, world)
+
         /// Get all the entities in the world.
         [<FunctionBinding "getEntitiesFlattened0">]
         static member getEntitiesFlattened1 world =

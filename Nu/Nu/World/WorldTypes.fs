@@ -337,8 +337,8 @@ and GameDispatcher () =
     default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModelValue<'a> : World -> 'a option
-    default this.TryGetInitialModelValue _ = None
+    abstract TryGetInitialModel<'a> : World -> 'a option
+    default this.TryGetInitialModel _ = None
 
     /// Attempt to synchronize the content of a game.
     abstract TrySynchronize : bool * Game * World -> World
@@ -347,6 +347,14 @@ and GameDispatcher () =
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Game * World -> World
     default this.Edit (_, _, world) = world
+
+    /// Attempt to truncate a game model.
+    abstract TryTruncateModel<'a> : 'a -> 'a option
+    default this.TryTruncateModel _ = None
+
+    /// Attempt to untruncate a game model.
+    abstract TryUntruncateModel<'a> : 'a * Game * World -> 'a option
+    default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for screens.
 and ScreenDispatcher () =
@@ -381,8 +389,8 @@ and ScreenDispatcher () =
     default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModelValue<'a> : World -> 'a option
-    default this.TryGetInitialModelValue _ = None
+    abstract TryGetInitialModel<'a> : World -> 'a option
+    default this.TryGetInitialModel _ = None
 
     /// Attempt to synchronize the content of a screen.
     abstract TrySynchronize : bool * Screen * World -> World
@@ -391,6 +399,14 @@ and ScreenDispatcher () =
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Screen * World -> World
     default this.Edit (_, _, world) = world
+
+    /// Attempt to truncate a screen model.
+    abstract TryTruncateModel<'a> : 'a -> 'a option
+    default this.TryTruncateModel _ = None
+
+    /// Attempt to untruncate a screen model.
+    abstract TryUntruncateModel<'a> : 'a * Screen* World  -> 'a option
+    default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for groups.
 and GroupDispatcher () =
@@ -425,8 +441,8 @@ and GroupDispatcher () =
     default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModelValue<'a> : World -> 'a option
-    default this.TryGetInitialModelValue _ = None
+    abstract TryGetInitialModel<'a> : World -> 'a option
+    default this.TryGetInitialModel _ = None
 
     /// Attempt to synchronize the content of a group.
     abstract TrySynchronize : bool * Group * World -> World
@@ -435,6 +451,14 @@ and GroupDispatcher () =
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Group * World -> World
     default this.Edit (_, _, world) = world
+
+    /// Attempt to truncate a group model.
+    abstract TryTruncateModel<'a> : 'a -> 'a option
+    default this.TryTruncateModel _ = None
+
+    /// Attempt to untruncate a group model.
+    abstract TryUntruncateModel<'a> : 'a * Group* World  -> 'a option
+    default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for entities.
 and EntityDispatcher (is2d, centered, physical) =
@@ -514,8 +538,8 @@ and EntityDispatcher (is2d, centered, physical) =
     default this.Signal (_, _, world) = world
 
     /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModelValue<'a> : World -> 'a option
-    default this.TryGetInitialModelValue _ = None
+    abstract TryGetInitialModel<'a> : World -> 'a option
+    default this.TryGetInitialModel _ = None
 
     /// Attempt to synchronize content of an entity.
     abstract TrySynchronize : bool * Entity * World -> World
@@ -539,6 +563,14 @@ and EntityDispatcher (is2d, centered, physical) =
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Entity * World -> World
     default this.Edit (_, _, world) = world
+
+    /// Attempt to truncate an entity model.
+    abstract TryTruncateModel<'a> : 'a -> 'a option
+    default this.TryTruncateModel _ = None
+
+    /// Attempt to untruncate an entity model.
+    abstract TryUntruncateModel<'a> : 'a * Entity* World  -> 'a option
+    default this.TryUntruncateModel (_, _, _) = None
 
     /// Whether the dispatcher participates directly in a physics system (not counting its facets).
     member this.Physical = physical

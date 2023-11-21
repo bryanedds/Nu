@@ -188,6 +188,16 @@ module WorldScreenModule =
             let dispatcher = screen.GetDispatcher world
             dispatcher.Edit (operation, screen, world)
 
+        /// Attempt to truncate a model.
+        static member tryTruncateScreenModel<'model> (model : 'model) (screen : Screen) world =
+            let dispatcher = screen.GetDispatcher world
+            dispatcher.TryTruncateModel<'model> model
+
+        /// Attempt to untruncate a model.
+        static member tryUntruncateScreenModel<'model> (model : 'model) (screen : Screen) world =
+            let dispatcher = screen.GetDispatcher world
+            dispatcher.TryUntruncateModel<'model> (model, screen, world)
+
         /// Get all the screens in the world.
         [<FunctionBinding>]
         static member getScreens world =
