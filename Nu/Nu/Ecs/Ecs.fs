@@ -5,6 +5,7 @@ namespace Nu.Ecs
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
+open System.ComponentModel
 open System.IO
 open System.Threading.Tasks
 open Prime
@@ -340,8 +341,34 @@ and Archetype (archetypeId : ArchetypeId) =
         freeIndex <- inc lastIndex
         (firstIndex, lastIndex)
 
+/// Type converter for Ecs (just serilizes to and from unit).
+and EcsConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Ecs>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then Symbols ([], ValueNone) :> obj
+        elif destType = typeof<Ecs> then source
+        else failconv "Invalid EcsConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Ecs>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([], _) -> Ecs () :> obj
+            | _ -> failconv "Invalid EcsConverter conversion from source." (Some symbol)
+        | :? Ecs -> source
+        | _ -> failconv "Invalid EcsConverter conversion from source." None
+
 /// An archetype-based Ecs construct,
-and Ecs () =
+and [<TypeConverter (typeof<EcsConverter>)>] Ecs () =
 
     let subscriptionIdLock = obj ()
     let mutable subscriptionIdCurrent = 0u
