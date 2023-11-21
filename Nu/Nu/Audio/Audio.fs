@@ -151,18 +151,18 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 if reloading then
                     for asset in assets do
                         if  match audioPackage.Assets.TryGetValue asset.AssetTag.AssetName with
-                            | (true, audioAsset) -> SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer
+                            | (true, (_, audioAsset)) -> SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer
                             | (false, _) -> true
                         then
                             match SdlAudioPlayer.tryLoadAudioAsset asset with
-                            | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- audioAsset
+                            | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, audioAsset)
                             | None -> ()
 
                 // otherwise create assets
                 else
                     for asset in assets do
                         match SdlAudioPlayer.tryLoadAudioAsset asset with
-                        | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- audioAsset
+                        | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, audioAsset)
                         | None -> ()
 
             | Left error ->
@@ -172,12 +172,12 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private tryGetAudioAsset (assetTag : obj AssetTag) audioPlayer =
         match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
-        | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
+        | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map snd
         | None ->
             Log.info ("Loading Audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
             SdlAudioPlayer.tryLoadAudioPackage false assetTag.PackageName audioPlayer
             match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
-            | Some package -> Dictionary.tryFind assetTag.AssetName package.Assets
+            | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map snd
             | None -> None
 
     static member private playSong playSongMessage audioPlayer =
@@ -215,7 +215,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             // (which is very bad according to the API docs).
             SdlAudioPlayer.haltSound ()
             for asset in package.Assets do
-                match asset.Value with
+                match snd asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
             audioPlayer.AudioPackages.Remove packageName |> ignore
