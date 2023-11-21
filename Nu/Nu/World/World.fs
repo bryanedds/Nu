@@ -30,10 +30,13 @@ module Nu =
             Reflection.init ()
 
             // init math module
-            Math.init ()
+            Math.Init ()
+
+            // init vsync
+            Vsync.Init nuConfig.RunSynchronously
 
             // init OpenGL assert mechanism
-            OpenGL.Hl.AssertInit
+            OpenGL.Hl.Init
 #if DEBUG
                 nuConfig.Unaccompanied
 #else
@@ -289,9 +292,6 @@ module Nu =
 
             // init miscellaneous F# reach-arounds
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
-
-            // init vsync
-            Vsync.Init nuConfig.RunSynchronously
 
             // init event world caching
             EventGraph.setEventAddressCaching true
