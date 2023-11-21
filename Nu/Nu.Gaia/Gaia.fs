@@ -1172,10 +1172,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
             if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlReleased () then
                 world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
-            if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Up) < 0.999f then world <- World.setEyeRotation3d rotation' world
-            if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Down) < 0.999f then world <- World.setEyeRotation3d rotation' world
             if ImGui.IsKeyDown ImGuiKey.UpArrow && ImGui.IsAltReleased () then
