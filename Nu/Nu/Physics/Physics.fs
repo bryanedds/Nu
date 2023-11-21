@@ -251,35 +251,35 @@ type CollisionDetection =
 /// The shape of a physics body box.
 type BodyBox =
     { Size : Vector3
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
     static member ofBox3 (box : Box3) =
-        { Size = box.Size; TransformOpt = Some (Matrix4x4.CreateTranslation box.Center); PropertiesOpt = None }
+        { Size = box.Size; TransformOpt = Some (Affine.makeTranslation box.Center); PropertiesOpt = None }
 
 /// The shape of a physics body sphere.
 type BodySphere =
     { Radius : single
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
 type BodyCapsule =
     { Height : single
       Radius : single
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
 type BodyBoxRounded =
     { Size : Vector3
       Radius : single
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body convex hull.
 type BodyConvexHull =
     { Vertices : Vector3 array
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body convex hull.
@@ -287,20 +287,20 @@ type BodyTerrain =
     { Resolution : Vector2i
       Bounds : Box3
       HeightMap : HeightMap
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body static model.
 type BodyStaticModel =
     { StaticModel : StaticModel AssetTag
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body static model surface.
 type BodyStaticModelSurface =
     { SurfaceIndex : int
       StaticModel : StaticModel AssetTag
-      TransformOpt : Matrix4x4 option
+      TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body.
@@ -651,12 +651,9 @@ module Physics =
 
     /// Localize a body shape to a specific size.
     let rec localizeBodyShape (size : Vector3) bodyShape =
-        let scaleTranslation (scalar : Vector3) (transformOpt : Matrix4x4 option) =
+        let scaleTranslation (scalar : Vector3) (transformOpt : Affine option) =
             match transformOpt with
-            | Some transform ->
-                let mutable transform = transform
-                transform.Translation <- transform.Translation * scalar
-                Some transform
+            | Some transform -> Some { transform with Translation = transform.Translation * scalar }
             | None -> None
         match bodyShape with
         | BodyEmpty -> BodyEmpty

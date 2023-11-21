@@ -969,6 +969,35 @@ module Ray3 =
     let inline rayEq (left : Ray3) (right : Ray3) = left.Equals right
     let inline rayNeq (left : Ray3) (right : Ray3) = not (left.Equals right)
 
+/// Composition of individual affine matrix components.
+type [<StructuralEquality; NoComparison; Struct>] Affine =
+    { mutable Translation : Vector3
+      mutable Rotation : Quaternion
+      mutable Scale : Vector3 }
+    member this.Matrix =
+        Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
+    static member make translation rotation scale =
+        { Translation = translation; Rotation = rotation; Scale = scale }
+    static member makeTranslation translation =
+        Affine.make translation quatIdentity v3One
+    static member makeRotation translation =
+        Affine.make v3Zero translation v3One
+    static member makeScale scale =
+        Affine.make v3Zero quatIdentity scale
+    static member Identity =
+        Affine.make v3Zero quatIdentity v3One
+
+/// The flipness of an image.
+[<Syntax
+    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type [<StructuralEquality; NoComparison; Struct>] Flip =
+    | FlipNone
+    | FlipH
+    | FlipV
+    | FlipHV
+
 /// Type of light.
 [<Syntax
     ("PointLight DirectionalLight SpotLight", "", "", "", "",
@@ -990,17 +1019,6 @@ type [<StructuralEquality; NoComparison; Struct>] RayCast2Output =
       mutable Fraction : single }
     static member inline defaultOutput =
         Unchecked.defaultof<RayCast2Output>
-
-/// The flipness of an image.
-[<Syntax
-    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Flip =
-    | FlipNone
-    | FlipH
-    | FlipV
-    | FlipHV
 
 [<RequireQualifiedAccess>]
 module Math =

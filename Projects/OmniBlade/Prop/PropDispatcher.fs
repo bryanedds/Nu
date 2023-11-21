@@ -47,7 +47,7 @@ module PropDispatcher =
                     | DoorState true -> BodyEmpty
                     | _ ->
                         match doorType with
-                        | BarredDoor -> BodyBox { Size = v3 1.0f 0.5f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 0.0f -0.25f 0.0f)); PropertiesOpt = None }
+                        | BarredDoor -> BodyBox { Size = v3 1.0f 0.5f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f -0.25f 0.0f)); PropertiesOpt = None }
                         | _ -> BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                 | Chest _ ->
                     BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
@@ -61,19 +61,19 @@ module PropDispatcher =
                     else BodyEmpty
                 | Character (_, _, _, _, _, requirements) ->
                     if propPlus.Advents.IsSupersetOf requirements
-                    then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                    then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Npc (npcType, _, _, requirements) | NpcBranching (npcType, _, _, requirements) ->
                     if propPlus.Advents.IsSupersetOf requirements && NpcType.exists propPlus.Advents npcType then
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
                         | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
-                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
-                        | AraneaImplicitumNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                        | AraneaImplicitumNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Shopkeep (_, _, _, requirements) ->
                     if propPlus.Advents.IsSupersetOf requirements
-                    then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Matrix4x4.CreateTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                    then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
                     else BodyEmpty
                 | Flame _ | ChestSpawn | PortalSpawn | EmptyProp ->
                     BodyEmpty]

@@ -94,7 +94,7 @@ module TmxMap =
         TmxObject xml
 
     let rec importShape shape center (tileSize : Vector2) (tileOffset : Vector2) =
-        let transformOpt = Some (Matrix4x4.CreateTranslation (center * tileSize.V3 + tileOffset.V3))
+        let transformOpt = Some (Affine.makeTranslation (center * tileSize.V3 + tileOffset.V3))
         match shape with
         | BodyEmpty as empty ->
             empty
