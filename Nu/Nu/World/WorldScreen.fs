@@ -234,8 +234,8 @@ module WorldScreenModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
-            let ecs = world.WorldExtension.Plugin.MakeEcs ()
-            let screenState = ScreenState.make world.GameTime nameOpt dispatcher ecs
+            let makeEcs = fun screenName -> world.WorldExtension.Plugin.MakeEcs (Game.Handle / screenName)
+            let screenState = ScreenState.make makeEcs world.GameTime nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = Game.Handle / screenState.Name
             let world =
@@ -323,11 +323,9 @@ module WorldScreenModule =
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find a ScreenDispatcher named '" + dispatcherName + "'.")
 
-            // make the ecs
-            let ecs = world.WorldExtension.Plugin.MakeEcs ()
-
             // make the screen state and populate its properties
-            let screenState = ScreenState.make world.GameTime None dispatcher ecs
+            let makeEcs = fun screenName -> world.WorldExtension.Plugin.MakeEcs (Game.Handle / screenName)
+            let screenState = ScreenState.make makeEcs world.GameTime None dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 

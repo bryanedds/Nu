@@ -850,13 +850,13 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       Name : string }
 
     /// Make a screen state value.
-    static member make time nameOpt (dispatcher : ScreenDispatcher) ecs =
+    static member make makeEcs time nameOpt (dispatcher : ScreenDispatcher) =
         let (id, name) = Gen.id64AndNameIf nameOpt
         { Dispatcher = dispatcher
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyScreenContent :?> ScreenContent
-          Ecs = ecs
+          Ecs = makeEcs name
           TransitionState = IdlingState time
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
@@ -1656,9 +1656,9 @@ and [<AbstractClass>] NuPlugin () =
     abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
     default this.MakeKeyedValues world = ([], world)
 
-    /// Make the Ecs for each screen.
-    abstract MakeEcs : unit -> Ecs.Ecs
-    default this.MakeEcs () = Ecs.Ecs ()
+    /// Make the Ecs for the given screen.
+    abstract MakeEcs : Screen -> Ecs.Ecs
+    default this.MakeEcs _ = Ecs.Ecs ()
 
     /// Attempt to make an emitter of the given name.
     abstract TryMakeEmitter : GameTime -> GameTime -> GameTime -> single -> int -> string -> Particles.Emitter option
