@@ -642,6 +642,16 @@ module WorldEntityModule =
             then Array.fold (fun world (facet : Facet) -> facet.Edit (operation, entity, world)) world facets
             else world
 
+        /// Attempt to truncate an entity model.
+        static member tryTruncateEntityModel<'model> (model : 'model) (entity : Entity) world =
+            let dispatcher = entity.GetDispatcher world
+            dispatcher.TryTruncateModel<'model> model
+
+        /// Attempt to untruncate an entity model.
+        static member tryUntruncateEntityModel<'model> (model : 'model) (entity : Entity) world =
+            let dispatcher = entity.GetDispatcher world
+            dispatcher.TryUntruncateModel<'model> (model, entity, world)
+
         /// Get all the entities in a group.
         [<FunctionBinding>]
         static member getEntitiesFlattened (group : Group) world =

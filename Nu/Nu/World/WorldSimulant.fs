@@ -166,6 +166,24 @@ module WorldSimulantModule =
             | :? Game as game -> World.editGame operation game world
             | _ -> failwithumf ()
 
+        /// Attempt to truncate a model.
+        static member tryTruncateModel<'model> (model : 'model) (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.tryTruncateEntityModel<'model> model entity world
+            | :? Group as group -> World.tryTruncateGroupModel<'model> model group world
+            | :? Screen as screen -> World.tryTruncateScreenModel<'model> model screen world
+            | :? Game as game -> World.tryTruncateGameModel<'model> model game world
+            | _ -> failwithumf ()
+
+        /// Attempt to untruncate a model.
+        static member tryUntruncateModel<'model> (model : 'model) (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.tryUntruncateEntityModel<'model> model entity world
+            | :? Group as group -> World.tryUntruncateGroupModel<'model> model group world
+            | :? Screen as screen -> World.tryUntruncateScreenModel<'model> model screen world
+            | :? Game as game -> World.tryUntruncateGameModel<'model> model game world
+            | _ -> failwithumf ()
+
         /// Attempt to get the parent of the given simulant.
         [<FunctionBinding>]
         static member tryGetParent (simulant : Simulant) world =

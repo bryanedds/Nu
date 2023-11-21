@@ -197,3 +197,13 @@ module OmniBlade =
              Content.screenWithGroupFromFile Simulants.Intro3.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4)) Assets.Gui.Intro3GroupFilePath [] []
              Content.screenWithGroupFromFile Simulants.Intro4.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5)) Assets.Gui.Intro4GroupFilePath [] []
              Content.screenWithGroupFromFile Simulants.Intro5.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field)) Assets.Gui.Intro5GroupFilePath [] []]
+
+        override this.TruncateModel model =
+            match model with
+            | Field field -> Field (Field.truncate field)
+            | _ -> model
+
+        override this.UntruncateModel (current, incoming) =
+            match (current, incoming) with
+            | (Field fieldCurrent, Field fieldIncoming) -> Field (Field.untruncate fieldCurrent fieldIncoming)
+            | _ -> current

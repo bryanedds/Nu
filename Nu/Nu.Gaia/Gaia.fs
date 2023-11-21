@@ -1689,7 +1689,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 else ImGui.Text "Name"
                             | _ -> ()
                             if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
-                        elif not (simulant :? Entity) && propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                        elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
                             let mutable clickToEditModel = "*click to edit*"
                             ImGui.InputText ("Model", &clickToEditModel, 256u) |> ignore<bool>
                             if ImGui.IsItemFocused () then
@@ -2141,7 +2141,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             toSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
                             ofSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
                             let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType, toSymbolMemo, ofSymbolMemo)
-                            let propertyValue = getPropertyValue propertyDescriptor simulant
+                            let propertyValueUntruncated = getPropertyValue propertyDescriptor simulant
+                            let propertyValue =
+                                if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                    match World.tryTruncateModel propertyValueUntruncated simulant world with
+                                    | Some truncatedValue -> truncatedValue
+                                    | None -> propertyValueUntruncated
+                                else propertyValueUntruncated
                             ImGui.Text propertyDescriptor.PropertyName
                             ImGui.SameLine ()
                             ImGui.Text ":"
@@ -2153,7 +2159,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if  isPropertyAssetTag then
                                 ImGui.SameLine ()
                                 if ImGui.Button "Pick" then showAssetPickerDialog <- true
-                            if focusPropertyEditorRequested then
+                            if  focusPropertyEditorRequested then
                                 ImGui.SetKeyboardFocusHere ()
                                 focusPropertyEditorRequested <- false
                             if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
@@ -2163,7 +2169,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let worldsPast' = worldsPast
                                 try let propertyValueEscaped = propertyValueStr
                                     let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                    let propertyValueTruncated = converter.ConvertFromString propertyValueUnescaped
+                                    let propertyValue =
+                                        if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                            match World.tryUntruncateModel propertyValueTruncated simulant world with
+                                            | Some truncatedValue -> truncatedValue
+                                            | None -> propertyValueTruncated
+                                        else propertyValueTruncated
                                     setPropertyValue propertyValue propertyDescriptor simulant
                                 with _ ->
                                     worldsPast <- worldsPast'

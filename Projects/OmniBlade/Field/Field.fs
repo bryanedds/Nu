@@ -569,7 +569,7 @@ module Field =
         let field = clearSpirits field
         field
 
-    let private toSymbolizable field =
+    let private toSavable field =
         { field with
             UpdateTime_ = 0L
             Avatar_ = field.Avatar_
@@ -585,10 +585,16 @@ module Field =
             | Slot1 -> Assets.Global.SaveFilePath1
             | Slot2 -> Assets.Global.SaveFilePath2
             | Slot3 -> Assets.Global.SaveFilePath3
-        let fieldSymbolizable = toSymbolizable field
-        let fieldSymbol = valueToSymbol fieldSymbolizable
+        let fieldSavable = toSavable field
+        let fieldSymbol = valueToSymbol fieldSavable
         let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
+
+    let truncate field =
+        { field with Spirits_ = [||] }
+
+    let untruncate current incoming =
+        { incoming with Spirits_ = current.Spirits_ }
 
     (* High-Level Operations (signal-producing) *)
 

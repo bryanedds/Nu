@@ -124,7 +124,7 @@ module WorldModuleScreen =
                 try modelObj |> valueToSymbol |> symbolToValue
                 with _ ->
                     Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
-                    match screenState.Dispatcher.TryGetInitialModelValue<'a> world with
+                    match screenState.Dispatcher.TryGetInitialModel<'a> world with
                     | None -> failwithnie ()
                     | Some value -> value
 

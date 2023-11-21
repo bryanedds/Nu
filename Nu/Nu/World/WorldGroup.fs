@@ -151,6 +151,16 @@ module WorldGroupModule =
             let dispatcher = group.GetDispatcher world
             dispatcher.Edit (operation, group, world)
 
+        /// Attempt to truncate a group model.
+        static member tryTruncateGroupModel<'model> (model : 'model) (group : Group) world =
+            let dispatcher = group.GetDispatcher world
+            dispatcher.TryTruncateModel<'model> model
+
+        /// Attempt to untruncate a group model.
+        static member tryUntruncateGroupModel<'model> (model : 'model) (group : Group) world =
+            let dispatcher = group.GetDispatcher world
+            dispatcher.TryUntruncateModel<'model> (model, group, world)
+
         /// Get all the groups in a screen.
         [<FunctionBinding>]
         static member getGroups (screen : Screen) world =

@@ -318,7 +318,7 @@ module WorldModuleEntity =
                 try modelObj |> valueToSymbol |> symbolToValue
                 with _ ->
                     Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
-                    match entityState.Dispatcher.TryGetInitialModelValue<'a> world with
+                    match entityState.Dispatcher.TryGetInitialModel<'a> world with
                     | None -> failwithnie ()
                     | Some value -> value
 
