@@ -133,7 +133,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         body.SetIsSensor bodyProperties.Sensor
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
-        let transform = Option.defaultValue m4Identity bodyBox.TransformOpt
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyBox.TransformOpt
         let shape =
             body.CreateRectangle
                 (AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Size.X * transform.Scale.X),
@@ -146,7 +146,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt shape
 
     static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
-        let transform = Option.defaultValue m4Identity bodySphere.TransformOpt
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodySphere.TransformOpt
         let shape =
             body.CreateCircle
                 (AetherPhysicsEngine.toPhysicsPolygonRadius (bodySphere.Radius * transform.Scale.X),
@@ -158,7 +158,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt shape
 
     static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
-        let transform = Option.defaultValue m4Identity bodyCapsule.TransformOpt
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyCapsule.TransformOpt
         let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyCapsule.Height * transform.Scale.Y)
         let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius (bodyCapsule.Radius * transform.Scale.Y)
         let density = AetherPhysicsEngine.toPhysicsDensity bodyProperties.Substance
@@ -179,7 +179,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         Array.ofSeq bodyShapes
 
     static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (body : Body) =
-        let transform = Option.defaultValue m4Identity bodyBoxRounded.TransformOpt
+        let transform = Option.mapOrDefaultValue (fun (a : Affine) -> let mutable t = a in t.Matrix) m4Identity bodyBoxRounded.TransformOpt
         let width = AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBoxRounded.Size.X * transform.Scale.X)
         let height = AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBoxRounded.Size.Y * transform.Scale.Y)
         let radius = AetherPhysicsEngine.toPhysicsPolygonRadius (bodyBoxRounded.Radius * transform.Scale.X)
@@ -209,7 +209,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         Array.ofSeq bodyShapes
 
     static member private attachBodyConvexHull bodySource bodyProperties (bodyConvexHull : BodyConvexHull) (body : Body) =
-        let transform = Option.defaultValue m4Identity bodyConvexHull.TransformOpt
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyConvexHull.TransformOpt
         let vertices = Array.zeroCreate bodyConvexHull.Vertices.Length
         for i in 0 .. dec bodyConvexHull.Vertices.Length do
             vertices.[i] <- AetherPhysicsEngine.toPhysicsV2 (Vector3.Transform (bodyConvexHull.Vertices.[i], transform))

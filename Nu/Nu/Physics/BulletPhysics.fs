@@ -227,8 +227,16 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let surface = staticModel.Surfaces.[i]
                 let transform =
                     match bodyStaticModel.TransformOpt with
-                    | Some transform -> transform * surface.SurfaceMatrix
-                    | None -> surface.SurfaceMatrix
+                    | Some transform ->
+                        Affine.make
+                            (Vector3.Transform (transform.Translation, surface.SurfaceMatrix))
+                            (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromQuaternion transform.Rotation * surface.SurfaceMatrix))
+                            (Vector3.Transform (transform.Scale, surface.SurfaceMatrix))
+                    | None ->
+                        Affine.make
+                            (Vector3.Transform (v3Zero, surface.SurfaceMatrix))
+                            (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromQuaternion quatIdentity * surface.SurfaceMatrix))
+                            (Vector3.Transform (v3One, surface.SurfaceMatrix))
                 let bodyStaticModelSurface = { SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
                 BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertias physicsEngine)
                 centerMassInertias

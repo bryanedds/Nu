@@ -1368,9 +1368,9 @@ module RigidBodyFacetModule =
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
              define Entity.LinearVelocity v3Zero
-             define Entity.LinearDamping 0.0f
+             define Entity.LinearDamping 0.0f // leave this up to friction by default
              define Entity.AngularVelocity v3Zero
-             define Entity.AngularDamping 0.0f
+             define Entity.AngularDamping 0.2f
              define Entity.AngularFactor v3One
              define Entity.Substance (Density 1.0f)
              define Entity.GravityOverride None
