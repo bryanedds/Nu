@@ -337,7 +337,7 @@ module WorldModule3 =
                  EffectDispatcher2d () :> EntityDispatcher
                  BlockDispatcher2d () :> EntityDispatcher
                  BoxDispatcher2d () :> EntityDispatcher
-                 Character2dDispatcher () :> EntityDispatcher
+                 CharacterDispatcher2d () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
                  LightProbeDispatcher3d () :> EntityDispatcher
