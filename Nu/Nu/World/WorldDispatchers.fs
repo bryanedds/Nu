@@ -288,24 +288,24 @@ module BoxDispatcher2dModule =
             [define Entity.StaticImage Assets.Default.Box]
 
 [<AutoOpen>]
-module SideViewCharacterDispatcherModule =
+module Character2dDispatcherModule =
 
     type Entity with
-        member this.GetSideViewCharacterIdleImage world : Image AssetTag = this.Get (nameof this.SideViewCharacterIdleImage) world
-        member this.SetSideViewCharacterIdleImage (value : Image AssetTag) world = this.Set (nameof this.SideViewCharacterIdleImage) value world
-        member this.SideViewCharacterIdleImage = lens (nameof this.SideViewCharacterIdleImage) this this.GetSideViewCharacterIdleImage this.SetSideViewCharacterIdleImage
-        member this.GetSideViewCharacterJumpImage world : Image AssetTag = this.Get (nameof this.SideViewCharacterJumpImage) world
-        member this.SetSideViewCharacterJumpImage (value : Image AssetTag) world = this.Set (nameof this.SideViewCharacterJumpImage) value world
-        member this.SideViewCharacterJumpImage = lens (nameof this.SideViewCharacterJumpImage) this this.GetSideViewCharacterJumpImage this.SetSideViewCharacterJumpImage
-        member this.GetSideViewCharacterWalkSheet world : Image AssetTag = this.Get (nameof this.SideViewCharacterWalkSheet) world
-        member this.SetSideViewCharacterWalkSheet (value : Image AssetTag) world = this.Set (nameof this.SideViewCharacterWalkSheet) value world
-        member this.SideViewCharacterWalkSheet = lens (nameof this.SideViewCharacterWalkSheet) this this.GetSideViewCharacterWalkSheet this.SetSideViewCharacterWalkSheet
-        member this.GetSideViewCharacterFacingLeft world : bool = this.Get (nameof this.SideViewCharacterFacingLeft) world
-        member this.SetSideViewCharacterFacingLeft (value : bool) world = this.Set (nameof this.SideViewCharacterFacingLeft) value world
-        member this.SideViewCharacterFacingLeft = lens (nameof this.SideViewCharacterFacingLeft) this this.GetSideViewCharacterFacingLeft this.SetSideViewCharacterFacingLeft
+        member this.GetCharacter2dIdleImage world : Image AssetTag = this.Get (nameof this.Character2dIdleImage) world
+        member this.SetCharacter2dIdleImage (value : Image AssetTag) world = this.Set (nameof this.Character2dIdleImage) value world
+        member this.Character2dIdleImage = lens (nameof this.Character2dIdleImage) this this.GetCharacter2dIdleImage this.SetCharacter2dIdleImage
+        member this.GetCharacter2dJumpImage world : Image AssetTag = this.Get (nameof this.Character2dJumpImage) world
+        member this.SetCharacter2dJumpImage (value : Image AssetTag) world = this.Set (nameof this.Character2dJumpImage) value world
+        member this.Character2dJumpImage = lens (nameof this.Character2dJumpImage) this this.GetCharacter2dJumpImage this.SetCharacter2dJumpImage
+        member this.GetCharacter2dWalkSheet world : Image AssetTag = this.Get (nameof this.Character2dWalkSheet) world
+        member this.SetCharacter2dWalkSheet (value : Image AssetTag) world = this.Set (nameof this.Character2dWalkSheet) value world
+        member this.Character2dWalkSheet = lens (nameof this.Character2dWalkSheet) this this.GetCharacter2dWalkSheet this.SetCharacter2dWalkSheet
+        member this.GetCharacter2dFacingLeft world : bool = this.Get (nameof this.Character2dFacingLeft) world
+        member this.SetCharacter2dFacingLeft (value : bool) world = this.Set (nameof this.Character2dFacingLeft) value world
+        member this.Character2dFacingLeft = lens (nameof this.Character2dFacingLeft) this this.GetCharacter2dFacingLeft this.SetCharacter2dFacingLeft
 
     /// Gives an entity the base behavior of 2d physics-driven character in a platformer.
-    type SideViewCharacterDispatcher () =
+    type Character2dDispatcher () =
         inherit EntityDispatcher2d (true)
 
         static let computeWalkCelInset time delay (celSize : Vector2) (celRun : int) =
@@ -330,25 +330,25 @@ module SideViewCharacterDispatcherModule =
              define Entity.AngularFactor v3Zero
              define Entity.GravityOverride (Some (Constants.Physics.Gravity2dDefault * 3.0f))
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
-             define Entity.SideViewCharacterIdleImage Assets.Default.SideViewCharacterIdleImage
-             define Entity.SideViewCharacterJumpImage Assets.Default.SideViewCharacterJumpImage
-             define Entity.SideViewCharacterWalkSheet Assets.Default.SideViewCharacterWalkImage
-             define Entity.SideViewCharacterFacingLeft false]
+             define Entity.Character2dIdleImage Assets.Default.Character2dIdleImage
+             define Entity.Character2dJumpImage Assets.Default.Character2dJumpImage
+             define Entity.Character2dWalkSheet Assets.Default.Character2dWalkImage
+             define Entity.Character2dFacingLeft false]
 
         override this.Update (entity, world) =
             if entity.GetEnabled world then
                 // we have to use a bit of hackery to remember whether the character is facing left or
                 // right when there is no velocity
-                let facingLeft = entity.GetSideViewCharacterFacingLeft world
+                let facingLeft = entity.GetCharacter2dFacingLeft world
                 let velocity = World.getBodyLinearVelocity (entity.GetBodyId world) world
-                if facingLeft && velocity.X > 1.0f then entity.SetSideViewCharacterFacingLeft false world
-                elif not facingLeft && velocity.X < -1.0f then entity.SetSideViewCharacterFacingLeft true world
+                if facingLeft && velocity.X > 1.0f then entity.SetCharacter2dFacingLeft false world
+                elif not facingLeft && velocity.X < -1.0f then entity.SetCharacter2dFacingLeft true world
                 else world
             else world
 
         override this.Render (entity, world) =
             let bodyId = entity.GetBodyId world
-            let facingLeft = entity.GetSideViewCharacterFacingLeft world
+            let facingLeft = entity.GetCharacter2dFacingLeft world
             let velocity = World.getBodyLinearVelocity bodyId world
             let celSize = entity.GetCelSize world
             let celRun = entity.GetCelRun world
@@ -356,13 +356,13 @@ module SideViewCharacterDispatcherModule =
             let mutable transform = entity.GetTransform world
             let struct (insetOpt, image) =
                 if not (World.getBodyGrounded bodyId world) then
-                    let image = entity.GetSideViewCharacterJumpImage world
+                    let image = entity.GetCharacter2dJumpImage world
                     struct (ValueNone, image)
                 elif velocity.X < 5.0f && velocity.X > -5.0f then
-                    let image = entity.GetSideViewCharacterIdleImage world
+                    let image = entity.GetCharacter2dIdleImage world
                     struct (ValueNone, image)
                 else
-                    let image = entity.GetSideViewCharacterWalkSheet world
+                    let image = entity.GetCharacter2dWalkSheet world
                     struct (ValueSome (computeWalkCelInset world.GameTime animationDelay celSize celRun), image)
             World.enqueueLayeredOperation2d
                 { Elevation = transform.Elevation
@@ -856,7 +856,28 @@ module BoxDispatcher3dModule =
              define Entity.StaticModel Assets.Default.StaticModel]
 
 [<AutoOpen>]
-module TerrainDispatcher3dModule =
+module CharacterDispatcher3dModule =
+
+    /// Gives an entity the base behavior of a 3d character.
+    type CharacterDispatcher3d () =
+        inherit EntityDispatcher3d (true, true)
+
+        static member Facets =
+            [typeof<AnimatedModelFacet>
+             typeof<RigidBodyFacet>]
+
+        static member Properties =
+            [define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.AnimatedModel Assets.Default.AnimatedModel
+             define Entity.BodyType Dynamic
+             define Entity.Friction 1.0f
+             define Entity.LinearDamping 0.5f
+             define Entity.AngularDamping 1.0f
+             define Entity.AngularFactor (v3 0.0f 0.1f 0.0f)
+             define Entity.BodyShape (BodyCapsule { Height = 1.0f; Radius = 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.8f 0.0f)); PropertiesOpt = None })]
+
+[<AutoOpen>]
+module TerrainDispatcherModule =
 
     /// Gives an entity the base behavior of a rigid 3d terrain.
     type TerrainDispatcher () =

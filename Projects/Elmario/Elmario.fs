@@ -60,7 +60,7 @@ type ElmarioDispatcher () =
     override this.Content (_, _) =
         [Content.screen Simulants.Screen.Name Vanilla []
             [Content.group Simulants.Group.Name []
-                [Content.sideViewCharacter Simulants.Elmario.Name
+                [Content.character2d Simulants.Elmario.Name
                     [Entity.Position == v3 0.0f 54.0f 0.0f
                      Entity.Size == v3 108.0f 108.0f 0.0f]
                  Content.block2d "Ground"

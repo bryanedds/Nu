@@ -418,8 +418,8 @@ module Content =
     /// Describe a 2d box with the given initializers.
     let box2d entityName initializers = entity<BoxDispatcher2d> entityName initializers
 
-    /// Describe a side-view character with the given initializers.
-    let sideViewCharacter entityName initializers = entity<SideViewCharacterDispatcher> entityName initializers
+    /// Describe a 2d character with the given initializers.
+    let character2d entityName initializers = entity<Character2dDispatcher> entityName initializers
 
     /// Describe a tile map with the given initializers.
     let tileMap entityName initializers = entity<TileMapDispatcher> entityName initializers
@@ -453,6 +453,9 @@ module Content =
 
     /// Describe an animated model with the given initializers.
     let animatedModel entityName initializers = entity<AnimatedModelDispatcher> entityName initializers
+
+    /// Describe a 3d character with the given initializers.
+    let character3d entityName initializers = entity<CharacterDispatcher3d> entityName initializers
 
     /// Describe a terrain with the given initializers.
     let terrain entityName initializers = entity<TerrainDispatcher> entityName initializers
