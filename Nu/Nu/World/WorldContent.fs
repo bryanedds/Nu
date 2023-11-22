@@ -419,7 +419,7 @@ module Content =
     let box2d entityName initializers = entity<BoxDispatcher2d> entityName initializers
 
     /// Describe a 2d character with the given initializers.
-    let character2d entityName initializers = entity<Character2dDispatcher> entityName initializers
+    let character2d entityName initializers = entity<CharacterDispatcher2d> entityName initializers
 
     /// Describe a tile map with the given initializers.
     let tileMap entityName initializers = entity<TileMapDispatcher> entityName initializers
