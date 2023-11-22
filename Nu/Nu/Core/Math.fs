@@ -103,22 +103,55 @@ module Vector3 =
         member this.WithZ z = Vector3 (this.X, this.Y, z)
         member this.RollPitchYaw = Math.RollPitchYaw &this
 
+        /// Compute angle between vectors.
         member this.AngleBetween (that : Vector3) =
             let a = Vector3.Normalize this
             let b = Vector3.Normalize that
             acos (Vector3.Dot (a, b))
 
+        /// Compute power of vector components.
         static member Pow (a : Vector3, b : Vector3) =
             Vector3
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)),
                  single (Math.Pow (double a.Z, double b.Z)))
 
+        /// Compute modulo of vector components.
         static member Modulo (a : Vector3, b : Vector3) =
             Vector3
                 (a.X % b.X,
                  a.Y % b.Y,
                  a.Z % b.Z)
+
+        /// Project a vector onto a plane.
+        static member Project (v : Vector3, p : Plane3) =
+            let mutable dc = Unchecked.defaultof<_>
+            p.DotCoordinate (&v, &dc)
+            v - dc * p.Normal
+
+        /// Mirror a vector on a plane.
+        static member Mirror (v : Vector3, p : Plane3) =
+            let mutable dc = Unchecked.defaultof<_>
+            p.DotCoordinate (&v, &dc)
+            v - 2.0f * dc * p.Normal
+
+        /// Compute distance of a vector from the nearest point on a plane.
+        static member Distance (v : Vector3, p : Plane3) =
+            let mutable dc = Unchecked.defaultof<_>
+            p.DotCoordinate (&v, &dc)
+            let distance = dc + p.D
+            abs (distance / p.Normal.Magnitude)
+
+        /// Compute offset from a vector to the nearest point on a plane.
+        static member ToPlane (v : Vector3, p : Plane3) =
+            let mutable dc = Unchecked.defaultof<_>
+            p.DotCoordinate (&v, &dc)
+            let distance = dc + p.D
+            -distance * p.Normal
+
+        /// Compute offset to a vector from the nearest point on a plane.
+        static member FromPlane (v : Vector3, p : Plane3) =
+            -Vector3.ToPlane (v, p)
 
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
@@ -854,6 +887,14 @@ module Matrix4x4 =
         trs.M33 <- trs.M33 * scale.Z
         trs.Translation <- translation
         trs
+
+    /// Create a rotation matrix from three orthogonal vectors.
+    let CreateRotation (right : Vector3, up : Vector3, forward : Vector3) =
+        Matrix4x4
+            (right.X, up.X, forward.X, 0.0f,
+             right.Y, up.Y, forward.Y, 0.0f,
+             right.Z, up.Z, forward.Z, 0.0f,
+             0.0f, 0.0f, 0.0f, 1.0f)
 
 [<AutoOpen>]
 module Color =
