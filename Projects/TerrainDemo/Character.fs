@@ -43,4 +43,33 @@ module CharacterDispatcher =
             let world = if World.isKeyboardKeyDown KeyboardKey.Space world && grounded then World.applyBodyLinearImpulse (v3Up * 0.333f) v3Zero bodyId world else world
             let world = World.setEyeRotation3d rotation world
             let world = World.setEyeCenter3d (position + v3Up * 1.5f - rotation.Forward * 3.0f) world
+            let linearVelocity = World.getBodyLinearVelocity bodyId world
+            let angularVelocity = World.getBodyAngularVelocity bodyId world
+            let forwardness = (linearVelocity * rotation.Forward).Length ()
+            let backwardness = -forwardness
+            let rightwardness = (linearVelocity * rotation.Right).Length ()
+            let leftwardness = -rightwardness
+            let turnRightwardness = (angularVelocity * v3Up).Length ()
+            let turnLeftwardness = -turnRightwardness
+            let animations =
+                [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
+            let animations =
+                if forwardness > 0.1f then
+                    { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None } :: animations
+                elif backwardness > 0.1f then
+                    { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBackward"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if rightwardness > 0.1f then
+                    { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRightward"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None } :: animations
+                elif leftwardness > 0.1f then
+                    { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeftward"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if turnRightwardness > 0.1f then
+                    { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None } :: animations
+                elif turnLeftwardness > 0.1f then
+                    { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None } :: animations
+                else animations
+            let world = entity.SetAnimations (List.toArray animations) world
             world

@@ -44,16 +44,11 @@
   [FpsDispatcher
    [[Name Fps-0001]
     [Position [-361 -223 0]]
-    [Text "FPS: 60.11"]]
+    [Text "FPS: 0.00"]]
    []]
-  [CharacterDispatcher3d
-   [[AngularVelocity [0 -8.6311516E-08 0]]
-    [Animations
-     [[0 None Armature|Relax Loop 1 1 None]]]
-    [LinearVelocity [-2.0887437E-06 2.2649765E-05 1.0095462E-06]]
-    [Name Character3d-0001]
-    [Position [-58.69809 -30.857399 -137.90092]]
+  [CharacterDispatcher
+   [[Name Character-0002]
+    [Position [-58.7 -30.8 -137.9]]
     [Presence Omnipresent]
-    [Rotation [0 -2.2636667E-07 0 1]]
     [Size [2.6602979 3.5022092 1.984515]]]
    []]]]
