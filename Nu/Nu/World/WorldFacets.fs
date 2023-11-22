@@ -1359,7 +1359,9 @@ module RigidBodyFacetModule =
         static let getBodyShape (entity : Entity) world =
             let scalar = entity.GetScale world * entity.GetSize world
             let bodyShape = entity.GetBodyShape world
-            World.localizeBodyShape scalar bodyShape world
+            if entity.GetIs2d world
+            then World.localizeBodyShape scalar bodyShape world
+            else bodyShape
 
         static member Properties =
             [define Entity.BodyEnabled true
@@ -2695,7 +2697,7 @@ module AnimatedModelFacetModule =
             [define Entity.StartTime GameTime.zero
              define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
-             define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
+             define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
         override this.Render (entity, world) =

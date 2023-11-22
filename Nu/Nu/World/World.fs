@@ -337,7 +337,7 @@ module WorldModule3 =
                  EffectDispatcher2d () :> EntityDispatcher
                  BlockDispatcher2d () :> EntityDispatcher
                  BoxDispatcher2d () :> EntityDispatcher
-                 SideViewCharacterDispatcher () :> EntityDispatcher
+                 Character2dDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
                  LightProbeDispatcher3d () :> EntityDispatcher
@@ -354,6 +354,7 @@ module WorldModule3 =
                  EffectDispatcher3d () :> EntityDispatcher
                  BlockDispatcher3d () :> EntityDispatcher
                  BoxDispatcher3d () :> EntityDispatcher
+                 CharacterDispatcher3d () :> EntityDispatcher
                  TerrainDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
