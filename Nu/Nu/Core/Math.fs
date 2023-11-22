@@ -129,8 +129,8 @@ module Vector3 =
             p.DotCoordinate (&v, &dc)
             v - dc * p.Normal
 
-        /// Mirror a vector on a plane.
-        static member Mirror (v : Vector3, p : Plane3) =
+        /// Reflect a vector on a plane.
+        static member Reflect (v : Vector3, p : Plane3) =
             let mutable dc = Unchecked.defaultof<_>
             p.DotCoordinate (&v, &dc)
             v - 2.0f * dc * p.Normal
