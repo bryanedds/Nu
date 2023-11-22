@@ -57,16 +57,16 @@ module CharacterDispatcher =
             let animations =
                 //if grounded then
                     let animations =
-                        if forwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.5f; Weight = forwardness; BoneFilterOpt = None } :: animations
-                        elif backwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBackward"; Playback = Loop; Rate = 1.5f; Weight = backwardness; BoneFilterOpt = None } :: animations
+                        if forwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.5f; Weight = forwardness; BoneFilterOpt = None } :: animations
+                        elif backwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBackward"; Playback = Loop; Rate = 1.5f; Weight = backwardness; BoneFilterOpt = None } :: animations
                         else animations
                     let animations =
-                        if rightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRightward"; Playback = Loop; Rate = 1.5f; Weight = rightwardness; BoneFilterOpt = None } :: animations
-                        elif leftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeftward"; Playback = Loop; Rate = 1.5f; Weight = leftwardness; BoneFilterOpt = None } :: animations
+                        if rightwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRightward"; Playback = Loop; Rate = 1.5f; Weight = rightwardness; BoneFilterOpt = None } :: animations
+                        elif leftwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeftward"; Playback = Loop; Rate = 1.5f; Weight = leftwardness; BoneFilterOpt = None } :: animations
                         else animations
                     let animations =
-                        if turnRightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.0f; Weight = turnRightwardness; BoneFilterOpt = None } :: animations
-                        elif turnLeftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.0f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
+                        if turnRightwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.0f; Weight = turnRightwardness; BoneFilterOpt = None } :: animations
+                        elif turnLeftwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.0f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
                         else animations
                     animations
                 //else animations
