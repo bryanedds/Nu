@@ -36,13 +36,14 @@ module CharacterDispatcher =
             let grounded = World.getBodyGrounded bodyId world
             let walkForce = if grounded then 1.0f else 0.5f
             let turnForce = if grounded then 1.0f else 0.5f
+            let jumpForce = 0.4f
             let world = if World.isKeyboardKeyDown KeyboardKey.Up world then World.applyBodyForce (forward * walkForce) v3Zero bodyId world else world
             let world = if World.isKeyboardKeyDown KeyboardKey.Down world then World.applyBodyForce (-forward * walkForce) v3Zero bodyId world else world
             let world = if World.isKeyboardKeyDown KeyboardKey.A world then World.applyBodyForce (-right * walkForce) v3Zero bodyId world else world
             let world = if World.isKeyboardKeyDown KeyboardKey.D world then World.applyBodyForce (right * walkForce) v3Zero bodyId world else world
             let world = if World.isKeyboardKeyDown KeyboardKey.Right world then World.applyBodyTorque (-v3Up * turnForce) bodyId world else world
             let world = if World.isKeyboardKeyDown KeyboardKey.Left world then World.applyBodyTorque (v3Up * turnForce) bodyId world else world
-            let world = if World.isKeyboardKeyDown KeyboardKey.Space world && grounded then World.applyBodyLinearImpulse (v3Up * 0.333f) v3Zero bodyId world else world
+            let world = if World.isKeyboardKeyDown KeyboardKey.Space world && grounded then World.applyBodyLinearImpulse (v3Up * jumpForce) v3Zero bodyId world else world
             let world = World.setEyeRotation3d rotation world
             let world = World.setEyeCenter3d (position + v3Up * 1.5f - rotation.Forward * 3.0f) world
             let linearVelocity = World.getBodyLinearVelocity bodyId world
@@ -53,7 +54,7 @@ module CharacterDispatcher =
             let leftwardness = (Vector3.Dot (linearVelocity, -rotation.Right))
             let turnRightwardness = (angularVelocity * v3Up).Length ()
             let turnLeftwardness = -turnRightwardness
-            let animations = [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }]
+            let animations = [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
             let animations =
                 //if grounded then
                     let animations =
@@ -65,8 +66,8 @@ module CharacterDispatcher =
                         elif leftwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeftward"; Playback = Loop; Rate = 1.5f; Weight = leftwardness; BoneFilterOpt = None } :: animations
                         else animations
                     let animations =
-                        if turnRightwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.0f; Weight = turnRightwardness; BoneFilterOpt = None } :: animations
-                        elif turnLeftwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.0f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
+                        if turnRightwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.5f; Weight = turnRightwardness; BoneFilterOpt = None } :: animations
+                        elif turnLeftwardness > 0.0f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.5f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
                         else animations
                     animations
                 //else animations
