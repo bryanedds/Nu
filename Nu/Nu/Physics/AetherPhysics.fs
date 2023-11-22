@@ -482,6 +482,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             let (_, body) = physicsEngine.Bodies.[bodyId]
             AetherPhysicsEngine.toPixelV3 body.LinearVelocity
 
+        member physicsEngine.GetBodyAngularVelocity bodyId =
+            let (_, body) = physicsEngine.Bodies.[bodyId]
+            v3 body.AngularVelocity 0.0f 0.0f
+
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             List.filter
                 (fun normal ->
