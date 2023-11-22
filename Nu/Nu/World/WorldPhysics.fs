@@ -123,6 +123,15 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine2d.GetBodyLinearVelocity bodyId
             else Log.debug ("Body for '" + scstring bodyId + "' not found."); v3Zero
 
+        /// Get the angular velocity of the body with the given physics id.
+        [<FunctionBinding>]
+        static member getBodyAngularVelocity bodyId world =
+            if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine3d.GetBodyAngularVelocity bodyId
+            elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
+                world.Subsystems.PhysicsEngine2d.GetBodyAngularVelocity bodyId
+            else Log.debug ("Body for '" + scstring bodyId + "' not found."); v3Zero
+
         /// Get the contact normals where the body with the given physics id is touching the ground.
         [<FunctionBinding>]
         static member getBodyToGroundContactNormals bodyId world =

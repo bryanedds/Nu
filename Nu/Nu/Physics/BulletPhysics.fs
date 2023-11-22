@@ -620,6 +620,13 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
                 else failwith ("No body with BodyId = " + scstring bodyId + ".")
 
+        member physicsEngine.GetBodyAngularVelocity bodyId =
+            match physicsEngine.Bodies.TryGetValue bodyId with
+            | (true, (_, body)) -> body.AngularVelocity
+            | (false, _) ->
+                if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
+                else failwith ("No body with BodyId = " + scstring bodyId + ".")
+
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             List.filter
                 (fun normal ->

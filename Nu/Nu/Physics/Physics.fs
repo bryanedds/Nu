@@ -597,6 +597,8 @@ type PhysicsEngine =
     abstract GetBodyContactNormals : BodyId -> Vector3 list
     /// Get the linear velocity of the body with the given physics id.
     abstract GetBodyLinearVelocity : BodyId -> Vector3
+    /// Get the angular velocity of the body with the given physics id.
+    abstract GetBodyAngularVelocity : BodyId -> Vector3
     /// Get the contact normals where the body with the given physics id is touching the ground.
     abstract GetBodyToGroundContactNormals : BodyId -> Vector3 list
     /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
@@ -624,6 +626,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyExists _ = false
         member physicsEngine.GetBodyContactNormals _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyLinearVelocity _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.GetBodyAngularVelocity _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactNormals _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
