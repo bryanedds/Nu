@@ -872,7 +872,7 @@ module CharacterDispatcher3dModule =
              define Entity.BodyType Dynamic
              define Entity.Friction 1.0f
              define Entity.LinearDamping 0.5f
-             define Entity.AngularDamping 1.0f
+             define Entity.AngularDamping 0.999f
              define Entity.AngularFactor (v3 0.0f 0.1f 0.0f)
              define Entity.BodyShape (BodyCapsule { Height = 1.0f; Radius = 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.8f 0.0f)); PropertiesOpt = None })]
 
