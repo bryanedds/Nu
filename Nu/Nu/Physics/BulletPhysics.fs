@@ -519,18 +519,16 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
             let body0 = manifold.Body0
             let body1 = manifold.Body1
-            if  body0.UserIndex = 1 ||
-                body1.UserIndex = 1 then
-                let bodySource0 = body0.UserObject :?> BodyId
-                let bodySource1 = body1.UserObject :?> BodyId
-                let collisionKey = (bodySource0, bodySource1)
-                let mutable normal = v3Zero
-                let numContacts = manifold.NumContacts
-                for j in 0 .. dec numContacts do
-                    let contact = manifold.GetContactPoint j
-                    normal <- normal - contact.NormalWorldOnB
-                normal <- normal / single numContacts
-                physicsEngine.Collisions.Add (collisionKey, normal)
+            let bodySource0 = body0.UserObject :?> BodyId
+            let bodySource1 = body1.UserObject :?> BodyId
+            let collisionKey = (bodySource0, bodySource1)
+            let mutable normal = v3Zero
+            let numContacts = manifold.NumContacts
+            for j in 0 .. dec numContacts do
+                let contact = manifold.GetContactPoint j
+                normal <- normal - contact.NormalWorldOnB
+            normal <- normal / single numContacts
+            physicsEngine.Collisions.Add (collisionKey, normal)
 
         // create collision messages
         for entry in physicsEngine.Collisions do
@@ -600,20 +598,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine.Objects.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            // TODO: see if this can be optimized from a linear-time search to constant-time look-up.
-            // Maybe bake a dictionary every integration at most.
-            match physicsEngine.Objects.TryGetValue bodyId with
-            | (true, object) ->
-                let dispatcher = physicsEngine.PhysicsContext.Dispatcher
-                let manifoldCount = dispatcher.NumManifolds
-                [for i in 0 .. dec manifoldCount do
-                    let manifold = dispatcher.GetManifoldByIndexInternal i
-                    if manifold.Body0 = object then
-                        let contactCount = manifold.NumContacts
-                        for j in 0 .. dec contactCount do
-                            let contact = manifold.GetContactPoint j
-                            yield contact.NormalWorldOnB]
-            | (false, _) -> []
+            [for collision in physicsEngine.Collisions do
+                let (body0, body1) = collision.Key
+                if body0 = bodyId then -collision.Value
+                elif body1 = bodyId then collision.Value]
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
