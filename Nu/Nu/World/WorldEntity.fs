@@ -7,7 +7,7 @@ open System.IO
 open System.Numerics
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldEntityModule =
 
     [<RequireQualifiedAccess>]
@@ -653,7 +653,6 @@ module WorldEntityModule =
             dispatcher.TryUntruncateModel<'model> (model, entity, world)
 
         /// Get all the entities in a group.
-        [<FunctionBinding>]
         static member getEntitiesFlattened (group : Group) world =
             let rec getEntitiesRec parent world =
                 let simulants = World.getSimulants world
@@ -670,7 +669,6 @@ module WorldEntityModule =
             getEntitiesRec (group :> Simulant) world |> SList.ofSeq |> seq
 
         /// Get all the entities directly parented by the group.
-        [<FunctionBinding>]
         static member getEntitiesSovereign (group : Group) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (group :> Simulant) with
@@ -681,13 +679,11 @@ module WorldEntityModule =
             | (false, _) -> Seq.empty
 
         /// Destroy an entity in the world at the end of the current update.
-        [<FunctionBinding>]
         static member destroyEntity (entity : Entity) world =
             World.addSimulantToDestruction entity world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
         /// depends on any of the entities' existences. Consider using World.destroyEntities instead.
-        [<FunctionBinding>]
         static member destroyEntitiesImmediate (entities : Entity seq) world =
             List.foldBack
                 (fun entity world -> World.destroyEntityImmediate entity world)
@@ -695,7 +691,6 @@ module WorldEntityModule =
                 world
 
         /// Destroy multiple entities in the world at the end of the current update.
-        [<FunctionBinding>]
         static member destroyEntities entities world =
             World.frame (World.destroyEntitiesImmediate entities) Game.Handle world
 
@@ -710,7 +705,6 @@ module WorldEntityModule =
             Array.map (fun p -> p.SortTarget :?> Entity)
 
         /// Attempt to pick an entity at the given position.
-        [<FunctionBinding>]
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
             let viewport = World.getViewport world
@@ -725,7 +719,6 @@ module WorldEntityModule =
                 entitiesSorted
 
         /// Attempt to pick a 3d entity with the given ray.
-        [<FunctionBinding>]
         static member tryPickEntity3d position entities world =
             let viewport = World.getViewport world
             let eyeCenter = World.getEyeCenter3d world
@@ -842,7 +835,6 @@ module WorldEntityModule =
             Seq.toList
 
         /// Write an entity to a file.
-        [<FunctionBinding>]
         static member writeEntityToFile (filePath : string) enity world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
@@ -961,7 +953,6 @@ module WorldEntityModule =
             (entity, world)
 
         /// Read an entity from a file.
-        [<FunctionBinding>]
         static member readEntityFromFile (filePath : string) nameOpt group world =
             let entityDescriptorStr = File.ReadAllText filePath
             let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr

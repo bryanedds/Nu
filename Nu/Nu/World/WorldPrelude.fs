@@ -126,18 +126,6 @@ type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
       ScheduledOp : 'w -> 'w }
 
-/// Specifies that a module contains functions that need to be considered for binding generation.
-type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
-    ModuleBindingAttribute () =
-    inherit Attribute ()
-
-/// Specifies that a module contains functions that need to be considered for binding generation.
-type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
-    FunctionBindingAttribute (bindingName : string) =
-    inherit Attribute ()
-    member this.BindingName = bindingName
-    new () = FunctionBindingAttribute ""
-
 /// Configuration parameters for Nu.
 type NuConfig =
     { RunSynchronously : bool

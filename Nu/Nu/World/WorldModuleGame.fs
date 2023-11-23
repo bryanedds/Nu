@@ -7,7 +7,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldModuleGame =
 
     /// Dynamic property getters / setters.
@@ -109,12 +109,10 @@ module WorldModuleGame =
             else struct (false, world)
 
         /// Get the omni-screen, if any.
-        [<FunctionBinding>]
         static member getOmniScreenOpt world =
             World.getGameOmniScreenOpt Game.Handle world
 
         /// Set the omni-screen or None.
-        [<FunctionBinding>]
         static member setOmniScreenOpt value world =
             World.setGameOmniScreenOpt value Game.Handle world |> snd'
 
@@ -125,12 +123,10 @@ module WorldModuleGame =
             World.setGameOmniScreenOpt (Some value) game world
 
         /// Get the omni-screen.
-        [<FunctionBinding>]
         static member getOmniScreen world =
             World.getGameOmniScreen Game.Handle world
 
         /// Set the omni-screen.
-        [<FunctionBinding>]
         static member setOmniScreen value world =
             World.setGameOmniScreen value Game.Handle world |> snd'
 
@@ -192,12 +188,10 @@ module WorldModuleGame =
             else (false, world)
 
         /// Get the currently selected screen, if any.
-        [<FunctionBinding>]
         static member getSelectedScreenOpt world =
             World.getGameSelectedScreenOpt Game.Handle world
 
         /// Set the currently selected screen or None.
-        [<FunctionBinding>]
         static member setSelectedScreenOpt value world =
             World.setGameSelectedScreenOpt value Game.Handle world |> snd
 
@@ -208,12 +202,10 @@ module WorldModuleGame =
             World.setGameSelectedScreenOpt (Some screen) game world
 
         /// Get the currently selected screen.
-        [<FunctionBinding>]
         static member getSelectedScreen world =
             World.getGameSelectedScreen Game.Handle world
 
         /// Set the currently selected screen.
-        [<FunctionBinding>]
         static member setSelectedScreen value world =
             World.setGameSelectedScreen value Game.Handle world |> snd
 
@@ -228,12 +220,10 @@ module WorldModuleGame =
             else struct (false, world)
 
         /// Get the desired screen, if applicable.
-        [<FunctionBinding>]
         static member getDesiredScreen world =
             World.getGameDesiredScreen Game.Handle world
 
         /// Set the desired screen, if applicable.
-        [<FunctionBinding>]
         static member setDesiredScreen value world =
             World.setGameDesiredScreen value Game.Handle world |> snd'
 
@@ -248,12 +238,10 @@ module WorldModuleGame =
             else struct (false, world)
 
         /// Get the current destination screen if a screen transition is currently underway.
-        [<FunctionBinding>]
         static member getScreenTransitionDestinationOpt world =
             World.getGameScreenTransitionDestinationOpt Game.Handle world
 
         /// Set the current destination screen or None.
-        [<FunctionBinding>]
         static member setScreenTransitionDestinationOpt value world =
             World.setGameScreenTransitionDestinationOpt value Game.Handle world |> snd'
 
@@ -268,12 +256,10 @@ module WorldModuleGame =
             else struct (false, world)
 
         /// Get the current 2d eye center.
-        [<FunctionBinding>]
         static member getEyeCenter2d world =
             World.getGameEyeCenter2d Game.Handle world
 
         /// Set the current 2d eye center.
-        [<FunctionBinding>]
         static member setEyeCenter2d value world =
             World.setGameEyeCenter2d value Game.Handle world |> snd'
 
@@ -288,24 +274,20 @@ module WorldModuleGame =
             else struct (false, world)
 
         /// Get the current 2d eye size.
-        [<FunctionBinding>]
         static member getEyeSize2d world =
             World.getGameEyeSize2d Game.Handle world
 
         /// Set the current 2d eye size.
-        [<FunctionBinding>]
         static member setEyeSize2d value world =
             World.setGameEyeSize2d value Game.Handle world |> snd'
 
         /// Get the current 2d eye bounds.
-        [<FunctionBinding>]
         static member getEyeBounds2d world =
             let eyeCenter = World.getGameEyeCenter2d Game.Handle world
             let eyeSize = World.getGameEyeSize2d Game.Handle world
             box2 (eyeCenter - eyeSize * 0.5f) eyeSize
 
         /// Constrain the eye to the given 2d bounds.
-        [<FunctionBinding>]
         static member constrainEyeBounds2d (bounds : Box2) world =
             let mutable eyeBounds = World.getEyeBounds2d world
             eyeBounds.Min <-
@@ -320,7 +302,6 @@ module WorldModuleGame =
             World.setGameEyeCenter2d eyeCenter Game.Handle world |> snd'
 
         /// Get the bounds of the 2d eye's sight irrespective of its position.
-        [<FunctionBinding>]
         static member getViewBounds2dAbsolute world =
             let gameState = World.getGameState Game.Handle world
             box2
@@ -328,30 +309,25 @@ module WorldModuleGame =
                 (v2 gameState.EyeSize2d.X gameState.EyeSize2d.Y)
 
         /// Get the bounds of the 2d eye's sight relative to its position.
-        [<FunctionBinding>]
         static member getViewBounds2dRelative world =
             let gameState = World.getGameState Game.Handle world
             let min = v2 (gameState.EyeCenter2d.X - gameState.EyeSize2d.X * 0.5f) (gameState.EyeCenter2d.Y - gameState.EyeSize2d.Y * 0.5f)
             box2 min gameState.EyeSize2d
 
         /// Get the bounds of the 2d play zone irrespective of eye center.
-        [<FunctionBinding>]
         static member getPlayBounds2dAbsolute world =
             World.getViewBounds2dAbsolute world
 
         /// Get the bounds of the 2d play zone relative to eye center.
-        [<FunctionBinding>]
         static member getPlayBounds2dRelative world =
             World.getViewBounds2dRelative world
 
         /// Check that the given bounds is within the 2d eye's sight irrespective of eye center.
-        [<FunctionBinding>]
         static member boundsInView2dAbsolute (bounds : Box2) world =
             let viewBounds = World.getViewBounds2dAbsolute world
             bounds.Intersects viewBounds
 
         /// Check that the given bounds is within the 2d eye's sight relative to eye center.
-        [<FunctionBinding>]
         static member boundsInView2dRelative (bounds : Box2) world =
             let viewBounds = World.getViewBounds2dRelative world
             bounds.Intersects viewBounds
@@ -374,12 +350,10 @@ module WorldModuleGame =
             else struct (false, world)
 
         /// Get the current 3d eye center.
-        [<FunctionBinding>]
         static member getEyeCenter3d world =
             World.getGameEyeCenter3d Game.Handle world
 
         /// Set the current 3d eye center.
-        [<FunctionBinding>]
         static member setEyeCenter3d value world =
             World.setGameEyeCenter3d value Game.Handle world |> snd'
 
@@ -401,12 +375,10 @@ module WorldModuleGame =
             else struct (false, world)
 
         /// Get the current 3d eye rotation.
-        [<FunctionBinding>]
         static member getEyeRotation3d world =
             World.getGameEyeRotation3d Game.Handle world
 
         /// Set the current 3d eye rotation.
-        [<FunctionBinding>]
         static member setEyeRotation3d value world =
             World.setGameEyeRotation3d value Game.Handle world |> snd'
 
@@ -420,28 +392,23 @@ module WorldModuleGame =
             (World.getGameState game world).EyeFrustum3dImposter
 
         /// Get the current enclosed 3d eye frustum.
-        [<FunctionBinding>]
         static member getEyeFrustum3dEnclosed world =
             World.getGameEyeFrustum3dEnclosed Game.Handle world
 
         /// Get the current unenclosed 3d eye frustum.
-        [<FunctionBinding>]
         static member getEyeFrustum3dExposed world =
             World.getGameEyeFrustum3dExposed Game.Handle world
 
         /// Get the current imposter 3d eye frustum.
-        [<FunctionBinding>]
         static member getEyeFrustum3dImposter world =
             World.getGameEyeFrustum3dImposter Game.Handle world
 
         /// Get the current 3d light box.
-        [<FunctionBinding>]
         static member getLightBox3d world =
             let lightBoxSize = Constants.Render.LightBoxSize3d
             box3 ((World.getGameState Game.Handle world).EyeCenter3d - lightBoxSize * 0.5f) lightBoxSize
 
         /// Get the bounds of the 3d play zone.
-        [<FunctionBinding>]
         static member getPlayBounds3d world =
             let eyeCenter = World.getGameEyeCenter3d Game.Handle world
             let eyeBox = box3 (eyeCenter - Constants.Render.PlayBoxSize3d * 0.5f) Constants.Render.PlayBoxSize3d
@@ -449,7 +416,6 @@ module WorldModuleGame =
             struct (eyeBox, eyeFrustum)
 
         /// Check that the given bounds is within the 3d eye's sight.
-        [<FunctionBinding>]
         static member boundsInView3d lightProbe light presence (bounds : Box3) world =
             Presence.intersects3d
                 (World.getGameEyeFrustum3dEnclosed Game.Handle world)
@@ -462,7 +428,6 @@ module WorldModuleGame =
                 presence
 
         /// Check that the given bounds is within the 3d eye's play bounds.
-        [<FunctionBinding>]
         static member boundsInPlay3d (bounds : Box3) world =
             let struct (viewBox, viewFrustum) = World.getPlayBounds3d world
             if bounds.Intersects viewBox then true

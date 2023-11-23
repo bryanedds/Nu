@@ -7,7 +7,7 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldSimulantModule =
 
     type World with
@@ -139,7 +139,6 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         /// Destroy the given simulant.
-        [<FunctionBinding>]
         static member destroyImmediate (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> World.destroyEntityImmediate entity world
@@ -148,7 +147,6 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         /// Destroy the given simulant.
-        [<FunctionBinding>]
         static member destroy (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> World.destroyEntity entity world
@@ -185,7 +183,6 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         /// Attempt to get the parent of the given simulant.
-        [<FunctionBinding>]
         static member tryGetParent (simulant : Simulant) world =
             ignore (world : World)
             match simulant with
@@ -196,7 +193,6 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         /// Get the parent of the given simulant.
-        [<FunctionBinding>]
         static member getParent (simulant : Simulant) world =
             ignore (world : World)
             match simulant with
@@ -207,7 +203,6 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         /// Get the existing children of the given simulant.
-        [<FunctionBinding>]
         static member getChildren (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> enumerable<Simulant> (World.getEntityChildren entity world)
@@ -217,7 +212,6 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         /// Check that a simulant exists in the world.
-        [<FunctionBinding>]
         static member getExists (simulant : Simulant) (world : World) =
             let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
             if namesLength >= 4 then
@@ -233,7 +227,6 @@ module WorldSimulantModule =
 
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
         /// Game is always considered 'selected' as well.
-        [<FunctionBinding>]
         static member getSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
             | [||] -> failwithumf ()

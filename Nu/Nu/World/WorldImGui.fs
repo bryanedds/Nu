@@ -5,7 +5,7 @@ namespace Nu
 open System
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldImGui =
 
     type World with

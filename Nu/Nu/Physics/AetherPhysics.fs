@@ -510,6 +510,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
 
+        member physicsEngine.InspectMessages inspect =
+            for message in physicsEngine.PhysicsMessages do
+                inspect message
+
         member physicsEngine.PopMessages () =
             let messages = physicsEngine.PhysicsMessages
             let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }

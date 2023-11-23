@@ -6,7 +6,7 @@ open System
 open System.IO
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldScreenModule =
 
     type Screen with
@@ -199,7 +199,6 @@ module WorldScreenModule =
             dispatcher.TryUntruncateModel<'model> (model, screen, world)
 
         /// Get all the screens in the world.
-        [<FunctionBinding>]
         static member getScreens world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (Game.Handle :> Simulant) with
@@ -210,7 +209,6 @@ module WorldScreenModule =
             | (false, _) -> Seq.empty
 
         /// Set the dissolve aspects of a screen.
-        [<FunctionBinding>]
         static member setScreenDissolve dissolveDescriptor songOpt (screen : Screen) world =
             let dissolveImageOpt = Some dissolveDescriptor.DissolveImage
             let world = screen.SetIncoming { Transition.make Incoming with TransitionLifeTime = dissolveDescriptor.IncomingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
@@ -219,7 +217,6 @@ module WorldScreenModule =
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Consider using World.destroyScreen instead.
-        [<FunctionBinding>]
         static member destroyScreenImmediate (screen : Screen) world =
             let world = World.tryRemoveSimulantFromDestruction screen world
             EventGraph.cleanEventAddressCache screen.ScreenAddress
@@ -232,12 +229,10 @@ module WorldScreenModule =
             else world
 
         /// Destroy a screen in the world at the end of the current update.
-        [<FunctionBinding>]
         static member destroyScreen (screen : Screen) world =
             World.addSimulantToDestruction screen world
 
         /// Create a screen and add it to the world.
-        [<FunctionBinding "createScreen">]
         static member createScreen3 dispatcherName nameOpt world =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
@@ -281,7 +276,6 @@ module WorldScreenModule =
             World.createScreen3 typeof<'d>.Name nameOpt world
 
         /// Create a screen with a dissolving transition, and add it to the world.
-        [<FunctionBinding "createDissolveScreen">]
         static member createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world =
             let (screen, world) = World.createScreen3 dispatcherName nameOpt world
             let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
@@ -311,7 +305,6 @@ module WorldScreenModule =
             Seq.toList
 
         /// Write a screen to a file.
-        [<FunctionBinding>]
         static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
@@ -366,7 +359,6 @@ module WorldScreenModule =
             (List.rev screensRev, world)
 
         /// Read a screen from a file.
-        [<FunctionBinding>]
         static member readScreenFromFile (filePath : string) nameOpt world =
             let screenDescriptorStr = File.ReadAllText filePath
             let screenDescriptor = scvalue<ScreenDescriptor> screenDescriptorStr

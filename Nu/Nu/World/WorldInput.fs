@@ -6,7 +6,7 @@ open System
 open ImGuiNET
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldInputModule =
 
     type World with
@@ -20,7 +20,6 @@ module WorldInputModule =
             MouseState.toNuButton mouseButton
 
         /// Check that the given mouse button is down.
-        [<FunctionBinding>]
         static member isMouseButtonDown mouseButton world =
             ignore (world : World)
             let io = ImGui.GetIO ()
@@ -29,13 +28,11 @@ module WorldInputModule =
             else false
 
         /// Check that the given mouse button is up.
-        [<FunctionBinding>]
         static member isMouseButtonUp mouseButton world =
             ignore (world : World)
             MouseState.isButtonUp mouseButton
 
         /// Get the position of the mouse.
-        [<FunctionBinding>]
         static member getMousePosition world =
             match World.tryGetWindowSize world with
             | Some windowSize ->
@@ -45,7 +42,6 @@ module WorldInputModule =
             | None -> MouseState.getPosition ()
 
         /// Get the 2d screen position of the mouse.
-        [<FunctionBinding>]
         static member getMousePosition2dScreen world =
             let viewport = World.getViewport world
             let eyeCenter = World.getEyeCenter2d world
@@ -53,7 +49,6 @@ module WorldInputModule =
             viewport.MouseTo2dScreen (World.getMousePosition world, eyeCenter, eyeSize)
 
         /// Get the 2d world position of the mouse.
-        [<FunctionBinding>]
         static member getMousePostion2dWorld absolute world =
             let viewport = World.getViewport world
             let eyeCenter = World.getEyeCenter2d world
@@ -61,13 +56,11 @@ module WorldInputModule =
             viewport.MouseToWorld2d (absolute, World.getMousePosition world, eyeCenter, eyeSize)
 
         /// Get the 3d screen position of the mouse.
-        [<FunctionBinding>]
         static member getMousePosition3dScreen world =
             let viewport = World.getViewport world
             viewport.MouseTo3dScreen (World.getMousePosition world)
 
         /// Get the 3d world ray of the mouse.
-        [<FunctionBinding>]
         static member getMouseRay3dWorld absolute world =
             let viewport = World.getViewport world
             let eyeCenter = World.getEyeCenter3d world
@@ -75,7 +68,6 @@ module WorldInputModule =
             viewport.MouseToWorld3d (absolute, World.getMousePosition world, eyeCenter, eyeRotation)
 
         /// Check that the given keyboard key is down.
-        [<FunctionBinding>]
         static member isKeyboardKeyDown key world =
             ignore (world : World)
             let io = ImGui.GetIO ()
@@ -84,43 +76,36 @@ module WorldInputModule =
             else false
 
         /// Check that the given keyboard key is up.
-        [<FunctionBinding>]
         static member isKeyboardKeyUp key world =
             ignore (world : World)
             KeyboardState.isKeyUp key
 
         /// Check that a keyboard alt key is down.
-        [<FunctionBinding>]
         static member isKeyboardAltDown world =
             ignore (world : World)
             KeyboardState.isAltDown ()
 
         /// Check that a keyboard alt key is up.
-        [<FunctionBinding>]
         static member isKeyboardAltUp world =
             ignore (world : World)
             KeyboardState.isAltUp ()
 
         /// Check that a keyboard ctrl key is down.
-        [<FunctionBinding>]
         static member isKeyboardCtrlDown world =
             ignore (world : World)
             KeyboardState.isCtrlDown ()
 
         /// Check that a keyboard ctrl key is up.
-        [<FunctionBinding>]
         static member isKeyboardCtrlUp world =
             ignore (world : World)
             KeyboardState.isCtrlUp ()
 
         /// Check that a keyboard shift key is down.
-        [<FunctionBinding>]
         static member isKeyboardShiftDown world =
             ignore (world : World)
             KeyboardState.isShiftDown ()
 
         /// Check that a keyboard shift key is up.
-        [<FunctionBinding>]
         static member isKeyboardShiftUp world =
             ignore (world : World)
             KeyboardState.isShiftUp ()

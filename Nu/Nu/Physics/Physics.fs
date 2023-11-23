@@ -607,6 +607,8 @@ type PhysicsEngine =
     abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
     /// Check that the body with the given physics id is on the ground.
     abstract IsBodyOnGround : BodyId -> bool
+    /// Inspect messages with the given lambda.
+    abstract InspectMessages : (PhysicsMessage -> unit) -> unit
     /// Pop all of the physics messages that have been enqueued.
     abstract PopMessages : unit -> PhysicsMessage UList * PhysicsEngine
     /// Clear all of the physics messages that have been enqueued.

@@ -299,7 +299,7 @@ module Nu =
             // mark init flag
             Initialized <- true
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldModule3 =
 
     type World with

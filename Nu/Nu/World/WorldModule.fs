@@ -22,7 +22,7 @@ module WorldModuleOperators =
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
         Relation.relate<Simulant, 't> simulant.SimulantAddress (atoa simulant2.SimulantAddress)
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldModule =
 
     /// Track if we're in the portion of the frame before tasklet processing has started or after.
@@ -144,32 +144,6 @@ module WorldModule =
         static member getGameDispatchers world =
             world.WorldExtension.Dispatchers.GameDispatchers
 
-    type World with // Metadata
-
-        /// Try to get the texture metadata of the given asset via script.
-        [<FunctionBinding "tryGetTextureSize">]
-        static member internal tryGetTextureSizeViaScript assetTag (world : World) =
-            ignore world
-            Metadata.tryGetTextureSize assetTag
-
-        /// Forcibly get the texture size metadata of the given asset via script (throwing on failure).
-        [<FunctionBinding "getTextureSize">]
-        static member internal getTextureSizeViaScript assetTag (world : World) =
-            ignore world
-            Metadata.getTextureSize assetTag
-
-        /// Try to get the texture size metadata of the given asset via script.
-        [<FunctionBinding "tryGetTextureSizeF">]
-        static member internal tryGetTextureSizeFViaScript assetTag (world : World) =
-            ignore world
-            Metadata.tryGetTextureSizeF assetTag
-
-        /// Forcibly get the texture size metadata of the given asset via script (throwing on failure).
-        [<FunctionBinding "getTextureSizeF">]
-        static member internal getTextureSizeFViaScript assetTag (world : World) =
-            ignore world
-            Metadata.getTextureSizeF assetTag
-
     type World with // AmbientState
 
         static member internal getAmbientState world =
@@ -182,47 +156,38 @@ module WorldModule =
             World.choose { world with AmbientState = updater world.AmbientState }
 
         /// Check that the update rate is non-zero.
-        [<FunctionBinding>]
         static member getAdvancing world =
             World.getAmbientStateBy AmbientState.getAdvancing world
 
         /// Check that the update rate is zero.
-        [<FunctionBinding>]
         static member getHalted world =
             World.getAmbientStateBy AmbientState.getHalted world
 
         /// Set whether the world state is advancing.
-        [<FunctionBinding>]
         static member setAdvancing advancing world =
             World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
         /// Check that the world is executing with imperative semantics where applicable.
-        [<FunctionBinding>]
         static member getImperative world =
             World.getAmbientStateBy AmbientState.getImperative world
 
         /// Check that the world is executing with functional semantics.
-        [<FunctionBinding>]
         static member getFunctional world =
             World.getAmbientStateBy AmbientState.getFunctional world
 
         /// Get whether the engine is running accompanied, such as in an editor.
-        [<FunctionBinding>]
         static member getAccompanied world =
             World.getAmbientStateBy AmbientState.getAccompanied world
 
         /// Get whether the engine is running unaccompanied, such as outside of an editor.
-        [<FunctionBinding>]
         static member getUnaccompanied world =
             World.getAmbientStateBy AmbientState.getUnaccompanied world
 
         /// Get collection config value.
-        [<FunctionBinding>]
         static member getCollectionConfig world =
             World.getAmbientStateBy AmbientState.getConfig world
 
         /// Get the the liveness state of the engine.
-        [<FunctionBinding>]
         static member getLiveness world =
             World.getAmbientStateBy AmbientState.getLiveness world
 
@@ -230,27 +195,22 @@ module WorldModule =
             World.updateAmbientState AmbientState.updateTime world
 
         /// Get the world's update time.
-        [<FunctionBinding>]
         static member getUpdateTime world =
             World.getAmbientStateBy AmbientState.getUpdateTime world
 
         /// Get the world's clock delta time.
-        [<FunctionBinding>]
         static member getClockDelta world =
             World.getAmbientStateBy AmbientState.getClockDelta world
 
         /// Get the world's clock time.
-        [<FunctionBinding>]
         static member getClockTime world =
             World.getAmbientStateBy AmbientState.getClockTime world
 
         /// Get the world's game delta time.
-        [<FunctionBinding>]
         static member getGameDelta world =
             World.getAmbientStateBy AmbientState.getGameDelta world
 
         /// Get the world's game time.
-        [<FunctionBinding>]
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
@@ -267,7 +227,6 @@ module WorldModule =
             World.choose { world with AmbientState = AmbientState.unshelve world.AmbientState }
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
-        [<FunctionBinding>]
         static member exit world =
             World.updateAmbientState AmbientState.exit world
 
@@ -345,50 +304,41 @@ module WorldModule =
             World.schedule time operation simulant world
 
         /// Attempt to get the window flags.
-        [<FunctionBinding>]
         static member tryGetWindowFlags world =
             World.getAmbientStateBy AmbientState.tryGetWindowFlags world
 
         /// Attempt to check that the window is minimized.
-        [<FunctionBinding>]
         static member tryGetWindowMinimized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
 
         /// Attempt to check that the window is maximized.
-        [<FunctionBinding>]
         static member tryGetWindowMaximized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
             
         /// Attempt to check that the window is in a full screen state.
-        [<FunctionBinding>]
         static member tryGetWindowFullScreen world =
             World.getAmbientStateBy AmbientState.tryGetWindowFullScreen world
 
         /// Attempt to set the window's full screen state.
-        [<FunctionBinding>]
         static member trySetWindowFullScreen fullScreen world =
             World.updateAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
 
         /// Attempt to get the window size.
-        [<FunctionBinding>]
         static member tryGetWindowSize world =
             World.getAmbientStateBy (AmbientState.tryGetWindowSize) world
 
         /// Get the window size, using resolution as default in case there is no window.
-        [<FunctionBinding>]
         static member getWindowSize world =
             match World.tryGetWindowSize world with
             | Some windowsSize -> windowsSize
             | None -> Constants.Render.Resolution
 
         /// Get the viewport.
-        [<FunctionBinding>]
         static member getViewport (world : World) =
             ignore world
             Constants.Render.Viewport
 
         /// Get the viewport offset by margin when applicable.
-        [<FunctionBinding>]
         static member getViewportOffset world =
             let windowSize = World.getWindowSize world
             Constants.Render.ViewportOffset windowSize
@@ -406,29 +356,24 @@ module WorldModule =
             World.updateAmbientState (AmbientState.updateSymbolics updater) world
 
         /// Try to load a symbol package with the given name.
-        [<FunctionBinding>]
         static member tryLoadSymbolPackage implicitDelimiters packageName world =
             World.getSymbolicsBy (Symbolics.tryLoadSymbolPackage implicitDelimiters packageName) world
 
         /// Unload a symbol package with the given name.
-        [<FunctionBinding>]
         static member unloadSymbolPackage packageName world =
             World.getSymbolicsBy (Symbolics.unloadSymbolPackage packageName) world
 
         /// Try to find a symbol with the given asset tag.
-        [<FunctionBinding>]
         static member tryGetSymbol assetTag metadata world =
             let symbolics = World.getSymbolics world
             Symbolics.tryGetSymbol assetTag metadata symbolics
 
         /// Try to find symbols with the given asset tags.
-        [<FunctionBinding>]
         static member tryGetSymbols implicitDelimiters assetTags world =
             let symbolics = World.getSymbolics world
             Symbolics.tryGetSymbols implicitDelimiters assetTags symbolics
 
         /// Reload all the symbols in symbolics.
-        [<FunctionBinding>]
         static member reloadSymbols world =
             World.getSymbolicsBy Symbolics.reloadSymbols world
             world
@@ -444,12 +389,10 @@ module WorldModule =
             World.updateAmbientState (AmbientState.setOverlayer overlayer) world
 
         /// Get overlays.
-        [<FunctionBinding>]
         static member getOverlays world =
             World.getOverlayerBy Overlayer.getOverlays world
 
         /// Attempt to get the given dispatcher's optional routed overlay name.
-        [<FunctionBinding>]
         static member tryGetRoutedOverlayNameOpt dispatcherName world =
             World.getOverlayRouterBy (OverlayRouter.tryGetOverlayNameOpt dispatcherName) world
 
@@ -467,13 +410,11 @@ module WorldModule =
             World.updateAmbientState AmbientState.acknowledgeUnculledRenderRequest world
 
         /// Get whether an unculled render was requested.
-        [<FunctionBinding>]
         static member getUnculledRenderRequested world =
             World.getAmbientStateBy AmbientState.getUnculledRenderRequested world
 
         /// Request an unculled render for the current frame, such as when a light probe needs to be rendered when its
         /// relevant entities are in culling range.
-        [<FunctionBinding>]
         static member requestUnculledRender world =
             World.updateAmbientState AmbientState.requestUnculledRender world
 
@@ -597,12 +538,10 @@ module WorldModule =
             World.updateEventGraph (EventGraph.setEventTracerOpt tracerOpt) world
 
         /// Get the state of the event filter.
-        [<FunctionBinding>]
         static member getEventFilter (world : World) =
             EventGraph.getEventFilter (World.getEventGraph world)
 
         /// Set the state of the event filter.
-        [<FunctionBinding>]
         static member setEventFilter filter (world : World) =
             World.updateEventGraph (EventGraph.setEventFilter filter) world
 
@@ -798,24 +737,20 @@ module WorldModule =
     type World with // Plugin
 
         /// Whether the current plugin allow code reloading.
-        [<FunctionBinding>]
         static member getAllowCodeReload world =
             world.WorldExtension.Plugin.AllowCodeReload
 
         /// Get the user-defined edit modes.
-        [<FunctionBinding>]
         static member getEditModes world =
             world.WorldExtension.Plugin.EditModes
 
         /// Attempt to set the edit mode.
-        [<FunctionBinding>]
         static member trySetEditMode editMode world =
             match (World.getEditModes world).TryGetValue editMode with
             | (true, callback) -> callback world
             | (false, _) -> world
 
         /// Attempt to make an emitter with the given parameters.
-        [<FunctionBinding>]
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
             world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 

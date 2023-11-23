@@ -46,16 +46,40 @@
   [FpsDispatcher
    [[Name Fps-0001]
     [Position [-361 -223 0]]
-    [Text "FPS: 60.04"]]
+    [Text "FPS: 60.09"]]
    []]
   [CharacterDispatcher
-   [[AngularVelocity [0 5.7032304E-07 0]]
+   [[AngularVelocity [0 2.9269503E-07 0]]
     [Animations
      [[0 None Armature|Idle Loop 1 0.5 None]]]
-    [LinearVelocity [1.0918822E-06 2.2679567E-05 1.8141143E-06]]
+    [LinearVelocity [1.5599699E-06 2.2768974E-05 6.044901E-07]]
     [Name Character-0002]
-    [Position [-59.186363 -30.07049 -147.97623]]
+    [Position [-57.471226 -30.00091 -151.49503]]
     [Presence Omnipresent]
-    [Rotation [0 0.9969621 0 -0.07788908]]
+    [Rotation [0 0.8844361 0 0.46666142]]
     [Size [2.6602979 3.5022092 1.984515]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0001]
+    [Position [-59.1 -29.2 -150.4]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0007]
+    [Position [-61.9 -28.8 -149.7]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0008]
+    [Position [-63.038418 -28.305292 -151.22342]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0009]
+    [Position [-63.1 -27.6 -153.9]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0010]
+    [Position [-63 -26.3 -156.3]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0011]
+    [Position [-64.7 -27.1 -156.6]]]
    []]]]
