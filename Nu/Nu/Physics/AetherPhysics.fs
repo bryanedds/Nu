@@ -537,7 +537,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                 | (DynamicFrameRate _, ClockTime secs) -> secs
                 | (_, _) -> failwithumf ()
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
-            physicsEngine.PhysicsContext.Step physicsStepAmount
+            let mutable substeps = Constants.Physics.SubstepsAether
+            physicsEngine.PhysicsContext.Step (physicsStepAmount, &substeps)
             AetherPhysicsEngine.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
             let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
