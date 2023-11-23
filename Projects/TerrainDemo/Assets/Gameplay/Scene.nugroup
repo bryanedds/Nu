@@ -13,7 +13,9 @@
     [Rotation [0.5 0 0 0.8660254]]]
    []]
   [SkyBoxDispatcher
-   [[AmbientBrightness 0.5] [Name SkyBox]]
+   [[AmbientBrightness 0.5]
+    [CubeMap [Gameplay SkyBoxMap]]
+    [Name SkyBox]]
    []]
   [TerrainDispatcher
    [[HeightMap
@@ -44,7 +46,7 @@
   [FpsDispatcher
    [[Name Fps-0001]
     [Position [-361 -223 0]]
-    [Text "FPS: 60.91"]]
+    [Text "FPS: 0.00"]]
    []]
   [CharacterDispatcher
    [[AngularVelocity [0 -2.0328716E-06 0]]
