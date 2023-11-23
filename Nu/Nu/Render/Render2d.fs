@@ -179,9 +179,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | (true, fontSize) ->
                     let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
                     if fontOpt <> IntPtr.Zero then Some (FontAsset (fontSize, fontOpt))
-                    else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
-                | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
-            else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
+                    else Log.info ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
+                | (false, _) -> Log.info ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
+            else Log.info ("Could not load font '" + asset.FilePath + "'."); None
         | _ -> None
 
     static member private tryLoadRenderPackage reloading packageName renderer =
@@ -498,7 +498,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                                 not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
                                 tileSetWidth <- let width = set.Image.Width in width.Value
 #if DEBUG
-                                if tileSetWidth % tileSourceSize.X <> 0 then Log.debugOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
+                                if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
 #endif
                                 tileSetTextureOpt <- Some (textureMetadata, texture)
                             if Option.isNone tileSetTextureOpt then

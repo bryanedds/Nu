@@ -622,7 +622,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | Right (textureMetadata, texture) ->
             Some (textureMetadata, texture)
         | Left error ->
-            Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
+            Log.info ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
             None
 
     static member private tryLoadCubeMapAsset packageState (asset : obj Asset) renderer =
@@ -639,15 +639,15 @@ type [<ReferenceEquality>] GlRenderer3d =
             let cubeMapMemoKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
             match OpenGL.CubeMap.TryCreateCubeMapMemoized (cubeMapMemoKey, packageState.CubeMapMemo) with
             | Right cubeMap -> Some (cubeMapMemoKey, cubeMap, ref None)
-            | Left error -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
-        | _ -> Log.debug ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
+            | Left error -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
+        | _ -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
 
     static member private tryLoadModelAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         use assimp = new Assimp.AssimpContext ()
         match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (true, asset.FilePath, renderer.RenderPhysicallyBasedMaterial, packageState.TextureMemo, assimp) with
         | Right model -> Some model
-        | Left error -> Log.debug ("Could not load model '" + asset.FilePath + "' due to: " + error); None
+        | Left error -> Log.info ("Could not load model '" + asset.FilePath + "' due to: " + error); None
 
     static member private tryLoadRawAsset (asset : obj Asset) =
         if File.Exists asset.FilePath
@@ -899,7 +899,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         vertexData.[u+7] <- surfaceDescriptor.Normals.[i].Z
                         i <- inc i
                 with :? IndexOutOfRangeException ->
-                    Log.debug "Vertex data truncated due to an unequal count among surface descriptor Positions, TexCoordses, and Normals."
+                    Log.info "Vertex data truncated due to an unequal count among surface descriptor Positions, TexCoordses, and Normals."
 
                 // create index data
                 let indexData = surfaceDescriptor.Indices.AsMemory ()
@@ -932,7 +932,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderPackages.[assetTag.PackageName] <- package
 
         // attempted to replace a loaded asset
-        else Log.debug ("Cannot replace a loaded asset '" + scstring assetTag + "' with a user-created static model.")
+        else Log.info ("Cannot replace a loaded asset '" + scstring assetTag + "' with a user-created static model.")
 
     static member private createPhysicallyBasedTerrainNormals (resolution : Vector2i) (positionsAndTexCoordses : struct (Vector3 * Vector2) array) =
         [|for y in 0 .. dec resolution.Y do
@@ -1360,10 +1360,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let cubeMapOpt = Some (cubeMapColor, cubeMapBrightness, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef)
                     (lightAmbientColor, lightAmbientBrightness, cubeMapOpt)
                 | _ ->
-                    Log.debug "Could not utilize sky box due to mismatched cube map asset."
+                    Log.info "Could not utilize sky box due to mismatched cube map asset."
                     (lightAmbientColor, lightAmbientBrightness, None)
             | ValueNone ->
-                Log.debug "Could not utilize sky box due to non-existent cube map asset."
+                Log.info "Could not utilize sky box due to non-existent cube map asset."
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
 
@@ -2038,7 +2038,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderTasks.RenderSkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
             | RenderLightProbe3d rlp ->
                 if renderer.RenderTasks.RenderLightProbes.ContainsKey rlp.LightProbeId then
-                    Log.debugOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
+                    Log.infoOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
                     renderer.RenderTasks.RenderLightProbes.Remove rlp.LightProbeId |> ignore<bool>
                 renderer.RenderTasks.RenderLightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.Bounds, rlp.Stale))
             | RenderLight3d rl ->
