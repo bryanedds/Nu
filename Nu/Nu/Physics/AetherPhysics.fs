@@ -59,9 +59,12 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
     static member private toPhysicsDensity substance =
         match substance with
         | Density density -> density
-        | Mass _ ->
-            Log.debugOnce "Currently 2D physics supports Substance only in terms of Density; using Density = 1.0f."
-            1.0f
+        | Mass mass ->
+            // TODO: figure out how to convert density to mass in all cases.
+            if mass <> 1.0f then
+                Log.infoOnce "Currently 2D physics supports Substance only in terms of Density; using Density = 1.0f."
+                1.0f
+            else mass
 
     static member private handleCollision
         (bodyShape : Dynamics.Fixture)

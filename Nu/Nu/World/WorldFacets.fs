@@ -1374,7 +1374,7 @@ module RigidBodyFacetModule =
              define Entity.AngularVelocity v3Zero
              define Entity.AngularDamping 0.2f
              define Entity.AngularFactor v3One
-             define Entity.Substance (Density 1.0f)
+             define Entity.Substance (Mass 1.0f)
              define Entity.GravityOverride None
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
