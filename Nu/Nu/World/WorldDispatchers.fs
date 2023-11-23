@@ -874,7 +874,7 @@ module CharacterDispatcher3dModule =
              define Entity.LinearDamping 0.5f
              define Entity.AngularDamping 0.999f
              define Entity.AngularFactor (v3 0.0f 0.1f 0.0f)
-             define Entity.BodyShape (BodyCapsule { Height = 1.0f; Radius = 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.8f 0.0f)); PropertiesOpt = None })]
+             define Entity.BodyShape (BodyCapsule { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
 
         override this.Update (entity, world) =
             let bodyId = entity.GetBodyId world
