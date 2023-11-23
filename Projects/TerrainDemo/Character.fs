@@ -55,20 +55,22 @@ module CharacterDispatcher =
                 (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkForceScalar else v3Zero) +
                 (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkForceScalar else v3Zero)
             let world =
-                match contactNormalOpt with
-                | Some contactUp when walkForce <> v3Zero ->
-                    let walkForward = walkForce.Normalized
-                    let groundPlane = Plane3 (contactUp, -1.0f)
-                    let slope = Vector3.Project (walkForward, groundPlane) - v3Up
-                    let walkForceOriented =
-                        if Vector3.Dot (slope, v3Up) > 0.0f then
-                            let angleBetween = walkForward.AngleBetween slope
-                            let rotationMatrix = Matrix4x4.CreateFromAxisAngle (Vector3.Cross (walkForward, v3Up), angleBetween)
-                            let walkForceOriented = Vector3.Transform (walkForce, rotationMatrix)
-                            walkForceOriented
-                        else walkForce
-                    World.applyBodyForce walkForceOriented v3Zero bodyId world
-                | Some _ | None -> World.applyBodyForce walkForce v3Zero bodyId world
+                if walkForce <> v3Zero then
+                    match contactNormalOpt with
+                    | Some contactUp ->
+                        let walkForward = walkForce.Normalized
+                        let groundPlane = Plane3 (contactUp, -1.0f)
+                        let slope = Vector3.Project (walkForward, groundPlane) - v3Up
+                        let walkForceOriented =
+                            if Vector3.Dot (slope, v3Up) > 0.0f then
+                                let angleBetween = walkForward.AngleBetween slope
+                                let rotationMatrix = Matrix4x4.CreateFromAxisAngle (Vector3.Cross (walkForward, v3Up), angleBetween)
+                                let walkForceOriented = Vector3.Transform (walkForce, rotationMatrix)
+                                walkForceOriented
+                            else walkForce
+                        World.applyBodyForce walkForceOriented v3Zero bodyId world
+                    | None -> World.applyBodyForce walkForce v3Zero bodyId world
+                else world
 
             // apply turn force
             let turnForce = if grounded then 8.0f else 4.0f
