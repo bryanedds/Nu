@@ -37,7 +37,7 @@ module CharacterDispatcher =
             let forward = rotation.Forward
             let right = rotation.Right
             let contactNormalOpt = World.getBodyToGroundContactNormalOpt bodyId world
-            let walkForceScalar = if grounded then 1.25f else 0.625f
+            let walkForceScalar = if grounded then 12.0f else 6.0f
             let walkForce = 
                 (if World.isKeyboardKeyDown KeyboardKey.W world then forward * walkForceScalar else v3Zero) +
                 (if World.isKeyboardKeyDown KeyboardKey.S world then -forward * walkForceScalar else v3Zero) +
@@ -60,12 +60,12 @@ module CharacterDispatcher =
                 | Some _ | None -> World.applyBodyForce walkForce v3Zero bodyId world
 
             // apply turn force
-            let turnForce = if grounded then 1.0f else 0.5f
+            let turnForce = if grounded then 8.0f else 4.0f
             let world = if World.isKeyboardKeyDown KeyboardKey.Right world then World.applyBodyTorque (-v3Up * turnForce) bodyId world else world
             let world = if World.isKeyboardKeyDown KeyboardKey.Left world then World.applyBodyTorque (v3Up * turnForce) bodyId world else world
 
             // apply jump force
-            let jumpForce = 0.4f
+            let jumpForce = 3.5f
             let world = if World.isKeyboardKeyDown KeyboardKey.Space world && grounded then World.applyBodyLinearImpulse (v3Up * jumpForce) v3Zero bodyId world else world
 
             // apply physics-based animations

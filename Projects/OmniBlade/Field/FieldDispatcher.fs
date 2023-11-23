@@ -602,6 +602,7 @@ module FieldDispatcher =
                     [Entity.Position == v3Zero
                      Entity.Elevation == Constants.Field.ForegroundElevation
                      Entity.Size == Constants.Gameplay.CharacterSize
+                     Entity.Substance == Density 1.0f
                      Entity.Avatar := field.Avatar]
 
                  // props
