@@ -10,7 +10,7 @@
     [Name Sun]
     [Position [0 12 2]]
     [Presence Omnipresent]
-    [Rotation [0.5 0 0 0.8660254]]]
+    [Rotation [0.4885185 0.18453936 -0.1065438 0.84613436]]]
    []]
   [SkyBoxDispatcher
    [[AmbientBrightness 0.5]
@@ -46,16 +46,16 @@
   [FpsDispatcher
    [[Name Fps-0001]
     [Position [-361 -223 0]]
-    [Text "FPS: 0.00"]]
+    [Text "FPS: 60.04"]]
    []]
   [CharacterDispatcher
-   [[AngularVelocity [0 -2.0328716E-06 0]]
+   [[AngularVelocity [0 5.7032304E-07 0]]
     [Animations
      [[0 None Armature|Idle Loop 1 0.5 None]]]
-    [LinearVelocity [-4.9148966E-06 2.1755695E-05 -5.723525E-07]]
+    [LinearVelocity [1.0918822E-06 2.2679567E-05 1.8141143E-06]]
     [Name Character-0002]
-    [Position [-28.123545 -27.687374 -127.13672]]
+    [Position [-59.186363 -30.07049 -147.97623]]
     [Presence Omnipresent]
-    [Rotation [0 -0.8416509 0 0.540022]]
+    [Rotation [0 0.9969621 0 -0.07788908]]
     [Size [2.6602979 3.5022092 1.984515]]]
    []]]]
