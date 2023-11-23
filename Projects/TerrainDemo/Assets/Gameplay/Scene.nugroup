@@ -44,15 +44,16 @@
   [FpsDispatcher
    [[Name Fps-0001]
     [Position [-361 -223 0]]
-    [Text "FPS: 60.29"]]
+    [Text "FPS: 60.91"]]
    []]
   [CharacterDispatcher
-   [[AngularDamping 0.999]
-    [AngularVelocity [0 -1.1184142E-06 0]]
-    [LinearVelocity [2.131912E-07 2.2873282E-05 -6.1004226E-07]]
+   [[AngularVelocity [0 -2.0328716E-06 0]]
+    [Animations
+     [[0 None Armature|Idle Loop 1 0.5 None]]]
+    [LinearVelocity [-4.9148966E-06 2.1755695E-05 -5.723525E-07]]
     [Name Character-0002]
-    [Position [-64.95574 -29.592918 -162.61461]]
+    [Position [-28.123545 -27.687374 -127.13672]]
     [Presence Omnipresent]
-    [Rotation [0 0.9944247 0 -0.10544894]]
+    [Rotation [0 -0.8416509 0 0.540022]]
     [Size [2.6602979 3.5022092 1.984515]]]
    []]]]
