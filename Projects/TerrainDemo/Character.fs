@@ -56,11 +56,10 @@ module CharacterDispatcher =
                     let groundPlane = Plane3 (contactUp, -1.0f)
                     let slope = Vector3.Project (walkForward, groundPlane) - v3Up
                     let walkForceOriented =
-                        if Vector3.Dot (slope, v3Up) >= 0.2f then
+                        if Vector3.Dot (slope, v3Up) > 0.0f then
                             let angleBetween = walkForward.AngleBetween slope
                             let rotationMatrix = Matrix4x4.CreateFromAxisAngle (Vector3.Cross (walkForward, v3Up), angleBetween)
                             let walkForceOriented = Vector3.Transform (walkForce, rotationMatrix)
-                            Log.info (scstring walkForce + " " + scstring walkForceOriented + " " + scstring angleBetween)
                             walkForceOriented
                         else walkForce
                     World.applyBodyForce walkForceOriented v3Zero bodyId world
@@ -74,7 +73,7 @@ module CharacterDispatcher =
             // apply jump force
             let jumpForce = 0.4f
             let world = if World.isKeyboardKeyDown KeyboardKey.Space world && grounded then World.applyBodyLinearImpulse (v3Up * jumpForce) v3Zero bodyId world else world
-            
+
             // apply physics-based animations
             let linearVelocity = World.getBodyLinearVelocity bodyId world
             let angularVelocity = World.getBodyAngularVelocity bodyId world
