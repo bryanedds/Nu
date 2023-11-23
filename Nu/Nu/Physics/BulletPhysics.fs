@@ -413,13 +413,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             object.Activate true // force activation so that a transform message will be produced
         | (false, _) -> ()
 
-    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
-        match physicsEngine.Objects.TryGetValue setBodyAngularVelocityMessage.BodyId with
-        | (true, (:? RigidBody as body)) ->
-            body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
-            body.Activate ()
-        | (_, _) -> ()
-
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyLinearVelocityMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
@@ -427,32 +420,47 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             body.Activate ()
         | (_, _) -> ()
 
-    static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
-        match physicsEngine.Objects.TryGetValue applyBodyAngularImpulseMessage.BodyId with
+    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue setBodyAngularVelocityMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
-            body.ApplyTorqueImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
+            body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
             body.Activate ()
         | (_, _) -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue applyBodyLinearImpulseMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
-            body.ApplyImpulse (applyBodyLinearImpulseMessage.LinearImpulse, applyBodyLinearImpulseMessage.Offset)
-            body.Activate ()
+            if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
+                body.ApplyImpulse (applyBodyLinearImpulseMessage.LinearImpulse, applyBodyLinearImpulseMessage.Offset)
+                body.Activate ()
+            else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Bullet.")
+        | (_, _) -> ()
+
+    static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
+        match physicsEngine.Objects.TryGetValue applyBodyAngularImpulseMessage.BodyId with
+        | (true, (:? RigidBody as body)) ->
+            if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X) then
+                body.ApplyTorqueImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
+                body.Activate ()
+            else Log.info ("Applying invalid angular impulse '" + scstring applyBodyAngularImpulseMessage.AngularImpulse + "'; this may destabilize Bullet.")
         | (_, _) -> ()
 
     static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue applyBodyForceMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
-            body.ApplyForce (applyBodyForceMessage.Force, applyBodyForceMessage.Offset)
-            body.Activate ()
+            if not (Single.IsNaN applyBodyForceMessage.Force.X) then
+                body.ApplyForce (applyBodyForceMessage.Force, applyBodyForceMessage.Offset)
+                body.Activate ()
+            else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Bullet.")
         | (_, _) -> ()
 
     static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue applyBodyTorqueMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
-            body.ApplyTorque applyBodyTorqueMessage.Torque
-            body.Activate ()
+            if not (Single.IsNaN applyBodyTorqueMessage.Torque.X) then
+                body.ApplyTorque applyBodyTorqueMessage.Torque
+                body.Activate ()
+            else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Aether.")
         | (_, _) -> ()
 
     static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
@@ -476,10 +484,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | SetBodyEnabledMessage setBodyEnabledMessage -> BulletPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> BulletPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> BulletPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> BulletPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> BulletPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> BulletPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> BulletPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BulletPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> BulletPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> BulletPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetBodyObservableMessage setBodyObservableMessage -> BulletPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine

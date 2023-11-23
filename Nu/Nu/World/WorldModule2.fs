@@ -718,7 +718,7 @@ module WorldModule2 =
                     | :? Entity as entity ->
                         if entity.Exists world && entity.Selected world then
                             let center = bodyTransformMessage.Center
-                            if not (Single.IsNaN center.X || Single.IsNaN center.Y || Single.IsNaN center.Z) then
+                            if not (Single.IsNaN center.X) then
                                 let rotation = bodyTransformMessage.Rotation
                                 let linearVelocity = bodyTransformMessage.LinearVelocity
                                 let angularVelocity = bodyTransformMessage.AngularVelocity
