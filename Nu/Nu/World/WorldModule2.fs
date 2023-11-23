@@ -735,16 +735,20 @@ module WorldModule2 =
                             let rotation = bodyTransformMessage.Rotation
                             let linearVelocity = bodyTransformMessage.LinearVelocity
                             let angularVelocity = bodyTransformMessage.AngularVelocity
-                            if entity.GetModelDriven world || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
-                                let transformData =
-                                    { BodyCenter = center
-                                      BodyRotation = rotation
-                                      BodyLinearVelocity = linearVelocity
-                                      BodyAngularVelocity = angularVelocity }
-                                let transformAddress = entity.BodyTransformEvent
-                                let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                                World.publishPlus transformData transformAddress eventTrace Nu.Game.Handle false false world
-                            else entity.ApplyPhysics center rotation linearVelocity angularVelocity world
+                            if Single.IsNaN center.X || Single.IsNaN center.Y || Single.IsNaN center.Z then
+                                Log.info ("Entity physics out of range: re-propagating physics for '" + scstring entity + "'.")
+                                World.propagateEntityPhysics entity world
+                            else
+                                if entity.GetModelDriven world || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
+                                    let transformData =
+                                        { BodyCenter = center
+                                          BodyRotation = rotation
+                                          BodyLinearVelocity = linearVelocity
+                                          BodyAngularVelocity = angularVelocity }
+                                    let transformAddress = entity.BodyTransformEvent
+                                    let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                                    World.publishPlus transformData transformAddress eventTrace Nu.Game.Handle false false world
+                                else entity.ApplyPhysics center rotation linearVelocity angularVelocity world
                         else world
                     | _ -> world
             | Dead -> world
