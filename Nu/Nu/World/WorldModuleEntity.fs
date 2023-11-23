@@ -7,7 +7,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldModuleEntity =
 
     /// A reflective property getter.
@@ -577,7 +577,6 @@ module WorldModuleEntity =
             transform
 
         /// Get all of the entities directly parented by an entity.
-        [<FunctionBinding>]
         static member getEntityChildren (entity : Entity) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (entity :> Simulant) with
@@ -588,20 +587,17 @@ module WorldModuleEntity =
             | (false, _) -> Seq.empty
 
         /// Traverse all of the entities directly parented by an entity.
-        [<FunctionBinding>]
         static member traverseEntityChildren effect (entity : Entity) (world : World) =
             let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
         /// Get all of the entities directly mounted on an entity.
-        [<FunctionBinding>]
         static member getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
             | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SList.ofSeq |> seq
             | (false, _) -> Seq.empty
 
         /// Traverse all of the entities directly mounted on an entity.
-        [<FunctionBinding>]
         static member traverseEntityMounters effect (entity : Entity) (world : World) =
             let mounters = World.getEntityMounters entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
@@ -2281,12 +2277,10 @@ module WorldModuleEntity =
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Consider using World.destroyEntity instead.
-        [<FunctionBinding>]
         static member destroyEntityImmediate entity world =
             World.destroyEntityImmediateInternal true entity world
 
         /// Create an entity and add it to the world.
-        [<FunctionBinding "createEntity">]
         static member createEntity5 dispatcherName overlayDescriptor surnames (group : Group) world =
 
             (* TODO: factor out common code between this and readEntity - there's just too much. *)
@@ -2428,7 +2422,6 @@ module WorldModuleEntity =
                     world children
 
         /// Rename an entity.
-        [<FunctionBinding>]
         static member renameEntity source destination world =
             World.frame (World.renameEntityImmediate source destination) Game.Handle world
 
@@ -2470,7 +2463,6 @@ module WorldModuleEntity =
                 (Left "Could not set the entity's overlay name to None because doing so is currently not implemented.", world)
             
         /// Try to set the entity's facet names from script.
-        [<FunctionBinding "trySetEntityOverlayNameOpt">]
         static member internal trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
             match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
             | (Right _, world) -> world
@@ -2500,7 +2492,6 @@ module WorldModuleEntity =
             else (Right (), world)
 
         /// Try to set the entity's facet names from script.
-        [<FunctionBinding "trySetEntityFacetNames">]
         static member internal trySetEntityFacetNamesFromScript facetNames entity world =
             match World.trySetEntityFacetNames facetNames entity world with
             | (Right _, world) -> world

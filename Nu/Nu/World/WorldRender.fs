@@ -6,7 +6,7 @@ open System
 open System.Numerics
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldRender =
 
     type World with
@@ -46,19 +46,16 @@ module WorldRender =
 
         /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
-        [<FunctionBinding>]
         static member loadRenderPackage2d packageName world =
             let loadRenderPackageUseMessage = LoadRenderPackage2d packageName
             World.enqueueRenderMessage2d loadRenderPackageUseMessage world
 
         /// Unload a 2d render package should be unloaded since its assets will not be used again soon.
-        [<FunctionBinding>]
         static member unloadRenderPackage2d packageName world =
             let unloadRenderPackageMessage = UnloadRenderPackage2d packageName
             World.enqueueRenderMessage2d unloadRenderPackageMessage world
 
         /// Send a message to the 2d renderer to reload its rendering assets.
-        [<FunctionBinding>]
         static member reloadRenderAssets2d world =
             let reloadRenderAssetsMessage = ReloadRenderAssets2d
             World.enqueueRenderMessage2d reloadRenderAssetsMessage world
@@ -91,19 +88,16 @@ module WorldRender =
 
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
-        [<FunctionBinding>]
         static member loadRenderPackage3d packageName world =
             let loadRenderPackageUseMessage = LoadRenderPackage3d packageName
             World.enqueueRenderMessage3d loadRenderPackageUseMessage world
 
         /// Unload a 3d render package should be unloaded since its assets will not be used again soon.
-        [<FunctionBinding>]
         static member unloadRenderPackage3d packageName world =
             let unloadRenderPackageMessage = UnloadRenderPackage3d packageName
             World.enqueueRenderMessage3d unloadRenderPackageMessage world
 
         /// Send a message to the 3d renderer to reload its rendering assets.
-        [<FunctionBinding>]
         static member reloadRenderAssets3d world =
             let reloadRenderAssetsMessage = ReloadRenderAssets3d
             World.enqueueRenderMessage3d reloadRenderAssetsMessage world

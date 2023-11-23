@@ -601,6 +601,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
         member physicsEngine.GetBodyContactNormals bodyId =
             // TODO: see if this can be optimized from a linear-time search to constant-time look-up.
+            // Maybe bake a dictionary every integration at most.
             match physicsEngine.Objects.TryGetValue bodyId with
             | (true, object) ->
                 let dispatcher = physicsEngine.PhysicsContext.Dispatcher
@@ -651,6 +652,10 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         member physicsEngine.IsBodyOnGround bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
+
+        member physicsEngine.InspectMessages inspect =
+            for message in physicsEngine.PhysicsMessages do
+                inspect message
 
         member physicsEngine.PopMessages () =
             let messages = physicsEngine.PhysicsMessages

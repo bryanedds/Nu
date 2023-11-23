@@ -6,7 +6,7 @@ open System
 open System.IO
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldGroupModule =
 
     type Group with
@@ -162,7 +162,6 @@ module WorldGroupModule =
             dispatcher.TryUntruncateModel<'model> (model, group, world)
 
         /// Get all the groups in a screen.
-        [<FunctionBinding>]
         static member getGroups (screen : Screen) world =
             let simulants = World.getSimulants world
             match simulants.TryGetValue (screen :> Simulant) with
@@ -173,7 +172,6 @@ module WorldGroupModule =
             | (false, _) -> Seq.empty
 
         /// Create a group and add it to the world.
-        [<FunctionBinding "createGroup">]
         static member createGroup4 dispatcherName nameOpt (screen : Screen) world =
             let dispatchers = World.getGroupDispatchers world
             let dispatcher =
@@ -222,7 +220,6 @@ module WorldGroupModule =
 
         /// Destroy a group in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// group's existence. Consider using World.destroyGroup instead.
-        [<FunctionBinding>]
         static member destroyGroupImmediate (group : Group) world =
             let world = World.tryRemoveSimulantFromDestruction group world
             EventGraph.cleanEventAddressCache group.GroupAddress
@@ -235,13 +232,11 @@ module WorldGroupModule =
             else world
 
         /// Destroy a group in the world at the end of the current update.
-        [<FunctionBinding>]
         static member destroyGroup (group : Group) world =
             World.addSimulantToDestruction group world
 
         /// Destroy multiple groups in the world immediately. Can be dangerous if existing in-flight publishing depends
         /// on any of the groups' existences. Consider using World.destroyGroups instead.
-        [<FunctionBinding>]
         static member destroyGroupsImmediate (groups : Group seq) world =
             List.foldBack
                 (fun group world -> World.destroyGroupImmediate group world)
@@ -249,7 +244,6 @@ module WorldGroupModule =
                 world
 
         /// Destroy multiple groups from the world at the end of the current update.
-        [<FunctionBinding>]
         static member destroyGroups groups world =
             World.frame (World.destroyGroupsImmediate groups) Game.Handle world
 
@@ -273,7 +267,6 @@ module WorldGroupModule =
             | None -> world
 
         /// Rename a group.
-        [<FunctionBinding>]
         static member renameGroup source destination world =
             World.frame (World.renameGroupImmediate source destination) Game.Handle world
 
@@ -297,7 +290,6 @@ module WorldGroupModule =
             Seq.toList
 
         /// Write a group to a file.
-        [<FunctionBinding>]
         static member writeGroupToFile (filePath : string) group world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
@@ -351,7 +343,6 @@ module WorldGroupModule =
             (List.rev groupsRev, world)
 
         /// Read a group from a file.
-        [<FunctionBinding>]
         static member readGroupFromFile (filePath : string) nameOpt screen world =
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr

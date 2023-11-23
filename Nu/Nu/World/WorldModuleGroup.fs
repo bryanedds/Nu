@@ -6,7 +6,7 @@ open System
 open System.Collections.Generic
 open Prime
 
-[<AutoOpen; ModuleBinding>]
+[<AutoOpen>]
 module WorldModuleGroup =
 
     /// Dynamic property getters / setters.
