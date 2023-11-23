@@ -29,15 +29,9 @@ module CharacterDispatcher =
 
         override this.Update (entity, world) =
 
-            // disable gravity when grounded
+            // apply movement forces
             let bodyId = entity.GetBodyId world
             let grounded = World.getBodyGrounded bodyId world
-            let world =
-                if grounded
-                then entity.SetGravityOverride (Some v3Zero) world
-                else entity.SetGravityOverride None world
-
-            // apply movement forces
             let position = entity.GetPosition world
             let rotation = entity.GetRotation world
             let forward = rotation.Forward

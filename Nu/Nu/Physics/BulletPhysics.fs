@@ -200,6 +200,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             try let positionsPtr = handle.AddrOfPinnedObject ()
                 let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
                 terrain.LocalScaling <- v3 (bounds.Width / single resolution.X) 1.0f (bounds.Depth / single resolution.Y)
+                terrain.SetFlipTriangleWinding true // match terrain winding order - I think!
                 BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
                 terrain.UserObject <-
                     { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -505,7 +506,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             | (DynamicFrameRate _, ClockTime secs) -> secs
             | (_, _) -> failwithumf ()
         if physicsStepAmount > 0.0f then
-            let result = physicsEngine.PhysicsContext.StepSimulation physicsStepAmount
+            let result = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubSteps3d)
             ignore result
 
     static member private createIntegrationMessages physicsEngine =
