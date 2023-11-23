@@ -199,7 +199,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let handle = GCHandle.Alloc (heights, GCHandleType.Pinned)
             try let positionsPtr = handle.AddrOfPinnedObject ()
                 let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
-                terrain.LocalScaling <- v3 (bounds.Width / single resolution.X) 1.0f (bounds.Depth / single resolution.Y)
+                terrain.LocalScaling <- v3 (bounds.Width / single (dec resolution.X)) 1.0f (bounds.Depth / single (dec resolution.Y))
                 terrain.SetFlipTriangleWinding true // match terrain winding order - I think!
                 BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
                 terrain.UserObject <-
