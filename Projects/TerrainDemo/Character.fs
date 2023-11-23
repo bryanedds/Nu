@@ -79,21 +79,17 @@ module CharacterDispatcher =
             let turnLeftwardness = -turnRightwardness
             let animations = [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
             let animations =
-                //if grounded then
-                    let animations =
-                        if forwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.5f; Weight = forwardness; BoneFilterOpt = None } :: animations
-                        elif backwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBackward"; Playback = Loop; Rate = 1.5f; Weight = backwardness; BoneFilterOpt = None } :: animations
-                        else animations
-                    let animations =
-                        if rightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRightward"; Playback = Loop; Rate = 1.5f; Weight = rightwardness; BoneFilterOpt = None } :: animations
-                        elif leftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeftward"; Playback = Loop; Rate = 1.5f; Weight = leftwardness; BoneFilterOpt = None } :: animations
-                        else animations
-                    let animations =
-                        if turnRightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.5f; Weight = turnRightwardness; BoneFilterOpt = None } :: animations
-                        elif turnLeftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.5f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
-                        else animations
-                    animations
-                //else animations
+                if forwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.5f; Weight = forwardness; BoneFilterOpt = None } :: animations
+                elif backwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBackward"; Playback = Loop; Rate = 1.5f; Weight = backwardness; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if rightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRightward"; Playback = Loop; Rate = 1.5f; Weight = rightwardness; BoneFilterOpt = None } :: animations
+                elif leftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeftward"; Playback = Loop; Rate = 1.5f; Weight = leftwardness; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if turnRightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.5f; Weight = turnRightwardness; BoneFilterOpt = None } :: animations
+                elif turnLeftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.5f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
+                else animations
             let world = entity.SetAnimations (List.toArray animations) world
 
             // orient camera            

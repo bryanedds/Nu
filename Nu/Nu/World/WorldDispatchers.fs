@@ -876,6 +876,32 @@ module CharacterDispatcher3dModule =
              define Entity.AngularFactor (v3 0.0f 0.1f 0.0f)
              define Entity.BodyShape (BodyCapsule { Height = 1.0f; Radius = 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.8f 0.0f)); PropertiesOpt = None })]
 
+        override this.Update (entity, world) =
+            let bodyId = entity.GetBodyId world
+            let rotation = entity.GetRotation world
+            let linearVelocity = World.getBodyLinearVelocity bodyId world
+            let angularVelocity = World.getBodyAngularVelocity bodyId world
+            let forwardness = (Vector3.Dot (linearVelocity, rotation.Forward))
+            let backwardness = (Vector3.Dot (linearVelocity, -rotation.Forward))
+            let rightwardness = (Vector3.Dot (linearVelocity, rotation.Right))
+            let leftwardness = (Vector3.Dot (linearVelocity, -rotation.Right))
+            let turnRightwardness = (angularVelocity * v3Up).Length ()
+            let turnLeftwardness = -turnRightwardness
+            let animations = [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
+            let animations =
+                if forwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.5f; Weight = forwardness; BoneFilterOpt = None } :: animations
+                elif backwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBackward"; Playback = Loop; Rate = 1.5f; Weight = backwardness; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if rightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRightward"; Playback = Loop; Rate = 1.5f; Weight = rightwardness; BoneFilterOpt = None } :: animations
+                elif leftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeftward"; Playback = Loop; Rate = 1.5f; Weight = leftwardness; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if turnRightwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRightward"; Playback = Loop; Rate = 1.5f; Weight = turnRightwardness; BoneFilterOpt = None } :: animations
+                elif turnLeftwardness > 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.5f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
+                else animations
+            entity.SetAnimations (List.toArray animations) world
+
 [<AutoOpen>]
 module TerrainDispatcherModule =
 
