@@ -508,16 +508,16 @@ type SetBodyLinearVelocityMessage =
     { BodyId : BodyId
       LinearVelocity : Vector3 }
 
+/// A message to the physics system to set the angular velocity of a body.
+type SetBodyAngularVelocityMessage =
+    { BodyId : BodyId
+      AngularVelocity : Vector3 }
+
 /// A message to the physics system to apply a linear impulse to a body.
 type ApplyBodyLinearImpulseMessage =
     { BodyId : BodyId
       LinearImpulse : Vector3
       Offset : Vector3 }
-
-/// A message to the physics system to set the angular velocity of a body.
-type SetBodyAngularVelocityMessage =
-    { BodyId : BodyId
-      AngularVelocity : Vector3 }
 
 /// A message to the physics system to apply an angular impulse to a body.
 type ApplyBodyAngularImpulseMessage =
@@ -578,10 +578,10 @@ type PhysicsMessage =
     | SetBodyEnabledMessage of SetBodyEnabledMessage
     | SetBodyCenterMessage of SetBodyCenterMessage
     | SetBodyRotationMessage of SetBodyRotationMessage
-    | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
     | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
-    | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
+    | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
     | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
+    | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
     | SetBodyObservableMessage of SetBodyObservableMessage
