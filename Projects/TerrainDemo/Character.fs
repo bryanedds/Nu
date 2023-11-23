@@ -27,6 +27,17 @@ module CharacterDispatcher =
              define Entity.AngularFactor (v3 0.0f 0.1f 0.0f)
              define Entity.BodyShape (BodyCapsule { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
 
+        override this.Register (entity, world) =
+            World.monitor (fun evt world ->
+                if evt.Data.KeyboardKey = KeyboardKey.Space && not evt.Data.Repeated then
+                    let bodyId = entity.GetBodyId world
+                    let grounded = World.getBodyGrounded bodyId world
+                    let jumpForce = 7.0f
+                    let world = if grounded then World.applyBodyLinearImpulse (v3Up * jumpForce) v3Zero bodyId world else world
+                    (Cascade, world)
+                else (Cascade, world))
+                Game.KeyboardKeyDownEvent entity world
+
         override this.Update (entity, world) =
 
             // apply movement forces
@@ -63,10 +74,6 @@ module CharacterDispatcher =
             let turnForce = if grounded then 8.0f else 4.0f
             let world = if World.isKeyboardKeyDown KeyboardKey.Right world then World.applyBodyTorque (-v3Up * turnForce) bodyId world else world
             let world = if World.isKeyboardKeyDown KeyboardKey.Left world then World.applyBodyTorque (v3Up * turnForce) bodyId world else world
-
-            // apply jump force
-            let jumpForce = 3.5f
-            let world = if World.isKeyboardKeyDown KeyboardKey.Space world && grounded then World.applyBodyLinearImpulse (v3Up * jumpForce) v3Zero bodyId world else world
 
             // apply physics-based animations
             let linearVelocity = World.getBodyLinearVelocity bodyId world
