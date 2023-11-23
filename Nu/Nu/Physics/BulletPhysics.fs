@@ -30,7 +30,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies : BulletBodyDictionary
           Ghosts : BulletGhostDictionary
           Objects : BulletObjectDictionary
-          Collisions : SDictionary<BodyId * BodyId, Vector3>
+          CollisionsFiltered : SDictionary<BodyId * BodyId, Vector3>
+          CollisionsGround : SDictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
           PhysicsDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -511,27 +512,48 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private createIntegrationMessages physicsEngine =
 
-        // create collision messages
-        let collisionsOld = physicsEngine.Collisions
-        physicsEngine.Collisions.Clear ()
+        // create collision entries
+        let collisionsOld = physicsEngine.CollisionsFiltered
+        physicsEngine.CollisionsFiltered.Clear ()
+        physicsEngine.CollisionsGround.Clear ()
         let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
         for i in 0 .. dec numManifolds do
+
+            // create non-ground collision entry if unfiltered
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
             let body0 = manifold.Body0
             let body1 = manifold.Body1
-            let bodySource0 = body0.UserObject :?> BodyId
-            let bodySource1 = body1.UserObject :?> BodyId
-            let collisionKey = (bodySource0, bodySource1)
+            let body0Source = body0.UserObject :?> BodyId
+            let body1Source = body1.UserObject :?> BodyId
+            let collisionKey = (body0Source, body1Source)
             let mutable normal = v3Zero
             let numContacts = manifold.NumContacts
             for j in 0 .. dec numContacts do
                 let contact = manifold.GetContactPoint j
                 normal <- normal - contact.NormalWorldOnB
             normal <- normal / single numContacts
-            physicsEngine.Collisions.Add (collisionKey, normal)
+            if  body0.UserIndex = 1 ||
+                body1.UserIndex = 1 then
+                physicsEngine.CollisionsFiltered.Add (collisionKey, normal)
+
+            // create ground collision entry for body0 if needed
+            normal <- -normal
+            let theta = Vector3.Dot (normal, Vector3.UnitY) |> double |> Math.Acos |> Math.Abs
+            if theta < Math.PI * 0.25 then
+                match physicsEngine.CollisionsGround.TryGetValue body0Source with
+                | (true, collisions) -> collisions.Add normal
+                | (false, _) -> physicsEngine.CollisionsGround.Add (body0Source, List [normal])
+
+            // create ground collision entry for body1 if needed
+            normal <- -normal
+            let theta = Vector3.Dot (normal, Vector3.UnitY) |> double |> Math.Acos |> Math.Abs
+            if theta < Math.PI * 0.25 then
+                match physicsEngine.CollisionsGround.TryGetValue body1Source with
+                | (true, collisions) -> collisions.Add normal
+                | (false, _) -> physicsEngine.CollisionsGround.Add (body1Source, List [normal])
 
         // create collision messages
-        for entry in physicsEngine.Collisions do
+        for entry in physicsEngine.CollisionsFiltered do
             let (bodySourceA, bodySourceB) = entry.Key
             if not (collisionsOld.ContainsKey entry.Key) then
                 BulletPhysicsEngine.handleCollision physicsEngine bodySourceA bodySourceB entry.Value
@@ -540,7 +562,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         // create separation messages
         for entry in collisionsOld do
             let (bodySourceA, bodySourceB) = entry.Key
-            if not (physicsEngine.Collisions.ContainsKey entry.Key) then
+            if not (physicsEngine.CollisionsFiltered.ContainsKey entry.Key) then
                 BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
                 BulletPhysicsEngine.handleSeparation physicsEngine bodySourceB bodySourceA
 
@@ -575,7 +597,8 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
           Bodies = OrderedDictionary HashIdentity.Structural
           Ghosts = OrderedDictionary HashIdentity.Structural
           Objects = OrderedDictionary HashIdentity.Structural
-          Collisions = SDictionary.make HashIdentity.Structural
+          CollisionsFiltered = SDictionary.make HashIdentity.Structural
+          CollisionsGround = SDictionary.make HashIdentity.Structural
           CollisionConfiguration = collisionConfiguration
           PhysicsDispatcher = physicsDispatcher
           BroadPhaseInterface = broadPhaseInterface
@@ -598,7 +621,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine.Objects.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            [for collision in physicsEngine.Collisions do
+            [for collision in physicsEngine.CollisionsFiltered do
                 let (body0, body1) = collision.Key
                 if body0 = bodyId then -collision.Value
                 elif body1 = bodyId then collision.Value]
@@ -618,11 +641,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 else failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            List.filter
-                (fun normal ->
-                    let theta = Vector3.Dot (normal, Vector3.UnitY) |> double |> Math.Acos |> Math.Abs
-                    theta < Math.PI * 0.25)
-                ((physicsEngine :> PhysicsEngine).GetBodyContactNormals bodyId)
+            match physicsEngine.CollisionsGround.TryGetValue bodyId with
+            | (true, collisions) -> List.ofSeq collisions
+            | (false, _) -> []
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
