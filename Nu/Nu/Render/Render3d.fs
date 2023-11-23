@@ -649,7 +649,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         | Right model -> Some model
         | Left error -> Log.info ("Could not load model '" + asset.FilePath + "' due to: " + error); None
 
-    static member private tryLoadRawAsset (asset : obj Asset) =
+    static member private tryLoadRawAsset (asset : obj Asset) renderer =
+        GlRenderer3d.invalidateCaches renderer
         if File.Exists asset.FilePath
         then Some ()
         else None
@@ -658,7 +659,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         GlRenderer3d.invalidateCaches renderer
         match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
         | ".raw" ->
-            match GlRenderer3d.tryLoadRawAsset asset with
+            match GlRenderer3d.tryLoadRawAsset asset renderer with
             | Some () -> Some RawAsset
             | None -> None
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
