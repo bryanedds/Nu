@@ -506,7 +506,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             | (DynamicFrameRate _, ClockTime secs) -> secs
             | (_, _) -> failwithumf ()
         if physicsStepAmount > 0.0f then
-            let result = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubSteps3d)
+            let result = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubstepsBullet)
             ignore result
 
     static member private createIntegrationMessages physicsEngine =
