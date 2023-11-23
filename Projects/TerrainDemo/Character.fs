@@ -57,12 +57,12 @@ module CharacterDispatcher =
             let world =
                 if walkForce <> v3Zero then
                     match contactNormalOpt with
-                    | Some contactUp ->
+                    | Some contactNormal ->
                         let walkForward = walkForce.Normalized
-                        let groundPlane = Plane3 (contactUp, -1.0f)
+                        let groundPlane = Plane3 (contactNormal, -1.0f)
                         let slope = Vector3.Project (walkForward, groundPlane) - v3Up
                         let walkForceOriented =
-                            if Vector3.Dot (slope, v3Up) > 0.0f then
+                            if Vector3.Dot (slope, v3Up) > 0.01f then // guard against generating massive force
                                 let angleBetween = walkForward.AngleBetween slope
                                 let rotationMatrix = Matrix4x4.CreateFromAxisAngle (Vector3.Cross (walkForward, v3Up), angleBetween)
                                 let walkForceOriented = Vector3.Transform (walkForce, rotationMatrix)
