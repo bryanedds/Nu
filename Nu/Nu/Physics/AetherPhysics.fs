@@ -264,7 +264,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         with :? ArgumentOutOfRangeException -> ()
 
         // always listen for collisions if not internal body
-        if not (bodyId.BodyIndex = Constants.Physics.InternalIndex) then
+        if bodyId.BodyIndex <> Constants.Physics.InternalIndex then
             body.add_OnCollision physicsEngine.CollisionHandler
             body.add_OnSeparation physicsEngine.SeparationHandler
 
