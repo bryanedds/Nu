@@ -363,27 +363,37 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.BodyId with
         | (true, (_, body)) ->
-            body.ApplyLinearImpulse
-                (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
-                 AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.Offset)
+            if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
+                body.ApplyLinearImpulse
+                    (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
+                     AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.Offset)
+            else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.BodyId with
-        | (true, (_, body)) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse.X)
+        | (true, (_, body)) ->
+            if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X) then
+                body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse.X)
+            else Log.info ("Applying invalid angular impulse '" + scstring applyBodyAngularImpulseMessage.AngularImpulse + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
     static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.BodyId with
         | (true, (_, body)) ->
-            body.ApplyForce
-                (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force,
-                 AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Offset)
+            if not (Single.IsNaN applyBodyForceMessage.Force.X) then
+                body.ApplyForce
+                    (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force,
+                     AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Offset)
+            else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
     static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyTorqueMessage.BodyId with
-        | (true, (_, body)) -> body.ApplyTorque (applyBodyTorqueMessage.Torque.X)
+        | (true, (_, body)) ->
+            if not (Single.IsNaN applyBodyTorqueMessage.Torque.X) then
+                body.ApplyTorque (applyBodyTorqueMessage.Torque.X)
+            else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
     static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
@@ -409,10 +419,10 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         | SetBodyEnabledMessage setBodyEnabledMessage -> AetherPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> AetherPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> AetherPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> AetherPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
         | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> AetherPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> AetherPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> AetherPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
         | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> AetherPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> AetherPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> AetherPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> AetherPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetBodyObservableMessage setBodyObservableMessage -> AetherPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
