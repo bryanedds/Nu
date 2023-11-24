@@ -97,7 +97,7 @@ type [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
     { Bounds : Box3
       Material : TerrainMaterial
       TintImage : Image AssetTag
-      NormalImage : Image AssetTag
+      NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
       Segments : Vector2i }
@@ -108,7 +108,7 @@ type [<StructuralEquality; NoComparison>] TerrainDescriptor =
       MaterialProperties : TerrainMaterialProperties
       Material : TerrainMaterial
       TintImage : Image AssetTag
-      NormalImage : Image AssetTag
+      NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
       Segments : Vector2i }
@@ -117,7 +117,7 @@ type [<StructuralEquality; NoComparison>] TerrainDescriptor =
         { Bounds = this.Bounds
           Material = this.Material
           TintImage = this.TintImage
-          NormalImage = this.NormalImage
+          NormalImageOpt = this.NormalImageOpt
           Tiles = this.Tiles
           HeightMap = this.HeightMap
           Segments = this.Segments }
@@ -966,16 +966,19 @@ type [<ReferenceEquality>] GlRenderer3d =
             let resolution = heightMapMetadata.Resolution
             let positionsAndTexCoordses = heightMapMetadata.PositionsAndTexCoordses
             let normals =
-                match GlRenderer3d.tryGetImageData geometryDescriptor.NormalImage renderer with
-                | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                    bytes |>
-                    Array.map (fun x -> single x / single Byte.MaxValue) |>
-                    Array.chunkBySize 4 |>
-                    Array.map (fun x ->
-                        let tangent = (v3 x.[2] x.[1] x.[0] * 2.0f - v3One).Normalized
-                        let normal = v3 tangent.X tangent.Z -tangent.Y
-                        normal)
-                | _ -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses
+                match geometryDescriptor.NormalImageOpt with
+                | Some normalImage ->
+                    match GlRenderer3d.tryGetImageData normalImage renderer with
+                    | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                        bytes |>
+                        Array.map (fun x -> single x / single Byte.MaxValue) |>
+                        Array.chunkBySize 4 |>
+                        Array.map (fun x ->
+                            let tangent = (v3 x.[2] x.[1] x.[0] * 2.0f - v3One).Normalized
+                            let normal = v3 tangent.X tangent.Z -tangent.Y
+                            normal)
+                    | _ -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses
+                | None -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses
 
             // compute tint
             let tint =
