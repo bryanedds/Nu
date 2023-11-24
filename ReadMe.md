@@ -26,6 +26,9 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
+![image](https://github.com/bryanedds/Nu/assets/1625560/7eff99b9-c363-4103-a2f7-a154fac7542a)
+Physicsally based rendering with image-based lighting in the Nu Game Engine.
+
 ![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
 Wandering around the forest in OmniBlade.
 
