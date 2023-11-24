@@ -82,46 +82,47 @@ module Assimp =
         i
 
     let internal InterpolatePosition (animationTime : single, positionKeys : Assimp.VectorKey array) =
-        if positionKeys.Length = 1 then
-            positionKeys.[0].Value
-        else
-            let PositionIndex = ComputePositionKeyFrameIndex (animationTime, positionKeys)
-            let NextPositionIndex = inc PositionIndex % positionKeys.Length
-            let DeltaTime = single (positionKeys.[NextPositionIndex].Time - positionKeys.[PositionIndex].Time)
-            let Factor = (animationTime - single positionKeys.[PositionIndex].Time) / DeltaTime
-            let Start = positionKeys.[PositionIndex].Value
-            let End = positionKeys.[NextPositionIndex].Value
-            let Delta = End - Start
-            let Result = Start + Factor * Delta
-            Result
+        if positionKeys.Length <> 1 then
+            let positionIndex = ComputePositionKeyFrameIndex (animationTime, positionKeys)
+            let positionIndexNext = inc positionIndex % positionKeys.Length
+            let positionKey = positionKeys.[positionIndex]
+            let positionKeyNext = positionKeys.[positionIndexNext]
+            let deltaTime = single (positionKeyNext.Time - positionKey.Time)
+            let factor = (animationTime - single positionKey.Time) / deltaTime
+            let start = positionKey.Value
+            let stop = positionKeyNext.Value
+            let delta = stop - start
+            start + factor * delta
+        else positionKeys.[0].Value
 
     let internal InterpolateRotation (animationTime : single, rotationKeys : Assimp.QuaternionKey array) =
-        if rotationKeys.Length = 1 then
-            rotationKeys.[0].Value
-        else
-            let RotationIndex = ComputeRotationKeyFrameIndex (animationTime, rotationKeys)
-            let NextRotationIndex = inc RotationIndex % rotationKeys.Length
-            let DeltaTime = single (rotationKeys.[NextRotationIndex].Time - rotationKeys.[RotationIndex].Time)
-            let Factor = (animationTime - single rotationKeys.[RotationIndex].Time) / DeltaTime
-            let StartRotationQ = rotationKeys.[RotationIndex].Value
-            let EndRotationQ = rotationKeys.[NextRotationIndex].Value
-            let Result = Assimp.Quaternion.Slerp (StartRotationQ, EndRotationQ, Factor)
-            Result.Normalize ()
-            Result
+        if rotationKeys.Length <> 1 then
+            let rotationIndex = ComputeRotationKeyFrameIndex (animationTime, rotationKeys)
+            let rotationIndexNext = inc rotationIndex % rotationKeys.Length
+            let rotationKey = rotationKeys.[rotationIndex]
+            let rotationKeyNext = rotationKeys.[rotationIndexNext]
+            let deltaTime = single (rotationKeyNext.Time - rotationKey.Time)
+            let factor = (animationTime - single rotationKey.Time) / deltaTime
+            let startRotation = rotationKey.Value
+            let stopRotation = rotationKeyNext.Value
+            let result = Assimp.Quaternion.Slerp (startRotation, stopRotation, factor)
+            result.Normalize ()
+            result
+        else rotationKeys.[0].Value
 
     let internal InterpolateScaling (animationTime : single, scalingKeys : Assimp.VectorKey array) =
-        if scalingKeys.Length = 1 then
-            scalingKeys.[0].Value
-        else
-            let ScalingIndex = ComputeScalingKeyFrameIndex (animationTime, scalingKeys)
-            let NextScalingIndex = inc ScalingIndex % scalingKeys.Length
-            let DeltaTime = single (scalingKeys.[NextScalingIndex].Time - scalingKeys.[ScalingIndex].Time)
-            let Factor = (animationTime - single scalingKeys.[ScalingIndex].Time) / DeltaTime
-            let Start = scalingKeys.[ScalingIndex].Value
-            let End = scalingKeys.[NextScalingIndex].Value
-            let Delta = End - Start
-            let Result = Start + Factor * Delta
-            Result
+        if scalingKeys.Length <> 1 then
+            let scalingIndex = ComputeScalingKeyFrameIndex (animationTime, scalingKeys)
+            let scalingIndexNext = inc scalingIndex % scalingKeys.Length
+            let scalingKey = scalingKeys.[scalingIndex]
+            let scalingKeyNext = scalingKeys.[scalingIndexNext]
+            let deltaTime = single (scalingKeyNext.Time - scalingKey.Time)
+            let factor = (animationTime - single scalingKey.Time) / deltaTime
+            let start = scalingKey.Value
+            let stop = scalingKeyNext.Value
+            let delta = stop - start
+            start + factor * delta
+        else scalingKeys.[0].Value
 
 [<AutoOpen>]
 module AssimpExtensions =
@@ -206,26 +207,26 @@ module AssimpExtensions =
                                     else remainingTime
                             let translation = Assimp.InterpolatePosition (localTimeScaled, channel.TranslationKeys)
                             let rotation = Assimp.InterpolateRotation (localTimeScaled, channel.RotationKeys)
-                            let scale = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
-                            Some (translation, rotation, scale, animation.Weight)
+                            let scaling = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
+                            Some (translation, rotation, scaling, animation.Weight)
                         else None
                     | (false, _) -> None|]
             let decompositions = Array.definitize decompositionOpts
             if Array.notEmpty decompositions then
                 let mutable translationAccumulated = Assimp.Vector3D 0.0f
                 let mutable rotationAccumulated = Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f)
-                let mutable scaleAccumulated = Assimp.Vector3D 1.0f
+                let mutable scalingAccumulated = Assimp.Vector3D 1.0f
                 let mutable weightAccumulated = 0.0f
-                for (translation, rotation, scale, weight) in decompositions do
+                for (translation, rotation, scaling, weight) in decompositions do
                     let factor = weightAccumulated / (weightAccumulated + weight)
                     let factor2 = 1.0f - factor
                     translationAccumulated <- translationAccumulated * factor + translation * factor2
                     rotationAccumulated <- Assimp.Quaternion.Slerp (rotationAccumulated, rotation, factor2)
-                    scaleAccumulated <- scaleAccumulated * factor + scale * factor2
+                    scalingAccumulated <- scalingAccumulated * factor + scaling * factor2
                     weightAccumulated <- weightAccumulated + weight
                 nodeTransform <-
                     // TODO: see if there's a faster way to construct a TRS matrix here.
-                    Assimp.Matrix4x4.FromScaling scaleAccumulated *
+                    Assimp.Matrix4x4.FromScaling scalingAccumulated *
                     Assimp.Matrix4x4 (rotationAccumulated.GetMatrix ()) *
                     Assimp.Matrix4x4.FromTranslation translationAccumulated
 
