@@ -182,7 +182,7 @@ module AssimpExtensions =
     type Assimp.Mesh with
 
         static member private UpdateBoneTransforms
-            (time : GameTime,
+            (time : single,
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
@@ -193,43 +193,42 @@ module AssimpExtensions =
 
             // compute local transform of the current node.
             // note that if the node is animated, its transform is replaced by that animation entirely.
-            let time = time.Seconds
             let mutable nodeTransform = node.Transform
-            let decompositions =
-                [|for animation in animations do
-                    let animationStartTime = animation.StartTime.Seconds
-                    let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
-                    match animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name) with
-                    | (true, channel) ->
-                        let localTime = time - animationStartTime
-                        if  localTime >= 0.0f &&
-                            (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
-                            (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
-                            let localTimeScaled =
-                                match animation.Playback with
-                                | Once ->
-                                    localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
-                                | Loop ->
-                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
-                                    localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
-                                | Bounce ->
-                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
-                                    let localTimeScaled = localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
-                                    let remainingTime = localTimeScaled % length
-                                    if int (localTimeScaled / length) % 2 = 1
-                                    then length - remainingTime
-                                    else remainingTime
-                            let translation = Assimp.InterpolatePosition (localTimeScaled, channel.TranslationKeys)
-                            let rotation = Assimp.InterpolateRotation (localTimeScaled, channel.RotationKeys)
-                            let scaling = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
-                            AnimationDecomposition.make translation rotation scaling animation.Weight
-                    | (false, _) -> ()|]
-            if Array.notEmpty decompositions then
+            let decompositions = List animations.Length
+            for animation in animations do
+                let animationStartTime = animation.StartTime.Seconds
+                let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
+                match animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name) with
+                | (true, channel) ->
+                    let localTime = time - animationStartTime
+                    if  localTime >= 0.0f &&
+                        (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
+                        (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
+                        let localTimeScaled =
+                            match animation.Playback with
+                            | Once ->
+                                localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
+                            | Loop ->
+                                let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
+                                localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
+                            | Bounce ->
+                                let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
+                                let localTimeScaled = localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
+                                let remainingTime = localTimeScaled % length
+                                if int (localTimeScaled / length) % 2 = 1
+                                then length - remainingTime
+                                else remainingTime
+                        let translation = Assimp.InterpolatePosition (localTimeScaled, channel.TranslationKeys)
+                        let rotation = Assimp.InterpolateRotation (localTimeScaled, channel.RotationKeys)
+                        let scaling = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
+                        decompositions.Add (AnimationDecomposition.make translation rotation scaling animation.Weight)
+                | (false, _) -> ()
+            if Seq.notEmpty decompositions then
                 let mutable translationAccumulated = Assimp.Vector3D 0.0f
                 let mutable rotationAccumulated = Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f)
                 let mutable scalingAccumulated = Assimp.Vector3D 1.0f
                 let mutable weightAccumulated = 0.0f
-                for i in 0 .. dec decompositions.Length do
+                for i in 0 .. dec decompositions.Count do
                     let factor = weightAccumulated / (weightAccumulated + decompositions.[i].Weight)
                     let factor2 = 1.0f - factor
                     translationAccumulated <- translationAccumulated * factor + decompositions.[i].Translation * factor2
@@ -255,7 +254,7 @@ module AssimpExtensions =
                 let child = node.Children.[i]
                 Assimp.Mesh.UpdateBoneTransforms (time, animationChannels, boneIds, boneInfos, animations, child, accumulatedTransform, scene)
 
-        member this.ComputeBoneTransforms (time, animations, scene : Assimp.Scene) =
+        member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, scene : Assimp.Scene) =
 
             // pre-compute animation channels
             let animationChannels =
@@ -286,7 +285,7 @@ module AssimpExtensions =
                 boneInfos.[boneId] <- BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
-            Assimp.Mesh.UpdateBoneTransforms (time, animationChannels, boneIds, boneInfos, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
+            Assimp.Mesh.UpdateBoneTransforms (time.Seconds, animationChannels, boneIds, boneInfos, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
             Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
