@@ -150,7 +150,9 @@ module OpenGl =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
+    // NOTE: I'm not sure how good OptimizeGraph works here. I understand it may cause additional bugs -
+    // https://github.com/search?q=repo%3Aassimp%2Fassimp+OptimizeGraph&type=issues
+    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.OptimizeGraph ||| Assimp.PostProcessSteps.GlobalScale
 
 [<RequireQualifiedAccess>]
 module Audio =
