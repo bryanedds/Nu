@@ -26,14 +26,14 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
+![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
+Physically based rendering with image-based lighting in the Nu Game Engine.
+
 ![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
 Wandering around the forest in OmniBlade.
 
 ![image](https://user-images.githubusercontent.com/1625560/209454643-7142731e-ede7-48d3-8a97-d691fd9263e7.png)
 A critical battle with evil itself!
-
-![image](https://user-images.githubusercontent.com/1625560/212570637-69cfd2c9-3b61-4d7a-82ce-933582f130e5.png)
-Live editing a cutscene in the old editor (now replaced with the new editor below).
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
