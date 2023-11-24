@@ -513,11 +513,14 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | (StaticFrameRate frameRate, UpdateTime frames) ->
             let physicsStepAmount = 1.0f / single frameRate * single frames
             if physicsStepAmount > 0.0f then
-                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 20, 1.0f / 240.0f)
+                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 32, 1.0f / single (frameRate * 2L))
                 ignore stepsTaken
         | (DynamicFrameRate _, ClockTime physicsStepAmount) ->
             if physicsStepAmount > 0.0f then
-                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 20, 1.0f / 240.0f)
+                // The following line is what Bullet seems to recommend (https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=2438) -
+                //let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 32, 1.0f / 120.0f)
+                // However, the following line of code seems to give smoother results -
+                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 4, physicsStepAmount / 4.0f - 0.0001f)
                 ignore stepsTaken
         | (_, _) -> failwithumf ()
 
