@@ -8,7 +8,7 @@
    []]
   [LightDispatcher3d
    [[Name Light3d]
-    [Position [0 2.6 -0.1]]]
+    [Position [0 2.5 0]]]
    []]
   [StaticModelDispatcher
    [[Name StaticModelRight]
