@@ -146,12 +146,31 @@ module AssimpExtensions =
               RotationKeys = rotationKeys
               ScalingKeys = scalingKeys }
 
+    type [<CustomEquality; NoComparison>] private AnimationChannelKey =
+        { AnimationName : string
+          NodeName : string
+          HashCode : int }
+
+        static member make animationName nodeName =
+            let hashCode = hash animationName ^^^ hash nodeName
+            { AnimationName = animationName
+              NodeName = nodeName
+              HashCode = hashCode }
+
+        override this.Equals thatObj =
+            match thatObj with
+            | :? AnimationChannelKey as that -> this.AnimationName = that.AnimationName && this.NodeName = that.NodeName
+            | _ -> false
+
+        override this.GetHashCode () =
+            this.HashCode
+
     /// Mesh extensions.
     type Assimp.Mesh with
 
         static member private UpdateBoneTransforms
             (time : GameTime,
-             animationChannels : Dictionary<struct (string * string), AnimationChannel>,
+             animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
              animations : Animation array,
@@ -165,7 +184,7 @@ module AssimpExtensions =
             let mutable nodeTransform = node.Transform
             let decompositionOpts =
                 [|for animation in animations do
-                    match animationChannels.TryGetValue struct (animation.Name, name) with
+                    match animationChannels.TryGetValue (AnimationChannelKey.make animation.Name name) with
                     | (true, channel) ->
                         let localTime = time - animation.StartTime
                         if  localTime >= GameTime.zero &&
@@ -234,7 +253,7 @@ module AssimpExtensions =
                         let animation = scene.Animations.[animationId]
                         for channelId in 0 .. dec animation.NodeAnimationChannels.Count do
                             let channel = animation.NodeAnimationChannels.[channelId]
-                            animationChannels.[struct (animation.Name, channel.NodeName)] <-
+                            animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <-
                                 AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
                     AnimationChannelsDict.[scene] <- animationChannels
                     animationChannels
