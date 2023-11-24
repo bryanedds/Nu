@@ -509,14 +509,18 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =
-        let physicsStepAmount =
-            match (Constants.GameTime.DesiredFrameRate, stepTime) with
-            | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
-            | (DynamicFrameRate _, ClockTime time) -> if time > 0.0f && time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
-            | (_, _) -> failwithumf ()
-        if physicsStepAmount > 0.0f then
-            let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubstepsBullet, physicsStepAmount / single Constants.Physics.SubstepsBullet - 0.0001f)
-            ignore stepsTaken
+        match (Constants.GameTime.DesiredFrameRate, stepTime) with
+        | (StaticFrameRate frameRate, UpdateTime frames) ->
+            let physicsStepAmount = 1.0f / single frameRate * single frames
+            if physicsStepAmount > 0.0f then
+                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubstepsBullet)
+                ignore stepsTaken
+        | (DynamicFrameRate _, ClockTime time) ->
+            let physicsStepAmount = if time > 0.0f && time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
+            if physicsStepAmount > 0.0f then
+                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubstepsBullet, physicsStepAmount / single Constants.Physics.SubstepsBullet - 0.0001f)
+                ignore stepsTaken
+        | (_, _) -> failwithumf ()
 
     static member private createIntegrationMessages physicsEngine =
 
