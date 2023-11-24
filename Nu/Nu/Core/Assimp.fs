@@ -44,13 +44,6 @@ module Assimp =
              m.A3, m.B3, m.C3, m.D3,
              m.A4, m.B4, m.C4, m.D4)
 
-    let TransformQuaternion (m : Assimp.Matrix4x4, q : Assimp.Quaternion) =
-        Assimp.Quaternion
-            (m.D1 * q.X + m.D2 * q.Y + m.D3 * q.Z + m.D4 * q.W,
-             m.A1 * q.X + m.A2 * q.Y + m.A3 * q.Z + m.A4 * q.W,
-             m.B1 * q.X + m.B2 * q.Y + m.B3 * q.Z + m.B4 * q.W,
-             m.C1 * q.X + m.C2 * q.Y + m.C3 * q.Z + m.C4 * q.W)
-
     let internal ComputePositionKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
         let keys = channel.PositionKeys
         let mutable low = 0
