@@ -515,10 +515,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             if physicsStepAmount > 0.0f then
                 let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubstepsBullet)
                 ignore stepsTaken
-        | (DynamicFrameRate _, ClockTime time) ->
-            let physicsStepAmount = if time > 0.0f && time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
+        | (DynamicFrameRate _, ClockTime physicsStepAmount) ->
             if physicsStepAmount > 0.0f then
-                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubstepsBullet, physicsStepAmount / single Constants.Physics.SubstepsBullet - 0.0001f)
+                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 20, 1.0f / 240.0f)
                 ignore stepsTaken
         | (_, _) -> failwithumf ()
 
