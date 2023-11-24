@@ -512,7 +512,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let physicsStepAmount =
             match (Constants.GameTime.DesiredFrameRate, stepTime) with
             | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
-            | (DynamicFrameRate _, ClockTime secs) -> secs
+            | (DynamicFrameRate _, ClockTime time) -> if time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
             | (_, _) -> failwithumf ()
         if physicsStepAmount > 0.0f then
             let result = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, Constants.Physics.SubstepsBullet)
