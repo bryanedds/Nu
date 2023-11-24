@@ -51,37 +51,52 @@ module Assimp =
              m.B1 * q.X + m.B2 * q.Y + m.B3 * q.Z + m.B4 * q.W,
              m.C1 * q.X + m.C2 * q.Y + m.C3 * q.Z + m.C4 * q.W)
 
-    let internal TryGetAnimationChannel (animation : Assimp.Animation, nodeName : string) =
-        let mutable resultOpt = None
-        let mutable i = 0
-        while resultOpt.IsNone && i < animation.NodeAnimationChannels.Count do
-            let channel = animation.NodeAnimationChannels.[i]
-            if (channel.NodeName = nodeName) then resultOpt <- Some channel
-            else i <- inc i
-        resultOpt
-
     let internal ComputePositionKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
+        let keys = channel.PositionKeys
+        let mutable low = 0
+        let mutable high = keys.Count - 1
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec channel.PositionKeys.Count do
-            if animationTime < single channel.PositionKeys.[inc i].Time then found <- true
-            else i <- inc i
+        while low <= high && not found do
+            let mid = (low + high) / 2
+            let midTime = single keys.[inc mid].Time
+            if animationTime < midTime then high <- mid - 1
+            elif animationTime > midTime then low <- mid + 1
+            else found <- true; i <- mid
+        if not found then
+            i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
     let internal ComputeRotationKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
+        let keys = channel.RotationKeys
+        let mutable low = 0
+        let mutable high = keys.Count - 1
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec channel.RotationKeys.Count do
-            if animationTime < single channel.RotationKeys.[inc i].Time then found <- true
-            else i <- inc i
+        while low <= high && not found do
+            let mid = (low + high) / 2
+            let midTime = single keys.[inc mid].Time
+            if animationTime < midTime then high <- mid - 1
+            elif animationTime > midTime then low <- mid + 1
+            else found <- true; i <- mid
+        if not found then
+            i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
     let internal ComputeScalingKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
+        let keys = channel.ScalingKeys
+        let mutable low = 0
+        let mutable high = keys.Count - 1
         let mutable found = false
         let mutable i = 0
-        while not found && i < dec channel.ScalingKeys.Count do
-            if animationTime < single channel.ScalingKeys.[inc i].Time then found <- true
-            else i <- inc i
+        while low <= high && not found do
+            let mid = (low + high) / 2
+            let midTime = single keys.[inc mid].Time
+            if animationTime < midTime then high <- mid - 1
+            elif animationTime > midTime then low <- mid + 1
+            else found <- true; i <- mid
+        if not found then
+            i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
     let internal InterpolatePosition (animationTime : single, channel : Assimp.NodeAnimationChannel) =
@@ -129,12 +144,14 @@ module Assimp =
 [<AutoOpen>]
 module AssimpExtensions =
 
+    let private AnimationChannelsDict = dictPlus HashIdentity.Reference []
+
     /// Mesh extensions.
     type Assimp.Mesh with
 
         static member private UpdateBoneTransforms
             (time : GameTime,
-             animationIds : Dictionary<string, int>,
+             animationChannels : Dictionary<struct (string * string), Assimp.NodeAnimationChannel>,
              boneIds : Dictionary<string, int>,
              boneInfos : Assimp.BoneInfo array,
              animations : Animation array,
@@ -148,34 +165,30 @@ module AssimpExtensions =
             let mutable nodeTransform = node.Transform
             let decompositionOpts =
                 [|for animation in animations do
-                    match animationIds.TryGetValue animation.Name with
-                    | (true, animationId) ->
+                    match animationChannels.TryGetValue struct (animation.Name, name) with
+                    | (true, channel) ->
                         let localTime = time - animation.StartTime
                         if  localTime >= GameTime.zero &&
                             (match animation.LifeTimeOpt with Some lifeTime -> localTime < animation.StartTime + lifeTime | None -> true) &&
                             (match animation.BoneFilterOpt with Some boneFilter -> boneFilter.Contains node.Name | None -> true) then
-                            let animationAssimp = scene.Animations.[animationId]
-                            match Assimp.TryGetAnimationChannel (animationAssimp, name) with
-                            | Some channel ->
-                                let localTimeScaled =
-                                    match animation.Playback with
-                                    | Once ->
-                                        localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
-                                    | Loop ->
-                                        let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
-                                        localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
-                                    | Bounce ->
-                                        let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
-                                        let localTimeScaled = localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
-                                        let remainingTime = localTimeScaled % length
-                                        if int (localTimeScaled / length) % 2 = 1
-                                        then length - remainingTime
-                                        else remainingTime
-                                let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
-                                let rotation = Assimp.InterpolateRotation (localTimeScaled, channel)
-                                let scale = Assimp.InterpolateScaling (localTimeScaled, channel)
-                                Some (translation, rotation, scale, animation.Weight)
-                            | None -> None
+                            let localTimeScaled =
+                                match animation.Playback with
+                                | Once ->
+                                    localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
+                                | Loop ->
+                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
+                                    localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
+                                | Bounce ->
+                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
+                                    let localTimeScaled = localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
+                                    let remainingTime = localTimeScaled % length
+                                    if int (localTimeScaled / length) % 2 = 1
+                                    then length - remainingTime
+                                    else remainingTime
+                            let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
+                            let rotation = Assimp.InterpolateRotation (localTimeScaled, channel)
+                            let scale = Assimp.InterpolateScaling (localTimeScaled, channel)
+                            Some (translation, rotation, scale, animation.Weight)
                         else None
                     | (false, _) -> None|]
             let decompositions = Array.definitize decompositionOpts
@@ -208,16 +221,23 @@ module AssimpExtensions =
             // recur
             for i in 0 .. dec node.Children.Count do
                 let child = node.Children.[i]
-                Assimp.Mesh.UpdateBoneTransforms (time, animationIds, boneIds, boneInfos, animations, child, accumulatedTransform, scene)
+                Assimp.Mesh.UpdateBoneTransforms (time, animationChannels, boneIds, boneInfos, animations, child, accumulatedTransform, scene)
 
         member this.ComputeBoneTransforms (time, animations, scene : Assimp.Scene) =
 
-            // pre-compute animation id dict
-            let animationIds = dictPlus StringComparer.Ordinal []
-            for animationId in 0 .. dec scene.Animations.Count do
-                let animation = scene.Animations.[animationId]
-                let animationName = animation.Name
-                animationIds.[animationName] <- animationId
+            // pre-compute animation channels
+            let animationChannels =
+                match AnimationChannelsDict.TryGetValue scene with
+                | (false, _) ->
+                    let animationChannels = dictPlus HashIdentity.Structural []
+                    for animationId in 0 .. dec scene.Animations.Count do
+                        let animation = scene.Animations.[animationId]
+                        for channelId in 0 .. dec animation.NodeAnimationChannels.Count do
+                            let channel = animation.NodeAnimationChannels.[channelId]
+                            animationChannels.[struct (animation.Name, channel.NodeName)] <- channel
+                    AnimationChannelsDict.[scene] <- animationChannels
+                    animationChannels
+                | (true, animationChannels) -> animationChannels
 
             // log if there are more bones than we currently support
             if this.Bones.Count >= Constants.Render.BonesMax then
@@ -233,7 +253,7 @@ module AssimpExtensions =
                 boneInfos.[boneId] <- Assimp.BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
-            Assimp.Mesh.UpdateBoneTransforms (time, animationIds, boneIds, boneInfos, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
+            Assimp.Mesh.UpdateBoneTransforms (time, animationChannels, boneIds, boneInfos, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
             Array.map (fun (boneInfo : Assimp.BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
