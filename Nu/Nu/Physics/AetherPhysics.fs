@@ -554,8 +554,7 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
                 | (DynamicFrameRate _, ClockTime time) -> if time > 0.0f && time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
                 | (_, _) -> failwithumf ()
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
-            let mutable substeps = Constants.Physics.SubstepsAether
-            physicsEngine.PhysicsContext.Step (physicsStepAmount, &substeps)
+            physicsEngine.PhysicsContext.Step physicsStepAmount
             AetherPhysicsEngine.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
             let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()

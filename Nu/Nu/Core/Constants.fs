@@ -168,8 +168,6 @@ module Physics =
 
     let [<Uniform>] Gravity2dDefault = Vector3 (0.0f, -9.80665f, 0.0f) * Engine.EntitySize2dDefault.Y
     let [<Uniform>] Gravity3dDefault = Vector3 (0.0f, -9.80665f, 0.0f)
-    let [<Uniform>] SubstepsAether = tainicom.Aether.Physics2D.Dynamics.SolverIterations (PositionIterations = 3, TOIPositionIterations = 20, TOIVelocityIterations = 8, VelocityIterations = 8)
-    let [<Literal>] SubstepsBullet = 4
     let [<Literal>] SleepingThresholdLinear = 1.0f // NOTE: in the example or bullet source code (can't remember), this defaulted to 0.8f...
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
     let [<Literal>] CollisionMargin3d = 0.0078125f // 1 >>> 7
