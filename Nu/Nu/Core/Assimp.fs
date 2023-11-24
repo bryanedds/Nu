@@ -28,14 +28,6 @@ type [<StructuralEquality; NoComparison>] Animation =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    type [<NoEquality; NoComparison; Struct>] BoneInfo =
-        { BoneTransformOffset : Assimp.Matrix4x4
-          mutable BoneTransformFinal : Assimp.Matrix4x4 }
-
-        static member make offset =
-            { BoneTransformOffset = offset
-              BoneTransformFinal = Unchecked.defaultof<_> }
-
     /// Convert a matrix from an Assimp representation to Nu's.
     let ExportMatrix (m : Assimp.Matrix4x4) =
         Matrix4x4
@@ -44,10 +36,9 @@ module Assimp =
              m.A3, m.B3, m.C3, m.D3,
              m.A4, m.B4, m.C4, m.D4)
 
-    let internal ComputePositionKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
-        let keys = channel.PositionKeys
+    let internal ComputePositionKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
         let mutable low = 0
-        let mutable high = keys.Count - 1
+        let mutable high = keys.Length - 1
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
@@ -60,10 +51,9 @@ module Assimp =
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
-    let internal ComputeRotationKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
-        let keys = channel.RotationKeys
+    let internal ComputeRotationKeyFrameIndex (animationTime : single, keys : Assimp.QuaternionKey array) =
         let mutable low = 0
-        let mutable high = keys.Count - 1
+        let mutable high = keys.Length - 1
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
@@ -76,10 +66,9 @@ module Assimp =
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
-    let internal ComputeScalingKeyFrameIndex (animationTime : single, channel : Assimp.NodeAnimationChannel) =
-        let keys = channel.ScalingKeys
+    let internal ComputeScalingKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
         let mutable low = 0
-        let mutable high = keys.Count - 1
+        let mutable high = keys.Length - 1
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
@@ -92,44 +81,44 @@ module Assimp =
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
-    let internal InterpolatePosition (animationTime : single, channel : Assimp.NodeAnimationChannel) =
-        if channel.PositionKeys.Count = 1 then
-            channel.PositionKeys.[0].Value
+    let internal InterpolatePosition (animationTime : single, positionKeys : Assimp.VectorKey array) =
+        if positionKeys.Length = 1 then
+            positionKeys.[0].Value
         else
-            let PositionIndex = ComputePositionKeyFrameIndex (animationTime, channel)
-            let NextPositionIndex = inc PositionIndex % channel.PositionKeys.Count
-            let DeltaTime = single (channel.PositionKeys.[NextPositionIndex].Time - channel.PositionKeys.[PositionIndex].Time)
-            let Factor = (animationTime - single channel.PositionKeys.[PositionIndex].Time) / DeltaTime
-            let Start = channel.PositionKeys.[PositionIndex].Value
-            let End = channel.PositionKeys.[NextPositionIndex].Value
+            let PositionIndex = ComputePositionKeyFrameIndex (animationTime, positionKeys)
+            let NextPositionIndex = inc PositionIndex % positionKeys.Length
+            let DeltaTime = single (positionKeys.[NextPositionIndex].Time - positionKeys.[PositionIndex].Time)
+            let Factor = (animationTime - single positionKeys.[PositionIndex].Time) / DeltaTime
+            let Start = positionKeys.[PositionIndex].Value
+            let End = positionKeys.[NextPositionIndex].Value
             let Delta = End - Start
             let Result = Start + Factor * Delta
             Result
 
-    let internal InterpolateRotation (animationTime : single, channel : Assimp.NodeAnimationChannel) =
-        if channel.RotationKeys.Count = 1 then
-            channel.RotationKeys.[0].Value
+    let internal InterpolateRotation (animationTime : single, rotationKeys : Assimp.QuaternionKey array) =
+        if rotationKeys.Length = 1 then
+            rotationKeys.[0].Value
         else
-            let RotationIndex = ComputeRotationKeyFrameIndex (animationTime, channel)
-            let NextRotationIndex = inc RotationIndex % channel.RotationKeys.Count
-            let DeltaTime = single (channel.RotationKeys.[NextRotationIndex].Time - channel.RotationKeys.[RotationIndex].Time)
-            let Factor = (animationTime - single channel.RotationKeys.[RotationIndex].Time) / DeltaTime
-            let StartRotationQ = channel.RotationKeys.[RotationIndex].Value
-            let EndRotationQ = channel.RotationKeys.[NextRotationIndex].Value
+            let RotationIndex = ComputeRotationKeyFrameIndex (animationTime, rotationKeys)
+            let NextRotationIndex = inc RotationIndex % rotationKeys.Length
+            let DeltaTime = single (rotationKeys.[NextRotationIndex].Time - rotationKeys.[RotationIndex].Time)
+            let Factor = (animationTime - single rotationKeys.[RotationIndex].Time) / DeltaTime
+            let StartRotationQ = rotationKeys.[RotationIndex].Value
+            let EndRotationQ = rotationKeys.[NextRotationIndex].Value
             let Result = Assimp.Quaternion.Slerp (StartRotationQ, EndRotationQ, Factor)
             Result.Normalize ()
             Result
 
-    let internal InterpolateScaling (animationTime : single, channel : Assimp.NodeAnimationChannel) =
-        if channel.ScalingKeys.Count = 1 then
-            channel.ScalingKeys.[0].Value
+    let internal InterpolateScaling (animationTime : single, scalingKeys : Assimp.VectorKey array) =
+        if scalingKeys.Length = 1 then
+            scalingKeys.[0].Value
         else
-            let ScalingIndex = ComputeScalingKeyFrameIndex (animationTime, channel)
-            let NextScalingIndex = inc ScalingIndex % channel.ScalingKeys.Count
-            let DeltaTime = single (channel.ScalingKeys.[NextScalingIndex].Time - channel.ScalingKeys.[ScalingIndex].Time)
-            let Factor = (animationTime - single channel.ScalingKeys.[ScalingIndex].Time) / DeltaTime
-            let Start = channel.ScalingKeys.[ScalingIndex].Value
-            let End = channel.ScalingKeys.[NextScalingIndex].Value
+            let ScalingIndex = ComputeScalingKeyFrameIndex (animationTime, scalingKeys)
+            let NextScalingIndex = inc ScalingIndex % scalingKeys.Length
+            let DeltaTime = single (scalingKeys.[NextScalingIndex].Time - scalingKeys.[ScalingIndex].Time)
+            let Factor = (animationTime - single scalingKeys.[ScalingIndex].Time) / DeltaTime
+            let Start = scalingKeys.[ScalingIndex].Value
+            let End = scalingKeys.[NextScalingIndex].Value
             let Delta = End - Start
             let Result = Start + Factor * Delta
             Result
@@ -139,14 +128,32 @@ module AssimpExtensions =
 
     let private AnimationChannelsDict = dictPlus HashIdentity.Reference []
 
+    type [<NoEquality; NoComparison; Struct>] private BoneInfo =
+        { BoneTransformOffset : Assimp.Matrix4x4
+          mutable BoneTransformFinal : Assimp.Matrix4x4 }
+
+        static member make offset =
+            { BoneTransformOffset = offset
+              BoneTransformFinal = Unchecked.defaultof<_> }
+
+    type [<NoEquality; NoComparison; Struct>] private AnimationChannel =
+        { TranslationKeys : Assimp.VectorKey array
+          RotationKeys : Assimp.QuaternionKey array
+          ScalingKeys : Assimp.VectorKey array }
+
+        static member make translationKeys rotationKeys scalingKeys =
+            { TranslationKeys = translationKeys
+              RotationKeys = rotationKeys
+              ScalingKeys = scalingKeys }
+
     /// Mesh extensions.
     type Assimp.Mesh with
 
         static member private UpdateBoneTransforms
             (time : GameTime,
-             animationChannels : Dictionary<struct (string * string), Assimp.NodeAnimationChannel>,
+             animationChannels : Dictionary<struct (string * string), AnimationChannel>,
              boneIds : Dictionary<string, int>,
-             boneInfos : Assimp.BoneInfo array,
+             boneInfos : BoneInfo array,
              animations : Animation array,
              node : Assimp.Node,
              parentTransform : Assimp.Matrix4x4,
@@ -169,18 +176,18 @@ module AssimpExtensions =
                                 | Once ->
                                     localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
                                 | Loop ->
-                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
+                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
                                     localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
                                 | Bounce ->
-                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Count].Time
+                                    let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
                                     let localTimeScaled = localTime.Seconds * animation.Rate * Constants.Render.AnimatedModelRateScalar
                                     let remainingTime = localTimeScaled % length
                                     if int (localTimeScaled / length) % 2 = 1
                                     then length - remainingTime
                                     else remainingTime
-                            let translation = Assimp.InterpolatePosition (localTimeScaled, channel)
-                            let rotation = Assimp.InterpolateRotation (localTimeScaled, channel)
-                            let scale = Assimp.InterpolateScaling (localTimeScaled, channel)
+                            let translation = Assimp.InterpolatePosition (localTimeScaled, channel.TranslationKeys)
+                            let rotation = Assimp.InterpolateRotation (localTimeScaled, channel.RotationKeys)
+                            let scale = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
                             Some (translation, rotation, scale, animation.Weight)
                         else None
                     | (false, _) -> None|]
@@ -227,7 +234,8 @@ module AssimpExtensions =
                         let animation = scene.Animations.[animationId]
                         for channelId in 0 .. dec animation.NodeAnimationChannels.Count do
                             let channel = animation.NodeAnimationChannels.[channelId]
-                            animationChannels.[struct (animation.Name, channel.NodeName)] <- channel
+                            animationChannels.[struct (animation.Name, channel.NodeName)] <-
+                                AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
                     AnimationChannelsDict.[scene] <- animationChannels
                     animationChannels
                 | (true, animationChannels) -> animationChannels
@@ -238,18 +246,18 @@ module AssimpExtensions =
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []
-            let boneInfos = Array.zeroCreate<Assimp.BoneInfo> this.Bones.Count
+            let boneInfos = Array.zeroCreate<BoneInfo> this.Bones.Count
             for boneId in 0 .. dec this.Bones.Count do
                 let bone = this.Bones.[boneId]
                 let boneName = bone.Name
                 boneIds.[boneName] <- boneId
-                boneInfos.[boneId] <- Assimp.BoneInfo.make bone.OffsetMatrix
+                boneInfos.[boneId] <- BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
             Assimp.Mesh.UpdateBoneTransforms (time, animationChannels, boneIds, boneInfos, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
-            Array.map (fun (boneInfo : Assimp.BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
+            Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
 
     /// Node extensions.
     type Assimp.Node with
