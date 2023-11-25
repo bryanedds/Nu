@@ -26,7 +26,7 @@
      [Some [Gameplay TwoKNormalMap]]]
     [Size [2048 195 2048]]
     [TerrainMaterial
-     [SplatMaterial
+     [BlendMaterial
       [[[[Gameplay Texture2Albedo] [Gameplay Texture2Roughness] [Gameplay Texture2Ao] [Gameplay Texture2Normal] [Gameplay Texture2Height]]
         [[Gameplay Texture1Albedo] [Gameplay Texture1Roughness] [Gameplay Texture1Ao] [Gameplay Texture1Normal] [Gameplay Texture1Height]]
         [[Gameplay Texture0Albedo] [Gameplay Texture0Roughness] [Gameplay Texture0Ao] [Gameplay Texture0Normal] [Gameplay Texture0Height]]

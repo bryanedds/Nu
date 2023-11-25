@@ -49,7 +49,7 @@ type [<StructuralEquality; NoComparison>] TerrainLayer =
       HeightImage : Image AssetTag }
 
 /// Blend-weights for a 3d terrain.
-type [<StructuralEquality; NoComparison>] SplatMap =
+type [<StructuralEquality; NoComparison>] BlendMap =
     | RgbaMap of Image AssetTag
     | RedsMap of Image AssetTag array
 
@@ -62,9 +62,9 @@ type [<StructuralEquality; NoComparison>] FlatMaterial =
       HeightImage : Image AssetTag }
 
 /// Blend-weighted material for a 3d terrain.
-type [<StructuralEquality; NoComparison>] SplatMaterial =
+type [<StructuralEquality; NoComparison>] BlendMaterial =
     { TerrainLayers : TerrainLayer array
-      SplatMap : SplatMap }
+      BlendMap : BlendMap }
 
 /// Dynamically specified blend-weighted 3d terrain material.
 /// TODO: define this later if we support dynamic terrain editing.
@@ -74,7 +74,7 @@ type [<StructuralEquality; NoComparison>] DynamicMaterial =
 /// Describes the material of which a 3d terrain is composed.
 type [<StructuralEquality; NoComparison>] TerrainMaterial =
     | FlatMaterial of FlatMaterial
-    | SplatMaterial of SplatMaterial
+    | BlendMaterial of BlendMaterial
 
 /// Material properties for terrain surfaces.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMaterialProperties =
@@ -1002,45 +1002,45 @@ type [<ReferenceEquality>] GlRenderer3d =
                     Array.map (fun x -> v3 x.[2] x.[1] x.[0])
                 | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
 
-            // compute splatses, logging if more than the safe number of terrain layers is utilized
-            let splatses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
+            // compute blendses, logging if more than the safe number of terrain layers is utilized
+            let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
             match geometryDescriptor.Material with
-            | SplatMaterial splatMaterial ->
-                if splatMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMaxSafe then
+            | BlendMaterial blendMaterial ->
+                if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMaxSafe then
                     Log.infoOnce
                         ("Terrain has more than " +
                          string Constants.Render.TerrainLayersMaxSafe +
                          " which references more than the guaranteed number of supported fragment shader textures.")
-                match splatMaterial.SplatMap with
+                match blendMaterial.BlendMap with
                 | RgbaMap rgbaMap ->
                     match GlRenderer3d.tryGetImageData rgbaMap renderer with
                     | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         for i in 0 .. dec positionsAndTexCoordses.Length do
                             // ARGB reverse byte order, from Drawing.Bitmap (windows).
                             // TODO: confirm it is the same for SDL (linux).
-                            splatses.[i,0] <- single bytes.[i * 4 + 2] / single Byte.MaxValue
-                            splatses.[i,1] <- single bytes.[i * 4 + 1] / single Byte.MaxValue
-                            splatses.[i,2] <- single bytes.[i * 4 + 0] / single Byte.MaxValue
-                            splatses.[i,3] <- single bytes.[i * 4 + 3] / single Byte.MaxValue
-                    | _ -> Log.info ("Could not locate image data for splat map '" + scstring rgbaMap + "'.")
+                            blendses.[i,0] <- single bytes.[i * 4 + 2] / single Byte.MaxValue
+                            blendses.[i,1] <- single bytes.[i * 4 + 1] / single Byte.MaxValue
+                            blendses.[i,2] <- single bytes.[i * 4 + 0] / single Byte.MaxValue
+                            blendses.[i,3] <- single bytes.[i * 4 + 3] / single Byte.MaxValue
+                    | _ -> Log.info ("Could not locate image data for blend map '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
                     for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
                         let red = reds.[i]
                         match GlRenderer3d.tryGetImageData red renderer with
                         | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                             for j in 0 .. dec positionsAndTexCoordses.Length do
-                                splatses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
-                        | _ -> Log.info ("Could not locate image data for splat map '" + scstring red + "'.")
+                                blendses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
+                        | _ -> Log.info ("Could not locate image data for blend map '" + scstring red + "'.")
             | FlatMaterial _ ->
                 for i in 0 .. dec positionsAndTexCoordses.Length do
-                    splatses.[i,0] <- 1.0f
+                    blendses.[i,0] <- 1.0f
 
             // compute vertices
             let vertices =
                 [|for i in 0 .. dec positionsAndTexCoordses.Length do
                     let struct (p, tc) = positionsAndTexCoordses.[i]
                     let n = normals.[i]
-                    let s = splatses
+                    let s = blendses
                     let t = tint.[i]
                     yield!
                         [|p.X; p.Y; p.Z
@@ -1404,12 +1404,12 @@ type [<ReferenceEquality>] GlRenderer3d =
               InvertRoughness = ValueOption.defaultValue Constants.Render.InvertRoughnessDefault terrainMaterialProperties.InvertRoughnessOpt }
         let (texelHeightAvg, materials) =
             match terrainDescriptor.Material with
-            | SplatMaterial splatMaterial ->
+            | BlendMaterial blendMaterial ->
                 let mutable texelHeightAvg = 0.0f
                 let materials =
-                    [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
+                    [|for i in 0 .. dec blendMaterial.TerrainLayers.Length do
                         let layer =
-                            splatMaterial.TerrainLayers.[i]
+                            blendMaterial.TerrainLayers.[i]
                         let defaultMaterial =
                             renderer.RenderPhysicallyBasedMaterial
                         let (albedoMetadata, albedoTexture) =
