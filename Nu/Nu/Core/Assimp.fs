@@ -185,7 +185,7 @@ module AssimpExtensions =
             (time : single,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
-             boneWrites : int ref,
+             boneWrites : int ref, // HACK: bones writes prevents us from traversing nodes in the hierarchy that would otherwise be redundant.
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
              node : Assimp.Node,
@@ -193,7 +193,7 @@ module AssimpExtensions =
              scene : Assimp.Scene) =
 
             // compute local transform of the current node.
-            // note that if the node is animated, its transform is replaced by that animation entirely.
+            // NOTE: if the node is animated, its transform is replaced by that animation entirely.
             let mutable nodeTransform = node.Transform
             let decompositions = List animations.Length
             for animation in animations do
@@ -224,7 +224,7 @@ module AssimpExtensions =
                         let scaling = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
                         decompositions.Add (AnimationDecomposition.make translation rotation scaling animation.Weight)
                 | (false, _) -> ()
-            if Seq.notEmpty decompositions then
+            if decompositions.Count > 0 then
                 let mutable translationAccumulated = Assimp.Vector3D 0.0f
                 let mutable rotationAccumulated = Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f)
                 let mutable scalingAccumulated = Assimp.Vector3D 1.0f
@@ -251,7 +251,7 @@ module AssimpExtensions =
                 boneWrites.Value <- inc boneWrites.Value
             | (false, _) -> ()
 
-            // recur
+            // recur if there are still bones left to write
             if boneWrites.Value < boneInfos.Length then
                 for i in 0 .. dec node.Children.Count do
                     let child = node.Children.[i]
