@@ -58,6 +58,7 @@ module WorldEntityModule =
         let mutable VisibleLocal = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Pickable = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable AlwaysRender = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Protected = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is2d = Unchecked.defaultof<Lens<bool, Entity>>
@@ -208,6 +209,9 @@ module WorldEntityModule =
         member this.GetAlwaysUpdate world = World.getEntityAlwaysUpdate this world
         member this.SetAlwaysUpdate value world = World.setEntityAlwaysUpdate value this world |> snd'
         member this.AlwaysUpdate = if notNull (this :> obj) then lens (nameof this.AlwaysUpdate) this this.GetAlwaysUpdate this.SetAlwaysUpdate else Cached.AlwaysUpdate
+        member this.GetAlwaysRender world = World.getEntityAlwaysRender this world
+        member this.SetAlwaysRender value world = World.setEntityAlwaysRender value this world |> snd'
+        member this.AlwaysRender = if notNull (this :> obj) then lens (nameof this.AlwaysRender) this this.GetAlwaysRender this.SetAlwaysRender else Cached.AlwaysRender
         member this.GetProtected world = World.getEntityProtected this world
         member this.Protected = if notNull (this :> obj) then lensReadOnly (nameof this.Protected) this this.GetProtected else Cached.Protected
         member this.GetPersistent world = World.getEntityPersistent this world
@@ -289,6 +293,7 @@ module WorldEntityModule =
             Cached.Visible <- lens (nameof Cached.Visible) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.VisibleLocal <- lens (nameof Cached.VisibleLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.AlwaysRender <- lens (nameof Cached.AlwaysRender) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Persistent <- lens (nameof Cached.Persistent) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is2d <- lensReadOnly (nameof Cached.Is2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>

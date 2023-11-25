@@ -87,7 +87,7 @@ module WorldModule2 =
             let quadtree = World.makeQuadtree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
-                let visible = entity.GetVisible world
+                let visible = entity.GetVisible world || entity.GetAlwaysRender world
                 let presence = entity.GetPresence world
                 if entity.GetIs2d world then
                     let element = Quadelement.make visible entity
@@ -107,7 +107,7 @@ module WorldModule2 =
             let octree = World.makeOctree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
-                let visible = entity.GetVisible world
+                let visible = entity.GetVisible world || entity.GetAlwaysRender world
                 let static_ = entity.GetStatic world
                 let lightProbe = entity.GetLightProbe world
                 let light = entity.GetLight world

@@ -2811,6 +2811,7 @@ module TerrainFacetModule =
         static member Properties =
             [define Entity.Size (v3 511.0f 111.0f 511.0f)
              define Entity.Presence Omnipresent
+             define Entity.AlwaysRender true
              define Entity.BodyEnabled true
              define Entity.Friction 0.5f
              define Entity.Restitution 0.0f
