@@ -22,7 +22,8 @@
      [RawHeightMap
       [[2048 2048] [RawUInt16 BigEndian] [Gameplay TwoKHeightMapRaw]]]]
     [Name Terrain]
-    [NormalImage [Gameplay TwoKNormalMap]]
+    [NormalImageOpt
+     [Some [Gameplay TwoKNormalMap]]]
     [Size [2048 195 2048]]
     [TerrainMaterial
      [SplatMaterial
@@ -46,7 +47,7 @@
   [FpsDispatcher
    [[Name Fps-0001]
     [Position [-361 -223 0]]
-    [Text "FPS: 60.09"]]
+    [Text "FPS: 0.00"]]
    []]
   [CharacterDispatcher
    [[AngularVelocity [0 2.9269503E-07 0]]
