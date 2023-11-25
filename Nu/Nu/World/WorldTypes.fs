@@ -495,6 +495,7 @@ and EntityDispatcher (is2d, centered, physical) =
          Define? LightProbe false
          Define? Light false
          Define? AlwaysUpdate false
+         Define? AlwaysRender false
          Define? PublishPreUpdates false
          Define? PublishUpdates false
          Define? PublishPostUpdates false
@@ -1055,6 +1056,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
+    member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
     member this.PublishPreUpdates with get () = this.Transform.PublishPreUpdates and set value = this.Transform.PublishPreUpdates <- value
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
     member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
