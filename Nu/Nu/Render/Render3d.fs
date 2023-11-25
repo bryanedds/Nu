@@ -939,13 +939,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         [|for y in 0 .. dec resolution.Y do
             for x in 0 .. dec resolution.X do
                 if x > 0 && y > 0 && x < dec resolution.X && y < dec resolution.Y then
-                    let v = fst' positionsAndTexCoordses.[resolution.X * y + x]
-                    let n = fst' positionsAndTexCoordses.[resolution.X * dec y + x]
+                    let v  = fst' positionsAndTexCoordses.[resolution.X * y + x]
+                    let n  = fst' positionsAndTexCoordses.[resolution.X * dec y + x]
                     let ne = fst' positionsAndTexCoordses.[resolution.X * dec y + inc x]
-                    let e = fst' positionsAndTexCoordses.[resolution.X * y + inc x]
-                    let s = fst' positionsAndTexCoordses.[resolution.X * inc y + x]
+                    let e  = fst' positionsAndTexCoordses.[resolution.X * y + inc x]
+                    let s  = fst' positionsAndTexCoordses.[resolution.X * inc y + x]
                     let sw = fst' positionsAndTexCoordses.[resolution.X * inc y + dec x]
-                    let w = fst' positionsAndTexCoordses.[resolution.X * y + dec x]
+                    let w  = fst' positionsAndTexCoordses.[resolution.X * y + dec x]
                     
                     let normalSum =
                         Vector3.Cross (ne - v, n - v) +
