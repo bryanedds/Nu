@@ -220,7 +220,7 @@ module WorldModule =
 
         /// Shelve the ambient state of the current world.
         static member internal shelveAmbientStateCurrent world =
-            World.choose (World.shelveAmbientStateNonCurrent world)
+            { world with AmbientState = AmbientState.shelve world.AmbientState }
 
         /// Unshelve the ambient state.
         static member internal unshelveAmbientState world =
