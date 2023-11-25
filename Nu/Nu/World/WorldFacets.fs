@@ -2801,7 +2801,7 @@ module TerrainFacetModule =
         member this.TryGetTerrainQuadSize world =
             let bounds = this.GetBounds world
             match this.TryGetTerrainResolution world with
-            | Some resolution -> Some (v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y))
+            | Some resolution -> Some (v2 bounds.Size.X bounds.Size.Z / v2 (resolution.X |> dec |> single) (resolution.Y |> dec |> single))
             | None -> None
 
     /// Augments an entity with a rigid 3d terrain.
