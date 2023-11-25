@@ -2838,11 +2838,7 @@ module TerrainFacetModule =
              define Entity.TintImage Assets.Default.TerrainTint
              define Entity.NormalImageOpt None
              define Entity.Tiles (v2 256.0f 256.0f)
-             define Entity.HeightMap
-                (RawHeightMap
-                    { Resolution = v2i 512 512
-                      RawFormat = RawUInt16 LittleEndian
-                      RawAsset = Assets.Default.HeightMap })
+             define Entity.HeightMap (RawHeightMap { Resolution = v2i 512 512; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
              define Entity.Segments v2iOne
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
