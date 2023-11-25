@@ -151,19 +151,6 @@ module PhysicallyBased =
           AnimatedSceneOpt : Assimp.Scene option
           PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
-    /// Describes a physically-based deferred terrain shader that's loaded into GPU.
-    type PhysicallyBasedDeferredTerrainShader =
-        { ViewUniform : int
-          ProjectionUniform : int
-          EyeCenterUniform : int
-          LayersCountUniform : int
-          AlbedoTexturesUniforms : int array
-          RoughnessTexturesUniforms : int array
-          AmbientOcclusionTexturesUniforms : int array
-          NormalTexturesUniforms : int array
-          HeightTexturesUniforms : int array
-          PhysicallyBasedShader : uint }
-
     /// Describes a physically-based shader that's loaded into GPU.
     type PhysicallyBasedShader =
         { ViewUniform : int
@@ -199,6 +186,19 @@ module PhysicallyBased =
           LightConeInnersUniform : int
           LightConeOutersUniform : int
           LightsCountUniform : int
+          PhysicallyBasedShader : uint }
+
+    /// Describes a physically-based deferred terrain shader that's loaded into GPU.
+    type PhysicallyBasedDeferredTerrainShader =
+        { ViewUniform : int
+          ProjectionUniform : int
+          EyeCenterUniform : int
+          LayersCountUniform : int
+          AlbedoTexturesUniforms : int array
+          RoughnessTexturesUniforms : int array
+          AmbientOcclusionTexturesUniforms : int array
+          NormalTexturesUniforms : int array
+          HeightTexturesUniforms : int array
           PhysicallyBasedShader : uint }
 
     /// Describes a light mapping pass of a deferred physically-based shader that's loaded into GPU.
@@ -777,174 +777,6 @@ module PhysicallyBased =
         // fin
         (vertexData, indexData, bounds)
 
-    /// Create physically-based terrain geometry from a mesh.
-    let CreatePhysicallyBasedTerrainGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
-
-        // make buffers
-        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
-
-            // make renderable
-            if renderable then
-
-                // initialize vao
-                let vao = Gl.GenVertexArray ()
-                Gl.BindVertexArray vao
-                Hl.Assert ()
-
-                // create vertex buffer
-                let vertexBuffer = Gl.GenBuffer ()
-                let texCoordsOffset =   (3 (*position*)) * sizeof<single>
-                let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-                let tintOffset =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-                let splatsOffset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*)) * sizeof<single>
-                let splats2Offset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*splats*)) * sizeof<single>
-                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*splats*) + 4 (*splats2*)) * sizeof<single>
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
-                use vertexDataHnd = vertexData.Pin () in
-                    let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
-                Gl.EnableVertexAttribArray 0u
-                Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
-                Gl.EnableVertexAttribArray 1u
-                Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint texCoordsOffset)
-                Gl.EnableVertexAttribArray 2u
-                Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
-                Gl.EnableVertexAttribArray 3u
-                Gl.VertexAttribPointer (3u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint tintOffset)
-                Gl.EnableVertexAttribArray 4u
-                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splatsOffset)
-                Gl.EnableVertexAttribArray 5u
-                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splats2Offset)
-                Hl.Assert ()
-
-                // create model buffer
-                let modelBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, modelBuffer)
-                let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally modelDataPtr.Free ()
-                Gl.EnableVertexAttribArray 6u
-                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (6u, 1u)
-                Gl.EnableVertexAttribArray 7u
-                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
-                Gl.VertexAttribDivisor (7u, 1u)
-                Gl.EnableVertexAttribArray 8u
-                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
-                Gl.VertexAttribDivisor (8u, 1u)
-                Gl.EnableVertexAttribArray 9u
-                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
-                Gl.VertexAttribDivisor (9u, 1u)
-                Hl.Assert ()
-
-                // create tex coords offset buffer
-                let texCoordsOffsetBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, texCoordsOffsetBuffer)
-                let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally texCoordsOffsetDataPtr.Free ()
-                Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (10u, 1u)
-                Hl.Assert ()
-
-                // create albedo buffer
-                let albedoBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, albedoBuffer)
-                let albedoDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedoDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally albedoDataPtr.Free ()
-                Gl.EnableVertexAttribArray 11u
-                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (11u, 1u)
-                Hl.Assert ()
-
-                // create material buffer (used for roughness, metallic, ambient occlusion, and emission in that order)
-                let materialBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
-                let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally materialDataPtr.Free ()
-                Gl.EnableVertexAttribArray 12u
-                Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (12u, 1u)
-                Hl.Assert ()
-
-                // create height buffer
-                let heightBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, heightBuffer)
-                let heightDataPtr = GCHandle.Alloc ([|1.0f|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<single>), heightDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally heightDataPtr.Free ()
-                Gl.EnableVertexAttribArray 13u
-                Gl.VertexAttribPointer (13u, 1, VertexAttribPointerType.Float, false, sizeof<single>, nativeint 0)
-                Gl.VertexAttribDivisor (13u, 1u)
-                Hl.Assert ()
-
-                // create invert roughness buffer
-                let invertRoughnessBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
-                let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally invertRoughnessDataPtr.Free ()
-                Gl.EnableVertexAttribArray 14u
-                Gl.VertexAttribIPointer (14u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
-                Gl.VertexAttribDivisor (14u, 1u)
-                Hl.Assert ()
-
-                // create index buffer
-                let indexBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
-                let indexDataSize = uint (indexData.Length * sizeof<uint>)
-                use indexDataHnd = indexData.Pin () in
-                    let indexDataNint = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
-                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
-                Hl.Assert ()
-
-                // finalize vao
-                Gl.BindVertexArray 0u
-                Hl.Assert ()
-
-                // fin
-                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
-
-            // fake buffers
-            else
-
-                // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 19)
-                let vertexData = vertexData.Span
-                for i in 0 .. dec vertices.Length do
-                    let j = i * 19
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
-
-                // create indices
-                let indices = indexData.ToArray ()
-
-                // fin
-                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
-
-        // make physically-based geometry
-        let geometry =
-            { Bounds = bounds
-              PrimitiveType = primitiveType
-              ElementCount = indexData.Length
-              Vertices = vertices
-              Indices = indices
-              VertexBuffer = vertexBuffer
-              ModelBuffer = modelBuffer
-              TexCoordsOffsetBuffer = texCoordsOffsetBuffer
-              AlbedoBuffer = albedoBuffer
-              MaterialBuffer = materialBuffer
-              HeightBuffer = heightBuffer
-              InvertRoughnessBuffer = invertRoughnessBuffer
-              IndexBuffer = indexBuffer
-              PhysicallyBasedVao = vao }
-
-        // fin
-        geometry
-
     /// Create physically-based static geometry from a mesh.
     let CreatePhysicallyBasedStaticGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
@@ -1281,6 +1113,174 @@ module PhysicallyBased =
         | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedAnimatedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
         | Left error -> Left error
 
+    /// Create physically-based terrain geometry from a mesh.
+    let CreatePhysicallyBasedTerrainGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
+
+        // make buffers
+        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
+
+            // make renderable
+            if renderable then
+
+                // initialize vao
+                let vao = Gl.GenVertexArray ()
+                Gl.BindVertexArray vao
+                Hl.Assert ()
+
+                // create vertex buffer
+                let vertexBuffer = Gl.GenBuffer ()
+                let texCoordsOffset =   (3 (*position*)) * sizeof<single>
+                let normalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+                let tintOffset =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+                let splatsOffset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*)) * sizeof<single>
+                let splats2Offset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*splats*)) * sizeof<single>
+                let vertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*splats*) + 4 (*splats2*)) * sizeof<single>
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, vertexBuffer)
+                use vertexDataHnd = vertexData.Pin () in
+                    let vertexDataNint = vertexDataHnd.Pointer |> NativePtr.ofVoidPtr<single> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ArrayBuffer, uint (vertexData.Length * sizeof<single>), vertexDataNint, BufferUsage.StaticDraw)
+                Gl.EnableVertexAttribArray 0u
+                Gl.VertexAttribPointer (0u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint 0)
+                Gl.EnableVertexAttribArray 1u
+                Gl.VertexAttribPointer (1u, 2, VertexAttribPointerType.Float, false, vertexSize, nativeint texCoordsOffset)
+                Gl.EnableVertexAttribArray 2u
+                Gl.VertexAttribPointer (2u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint normalOffset)
+                Gl.EnableVertexAttribArray 3u
+                Gl.VertexAttribPointer (3u, 3, VertexAttribPointerType.Float, false, vertexSize, nativeint tintOffset)
+                Gl.EnableVertexAttribArray 4u
+                Gl.VertexAttribPointer (4u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splatsOffset)
+                Gl.EnableVertexAttribArray 5u
+                Gl.VertexAttribPointer (5u, 4, VertexAttribPointerType.Float, false, vertexSize, nativeint splats2Offset)
+                Hl.Assert ()
+
+                // create model buffer
+                let modelBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, modelBuffer)
+                let modelDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally modelDataPtr.Free ()
+                Gl.EnableVertexAttribArray 6u
+                Gl.VertexAttribPointer (6u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (6u, 1u)
+                Gl.EnableVertexAttribArray 7u
+                Gl.VertexAttribPointer (7u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (4 * sizeof<single>))
+                Gl.VertexAttribDivisor (7u, 1u)
+                Gl.EnableVertexAttribArray 8u
+                Gl.VertexAttribPointer (8u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (8 * sizeof<single>))
+                Gl.VertexAttribDivisor (8u, 1u)
+                Gl.EnableVertexAttribArray 9u
+                Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, 16 * sizeof<single>, nativeint (12 * sizeof<single>))
+                Gl.VertexAttribDivisor (9u, 1u)
+                Hl.Assert ()
+
+                // create tex coords offset buffer
+                let texCoordsOffsetBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, texCoordsOffsetBuffer)
+                let texCoordsOffsetDataPtr = GCHandle.Alloc ([|0.0f; 0.0f; 0.0f; 0.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally texCoordsOffsetDataPtr.Free ()
+                Gl.EnableVertexAttribArray 10u
+                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (10u, 1u)
+                Hl.Assert ()
+
+                // create albedo buffer
+                let albedoBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, albedoBuffer)
+                let albedoDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedoDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally albedoDataPtr.Free ()
+                Gl.EnableVertexAttribArray 11u
+                Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (11u, 1u)
+                Hl.Assert ()
+
+                // create material buffer (used for roughness, metallic, ambient occlusion, and emission in that order)
+                let materialBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
+                let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally materialDataPtr.Free ()
+                Gl.EnableVertexAttribArray 12u
+                Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, 4 * sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (12u, 1u)
+                Hl.Assert ()
+
+                // create height buffer
+                let heightBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, heightBuffer)
+                let heightDataPtr = GCHandle.Alloc ([|1.0f|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<single>), heightDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally heightDataPtr.Free ()
+                Gl.EnableVertexAttribArray 13u
+                Gl.VertexAttribPointer (13u, 1, VertexAttribPointerType.Float, false, sizeof<single>, nativeint 0)
+                Gl.VertexAttribDivisor (13u, 1u)
+                Hl.Assert ()
+
+                // create invert roughness buffer
+                let invertRoughnessBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
+                let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
+                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                finally invertRoughnessDataPtr.Free ()
+                Gl.EnableVertexAttribArray 14u
+                Gl.VertexAttribIPointer (14u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
+                Gl.VertexAttribDivisor (14u, 1u)
+                Hl.Assert ()
+
+                // create index buffer
+                let indexBuffer = Gl.GenBuffer ()
+                Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
+                let indexDataSize = uint (indexData.Length * sizeof<uint>)
+                use indexDataHnd = indexData.Pin () in
+                    let indexDataNint = indexDataHnd.Pointer |> NativePtr.ofVoidPtr<uint> |> NativePtr.toNativeInt
+                    Gl.BufferData (BufferTarget.ElementArrayBuffer, indexDataSize, indexDataNint, BufferUsage.StaticDraw)
+                Hl.Assert ()
+
+                // finalize vao
+                Gl.BindVertexArray 0u
+                Hl.Assert ()
+
+                // fin
+                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
+
+            // fake buffers
+            else
+
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 19)
+                let vertexData = vertexData.Span
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 19
+                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
+                    vertices.[i] <- vertex
+
+                // create indices
+                let indices = indexData.ToArray ()
+
+                // fin
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+
+        // make physically-based geometry
+        let geometry =
+            { Bounds = bounds
+              PrimitiveType = primitiveType
+              ElementCount = indexData.Length
+              Vertices = vertices
+              Indices = indices
+              VertexBuffer = vertexBuffer
+              ModelBuffer = modelBuffer
+              TexCoordsOffsetBuffer = texCoordsOffsetBuffer
+              AlbedoBuffer = albedoBuffer
+              MaterialBuffer = materialBuffer
+              HeightBuffer = heightBuffer
+              InvertRoughnessBuffer = invertRoughnessBuffer
+              IndexBuffer = indexBuffer
+              PhysicallyBasedVao = vao }
+
+        // fin
+        geometry
+
     /// Create physically-based quad.
     let CreatePhysicallyBasedQuad renderable =
         let (vertexData, indexData, bounds) = CreatePhysicallyBasedQuadMesh ()
@@ -1447,45 +1447,6 @@ module PhysicallyBased =
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
         with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
 
-    /// Create a physically-based deferred terrain shader.
-    let CreatePhysicallyBasedDeferredTerrainShader (shaderFilePath : string) =
-
-        // create shader
-        let shader = Shader.CreateShaderFromFilePath shaderFilePath
-
-        // retrieve uniforms
-        let viewUniform = Gl.GetUniformLocation (shader, "view")
-        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
-        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
-        let layersCountUniform = Gl.GetUniformLocation (shader, "layersCount")
-        let albedoTexturesUniforms =
-            Array.init Constants.Render.TerrainLayersMax $ fun i ->
-                Gl.GetUniformLocation (shader, "albedoTextures[" + string i + "]")
-        let roughnessTexturesUniforms =
-            Array.init Constants.Render.TerrainLayersMax $ fun i ->
-                Gl.GetUniformLocation (shader, "roughnessTextures[" + string i + "]")
-        let ambientOcclusionTexturesUniforms =
-            Array.init Constants.Render.TerrainLayersMax $ fun i ->
-                Gl.GetUniformLocation (shader, "ambientOcclusionTextures[" + string i + "]")
-        let normalTexturesUniforms =
-            Array.init Constants.Render.TerrainLayersMax $ fun i ->
-                Gl.GetUniformLocation (shader, "normalTextures[" + string i + "]")
-        let heightTexturesUniforms =
-            Array.init Constants.Render.TerrainLayersMax $ fun i ->
-                Gl.GetUniformLocation (shader, "heightTextures[" + string i + "]")
-
-        // make shader record
-        { ViewUniform = viewUniform
-          ProjectionUniform = projectionUniform
-          EyeCenterUniform = eyeCenterUniform
-          LayersCountUniform = layersCountUniform
-          AlbedoTexturesUniforms = albedoTexturesUniforms
-          RoughnessTexturesUniforms = roughnessTexturesUniforms
-          AmbientOcclusionTexturesUniforms = ambientOcclusionTexturesUniforms
-          NormalTexturesUniforms = normalTexturesUniforms
-          HeightTexturesUniforms = heightTexturesUniforms
-          PhysicallyBasedShader = shader } : PhysicallyBasedDeferredTerrainShader
-
     /// Create a physically-based shader.
     let CreatePhysicallyBasedShader (shaderFilePath : string) =
 
@@ -1568,6 +1529,45 @@ module PhysicallyBased =
           LightConeOutersUniform = lightConeOutersUniform
           LightsCountUniform = lightsCountUniform
           PhysicallyBasedShader = shader }
+
+    /// Create a physically-based deferred terrain shader.
+    let CreatePhysicallyBasedDeferredTerrainShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+
+        // retrieve uniforms
+        let viewUniform = Gl.GetUniformLocation (shader, "view")
+        let projectionUniform = Gl.GetUniformLocation (shader, "projection")
+        let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let layersCountUniform = Gl.GetUniformLocation (shader, "layersCount")
+        let albedoTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "albedoTextures[" + string i + "]")
+        let roughnessTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "roughnessTextures[" + string i + "]")
+        let ambientOcclusionTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "ambientOcclusionTextures[" + string i + "]")
+        let normalTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "normalTextures[" + string i + "]")
+        let heightTexturesUniforms =
+            Array.init Constants.Render.TerrainLayersMax $ fun i ->
+                Gl.GetUniformLocation (shader, "heightTextures[" + string i + "]")
+
+        // make shader record
+        { ViewUniform = viewUniform
+          ProjectionUniform = projectionUniform
+          EyeCenterUniform = eyeCenterUniform
+          LayersCountUniform = layersCountUniform
+          AlbedoTexturesUniforms = albedoTexturesUniforms
+          RoughnessTexturesUniforms = roughnessTexturesUniforms
+          AmbientOcclusionTexturesUniforms = ambientOcclusionTexturesUniforms
+          NormalTexturesUniforms = normalTexturesUniforms
+          HeightTexturesUniforms = heightTexturesUniforms
+          PhysicallyBasedShader = shader } : PhysicallyBasedDeferredTerrainShader
 
     /// Create a physically-based shader for the light mapping pass of deferred rendering.
     let CreatePhysicallyBasedDeferredLightMappingShader (shaderFilePath : string) =
@@ -1759,176 +1759,16 @@ module PhysicallyBased =
           PhysicallyBasedFxaaShader = shader }
 
     /// Create the shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders (terrainShaderFilePath, shaderStaticFilePath, shaderAnimatedFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
-        let shaderTerrain = CreatePhysicallyBasedDeferredTerrainShader terrainShaderFilePath
+    let CreatePhysicallyBasedDeferredShaders (shaderStaticFilePath, shaderAnimatedFilePath, terrainShaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
         let shaderStatic = CreatePhysicallyBasedShader shaderStaticFilePath
         let shaderAnimated = CreatePhysicallyBasedShader shaderAnimatedFilePath
+        let shaderTerrain = CreatePhysicallyBasedDeferredTerrainShader terrainShaderFilePath
         let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath
         let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath
         let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath
         let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath
         let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
-        (shaderTerrain, shaderStatic, shaderAnimated, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
-
-    let DrawPhysicallyBasedTerrain
-        (view : single array,
-         projection : single array,
-         eyeCenter : Vector3,
-         modelsFields : single array,
-         texCoordsOffsetsFields : single array,
-         albedosFields : single array,
-         materialsFields : single array,
-         heightsFields : single array,
-         invertRoughnessesFields : int array,
-         elementsCount : int,
-         materials : PhysicallyBasedMaterial array,
-         geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedDeferredTerrainShader) =
-
-        // setup state
-        Gl.DepthFunc DepthFunction.Lequal
-        Gl.Enable EnableCap.DepthTest
-        Gl.Enable EnableCap.CullFace
-        Hl.Assert ()
-
-        // enforce layer limit
-        let layersCount = min materials.Length Constants.Render.TerrainLayersMax
-        
-        // setup shader
-        Gl.UseProgram shader.PhysicallyBasedShader
-        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
-        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.LayersCountUniform, layersCount)
-        for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
-        for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.RoughnessTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax)
-        for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.AmbientOcclusionTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 2)
-        for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.NormalTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 3)
-        for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.HeightTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 4)
-        Hl.Assert ()
-
-        // setup textures
-        for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture)
-        for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture)
-        for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture)
-        for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture)
-        for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture)
-        Hl.Assert ()
-
-        // setup pbr texture filters
-        for i in 0 .. dec layersCount do
-            for j in 0 .. dec 5 do
-                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
-                match materials[i].TextureMinFilterOpt with
-                | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-                | None -> ()
-                match materials[i].TextureMagFilterOpt with
-                | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-                | None -> ()
-                Hl.Assert ()
-
-        // update models buffer
-        let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update texCoordsOffsets buffer
-        let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally texCoordsOffsetsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
-        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update materials buffer
-        let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally materialsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update heights buffer
-        let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<single>, heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally heightsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update invert roughnesses buffer
-        let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<int>, invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally invertRoughnessesFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        Hl.Assert ()
-
-        // draw geometry
-        Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
-
-        // teardown pbr texture filters
-        for i in 0 .. dec layersCount do
-            for j in 0 .. dec 5 do
-                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
-                if materials[i].TextureMinFilterOpt.IsSome then
-                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
-                if materials[i].TextureMagFilterOpt.IsSome then
-                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-                Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                Hl.Assert ()
-
-        // teardown textures
-        for i in 0 .. dec layersCount * 5 do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-        
-        // teardown shader
-        Gl.UseProgram 0u
-        Hl.Assert ()
-
-        // teardown state
-        Gl.DepthFunc DepthFunction.Less
-        Gl.Disable EnableCap.DepthTest
-        Gl.Disable EnableCap.CullFace
+        (shaderStatic, shaderAnimated, shaderTerrain, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
 
     /// Draw a batch of physically-based surfaces.
     let DrawPhysicallyBasedSurfaces
@@ -2173,6 +2013,166 @@ module PhysicallyBased =
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.BlendEquation BlendEquationMode.FuncAdd
         if not material.TwoSided then Gl.Disable EnableCap.CullFace
+
+    let DrawPhysicallyBasedTerrain
+        (view : single array,
+         projection : single array,
+         eyeCenter : Vector3,
+         modelsFields : single array,
+         texCoordsOffsetsFields : single array,
+         albedosFields : single array,
+         materialsFields : single array,
+         heightsFields : single array,
+         invertRoughnessesFields : int array,
+         elementsCount : int,
+         materials : PhysicallyBasedMaterial array,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedDeferredTerrainShader) =
+
+        // setup state
+        Gl.DepthFunc DepthFunction.Lequal
+        Gl.Enable EnableCap.DepthTest
+        Gl.Enable EnableCap.CullFace
+        Hl.Assert ()
+
+        // enforce layer limit
+        let layersCount = min materials.Length Constants.Render.TerrainLayersMax
+        
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedShader
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LayersCountUniform, layersCount)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.RoughnessTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.AmbientOcclusionTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 2)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.NormalTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 3)
+        for i in 0 .. dec Constants.Render.TerrainLayersMax do
+            Gl.Uniform1 (shader.HeightTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 4)
+        Hl.Assert ()
+
+        // setup textures
+        for i in 0 .. dec layersCount do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture)
+        for i in 0 .. dec layersCount do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture)
+        for i in 0 .. dec layersCount do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture)
+        for i in 0 .. dec layersCount do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture)
+        for i in 0 .. dec layersCount do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture)
+        Hl.Assert ()
+
+        // setup pbr texture filters
+        for i in 0 .. dec layersCount do
+            for j in 0 .. dec 5 do
+                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
+                match materials[i].TextureMinFilterOpt with
+                | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+                | None -> ()
+                match materials[i].TextureMagFilterOpt with
+                | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+                | None -> ()
+                Hl.Assert ()
+
+        // update models buffer
+        let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally modelsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update texCoordsOffsets buffer
+        let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally texCoordsOffsetsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update albedos buffer
+        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally albedosFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update materials buffer
+        let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally materialsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update heights buffer
+        let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<single>, heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally heightsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update invert roughnesses buffer
+        let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<int>, invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally invertRoughnessesFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown pbr texture filters
+        for i in 0 .. dec layersCount do
+            for j in 0 .. dec 5 do
+                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
+                if materials[i].TextureMinFilterOpt.IsSome then
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
+                if materials[i].TextureMagFilterOpt.IsSome then
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+                Gl.BindTexture (TextureTarget.Texture2d, 0u)
+                Hl.Assert ()
+
+        // teardown textures
+        for i in 0 .. dec layersCount * 5 do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+        
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown state
+        Gl.DepthFunc DepthFunction.Less
+        Gl.Disable EnableCap.DepthTest
+        Gl.Disable EnableCap.CullFace
 
     /// Draw the light mapping pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightMappingSurface

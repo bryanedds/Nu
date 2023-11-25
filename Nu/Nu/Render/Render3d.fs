@@ -19,6 +19,26 @@ open System.Runtime.InteropServices
 // TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 //////////////////////////////////////////////////////////////////////////////////////////
 
+/// Describes a static model surface.
+type [<NoEquality; NoComparison>] SurfaceDescriptor =
+    { Positions : Vector3 array
+      TexCoordses : Vector2 array
+      Normals : Vector3 array
+      Indices : int array
+      ModelMatrix : Matrix4x4
+      Bounds : Box3
+      MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
+      AlbedoImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      EmissionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      HeightImage : Image AssetTag
+      TextureMinFilterOpt : OpenGL.TextureMinFilter option
+      TextureMagFilterOpt : OpenGL.TextureMagFilter option
+      TwoSided : bool }
+
 /// A layer from which a 3d terrain's material is composed.
 /// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
 type [<StructuralEquality; NoComparison>] TerrainLayer =
@@ -73,6 +93,7 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMate
         Unchecked.defaultof<TerrainMaterialProperties>
 
 /// Material properties for surfaces.
+/// NOTE: this type has to go after TerrainMaterialProperties lest the latter's field names shadow this one's.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
@@ -121,26 +142,6 @@ type [<StructuralEquality; NoComparison>] TerrainDescriptor =
           Tiles = this.Tiles
           HeightMap = this.HeightMap
           Segments = this.Segments }
-
-/// Describes a static model surface.
-type [<NoEquality; NoComparison>] SurfaceDescriptor =
-    { Positions : Vector3 array
-      TexCoordses : Vector2 array
-      Normals : Vector3 array
-      Indices : int array
-      ModelMatrix : Matrix4x4
-      Bounds : Box3
-      MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
-      AlbedoImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
-      TextureMinFilterOpt : OpenGL.TextureMinFilter option
-      TextureMagFilterOpt : OpenGL.TextureMagFilter option
-      TwoSided : bool }
 
 /// Describes billboard-based particles.
 type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
@@ -540,9 +541,9 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           RenderIrradianceShader : OpenGL.CubeMap.CubeMapShader
           RenderEnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
-          RenderPhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           RenderPhysicallyBasedDeferredStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           RenderPhysicallyBasedDeferredLightMappingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightMappingShader
           RenderPhysicallyBasedDeferredIrradianceShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredIrradianceShader
           RenderPhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
@@ -2203,11 +2204,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
-        let (deferredTerrainShader, deferredStaticShader, deferredAnimatedShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferredLightingShader) =
+        let (deferredStaticShader, deferredAnimatedShader, deferredTerrainShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferredLightingShader) =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
-                (Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
+                (Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath,
+                 Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath,
@@ -2393,9 +2394,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderSkyBoxShader = skyBoxShader
               RenderIrradianceShader = irradianceShader
               RenderEnvironmentFilterShader = environmentFilterShader
-              RenderPhysicallyBasedDeferredTerrainShader = deferredTerrainShader
               RenderPhysicallyBasedDeferredStaticShader = deferredStaticShader
               RenderPhysicallyBasedDeferredAnimatedShader = deferredAnimatedShader
+              RenderPhysicallyBasedDeferredTerrainShader = deferredTerrainShader
               RenderPhysicallyBasedDeferredLightMappingShader = deferredLightMappingShader
               RenderPhysicallyBasedDeferredIrradianceShader = deferredIrradianceShader
               RenderPhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
@@ -2459,9 +2460,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.RenderSkyBoxShader.SkyBoxShader
             OpenGL.Gl.DeleteProgram renderer.RenderIrradianceShader.CubeMapShader
             OpenGL.Gl.DeleteProgram renderer.RenderEnvironmentFilterShader.EnvironmentFilterShader
-            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredTerrainShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredStaticShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredAnimatedShader.PhysicallyBasedShader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredTerrainShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredLightMappingShader.PhysicallyBasedDeferredLightMappingShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredIrradianceShader.PhysicallyBasedDeferredIrradianceShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredEnvironmentFilterShader.PhysicallyBasedDeferredEnvironmentFilterShader
