@@ -938,13 +938,24 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private createPhysicallyBasedTerrainNormals (resolution : Vector2i) (positionsAndTexCoordses : struct (Vector3 * Vector2) array) =
         [|for y in 0 .. dec resolution.Y do
             for x in 0 .. dec resolution.X do
-                if inc x < resolution.X && inc y < resolution.Y then
-                    let a = fst' positionsAndTexCoordses.[resolution.X * y + x]
-                    let b = fst' positionsAndTexCoordses.[resolution.X * y + inc x]
-                    let c = fst' positionsAndTexCoordses.[resolution.X * inc y + x]
-                    let ab = b - a
-                    let ac = c - a
-                    let normal = Vector3.Cross (ac, ab) |> Vector3.Normalize
+                if x > 0 && y > 0 && x < dec resolution.X && y < dec resolution.Y then
+                    let v = fst' positionsAndTexCoordses.[resolution.X * y + x]
+                    let n = fst' positionsAndTexCoordses.[resolution.X * dec y + x]
+                    let ne = fst' positionsAndTexCoordses.[resolution.X * dec y + inc x]
+                    let e = fst' positionsAndTexCoordses.[resolution.X * y + inc x]
+                    let s = fst' positionsAndTexCoordses.[resolution.X * inc y + x]
+                    let sw = fst' positionsAndTexCoordses.[resolution.X * inc y + dec x]
+                    let w = fst' positionsAndTexCoordses.[resolution.X * y + dec x]
+                    
+                    let normalSum =
+                        Vector3.Cross (ne - v, n - v) +
+                        Vector3.Cross (e - v, ne - v) +
+                        Vector3.Cross (s - v, e - v) +
+                        Vector3.Cross (sw - v, s - v) +
+                        Vector3.Cross (w - v, sw - v) +
+                        Vector3.Cross (n - v, w - v)
+                    
+                    let normal = normalSum |> Vector3.Normalize
                     normal
                 else v3Up|]
 
