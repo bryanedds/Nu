@@ -494,8 +494,8 @@ module StaticBillboardDispatcherModule =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
-             define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
+             define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.NormalImage Assets.Default.MaterialNormal
@@ -711,8 +711,8 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetStaticModel staticModel world
                             let materialProperties =
                                 { AlbedoOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.Albedo
-                                  MetallicOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.Metallic
                                   RoughnessOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.Roughness
+                                  MetallicOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.Metallic
                                   AmbientOcclusionOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
                                   EmissionOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.Emission
                                   HeightOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.Height

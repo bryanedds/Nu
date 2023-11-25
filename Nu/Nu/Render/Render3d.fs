@@ -19,6 +19,26 @@ open System.Runtime.InteropServices
 // TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 //////////////////////////////////////////////////////////////////////////////////////////
 
+/// Describes a static model surface.
+type [<NoEquality; NoComparison>] SurfaceDescriptor =
+    { Positions : Vector3 array
+      TexCoordses : Vector2 array
+      Normals : Vector3 array
+      Indices : int array
+      ModelMatrix : Matrix4x4
+      Bounds : Box3
+      MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
+      AlbedoImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      EmissionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      HeightImage : Image AssetTag
+      TextureMinFilterOpt : OpenGL.TextureMinFilter option
+      TextureMagFilterOpt : OpenGL.TextureMagFilter option
+      TwoSided : bool }
+
 /// A layer from which a 3d terrain's material is composed.
 /// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
 type [<StructuralEquality; NoComparison>] TerrainLayer =
@@ -29,7 +49,7 @@ type [<StructuralEquality; NoComparison>] TerrainLayer =
       HeightImage : Image AssetTag }
 
 /// Blend-weights for a 3d terrain.
-type [<StructuralEquality; NoComparison>] SplatMap =
+type [<StructuralEquality; NoComparison>] BlendMap =
     | RgbaMap of Image AssetTag
     | RedsMap of Image AssetTag array
 
@@ -42,9 +62,9 @@ type [<StructuralEquality; NoComparison>] FlatMaterial =
       HeightImage : Image AssetTag }
 
 /// Blend-weighted material for a 3d terrain.
-type [<StructuralEquality; NoComparison>] SplatMaterial =
+type [<StructuralEquality; NoComparison>] BlendMaterial =
     { TerrainLayers : TerrainLayer array
-      SplatMap : SplatMap }
+      BlendMap : BlendMap }
 
 /// Dynamically specified blend-weighted 3d terrain material.
 /// TODO: define this later if we support dynamic terrain editing.
@@ -54,7 +74,7 @@ type [<StructuralEquality; NoComparison>] DynamicMaterial =
 /// Describes the material of which a 3d terrain is composed.
 type [<StructuralEquality; NoComparison>] TerrainMaterial =
     | FlatMaterial of FlatMaterial
-    | SplatMaterial of SplatMaterial
+    | BlendMaterial of BlendMaterial
 
 /// Material properties for terrain surfaces.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMaterialProperties =
@@ -73,18 +93,19 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMate
         Unchecked.defaultof<TerrainMaterialProperties>
 
 /// Material properties for surfaces.
+/// NOTE: this type has to go after TerrainMaterialProperties lest the latter's field names shadow this one's.
 type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
     { AlbedoOpt : Color voption
-      MetallicOpt : single voption
       RoughnessOpt : single voption
+      MetallicOpt : single voption
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
       HeightOpt : single voption
       InvertRoughnessOpt : bool voption }
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
-          MetallicOpt = ValueSome Constants.Render.MetallicDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
+          MetallicOpt = ValueSome Constants.Render.MetallicDefault
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
           HeightOpt = ValueSome Constants.Render.HeightDefault
@@ -122,33 +143,13 @@ type [<StructuralEquality; NoComparison>] TerrainDescriptor =
           HeightMap = this.HeightMap
           Segments = this.Segments }
 
-/// Describes a static model surface.
-type [<NoEquality; NoComparison>] SurfaceDescriptor =
-    { Positions : Vector3 array
-      TexCoordses : Vector2 array
-      Normals : Vector3 array
-      Indices : int array
-      ModelMatrix : Matrix4x4
-      Bounds : Box3
-      MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
-      AlbedoImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
-      TextureMinFilterOpt : OpenGL.TextureMinFilter option
-      TextureMagFilterOpt : OpenGL.TextureMagFilter option
-      TwoSided : bool }
-
 /// Describes billboard-based particles.
 type [<NoEquality; NoComparison>] BillboardParticlesDescriptor =
     { Absolute : bool
       MaterialProperties : MaterialProperties
       AlbedoImage : Image AssetTag
-      MetallicImage : Image AssetTag
       RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
@@ -283,8 +284,8 @@ and [<ReferenceEquality>] RenderBillboard =
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
       AlbedoImage : Image AssetTag
-      MetallicImage : Image AssetTag
       RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
@@ -298,8 +299,8 @@ and [<ReferenceEquality>] RenderBillboards =
       Billboards : (Matrix4x4 * Box2 option) SList
       MaterialProperties : MaterialProperties
       AlbedoImage : Image AssetTag
-      MetallicImage : Image AssetTag
       RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
@@ -312,8 +313,8 @@ and [<ReferenceEquality>] RenderBillboardParticles =
     { Absolute : bool
       MaterialProperties : MaterialProperties
       AlbedoImage : Image AssetTag
-      MetallicImage : Image AssetTag
       RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
@@ -540,9 +541,9 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderSkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           RenderIrradianceShader : OpenGL.CubeMap.CubeMapShader
           RenderEnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
-          RenderPhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           RenderPhysicallyBasedDeferredStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           RenderPhysicallyBasedDeferredAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          RenderPhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           RenderPhysicallyBasedDeferredLightMappingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightMappingShader
           RenderPhysicallyBasedDeferredIrradianceShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredIrradianceShader
           RenderPhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
@@ -857,8 +858,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 // make material properties
                 let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
                     { Albedo = surfaceDescriptor.MaterialProperties.Albedo
-                      Metallic = surfaceDescriptor.MaterialProperties.Metallic
                       Roughness = surfaceDescriptor.MaterialProperties.Roughness
+                      Metallic = surfaceDescriptor.MaterialProperties.Metallic
                       AmbientOcclusion = surfaceDescriptor.MaterialProperties.AmbientOcclusion
                       Emission = surfaceDescriptor.MaterialProperties.Emission
                       Height = surfaceDescriptor.MaterialProperties.Height
@@ -869,8 +870,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     { MaterialProperties = properties
                       AlbedoMetadata = albedoMetadata
                       AlbedoTexture = albedoTexture
-                      MetallicTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.MetallicImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.MetallicTexture
                       RoughnessTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
+                      MetallicTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.MetallicImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.MetallicTexture
                       AmbientOcclusionTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.AmbientOcclusionTexture
                       EmissionTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.EmissionImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.EmissionTexture
                       NormalTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.RenderPhysicallyBasedMaterial.NormalTexture
@@ -938,13 +939,24 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private createPhysicallyBasedTerrainNormals (resolution : Vector2i) (positionsAndTexCoordses : struct (Vector3 * Vector2) array) =
         [|for y in 0 .. dec resolution.Y do
             for x in 0 .. dec resolution.X do
-                if inc x < resolution.X && inc y < resolution.Y then
-                    let a = fst' positionsAndTexCoordses.[resolution.X * y + x]
-                    let b = fst' positionsAndTexCoordses.[resolution.X * y + inc x]
-                    let c = fst' positionsAndTexCoordses.[resolution.X * inc y + x]
-                    let ab = b - a
-                    let ac = c - a
-                    let normal = Vector3.Cross (ac, ab) |> Vector3.Normalize
+                if x > 0 && y > 0 && x < dec resolution.X && y < dec resolution.Y then
+                    let v  = fst' positionsAndTexCoordses.[resolution.X * y + x]
+                    let n  = fst' positionsAndTexCoordses.[resolution.X * dec y + x]
+                    let ne = fst' positionsAndTexCoordses.[resolution.X * dec y + inc x]
+                    let e  = fst' positionsAndTexCoordses.[resolution.X * y + inc x]
+                    let s  = fst' positionsAndTexCoordses.[resolution.X * inc y + x]
+                    let sw = fst' positionsAndTexCoordses.[resolution.X * inc y + dec x]
+                    let w  = fst' positionsAndTexCoordses.[resolution.X * y + dec x]
+                    
+                    let normalSum =
+                        Vector3.Cross (ne - v, n - v) +
+                        Vector3.Cross (e - v, ne - v) +
+                        Vector3.Cross (s - v, e - v) +
+                        Vector3.Cross (sw - v, s - v) +
+                        Vector3.Cross (w - v, sw - v) +
+                        Vector3.Cross (n - v, w - v)
+                    
+                    let normal = normalSum |> Vector3.Normalize
                     normal
                 else v3Up|]
 
@@ -990,45 +1002,45 @@ type [<ReferenceEquality>] GlRenderer3d =
                     Array.map (fun x -> v3 x.[2] x.[1] x.[0])
                 | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
 
-            // compute splatses, logging if more than the safe number of terrain layers is utilized
-            let splatses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
+            // compute blendses, logging if more than the safe number of terrain layers is utilized
+            let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
             match geometryDescriptor.Material with
-            | SplatMaterial splatMaterial ->
-                if splatMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMaxSafe then
+            | BlendMaterial blendMaterial ->
+                if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMaxSafe then
                     Log.infoOnce
                         ("Terrain has more than " +
                          string Constants.Render.TerrainLayersMaxSafe +
                          " which references more than the guaranteed number of supported fragment shader textures.")
-                match splatMaterial.SplatMap with
+                match blendMaterial.BlendMap with
                 | RgbaMap rgbaMap ->
                     match GlRenderer3d.tryGetImageData rgbaMap renderer with
                     | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         for i in 0 .. dec positionsAndTexCoordses.Length do
                             // ARGB reverse byte order, from Drawing.Bitmap (windows).
                             // TODO: confirm it is the same for SDL (linux).
-                            splatses.[i,0] <- single bytes.[i * 4 + 2] / single Byte.MaxValue
-                            splatses.[i,1] <- single bytes.[i * 4 + 1] / single Byte.MaxValue
-                            splatses.[i,2] <- single bytes.[i * 4 + 0] / single Byte.MaxValue
-                            splatses.[i,3] <- single bytes.[i * 4 + 3] / single Byte.MaxValue
-                    | _ -> Log.info ("Could not locate image data for splat map '" + scstring rgbaMap + "'.")
+                            blendses.[i,0] <- single bytes.[i * 4 + 2] / single Byte.MaxValue
+                            blendses.[i,1] <- single bytes.[i * 4 + 1] / single Byte.MaxValue
+                            blendses.[i,2] <- single bytes.[i * 4 + 0] / single Byte.MaxValue
+                            blendses.[i,3] <- single bytes.[i * 4 + 3] / single Byte.MaxValue
+                    | _ -> Log.info ("Could not locate image data for blend map '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
                     for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
                         let red = reds.[i]
                         match GlRenderer3d.tryGetImageData red renderer with
                         | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                             for j in 0 .. dec positionsAndTexCoordses.Length do
-                                splatses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
-                        | _ -> Log.info ("Could not locate image data for splat map '" + scstring red + "'.")
+                                blendses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
+                        | _ -> Log.info ("Could not locate image data for blend map '" + scstring red + "'.")
             | FlatMaterial _ ->
                 for i in 0 .. dec positionsAndTexCoordses.Length do
-                    splatses.[i,0] <- 1.0f
+                    blendses.[i,0] <- 1.0f
 
             // compute vertices
             let vertices =
                 [|for i in 0 .. dec positionsAndTexCoordses.Length do
                     let struct (p, tc) = positionsAndTexCoordses.[i]
                     let n = normals.[i]
-                    let s = splatses
+                    let s = blendses
                     let t = tint.[i]
                     yield!
                         [|p.X; p.Y; p.Z
@@ -1384,20 +1396,20 @@ type [<ReferenceEquality>] GlRenderer3d =
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
         let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
-              Metallic = Constants.Render.MetallicDefault
               Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault terrainMaterialProperties.RoughnessOpt
+              Metallic = Constants.Render.MetallicDefault
               AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
               Emission = Constants.Render.EmissionDefault
               Height = ValueOption.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
               InvertRoughness = ValueOption.defaultValue Constants.Render.InvertRoughnessDefault terrainMaterialProperties.InvertRoughnessOpt }
         let (texelHeightAvg, materials) =
             match terrainDescriptor.Material with
-            | SplatMaterial splatMaterial ->
+            | BlendMaterial blendMaterial ->
                 let mutable texelHeightAvg = 0.0f
                 let materials =
-                    [|for i in 0 .. dec splatMaterial.TerrainLayers.Length do
+                    [|for i in 0 .. dec blendMaterial.TerrainLayers.Length do
                         let layer =
-                            splatMaterial.TerrainLayers.[i]
+                            blendMaterial.TerrainLayers.[i]
                         let defaultMaterial =
                             renderer.RenderPhysicallyBasedMaterial
                         let (albedoMetadata, albedoTexture) =
@@ -1469,7 +1481,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              m4Identity.ToArray (), // NOTE: transform is baked into vertices.
              [|0.0f; 0.0f; 0.0f; 0.0f|], // TODO: implement tex coords offset parameterization!
              [|materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A|],
-             [|materialProperties.Metallic; materialProperties.Roughness; materialProperties.AmbientOcclusion; materialProperties.Emission|],
+             [|materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission|],
              [|texelHeightAvg * materialProperties.Height|],
              [|if materialProperties.InvertRoughness then 1 else 0|],
              elementsCount, materials, geometry, shader)
@@ -1529,8 +1541,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
                 renderer.RenderTexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
                 let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
-                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
                 let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
                 let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
                 let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
                 let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
@@ -1539,8 +1551,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderAlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.RenderAlbedosFields.[i * 4 + 2] <- albedo.B
                 renderer.RenderAlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.RenderPhysicallyBasedMaterialsFields.[i * 4] <- metallic
-                renderer.RenderPhysicallyBasedMaterialsFields.[i * 4 + 1] <- roughness
+                renderer.RenderPhysicallyBasedMaterialsFields.[i * 4] <- roughness
+                renderer.RenderPhysicallyBasedMaterialsFields.[i * 4 + 1] <- metallic
                 renderer.RenderPhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
                 renderer.RenderPhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
                 renderer.RenderPhysicallyBasedHeightsFields.[i] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
@@ -1554,19 +1566,19 @@ type [<ReferenceEquality>] GlRenderer3d =
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightsCount,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
-    static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage metallicImage roughnessImage ambientOcclusionImage emissionImage normalImage heightImage minFilterOpt magFilterOpt renderer =
+    static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage roughnessImage metallicImage ambientOcclusionImage emissionImage normalImage heightImage minFilterOpt magFilterOpt renderer =
         let (albedoMetadata, albedoTexture) =
             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize albedoImage) renderer with
             | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
             | _ -> (OpenGL.Texture.TextureMetadata.empty, renderer.RenderPhysicallyBasedMaterial.AlbedoTexture)
-        let metallicTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize metallicImage) renderer with
-            | ValueSome (TextureAsset (_, texture)) -> texture
-            | _ -> renderer.RenderPhysicallyBasedMaterial.MetallicTexture
         let roughnessTexture =
             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize roughnessImage) renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.RenderPhysicallyBasedMaterial.RoughnessTexture
+        let metallicTexture =
+            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize metallicImage) renderer with
+            | ValueSome (TextureAsset (_, texture)) -> texture
+            | _ -> renderer.RenderPhysicallyBasedMaterial.MetallicTexture
         let ambientOcclusionTexture =
             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize ambientOcclusionImage) renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
@@ -1585,8 +1597,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | _ -> renderer.RenderPhysicallyBasedMaterial.HeightTexture
         let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault properties.AlbedoOpt
-              Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
               Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault properties.RoughnessOpt
+              Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
               AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
               Emission = ValueOption.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
               Height = ValueOption.defaultValue Constants.Render.HeightDefault properties.HeightOpt
@@ -1595,8 +1607,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             { MaterialProperties = properties
               AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              MetallicTexture = metallicTexture
               RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
               AmbientOcclusionTexture = ambientOcclusionTexture
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
@@ -2060,16 +2072,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SortableLightDistanceSquared = Single.MaxValue }
                 renderer.RenderTasks.RenderLights.Add light
             | RenderBillboard rb ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.AlbedoImage rb.MetallicImage rb.RoughnessImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.HeightImage rb.MinFilterOpt rb.MagFilterOpt renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.AlbedoImage rb.RoughnessImage rb.MetallicImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.HeightImage rb.MinFilterOpt rb.MagFilterOpt renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                 GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, rb.RenderType, billboardSurface, renderer)
             | RenderBillboards rbs ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.AlbedoImage rbs.MetallicImage rbs.RoughnessImage rbs.AmbientOcclusionImage rbs.EmissionImage rbs.NormalImage rbs.HeightImage rbs.MinFilterOpt rbs.MagFilterOpt renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.AlbedoImage rbs.RoughnessImage rbs.MetallicImage rbs.AmbientOcclusionImage rbs.EmissionImage rbs.NormalImage rbs.HeightImage rbs.MinFilterOpt rbs.MagFilterOpt renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface ([||], m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                 for (modelMatrix, insetOpt) in rbs.Billboards do
                     GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, rbs.RenderType, billboardSurface, renderer)
             | RenderBillboardParticles rbps ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.AlbedoImage rbps.MetallicImage rbps.RoughnessImage rbps.AmbientOcclusionImage rbps.EmissionImage rbps.NormalImage rbps.HeightImage rbps.MinFilterOpt rbps.MagFilterOpt renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.AlbedoImage rbps.RoughnessImage rbps.MetallicImage rbps.AmbientOcclusionImage rbps.EmissionImage rbps.NormalImage rbps.HeightImage rbps.MinFilterOpt rbps.MagFilterOpt renderer
                 for particle in rbps.Particles do
                     let billboardMatrix =
                         Matrix4x4.CreateFromTrs
@@ -2192,11 +2204,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
-        let (deferredTerrainShader, deferredStaticShader, deferredAnimatedShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferredLightingShader) =
+        let (deferredStaticShader, deferredAnimatedShader, deferredTerrainShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferredLightingShader) =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
-                (Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
+                (Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath,
+                 Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath,
@@ -2321,8 +2333,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create default physically-based material properties
         let physicallyBasedMaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = Constants.Render.AlbedoDefault
-              Metallic = Constants.Render.MetallicDefault
               Roughness = Constants.Render.RoughnessDefault
+              Metallic = Constants.Render.MetallicDefault
               AmbientOcclusion = Constants.Render.AmbientOcclusionDefault
               Emission = Constants.Render.EmissionDefault
               Height = Constants.Render.HeightDefault
@@ -2336,8 +2348,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             { MaterialProperties = physicallyBasedMaterialProperties
               AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialMetallic.png") |> Either.getRight |> snd
               RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
+              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialMetallic.png") |> Either.getRight |> snd
               AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
               EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialEmission.png") |> Either.getRight |> snd
               NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.UncompressedTextureFormat, "Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
@@ -2382,9 +2394,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderSkyBoxShader = skyBoxShader
               RenderIrradianceShader = irradianceShader
               RenderEnvironmentFilterShader = environmentFilterShader
-              RenderPhysicallyBasedDeferredTerrainShader = deferredTerrainShader
               RenderPhysicallyBasedDeferredStaticShader = deferredStaticShader
               RenderPhysicallyBasedDeferredAnimatedShader = deferredAnimatedShader
+              RenderPhysicallyBasedDeferredTerrainShader = deferredTerrainShader
               RenderPhysicallyBasedDeferredLightMappingShader = deferredLightMappingShader
               RenderPhysicallyBasedDeferredIrradianceShader = deferredIrradianceShader
               RenderPhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
@@ -2448,9 +2460,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.RenderSkyBoxShader.SkyBoxShader
             OpenGL.Gl.DeleteProgram renderer.RenderIrradianceShader.CubeMapShader
             OpenGL.Gl.DeleteProgram renderer.RenderEnvironmentFilterShader.EnvironmentFilterShader
-            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredTerrainShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredStaticShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredAnimatedShader.PhysicallyBasedShader
+            OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredTerrainShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredLightMappingShader.PhysicallyBasedDeferredLightMappingShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredIrradianceShader.PhysicallyBasedDeferredIrradianceShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedDeferredEnvironmentFilterShader.PhysicallyBasedDeferredEnvironmentFilterShader

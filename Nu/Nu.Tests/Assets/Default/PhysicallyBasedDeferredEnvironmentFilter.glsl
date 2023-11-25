@@ -54,7 +54,7 @@ void main()
 
     // retrieve remaining data from geometry buffers
     vec3 position = texture(positionTexture, texCoordsOut).rgb;
-    float roughness = texture(materialTexture, texCoordsOut).g;
+    float roughness = texture(materialTexture, texCoordsOut).r;
 
     // retrieve light mapping data
     vec4 lmData = texture(lightMappingTexture, texCoordsOut);
