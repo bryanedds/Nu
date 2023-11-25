@@ -17,8 +17,8 @@ module PhysicallyBased =
     /// Describes the configurable properties of a physically-based material.
     type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterialProperties =
         { Albedo : Color
-          Metallic : single
           Roughness : single
+          Metallic : single
           AmbientOcclusion : single
           Emission : single
           Height : single
@@ -29,8 +29,8 @@ module PhysicallyBased =
         { MaterialProperties : PhysicallyBasedMaterialProperties
           AlbedoMetadata : Texture.TextureMetadata
           AlbedoTexture : uint
-          MetallicTexture : uint
           RoughnessTexture : uint
+          MetallicTexture : uint
           AmbientOcclusionTexture : uint
           EmissionTexture : uint
           NormalTexture : uint
@@ -68,8 +68,8 @@ module PhysicallyBased =
 
         static member inline hash surface =
             (int surface.SurfaceMaterial.AlbedoTexture) ^^^
-            (int surface.SurfaceMaterial.MetallicTexture <<< 2) ^^^
-            (int surface.SurfaceMaterial.RoughnessTexture <<< 4) ^^^
+            (int surface.SurfaceMaterial.RoughnessTexture <<< 2) ^^^
+            (int surface.SurfaceMaterial.MetallicTexture <<< 4) ^^^
             (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 6) ^^^
             (int surface.SurfaceMaterial.EmissionTexture <<< 7) ^^^
             (int surface.SurfaceMaterial.NormalTexture <<< 10) ^^^
@@ -84,8 +84,8 @@ module PhysicallyBased =
             optEq left.SurfaceMaterial.TextureMinFilterOpt right.SurfaceMaterial.TextureMinFilterOpt &&
             optEq left.SurfaceMaterial.TextureMagFilterOpt right.SurfaceMaterial.TextureMagFilterOpt &&
             left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
-            left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
             left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
+            left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
             left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
             left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
             left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
@@ -173,8 +173,8 @@ module PhysicallyBased =
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
           AlbedoTextureUniform : int
-          MetallicTextureUniform : int
           RoughnessTextureUniform : int
+          MetallicTextureUniform : int
           AmbientOcclusionTextureUniform : int
           EmissionTextureUniform : int
           NormalTextureUniform : int
@@ -311,57 +311,24 @@ module PhysicallyBased =
         let hasBaseColor =                      albedoTextureFileName.Contains "BaseColor"
         let hasAlbedo =                         albedoTextureFileName.Contains "Albedo"
         let mTextureFilePath =                  if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m")                     elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m") else ""
-        let m_gTextureFilePath =                if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_g")                   elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_g") else ""
-        let m_g_aoTextureFilePath =             if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_m_g_ao")                elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_m_g_ao") else ""
+        let g_mTextureFilePath =                if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_g_m")                   elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_g_m") else ""
+        let g_m_aoTextureFilePath =             if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_g_m_ao")                elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_g_m_ao") else ""
         let gTextureFilePath =                  if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_g")                     elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_g") else ""
         let sTextureFilePath =                  if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_s")                     elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_s") else ""
         let aoTextureFilePath =                 if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_ao")                    elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_ao") else ""
         let eTextureFilePath =                  if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_e")                     elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_e") else ""
         let nTextureFilePath =                  if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_n")                     elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_n") else ""
         let hTextureFilePath =                  if has_bc         then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_bc", "_h")                     elif has_d      then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("_d", "_h") else ""
+        let rmTextureFilePath =                 if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "RM")               elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "RM") else ""
+        let rmaTextureFilePath =                if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "RMA")              elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "RMA") else ""
+        let roughnessTextureFilePath =          if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")        elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Roughness") else ""
         let metallicTextureFilePath =           if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metallic")         elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Metallic") else ""
         let metalnessTextureFilePath =          if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Metalness")        elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Metalness") else ""
-        let mrTextureFilePath =                 if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "MR")               elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "MR") else ""
-        let mraTextureFilePath =                if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "MRA")              elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "MRA") else ""
-        let roughnessTextureFilePath =          if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Roughness")        elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Roughness") else ""
         let ambientOcclusionTextureFilePath =   if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AmbientOcclusion") elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "AmbientOcclusion") else ""
         let aoTextureFilePath' =                if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "AO")               elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "AO") else ""
         let normalTextureFilePath =             if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Normal")           elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Normal") else ""
         let emissionTextureFilePath =           if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Emission")         elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Emission") else ""
         let heightTextureFilePath =             if hasBaseColor   then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("BaseColor", "Height")           elif hasAlbedo  then albedoTextureDirName + "/" + albedoTextureFileName.Replace ("Albedo", "Height") else ""
-
-        // attempt to load metallic info
-        let metallic = Constants.Render.MetallicDefault
-        let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
-        if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
-        metallicTextureSlot.FilePath <- metallicTextureSlot.FilePath.Trim () // trim
-        let metallicTexture =
-            if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
-                | Right (_, texture) -> texture
-                | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mTextureFilePath, textureMemo) with
-                    | Right (_, texture) -> texture
-                    | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + m_gTextureFilePath, textureMemo) with
-                        | Right (_, texture) -> texture
-                        | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + m_g_aoTextureFilePath, textureMemo) with
-                            | Right (_, texture) -> texture
-                            | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metallicTextureFilePath, textureMemo) with
-                                | Right (_, texture) -> texture
-                                | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metalnessTextureFilePath, textureMemo) with
-                                    | Right (_, texture) -> texture
-                                    | Left _ ->
-                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mrTextureFilePath, textureMemo) with
-                                        | Right (_, texture) -> texture
-                                        | Left _ ->
-                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mraTextureFilePath, textureMemo) with
-                                            | Right (_, texture) -> texture
-                                            | Left _ -> defaultMaterial.MetallicTexture
-            else defaultMaterial.MetallicTexture
 
         // attempt to load roughness info
         let invertRoughness = has_bc || has_d // NOTE: assume texture from Unity export if it has this weird naming.
@@ -380,22 +347,55 @@ module PhysicallyBased =
                         match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + sTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + m_gTextureFilePath, textureMemo) with
+                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_mTextureFilePath, textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + m_g_aoTextureFilePath, textureMemo) with
+                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ ->
                                     match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + roughnessTextureFilePath, textureMemo) with
                                     | Right (_, texture) -> texture
                                     | Left _ ->
-                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mrTextureFilePath, textureMemo) with
+                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmTextureFilePath, textureMemo) with
                                         | Right (_, texture) -> texture
                                         | Left _ ->
-                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mraTextureFilePath, textureMemo) with
+                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
                                             | Right (_, texture) -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
+
+        // attempt to load metallic info
+        let metallic = Constants.Render.MetallicDefault
+        let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
+        if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
+        metallicTextureSlot.FilePath <- metallicTextureSlot.FilePath.Trim () // trim
+        let metallicTexture =
+            if renderable then
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
+                | Right (_, texture) -> texture
+                | Left _ ->
+                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mTextureFilePath, textureMemo) with
+                    | Right (_, texture) -> texture
+                    | Left _ ->
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_mTextureFilePath, textureMemo) with
+                        | Right (_, texture) -> texture
+                        | Left _ ->
+                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
+                            | Right (_, texture) -> texture
+                            | Left _ ->
+                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metallicTextureFilePath, textureMemo) with
+                                | Right (_, texture) -> texture
+                                | Left _ ->
+                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metalnessTextureFilePath, textureMemo) with
+                                    | Right (_, texture) -> texture
+                                    | Left _ ->
+                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmTextureFilePath, textureMemo) with
+                                        | Right (_, texture) -> texture
+                                        | Left _ ->
+                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
+                                            | Right (_, texture) -> texture
+                                            | Left _ -> defaultMaterial.MetallicTexture
+            else defaultMaterial.MetallicTexture
 
         // attempt to load ambient occlusion info
         let ambientOcclusion = Constants.Render.AmbientOcclusionDefault
@@ -410,7 +410,7 @@ module PhysicallyBased =
                     match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + aoTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + m_g_aoTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
                             match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + ambientOcclusionTextureFilePath, textureMemo) with
@@ -419,12 +419,9 @@ module PhysicallyBased =
                                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + aoTextureFilePath', textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mrTextureFilePath, textureMemo) with
+                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
                                     | Right (_, texture) -> texture
-                                    | Left _ ->
-                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mraTextureFilePath, textureMemo) with
-                                        | Right (_, texture) -> texture
-                                        | Left _ -> defaultMaterial.AmbientOcclusionTexture
+                                    | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
 
         // attempt to load emission info
@@ -483,8 +480,8 @@ module PhysicallyBased =
         // make properties
         let properties =
             { Albedo = color albedo.R albedo.G albedo.B albedo.A
-              Metallic = metallic
               Roughness = roughness
+              Metallic = metallic
               AmbientOcclusion = ambientOcclusion
               Emission = emission
               Height = height
@@ -494,8 +491,8 @@ module PhysicallyBased =
         { MaterialProperties = properties
           AlbedoMetadata = albedoMetadata
           AlbedoTexture = albedoTexture
-          MetallicTexture = metallicTexture
           RoughnessTexture = roughnessTexture
+          MetallicTexture = metallicTexture
           AmbientOcclusionTexture = ambientOcclusionTexture
           EmissionTexture = emissionTexture
           NormalTexture = normalTexture
@@ -862,7 +859,7 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (11u, 1u)
                 Hl.Assert ()
 
-                // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
+                // create material buffer (used for roughness, metallic, ambient occlusion, and emission in that order)
                 let materialBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
                 let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
@@ -1021,7 +1018,7 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (8u, 1u)
                 Hl.Assert ()
 
-                // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
+                // create material buffer (used for roughness, metallic, ambient occlusion, and emission in that order)
                 let materialBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
                 let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
@@ -1192,7 +1189,7 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (10u, 1u)
                 Hl.Assert ()
 
-                // create material buffer (used for metallic, roughness, ambient occlusion, and emission in that order)
+                // create material buffer (used for roughness, metallic, ambient occlusion, and emission in that order)
                 let materialBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, materialBuffer)
                 let materialDataPtr = GCHandle.Alloc ([|1.0f; 1.0f; 1.0f; 1.0f|], GCHandleType.Pinned)
@@ -1505,8 +1502,8 @@ module PhysicallyBased =
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
-        let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
+        let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
         let ambientOcclusionTextureUniform = Gl.GetUniformLocation (shader, "ambientOcclusionTexture")
         let emissionTextureUniform = Gl.GetUniformLocation (shader, "emissionTexture")
         let normalTextureUniform = Gl.GetUniformLocation (shader, "normalTexture")
@@ -1544,8 +1541,8 @@ module PhysicallyBased =
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           AlbedoTextureUniform = albedoTextureUniform
-          MetallicTextureUniform = metallicTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
+          MetallicTextureUniform = metallicTextureUniform
           AmbientOcclusionTextureUniform = ambientOcclusionTextureUniform
           EmissionTextureUniform = emissionTextureUniform
           NormalTextureUniform = normalTextureUniform
@@ -1993,8 +1990,8 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
-        Gl.Uniform1 (shader.MetallicTextureUniform, 1)
-        Gl.Uniform1 (shader.RoughnessTextureUniform, 2)
+        Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
+        Gl.Uniform1 (shader.MetallicTextureUniform, 2)
         Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
         Gl.Uniform1 (shader.EmissionTextureUniform, 4)
         Gl.Uniform1 (shader.NormalTextureUniform, 5)
@@ -2027,9 +2024,9 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
         Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture)
         Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
         Gl.ActiveTexture TextureUnit.Texture4
