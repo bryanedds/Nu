@@ -2777,6 +2777,9 @@ module TerrainFacetModule =
         member this.GetTintImage world : Image AssetTag = this.Get (nameof this.TintImage) world
         member this.SetTintImage (value : Image AssetTag) world = this.Set (nameof this.TintImage) value world
         member this.TintImage = lens (nameof this.TintImage) this this.GetTintImage this.SetTintImage
+        member this.GetNormalImageOpt world : Image AssetTag option = this.Get (nameof this.NormalImageOpt) world
+        member this.SetNormalImageOpt (value : Image AssetTag option) world = this.Set (nameof this.NormalImageOpt) value world
+        member this.NormalImageOpt = lens (nameof this.NormalImageOpt) this this.GetNormalImageOpt this.SetNormalImageOpt
         member this.GetTiles world : Vector2 = this.Get (nameof this.Tiles) world
         member this.SetTiles (value : Vector2) world = this.Set (nameof this.Tiles) value world
         member this.Tiles = lens (nameof this.Tiles) this this.GetTiles this.SetTiles
@@ -2798,7 +2801,7 @@ module TerrainFacetModule =
         member this.TryGetTerrainQuadSize world =
             let bounds = this.GetBounds world
             match this.TryGetTerrainResolution world with
-            | Some resolution -> Some (v2 bounds.Size.X bounds.Size.Z / v2 (single resolution.X) (single resolution.Y))
+            | Some resolution -> Some (v2 bounds.Size.X bounds.Size.Z / v2 (resolution.X |> dec |> single) (resolution.Y |> dec |> single))
             | None -> None
 
     /// Augments an entity with a rigid 3d terrain.
@@ -2823,7 +2826,7 @@ module TerrainFacetModule =
                       NormalImage = Assets.Default.MaterialNormal
                       HeightImage = Assets.Default.MaterialHeight })
              define Entity.TintImage Assets.Default.MaterialAlbedo
-             define Entity.NormalImage Assets.Default.MaterialNormal
+             define Entity.NormalImageOpt None
              define Entity.Tiles v2One
              define Entity.HeightMap (ImageHeightMap Assets.Default.HeightMap)
              define Entity.Segments v2iOne
@@ -2884,7 +2887,7 @@ module TerrainFacetModule =
                   MaterialProperties = entity.GetTerrainMaterialProperties world
                   Material = entity.GetTerrainMaterial world
                   TintImage = entity.GetTintImage world
-                  NormalImage = entity.GetNormalImage world
+                  NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world
                   HeightMap = entity.GetHeightMap world
                   Segments = entity.GetSegments world }
