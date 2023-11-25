@@ -2817,7 +2817,7 @@ module TerrainFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask Constants.Physics.CollisionWildcard
-             define Entity.ModelDriven false
+             define Entity.InsetOpt None
              define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
              define Entity.TerrainMaterial
                 (BlendMaterial
@@ -2894,6 +2894,7 @@ module TerrainFacetModule =
             let mutable transform = entity.GetTransform world
             let terrainDescriptor =
                 { Bounds = transform.Bounds
+                  InsetOpt = entity.GetInsetOpt world
                   MaterialProperties = entity.GetTerrainMaterialProperties world
                   Material = entity.GetTerrainMaterial world
                   TintImage = entity.GetTintImage world
