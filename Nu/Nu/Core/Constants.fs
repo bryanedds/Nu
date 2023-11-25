@@ -104,7 +104,6 @@ module Render =
     let [<Literal>] BonesInfluenceMax = 4
     let [<Literal>] AnimatedModelRateScalar = 30.0f // some arbitrary scale that mixamo fbx exported from blender seems to like...
     let [<Literal>] AnimatedModelMessagesPrealloc = 128
-    let [<Literal>] AnimatedModelSurfaceMessagesPrealloc = 128
     let [<Literal>] GeometryBatchPrealloc = 1024
     let [<Literal>] TerrainLayersMaxSafe = 6
     let [<Literal>] TerrainLayersMax = 8
