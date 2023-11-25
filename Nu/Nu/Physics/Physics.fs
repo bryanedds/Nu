@@ -158,7 +158,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
 
                 // fin
                 Some { Resolution = v2i resolutionX resolutionY; HeightsNormalized = heightsNormalized; PositionsAndTexCoordses = positionsAndTexCoordses }
-            with exn -> Log.info ("Attempt to read raw height map failed with the following exception: " + exn.Message); None
+            with exn -> Log.infoOnce ("Attempt to read raw height map failed with the following exception: " + exn.Message); None
         | None -> None
 
     /// Attempt to compute height map metadata, loading assets as required.
