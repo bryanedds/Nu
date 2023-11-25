@@ -2809,7 +2809,7 @@ module TerrainFacetModule =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.Size (v3 1024.0f 128.0f 1024.0f)
+            [define Entity.Size (v3 512.0f 111.0f 512.0f)
              define Entity.Presence Omnipresent
              define Entity.BodyEnabled true
              define Entity.Friction 0.5f
@@ -2819,16 +2819,35 @@ module TerrainFacetModule =
              define Entity.ModelDriven false
              define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
              define Entity.TerrainMaterial
-                (FlatMaterial
-                    { AlbedoImage = Assets.Default.MaterialAlbedo
-                      RoughnessImage = Assets.Default.MaterialRoughness
-                      AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
-                      NormalImage = Assets.Default.MaterialNormal
-                      HeightImage = Assets.Default.MaterialHeight })
-             define Entity.TintImage Assets.Default.MaterialAlbedo
+                (SplatMaterial
+                    { TerrainLayers =
+                        [|
+                          // TODO: use Assets.Default.Texture0...
+                          { AlbedoImage = Assets.Default.MaterialAlbedo
+                            RoughnessImage = Assets.Default.MaterialRoughness
+                            AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
+                            NormalImage = Assets.Default.MaterialNormal
+                            HeightImage = Assets.Default.MaterialHeight }
+                          
+                          // TODO: use Assets.Default.Texture1...
+                          { AlbedoImage = Assets.Default.MaterialAlbedo
+                            RoughnessImage = Assets.Default.MaterialRoughness
+                            AmbientOcclusionImage = Assets.Default.MaterialAmbientOcclusion
+                            NormalImage = Assets.Default.MaterialNormal
+                            HeightImage = Assets.Default.MaterialHeight }
+                        |]
+                      SplatMap =
+                          RedsMap
+                            [|Assets.Default.MaterialAlbedo // TODO: use Assets.Default.Splat0
+                              Assets.Default.MaterialAlbedo|]}) // TODO: use Assets.Default.Splat1
+             define Entity.TintImage Assets.Default.MaterialAlbedo // TODO: use Assets.Default.TerrainTint
              define Entity.NormalImageOpt None
-             define Entity.Tiles v2One
-             define Entity.HeightMap (ImageHeightMap Assets.Default.HeightMap)
+             define Entity.Tiles (v2 128.0f 128.0f)
+             define Entity.HeightMap
+                (RawHeightMap
+                    { Resolution = v2i 512 512
+                      RawFormat = RawUInt16 LittleEndian
+                      RawAsset = Assets.Default.HeightMapRaw })
              define Entity.Segments v2iOne
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
