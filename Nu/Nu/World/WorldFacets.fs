@@ -2809,7 +2809,7 @@ module TerrainFacetModule =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.Size (v3 511.0f 111.0f 511.0f)
+            [define Entity.Size (v3 511.0f 128.0f 511.0f)
              define Entity.Presence Omnipresent
              define Entity.AlwaysRender true
              define Entity.BodyEnabled true
@@ -2911,5 +2911,5 @@ module TerrainFacetModule =
 
         override this.GetQuickSize (entity, world) =
             match entity.TryGetTerrainResolution world with
-            | Some resolution -> v3 (single resolution.X) 128.0f (single resolution.Y)
-            | None -> v3 1024.0f 128.0f 1024.0f
+            | Some resolution -> v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))
+            | None -> v3 512.0f 128.0f 512.0f
