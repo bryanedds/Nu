@@ -174,7 +174,8 @@ and [<ReferenceEquality>] RenderTasks =
       RenderSurfacesForwardAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderSurfacesForwardRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
       RenderTerrainsAbsolute : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
-      RenderTerrainsRelative : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList }
+      RenderTerrainsRelative : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
+      UtilizedTerrainGeometries : TerrainGeometryDescriptor HashSet }
 
 /// The parameters for completing a render pass.
 and [<ReferenceEquality>] RenderPassParameters3d =
@@ -376,6 +377,7 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
 
 and [<ReferenceEquality>] RenderTerrain =
     { Absolute : bool
+      Visible : bool
       TerrainDescriptor : TerrainDescriptor }
 
 /// A message to the 3d renderer.
@@ -1346,7 +1348,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
         | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
-    static member private categorizeTerrain (absolute, terrainDescriptor : TerrainDescriptor, renderer) =
+    static member private categorizeTerrain (absolute, visible, terrainDescriptor : TerrainDescriptor, renderer) =
 
         // attempt to create terrain geometry
         let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor
@@ -1357,14 +1359,18 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Some geometry -> renderer.RenderPhysicallyBasedTerrainGeometries.Add (geometryDescriptor, geometry)
             | None -> ()
 
-        // attempt to add terrain to appropriate render list
+        // attempt to add terrain to appropriate render list when visible
         // TODO: also add found geometry to render list so it doesn't have to be looked up redundantly?
-        match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
-        | (true, terrainGeometry) ->
-            if absolute
-            then renderer.RenderTasks.RenderTerrainsAbsolute.Add struct (terrainDescriptor, terrainGeometry)
-            else renderer.RenderTasks.RenderTerrainsRelative.Add struct (terrainDescriptor, terrainGeometry)
-        | (false, _) -> ()
+        if visible then
+            match renderer.RenderPhysicallyBasedTerrainGeometries.TryGetValue geometryDescriptor with
+            | (true, terrainGeometry) ->
+                if absolute
+                then renderer.RenderTasks.RenderTerrainsAbsolute.Add struct (terrainDescriptor, terrainGeometry)
+                else renderer.RenderTasks.RenderTerrainsRelative.Add struct (terrainDescriptor, terrainGeometry)
+            | (false, _) -> ()
+
+        // mark terrain geometry as utilized regardless of visibility (to keep it from being destroyed).
+        renderer.RenderTasks.UtilizedTerrainGeometries.Add geometryDescriptor |> ignore<bool>
 
     static member private getLastSkyBoxOpt renderer =
         match Seq.tryLast renderer.RenderTasks.RenderSkyBoxes with
@@ -2038,6 +2044,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedFxaaSurface (filterTexture, renderer.RenderPhysicallyBasedQuad, renderer.RenderPhysicallyBasedFxaaShader)
         OpenGL.Hl.Assert ()
 
+        // destroy cached geometries that weren't rendered this frame
+        for geometry in renderer.RenderPhysicallyBasedTerrainGeometries do
+            if not (renderer.RenderTasks.UtilizedTerrainGeometries.Contains geometry.Key) then
+                OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry geometry.Value
+                renderer.RenderPhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
+
     /// Render 3d surfaces.
     static member render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
@@ -2120,7 +2132,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderCachedAnimatedModel camm ->
                 GlRenderer3d.categorizeAnimatedModel (camm.CachedAnimatedModelTime, camm.CachedAnimatedModelAbsolute, &camm.CachedAnimatedModelMatrix, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelAnimations, camm.CachedAnimatedModel, renderer)
             | RenderTerrain rt ->
-                GlRenderer3d.categorizeTerrain (rt.Absolute, rt.TerrainDescriptor, renderer)
+                GlRenderer3d.categorizeTerrain (rt.Absolute, rt.Visible, rt.TerrainDescriptor, renderer)
             | RenderPostPass3d rp ->
                 postPasses.Add rp |> ignore<bool>
             | ConfigureLightMapping lmc ->
@@ -2183,6 +2195,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderTasks.RenderSurfacesForwardRelativeSorted.Clear ()
         renderer.RenderTasks.RenderTerrainsAbsolute.Clear ()
         renderer.RenderTasks.RenderTerrainsRelative.Clear ()
+        renderer.RenderTasks.UtilizedTerrainGeometries.Clear ()
 
         // destroy user-defined static models
         for staticModel in userDefinedStaticModelsToDestroy do
@@ -2386,7 +2399,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderSurfacesForwardAbsoluteSorted = SList.make ()
               RenderSurfacesForwardRelativeSorted = SList.make ()
               RenderTerrainsAbsolute = SList.make ()
-              RenderTerrainsRelative = SList.make () }
+              RenderTerrainsRelative = SList.make ()
+              UtilizedTerrainGeometries = hashSetPlus HashIdentity.Structural [] }
 
         // make renderer
         let renderer =

@@ -2616,6 +2616,7 @@ module PhysicallyBased =
         Gl.DeleteBuffers [|geometry.TexCoordsOffsetBuffer|]
         Gl.DeleteBuffers [|geometry.AlbedoBuffer|]
         Gl.DeleteBuffers [|geometry.MaterialBuffer|]
+        Gl.DeleteBuffers [|geometry.HeightBuffer|]
         Gl.DeleteBuffers [|geometry.InvertRoughnessBuffer|]
         Gl.DeleteBuffers [|geometry.IndexBuffer|]
         Gl.BindVertexArray 0u

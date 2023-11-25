@@ -2891,7 +2891,6 @@ module TerrainFacetModule =
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
-            let absolute = transform.Absolute
             let terrainDescriptor =
                 { Bounds = transform.Bounds
                   MaterialProperties = entity.GetTerrainMaterialProperties world
@@ -2903,7 +2902,8 @@ module TerrainFacetModule =
                   Segments = entity.GetSegments world }
             World.enqueueRenderMessage3d
                 (RenderTerrain
-                    { Absolute = absolute
+                    { Absolute = transform.Absolute
+                      Visible = transform.Visible
                       TerrainDescriptor = terrainDescriptor })
                 world
 
