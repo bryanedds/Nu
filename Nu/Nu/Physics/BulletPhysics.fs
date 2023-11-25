@@ -500,13 +500,36 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 | Some gravity -> body.Gravity <- gravity
                 | None -> body.Gravity <- gravity
         | ClearPhysicsMessageInternal ->
-            for constrainEntry in physicsEngine.Constraints do physicsEngine.PhysicsContext.RemoveConstraint constrainEntry.Value
-            physicsEngine.Objects.Clear ()
+
+            // collect body user objects as we proceed
+            let bodyUserObjects = List ()
+
+            // destroy constraints
+            for constrain in physicsEngine.Constraints.Values do
+                physicsEngine.PhysicsContext.RemoveConstraint constrain
             physicsEngine.Constraints.Clear ()
-            for ghostEntry in physicsEngine.Ghosts do physicsEngine.PhysicsContext.RemoveCollisionObject ghostEntry.Value
+
+            // destroy bullet objects
+            for objects in physicsEngine.Objects.Values do
+                bodyUserObjects.Add (objects.UserObject :?> BodyUserObject)
+            physicsEngine.Objects.Clear ()
+
+            // destroy ghosts
+            for ghost in physicsEngine.Ghosts.Values do
+                bodyUserObjects.Add (ghost.UserObject :?> BodyUserObject)
+                physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Ghosts.Clear ()
-            for bodyEntry in physicsEngine.Bodies do physicsEngine.PhysicsContext.RemoveRigidBody (snd bodyEntry.Value)
+
+            // destroy bodies
+            for body in physicsEngine.Bodies.Values do
+                physicsEngine.PhysicsContext.RemoveRigidBody (snd body)
             physicsEngine.Bodies.Clear ()
+
+            // dispose body user objects
+            for bodyUserObject in bodyUserObjects do
+                bodyUserObject.Dispose ()
+
+            // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private integrate stepTime physicsEngine =        
