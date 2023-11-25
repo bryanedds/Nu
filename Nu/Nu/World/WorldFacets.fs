@@ -2101,12 +2101,12 @@ module StaticBillboardFacetModule =
         member this.GetAlbedoImage world : Image AssetTag = this.Get (nameof this.AlbedoImage) world
         member this.SetAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.AlbedoImage) value world
         member this.AlbedoImage = lens (nameof this.AlbedoImage) this this.GetAlbedoImage this.SetAlbedoImage
-        member this.GetMetallicImage world : Image AssetTag = this.Get (nameof this.MetallicImage) world
-        member this.SetMetallicImage (value : Image AssetTag) world = this.Set (nameof this.MetallicImage) value world
-        member this.MetallicImage = lens (nameof this.MetallicImage) this this.GetMetallicImage this.SetMetallicImage
         member this.GetRoughnessImage world : Image AssetTag = this.Get (nameof this.RoughnessImage) world
         member this.SetRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.RoughnessImage) value world
         member this.RoughnessImage = lens (nameof this.RoughnessImage) this this.GetRoughnessImage this.SetRoughnessImage
+        member this.GetMetallicImage world : Image AssetTag = this.Get (nameof this.MetallicImage) world
+        member this.SetMetallicImage (value : Image AssetTag) world = this.Set (nameof this.MetallicImage) value world
+        member this.MetallicImage = lens (nameof this.MetallicImage) this this.GetMetallicImage this.SetMetallicImage
         member this.GetAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.AmbientOcclusionImage) world
         member this.SetAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.AmbientOcclusionImage) value world
         member this.AmbientOcclusionImage = lens (nameof this.AmbientOcclusionImage) this this.GetAmbientOcclusionImage this.SetAmbientOcclusionImage
@@ -2137,8 +2137,8 @@ module StaticBillboardFacetModule =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
              define Entity.AlbedoImage Assets.Default.MaterialAlbedo
-             define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.RoughnessImage Assets.Default.MaterialRoughness
+             define Entity.MetallicImage Assets.Default.MaterialMetallic
              define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.NormalImage Assets.Default.MaterialNormal
@@ -2154,8 +2154,8 @@ module StaticBillboardFacetModule =
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
             let albedoImage = entity.GetAlbedoImage world
-            let metallicImage = entity.GetMetallicImage world
             let roughnessImage = entity.GetRoughnessImage world
+            let metallicImage = entity.GetMetallicImage world
             let ambientOcclusionImage = entity.GetAmbientOcclusionImage world
             let emissionImage = entity.GetEmissionImage world
             let normalImage = entity.GetNormalImage world
@@ -2169,7 +2169,7 @@ module StaticBillboardFacetModule =
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties
-                      AlbedoImage = albedoImage; MetallicImage = metallicImage; RoughnessImage = roughnessImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
+                      AlbedoImage = albedoImage; RoughnessImage = roughnessImage; MetallicImage = metallicImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
                       MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
                 world
 
@@ -2197,12 +2197,12 @@ module BasicStaticBillboardEmitterFacetModule =
         member this.GetEmitterAlbedoImage world : Image AssetTag = this.Get (nameof this.EmitterAlbedoImage) world
         member this.SetEmitterAlbedoImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAlbedoImage) value world
         member this.EmitterAlbedoImage = lens (nameof this.EmitterAlbedoImage) this this.GetEmitterAlbedoImage this.SetEmitterAlbedoImage
-        member this.GetEmitterMetallicImage world : Image AssetTag = this.Get (nameof this.EmitterMetallicImage) world
-        member this.SetEmitterMetallicImage (value : Image AssetTag) world = this.Set (nameof this.EmitterMetallicImage) value world
-        member this.EmitterMetallicImage = lens (nameof this.EmitterMetallicImage) this this.GetEmitterMetallicImage this.SetEmitterMetallicImage
         member this.GetEmitterRoughnessImage world : Image AssetTag = this.Get (nameof this.EmitterRoughnessImage) world
         member this.SetEmitterRoughnessImage (value : Image AssetTag) world = this.Set (nameof this.EmitterRoughnessImage) value world
         member this.EmitterRoughnessImage = lens (nameof this.EmitterRoughnessImage) this this.GetEmitterRoughnessImage this.SetEmitterRoughnessImage
+        member this.GetEmitterMetallicImage world : Image AssetTag = this.Get (nameof this.EmitterMetallicImage) world
+        member this.SetEmitterMetallicImage (value : Image AssetTag) world = this.Set (nameof this.EmitterMetallicImage) value world
+        member this.EmitterMetallicImage = lens (nameof this.EmitterMetallicImage) this this.GetEmitterMetallicImage this.SetEmitterMetallicImage
         member this.GetEmitterAmbientOcclusionImage world : Image AssetTag = this.Get (nameof this.EmitterAmbientOcclusionImage) world
         member this.SetEmitterAmbientOcclusionImage (value : Image AssetTag) world = this.Set (nameof this.EmitterAmbientOcclusionImage) value world
         member this.EmitterAmbientOcclusionImage = lens (nameof this.EmitterAmbientOcclusionImage) this this.GetEmitterAmbientOcclusionImage this.SetEmitterAmbientOcclusionImage
@@ -2254,8 +2254,8 @@ module BasicStaticBillboardEmitterFacetModule =
                           Restitution = Constants.Particles.RestitutionDefault }
                     Absolute = transform.Absolute
                     AlbedoImage = entity.GetEmitterAlbedoImage world
-                    MetallicImage = entity.GetEmitterMetallicImage world
                     RoughnessImage = entity.GetEmitterRoughnessImage world
+                    MetallicImage = entity.GetEmitterMetallicImage world
                     AmbientOcclusionImage = entity.GetEmitterAmbientOcclusionImage world
                     EmissionImage = entity.GetEmitterEmissionImage world
                     NormalImage = entity.GetEmitterNormalImage world
@@ -2301,14 +2301,14 @@ module BasicStaticBillboardEmitterFacetModule =
             let world = updateEmitter (fun emitter -> if assetNeq emitter.AlbedoImage emitterAlbedoImage then { emitter with AlbedoImage = emitterAlbedoImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleEmitterMetallicImageChange evt world =
-            let emitterMetallicImage = evt.Data.Value :?> Image AssetTag
-            let world = updateEmitter (fun emitter -> if assetNeq emitter.MetallicImage emitterMetallicImage then { emitter with MetallicImage = emitterMetallicImage } else emitter) evt.Subscriber world
-            (Cascade, world)
-
         static let handleEmitterRoughnessImageChange evt world =
             let emitterRoughnessImage = evt.Data.Value :?> Image AssetTag
             let world = updateEmitter (fun emitter -> if assetNeq emitter.RoughnessImage emitterRoughnessImage then { emitter with RoughnessImage = emitterRoughnessImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterMetallicImageChange evt world =
+            let emitterMetallicImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.MetallicImage emitterMetallicImage then { emitter with MetallicImage = emitterMetallicImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterAmbientOcclusionImageChange evt world =
@@ -2418,8 +2418,8 @@ module BasicStaticBillboardEmitterFacetModule =
             [define Entity.SelfDestruct false
              define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
              define Entity.EmitterAlbedoImage Assets.Default.MaterialAlbedo
-             define Entity.EmitterMetallicImage Assets.Default.MaterialMetallic
              define Entity.EmitterRoughnessImage Assets.Default.MaterialRoughness
+             define Entity.EmitterMetallicImage Assets.Default.MaterialMetallic
              define Entity.EmitterAmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
              define Entity.EmitterEmissionImage Assets.Default.MaterialEmission
              define Entity.EmitterNormalImage Assets.Default.MaterialNormal
@@ -2444,8 +2444,8 @@ module BasicStaticBillboardEmitterFacetModule =
             let world = World.sense handleRotationChange (entity.GetChangeEvent (nameof entity.Rotation)) entity (nameof BasicStaticBillboardEmitterFacet) world
             let world = World.sense handleEmitterMaterialPropertiesChange (entity.GetChangeEvent (nameof entity.EmitterMaterialProperties)) entity (nameof BasicStaticBillboardEmitterFacet) world
             let world = World.sense handleEmitterAlbedoImageChange (entity.GetChangeEvent (nameof entity.EmitterAlbedoImage)) entity (nameof BasicStaticBillboardEmitterFacet) world
-            let world = World.sense handleEmitterMetallicImageChange (entity.GetChangeEvent (nameof entity.EmitterMetallicImage)) entity (nameof BasicStaticBillboardEmitterFacet) world
             let world = World.sense handleEmitterRoughnessImageChange (entity.GetChangeEvent (nameof entity.EmitterRoughnessImage)) entity (nameof BasicStaticBillboardEmitterFacet) world
+            let world = World.sense handleEmitterMetallicImageChange (entity.GetChangeEvent (nameof entity.EmitterMetallicImage)) entity (nameof BasicStaticBillboardEmitterFacet) world
             let world = World.sense handleEmitterAmbientOcclusionImageChange (entity.GetChangeEvent (nameof entity.EmitterAmbientOcclusionImage)) entity (nameof BasicStaticBillboardEmitterFacet) world
             let world = World.sense handleEmitterEmissionImageChange (entity.GetChangeEvent (nameof entity.EmitterEmissionImage)) entity (nameof BasicStaticBillboardEmitterFacet) world
             let world = World.sense handleEmitterNormalImageChange (entity.GetChangeEvent (nameof entity.EmitterNormalImage)) entity (nameof BasicStaticBillboardEmitterFacet) world
@@ -2489,8 +2489,8 @@ module BasicStaticBillboardEmitterFacetModule =
                         let emitterProperties = entity.GetEmitterMaterialProperties world
                         let materialProperties =
                             { AlbedoOpt = match emitterProperties.AlbedoOpt with ValueSome albedo -> ValueSome albedo | ValueNone -> descriptor.MaterialProperties.AlbedoOpt
-                              MetallicOpt = match emitterProperties.MetallicOpt with ValueSome metallic -> ValueSome metallic | ValueNone -> descriptor.MaterialProperties.MetallicOpt
                               RoughnessOpt = match emitterProperties.RoughnessOpt with ValueSome roughness -> ValueSome roughness | ValueNone -> descriptor.MaterialProperties.RoughnessOpt
+                              MetallicOpt = match emitterProperties.MetallicOpt with ValueSome metallic -> ValueSome metallic | ValueNone -> descriptor.MaterialProperties.MetallicOpt
                               AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with ValueSome ambientOcclusion -> ValueSome ambientOcclusion | ValueNone -> descriptor.MaterialProperties.AmbientOcclusionOpt
                               EmissionOpt = match emitterProperties.EmissionOpt with ValueSome emission -> ValueSome emission | ValueNone -> descriptor.MaterialProperties.EmissionOpt
                               HeightOpt = match emitterProperties.HeightOpt with ValueSome height -> ValueSome height | ValueNone -> descriptor.MaterialProperties.HeightOpt
@@ -2500,8 +2500,8 @@ module BasicStaticBillboardEmitterFacetModule =
                                 { Absolute = descriptor.Absolute
                                   MaterialProperties = materialProperties
                                   AlbedoImage = descriptor.AlbedoImage
-                                  MetallicImage = descriptor.MetallicImage
                                   RoughnessImage = descriptor.RoughnessImage
+                                  MetallicImage = descriptor.MetallicImage
                                   AmbientOcclusionImage = descriptor.AmbientOcclusionImage
                                   EmissionImage = descriptor.EmissionImage
                                   NormalImage = descriptor.NormalImage

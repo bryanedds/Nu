@@ -135,14 +135,14 @@ void main()
         float splat = splatsOut[i/4][i%4];
         albedoBlend += texture(albedoTextures[i], texCoords) * splat;
         vec4 roughness = texture(roughnessTextures[i], texCoords);
-        roughnessBlend += (roughness.a == 1.0f ? roughness.g : roughness.a) * splat;
+        roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * splat;
         ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * splat;
         normalBlend += texture(normalTextures[i], texCoords).xyz * splat;
     }
 
     // populate albedo, material, and normalAndHeight
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
-    material = vec4(0.0, (invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g, ambientOcclusionBlend * materialOut.b, 0.0);
+    material = vec4((invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
     normalAndHeight.xyz = normalize(toWorld * (normalBlend * 2.0 - 1.0));
     normalAndHeight.a = height;
 }
