@@ -493,12 +493,15 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | SetBodyObservableMessage setBodyObservableMessage -> BulletPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
+
+            // set gravity of ALL bodies
             physicsEngine.PhysicsContext.Gravity <- gravity
             for bodyEntry in physicsEngine.Bodies do
                 let (gravityOverride, body) = bodyEntry.Value
                 match gravityOverride with
                 | Some gravity -> body.Gravity <- gravity
                 | None -> body.Gravity <- gravity
+
         | ClearPhysicsMessageInternal ->
 
             // collect body user objects as we proceed
