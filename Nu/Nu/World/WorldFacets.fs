@@ -2837,7 +2837,7 @@ module TerrainFacetModule =
                               Assets.Default.TerrainLayer2Splat|]})
              define Entity.TintImage Assets.Default.TerrainTint
              define Entity.NormalImageOpt None
-             define Entity.Tiles (v2 128.0f 128.0f)
+             define Entity.Tiles (v2 256.0f 256.0f)
              define Entity.HeightMap
                 (RawHeightMap
                     { Resolution = v2i 512 512
