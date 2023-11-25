@@ -177,6 +177,20 @@ module internal Octnode =
                     if bounds.Intersects box then
                         set.Add element |> ignore
 
+    let rec internal getLightProbesInBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if isIntersectingBox box &node then
+                    getLightProbesInBox box set &node
+        | ValueRight elements ->
+            for element in elements do
+                if element.LightProbe then
+                    let bounds = element.Bounds
+                    if bounds.Intersects box then
+                        set.Add element |> ignore
+
     let rec internal getLightsInBox box (set : 'e Octelement HashSet) (node : 'e Octnode inref) =
         match node.Children_ with
         | ValueLeft nodes ->
@@ -478,7 +492,7 @@ module Octree =
     /// Get all of the light probe elements in the given light box.
     let getLightProbesInPlay lightBox (set : _ HashSet) tree =
         if tree.ElementsModified then
-            Octnode.getLightsInBox lightBox set &tree.Node
+            Octnode.getLightProbesInBox lightBox set &tree.Node
             let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.LightProbe)
             new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
         else Seq.empty
