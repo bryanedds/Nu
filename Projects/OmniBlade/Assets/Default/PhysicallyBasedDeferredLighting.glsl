@@ -105,8 +105,8 @@ void main()
     float ssao = texture(ssaoTexture, texCoordsOut).r;
 
     // compute materials
-    float metallic = material.r;
-    float roughness = material.g;
+    float roughness = material.r;
+    float metallic = material.g;
     float ambientOcclusion = material.b * ssao;
     vec3 emission = vec3(material.a);
 

@@ -58,7 +58,7 @@ vec2 hammersley(uint i, uint normal)
 vec3 importanceSampleGGX(vec2 xi, vec3 normal, float roughness)
 {
     // compute 
-	float rPow2 = roughness*roughness;
+	float rPow2 = roughness * roughness;
 	float phi = 2.0 * PI * xi.x;
 	float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (rPow2 * rPow2 - 1.0) * xi.y));
 	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);

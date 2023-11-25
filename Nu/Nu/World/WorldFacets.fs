@@ -2819,7 +2819,7 @@ module TerrainFacetModule =
              define Entity.ModelDriven false
              define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
              define Entity.TerrainMaterial
-                (SplatMaterial
+                (BlendMaterial
                     { TerrainLayers =
                         [|{ AlbedoImage = Assets.Default.TerrainLayerAlbedo
                             RoughnessImage = Assets.Default.TerrainLayerRoughness
@@ -2831,10 +2831,10 @@ module TerrainFacetModule =
                             AmbientOcclusionImage = Assets.Default.TerrainLayer2AmbientOcclusion
                             NormalImage = Assets.Default.TerrainLayer2Normal
                             HeightImage = Assets.Default.TerrainLayer2Height }|]
-                      SplatMap =
+                      BlendMap =
                           RedsMap
-                            [|Assets.Default.TerrainLayerSplat
-                              Assets.Default.TerrainLayer2Splat|]})
+                            [|Assets.Default.TerrainLayerBlend
+                              Assets.Default.TerrainLayer2Blend|]})
              define Entity.TintImage Assets.Default.TerrainTint
              define Entity.NormalImageOpt None
              define Entity.Tiles (v2 256.0f 256.0f)

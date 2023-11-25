@@ -29,7 +29,7 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec3 tint;
-layout (location = 4) in vec4 splats[2];
+layout (location = 4) in vec4 blends[2];
 layout (location = 6) in mat4 model;
 layout (location = 10) in vec4 texCoordsOffset;
 layout (location = 11) in vec4 albedo;
@@ -40,7 +40,7 @@ layout (location = 14) in int invertRoughness;
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
-out vec4 splatsOut[2];
+out vec4 blendsOut[2];
 out vec3 tintOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
@@ -59,8 +59,8 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightOut = height;
     invertRoughnessOut = invertRoughness;
-    splatsOut[0] = splats[0];
-    splatsOut[1] = splats[1];
+    blendsOut[0] = blends[0];
+    blendsOut[1] = blends[1];
     tintOut = tint;
     gl_Position = projection * view * positionOut;
 }
@@ -82,7 +82,7 @@ uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
-in vec4 splatsOut[2];
+in vec4 blendsOut[2];
 in vec3 tintOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
@@ -115,7 +115,7 @@ void main()
 
     // compute height blend and height
     float heightBlend = 0.0;
-    for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * splatsOut[i/4][i%4];
+    for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * blendsOut[i/4][i%4];
     float height = heightBlend * heightOut;
 
     // compute tex coords in parallax space
@@ -132,12 +132,12 @@ void main()
     vec3 normalBlend = vec3(0.0);
     for (int i = 0; i < layersCountCeil; ++i)
     {
-        float splat = splatsOut[i/4][i%4];
-        albedoBlend += texture(albedoTextures[i], texCoords) * splat;
+        float blend = blendsOut[i/4][i%4];
+        albedoBlend += texture(albedoTextures[i], texCoords) * blend;
         vec4 roughness = texture(roughnessTextures[i], texCoords);
-        roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * splat;
-        ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * splat;
-        normalBlend += texture(normalTextures[i], texCoords).xyz * splat;
+        roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
+        ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * blend;
+        normalBlend += texture(normalTextures[i], texCoords).xyz * blend;
     }
 
     // populate albedo, material, and normalAndHeight
