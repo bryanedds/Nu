@@ -158,7 +158,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
 
                 // fin
                 Some { Resolution = v2i resolutionX resolutionY; HeightsNormalized = heightsNormalized; PositionsAndTexCoordses = positionsAndTexCoordses }
-            with exn -> Log.info ("Attempt to read raw height map failed with the following exception: " + exn.Message); None
+            with exn -> Log.infoOnce ("Attempt to read raw height map failed with the following exception: " + exn.Message); None
         | None -> None
 
     /// Attempt to compute height map metadata, loading assets as required.
@@ -282,14 +282,6 @@ type BodyConvexHull =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body convex hull.
-type BodyTerrain =
-    { Resolution : Vector2i
-      Bounds : Box3
-      HeightMap : HeightMap
-      TransformOpt : Affine option
-      PropertiesOpt : BodyShapeProperties option }
-
 /// The shape of a physics body static model.
 type BodyStaticModel =
     { StaticModel : StaticModel AssetTag
@@ -300,6 +292,14 @@ type BodyStaticModel =
 type BodyStaticModelSurface =
     { SurfaceIndex : int
       StaticModel : StaticModel AssetTag
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+
+/// The shape of a physics body convex hull.
+type BodyTerrain =
+    { Resolution : Vector2i
+      Bounds : Box3
+      HeightMap : HeightMap
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
@@ -315,9 +315,9 @@ type BodyShape =
     | BodyCapsule of BodyCapsule
     | BodyBoxRounded of BodyBoxRounded
     | BodyConvexHull of BodyConvexHull
-    | BodyTerrain of BodyTerrain
     | BodyStaticModel of BodyStaticModel
     | BodyStaticModelSurface of BodyStaticModelSurface
+    | BodyTerrain of BodyTerrain
     | BodyShapes of BodyShape list
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
@@ -668,7 +668,7 @@ module Physics =
         | BodyCapsule bodyCapsule -> BodyCapsule { bodyCapsule with Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; TransformOpt = scaleTranslation size bodyCapsule.TransformOpt }
         | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { bodyBoxRounded with Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; TransformOpt = scaleTranslation size bodyBoxRounded.TransformOpt }
         | BodyConvexHull bodyConvexHull -> BodyConvexHull { bodyConvexHull with Vertices = Array.map (fun vertex -> size * vertex) bodyConvexHull.Vertices; TransformOpt = scaleTranslation size bodyConvexHull.TransformOpt }
-        | BodyTerrain _ as bodyTerrain -> bodyTerrain
         | BodyStaticModel _ as bodyStaticModel -> bodyStaticModel
         | BodyStaticModelSurface _ as bodyStaticModelSurface -> bodyStaticModelSurface
+        | BodyTerrain _ as bodyTerrain -> bodyTerrain
         | BodyShapes bodyShapes -> BodyShapes (List.map (localizeBodyShape size) bodyShapes)

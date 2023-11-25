@@ -189,38 +189,6 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia) :: centerMassInertias
 
-    static member private attachBodyTerrain tryGetAssetFilePath bodySource (bodyProperties : BodyProperties) (bodyTerrain : BodyTerrain) (compoundShape : CompoundShape) centerMassInertias =
-        let resolution = bodyTerrain.Resolution
-        let bounds = bodyTerrain.Bounds
-        match HeightMap.tryGetMetadata tryGetAssetFilePath bounds v2One bodyTerrain.HeightMap with
-        | Some heightMapMetadata ->
-            let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
-            for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
-                heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * bounds.Height
-            let handle = GCHandle.Alloc (heights, GCHandleType.Pinned)
-            try let positionsPtr = handle.AddrOfPinnedObject ()
-                let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
-                terrain.LocalScaling <- v3 (bounds.Width / single (dec resolution.X)) 1.0f (bounds.Depth / single (dec resolution.Y))
-                terrain.SetFlipTriangleWinding true // match terrain winding order - I think!
-                BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
-                terrain.UserObject <-
-                    { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                      ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-                let center =
-                    match bodyTerrain.TransformOpt with
-                    | Some transform -> transform.Translation
-                    | None -> v3Zero
-                let mass = 0.0f // infinite mass
-                let inertia = terrain.CalculateLocalInertia mass
-                compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, terrain)
-                (center, mass, inertia) :: centerMassInertias
-            finally
-                // freeing the handle seems to cause a crash since bullet doesn't seem to copy the data.
-                // TODO: track this handle so it can be freed when terrain is destroyed.
-                //handle.Free
-                ()
-        | None -> centerMassInertias
-
     // TODO: add some error logging.
     static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) centerMassInertias physicsEngine =
         match physicsEngine.TryGetStaticModelMetadata bodyStaticModel.StaticModel with
@@ -257,6 +225,38 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             else centerMassInertias
         | None -> centerMassInertias
 
+    static member private attachBodyTerrain tryGetAssetFilePath bodySource (bodyProperties : BodyProperties) (bodyTerrain : BodyTerrain) (compoundShape : CompoundShape) centerMassInertias =
+        let resolution = bodyTerrain.Resolution
+        let bounds = bodyTerrain.Bounds
+        match HeightMap.tryGetMetadata tryGetAssetFilePath bounds v2One bodyTerrain.HeightMap with
+        | Some heightMapMetadata ->
+            let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
+            for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
+                heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * bounds.Height
+            let handle = GCHandle.Alloc (heights, GCHandleType.Pinned)
+            try let positionsPtr = handle.AddrOfPinnedObject ()
+                let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
+                terrain.LocalScaling <- v3 (bounds.Width / single (dec resolution.X)) 1.0f (bounds.Depth / single (dec resolution.Y))
+                terrain.SetFlipTriangleWinding true // match terrain winding order - I think!
+                BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
+                terrain.UserObject <-
+                    { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+                      ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+                let center =
+                    match bodyTerrain.TransformOpt with
+                    | Some transform -> transform.Translation
+                    | None -> v3Zero
+                let mass = 0.0f // infinite mass
+                let inertia = terrain.CalculateLocalInertia mass
+                compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, terrain)
+                (center, mass, inertia) :: centerMassInertias
+            finally
+                // freeing the handle seems to cause a crash since bullet doesn't seem to copy the data.
+                // TODO: track this handle so it can be freed when terrain is destroyed.
+                //handle.Free
+                ()
+        | None -> centerMassInertias
+
     static member private attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine =
         List.fold (fun centerMassInertias bodyShape ->
             let centerMassInertias' = BulletPhysicsEngine.attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertias physicsEngine
@@ -272,9 +272,9 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertias
         | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertias
         | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertias
-        | BodyTerrain bodyTerrain -> BulletPhysicsEngine.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertias
         | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertias physicsEngine
         | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertias physicsEngine
+        | BodyTerrain bodyTerrain -> BulletPhysicsEngine.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertias
         | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertias physicsEngine
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =

@@ -1315,22 +1315,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
-        // edit metallic
-        let mutable isSome = ValueOption.isSome mp.MetallicOpt
-        if ImGui.Checkbox ((if isSome then "##mpMetallicIsSome" else "MetallicOpt"), &isSome) then
-            if isSome
-            then setPropertyValue { mp with MetallicOpt = ValueSome Constants.Render.MetallicDefault } propertyDescriptor simulant
-            else setPropertyValue { mp with MetallicOpt = ValueNone } propertyDescriptor simulant
-        else
-            match mp.MetallicOpt with
-            | ValueSome metallic ->
-                let mutable metallic = metallic
-                ImGui.SameLine ()
-                if ImGui.SliderFloat ("MetallicOpt", &metallic, 0.0f, 1.0f) then setPropertyValue { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-            | ValueNone -> ()
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-
         // edit roughness
         let mutable isSome = ValueOption.isSome mp.RoughnessOpt
         if ImGui.Checkbox ((if isSome then "##mpRoughnessIsSome" else "RoughnessOpt"), &isSome) then
@@ -1343,6 +1327,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable roughness = roughness
                 ImGui.SameLine ()
                 if ImGui.SliderFloat ("RoughnessOpt", &roughness, 0.0f, 1.0f) then setPropertyValue { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+
+        // edit metallic
+        let mutable isSome = ValueOption.isSome mp.MetallicOpt
+        if ImGui.Checkbox ((if isSome then "##mpMetallicIsSome" else "MetallicOpt"), &isSome) then
+            if isSome
+            then setPropertyValue { mp with MetallicOpt = ValueSome Constants.Render.MetallicDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with MetallicOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.MetallicOpt with
+            | ValueSome metallic ->
+                let mutable metallic = metallic
+                ImGui.SameLine ()
+                if ImGui.SliderFloat ("MetallicOpt", &metallic, 0.0f, 1.0f) then setPropertyValue { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
