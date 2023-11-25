@@ -183,9 +183,10 @@ module AssimpExtensions =
 
         static member private UpdateBoneTransforms
             (time : single,
-             animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
+             boneWrites : int ref,
+             animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
              node : Assimp.Node,
              parentTransform : Assimp.Matrix4x4,
@@ -247,12 +248,14 @@ module AssimpExtensions =
             | (true, boneId) ->
                 let boneTransformOffset = boneInfos.[boneId].BoneTransformOffset
                 boneInfos.[boneId].BoneTransformFinal <- boneTransformOffset * accumulatedTransform
+                boneWrites.Value <- inc boneWrites.Value
             | (false, _) -> ()
 
             // recur
-            for i in 0 .. dec node.Children.Count do
-                let child = node.Children.[i]
-                Assimp.Mesh.UpdateBoneTransforms (time, animationChannels, boneIds, boneInfos, animations, child, accumulatedTransform, scene)
+            if boneWrites.Value < boneInfos.Length then
+                for i in 0 .. dec node.Children.Count do
+                    let child = node.Children.[i]
+                    Assimp.Mesh.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
 
         member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, scene : Assimp.Scene) =
 
@@ -285,7 +288,7 @@ module AssimpExtensions =
                 boneInfos.[boneId] <- BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
-            Assimp.Mesh.UpdateBoneTransforms (time.Seconds, animationChannels, boneIds, boneInfos, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
+            Assimp.Mesh.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
             Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
