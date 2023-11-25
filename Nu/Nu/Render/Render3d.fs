@@ -1479,10 +1479,6 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private renderPhysicallyBasedTerrain viewArray geometryProjectionArray eyeCenter terrainDescriptor geometry shader renderer =
         let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution terrainDescriptor.HeightMap renderer)
         let elementsCount = dec resolutionX * dec resolutionY * 6
-        let texCoordsOffset =
-            match terrainDescriptor.InsetOpt with
-            | Some inset -> [|inset.Min.X; inset.Min.Y; inset.Min.X + inset.Size.X; inset.Min.Y + inset.Size.Y|]
-            | None -> [|0.0f; 0.0f; 0.0f; 0.0f|]
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
         let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
@@ -1492,9 +1488,10 @@ type [<ReferenceEquality>] GlRenderer3d =
               Emission = Constants.Render.EmissionDefault
               Height = ValueOption.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
               InvertRoughness = ValueOption.defaultValue Constants.Render.InvertRoughnessDefault terrainMaterialProperties.InvertRoughnessOpt }
-        let (texelHeightAvg, materials) =
+        let (texelWidthAvg, texelHeightAvg, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
+                let mutable texelWidthAvg = 0.0f
                 let mutable texelHeightAvg = 0.0f
                 let materials =
                     [|for i in 0 .. dec blendMaterial.TerrainLayers.Length do
@@ -1522,6 +1519,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.HeightImage) renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.HeightTexture
                             | ValueNone -> defaultMaterial.HeightTexture
+                        texelWidthAvg <- texelWidthAvg + albedoMetadata.TextureTexelWidth
                         texelHeightAvg <- texelHeightAvg + albedoMetadata.TextureTexelHeight
                         { defaultMaterial with
                             MaterialProperties = materialProperties
@@ -1531,8 +1529,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                             AmbientOcclusionTexture = ambientOcclusionTexture
                             NormalTexture = normalTexture
                             HeightTexture = heightTexture }|]
+                texelWidthAvg <- texelWidthAvg / single materials.Length
                 texelHeightAvg <- texelHeightAvg / single materials.Length
-                (texelHeightAvg, materials)
+                (texelWidthAvg, texelHeightAvg, materials)
             | FlatMaterial flatMaterial ->
                 let defaultMaterial =
                     renderer.RenderPhysicallyBasedMaterial
@@ -1565,11 +1564,22 @@ type [<ReferenceEquality>] GlRenderer3d =
                         AmbientOcclusionTexture = ambientOcclusionTexture
                         NormalTexture = normalTexture
                         HeightTexture = heightTexture }
-                (albedoMetadata.TextureTexelHeight, [|material|])
+                (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|])
+        let texCoordsOffset =
+            match terrainDescriptor.InsetOpt with
+            | Some inset ->
+                let texelWidth = texelWidthAvg
+                let texelHeight = texelHeightAvg
+                let px = inset.Min.X * texelWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                let sx = inset.Size.X * texelWidth
+                let sy = -inset.Size.Y * texelHeight
+                Box2 (px, py, sx, sy)
+            | None -> box2 v2Zero v2Zero
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, geometryProjectionArray, eyeCenter,
              m4Identity.ToArray (), // NOTE: transform is baked into vertices.
-             texCoordsOffset,
+             [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|],
              [|materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A|],
              [|materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission|],
              [|texelHeightAvg * materialProperties.Height|],
