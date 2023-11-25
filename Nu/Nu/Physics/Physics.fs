@@ -228,6 +228,11 @@ module BodyShapeProperties =
           CollisionMaskOpt = None
           SensorOpt = None }
 
+/// Internal object that carries interstitial information between Nu and a physics engine.
+type [<NoEquality; NoComparison>] BodyUserObject =
+    { BodyId : BodyId
+      Dispose : unit -> unit }
+
 /// Describes the substantial nature of a body in terms of mass or density.
 [<Syntax
     ("Mass Density", "", "", "", "",
