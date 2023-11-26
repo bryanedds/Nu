@@ -2219,6 +2219,10 @@ type [<ReferenceEquality>] GlRenderer3d =
     /// Make a GlRenderer3d.
     static member make window =
 
+        // globally configure opengl for physically-based rendering
+        OpenGL.Gl.Enable OpenGL.EnableCap.TextureCubeMapSeamless
+        OpenGL.Hl.Assert ()
+
         // create sky box shader
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
         OpenGL.Hl.Assert ()
@@ -2357,7 +2361,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create default environment filter map
         let environmentFilterMap = OpenGL.LightMap.CreateEnvironmentFilterMap (Constants.Render.EnvironmentFilterResolution, environmentFilterShader, cubeMapSurface)
         OpenGL.Hl.Assert ()
-
+        
         // create default physically-based material properties
         let physicallyBasedMaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = Constants.Render.AlbedoDefault
@@ -2370,6 +2374,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // get albedo metadata and texture
         let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialAlbedo.png") |> Either.getRight
+        OpenGL.Hl.Assert ()
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
