@@ -2801,7 +2801,7 @@ module TerrainFacetModule =
         member this.TryGetTerrainQuadSize world =
             let bounds = this.GetBounds world
             match this.TryGetTerrainResolution world with
-            | Some resolution -> Some (v2 bounds.Size.X bounds.Size.Z / v2 (resolution.X |> dec |> single) (resolution.Y |> dec |> single))
+            | Some resolution -> Some (v2 (bounds.Size.X / single (dec resolution.X)) (bounds.Size.Z / single (dec resolution.Y)))
             | None -> None
 
     /// Augments an entity with a rigid 3d terrain.
@@ -2809,7 +2809,7 @@ module TerrainFacetModule =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.Size (v3 511.0f 128.0f 511.0f)
+            [define Entity.Size (v3 512.0f 128.0f 512.0f)
              define Entity.Presence Omnipresent
              define Entity.AlwaysRender true
              define Entity.BodyEnabled true
@@ -2839,7 +2839,7 @@ module TerrainFacetModule =
              define Entity.TintImage Assets.Default.TerrainTint
              define Entity.NormalImageOpt None
              define Entity.Tiles (v2 256.0f 256.0f)
-             define Entity.HeightMap (RawHeightMap { Resolution = v2i 512 512; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
+             define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
              define Entity.Segments v2iOne
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 

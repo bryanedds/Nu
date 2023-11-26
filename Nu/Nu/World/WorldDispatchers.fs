@@ -913,6 +913,6 @@ module TerrainDispatcherModule =
             [typeof<TerrainFacet>]
 
         static member Properties =
-            [define Entity.Size (v3 511.0f 128.0f 511.0f)
+            [define Entity.Size (v3 512.0f 128.0f 512.0f)
              define Entity.Presence Omnipresent
              define Entity.AlwaysRender true]
