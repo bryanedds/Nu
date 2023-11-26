@@ -321,15 +321,14 @@ void main()
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 diffuse = irradiance * albedo.rgb * lightAmbientDiffuse;
-    float alpha = albedo.a;
+    vec3 diffuse = kD * irradiance * albedo.rgb * lightAmbientDiffuse;
 
     // compute specular term
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
     // compute ambient term
-    vec3 ambient = (kD * diffuse + specular) * ambientOcclusion;
+    vec3 ambient = diffuse + specular;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;
@@ -338,5 +337,5 @@ void main()
     color = color + emission * albedo.rgb;
 
     // write
-    frag = vec4(color, alpha);
+    frag = vec4(color, albedo.a);
 }
