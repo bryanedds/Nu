@@ -3,6 +3,7 @@
 
 namespace Nu.Constants
 open System
+open System.Diagnostics
 open System.Numerics
 open System.Configuration
 open Prime
@@ -54,6 +55,7 @@ module Engine =
     let [<Uniform>] OctreeSize = Vector3 (OctnodeSize * single (pown 2 OctreeDepth))
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings.["EventTracing"] with null -> false | tracing -> scvalue<bool> tracing
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings.["EventFilter"] with null -> Empty | filter -> scvalue<EventFilter> filter
+    let [<Uniform>] TickDeltaMax = 1.0 / 10.0 * double Stopwatch.Frequency |> int64
 
 [<RequireQualifiedAccess>]
 module Render =
