@@ -184,12 +184,13 @@ module AmbientState =
               // cache line 2
               KeyValueStore : SUMap<Guid, obj>
               TickTime : int64
+              TickTimeShavings : int64
               TickWatch : Stopwatch
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
-              Overlayer : Overlayer
               // cache line 3
+              Overlayer : Overlayer
               OverlayRouter : OverlayRouter
               UnculledRenderRequested : bool }
 
@@ -267,12 +268,15 @@ module AmbientState =
     /// Update the update and clock times.
     let updateTime state =
         let updateDelta = if state.Advancing then 1L else 0L
-        let tickTime = state.TickWatch.ElapsedTicks
-        let tickDelta = tickTime - state.TickTime
+        let tickTimeShaved = state.TickWatch.ElapsedTicks - state.TickTimeShavings
+        let tickDelta = tickTimeShaved - state.TickTime
+        let tickDeltaShaved = min (tickTimeShaved - state.TickTime) (1.0 / 10.0 * double Stopwatch.Frequency |> int64)
+        let tickDeltaShavings = max (tickDelta - tickDeltaShaved) 0L
         { state with
             UpdateTime = state.UpdateTime + updateDelta
-            TickDelta = tickDelta
-            TickTime = tickTime }
+            TickTime = tickTimeShaved - tickDeltaShavings
+            TickTimeShavings = state.TickTimeShavings + tickDeltaShavings
+            TickDelta = tickDeltaShaved }
 
     /// Shelve the ambient state.
     let shelve (state : _ AmbientState) =
@@ -427,6 +431,7 @@ module AmbientState =
           TickDelta = 0L
           KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
           TickTime = 0L
+          TickTimeShavings = 0L
           TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
