@@ -1347,6 +1347,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
+        // edit ambient occlusion
+        let mutable isSome = ValueOption.isSome mp.AmbientOcclusionOpt
+        if ImGui.Checkbox ((if isSome then "##mpAmbientOcclusionIsSome" else "AmbientOcclusionOpt"), &isSome) then
+            if isSome
+            then setPropertyValue { mp with AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with AmbientOcclusionOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.AmbientOcclusionOpt with
+            | ValueSome ambientOcclusion ->
+                let mutable ambientOcclusion = ambientOcclusion
+                ImGui.SameLine ()
+                if ImGui.SliderFloat ("AmbientOcclusionOpt", &ambientOcclusion, 0.0f, 10.0f) then setPropertyValue { mp with AmbientOcclusionOpt = ValueSome ambientOcclusion } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+
         // edit emission
         let mutable isSome = ValueOption.isSome mp.EmissionOpt
         if ImGui.Checkbox ((if isSome then "##mpEmissionIsSome" else "EmissionOpt"), &isSome) then
