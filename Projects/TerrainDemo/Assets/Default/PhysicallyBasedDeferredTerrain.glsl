@@ -137,12 +137,12 @@ void main()
         vec4 roughness = texture(roughnessTextures[i], texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
         ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * blend;
-        normalBlend += texture(normalTextures[i], texCoords).xyz * blend;
+        normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
     // populate albedo, material, and normalAndHeight
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4((invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
-    normalAndHeight.xyz = normalize(toWorld * (normalBlend * 2.0 - 1.0));
+    normalAndHeight.xyz = normalize(toWorld * normalize(normalBlend));
     normalAndHeight.a = height;
 }
