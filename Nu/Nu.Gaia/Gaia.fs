@@ -2359,9 +2359,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if showNewProjectDialog then
 
                         // ensure template directory exists
-                        let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
-                        let slnDir = programDir + "/../../../../.." |> Path.GetFullPath
-                        let templateDir = programDir + "/../../../../Nu.Template" |> Path.GetFullPath
+                        let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName |> fun dir -> dir.Replace ("\\", "/")
+                        let slnDir = programDir + "/../../../../.." |> Path.GetFullPath |> fun dir -> dir.Replace ("\\", "/")
+                        let templateDir = programDir + "/../../../../Nu.Template" |> Path.GetFullPath |> fun dir -> dir.Replace ("\\", "/")
                         if Directory.Exists templateDir then
 
                             // prompt user to create new project
@@ -2372,14 +2372,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.SameLine ()
                                 ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
                                 newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
-                                let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
+                                let templateIdentifier = templateDir.Replace ("/", "\\") // this is what dotnet knows the template as for uninstall...
                                 let templateFileName = "Nu.Template.fsproj"
-                                let projectsDir = programDir + "/../../../../../Projects" |> Path.GetFullPath
-                                let newProjectDir = projectsDir + "/" + newProjectName |> Path.GetFullPath
+                                let projectsDir = programDir + "/../../../../../Projects" |> Path.GetFullPath |> fun dir -> dir.Replace ("\\", "/")
+                                let newProjectDir = projectsDir + "/" + newProjectName |> Path.GetFullPath |> fun dir -> dir.Replace ("\\", "/")
                                 let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net7.0/" + newProjectName + ".dll"
                                 let newFileName = newProjectName + ".fsproj"
-                                let newProject = newProjectDir + "/" + newFileName |> Path.GetFullPath
-                                let validName = Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
+                                let newProject = newProjectDir + "/" + newFileName |> Path.GetFullPath |> fun dir -> dir.Replace ("\\", "/")
+                                let validName = not (String.IsNullOrWhiteSpace newProjectName) && Array.notExists (fun char -> newProjectName.Contains (string char)) (Path.GetInvalidPathChars ())
                                 if not validName then ImGui.Text "Invalid project name!"
                                 let validDirectory = not (Directory.Exists newProjectDir)
                                 if not validDirectory then ImGui.Text "Project already exists!"
