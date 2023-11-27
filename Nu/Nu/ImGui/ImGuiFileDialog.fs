@@ -32,7 +32,7 @@ type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
     member val CurrentFiles : list<FileInfo> = [] with get, set
     member val CurrentIndex : UInt64 = 0UL with get, set
     member this.FilePath
-        with get () = this.DirectoryPath.FullName.Replace ('\\', '/') + "/" + this.FileName
+        with get () = this.DirectoryPath.FullName.Replace ("\\", "/") + "/" + this.FileName
         and set (value : string) =
             this.FileName <- Path.GetFileName value
             this.DirectoryPath <- DirectoryInfo (Path.GetDirectoryName value)
@@ -133,7 +133,7 @@ module ImGui =
                     refreshInfo dialogState
 
                 // Draw path
-                ImGui.Text ("Path: " + dialogState.DirectoryPath.FullName.Replace ('\\', '/'))
+                ImGui.Text ("Path: " + dialogState.DirectoryPath.FullName.Replace ("\\", "/"))
 
                 let contentRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X
 
