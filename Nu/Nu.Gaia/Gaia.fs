@@ -78,7 +78,7 @@ module Gaia =
     let mutable private groupRename = ""
     let mutable private entityRename = ""
     let mutable private desiredEyeCenter2d = v2Zero
-    let mutable private desiredEyeCenter3d = Constants.Engine.EyeCenter3dDefault
+    let mutable private desiredEyeCenter3d = v3Zero
     let mutable private desiredEyeRotation3d = quatIdentity
 
     (* Configuration States *)
@@ -2448,7 +2448,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         Log.info ("Project '" + newProjectName + "'" + "created.")
 
                                         // configure editor to open new project then exit
-                                        let gaiaState = GaiaState.make newProjectDllPath (Some "Title") openProjectImperativeExecution
+                                        let gaiaState = GaiaState.make newProjectDllPath (Some "Title") openProjectImperativeExecution desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                         let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2494,7 +2494,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 String.notEmpty openProjectFilePath &&
                                 File.Exists openProjectFilePath then
                                 showOpenProjectDialog <- false
-                                let gaiaState = GaiaState.make openProjectFilePath (Some openProjectEditMode) openProjectImperativeExecution
+                                let gaiaState = GaiaState.make openProjectFilePath (Some openProjectEditMode) openProjectImperativeExecution desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2629,7 +2629,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
                             ImGui.Text "Any unsaved changes will be lost."
                             if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
-                                let gaiaState = GaiaState.make projectDllPath (Some projectEditMode) projectImperativeExecution
+                                let gaiaState = GaiaState.make projectDllPath (Some projectEditMode) projectImperativeExecution desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Path.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2776,6 +2776,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         openProjectFilePath <- gaiaState.ProjectDllPath
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        if not (String.IsNullOrWhiteSpace gaiaState.ProjectDllPath) then
+            desiredEyeCenter2d <- gaiaState.DesiredEyeCenter2d
+            desiredEyeCenter3d <- gaiaState.DesiredEyeCenter3d
+            desiredEyeRotation3d <- gaiaState.DesiredEyeRotation3d
+            world <- World.setEyeCenter2d desiredEyeCenter2d world
+            world <- World.setEyeCenter3d desiredEyeCenter3d world
+            world <- World.setEyeRotation3d desiredEyeRotation3d world
+            world <- World.setMasterSoundVolume gaiaState.MasterSoundVolume world
+            world <- World.setMasterSongVolume gaiaState.MasterSongVolume world
         targetDir <- targetDir_
         projectDllPath <- openProjectFilePath
         projectFileDialogState <- ImGuiFileDialogState targetDir
@@ -2845,9 +2854,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world
                 let world = World.subscribe handleNuRender Game.RenderEvent Game world
-
-                // no song playback in editor by default
-                let world = World.setMasterSongVolume 0.0f world
                 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world
