@@ -270,7 +270,7 @@ module AmbientState =
         let updateDelta = if state.Advancing then 1L else 0L
         let tickTimeShaved = state.TickWatch.ElapsedTicks - state.TickTimeShavings
         let tickDelta = tickTimeShaved - state.TickTime
-        let tickDeltaShaved = min (tickTimeShaved - state.TickTime) (1.0 / 10.0 * double Stopwatch.Frequency |> int64)
+        let tickDeltaShaved = min (tickTimeShaved - state.TickTime) Constants.Engine.TickDeltaMax
         let tickDeltaShavings = max (tickDelta - tickDeltaShaved) 0L
         { state with
             UpdateTime = state.UpdateTime + updateDelta

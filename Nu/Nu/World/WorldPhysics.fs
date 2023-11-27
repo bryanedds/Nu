@@ -109,7 +109,9 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine3d.GetBodyContactNormals bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyContactNormals bodyId
-            else Log.info ("Body for '" + scstring bodyId + "' not found."); []
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_IMMEDIATE isn't enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                []
 
         /// Get the linear velocity of the body with the given physics id.
         static member getBodyLinearVelocity bodyId world =
@@ -117,7 +119,9 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine3d.GetBodyLinearVelocity bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyLinearVelocity bodyId
-            else Log.info ("Body for '" + scstring bodyId + "' not found."); v3Zero
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_IMMEDIATE isn't enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                v3Zero
 
         /// Get the angular velocity of the body with the given physics id.
         static member getBodyAngularVelocity bodyId world =
@@ -125,7 +129,9 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine3d.GetBodyAngularVelocity bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyAngularVelocity bodyId
-            else Log.info ("Body for '" + scstring bodyId + "' not found."); v3Zero
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_IMMEDIATE isn't enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                v3Zero
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         static member getBodyToGroundContactNormals bodyId world =
@@ -133,7 +139,9 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormals bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals bodyId
-            else Log.info ("Body for '" + scstring bodyId + "' not found."); []
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_IMMEDIATE isn't enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                []
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
         static member getBodyToGroundContactNormalOpt bodyId world =
@@ -141,7 +149,9 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactNormalOpt bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormalOpt bodyId
-            else Log.info ("Body for '" + scstring bodyId + "' not found."); None
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_IMMEDIATE isn't enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                None
 
         /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
         static member getBodyToGroundContactTangentOpt bodyId world =
@@ -149,7 +159,9 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine3d.GetBodyToGroundContactTangentOpt bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactTangentOpt bodyId
-            else Log.info ("Body for '" + scstring bodyId + "' not found."); None
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_IMMEDIATE isn't enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                None
 
         /// Check that the body with the given physics id is on the ground.
         static member getBodyGrounded bodyId world =
@@ -157,7 +169,9 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine3d.IsBodyOnGround bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.IsBodyOnGround bodyId
-            else Log.info ("Body for '" + scstring bodyId + "' not found."); false
+            else
+                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_IMMEDIATE isn't enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                false
 
         /// Send a physics message to create a physics body.
         static member createBody is2d bodyId (bodyProperties : BodyProperties) world =
