@@ -1,0 +1,27 @@
+[GroupDispatcher
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Gui]
+  [Persistent True]
+  [Visible True]]
+ [[TextDispatcher
+   [[BackdropImageOpt
+     [Some [Default Label]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Name Credits]
+    [Position [0 144 0]]
+    [Size [512 96 0]]
+    [Text Credits]]
+   []]
+  [TextDispatcher
+   [[BackdropImageOpt
+     [Some [Default Label]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Name YourNameHere]
+    [Size [512 48 0]]
+    [Text "Your Name Here!"]]
+   []]
+  [ButtonDispatcher
+   [[Name Back]
+    [Position [0 -144 0]]
+    [Text Back]]
+   []]]]
