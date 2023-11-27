@@ -33,6 +33,10 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit EntityDispatcher3d<CharacterModel, CharacterMessage, CharacterCommand> (true, true, CharacterModel.initial)
 
+        static let [<Literal>] WalkForce = 12.0f
+        static let [<Literal>] TurnForce = 8.0f
+        static let [<Literal>] JumpForce = 7.0f
+
         static member Facets =
             [typeof<AnimatedModelFacet>
              typeof<RigidBodyFacet>]
@@ -51,6 +55,7 @@ module CharacterDispatcher =
              Game.KeyboardKeyDownEvent =|> fun evt -> TryJump evt.Data]
 
         override this.Message (character, message, entity, world) =
+
             match message with
             | UpdateMessage ->
                 let time = character.CharacterTime + (let d = world.GameDelta in d.Seconds)
@@ -82,7 +87,7 @@ module CharacterDispatcher =
                 let forward = rotation.Forward
                 let right = rotation.Right
                 let contactNormalOpt = World.getBodyToGroundContactNormalOpt bodyId world
-                let walkForceScalar = if grounded then 12.0f else 6.0f
+                let walkForceScalar = if grounded then WalkForce else WalkForce * 0.5f
                 let walkForce = 
                     (if World.isKeyboardKeyDown KeyboardKey.W world then forward * walkForceScalar else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.S world then -forward * walkForceScalar else v3Zero) +
@@ -107,7 +112,7 @@ module CharacterDispatcher =
                     else world
 
                 // apply turn force
-                let turnForce = if grounded then 8.0f else 4.0f
+                let turnForce = if grounded then TurnForce else TurnForce * 0.5f
                 let world = if World.isKeyboardKeyDown KeyboardKey.Right world then World.applyBodyTorque (-v3Up * turnForce) bodyId world else world
                 let world = if World.isKeyboardKeyDown KeyboardKey.Left world then World.applyBodyTorque (v3Up * turnForce) bodyId world else world
 
@@ -145,6 +150,5 @@ module CharacterDispatcher =
 
             | Jump ->
                 let bodyId = entity.GetBodyId world
-                let jumpForce = 7.0f
-                let world = World.applyBodyLinearImpulse (v3Up * jumpForce) v3Zero bodyId world
+                let world = World.applyBodyLinearImpulse (v3Up * JumpForce) v3Zero bodyId world
                 just world
