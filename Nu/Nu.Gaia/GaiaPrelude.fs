@@ -35,4 +35,4 @@ type [<SymbolicExpansion>] GaiaState =
           MasterSoundVolume = masterSoundVolume
           MasterSongVolume = masterSongVolume }
     static member defaultState =
-        GaiaState.make "" None false v2Zero Constants.Engine.EyeCenter3dDefault quatIdentity 1.0f 1.0f
+        GaiaState.make "" None false v2Zero Constants.Engine.EyeCenter3dDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
