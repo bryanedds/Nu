@@ -12,8 +12,9 @@ What is the **Nu Game Engine**?
 
 This repository hosts several projects, including -
 
-- the sample game ['Twenty48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty48).
-- the sample game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
+- the sample 2d puzzle game ['Twenty48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty48).
+- the sample 2d action game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
+- the sample 3D game ['TerraFirma'](https://github.com/bryanedds/Nu/tree/master/Projects/TerraFirma).
 - the game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade) available free for Windows and Linux here - https://github.com/bryanedds/Nu/releases/tag/v10.6.2
 
 Getting Started with Nu
