@@ -1760,10 +1760,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // track state for hot key input
                 let mutable entityHierarchyFocused = false
 
-                // update eye input at start of loop to avoid visual lag
-                updateEyeDrag ()
-                updateEyeTravel ()
-
                 // viewport interaction
                 let io = ImGui.GetIO ()
                 ImGui.SetNextWindowPos v2Zero
@@ -2698,6 +2694,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.ShowStackToolWindow ()
 
                 // process non-widget mouse input and hotkeys
+                updateEyeDrag ()
+                updateEyeTravel ()
                 updateEntityContext ()
                 updateEntityDrag ()
                 updateHotkeys entityHierarchyFocused
