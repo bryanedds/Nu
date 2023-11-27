@@ -2777,14 +2777,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         openProjectFilePath <- gaiaState.ProjectDllPath
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         if not (String.IsNullOrWhiteSpace gaiaState.ProjectDllPath) then
-            desiredEyeCenter2d <- gaiaState.DesiredEyeCenter2d
-            desiredEyeCenter3d <- gaiaState.DesiredEyeCenter3d
-            desiredEyeRotation3d <- gaiaState.DesiredEyeRotation3d
+            if World.getEyeCenter2d world <> v2Zero then desiredEyeCenter2d <- gaiaState.DesiredEyeCenter2d
+            if World.getEyeCenter3d world <> Constants.Engine.EyeCenter3dDefault then desiredEyeCenter3d <- gaiaState.DesiredEyeCenter3d
+            if World.getEyeRotation3d world <> quatIdentity then desiredEyeRotation3d <- gaiaState.DesiredEyeRotation3d
             world <- World.setEyeCenter2d desiredEyeCenter2d world
             world <- World.setEyeCenter3d desiredEyeCenter3d world
             world <- World.setEyeRotation3d desiredEyeRotation3d world
-            world <- World.setMasterSoundVolume gaiaState.MasterSoundVolume world
-            world <- World.setMasterSongVolume gaiaState.MasterSongVolume world
+            if World.getMasterSoundVolume world <> Constants.Audio.SoundVolumeDefault then world <- World.setMasterSoundVolume gaiaState.MasterSoundVolume world
+            if World.getMasterSongVolume world <> Constants.Audio.SongVolumeDefault then world <- World.setMasterSongVolume gaiaState.MasterSongVolume world
         targetDir <- targetDir_
         projectDllPath <- openProjectFilePath
         projectFileDialogState <- ImGuiFileDialogState targetDir
