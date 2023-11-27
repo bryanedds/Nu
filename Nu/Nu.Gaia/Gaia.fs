@@ -77,6 +77,9 @@ module Gaia =
     let mutable private newGroupName = ""
     let mutable private groupRename = ""
     let mutable private entityRename = ""
+    let mutable private desiredEyeCenter2d = v2Zero
+    let mutable private desiredEyeCenter3d = Constants.Engine.EyeCenter3dDefault
+    let mutable private desiredEyeRotation3d = quatIdentity
 
     (* Configuration States *)
 
@@ -937,9 +940,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         tryReloadCode ()
 
     let private resetEye () =
-        world <- World.setEyeCenter2d v2Zero world
-        world <- World.setEyeCenter3d Constants.Engine.EyeCenter3dDefault world
-        world <- World.setEyeRotation3d quatIdentity world
+        desiredEyeCenter2d <- v2Zero
+        desiredEyeCenter3d <- Constants.Engine.EyeCenter3dDefault
+        desiredEyeRotation3d <- quatIdentity
 
     let private toggleAdvancing () =
         if not world.Advancing then snapshot ()
@@ -1142,8 +1145,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match dragEyeState with
             | DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig) ->
                 let mousePositionScreen = World.getMousePosition2dScreen world
-                let eyeCenter = (entityDragOffset - mousePositionScreenOrig) + -Constants.Gaia.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
-                world <- World.setEyeCenter2d eyeCenter world
+                desiredEyeCenter2d <- (entityDragOffset - mousePositionScreenOrig) + -Constants.Gaia.EyeSpeed * (mousePositionScreen - mousePositionScreenOrig)
                 dragEyeState <- DragEyeCenter2d (entityDragOffset, mousePositionScreenOrig)
             | DragEyeInactive -> ()
 
@@ -1165,27 +1167,27 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsShiftDown () && not (ImGui.IsKeyDown ImGuiKey.Enter) then 0.025f
                 else 0.05f
             if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlReleased () then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Forward, rotation) * moveSpeed) world
+                desiredEyeCenter3d <- position + Vector3.Transform (v3Forward, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlReleased () then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Back, rotation) * moveSpeed) world
+                desiredEyeCenter3d <- position + Vector3.Transform (v3Back, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlReleased () then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Left, rotation) * moveSpeed) world
+                desiredEyeCenter3d <- position + Vector3.Transform (v3Left, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlReleased () then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Right, rotation) * moveSpeed) world
+                desiredEyeCenter3d <- position + Vector3.Transform (v3Right, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Up) < 0.999f then world <- World.setEyeRotation3d rotation' world
+                if Vector3.Dot (rotation'.Forward, v3Up) < 0.999f then desiredEyeRotation3d <- rotation'
             if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Down) < 0.999f then world <- World.setEyeRotation3d rotation' world
+                if Vector3.Dot (rotation'.Forward, v3Down) < 0.999f then desiredEyeRotation3d <- rotation'
             if ImGui.IsKeyDown ImGuiKey.UpArrow && ImGui.IsAltReleased () then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Up, rotation) * moveSpeed) world
+                desiredEyeCenter3d <- position + Vector3.Transform (v3Up, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.DownArrow && ImGui.IsAltReleased () then
-                world <- World.setEyeCenter3d (position + Vector3.Transform (v3Down, rotation) * moveSpeed) world
+                desiredEyeCenter3d <- position + Vector3.Transform (v3Down, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltReleased () then
-                world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation) world
+                desiredEyeRotation3d <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
             if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltReleased () then
-                world <- World.setEyeRotation3d (Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation) world
+                desiredEyeRotation3d <- Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation
 
     let private updateHotkeys entityHierarchyFocused =
         if not (modal ()) then
@@ -1241,11 +1243,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             if not (entity.GetAbsolute world) then
                 if entity.GetIs2d world then
-                    world <- World.setEyeCenter2d (entity.GetCenter world).V2 world
+                    desiredEyeCenter2d <- (entity.GetCenter world).V2
                 else
                     let eyeRotation = World.getEyeRotation3d world
                     let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
-                    world <- World.setEyeCenter3d (entity.GetPosition world + eyeCenterOffset) world
+                    desiredEyeCenter3d <- entity.GetPosition world + eyeCenterOffset
         if ImGui.BeginPopupContextItem () then
             selectEntityOpt (Some entity)
             if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
@@ -1736,6 +1738,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // transfer to world mutation mode
         world <- worldOld
 
+        // see if sync eyes to editor is desirable
+        let eyeCenter2d = World.getEyeCenter2d world
+        let eyeCenter3d = World.getEyeCenter3d world
+        let eyeRotation3d = World.getEyeRotation3d world
+        let eyeChangedElsewhere =
+            eyeCenter2d <> desiredEyeCenter2d ||
+            eyeCenter3d <> desiredEyeCenter3d ||
+            eyeRotation3d <> desiredEyeRotation3d
+
         // enable global docking
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
@@ -1817,8 +1828,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     //ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
                     //ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, uint 0x10101010)
                     //ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
-                    //world <- World.setEyeCenter3d (eyeCenter |> Matrix4x4.CreateFromArray).Translation world
-                    //world <- World.setEyeRotation3d (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix) world
+                    //eyeCenter3d <- (eyeCenter |> Matrix4x4.CreateFromArray).Translation
+                    //eyeRotation3d <- (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix)
 
                     // light probe bounds manipulation
                     match selectedEntityOpt with
@@ -2690,6 +2701,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 updateEntityContext ()
                 updateEntityDrag ()
                 updateHotkeys entityHierarchyFocused
+                if not eyeChangedElsewhere then
+                    world <- World.setEyeCenter2d desiredEyeCenter2d world
+                    world <- World.setEyeCenter3d desiredEyeCenter3d world
+                    world <- World.setEyeRotation3d desiredEyeRotation3d world
+                else
+                    desiredEyeCenter2d <- World.getEyeCenter2d world
+                    desiredEyeCenter3d <- World.getEyeCenter3d world
+                    desiredEyeRotation3d <- World.getEyeRotation3d world
 
                 // reloading assets dialog
                 if reloadAssetsRequested > 0 then

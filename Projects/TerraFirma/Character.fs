@@ -89,8 +89,8 @@ module CharacterDispatcher =
                 let contactNormalOpt = World.getBodyToGroundContactNormalOpt bodyId world
                 let walkForceScalar = if grounded then WalkForce else WalkForce * 0.5f
                 let walkForce = 
-                    (if World.isKeyboardKeyDown KeyboardKey.W world then forward * walkForceScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.S world then -forward * walkForceScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkForceScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkForceScalar else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkForceScalar else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkForceScalar else v3Zero)
                 let world =
