@@ -179,6 +179,7 @@ module Physics =
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
 
 [<RequireQualifiedAccess>]
 module Lens =
