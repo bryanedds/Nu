@@ -568,7 +568,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let mutable j = 0
             while not intersecting && j < manifold.NumContacts do
                 let pt = manifold.GetContactPoint i
-                if pt.Distance <= Constants.Physics.BroadPhaseManifoldDistanceMax
+                if pt.Distance <= Constants.Physics.CollisionDetectionDistanceMax3d
                 then intersecting <- true
                 else j <- inc j
             if intersecting then

@@ -173,14 +173,14 @@ module Physics =
     let [<Uniform>] Gravity3dDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] SleepingThresholdLinear = 1.0f // NOTE: in the example or bullet source code (can't remember), this defaulted to 0.8f...
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
-    let [<Literal>] CollisionMargin3d = 0.0078125f // 1 >>> 7
     let [<Literal>] CollisionWildcard = "*"
+    let [<Literal>] CollisionMargin3d = 0.0078125f // 1.0f >>> 7
+    let [<Literal>] CollisionDetectionDistanceMax3d = 0.05f // NOTE: this is a hand-tuned Bullet Physics parameter. If we end up with missing collision events, this is primary sus.
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
-    let [<Literal>] BroadPhaseManifoldDistanceMax = 0.05f // NOTE: this is a hand-tuned Bullet Physics parameter. If we end up with missing collision events, this is primary sus.
 
 [<RequireQualifiedAccess>]
 module Lens =
