@@ -560,38 +560,50 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
         for i in 0 .. dec numManifolds do
 
-            // create non-ground collision entry if unfiltered
+            // ensure at least ONE contact point is either intersecting or touching by checking distance.
+            // this will filter out manifolds contacting only on the broadphase level according to -
+            // https://github.com/timbeaudet/knowledge_base/blob/main/issues/bullet_contact_report_issue.md
             let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
-            let body0 = manifold.Body0
-            let body1 = manifold.Body1
-            let body0Source = (body0.UserObject :?> BodyUserObject).BodyId
-            let body1Source = (body1.UserObject :?> BodyUserObject).BodyId
-            let collisionKey = (body0Source, body1Source)
-            let mutable normal = v3Zero
-            let numContacts = manifold.NumContacts
-            for j in 0 .. dec numContacts do
-                let contact = manifold.GetContactPoint j
-                normal <- normal - contact.NormalWorldOnB
-            normal <- normal / single numContacts
-            if  body0.UserIndex = 1 ||
-                body1.UserIndex = 1 then
-                physicsEngine.CollisionsFiltered.Add (collisionKey, normal)
+            let mutable intersecting = false
+            let mutable j = 0
+            while not intersecting && j < manifold.NumContacts do
+                let pt = manifold.GetContactPoint i
+                if pt.Distance <= 0.1f // NOTE: this is a hand-tuned parameter. Not sure if this covers all cases, however.
+                then intersecting <- true
+                else j <- inc j
+            if intersecting then
 
-            // create ground collision entry for body0 if needed
-            normal <- -normal
-            let theta = Vector3.Dot (normal, Vector3.UnitY) |> double |> Math.Acos |> Math.Abs
-            if theta < Math.PI * 0.25 then
-                match physicsEngine.CollisionsGround.TryGetValue body0Source with
-                | (true, collisions) -> collisions.Add normal
-                | (false, _) -> physicsEngine.CollisionsGround.Add (body0Source, List [normal])
+                // create non-ground collision entry if unfiltered
+                let body0 = manifold.Body0
+                let body1 = manifold.Body1
+                let body0Source = (body0.UserObject :?> BodyUserObject).BodyId
+                let body1Source = (body1.UserObject :?> BodyUserObject).BodyId
+                let collisionKey = (body0Source, body1Source)
+                let mutable normal = v3Zero
+                let numContacts = manifold.NumContacts
+                for j in 0 .. dec numContacts do
+                    let contact = manifold.GetContactPoint j
+                    normal <- normal - contact.NormalWorldOnB
+                normal <- normal / single numContacts
+                if  body0.UserIndex = 1 ||
+                    body1.UserIndex = 1 then
+                    physicsEngine.CollisionsFiltered.Add (collisionKey, normal)
 
-            // create ground collision entry for body1 if needed
-            normal <- -normal
-            let theta = Vector3.Dot (normal, Vector3.UnitY) |> double |> Math.Acos |> Math.Abs
-            if theta < Math.PI * 0.25 then
-                match physicsEngine.CollisionsGround.TryGetValue body1Source with
-                | (true, collisions) -> collisions.Add normal
-                | (false, _) -> physicsEngine.CollisionsGround.Add (body1Source, List [normal])
+                // create ground collision entry for body0 if needed
+                normal <- -normal
+                let theta = Vector3.Dot (normal, Vector3.UnitY) |> acos |> abs
+                if theta < Constants.Physics.GroundAngleMax then
+                    match physicsEngine.CollisionsGround.TryGetValue body0Source with
+                    | (true, collisions) -> collisions.Add normal
+                    | (false, _) -> physicsEngine.CollisionsGround.Add (body0Source, List [normal])
+
+                // create ground collision entry for body1 if needed
+                normal <- -normal
+                let theta = -theta
+                if theta < Constants.Physics.GroundAngleMax then
+                    match physicsEngine.CollisionsGround.TryGetValue body1Source with
+                    | (true, collisions) -> collisions.Add normal
+                    | (false, _) -> physicsEngine.CollisionsGround.Add (body1Source, List [normal])
 
         // create collision messages
         for entry in physicsEngine.CollisionsFiltered do

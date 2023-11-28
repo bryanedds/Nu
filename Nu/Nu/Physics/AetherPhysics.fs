@@ -502,8 +502,8 @@ type [<ReferenceEquality>] AetherPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             List.filter
                 (fun normal ->
-                    let theta = Vector2.Dot (normal.V2, Vector2.UnitY) |> double |> Math.Acos |> Math.Abs
-                    theta < Math.PI * 0.25)
+                    let theta = Vector2.Dot (normal.V2, Vector2.UnitY) |> acos |> abs
+                    theta < Constants.Physics.GroundAngleMax)
                 ((physicsEngine :> PhysicsEngine).GetBodyContactNormals bodyId)
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
