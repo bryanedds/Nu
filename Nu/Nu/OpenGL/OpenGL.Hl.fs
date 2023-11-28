@@ -42,8 +42,8 @@ module Hl =
         let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
         match severity with
         | DebugSeverity.DebugSeverityLow -> Log.info messageStr
-        | DebugSeverity.DebugSeverityMedium
-        | DebugSeverity.DebugSeverityHigh -> () // Log.debug messageStr
+        | DebugSeverity.DebugSeverityMedium -> Log.debug messageStr
+        | DebugSeverity.DebugSeverityHigh -> Log.trace messageStr
         | DebugSeverity.DebugSeverityNotification
         | DebugSeverity.DontCare
         | _ -> ()
