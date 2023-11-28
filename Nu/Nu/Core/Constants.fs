@@ -161,10 +161,10 @@ module Audio =
     let [<Literal>] SongVolumeDefault = 0.5f
     let [<Literal>] SoundVolumeDefault = 1.0f
     let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5f
-    let [<Uniform>] SongResumptionMaximum = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
+    let [<Uniform>] SongResumptionMax = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
     let [<Literal>] Frequency = 44100
     let [<Literal>] BufferSizeDefault = 1024
-    let [<Literal>] FadeInSecondsMinimum = 0.1f // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
+    let [<Literal>] FadeInSecondsMin = 0.1f // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
 
 [<RequireQualifiedAccess>]
 module Physics =
@@ -175,12 +175,12 @@ module Physics =
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
     let [<Literal>] CollisionWildcard = "*"
     let [<Literal>] CollisionMargin3d = 0.0078125f // 1.0f >>> 7
-    let [<Literal>] CollisionDetectionDistanceMax3d = 0.05f // NOTE: this is a hand-tuned Bullet Physics parameter. If we end up with missing collision events, this is primary sus.
+    let [<Literal>] CollisionDetectionDistance3dMax = 0.05f // NOTE: this is a hand-tuned Bullet Physics parameter. If we end up with missing collision events, this is primary sus.
+    let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
-    let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
 
 [<RequireQualifiedAccess>]
 module Lens =
