@@ -23,6 +23,7 @@
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
+		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
 
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">

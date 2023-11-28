@@ -15,7 +15,7 @@
 		<WarnOn>FS1182</WarnOn>
 		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>$(DefineConstants)</DefineConstants>
+		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
