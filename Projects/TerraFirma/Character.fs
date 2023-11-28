@@ -80,43 +80,10 @@ module CharacterDispatcher =
             match command with
             | UpdateCommand ->
 
-                // apply movement forces
+                // apply physics-based animations
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let rotation = entity.GetRotation world
-                let forward = rotation.Forward
-                let right = rotation.Right
-                let contactNormalOpt = World.getBodyToGroundContactNormalOpt bodyId world
-                let walkForceScalar = if grounded then WalkForce else WalkForce * 0.5f
-                let walkForce = 
-                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkForceScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkForceScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkForceScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkForceScalar else v3Zero)
-                let world =
-                    if walkForce <> v3Zero then
-                        match contactNormalOpt with
-                        | Some contactNormal ->
-                            let walkForward = walkForce.Normalized
-                            let groundPlane = Plane3 (contactNormal, -1.0f)
-                            let slope = Vector3.Project (walkForward, groundPlane) - v3Up
-                            let walkForceOriented =
-                                if Vector3.Dot (slope, v3Up) > 0.01f then // guard against generating massive force
-                                    let angleBetween = walkForward.AngleBetween slope
-                                    let rotationMatrix = Matrix4x4.CreateFromAxisAngle (Vector3.Cross (walkForward, v3Up), angleBetween)
-                                    let walkForceOriented = Vector3.Transform (walkForce, rotationMatrix)
-                                    walkForceOriented
-                                else walkForce
-                            World.applyBodyForce walkForceOriented v3Zero bodyId world
-                        | None -> World.applyBodyForce walkForce v3Zero bodyId world
-                    else world
-
-                // apply turn force
-                let turnForce = if grounded then TurnForce else TurnForce * 0.5f
-                let world = if World.isKeyboardKeyDown KeyboardKey.Right world then World.applyBodyTorque (-v3Up * turnForce) bodyId world else world
-                let world = if World.isKeyboardKeyDown KeyboardKey.Left world then World.applyBodyTorque (v3Up * turnForce) bodyId world else world
-
-                // apply physics-based animations
                 let linearVelocity = World.getBodyLinearVelocity bodyId world
                 let angularVelocity = World.getBodyAngularVelocity bodyId world
                 let forwardness = (Vector3.Dot (linearVelocity, rotation.Forward))
@@ -139,6 +106,40 @@ module CharacterDispatcher =
                     elif turnLeftwardness >= 0.1f then { StartTime = 0.0f; LifeTimeOpt = None; Name = "Armature|TurnLeftward"; Playback = Loop; Rate = 1.5f; Weight = turnLeftwardness; BoneFilterOpt = None } :: animations
                     else animations
                 let world = entity.SetAnimations (List.toArray animations) world
+
+                // apply walk force
+                let forward = rotation.Forward
+                let right = rotation.Right
+                let contactNormalOpt = World.getBodyToGroundContactNormalOpt bodyId world
+                let walkForceScalar = if grounded then WalkForce else WalkForce * 0.5f
+                let walkForce = 
+                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkForceScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkForceScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkForceScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkForceScalar else v3Zero)
+                let world =
+                    if walkForce <> v3Zero then
+                        match contactNormalOpt with
+                        | Some contactNormal ->
+                            let walkForward = walkForce.Normalized
+                            let groundPlane = Plane3 (contactNormal, -1.0f)
+                            let slope = Vector3.Project (walkForward, groundPlane) - v3Up
+                            let angle = Vector3.Dot (slope, v3Up)
+                            let walkForceOriented =
+                                if abs angle > 0.001f then // guard against generating NaNs
+                                    let angleBetween = walkForward.AngleBetween slope
+                                    let rotationMatrix = Matrix4x4.CreateFromAxisAngle (Vector3.Cross (walkForward, v3Up), angleBetween)
+                                    let walkForceOriented = Vector3.Transform (walkForce, rotationMatrix)
+                                    walkForceOriented
+                                else walkForce
+                            World.applyBodyForce walkForceOriented v3Zero bodyId world
+                        | None -> World.applyBodyForce walkForce v3Zero bodyId world
+                    else world
+
+                // apply turn force
+                let turnForce = if grounded then TurnForce else TurnForce * 0.5f
+                let world = if World.isKeyboardKeyDown KeyboardKey.Right world then World.applyBodyTorque (-v3Up * turnForce) bodyId world else world
+                let world = if World.isKeyboardKeyDown KeyboardKey.Left world then World.applyBodyTorque (v3Up * turnForce) bodyId world else world
                 just world
 
             | PostUpdate ->
