@@ -180,6 +180,7 @@ module Physics =
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
+    let [<Literal>] BroadPhaseManifoldDistanceMax = 0.05f // NOTE: this is a hand-tuned Bullet Physics parameter. If we end up with missing collision events, this is primary sus.
 
 [<RequireQualifiedAccess>]
 module Lens =
