@@ -551,7 +551,7 @@ module FieldDispatcher =
                                 match field.FieldSongTimeOpt with
                                 | Some playTime ->
                                     let startTime = time - playTime
-                                    if playTime < int64 Constants.Audio.SongResumptionMaximum
+                                    if playTime < int64 Constants.Audio.SongResumptionMax
                                     then (playTime, startTime)
                                     else (0L, time)
                                 | None -> (0L, time)
@@ -567,7 +567,7 @@ module FieldDispatcher =
                             match field.FieldSongTimeOpt with
                             | Some playTime ->
                                 let startTime = time - playTime
-                                if playTime < int64 Constants.Audio.SongResumptionMaximum
+                                if playTime < int64 Constants.Audio.SongResumptionMax
                                 then (playTime, startTime)
                                 else (0L, time)
                             | None -> (0L, time)
