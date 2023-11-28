@@ -304,7 +304,9 @@ module WorldPhysics =
                 let world = World.enqueuePhysicsMessage3d setBodyObservableMessage world
                 let world = World.enqueuePhysicsMessage2d setBodyObservableMessage world
                 world
-            else Log.debug "Set the observability of an internally indexed body from outside the engine is prohibited."; world
+            else
+                Log.debug "Set the observability of an internally indexed body from outside the engine is prohibited."
+                world
 
         /// Send a physics message to set the observability of a body.
         /// Disabling observability where it's not needed can significantly increase performance.

@@ -168,7 +168,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             | Right (textureMetadata, texture) ->
                 Some (TextureAsset (textureMetadata, texture))
             | Left error ->
-                Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
+                Log.infoOnce ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
         | ".ttf" ->
             let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath

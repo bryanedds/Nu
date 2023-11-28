@@ -521,7 +521,7 @@ and [<TypeConverter (typeof<EcsConverter>)>] Ecs () =
             let getKey = fun (callback : EcsCallbackScheduledObj) -> callback.EcsQuery
             match dependentCallbacks.Group (getDependenciess, getKey) with
             | (true, groups) ->
-                Log.debug "Cycle found in dependencies. Executing at arbitrary staring point."
+                Log.debug "Cycle found in dependencies. Executing at arbitrary starting point."
                 for group in groups do
                     for callback in group do
                         match callback.EcsCallbackObj with

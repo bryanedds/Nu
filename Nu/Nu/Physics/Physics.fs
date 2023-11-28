@@ -59,7 +59,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
             try let bytes = File.ReadAllBytes filePath
                 Some bytes
             with exn ->
-                Log.debug ("Could not load texture '" + filePath + "' due to: " + scstring exn)
+                Log.info ("Could not load texture '" + filePath + "' due to: " + scstring exn)
                 None
         | None -> None
 

@@ -157,7 +157,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
     static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        Log.debugOnce "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
+        Log.info "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
         let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
 

@@ -121,14 +121,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             if wavOpt <> IntPtr.Zero then Some (WavAsset wavOpt)
             else
                 let errorMsg = SDL.SDL_GetError ()
-                Log.debug ("Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+                Log.info ("Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
         | ".ogg" ->
             let oggOpt = SDL_mixer.Mix_LoadMUS asset.FilePath
             if oggOpt <> IntPtr.Zero then Some (OggAsset oggOpt)
             else
                 let errorMsg = SDL.SDL_GetError ()
-                Log.debug ("Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+                Log.info ("Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
         | _ -> None
 
