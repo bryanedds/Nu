@@ -87,7 +87,7 @@ module Texture =
             let fileExtension = Path.GetExtension(filePath).ToLowerInvariant()
             if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
                 fileExtension <> ".tga" (* NOTE: System.Drawing.Bitmap does not seem to support .tga loading. *) then
-                // NOTE: System.Drawing.Bitmap is, AFAIK, only available on non-Windows platforms, so we use a fast path here.
+                // NOTE: System.Drawing.Bitmap is, AFAIK, only available on Windows platforms, so we use a fast path here.
                 try let bitmap = new Drawing.Bitmap (filePath)
                     let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
                     let metadata =
