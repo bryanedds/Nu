@@ -6,9 +6,9 @@ Kd 1.000000 1.000000 1.000000
 Pm 1.000000 0.000000 0.000000
 Pr 1.000000
 Ka 1.000000 0.000000 0.000000
-map_Kd StaticModelAlbedo.png
-map_Pm StaticModelMetallic.png
-map_Pr StaticModelRoughness.png
-map_Ka StaticModelAmbientOcclusion.png
-map_Ke StaticModelEmission.png
-norm StaticModelNormal.png
+map_Kd StaticModelAlbedo.tiff
+map_Pm StaticModelMetallic.tiff
+map_Pr StaticModelRoughness.tiff
+map_Ka MaterialAmbientOcclusion.tiff
+map_Ke MaterialEmission.tiff
+norm MaterialNormal.tiff

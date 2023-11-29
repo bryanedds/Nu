@@ -2,17 +2,17 @@
 # Material Count: 2
 
 newmtl Mat
-map_Kd LightbulbModelAlbedo.png
-map_Pm MaterialMetallic.png
-map_Pr MaterialRoughness.png
-map_Ka MaterialAmbientOcclusion.png
-map_Ke MaterialEmission.png
-norm MaterialNormal.png
+map_Kd LightbulbModelAlbedo.tiff
+map_Pm MaterialMetallic.tiff
+map_Pr MaterialRoughness.tiff
+map_Ka MaterialAmbientOcclusion.tiff
+map_Ke MaterialEmission.tiff
+norm MaterialNormal.tiff
 
 newmtl Mat2
-map_Kd LightbulbModelAlbedo.png
-map_Pm MaterialMetallic.png
-map_Pr MaterialRoughness.png
-map_Ka MaterialAmbientOcclusion.png
-map_Ke MaterialEmission.png
-norm MaterialNormal.png
+map_Kd LightbulbModelAlbedo.tiff
+map_Pm MaterialMetallic.tiff
+map_Pr MaterialRoughness.tiff
+map_Ka MaterialAmbientOcclusion.tiff
+map_Ke MaterialEmission.tiff
+norm MaterialNormal.tiff
