@@ -2373,7 +2373,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               InvertRoughness = Constants.Render.InvertRoughnessDefault }
 
         // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialAlbedo.png") |> Either.getRight
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialAlbedo.tiff") |> Either.getRight
         OpenGL.Hl.Assert ()
 
         // create default physically-based material
@@ -2381,12 +2381,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             { MaterialProperties = physicallyBasedMaterialProperties
               AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialRoughness.png") |> Either.getRight |> snd
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialMetallic.png") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialAmbientOcclusion.png") |> Either.getRight |> snd
-              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialEmission.png") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.UncompressedTextureFormat, "Assets/Default/MaterialNormal.png") |> Either.getRight |> snd
-              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialHeight.png") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialRoughness.tiff") |> Either.getRight |> snd
+              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialMetallic.tiff") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialAmbientOcclusion.tiff") |> Either.getRight |> snd
+              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialEmission.tiff") |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.UncompressedTextureFormat, "Assets/Default/MaterialNormal.tiff") |> Either.getRight |> snd
+              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGl.CompressedColorTextureFormat, "Assets/Default/MaterialHeight.tiff") |> Either.getRight |> snd
               TextureMinFilterOpt = None
               TextureMagFilterOpt = None
               TwoSided = false }

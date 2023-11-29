@@ -245,4 +245,4 @@ module Paths =
     let [<Literal>] PhysicallyBasedFxaaShaderFilePath = "Assets/Default/PhysicallyBasedFxaa.glsl"
     let [<Literal>] WhiteTextureFilePath = "Assets/Default/White.bmp"
     let [<Literal>] BlackTextureFilePath = "Assets/Default/Black.bmp"
-    let [<Literal>] BrdfTextureFilePath = "Assets/Default/Brdf.png"
+    let [<Literal>] BrdfTextureFilePath = "Assets/Default/Brdf.tiff"
