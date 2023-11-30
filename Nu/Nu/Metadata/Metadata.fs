@@ -80,8 +80,8 @@ module Metadata =
     let private tryGenerateModelMetadata asset =
         if File.Exists asset.FilePath then
             let textureMemo = OpenGL.Texture.TextureMemo.make () // unused
-            use assimp = new Assimp.AssimpContext ()
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimp) with
+            let assimpSceneMemo = Assimp.AssimpSceneMemo.make () // unused
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimpSceneMemo) with
             | Right model ->
                 if model.AnimatedSceneOpt.IsSome
                 then Some (AnimatedModelMetadata model)

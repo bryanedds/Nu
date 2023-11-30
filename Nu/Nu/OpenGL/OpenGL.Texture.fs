@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Runtime.InteropServices
+open System.Threading.Tasks
 open SDL2
 open Prime
 open Nu
@@ -35,16 +36,19 @@ module Texture =
               TextureInternalFormat = Unchecked.defaultof<InternalFormat>
               TextureGenerateMipmaps = false }
 
+    /// A parallelizable task for loading textures into memory.
+    type TextureDataLoadTask =
+        Task<Either<string, string * TextureMetadata * nativeint * IDisposable>>
+
     /// Memoizes texture loads.
     type [<ReferenceEquality>] TextureMemo =
-        private
-            { Textures : Dictionary<string, TextureMetadata * uint> }
+        { Textures : Dictionary<string, TextureMetadata * uint> }
 
         /// Make a texture memoizer.
         static member make () =
             { Textures = Dictionary HashIdentity.Structural }
 
-    /// Create a texture with raw texture data.
+    /// Create a texture from existing texture data.
     let CreateTexture (internalFormat, width, height, pixelFormat, pixelType, minFilter : OpenGL.TextureMinFilter, magFilter : OpenGL.TextureMagFilter, generateMipmaps, textureData : nativeint) =
         let texture = OpenGL.Gl.GenTexture ()
         OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
@@ -57,13 +61,44 @@ module Texture =
         if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
         texture
 
-    /// Create a filtered texture with raw texture data.
-    let CreateTextureFiltered (internalFormat, width, height, pixelFormat, pixelType, textureData : nativeint) =
+    /// Create a filtered texture from existing texture data.
+    let CreateTextureFiltered (internalFormat, width, height, pixelFormat, pixelType, textureData) =
         CreateTexture (internalFormat, width, height, pixelFormat, pixelType, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, textureData)
 
-    /// Create an unfiltered texture with raw texture data.
-    let CreateTextureUnfiltered (internalFormat, width, height, pixelFormat, pixelType, textureData : nativeint) =
+    /// Create an unfiltered texture from existing texture data.
+    let CreateTextureUnfiltered (internalFormat, width, height, pixelFormat, pixelType, textureData) =
         CreateTexture (internalFormat, width, height, pixelFormat, pixelType, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, textureData)
+
+    let private CreateTextureFromDataInternal (internalFormat, generateMipmaps, metadata, textureData) =
+
+        // upload the texture data to gl
+        let texture = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, texture)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, textureData)
+        if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
+        Hl.Assert ()
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        texture
+
+    /// Create a texture from existing texture data.
+    let CreateTextureFromData (internalFormat, minFilter, magFilter, generateMipmaps, metadata, textureData) =
+        let texture = CreateTextureFromDataInternal (internalFormat, generateMipmaps, metadata, textureData)
+        Gl.BindTexture (TextureTarget.Texture2d, texture)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
+        Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
+        if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
+        texture
+
+    /// Create a filtered texture from existing texture data.
+    let CreateTextureFromDataFiltered (internalFormat, metadata, textureData) =
+        CreateTextureFromData (internalFormat, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, metadata, textureData)
+
+    /// Create an unfiltered texture from existing texture data.
+    let CreateTextureFromDataUnfiltered (internalFormat, metadata, textureData) =
+        CreateTextureFromData (internalFormat, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, metadata, textureData)
 
     /// Attempt to create uploadable texture data from the given file path.
     /// Don't forget to dispose the last field when finished with the texture data.
@@ -108,28 +143,17 @@ module Texture =
                 else None
         else None
 
-    let private TryCreateTextureInternal (textureOpt, internalFormat, generateMipmaps, filePath : string) =
-
-        // attmept to load image
+    let private TryCreateTextureInternal (internalFormat, generateMipmaps, filePath : string) =
         match TryCreateTextureData (internalFormat, generateMipmaps, filePath) with
         | Some (metadata, textureData, disposer) ->
-
-            // upload the texture data to gl
             use _ = disposer
-            let texture = match textureOpt with Some texture -> texture | None -> Gl.GenTexture ()
-            Gl.BindTexture (TextureTarget.Texture2d, texture)
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, textureData)
-            if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
-            Hl.Assert ()
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            let texture = CreateTextureFromDataInternal (internalFormat, generateMipmaps, metadata, textureData)
             Right (metadata, texture)
-
-        // failure
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
     /// Attempt to create a texture from a file.
     let TryCreateTexture (internalFormat, minFilter, magFilter, generateMipmaps, filePath) =
-        match TryCreateTextureInternal (None, internalFormat, generateMipmaps, filePath) with
+        match TryCreateTextureInternal (internalFormat, generateMipmaps, filePath) with
         | Right (metadata, texture) ->
             Gl.BindTexture (TextureTarget.Texture2d, texture)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
@@ -173,24 +197,3 @@ module Texture =
     /// Attempt to create an unfiltered memoized texture from a file.
     let TryCreateTextureUnfilteredMemoized (internalFormat, filePath, textureMemo) =
         TryCreateTextureMemoized (internalFormat, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath, textureMemo)
-
-    /// Recreate the memoized textures.
-    let RecreateTexturesMemoized textureMemo =
-        for entry in textureMemo.Textures do
-            let filePath = entry.Key
-            let (metadata, texture) = entry.Value
-            TryCreateTextureInternal (Some texture, metadata.TextureInternalFormat, metadata.TextureGenerateMipmaps, filePath) |> ignore
-
-    /// Delete a memoized texture.
-    let DeleteTextureMemoized textureKey (textureMemo : TextureMemo) =
-        match textureMemo.Textures.TryGetValue textureKey with
-        | (true, (_, texture)) ->
-            Gl.DeleteTextures texture
-            textureMemo.Textures.Remove textureKey |> ignore<bool>
-        | (false, _) -> ()
-
-    /// Delete memoized textures.
-    let DeleteTexturesMemoized textureMemo =
-        for entry in textureMemo.Textures do
-            Gl.DeleteTextures [|snd entry.Value|]
-        textureMemo.Textures.Clear ()

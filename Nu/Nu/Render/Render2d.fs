@@ -133,6 +133,12 @@ type LayeredOperation2dComparer () =
                 if assetNameCompare <> 0 then assetNameCompare
                 else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
+/// The internally used package state for the 2d OpenGL renderer.
+type [<ReferenceEquality>] private GlPackageState2d =
+    { TextureMemo : OpenGL.Texture.TextureMemo
+      CubeMapMemo : OpenGL.CubeMap.CubeMapMemo
+      AssimpSceneMemo : Assimp.AssimpSceneMemo }
+
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =
     private
@@ -141,8 +147,8 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderSpriteQuad : uint * uint * uint // TODO: release these resources on clean-up.
           RenderTextQuad : uint * uint * uint // TODO: release these resources on clean-up.
           RenderSpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
-          RenderPackages : Packages<RenderAsset, unit>
-          mutable RenderPackageCachedOpt : string * Package<RenderAsset, unit> // OPTIMIZATION: nullable for speed.
+          RenderPackages : Packages<RenderAsset, GlPackageState2d>
+          mutable RenderPackageCachedOpt : string * Package<RenderAsset, GlPackageState2d> // OPTIMIZATION: nullable for speed.
           mutable RenderAssetCachedOpt : string * RenderAsset
           RenderLayeredOperations : LayeredOperation2d List }
 
@@ -197,26 +203,37 @@ type [<ReferenceEquality>] GlRenderer2d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = Assimp.AssimpSceneMemo.make () }
+                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
 
-                // reload assets if specified
+                // free assets if specified
                 if reloading then
+
+                    // clear package
+                    renderPackage.Assets.Clear ()
+
+                    // clear memos
+                    renderPackage.PackageState.TextureMemo.Textures.Clear ()
+                    renderPackage.PackageState.CubeMapMemo.CubeMaps.Clear ()
+                    renderPackage.PackageState.AssimpSceneMemo.AssimpScenes.Clear ()
+
+                    // free assets
                     for asset in assets do
                         match renderPackage.Assets.TryGetValue asset.AssetTag.AssetName with
                         | (true, (_, renderAsset)) -> GlRenderer2d.freeRenderAsset renderAsset renderer
                         | (false, _) -> ()
-                        match GlRenderer2d.tryLoadRenderAsset asset renderer with
-                        | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, renderAsset)
-                        | None -> ()
 
-                // otherwise create assets
-                else
-                    for asset in assets do
-                        match GlRenderer2d.tryLoadRenderAsset asset renderer with
-                        | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, renderAsset)
-                        | None -> ()
+                // memoize assets
+                AssetMemo.memoizeAssets
+                    assets renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
+
+                // load assets
+                for asset in assets do
+                    match GlRenderer2d.tryLoadRenderAsset asset renderer with
+                    | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, renderAsset)
+                    | None -> ()
 
             // handle error cases
             | Left failedAssetNames ->
