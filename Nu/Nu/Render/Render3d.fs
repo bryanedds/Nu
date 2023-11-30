@@ -593,11 +593,28 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
 
+    static member private getInternalFormatFromAssetName (assetName : string) =
+        if  assetName.EndsWith "_n" ||
+            assetName.EndsWith "_u" ||
+            assetName.EndsWith "Normal" ||
+            assetName.EndsWith "Uncompressed" then
+            Constants.OpenGl.UncompressedTextureFormat
+        else Constants.OpenGl.CompressedColorTextureFormat
+
     static member private freeRenderAsset packageState filePath renderAsset renderer =
         GlRenderer3d.invalidateCaches renderer
         match renderAsset with
         | RawAsset _ ->
             () // nothing to do
+        | TextureEirAsset eir ->
+            match eir with
+            | Right _ ->
+                OpenGL.Texture.DeleteTextureMemoized filePath packageState.TextureMemo
+                OpenGL.Hl.Assert ()
+            | Left future ->
+                match future.Result with
+                | Left _ -> ()
+                | Right (_, _, d) -> d.Dispose ()
         | TextureAsset (_, _) ->
             OpenGL.Texture.DeleteTextureMemoized filePath packageState.TextureMemo
             OpenGL.Hl.Assert ()
@@ -615,13 +632,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        let internalFormat =
-            if  asset.AssetTag.AssetName.EndsWith "_n" ||
-                asset.AssetTag.AssetName.EndsWith "_u" ||
-                asset.AssetTag.AssetName.EndsWith "Normal" ||
-                asset.AssetTag.AssetName.EndsWith "Uncompressed" then
-                Constants.OpenGl.UncompressedTextureFormat
-            else Constants.OpenGl.CompressedColorTextureFormat
+        let internalFormat = GlRenderer3d.getInternalFormatFromAssetName asset.AssetTag.AssetName
         match OpenGL.Texture.TryCreateTextureFilteredMemoized (internalFormat, asset.FilePath, packageState.TextureMemo) with
         | Right (textureMetadata, texture) ->
             Some (textureMetadata, texture)
@@ -666,7 +677,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             match GlRenderer3d.tryLoadRawAsset asset renderer with
             | Some () -> Some RawAsset
             | None -> None
-        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
+        | ".tif" | ".tiff" ->
+            let textureDataFuture = new TextureDataFuture (fun () ->
+                let internalFormat = GlRenderer3d.getInternalFormatFromAssetName asset.AssetTag.AssetName
+                match OpenGL.Texture.TryCreateTextureData (internalFormat, true, asset.FilePath) with
+                | Some textureData -> Right textureData
+                | None -> Left ("Error creating texture data from '" + asset.FilePath + "'"))
+            Some (TextureEirAsset (Left textureDataFuture))
+        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" ->
             match GlRenderer3d.tryLoadTextureAsset packageState asset renderer with
             | Some (metadata, texture) -> Some (TextureAsset (metadata, texture))
             | None -> None
@@ -710,6 +728,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | (true, (_, renderAsset)) ->
                             match renderAsset with
                             | RawAsset _ -> ()
+                            | TextureEirAsset eir ->
+                                match eir with
+                                | Right _ -> () // already reloaded via texture memo
+                                | Left future ->
+                                    match future.Result with
+                                    | Left _ -> ()
+                                    | Right (_, _, d) -> d.Dispose ()
                             | TextureAsset _ -> () // already reloaded via texture memo
                             | FontAsset _ -> () // not yet used in 3d renderer
                             | CubeMapAsset _ -> () // already reloaded via cube map memo
@@ -793,14 +818,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
-    static member private tryGetImageData (assetTag : Image AssetTag) renderer =
+    static member private tryGetTextureData (assetTag : Image AssetTag) renderer =
         match GlRenderer3d.tryGetFilePath (AssetTag.generalize assetTag) renderer with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateImageData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
-            | Some (metadata, imageDataPtr, disposer) ->
+            match OpenGL.Texture.TryCreateTextureData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
+            | Some (metadata, textureDataPtr, disposer) ->
                 use _ = disposer
                 let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
-                Marshal.Copy (imageDataPtr, bytes, 0, bytes.Length)
+                Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
                 Some (metadata, bytes)
             | None -> None
         | None -> None
@@ -983,7 +1008,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let normals =
                 match geometryDescriptor.NormalImageOpt with
                 | Some normalImage ->
-                    match GlRenderer3d.tryGetImageData normalImage renderer with
+                    match GlRenderer3d.tryGetTextureData normalImage renderer with
                     | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         bytes |>
                         Array.map (fun x -> single x / single Byte.MaxValue) |>
@@ -997,7 +1022,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // compute tint
             let tint =
-                match GlRenderer3d.tryGetImageData geometryDescriptor.TintImage renderer with
+                match GlRenderer3d.tryGetTextureData geometryDescriptor.TintImage renderer with
                 | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                     bytes |>
                     Array.map (fun x -> single x / single Byte.MaxValue) |>
@@ -1016,7 +1041,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                          " which references more than the guaranteed number of supported fragment shader textures.")
                 match blendMaterial.BlendMap with
                 | RgbaMap rgbaMap ->
-                    match GlRenderer3d.tryGetImageData rgbaMap renderer with
+                    match GlRenderer3d.tryGetTextureData rgbaMap renderer with
                     | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         for i in 0 .. dec positionsAndTexCoordses.Length do
                             // ARGB reverse byte order, from Drawing.Bitmap (windows).
@@ -1025,15 +1050,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                             blendses.[i,1] <- single bytes.[i * 4 + 1] / single Byte.MaxValue
                             blendses.[i,2] <- single bytes.[i * 4 + 0] / single Byte.MaxValue
                             blendses.[i,3] <- single bytes.[i * 4 + 3] / single Byte.MaxValue
-                    | _ -> Log.info ("Could not locate image data for blend map '" + scstring rgbaMap + "'.")
+                    | _ -> Log.info ("Could not locate texture data for blend map '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
                     for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
                         let red = reds.[i]
-                        match GlRenderer3d.tryGetImageData red renderer with
+                        match GlRenderer3d.tryGetTextureData red renderer with
                         | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                             for j in 0 .. dec positionsAndTexCoordses.Length do
                                 blendses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
-                        | _ -> Log.info ("Could not locate image data for blend map '" + scstring red + "'.")
+                        | _ -> Log.info ("Could not locate texture data for blend map '" + scstring red + "'.")
             | FlatMaterial _ ->
                 for i in 0 .. dec positionsAndTexCoordses.Length do
                     blendses.[i,0] <- 1.0f

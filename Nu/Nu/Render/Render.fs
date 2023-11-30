@@ -55,6 +55,7 @@ type [<NoEquality; NoComparison; Struct>] Particle =
 /// An asset that is used for rendering.
 type RenderAsset =
     | RawAsset
+    | TextureEirAsset of TextureEir
     | TextureAsset of TextureMetadata : OpenGL.Texture.TextureMetadata * Texture : uint
     | FontAsset of PointSize : int * Font : nativeint
     | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapMemoKey * CubeMap : uint * IrradianceAndEnvironmentMapOptRef : (uint * uint) option ref

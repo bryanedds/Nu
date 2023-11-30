@@ -55,7 +55,7 @@ module Metadata =
                 Some (TextureMetadata (v2i image.Width image.Height))
             else
                 // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow path here.
-                match OpenGL.Texture.TryCreateImageData (Unchecked.defaultof<OpenGL.InternalFormat>, false, asset.FilePath) with
+                match OpenGL.Texture.TryCreateTextureData (Unchecked.defaultof<OpenGL.InternalFormat>, false, asset.FilePath) with
                 | Some (metadata, _, disposer) ->
                     use _ = disposer
                     Some (TextureMetadata (v2i metadata.TextureWidth metadata.TextureHeight))

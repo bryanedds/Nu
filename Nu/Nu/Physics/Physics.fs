@@ -41,14 +41,14 @@ type [<StructuralEquality; NoComparison>] HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
 
-    static member private tryGetImageData tryGetAssetFilePath (assetTag : Image AssetTag) =
+    static member private tryGetTextureData tryGetAssetFilePath (assetTag : Image AssetTag) =
         match tryGetAssetFilePath (AssetTag.generalize assetTag) with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateImageData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
-            | Some (metadata, imageDataPtr, disposer) ->
+            match OpenGL.Texture.TryCreateTextureData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
+            | Some (metadata, textureDataPtr, disposer) ->
                 use _ = disposer
                 let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
-                Marshal.Copy (imageDataPtr, bytes, 0, bytes.Length)
+                Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
                 Some (metadata, bytes)
             | None -> None
         | None -> None
@@ -64,7 +64,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
         | None -> None
 
     static member private tryGetImageHeightMapMetadata tryGetAssetFilePath (bounds : Box3) tiles image =
-        match HeightMap.tryGetImageData tryGetAssetFilePath image with
+        match HeightMap.tryGetTextureData tryGetAssetFilePath image with
         | Some (metadata, bytes) ->
 
             // compute normalize heights
