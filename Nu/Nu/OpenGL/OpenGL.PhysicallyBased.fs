@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
+open System.Threading.Tasks
 open FSharp.NativeInterop
 open Prime
 open Nu
@@ -1339,10 +1340,27 @@ module PhysicallyBased =
         | None -> Right geometries
 
     /// Attempt to create physically-based model from a model file with assimp.
-    let TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureMemo, assimp : Assimp.AssimpContext) =
+    let TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureMemo, assimpSceneMemo : Assimp.AssimpSceneMemo) =
+
+        // attempt to memoize scene
+        let sceneEir =
+            match assimpSceneMemo.AssimpScenes.TryGetValue filePath with
+            | (false, _) ->
+
+                // attempt to create scene
+                use assimp = new Assimp.AssimpContext ()
+                try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
+                    assimpSceneMemo.AssimpScenes.[filePath] <- scene
+                    Right scene
+                with exn ->
+                    Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
+
+            // already exists
+            | (true, texture) -> Right texture
 
         // attempt to import from assimp scene
-        try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
+        match sceneEir with
+        | Right scene ->
             let dirPath = Path.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
             | Right materials ->
@@ -1445,7 +1463,7 @@ module PhysicallyBased =
                 // error
                 | Left error -> Left error
             | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
-        with exn -> Left ("Could not load static model '" + filePath + "' due to: " + scstring exn)
+        | Left error -> Left error
 
     /// Create a physically-based shader.
     let CreatePhysicallyBasedShader (shaderFilePath : string) =

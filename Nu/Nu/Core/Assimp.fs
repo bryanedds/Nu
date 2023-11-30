@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Numerics
+open System.Threading.Tasks
 open Prime
 
 /// Determines how an animation is played.
@@ -27,6 +28,18 @@ type [<StructuralEquality; NoComparison>] Animation =
 /// Intentionally prevents the original Assimp namespace from being opened.
 [<RequireQualifiedAccess>]
 module Assimp =
+
+    /// A parallelizable task for loading assimp scenes into memory.
+    type AssimpSceneLoadTask =
+        Task<Either<string, string * Assimp.Scene>>
+
+    /// Memoizes assimp scene loads.
+    type [<ReferenceEquality>] AssimpSceneMemo =
+        { AssimpScenes : Dictionary<string, Assimp.Scene> }
+
+        /// Make an assimp scene memoizer.
+        static member make () =
+            { AssimpScenes = Dictionary HashIdentity.Structural }
 
     /// Convert a matrix from an Assimp representation to Nu's.
     let ExportMatrix (m : Assimp.Matrix4x4) =
