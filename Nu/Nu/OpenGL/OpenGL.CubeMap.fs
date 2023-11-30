@@ -41,10 +41,10 @@ module CubeMap =
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
                 let faceFilePath = faceFilePaths.[i]
-                match Texture.TryCreateImageData (Constants.OpenGl.UncompressedTextureFormat, false, faceFilePath) with
-                | Some (metadata, imageData, disposer) ->
+                match Texture.TryCreateTextureData (Constants.OpenGl.UncompressedTextureFormat, false, faceFilePath) with
+                | Some (metadata, textureData, disposer) ->
                     use _ = disposer
-                    Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGl.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, imageData)
+                    Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGl.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, textureData)
                     Hl.Assert ()
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
