@@ -1193,19 +1193,19 @@ module Data =
               readSheetVsync Assets.Data.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationType)
               readSheetVsync Assets.Data.FieldDataFilePath (fun data -> data.FieldType)|]
         let results = tasks |> Vsync.Parallel |> Vsync.RunSynchronously
-        { Weapons = results.[0] :?> _
-          Armors = results.[1] :?> _ 
-          Accessories = results.[2] :?> _ 
-          Consumables = results.[3] :?> _ 
-          Techs = results.[4] :?> _ 
-          Archetypes = results.[5] :?> _ 
-          Characters = results.[6] :?> _ 
-          Shops = results.[7] :?> _ 
-          Battles = results.[8] :?> _ 
-          Encounters = results.[9] :?> _ 
-          TechAnimations = results.[10] :?> _ 
-          CharacterAnimations = results.[11] :?> _ 
-          Fields = results.[12] :?> _ }
+        { Weapons = cast results.[0]
+          Armors = cast results.[1] 
+          Accessories = cast results.[2] 
+          Consumables = cast results.[3] 
+          Techs = cast results.[4] 
+          Archetypes = cast results.[5] 
+          Characters = cast results.[6] 
+          Shops = cast results.[7] 
+          Battles = cast results.[8] 
+          Encounters = cast results.[9] 
+          TechAnimations = cast results.[10]
+          CharacterAnimations = cast results.[11]
+          Fields = cast results.[12] }
 
     let Value =
         readFromFiles ()
