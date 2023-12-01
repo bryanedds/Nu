@@ -1341,6 +1341,7 @@ module PhysicallyBased =
         | None -> Right geometries
 
     /// Attempt to create physically-based model from a model file with assimp.
+    /// Thread-safe if renderable = false.
     let TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureMemo, assimpSceneMemo : Assimp.AssimpSceneMemo) =
 
         // attempt to memoize scene

@@ -46,6 +46,18 @@ module AssetMemo =
                 task.Start ()
                 Vsync.AwaitTaskT task]
 
+        let assimpSceneLoadTasks =
+            [for assimpSceneAsset in assimpSceneAssets do
+                let task =
+                    new Assimp.AssimpSceneLoadTask (fun () ->
+                        use assimp = new Assimp.AssimpContext ()
+                        try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
+                            Right (assimpSceneAsset.FilePath, scene)
+                        with exn ->
+                            Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn))
+                task.Start ()
+                Vsync.AwaitTaskT task]
+
         for task in textureDataLoadTasks do
             match Vsync.RunSynchronously task with
             | Right (filePath, metadata, textureData, disposer) ->
@@ -69,18 +81,6 @@ module AssetMemo =
                 | Right cubeMap -> cubeMapMemo.CubeMaps.[cubeMapMemoKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")
-
-        let assimpSceneLoadTasks =
-            [for assimpSceneAsset in assimpSceneAssets do
-                let task =
-                    new Assimp.AssimpSceneLoadTask (fun () ->
-                        use assimp = new Assimp.AssimpContext ()
-                        try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
-                            Right (assimpSceneAsset.FilePath, scene)
-                        with exn ->
-                            Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn))
-                task.Start ()
-                Vsync.AwaitTaskT task]
 
         for task in assimpSceneLoadTasks do
             match Vsync.RunSynchronously task with
