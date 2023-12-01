@@ -4,16 +4,11 @@
 namespace OpenGL
 open System
 open System.Collections.Generic
-open System.Threading.Tasks
 open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
 module Assimp =
-
-    /// A parallelizable task for loading assimp scenes into memory.
-    type AssimpSceneLoadTask =
-        Task<Either<string, string * Assimp.Scene>>
 
     /// Memoizes assimp scene loads.
     type [<ReferenceEquality>] AssimpSceneMemo =

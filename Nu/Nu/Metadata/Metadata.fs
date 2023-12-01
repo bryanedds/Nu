@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Threading.Tasks
 open System.IO
 open TiledSharp
 open Prime
@@ -110,7 +109,7 @@ module Metadata =
         | Right assets ->
             let package =
                 assets |>
-                List.map (fun asset -> let t = new Task<_> (fun () -> tryGenerateAssetMetadata asset) in t.Start (); Vsync.AwaitTaskT t) |>
+                List.map (fun asset -> vsync { return tryGenerateAssetMetadata asset }) |>
                 Vsync.Parallel |>
                 Vsync.RunSynchronously |>
                 Array.definitize |>

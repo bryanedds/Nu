@@ -1174,20 +1174,38 @@ module Data =
         let value = symbolToValue<'d list> symbol
         Map.ofListBy (fun data -> getKey data, data) value
 
+    let private readSheetVsync<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
+        vsync { return readSheet filePath getKey :> obj }
+
     let private readFromFiles () =
-        { Weapons = readSheet Assets.Data.WeaponDataFilePath (fun data -> data.WeaponType)
-          Armors = readSheet Assets.Data.ArmorDataFilePath (fun data -> data.ArmorType)
-          Accessories = readSheet Assets.Data.AccessoryDataFilePath (fun data -> data.AccessoryType)
-          Consumables = readSheet Assets.Data.ConsumableDataFilePath (fun data -> data.ConsumableType)
-          Techs = readSheet Assets.Data.TechDataFilePath (fun data -> data.TechType)
-          Archetypes = readSheet Assets.Data.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
-          Characters = readSheet Assets.Data.CharacterDataFilePath (fun data -> data.CharacterType)
-          Shops = readSheet Assets.Data.ShopDataFilePath (fun data -> data.ShopType)
-          Battles = readSheet Assets.Data.BattleDataFilePath (fun data -> data.BattleType)
-          Encounters = readSheet Assets.Data.EncounterDataFilePath (fun data -> data.EncounterType)
-          TechAnimations = readSheet Assets.Data.TechAnimationDataFilePath (fun data -> data.TechType)
-          CharacterAnimations = readSheet Assets.Data.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationType)
-          Fields = readSheet Assets.Data.FieldDataFilePath (fun data -> data.FieldType) }
+        let tasks =
+            [|readSheetVsync Assets.Data.WeaponDataFilePath (fun data -> data.WeaponType)
+              readSheetVsync Assets.Data.ArmorDataFilePath (fun data -> data.ArmorType)
+              readSheetVsync Assets.Data.AccessoryDataFilePath (fun data -> data.AccessoryType)
+              readSheetVsync Assets.Data.ConsumableDataFilePath (fun data -> data.ConsumableType)
+              readSheetVsync Assets.Data.TechDataFilePath (fun (data : TechData) -> data.TechType)
+              readSheetVsync Assets.Data.ArchetypeDataFilePath (fun (data : ArchetypeData) -> data.ArchetypeType)
+              readSheetVsync Assets.Data.CharacterDataFilePath (fun data -> data.CharacterType)
+              readSheetVsync Assets.Data.ShopDataFilePath (fun data -> data.ShopType)
+              readSheetVsync Assets.Data.BattleDataFilePath (fun data -> data.BattleType)
+              readSheetVsync Assets.Data.EncounterDataFilePath (fun data -> data.EncounterType)
+              readSheetVsync Assets.Data.TechAnimationDataFilePath (fun data -> data.TechType)
+              readSheetVsync Assets.Data.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationType)
+              readSheetVsync Assets.Data.FieldDataFilePath (fun data -> data.FieldType)|]
+        let results = tasks |> Vsync.Parallel |> Vsync.RunSynchronously
+        { Weapons = results.[0] :?> _
+          Armors = results.[1] :?> _ 
+          Accessories = results.[2] :?> _ 
+          Consumables = results.[3] :?> _ 
+          Techs = results.[4] :?> _ 
+          Archetypes = results.[5] :?> _ 
+          Characters = results.[6] :?> _ 
+          Shops = results.[7] :?> _ 
+          Battles = results.[8] :?> _ 
+          Encounters = results.[9] :?> _ 
+          TechAnimations = results.[10] :?> _ 
+          CharacterAnimations = results.[11] :?> _ 
+          Fields = results.[12] :?> _ }
 
     let Value =
         readFromFiles ()
