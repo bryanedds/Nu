@@ -13,7 +13,7 @@ module Gameplay =
         | Quit
 
     // this is our MMCC model type representing gameplay.
-    // this model representation uses update time, that is, time based on seconds.
+    // this model representation uses clock time, that is, time based on seconds.
     // unlike the other demo projects, this project uses ClockTime rather than UpdateTime. This will allows your frame
     // rate to vary based on the deployment machine's specs.
     type Gameplay =

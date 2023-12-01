@@ -3,11 +3,9 @@
 
 namespace OpenGL
 open System
-open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
-open System.Threading.Tasks
 open FSharp.NativeInterop
 open Prime
 open Nu
