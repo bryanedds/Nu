@@ -11,18 +11,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module AssetMemo =
 
-    /// Infer the internal format of an asset by its name.
-    /// TODO: move this somewhere more relevant.
-    let getInternalFormatFromAssetName (assetName : string) =
-        if  assetName.EndsWith "_n" ||
-            assetName.EndsWith "_u" ||
-            assetName.EndsWith "Normal" ||
-            assetName.EndsWith "Uncompressed" then
-            Constants.OpenGl.UncompressedTextureFormat
-        else Constants.OpenGl.CompressedColorTextureFormat
-
-    /// Memoize assets in a parallel manner.
-    let memoizeAssets is2d (assets : obj Asset list) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : Assimp.AssimpSceneMemo) =
+    /// Memoize assets in parallel.
+    let memoizeParallel is2d (assets : obj Asset list) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo) =
 
         // collect memoizable assets
         let textureAssets = List ()
@@ -35,6 +25,7 @@ module AssetMemo =
             | ".fbx" | ".dae" | ".obj" -> assimpSceneAssets.Add asset
             | _ -> ()
 
+        // instantiate texture data loading tasks
         let textureDataLoadTasks =
             [for textureAsset in textureAssets do
                 let task =
@@ -42,17 +33,18 @@ module AssetMemo =
                         let internalFormat =
                             if is2d
                             then Constants.OpenGl.UncompressedTextureFormat
-                            else getInternalFormatFromAssetName textureAsset.AssetTag.AssetName
+                            else AssetTag.inferInternalFormatFromAssetName textureAsset.AssetTag
                         match OpenGL.Texture.TryCreateTextureData (internalFormat, true, textureAsset.FilePath) with
                         | Some (metadata, textureData, disposable) -> Right (textureAsset.FilePath, metadata, textureData, disposable)
                         | None -> Left ("Error creating texture data from '" + textureAsset.FilePath + "'"))
                 task.Start ()
                 Vsync.AwaitTaskT task]
 
+        // instantiate assimp scene loading tasks
         let assimpSceneLoadTasks =
             [for assimpSceneAsset in assimpSceneAssets do
                 let task =
-                    new Assimp.AssimpSceneLoadTask (fun () ->
+                    new OpenGL.Assimp.AssimpSceneLoadTask (fun () ->
                         use assimp = new Assimp.AssimpContext ()
                         try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
                             Right (assimpSceneAsset.FilePath, scene)
@@ -61,6 +53,7 @@ module AssetMemo =
                 task.Start ()
                 Vsync.AwaitTaskT task]
 
+        // run texture data loading tasks, handling results as soon as they come in (to minimize RAM utilization)
         for task in textureDataLoadTasks do
             match Vsync.RunSynchronously task with
             | Right (filePath, metadata, textureData, disposer) ->
@@ -72,6 +65,13 @@ module AssetMemo =
                 textureMemo.Textures.[filePath] <- (metadata, texture)
             | Left error -> Log.info error
 
+        // run assimp scene loading tasks, handling results as soon as they come in (to minimize RAM utilization)
+        for task in assimpSceneLoadTasks do
+            match Vsync.RunSynchronously task with
+            | Right (filePath, scene) -> assimpSceneMemo.AssimpScenes.[filePath] <- scene
+            | Left error -> Log.info error
+
+        // memoize cube maps directly
         for cubeMap in cubeMapAssets do
             match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
@@ -87,8 +87,3 @@ module AssetMemo =
                 | Right cubeMap -> cubeMapMemo.CubeMaps.[cubeMapMemoKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")
-
-        for task in assimpSceneLoadTasks do
-            match Vsync.RunSynchronously task with
-            | Right (filePath, scene) -> assimpSceneMemo.AssimpScenes.[filePath] <- scene
-            | Left error -> Log.info error

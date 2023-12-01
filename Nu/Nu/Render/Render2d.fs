@@ -137,7 +137,7 @@ type LayeredOperation2dComparer () =
 type [<ReferenceEquality>] private GlPackageState2d =
     { TextureMemo : OpenGL.Texture.TextureMemo
       CubeMapMemo : OpenGL.CubeMap.CubeMapMemo
-      AssimpSceneMemo : Assimp.AssimpSceneMemo }
+      AssimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo }
 
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =
@@ -203,7 +203,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = Assimp.AssimpSceneMemo.make () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
@@ -225,8 +225,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                         | (true, (_, renderAsset)) -> GlRenderer2d.freeRenderAsset renderAsset renderer
                         | (false, _) -> ()
 
-                // memoize assets
-                AssetMemo.memoizeAssets
+                // memoize assets in parallel
+                AssetMemo.memoizeParallel
                     true assets renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
 
                 // load assets
