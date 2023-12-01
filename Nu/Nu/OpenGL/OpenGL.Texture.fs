@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Runtime.InteropServices
-open System.Threading.Tasks
 open SDL2
 open Prime
 open Nu
@@ -35,10 +34,6 @@ module Texture =
               TextureTexelHeight = 0.0f
               TextureInternalFormat = Unchecked.defaultof<InternalFormat>
               TextureGenerateMipmaps = false }
-
-    /// A parallelizable task for loading textures into memory.
-    type TextureDataLoadTask =
-        Task<Either<string, string * TextureMetadata * nativeint * IDisposable>>
 
     /// Memoizes texture loads.
     type [<ReferenceEquality>] TextureMemo =

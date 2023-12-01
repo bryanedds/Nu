@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Numerics
-open System.Threading.Tasks
 open Prime
 
 /// Determines how an animation is played.

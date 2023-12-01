@@ -25,37 +25,31 @@ module AssetMemo =
             | ".fbx" | ".dae" | ".obj" -> assimpSceneAssets.Add asset
             | _ -> ()
 
-        // instantiate texture data loading tasks
-        let textureDataLoadTasks =
+        // instantiate texture data loading ops
+        let textureDataLoadOps =
             [for textureAsset in textureAssets do
-                let task =
-                    new OpenGL.Texture.TextureDataLoadTask (fun () ->
-                        let internalFormat =
-                            if is2d
-                            then Constants.OpenGl.UncompressedTextureFormat
-                            else AssetTag.inferInternalFormatFromAssetName textureAsset.AssetTag
-                        match OpenGL.Texture.TryCreateTextureData (internalFormat, true, textureAsset.FilePath) with
-                        | Some (metadata, textureData, disposable) -> Right (textureAsset.FilePath, metadata, textureData, disposable)
-                        | None -> Left ("Error creating texture data from '" + textureAsset.FilePath + "'"))
-                task.Start ()
-                Vsync.AwaitTaskT task]
+                vsync
+                    { let internalFormat =
+                        if is2d
+                        then Constants.OpenGl.UncompressedTextureFormat
+                        else AssetTag.inferInternalFormatFromAssetName textureAsset.AssetTag
+                      match OpenGL.Texture.TryCreateTextureData (internalFormat, true, textureAsset.FilePath) with
+                      | Some (metadata, textureData, disposable) -> return Right (textureAsset.FilePath, metadata, textureData, disposable)
+                      | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
-        // instantiate assimp scene loading tasks
-        let assimpSceneLoadTasks =
+        // instantiate assimp scene loading ops
+        let assimpSceneLoadOps =
             [for assimpSceneAsset in assimpSceneAssets do
-                let task =
-                    new OpenGL.Assimp.AssimpSceneLoadTask (fun () ->
-                        use assimp = new Assimp.AssimpContext ()
-                        try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
-                            Right (assimpSceneAsset.FilePath, scene)
-                        with exn ->
-                            Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn))
-                task.Start ()
-                Vsync.AwaitTaskT task]
+                vsync
+                    { use assimp = new Assimp.AssimpContext ()
+                      try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
+                          return Right (assimpSceneAsset.FilePath, scene)
+                      with exn ->
+                          return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
 
-        // run texture data loading tasks, handling results as soon as they come in (to minimize RAM utilization)
-        for task in textureDataLoadTasks do
-            match Vsync.RunSynchronously task with
+        // run texture data loading ops
+        for textureData in textureDataLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously do
+            match textureData with
             | Right (filePath, metadata, textureData, disposer) ->
                 use _ = disposer
                 let texture =
@@ -65,9 +59,9 @@ module AssetMemo =
                 textureMemo.Textures.[filePath] <- (metadata, texture)
             | Left error -> Log.info error
 
-        // run assimp scene loading tasks, handling results as soon as they come in (to minimize RAM utilization)
-        for task in assimpSceneLoadTasks do
-            match Vsync.RunSynchronously task with
+        // run assimp scene loading op
+        for assimpScene in assimpSceneLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously do
+            match assimpScene with
             | Right (filePath, scene) -> assimpSceneMemo.AssimpScenes.[filePath] <- scene
             | Left error -> Log.info error
 
