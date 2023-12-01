@@ -27,10 +27,10 @@ module CubeMap =
             { CubeMaps = Dictionary HashIdentity.Structural }
 
     /// Attempt to create a cube map from 6 files.
-    let private TryCreateCubeMapInternal (cubeMapOpt, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
+    let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
 
         // bind new cube map
-        let cubeMap = match cubeMapOpt with Some cubeMap -> cubeMap | None -> Gl.GenTexture ()
+        let cubeMap = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
         Hl.Assert ()
 
@@ -61,30 +61,17 @@ module CubeMap =
             Left error
 
     /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
-        TryCreateCubeMapInternal (None, faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-
-    /// Attempt to create a cube map from 6 files.
     let TryCreateCubeMapMemoized (cubeMapMemoKey, cubeMapMemo) =
 
-        // deconstruct key
-        let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapMemoKey
-
         // memoize cube map
-        let cubeMapKey =
-            (Path.GetFullPath faceRightFilePath,
-             Path.GetFullPath faceLeftFilePath,
-             Path.GetFullPath faceTopFilePath,
-             Path.GetFullPath faceBottomFilePath,
-             Path.GetFullPath faceBackFilePath,
-             Path.GetFullPath faceFrontFilePath)
-        match cubeMapMemo.CubeMaps.TryGetValue cubeMapKey with
+        match cubeMapMemo.CubeMaps.TryGetValue cubeMapMemoKey with
         | (false, _) ->
 
             // attempt to create cube map
+            let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapMemoKey
             match TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
             | Right cubeMap ->
-                cubeMapMemo.CubeMaps.Add (cubeMapKey, cubeMap)
+                cubeMapMemo.CubeMaps.Add (cubeMapMemoKey, cubeMap)
                 Right cubeMap
             | Left error -> Left error
 

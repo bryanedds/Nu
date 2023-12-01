@@ -57,13 +57,13 @@ module AssetMemo =
         for cubeMap in cubeMapAssets do
             match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
-                let dirPath = Path.GetDirectoryName cubeMap.FilePath
-                let faceRightFilePath = dirPath + "/" + faceRightFilePath |> fun str -> str.Trim ()
-                let faceLeftFilePath = dirPath + "/" + faceLeftFilePath |> fun str -> str.Trim ()
-                let faceTopFilePath = dirPath + "/" + faceTopFilePath |> fun str -> str.Trim ()
-                let faceBottomFilePath = dirPath + "/" + faceBottomFilePath |> fun str -> str.Trim ()
-                let faceBackFilePath = dirPath + "/" + faceBackFilePath |> fun str -> str.Trim ()
-                let faceFrontFilePath = dirPath + "/" + faceFrontFilePath |> fun str -> str.Trim ()
+                let dirPath = Path.GetDirectoryName(cubeMap.FilePath).Replace("\\", "/")
+                let faceRightFilePath = dirPath + "/" + faceRightFilePath.Trim ()
+                let faceLeftFilePath = dirPath + "/" + faceLeftFilePath.Trim ()
+                let faceTopFilePath = dirPath + "/" + faceTopFilePath.Trim ()
+                let faceBottomFilePath = dirPath + "/" + faceBottomFilePath.Trim ()
+                let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
+                let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
                 let cubeMapMemoKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
                 match OpenGL.CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
                 | Right cubeMap -> cubeMapMemo.CubeMaps.[cubeMapMemoKey] <- cubeMap
