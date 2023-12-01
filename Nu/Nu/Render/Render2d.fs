@@ -166,11 +166,11 @@ type [<ReferenceEquality>] GlRenderer2d =
         | StaticModelAsset _ -> ()
         | AnimatedModelAsset _ -> ()
 
-    static member private tryLoadRenderAsset (asset : obj Asset) renderer =
+    static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
-            match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.OpenGl.UncompressedTextureFormat, asset.FilePath) with
+            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (Constants.OpenGl.UncompressedTextureFormat, asset.FilePath, packageState.TextureMemo) with
             | Right (textureMetadata, texture) ->
                 Some (TextureAsset (textureMetadata, texture))
             | Left error ->
@@ -231,7 +231,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                 // load assets
                 for asset in assets do
-                    match GlRenderer2d.tryLoadRenderAsset asset renderer with
+                    match GlRenderer2d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
                     | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, renderAsset)
                     | None -> ()
 
