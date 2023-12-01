@@ -287,6 +287,7 @@ module PhysicallyBased =
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
     /// inverted to smoothness (such as when a model is imported from an fbx exported from a Unity scene).
+    /// Thread-safe if renderable = false.
     let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, minFilterOpt, magFilterOpt, textureMemo, material : Assimp.Material) =
 
         // attempt to load albedo info
@@ -1303,6 +1304,7 @@ module PhysicallyBased =
         PhysicallyBasedSurface.make surfaceNames surfaceMatrix surfaceBounds physicallyBasedMaterial physicallyBasedGeometry
 
     /// Attempt to create physically-based material from an assimp scene.
+    /// Thread-safe if renderable = false.
     let TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let materials = Array.zeroCreate scene.Materials.Count
