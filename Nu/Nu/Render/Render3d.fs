@@ -651,7 +651,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ".fbx" | ".dae" | ".obj" ->
             match GlRenderer3d.tryLoadModelAsset packageState asset renderer with
             | Some model ->
-                if model.AnimatedSceneOpt.IsSome
+                if model.Animated
                 then Some (AnimatedModelAsset model)
                 else Some (StaticModelAsset (false, model))
             | None -> None
@@ -898,11 +898,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             let surfaces = Seq.toArray surfaces
             let hierarchy = TreeNode (Array.map OpenGL.PhysicallyBased.PhysicallyBasedSurface surfaces)
             let model : OpenGL.PhysicallyBased.PhysicallyBasedModel =
-                { Bounds = bounds
+                { Animated = false
+                  Bounds = bounds
                   LightProbes = [||]
                   Lights = [||]
                   Surfaces = surfaces
-                  AnimatedSceneOpt = None
+                  SceneOpt = None
                   PhysicallyBasedHierarchy = hierarchy }
 
             // assign model as appropriate render package asset
@@ -1229,7 +1230,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // render animated surfaces
                 for surface in modelAsset.Surfaces do
-                    match modelAsset.AnimatedSceneOpt with
+                    match modelAsset.SceneOpt with
                     | Some scene ->
 
                         // compute tex coords offset
@@ -1263,7 +1264,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
 
                     // unable to render
-                    | Some _ | None -> ()
+                    | None -> Log.infoOnce ("Cannot render animated model without an assimp scene for '" + scstring animatedModel + "'.")
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
         | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
@@ -1283,7 +1284,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // render animated surfaces
                 for surface in modelAsset.Surfaces do
-                    match modelAsset.AnimatedSceneOpt with
+                    match modelAsset.SceneOpt with
                     | Some scene ->
 
                         // render animated meshes
@@ -1320,7 +1321,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     else renderer.RenderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
 
                     // unable to render
-                    | Some _ | None -> ()
+                    | None -> Log.infoOnce ("Cannot render animated model without an assimp scene for '" + scstring animatedModel + "'.")
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
         | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 

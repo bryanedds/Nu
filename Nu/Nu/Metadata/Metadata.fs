@@ -77,7 +77,7 @@ module Metadata =
             let assimpSceneMemo = Assimp.AssimpSceneMemo.make () // unused
             match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimpSceneMemo) with
             | Right model ->
-                if model.AnimatedSceneOpt.IsSome
+                if model.Animated
                 then Some (AnimatedModelMetadata model)
                 else Some (StaticModelMetadata model)
             | Left error ->
