@@ -1343,7 +1343,7 @@ module PhysicallyBased =
 
     /// Attempt to create physically-based model from a model file with assimp.
     /// Thread-safe if renderable = false.
-    let TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureMemo, assimpSceneMemo : Assimp.AssimpSceneMemo) =
+    let TryCreatePhysicallyBasedModel (renderable, filePath, defaultMaterial, textureMemo, assimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo) =
 
         // attempt to memoize scene
         let sceneEir =

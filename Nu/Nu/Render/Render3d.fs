@@ -536,7 +536,7 @@ type [<ReferenceEquality>] StubRenderer3d =
 type [<ReferenceEquality>] private GlPackageState3d =
     { TextureMemo : OpenGL.Texture.TextureMemo
       CubeMapMemo : OpenGL.CubeMap.CubeMapMemo
-      AssimpSceneMemo : Assimp.AssimpSceneMemo }
+      AssimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo }
 
 /// The OpenGL implementation of Renderer3d.
 type [<ReferenceEquality>] GlRenderer3d =
@@ -596,7 +596,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        let internalFormat = AssetMemo.getInternalFormatFromAssetName asset.AssetTag.AssetName
+        let internalFormat = AssetTag.inferInternalFormatFromAssetName asset.AssetTag
         match OpenGL.Texture.TryCreateTextureFilteredMemoized (internalFormat, asset.FilePath, packageState.TextureMemo) with
         | Right (textureMetadata, texture) ->
             Some (textureMetadata, texture)
@@ -688,7 +688,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = Assimp.AssimpSceneMemo.make () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
@@ -710,8 +710,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | (true, (_, renderAsset)) -> GlRenderer3d.freeRenderAsset renderAsset renderer
                         | (false, _) -> ()
 
-                // memoize assets
-                AssetMemo.memoizeAssets
+                // memoize assets in parallel
+                AssetMemo.memoizeParallel
                     false assets renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
 
                 // load assets
@@ -911,7 +911,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | (true, package) ->
                 package.Assets.[assetTag.AssetName] <- ("", StaticModelAsset (true, model))
             | (false, _) ->
-                let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = Assimp.AssimpSceneMemo.make () }
+                let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                 let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName ("", StaticModelAsset (true, model)); PackageState = packageState }
                 renderer.RenderPackages.[assetTag.PackageName] <- package
 

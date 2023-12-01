@@ -41,6 +41,16 @@ module AssetTag =
     let specialize<'a> (assetTag : obj AssetTag) : 'a AssetTag =
         convert<obj, 'a> assetTag
 
+    /// Infer the internal format of an asset by its name.
+    /// TODO: move this somewhere more relevant?
+    let inferInternalFormatFromAssetName (assetTag : _ AssetTag) =
+        if  assetTag.AssetName.EndsWith "_n" ||
+            assetTag.AssetName.EndsWith "_u" ||
+            assetTag.AssetName.EndsWith "Normal" ||
+            assetTag.AssetName.EndsWith "Uncompressed" then
+            Constants.OpenGl.UncompressedTextureFormat
+        else Constants.OpenGl.CompressedColorTextureFormat
+
 [<AutoOpen>]
 module AssetTagOperators =
 

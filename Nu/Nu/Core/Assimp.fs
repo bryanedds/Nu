@@ -29,18 +29,6 @@ type [<StructuralEquality; NoComparison>] Animation =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    /// A parallelizable task for loading assimp scenes into memory.
-    type AssimpSceneLoadTask =
-        Task<Either<string, string * Assimp.Scene>>
-
-    /// Memoizes assimp scene loads.
-    type [<ReferenceEquality>] AssimpSceneMemo =
-        { AssimpScenes : Dictionary<string, Assimp.Scene> }
-
-        /// Make an assimp scene memoizer.
-        static member make () =
-            { AssimpScenes = Dictionary HashIdentity.Structural }
-
     /// Convert a matrix from an Assimp representation to Nu's.
     let ExportMatrix (m : Assimp.Matrix4x4) =
         Matrix4x4

@@ -729,13 +729,13 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             physicsEngine :> PhysicsEngine
 
         member physicsEngine.EnqueueMessage physicsMessage =
-#if HANDLE_PHYSICS_MESSAGES_IMMEDIATE
-            BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
-            physicsEngine
-#else
+#if HANDLE_PHYSICS_MESSAGES_DEFERRED
             let physicsMessages = UList.add physicsMessage physicsEngine.PhysicsMessages
             let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
             physicsEngine :> PhysicsEngine
+#else
+            BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
+            physicsEngine
 #endif
 
         member physicsEngine.Integrate stepTime physicsMessages =
