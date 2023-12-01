@@ -22,7 +22,7 @@ module AssetMemo =
         else Constants.OpenGl.CompressedColorTextureFormat
 
     /// Memoize assets in a parallel manner.
-    let memoizeAssets (assets : obj Asset list) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : Assimp.AssimpSceneMemo) =
+    let memoizeAssets filtered (assets : obj Asset list) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : Assimp.AssimpSceneMemo) =
 
         // collect memoizable assets
         let textureAssets = List ()
@@ -62,7 +62,10 @@ module AssetMemo =
             match Vsync.RunSynchronously task with
             | Right (filePath, metadata, textureData, disposer) ->
                 use _ = disposer
-                let texture = OpenGL.Texture.CreateTextureFromDataFiltered (Constants.OpenGl.CompressedColorTextureFormat, metadata, textureData)
+                let texture =
+                    if filtered
+                    then OpenGL.Texture.CreateTextureFromDataFiltered (Constants.OpenGl.CompressedColorTextureFormat, metadata, textureData)
+                    else OpenGL.Texture.CreateTextureFromDataUnfiltered (Constants.OpenGl.CompressedColorTextureFormat, metadata, textureData)
                 textureMemo.Textures.[filePath] <- (metadata, texture)
             | Left error -> Log.info error
 
