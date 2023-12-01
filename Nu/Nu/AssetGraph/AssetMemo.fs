@@ -22,7 +22,7 @@ module AssetMemo =
         else Constants.OpenGl.CompressedColorTextureFormat
 
     /// Memoize assets in a parallel manner.
-    let memoizeAssets filtered (assets : obj Asset list) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : Assimp.AssimpSceneMemo) =
+    let memoizeAssets is2d (assets : obj Asset list) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : Assimp.AssimpSceneMemo) =
 
         // collect memoizable assets
         let textureAssets = List ()
@@ -39,7 +39,10 @@ module AssetMemo =
             [for textureAsset in textureAssets do
                 let task =
                     new OpenGL.Texture.TextureDataLoadTask (fun () ->
-                        let internalFormat = getInternalFormatFromAssetName textureAsset.AssetTag.AssetName
+                        let internalFormat =
+                            if is2d
+                            then Constants.OpenGl.UncompressedTextureFormat
+                            else getInternalFormatFromAssetName textureAsset.AssetTag.AssetName
                         match OpenGL.Texture.TryCreateTextureData (internalFormat, true, textureAsset.FilePath) with
                         | Some (metadata, textureData, disposable) -> Right (textureAsset.FilePath, metadata, textureData, disposable)
                         | None -> Left ("Error creating texture data from '" + textureAsset.FilePath + "'"))
@@ -63,9 +66,9 @@ module AssetMemo =
             | Right (filePath, metadata, textureData, disposer) ->
                 use _ = disposer
                 let texture =
-                    if filtered
-                    then OpenGL.Texture.CreateTextureFromDataFiltered (Constants.OpenGl.CompressedColorTextureFormat, metadata, textureData)
-                    else OpenGL.Texture.CreateTextureFromDataUnfiltered (Constants.OpenGl.CompressedColorTextureFormat, metadata, textureData)
+                    if is2d
+                    then OpenGL.Texture.CreateTextureFromDataUnfiltered (metadata.TextureInternalFormat, metadata, textureData)
+                    else OpenGL.Texture.CreateTextureFromDataFiltered (metadata.TextureInternalFormat, metadata, textureData)
                 textureMemo.Textures.[filePath] <- (metadata, texture)
             | Left error -> Log.info error
 

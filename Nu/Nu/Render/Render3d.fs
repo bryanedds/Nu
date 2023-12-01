@@ -712,7 +712,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // memoize assets
                 AssetMemo.memoizeAssets
-                    true assets renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
+                    false assets renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
 
                 // load assets
                 for asset in assets do
