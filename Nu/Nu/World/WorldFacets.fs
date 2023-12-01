@@ -2750,7 +2750,6 @@ module AnimatedModelFacetModule =
         override this.TryGetHighlightBounds (entity, world) =
             match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
             | Some animatedModelMetadata ->
-                // TODO: include animation state.
                 let mutable boundsOpt = None
                 for surface in animatedModelMetadata.Surfaces do
                     let bounds2 = surface.SurfaceBounds.Transform surface.SurfaceMatrix
