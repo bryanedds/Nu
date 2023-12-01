@@ -145,11 +145,12 @@ module PhysicallyBased =
 
     /// A physically-based model.
     type PhysicallyBasedModel =
-        { Bounds : Box3
+        { Animated : bool
+          Bounds : Box3
           LightProbes : PhysicallyBasedLightProbe array
           Lights : PhysicallyBasedLight array
           Surfaces : PhysicallyBasedSurface array
-          AnimatedSceneOpt : Assimp.Scene option
+          SceneOpt : Assimp.Scene option
           PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
     /// Describes a physically-based shader that's loaded into GPU.
@@ -1457,11 +1458,12 @@ module PhysicallyBased =
 
                     // fin
                     Right
-                        { Bounds = bounds
+                        { Animated = animated
+                          Bounds = bounds
                           LightProbes = Array.ofSeq lightProbes
                           Lights = Array.ofSeq lights
                           Surfaces = Array.ofSeq surfaces
-                          AnimatedSceneOpt = if animated then Some scene else None
+                          SceneOpt = Some scene
                           PhysicallyBasedHierarchy = hierarchy }
 
                 // error
