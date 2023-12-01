@@ -70,6 +70,7 @@ module Metadata =
             Log.trace errorMessage
             None
 
+    /// Thread-safe.
     let private tryGenerateModelMetadata asset =
         if File.Exists asset.FilePath then
             let textureMemo = OpenGL.Texture.TextureMemo.make () // unused

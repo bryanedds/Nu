@@ -48,11 +48,12 @@ module TmxExtensions =
         /// it will be parsed to retrieve the image asset. If the custom property is missing, the image asset will be
         /// inferred from the tile set's image source filename. Throws a TileSetPropertyNotFoundException if the custom
         /// property "Image" is missing and the tile set's image source filename cannot be inferred.
+        /// Thread-safe.
         member this.GetImageAsset tileMapPackage =
             let imageAsset =
                 match this.Properties.TryGetValue "Image" with
                 | (true, imageAssetTagString) ->
-                    try scvalueMemo<Image AssetTag> imageAssetTagString
+                    try scvalue<Image AssetTag> imageAssetTagString
                     with :? KeyNotFoundException ->
                         let errorMessage =
                             "Tileset '" + this.Name + "' missing Image property.\n" +
@@ -67,6 +68,7 @@ module TmxExtensions =
     type TmxMap with
 
         /// Get each of the map's tilesets paired with their associated image assets (per the given package).
+        /// Thread-safe.
         member this.GetImageAssets tileMapPackage =
             this.Tilesets |>
             Array.ofSeq |>
