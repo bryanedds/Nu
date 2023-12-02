@@ -65,10 +65,11 @@
 		</Reference>
 		<PackageReference Include="Csv" Version="2.0.93" />
 		<PackageReference Include="FParsec" Version="1.1.1" />
-		<PackageReference Include="Aether.Physics2D" Version="1.7.0" />
+		<PackageReference Include="Aether.Physics2D" Version="2.0.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.5.0.1" />
 		<PackageReference Include="Prime" Version="9.16.0" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
 	</ItemGroup>
 
