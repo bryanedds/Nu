@@ -501,7 +501,7 @@ module WorldModule2 =
         /// locked by the engine's subsystems.
         static member tryReloadAssets world =
             let targetDir = AppDomain.CurrentDomain.BaseDirectory
-            let assetSourceDir = Path.GetFullPath (targetDir + "../../..")
+            let assetSourceDir = Pathf.GetFullPath (targetDir + "../../..")
             match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
             | (Right _, world) -> (true, world)
             | (Left _, world) -> (false, world)

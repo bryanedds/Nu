@@ -37,11 +37,10 @@ type Overlay =
 
         // get the unique, decomposed source types
         let decomposedTypes =
-            seq {
-                for sourceType in sourceTypes do
-                    yield sourceType
-                    for sourceTypeDecomposed in Reflection.getBaseTypesExceptObject sourceType do
-                        yield sourceTypeDecomposed } |>
+            [|for sourceType in sourceTypes do
+                yield sourceType
+                for sourceTypeDecomposed in Reflection.getBaseTypesExceptObject sourceType do
+                    yield sourceTypeDecomposed|] |>
             HashSet |>
             Seq.toList
 

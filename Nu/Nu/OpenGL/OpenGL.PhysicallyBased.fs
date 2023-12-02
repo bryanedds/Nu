@@ -305,8 +305,8 @@ module PhysicallyBased =
             else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
 
         // infer possible alternate texture names
-        let albedoTextureDirName =              match Path.GetDirectoryName albedoTextureSlot.FilePath with null -> "" | dirName -> dirName.Replace ("\\", "/")
-        let albedoTextureFileName =             Path.GetFileName albedoTextureSlot.FilePath
+        let albedoTextureDirName =              match albedoTextureSlot.FilePath with null -> "" | filePath -> Pathf.GetDirectoryName filePath
+        let albedoTextureFileName =             Pathf.GetFileName albedoTextureSlot.FilePath
         let filePathPrefix =                    if albedoTextureDirName <> "" then albedoTextureDirName + "/" else ""
         let has_bc =                            albedoTextureFileName.Contains "_bc"
         let has_d =                             albedoTextureFileName.Contains "_d"
@@ -1364,7 +1364,7 @@ module PhysicallyBased =
         // attempt to import from assimp scene
         match sceneEir with
         | Right scene ->
-            let dirPath = Path.GetDirectoryName(filePath).Replace("\\", "/")
+            let dirPath = Pathf.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
             | Right materials ->
                 let animated = scene.Animations.Count <> 0
@@ -1377,12 +1377,10 @@ module PhysicallyBased =
 
                     // collect light nodes
                     let lightNodes =
-                        seq {
-                            for i in 0 .. dec scene.LightCount do
-                                let light = scene.Lights.[i]
-                                let node = scene.RootNode.FindNode light.Name
-                                yield (light, node) } |>
-                        Seq.toArray
+                        [|for i in 0 .. dec scene.LightCount do
+                            let light = scene.Lights.[i]
+                            let node = scene.RootNode.FindNode light.Name
+                            yield (light, node)|]
 
                     // construct bounds and hierarchy
                     // TODO: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
@@ -1392,66 +1390,62 @@ module PhysicallyBased =
                     let mutable bounds = box3Zero
                     let hierarchy =
                         scene.RootNode.Map ([||], m4Identity, fun node names transform ->
-                            seq {
+                            [|// collect node
+                              yield PhysicallyBasedNode names
 
-                                // collect node
-                                yield PhysicallyBasedNode names
+                              // attempt to collect light probe
+                              let lastNameLower = Array.last(names).ToLowerInvariant()
+                              if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
+                                let names = Array.append names [|"LightProbe"|]
+                                let lightProbeOrigin = transform.Translation
+                                let lightProbeBounds =
+                                    box3
+                                        (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
+                                        (v3Dup Constants.Render.LightProbeSizeDefault)
+                                let lightProbe =
+                                    { LightProbeNames = names
+                                      LightProbeMatrixIsIdentity = transform.IsIdentity
+                                      LightProbeMatrix = transform
+                                      LightProbeBounds = lightProbeBounds }
+                                lightProbes.Add lightProbe
+                                yield PhysicallyBasedLightProbe lightProbe
 
-                                // attempt to collect light probe
-                                let lastNameLower = Array.last(names).ToLowerInvariant()
-                                if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
-                                    let names = Array.append names [|"LightProbe"|]
-                                    let lightProbeOrigin = transform.Translation
-                                    let lightProbeBounds =
-                                        box3
-                                            (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
-                                            (v3Dup Constants.Render.LightProbeSizeDefault)
-                                    let lightProbe =
-                                        { LightProbeNames = names
-                                          LightProbeMatrixIsIdentity = transform.IsIdentity
-                                          LightProbeMatrix = transform
-                                          LightProbeBounds = lightProbeBounds }
-                                    lightProbes.Add lightProbe
-                                    yield PhysicallyBasedLightProbe lightProbe
+                              // collect light
+                              // NOTE: this is an n^2 algorithm to deal with nodes having no light information
+                              for i in 0 .. dec lightNodes.Length do
+                                let (light, lightNode) = lightNodes.[i]
+                                if lightNode = node then
+                                    let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
+                                    let lightMatrix = Assimp.ExportMatrix node.TransformWorld
+                                    let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
+                                    let lightType =
+                                        match light.LightType with
+                                        | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
+                                        | _ -> PointLight // default to point light
+                                    let physicallyBasedLight =
+                                        { LightNames = names
+                                          LightMatrixIsIdentity = lightMatrix.IsIdentity
+                                          LightMatrix = lightMatrix
+                                          LightColor = color
+                                          LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
+                                          LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
+                                          LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
+                                          LightCutoff = Constants.Render.CutoffDefault // TODO: figure out if we can populate this properly.
+                                          PhysicallyBasedLightType = lightType }
+                                    lights.Add physicallyBasedLight
+                                    yield PhysicallyBasedLight physicallyBasedLight
 
-                                // collect light
-                                // NOTE: this is an n^2 algorithm to deal with nodes having no light information
-                                for i in 0 .. dec lightNodes.Length do
-                                    let (light, lightNode) = lightNodes.[i]
-                                    if lightNode = node then
-                                        let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
-                                        let lightMatrix = Assimp.ExportMatrix node.TransformWorld
-                                        let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
-                                        let lightType =
-                                            match light.LightType with
-                                            | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
-                                            | _ -> PointLight // default to point light
-                                        let physicallyBasedLight =
-                                            { LightNames = names
-                                              LightMatrixIsIdentity = lightMatrix.IsIdentity
-                                              LightMatrix = lightMatrix
-                                              LightColor = color
-                                              LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
-                                              LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
-                                              LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
-                                              LightCutoff = Constants.Render.CutoffDefault // TODO: figure out if we can populate this properly.
-                                              PhysicallyBasedLightType = lightType }
-                                        lights.Add physicallyBasedLight
-                                        yield PhysicallyBasedLight physicallyBasedLight
-
-                                // collect surfaces
-                                for i in 0 .. dec node.MeshIndices.Count do
-                                    let names = Array.append names [|"Geometry" + if i > 0 then string i else ""|]
-                                    let meshIndex = node.MeshIndices.[i]
-                                    let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                                    let material = materials.[materialIndex]
-                                    let geometry = geometries.[meshIndex]
-                                    let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
-                                    bounds <- bounds.Combine (geometry.Bounds.Transform transform)
-                                    surfaces.Add surface
-                                    yield PhysicallyBasedSurface surface } |>
-
-                            Seq.toArray |>
+                              // collect surfaces
+                              for i in 0 .. dec node.MeshIndices.Count do
+                                let names = Array.append names [|"Geometry" + if i > 0 then string i else ""|]
+                                let meshIndex = node.MeshIndices.[i]
+                                let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                                let material = materials.[materialIndex]
+                                let geometry = geometries.[meshIndex]
+                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
+                                bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                                surfaces.Add surface
+                                yield PhysicallyBasedSurface surface|] |>
                             TreeNode)
 
                     // fin

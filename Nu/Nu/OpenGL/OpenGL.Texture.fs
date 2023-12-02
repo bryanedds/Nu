@@ -100,7 +100,7 @@ module Texture =
     let TryCreateTextureData (internalFormat, generateMipmaps, filePath : string) =
         if File.Exists filePath then
             let platform = Environment.OSVersion.Platform
-            let fileExtension = Path.GetExtension(filePath).ToLowerInvariant()
+            let fileExtension = Pathf.GetExtensionLower filePath
             if  (platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows) &&
                 fileExtension <> ".tga" (* NOTE: System.Drawing.Bitmap does not seem to support .tga loading. *) then
                 // NOTE: System.Drawing.Bitmap is, AFAIK, only available on Windows platforms, so we use a fast path here.

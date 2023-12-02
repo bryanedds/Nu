@@ -19,7 +19,7 @@ module AssetMemo =
         let cubeMapAssets = List ()
         let assimpSceneAssets = List ()
         for asset in assets do
-            match Path.GetExtension(asset.FilePath).ToLowerInvariant() with
+            match Pathf.GetExtensionLower asset.FilePath with
             | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" -> textureAssets.Add asset
             | ".cbm" -> cubeMapAssets.Add asset
             | ".fbx" | ".dae" | ".obj" -> assimpSceneAssets.Add asset
@@ -69,7 +69,7 @@ module AssetMemo =
         for cubeMap in cubeMapAssets do
             match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
-                let dirPath = Path.GetDirectoryName(cubeMap.FilePath).Replace("\\", "/")
+                let dirPath = Pathf.GetDirectoryName cubeMap.FilePath
                 let faceRightFilePath = dirPath + "/" + faceRightFilePath.Trim ()
                 let faceLeftFilePath = dirPath + "/" + faceLeftFilePath.Trim ()
                 let faceTopFilePath = dirPath + "/" + faceTopFilePath.Trim ()

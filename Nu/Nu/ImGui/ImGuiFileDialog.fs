@@ -32,10 +32,10 @@ type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
     member val CurrentFiles : list<FileInfo> = [] with get, set
     member val CurrentIndex : UInt64 = 0UL with get, set
     member this.FilePath
-        with get () = this.DirectoryPath.FullName.Replace ("\\", "/") + "/" + this.FileName
+        with get () = Pathf.Normalize this.DirectoryPath.FullName + "/" + this.FileName
         and set (value : string) =
-            this.FileName <- Path.GetFileName value
-            this.DirectoryPath <- DirectoryInfo (Path.GetDirectoryName value)
+            this.FileName <- Pathf.GetFileName value
+            this.DirectoryPath <- DirectoryInfo (Pathf.GetDirectoryName value)
 
 [<RequireQualifiedAccess>]
 module ImGui =
@@ -133,7 +133,7 @@ module ImGui =
                     refreshInfo dialogState
 
                 // Draw path
-                ImGui.Text ("Path: " + dialogState.DirectoryPath.FullName.Replace ("\\", "/"))
+                ImGui.Text ("Path: " + Pathf.Normalize dialogState.DirectoryPath.FullName)
 
                 let contentRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X
 
@@ -266,7 +266,7 @@ module ImGui =
                     ImGui.NextColumn ()
                     ImGui.TextUnformatted size
                     ImGui.NextColumn ()
-                    ImGui.TextUnformatted (Path.GetExtension filePath)
+                    ImGui.TextUnformatted (Pathf.GetExtensionMixed filePath)
                     ImGui.NextColumn ()
                     ImGui.TextUnformatted (scstring lastWriteTime)
                     ImGui.NextColumn ()
@@ -295,7 +295,7 @@ module ImGui =
                 | ImGuiFileDialogType.Open ->
                     if ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter || filePicked then
 
-                        dialogState.ResultPath <- Path.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
+                        dialogState.ResultPath <- Pathf.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
                         if File.Exists dialogState.ResultPath then
                             fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
@@ -314,7 +314,7 @@ module ImGui =
                 | ImGuiFileDialogType.Save ->
                     if ImGui.Button "Save" || ImGui.IsKeyPressed ImGuiKey.Enter || filePicked then
 
-                        dialogState.ResultPath <- Path.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
+                        dialogState.ResultPath <- Pathf.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
                         if dialogState.DirectoryPath.Exists && String.notEmpty (dialogState.FileName.Trim ()) then
                             fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
