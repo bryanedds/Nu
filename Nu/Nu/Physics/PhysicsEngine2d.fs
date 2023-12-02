@@ -5,10 +5,10 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Numerics
-open tainicom.Aether.Physics2D
-open tainicom.Aether.Physics2D.Dynamics
-open tainicom.Aether.Physics2D.Dynamics.Contacts
-open tainicom.Aether.Physics2D.Dynamics.Joints
+open nkast.Aether.Physics2D
+open nkast.Aether.Physics2D.Dynamics
+open nkast.Aether.Physics2D.Dynamics.Contacts
+open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
 
 #nowarn "44" // ignore aether deprecation warnings
@@ -122,7 +122,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         body.AngularVelocity <- bodyProperties.AngularVelocity.Z
         body.AngularDamping <- bodyProperties.AngularDamping
         body.FixedRotation <- bodyProperties.AngularFactor.Z = 0.0f
-        body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
+        body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/nkast/Aether.Physics2D/issues/85#issuecomment-716051707
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discontinuous -> true | Continuous _ -> false
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
