@@ -801,7 +801,7 @@ module FieldDispatcher =
                             [Entity.PositionLocal == v3 650.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
-                                | Some teammate -> string teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
+                                | Some teammate -> getCaseName teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                 | None -> ""]
                          Content.text "Weapon"
                             [Entity.PositionLocal == v3 444.0f 237.0f 0.0f; Entity.ElevationLocal == 1.0f
@@ -1036,7 +1036,7 @@ module FieldDispatcher =
                                          Entity.ClickEvent => MenuTechClose]
                                      Content.text "Line1"
                                         [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
-                                         Entity.Text := string tech.TechType]
+                                         Entity.Text := getCaseName tech.TechType]
                                      Content.text "Line2"
                                         [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f
                                          Entity.Text := "TP Cost: " + string tech.TechCost]
