@@ -9,27 +9,15 @@ open System.Runtime.InteropServices
 open BulletSharp
 open Prime
 
-/// Tracks Bullet physics bodies by their BodyIds.
-type internal BulletBodyDictionary = OrderedDictionary<BodyId, Vector3 option * RigidBody>
-
-/// Tracks Bullet physics ghosts by their BodyIds.
-type internal BulletGhostDictionary = OrderedDictionary<BodyId, GhostObject>
-
-/// Tracks Bullet physics collision objects by their BodyIds.
-type internal BulletObjectDictionary = OrderedDictionary<BodyId, CollisionObject>
-
-/// Tracks Bullet physics constraints by their BodyIds.
-type internal BulletConstraintDictionary = OrderedDictionary<JointId, TypedConstraint>
-
-/// The BulletPhysics 3d implementation of PhysicsEngine.
-/// TODO: only record the collisions for bodies that have event subscriptions associated with them.
-type [<ReferenceEquality>] BulletPhysicsEngine =
+/// The 3d implementation of PhysicsEngine in terms of Bullet Physics.
+/// TODO: only record the collisions for bodies that have event subscriptions associated with them?
+type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : DynamicsWorld
-          Constraints : BulletConstraintDictionary
-          Bodies : BulletBodyDictionary
-          Ghosts : BulletGhostDictionary
-          Objects : BulletObjectDictionary
+          Constraints : OrderedDictionary<JointId, TypedConstraint>
+          Bodies : OrderedDictionary<BodyId, Vector3 option * RigidBody>
+          Ghosts : OrderedDictionary<BodyId, GhostObject>
+          Objects : OrderedDictionary<BodyId, CollisionObject>
           CollisionsFiltered : SDictionary<BodyId * BodyId, Vector3>
           CollisionsGround : SDictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
@@ -84,7 +72,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
-        BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties body
+        PhysicsEngine3d.configureCollisionObjectProperties bodyProperties body
         body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
         if bodyProperties.SleepingAllowed // TODO: see if we can find a more reliable way to disable sleeping.
         then body.SetSleepingThresholds (Constants.Physics.SleepingThresholdLinear, Constants.Physics.SleepingThresholdAngular)
@@ -98,7 +86,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private attachBodyBox bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let box = new BoxShape (bodyBox.Size * 0.5f)
-        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
         box.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -118,7 +106,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let sphere = new SphereShape (bodySphere.Radius)
-        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
         sphere.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -138,7 +126,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let capsule = new CapsuleShape (bodyCapsule.Radius, bodyCapsule.Height)
-        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
         capsule.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -157,13 +145,13 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
     static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        Log.info "Rounded box not yet implemented via BulletPhysicsEngine; creating a normal box instead."
+        Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
         let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
+        PhysicsEngine3d.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
 
     static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let hull = new ConvexHullShape (bodyConvexHull.Vertices)
-        BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
         hull.OptimizeConvexHull () // TODO: instead of always optimizing hull, instead consider caching hull.UnscaledPoints after optimizing the first time and reusing that.
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -208,7 +196,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                             (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromQuaternion quatIdentity * surface.SurfaceMatrix))
                             (Vector3.Transform (v3One, surface.SurfaceMatrix))
                 let bodyStaticModelSurface = { SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
-                BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine)
+                PhysicsEngine3d.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine)
                 centerMassInertiaDisposes
                 [0 .. dec staticModel.Surfaces.Length]
         | None -> centerMassInertiaDisposes
@@ -221,7 +209,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 bodyStaticModelSurface.SurfaceIndex < staticModel.Surfaces.Length then
                 let geometry = staticModel.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
                 let bodyConvexHull = { Vertices = geometry.Vertices; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
-                BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes
+                PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes
             else centerMassInertiaDisposes
         | None -> centerMassInertiaDisposes
 
@@ -238,7 +226,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
                 terrain.LocalScaling <- v3 (bounds.Width / single (dec resolution.X)) 1.0f (bounds.Depth / single (dec resolution.Y))
                 terrain.SetFlipTriangleWinding true // match terrain winding order - I think!
-                BulletPhysicsEngine.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
+                PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
                 terrain.UserObject <-
                     { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                       ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -256,7 +244,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertiaDisposes physicsEngine =
         List.fold (fun centerMassInertiaDisposes bodyShape ->
-            let centerMassInertiaDisposes' = BulletPhysicsEngine.attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine
+            let centerMassInertiaDisposes' = PhysicsEngine3d.attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine
             centerMassInertiaDisposes' @ centerMassInertiaDisposes)
             centerMassInertiaDisposes
             bodyShapes
@@ -264,15 +252,15 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
     static member private attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine =
         match bodyShape with
         | BodyEmpty -> centerMassInertiaDisposes
-        | BodyBox bodyBox -> BulletPhysicsEngine.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
-        | BodySphere bodySphere -> BulletPhysicsEngine.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertiaDisposes
-        | BodyCapsule bodyCapsule -> BulletPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertiaDisposes
-        | BodyBoxRounded bodyBoxRounded -> BulletPhysicsEngine.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertiaDisposes
-        | BodyConvexHull bodyConvexHull -> BulletPhysicsEngine.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes
-        | BodyStaticModel bodyStaticModel -> BulletPhysicsEngine.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertiaDisposes physicsEngine
-        | BodyStaticModelSurface bodyStaticModelSurface -> BulletPhysicsEngine.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine
-        | BodyTerrain bodyTerrain -> BulletPhysicsEngine.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertiaDisposes
-        | BodyShapes bodyShapes -> BulletPhysicsEngine.attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertiaDisposes physicsEngine
+        | BodyBox bodyBox -> PhysicsEngine3d.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
+        | BodySphere bodySphere -> PhysicsEngine3d.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertiaDisposes
+        | BodyCapsule bodyCapsule -> PhysicsEngine3d.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertiaDisposes
+        | BodyBoxRounded bodyBoxRounded -> PhysicsEngine3d.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertiaDisposes
+        | BodyConvexHull bodyConvexHull -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes
+        | BodyStaticModel bodyStaticModel -> PhysicsEngine3d.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertiaDisposes physicsEngine
+        | BodyStaticModelSurface bodyStaticModelSurface -> PhysicsEngine3d.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine
+        | BodyTerrain bodyTerrain -> PhysicsEngine3d.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertiaDisposes
+        | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertiaDisposes physicsEngine
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
         let (shape, centerMassInertiaDisposes) =
@@ -289,7 +277,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
             body.UserObject <- { BodyId = bodyId; Dispose = disposer }
             body.UserIndex <- userIndex
-            BulletPhysicsEngine.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
+            PhysicsEngine3d.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverride, body))
             then physicsEngine.Objects.Add (bodyId, body)
@@ -300,21 +288,21 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
             ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
             ghost.UserIndex <- userIndex
-            BulletPhysicsEngine.configureCollisionObjectProperties bodyProperties ghost
+            PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
             then physicsEngine.Objects.Add (bodyId, ghost)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
-        BulletPhysicsEngine.createBody3 (fun ps cs cmas ->
-            BulletPhysicsEngine.attachBodyShape physicsEngine.TryGetAssetFilePath bodyId.BodySource ps bodyShape cs cmas physicsEngine)
+        PhysicsEngine3d.createBody3 (fun ps cs cmas ->
+            PhysicsEngine3d.attachBodyShape physicsEngine.TryGetAssetFilePath bodyId.BodySource ps bodyShape cs cmas physicsEngine)
             bodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
         let bodyId = createBodyMessage.BodyId
         let bodyProperties = createBodyMessage.BodyProperties
-        BulletPhysicsEngine.createBody4 bodyProperties.BodyShape bodyId bodyProperties physicsEngine
+        PhysicsEngine3d.createBody4 bodyProperties.BodyShape bodyId bodyProperties physicsEngine
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter
@@ -322,7 +310,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let createBodyMessage =
                     { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
                       BodyProperties = bodyProperties }
-                BulletPhysicsEngine.createBody createBodyMessage physicsEngine)
+                PhysicsEngine3d.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
@@ -347,7 +335,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
-            BulletPhysicsEngine.destroyBody { BodyId = bodyId } physicsEngine)
+            PhysicsEngine3d.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
@@ -374,7 +362,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
                 let createJointMessage =
                     { JointSource = createJointsMessage.JointsSource
                       JointProperties = jointProperties }
-                BulletPhysicsEngine.createJoint createJointMessage physicsEngine)
+                PhysicsEngine3d.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties
 
     static member private destroyJoint (destroyJointMessage : DestroyJointMessage) physicsEngine =
@@ -386,7 +374,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private destroyJoints (destroyJointsMessage : DestroyJointsMessage) physicsEngine =
         List.iter (fun jointId ->
-            BulletPhysicsEngine.destroyJoint { JointId = jointId } physicsEngine)
+            PhysicsEngine3d.destroyJoint { JointId = jointId } physicsEngine)
             destroyJointsMessage.JointIds
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
@@ -474,24 +462,24 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
-        | CreateBodyMessage createBodyMessage -> BulletPhysicsEngine.createBody createBodyMessage physicsEngine
-        | CreateBodiesMessage createBodiesMessage -> BulletPhysicsEngine.createBodies createBodiesMessage physicsEngine
-        | DestroyBodyMessage destroyBodyMessage -> BulletPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
-        | DestroyBodiesMessage destroyBodiesMessage -> BulletPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateJointMessage createJointMessage -> BulletPhysicsEngine.createJoint createJointMessage physicsEngine
-        | CreateJointsMessage createJointsMessage -> BulletPhysicsEngine.createJoints createJointsMessage physicsEngine
-        | DestroyJointMessage destroyJointMessage -> BulletPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
-        | DestroyJointsMessage destroyJointsMessage -> BulletPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
-        | SetBodyEnabledMessage setBodyEnabledMessage -> BulletPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
-        | SetBodyCenterMessage setBodyCenterMessage -> BulletPhysicsEngine.setBodyCenter setBodyCenterMessage physicsEngine
-        | SetBodyRotationMessage setBodyRotationMessage -> BulletPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> BulletPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> BulletPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> BulletPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> BulletPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        | ApplyBodyForceMessage applyBodyForceMessage -> BulletPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
-        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> BulletPhysicsEngine.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | SetBodyObservableMessage setBodyObservableMessage -> BulletPhysicsEngine.setBodyObservable setBodyObservableMessage physicsEngine
+        | CreateBodyMessage createBodyMessage -> PhysicsEngine3d.createBody createBodyMessage physicsEngine
+        | CreateBodiesMessage createBodiesMessage -> PhysicsEngine3d.createBodies createBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine3d.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine3d.destroyBodies destroyBodiesMessage physicsEngine
+        | CreateJointMessage createJointMessage -> PhysicsEngine3d.createJoint createJointMessage physicsEngine
+        | CreateJointsMessage createJointsMessage -> PhysicsEngine3d.createJoints createJointsMessage physicsEngine
+        | DestroyJointMessage destroyJointMessage -> PhysicsEngine3d.destroyJoint destroyJointMessage physicsEngine
+        | DestroyJointsMessage destroyJointsMessage -> PhysicsEngine3d.destroyJoints destroyJointsMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine3d.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine3d.setBodyCenter setBodyCenterMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine3d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine3d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | SetBodyObservableMessage setBodyObservableMessage -> PhysicsEngine3d.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
 
             // set gravity of ALL bodies
@@ -609,15 +597,15 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
         for entry in physicsEngine.CollisionsFiltered do
             let (bodySourceA, bodySourceB) = entry.Key
             if not (collisionsOld.ContainsKey entry.Key) then
-                BulletPhysicsEngine.handleCollision physicsEngine bodySourceA bodySourceB entry.Value
-                BulletPhysicsEngine.handleCollision physicsEngine bodySourceB bodySourceA -entry.Value
+                PhysicsEngine3d.handleCollision physicsEngine bodySourceA bodySourceB entry.Value
+                PhysicsEngine3d.handleCollision physicsEngine bodySourceB bodySourceA -entry.Value
 
         // create separation messages
         for entry in collisionsOld do
             let (bodySourceA, bodySourceB) = entry.Key
             if not (physicsEngine.CollisionsFiltered.ContainsKey entry.Key) then
-                BulletPhysicsEngine.handleSeparation physicsEngine bodySourceA bodySourceB
-                BulletPhysicsEngine.handleSeparation physicsEngine bodySourceB bodySourceA
+                PhysicsEngine3d.handleSeparation physicsEngine bodySourceA bodySourceB
+                PhysicsEngine3d.handleSeparation physicsEngine bodySourceB bodySourceA
 
         // create transform messages
         for bodyEntry in physicsEngine.Bodies do
@@ -634,7 +622,7 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
 
     static member private handlePhysicsMessages physicsMessages physicsEngine =
         for physicsMessage in physicsMessages do
-            BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
+            PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
 
     static member make imperative gravity tryGetAssetFilePath tryGetStaticModelMetadata =
         let config = if imperative then Imperative else Functional
@@ -734,17 +722,17 @@ type [<ReferenceEquality>] BulletPhysicsEngine =
             let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
             physicsEngine :> PhysicsEngine
 #else
-            BulletPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
+            PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
             physicsEngine
 #endif
 
         member physicsEngine.Integrate stepTime physicsMessages =
-            BulletPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
-            BulletPhysicsEngine.integrate stepTime physicsEngine
-            BulletPhysicsEngine.createIntegrationMessages physicsEngine
+            PhysicsEngine3d.handlePhysicsMessages physicsMessages physicsEngine
+            PhysicsEngine3d.integrate stepTime physicsEngine
+            PhysicsEngine3d.createIntegrationMessages physicsEngine
             let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
 
         member physicsEngine.CleanUp () =
-            BulletPhysicsEngine.cleanUp physicsEngine
+            PhysicsEngine3d.cleanUp physicsEngine

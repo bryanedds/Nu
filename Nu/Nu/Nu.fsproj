@@ -75,8 +75,8 @@
 		<Compile Include="AssetGraph\AssetGraph.fs" />
 		<Compile Include="AssetGraph\AssetMemo.fs" />
 		<Compile Include="Physics\PhysicsEngine.fs" />
-		<Compile Include="Physics\AetherPhysicsEngine.fs" />
-		<Compile Include="Physics\BulletPhysicsEngine.fs" />
+		<Compile Include="Physics\PhysicsEngine2d.fs" />
+		<Compile Include="Physics\PhysicsEngine3d.fs" />
 		<Compile Include="Render\Renderer.fs" />
 		<Compile Include="Render\Renderer2d.fs" />
 		<Compile Include="Render\Renderer3d.fs" />
