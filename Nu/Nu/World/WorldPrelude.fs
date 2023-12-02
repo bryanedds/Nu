@@ -87,8 +87,7 @@ type [<StructuralEquality; NoComparison>] TransitionState =
         | IdlingState time -> time
 
 /// Describes one of a screen's transition processes.
-/// TODO: figure out if this really needs to be CLIMutable.
-type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
+type [<StructuralEquality; NoComparison>] Transition =
     { TransitionType : TransitionType
       TransitionLifeTime : GameTime
       DissolveImageOpt : Image AssetTag option

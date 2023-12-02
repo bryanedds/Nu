@@ -185,7 +185,7 @@ module AssimpExtensions =
             (time : single,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
-             boneWrites : int ref, // HACK: bones writes prevents us from traversing nodes in the hierarchy that would otherwise be redundant.
+             boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would otherwise be redundant.
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
              node : Assimp.Node,
@@ -193,8 +193,8 @@ module AssimpExtensions =
              scene : Assimp.Scene) =
 
             // compute local transform of the current node.
-            // NOTE: if the node is animated, its transform is replaced by that animation entirely.
-            let mutable nodeTransform = node.Transform
+            // TODO: see if there's a clean way to get rid of allocation here.
+            let mutable nodeTransform = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
             let decompositions = List animations.Length
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
@@ -237,10 +237,9 @@ module AssimpExtensions =
                     scalingAccumulated <- scalingAccumulated * factor + decompositions.[i].Scaling * factor2
                     weightAccumulated <- weightAccumulated + decompositions.[i].Weight
                 nodeTransform <-
-                    // TODO: see if there's a faster way to construct a TRS matrix here.
                     Assimp.Matrix4x4.FromScaling scalingAccumulated *
                     Assimp.Matrix4x4 (rotationAccumulated.GetMatrix ()) *
-                    Assimp.Matrix4x4.FromTranslation translationAccumulated
+                    Assimp.Matrix4x4.FromTranslation translationAccumulated // TODO: see if there's a faster way to construct a TRS matrix here.
 
             // compute current transform and assign the final bone transform where applicable
             let accumulatedTransform = nodeTransform * parentTransform
@@ -268,8 +267,8 @@ module AssimpExtensions =
                         let animation = scene.Animations.[animationId]
                         for channelId in 0 .. dec animation.NodeAnimationChannels.Count do
                             let channel = animation.NodeAnimationChannels.[channelId]
-                            animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <-
-                                AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
+                            let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
+                            animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
                     AnimationChannelsDict.[scene] <- animationChannels
                     animationChannels
                 | (true, animationChannels) -> animationChannels

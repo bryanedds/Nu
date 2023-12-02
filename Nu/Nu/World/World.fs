@@ -165,14 +165,6 @@ module Nu =
             WorldTypes.getEntityIs2d <- fun entityObj worldObj ->
                 World.getEntityIs2d (entityObj :?> Entity) (worldObj :?> World)
 
-            // TODO: P1: implement!
-            WorldModule.addSimulantScriptUnsubscription <- fun _ _ _ ->
-                failwithnie ()
-
-            // TODO: P1: implement!
-            WorldModule.unsubscribeSimulantScripts <- fun _ _ ->
-                failwithnie ()
-
             // init getSelected F# reach-around
             WorldModule.getSelected <- fun simulant world ->
                 World.getSelected simulant world

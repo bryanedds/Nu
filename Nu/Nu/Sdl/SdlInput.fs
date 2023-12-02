@@ -118,7 +118,7 @@ module internal KeyboardState =
     let internal isShiftUp () =
         not (isShiftDown ())
 
-// TODO: internalize all this and expose through World API.
+// TODO: P1: internalize all this and expose through World API.
 [<RequireQualifiedAccess>]        
 module GamepadState =
 

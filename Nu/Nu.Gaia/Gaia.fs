@@ -17,28 +17,23 @@ open ImGuizmoNET
 open Prime
 open Nu
 
-///////////////////////////////////
-// TODO:
-//
-// Paste in hierarchy.
-// Log Output window.
-// Sense functions for Stream.
-// Perhaps look up some-constructed default property values from overlayer.
-//
-// Custom properties in order of priority:
-//
-//  Enums
-//  Layout
-//  CollisionMask
-//  CollisionCategories
-//  CollisionDetection
-//  BodyShape
-//  JointDevice
-//  DateTimeOffset?
-//  SymbolicCompression
-//  Flag Enums
-//
-///////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+// TODO:                                                                    //
+// Log Output window.                                                       //
+// Perhaps look up (Value)Some-constructed default property values from overlayer. //
+// Custom properties in order of priority:                                  //
+//  NormalOpt (for terrain)                                                 //
+//  Enums                                                                   //
+//  Layout                                                                  //
+//  CollisionMask                                                           //
+//  CollisionCategories                                                     //
+//  CollisionDetection                                                      //
+//  BodyShape                                                               //
+//  JointDevice                                                             //
+//  DateTimeOffset?                                                         //
+//  SymbolicCompression                                                     //
+//  Flag Enums                                                              //
+//////////////////////////////////////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
 module Gaia =
@@ -911,7 +906,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
                     let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536" // TODO: pull these from fsproj!
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
-                    let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; fsProjectNoWarn|]
+                    let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; fsProjectNoWarn|] // TODO: see can we use --wwarnon as well.
                     use errorStream = new StringWriter ()
                     use inStream = new StringReader ""
                     use outStream = new StringWriter ()
@@ -1420,7 +1415,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let propertyValue = getProperty propertyDescriptor simulant
         let propertyValueStr = converter.ConvertToString propertyValue
         match propertyValue with
-        | :? Frustum -> () // TODO: implement FrustumConverter.
+        | :? Frustum -> () // TODO: P1: implement FrustumConverter.
         | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (name, &b') then setProperty b' propertyDescriptor simulant
         | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int8 i') propertyDescriptor simulant
         | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint8 i') propertyDescriptor simulant
@@ -1574,8 +1569,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 setProperty (Activator.CreateInstance (ty, [|""|])) propertyDescriptor simulant
                             elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
                                 setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant
-                            else
-                                () // TODO: look up default values from overlayer if they are some
+                            else ()
                         else setProperty None propertyDescriptor simulant
                     focusProperty ()
                     if isSome then
@@ -2120,7 +2114,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         showSelectedEntity <- true
                                 | None -> ()
                         let entities =
-                            World.getEntitiesSovereign selectedGroup world |> // TODO: P1: see if we can optimize entity hierarchy queries!
+                            World.getEntitiesSovereign selectedGroup world |>
                             Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
                             Array.ofSeq |>
                             Array.sortBy fst |>

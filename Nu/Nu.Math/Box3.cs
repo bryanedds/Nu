@@ -99,53 +99,6 @@ namespace Nu
         }
 
         /// <summary>
-        ///   Check if this <see cref="Box3"/> contains a <see cref="Frustum"/>.
-        /// </summary>
-        /// <param name="frustum">The <see cref="Frustum"/> to test for overlap.</param>
-        /// <returns>
-        ///   A value indicating if this <see cref="Box3"/> contains,
-        ///   intersects with or is disjoint with <paramref name="frustum"/>.
-        /// </returns>
-        public ContainmentType Contains(Frustum frustum)
-        {
-            //TODO: bad done here need a fix. 
-            //Because question is not frustum contain box but reverse and this is not the same
-            int i;
-            ContainmentType contained;
-            Vector3[] corners = frustum.GetCorners();
-
-            // First we check if frustum is in box
-            for (i = 0; i < corners.Length; i++)
-            {
-                this.Contains(ref corners[i], out contained);
-                if (contained == ContainmentType.Disjoint)
-                    break;
-            }
-
-            if (i == corners.Length) // This means we checked all the corners and they were all contain or instersect
-                return ContainmentType.Contains;
-
-            if (i != 0)             // if i is not equal to zero, we can fastpath and say that this box intersects
-                return ContainmentType.Intersects;
-
-
-            // If we get here, it means the first (and only) point we checked was actually contained in the frustum.
-            // So we assume that all other points will also be contained. If one of the points is disjoint, we can
-            // exit immediately saying that the result is Intersects
-            i++;
-            for (; i < corners.Length; i++)
-            {
-                this.Contains(ref corners[i], out contained);
-                if (contained != ContainmentType.Contains)
-                    return ContainmentType.Intersects;
-
-            }
-
-            // If we get here, then we know all the points were actually contained, therefore result is Contains
-            return ContainmentType.Contains;
-        }
-
-        /// <summary>
         ///   Check if this <see cref="Box3"/> contains a <see cref="Sphere"/>.
         /// </summary>
         /// <param name="sphere">The <see cref="Sphere"/> to test for overlap.</param>

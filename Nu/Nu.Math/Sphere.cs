@@ -428,19 +428,6 @@ namespace Nu
             box.Intersects(in this, out result);
         }
 
-        /*
-        TODO : Make the public bool Intersects(Frustum frustum) overload
-
-        public bool Intersects(Frustum frustum)
-        {
-            if (frustum == null)
-                throw new NullReferenceException();
-
-            throw new NotImplementedException();
-        }
-
-        */
-
         /// <summary>
         /// Gets whether or not the other <see cref="Sphere"/> intersects with this sphere.
         /// </summary>
