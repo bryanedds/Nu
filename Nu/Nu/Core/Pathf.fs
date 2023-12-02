@@ -5,7 +5,7 @@ namespace Nu
 open System
 open System.IO
 
-/// Performs operations on <see cref="T:System.String" /> instances that contain file or directory path information. These operations are performed in a cross-platform manner.
+/// Performs operations on System.String instances that contain file or directory path information. These operations are performed in a normalized manner where '/' is use as the directory seperator.
 [<RequireQualifiedAccess>]
 module Pathf =
 
@@ -17,7 +17,7 @@ module Pathf =
     let Denormalize (path : string) =
         path.Replace ('/', '\\')
 
-    /// Combines two paths into a normalized path.
+    /// Combines two strings into a path.
     let Combine (left, right) =
         Normalize (Path.Combine (left, right))
 
