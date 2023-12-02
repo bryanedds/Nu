@@ -575,8 +575,8 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-                let physicsEngine2d = AetherPhysicsEngine.make config.Imperative Constants.Physics.Gravity2dDefault
-                let physicsEngine3d = BulletPhysicsEngine.make config.Imperative Constants.Physics.Gravity3dDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
+                let physicsEngine2d = PhysicsEngine2d.make config.Imperative Constants.Physics.Gravity2dDefault
+                let physicsEngine3d = PhysicsEngine3d.make config.Imperative Constants.Physics.Gravity3dDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
                 let rendererProcess = RendererThread () :> RendererProcess
                 rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint

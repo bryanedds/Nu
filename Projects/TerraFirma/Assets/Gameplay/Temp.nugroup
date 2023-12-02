@@ -1,0 +1,889 @@
+[GroupDispatcher
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Scene]
+  [Persistent True]
+  [Visible True]]
+ [[LightDispatcher3d
+   [[Brightness 3]
+    [Cutoff 1000000]
+    [LightType DirectionalLight]
+    [Name Sun]
+    [Position [0 12 2]]
+    [Presence Omnipresent]
+    [Rotation [0.4885185 0.18453936 -0.1065438 0.84613436]]]
+   []]
+  [SkyBoxDispatcher
+   [[AmbientBrightness 0.5] [Name SkyBox]]
+   []]
+  [TerrainDispatcher
+   [[HeightMap
+     [RawHeightMap
+      [[2048 2048] [RawUInt16 BigEndian] [Gameplay TerraHeightMap]]]]
+    [Name Terrain]
+    [Size [2048 195 2048]]
+    [TerrainMaterial
+     [BlendMaterial
+      [[[[Gameplay TerraLayerAlbedo] [Gameplay TerraLayerRoughness] [Gameplay TerraLayerAmbientOcclusion] [Gameplay TerraLayerNormal] [Gameplay TerraLayerHeight]]
+        [[Gameplay TerraLayer2Albedo] [Gameplay TerraLayer2Roughness] [Gameplay TerraLayer2AmbientOcclusion] [Gameplay TerraLayer2Normal] [Gameplay TerraLayer2Height]]
+        [[Gameplay TerraLayer3Albedo] [Gameplay TerraLayer3Roughness] [Gameplay TerraLayer3AmbientOcclusion] [Gameplay TerraLayer3Normal] [Gameplay TerraLayer3Height]]
+        [[Gameplay TerraLayer4Albedo] [Gameplay TerraLayer4Roughness] [Gameplay TerraLayer4AmbientOcclusion] [Gameplay TerraLayer4Normal] [Gameplay TerraLayer4Height]]]
+       [RedsMap
+        [[Gameplay TerraLayerBlend] [Gameplay TerraLayer2Blend] [Gameplay TerraLayer3Blend] [Gameplay TerraLayer4]]]]]]
+    [TerrainMaterialProperties
+     [[AlbedoOpt
+       [ValueSome [1 1 1 1]]]
+      [RoughnessOpt [ValueSome 1]]
+      [AmbientOcclusionOpt [ValueSome 1]]
+      [HeightOpt [ValueSome 8]]
+      [InvertRoughnessOpt [ValueSome False]]]]
+    [Tiles [512 512]]]
+   []]
+  [CharacterDispatcher
+   [[AngularDamping 0.999]
+    [AngularFactor [0 0.1 0]]
+    [AngularVelocity [0 -1.6013902E-05 0]]
+    [Animations
+     [[0 None Armature|Idle Loop 1 0.5 None]]]
+    [BodyShape
+     [BodyCapsule
+      [1
+       0.35
+       [Some
+        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
+       None]]]
+    [Friction 1]
+    [LinearDamping 0.5]
+    [LinearVelocity [6.923222E-06 -5.2999618E-05 0.00030791108]]
+    [Model
+     ["TerraFirma.CharacterDispatcher+CharacterModel, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [9.679032 0 9.679032 [Default AnimatedModel]]]]
+    [Name Player]
+    [Position [-72.533264 -37.61453 -114.50935]]
+    [Presence Omnipresent]
+    [Rotation [0 0.9739582 0 0.22672771]]
+    [Size [2.6602979 3.5022092 1.984515]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0001]
+    [Position [-59.1 -29.2 -150.4]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0007]
+    [Position [-61.9 -28.8 -149.7]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0008]
+    [Position [-63 -28.3 -151.2]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0009]
+    [Position [-63.1 -27.6 -153.9]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0010]
+    [Position [-63 -26.3 -156.3]]]
+   []]
+  [BlockDispatcher3d
+   [[Name Block3d-0011]
+    [Position [-64.7 -27.1 -156.6]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0001]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0002]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0003]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0004]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0005]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0006]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0007]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0008]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0009]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0010]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0011]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0012]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0013]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0014]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0015]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0016]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0017]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0018]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0019]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0020]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0021]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0022]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0023]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0024]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0025]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0026]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0027]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0028]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0029]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0030]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0031]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0032]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0033]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0034]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0035]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0036]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0037]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0038]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0039]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0040]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0041]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0042]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0043]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0044]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0045]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0046]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0047]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0048]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0049]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0050]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0051]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0052]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0053]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0054]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0055]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0056]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0057]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0058]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0059]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0060]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0061]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0062]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0063]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0064]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0065]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0066]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0067]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0068]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0069]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0070]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0071]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0072]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0073]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0074]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0075]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0076]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0077]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0078]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0079]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0080]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0081]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0082]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0083]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0084]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0085]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0086]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0087]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0088]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0089]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0090]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0091]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0092]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0093]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0094]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0095]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0096]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0097]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0098]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0099]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0100]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0101]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0102]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0103]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0104]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0105]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0106]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0107]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0108]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0109]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0110]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0111]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0112]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0113]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0114]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0115]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0116]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0117]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0118]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0119]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0120]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0121]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0122]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0123]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0124]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0125]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0126]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0127]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0128]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0129]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0130]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0131]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0132]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0133]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0134]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0135]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0136]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0137]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0138]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0139]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0140]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0141]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0142]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0143]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0144]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0145]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0146]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0147]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0148]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0149]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0150]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0151]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0152]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0153]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0154]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0155]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0156]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0157]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0158]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0159]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0160]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0161]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0162]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0163]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0164]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0165]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0166]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0167]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0168]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0169]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0170]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0171]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0172]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0173]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0174]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0175]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0176]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0177]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0178]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0179]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0180]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0181]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0182]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0183]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0184]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0185]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0186]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0187]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0188]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0189]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0190]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0191]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0192]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0193]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0194]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0195]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0196]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0197]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0198]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0199]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]
+  [BoxDispatcher3d
+   [[Name Box3d-0200]
+    [Position [-71.87079 -36.11453 -115.85513]]]
+   []]]]
