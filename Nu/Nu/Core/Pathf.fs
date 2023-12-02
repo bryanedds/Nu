@@ -1,4 +1,9 @@
-﻿namespace System.IO
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2023.
+
+namespace Nu
+open System
+open System.IO
 
 /// Performs operations on <see cref="T:System.String" /> instances that contain file or directory path information. These operations are performed in a cross-platform manner.
 [<RequireQualifiedAccess>]
