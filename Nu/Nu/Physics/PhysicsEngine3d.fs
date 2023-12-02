@@ -555,8 +555,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let mutable intersecting = false
             let mutable j = 0
             while not intersecting && j < manifold.NumContacts do
-                let pt = manifold.GetContactPoint i
-                if pt.Distance <= Constants.Physics.CollisionDetectionDistance3dMax
+                let pt = manifold.GetContactPoint j
+                if pt.Distance <= 0.0f
                 then intersecting <- true
                 else j <- inc j
             if intersecting then
