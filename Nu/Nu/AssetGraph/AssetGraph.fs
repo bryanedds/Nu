@@ -106,7 +106,7 @@ module AssetGraph =
         else rawAssetExtension
 
     let private writeMagickImageAsPng psdHack (filePath : string) (image : MagickImage) =
-        match Path.GetExtension(filePath).ToLowerInvariant() with
+        match Pathf.GetExtensionLower filePath with
         | ".png" ->
             use stream = File.OpenWrite filePath
             if psdHack then
@@ -123,16 +123,16 @@ module AssetGraph =
     let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
-        let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
+        let intermediateFileExtension = Pathf.GetExtensionMixed intermediateFileSubpath
         let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
 
         // build the refinement file path
         let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
-        let refinementFileSubpath = Path.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
+        let refinementFileSubpath = Pathf.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
         let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
 
         // refine the asset
-        Directory.CreateDirectory (Path.GetDirectoryName refinementFilePath) |> ignore
+        Directory.CreateDirectory (Pathf.GetDirectoryName refinementFilePath) |> ignore
         match refinement with
         | PsdToPng ->
             use image = new MagickImage (intermediateFilePath)
@@ -161,12 +161,12 @@ module AssetGraph =
 
             // build input file path
             let inputFileSubpath = asset.FilePath
-            let inputFileExtension = Path.GetExtension inputFileSubpath
+            let inputFileExtension = Pathf.GetExtensionMixed inputFileSubpath
             let inputFilePath = inputDirectory + "/" + inputFileSubpath
 
             // build the output file path
             let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
-            let outputFileSubpath = Path.ChangeExtension (asset.FilePath, outputFileExtension)
+            let outputFileSubpath = Pathf.ChangeExtension (asset.FilePath, outputFileExtension)
             let outputFilePath = outputDirectory + "/" + outputFileSubpath
 
             // build the asset if fully building or if it's out of date
@@ -182,48 +182,44 @@ module AssetGraph =
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
                 let outputFilePath = outputDirectory + "/" + intermediateFileSubpath
-                Directory.CreateDirectory (Path.GetDirectoryName outputFilePath) |> ignore
+                Directory.CreateDirectory (Pathf.GetDirectoryName outputFilePath) |> ignore
                 try File.Copy (intermediateFilePath, outputFilePath, true)
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
     /// Collect the associated assets from package descriptor assets value.
     let private collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements =
-        seq {
-            if Directory.Exists directory then
-                let filePaths =
-                    seq {
-                        for extension in extensions do
-                            yield! Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) }
-                for filePath in filePaths do
-                    let filePath = filePath.Replace ("\\", "/") // normalize format
-                    let extension = Path.GetExtension(filePath).Replace(".", "").ToLowerInvariant()
-                    let assetName = (Path.GetFileNameWithoutExtension filePath)
-                    let tag = AssetTag.make<obj> packageName assetName
-                    let asset = Asset.make tag filePath refinements associations
-                    if Option.isSome associationOpt
-                    then if Set.contains extension extensions then yield asset
-                    else yield asset
-            else Log.info ("Invalid directory '" + directory + "'. when looking for assets.") }
+        [if Directory.Exists directory then
+            let filePaths =
+                [for extension in extensions do
+                    for filePath in Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) do
+                        Pathf.Normalize filePath]
+            for filePath in filePaths do
+                let extension = Pathf.GetExtensionLower(filePath).Replace(".", "")
+                let assetName = Pathf.GetFileNameWithoutExtension filePath
+                let tag = AssetTag.make<obj> packageName assetName
+                let asset = Asset.make tag filePath refinements associations
+                if Option.isSome associationOpt
+                then if Set.contains extension extensions then yield asset
+                else yield asset
+         else Log.info ("Invalid directory '" + directory + "'. when looking for assets.")]
 
     /// Collect the associated assets from a package descriptor.
     let private collectAssetsFromPackageDescriptor (associationOpt : string option) packageName packageDescriptor =
-        seq {
-            for assetDescriptor in packageDescriptor do
-                match assetDescriptor with
-                | Asset (assetName, filePath, associations, refinements) ->
-                    let tag = AssetTag.make<obj> packageName assetName
-                    let asset = Asset.make tag filePath refinements associations
-                    match associationOpt with
-                    | Some association -> if Set.contains association associations then yield asset
-                    | None -> yield asset
-                | Assets (directory, extensions, associations, refinements) ->
-                    match associationOpt with
-                    | Some association when Set.contains association associations ->
-                        yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
-                    | None ->
-                        yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
-                    | _ -> () } |>
-        Seq.toList
+        [for assetDescriptor in packageDescriptor do
+            match assetDescriptor with
+            | Asset (assetName, filePath, associations, refinements) ->
+                let tag = AssetTag.make<obj> packageName assetName
+                let asset = Asset.make tag filePath refinements associations
+                match associationOpt with
+                | Some association -> if Set.contains association associations then yield asset
+                | None -> yield asset
+            | Assets (directory, extensions, associations, refinements) ->
+                match associationOpt with
+                | Some association when Set.contains association associations ->
+                    yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
+                | None ->
+                    yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
+                | _ -> ()]
 
     /// Get package descriptors.
     let getPackageDescriptors assetGraph =
@@ -246,12 +242,10 @@ module AssetGraph =
 
     /// Collect all the available assets from an asset graph document.
     let collectAssets associationOpt assetGraph =
-        seq {
-            for entry in assetGraph.PackageDescriptors do
-                let packageName = entry.Key
-                let packageDescriptor = entry.Value
-                yield! collectAssetsFromPackageDescriptor associationOpt packageName packageDescriptor } |>
-        Seq.toList |>
+        [for entry in assetGraph.PackageDescriptors do
+            let packageName = entry.Key
+            let packageDescriptor = entry.Value
+            yield! collectAssetsFromPackageDescriptor associationOpt packageName packageDescriptor] |>
         List.groupBy (fun asset -> asset.FilePath) |>
         List.map (snd >> List.last)
 
@@ -261,7 +255,7 @@ module AssetGraph =
         // compute the asset graph's tracker file path
         let outputFilePathOpt =
             Option.map (fun (filePath : string) ->
-                outputDirectory + "/" + Path.ChangeExtension(Path.GetFileName filePath, ".tracker"))
+                outputDirectory + "/" + Pathf.ChangeExtension (Pathf.GetFileName filePath, ".tracker"))
                 assetGraph.FilePathOpt
 
         // check if the output assetGraph file is newer than the current

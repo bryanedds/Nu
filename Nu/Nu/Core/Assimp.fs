@@ -307,19 +307,17 @@ module AssimpExtensions =
 
         /// Collect all the child nodes of a node, including the node itself.
         member this.CollectNodes () =
-            seq {
-                yield this
-                for child in this.Children do
-                    yield! child.CollectNodes () }
+            [|this
+              for child in this.Children do
+                yield! child.CollectNodes ()|]
 
         /// Collect all the child nodes and transforms of a node, including the node itself.
         member this.CollectNodesAndTransforms (unitType, parentTransform : Matrix4x4) =
-            seq {
-                let localTransform = Assimp.ExportMatrix this.Transform
-                let worldTransform = localTransform * parentTransform
-                yield (this, worldTransform)
-                for child in this.Children do
-                    yield! child.CollectNodesAndTransforms (unitType, worldTransform) }
+            [|let localTransform = Assimp.ExportMatrix this.Transform
+              let worldTransform = localTransform * parentTransform
+              yield (this, worldTransform)
+              for child in this.Children do
+                yield! child.CollectNodesAndTransforms (unitType, worldTransform)|]
 
         /// Map to a TreeNode.
         member this.Map<'a> (parentNames : string array, parentTransform : Matrix4x4, mapper : Assimp.Node -> string array -> Matrix4x4 -> 'a array TreeNode) : 'a array TreeNode =
