@@ -302,7 +302,7 @@ type internal Octnode<'e when 'e : equality> = Octnode.Octnode<'e>
 module Octree =
 
     /// Provides an enumerator interface to the octree queries.
-    /// TODO: see if we can make this enumerator work when its results are evaluated multiple times in the debugger.
+    /// TODO: P1: see if we can make this enumerator work when its results are evaluated multiple times in the debugger.
     type internal OctreeEnumerator<'e when 'e : equality> (uncullable : 'e Octelement seq, cullable : 'e Octelement seq) =
 
         let uncullableArray = SArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid

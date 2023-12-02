@@ -322,7 +322,7 @@ module WorldEntityModule =
         member this.RenderEvent = Events.RenderEvent --> this
         member this.MountEvent = Events.MountEvent --> this
         member this.UnmountEvent = Events.UnmountEvent --> this
-        member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this // TODO: make sure we have all the applicable entity physics events.
+        member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
 
@@ -852,8 +852,6 @@ module WorldEntityModule =
 
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor (nameOpt : string option) (parent : Simulant) world =
-
-            (* TODO: factor out common code between this and createEntity5 - there's just too much. *)
 
             // make the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName

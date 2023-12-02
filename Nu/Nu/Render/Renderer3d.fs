@@ -15,7 +15,6 @@ open System.Runtime.InteropServices
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
-// TODO: introduce records for RenderTask cases.                                        //
 // TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,11 +64,6 @@ type [<StructuralEquality; NoComparison>] FlatMaterial =
 type [<StructuralEquality; NoComparison>] BlendMaterial =
     { TerrainLayers : TerrainLayer array
       BlendMap : BlendMap }
-
-/// Dynamically specified blend-weighted 3d terrain material.
-/// TODO: define this later if we support dynamic terrain editing.
-type [<StructuralEquality; NoComparison>] DynamicMaterial =
-    { Unused : unit }
 
 /// Describes the material of which a 3d terrain is composed.
 type [<StructuralEquality; NoComparison>] TerrainMaterial =
@@ -962,11 +956,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | Some normalImage ->
                     match GlRenderer3d.tryGetTextureData normalImage renderer with
                     | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                        let scalar = 1.0f / single Byte.MaxValue
                         bytes |>
-                        Array.map (fun x -> single x / single Byte.MaxValue) |>
+                        Array.map (fun b -> single b * scalar) |>
                         Array.chunkBySize 4 |>
-                        Array.map (fun x ->
-                            let tangent = (v3 x.[2] x.[1] x.[0] * 2.0f - v3One).Normalized
+                        Array.map (fun b ->
+                            let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
                             let normal = v3 tangent.X tangent.Z -tangent.Y
                             normal)
                     | _ -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses
@@ -976,10 +971,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             let tint =
                 match GlRenderer3d.tryGetTextureData geometryDescriptor.TintImage renderer with
                 | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                    let scalar = 1.0f / single Byte.MaxValue
                     bytes |>
-                    Array.map (fun x -> single x / single Byte.MaxValue) |>
+                    Array.map (fun b -> single b * scalar) |>
                     Array.chunkBySize 4 |>
-                    Array.map (fun x -> v3 x.[2] x.[1] x.[0])
+                    Array.map (fun b -> v3 b.[2] b.[1] b.[0])
                 | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
 
             // compute blendses, logging if more than the safe number of terrain layers is utilized
@@ -995,21 +991,23 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | RgbaMap rgbaMap ->
                     match GlRenderer3d.tryGetTextureData rgbaMap renderer with
                     | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                        let scalar = 1.0f / single Byte.MaxValue
                         for i in 0 .. dec positionsAndTexCoordses.Length do
                             // ARGB reverse byte order, from Drawing.Bitmap (windows).
                             // TODO: confirm it is the same for SDL (linux).
-                            blendses.[i,0] <- single bytes.[i * 4 + 2] / single Byte.MaxValue
-                            blendses.[i,1] <- single bytes.[i * 4 + 1] / single Byte.MaxValue
-                            blendses.[i,2] <- single bytes.[i * 4 + 0] / single Byte.MaxValue
-                            blendses.[i,3] <- single bytes.[i * 4 + 3] / single Byte.MaxValue
+                            blendses.[i, 0] <- single bytes.[i * 4 + 2] * scalar
+                            blendses.[i, 1] <- single bytes.[i * 4 + 1] * scalar
+                            blendses.[i, 2] <- single bytes.[i * 4 + 0] * scalar
+                            blendses.[i, 3] <- single bytes.[i * 4 + 3] * scalar
                     | _ -> Log.info ("Could not locate texture data for blend map '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
+                    let scalar = 1.0f / single Byte.MaxValue
                     for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
                         let red = reds.[i]
                         match GlRenderer3d.tryGetTextureData red renderer with
                         | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                             for j in 0 .. dec positionsAndTexCoordses.Length do
-                                blendses.[j,i] <- single bytes.[j * 4 + 2] / single Byte.MaxValue
+                                blendses.[j, i] <- single bytes.[j * 4 + 2] * scalar
                         | _ -> Log.info ("Could not locate texture data for blend map '" + scstring red + "'.")
             | FlatMaterial _ ->
                 for i in 0 .. dec positionsAndTexCoordses.Length do
@@ -1251,6 +1249,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                         for mesh in scene.Meshes do
 
                             // render animated surface
+                            // TODO: instead of computing bone transforms and adding to render tasks immediately,
+                            // consider batching up the operations so they can be run in parallel.
                             let bones = mesh.ComputeBoneTransforms (time, animations, scene)
                             if modelAbsolute then
                                 let mutable renderTasks = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
@@ -1369,7 +1369,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList) =
         surfaces |>
         Seq.map (fun struct (subsort, sort, model, texCoordsOffset, properties, surface) -> struct (subsort, sort, model, texCoordsOffset, properties, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
-        Seq.toArray |> // TODO: use a preallocated array to avoid allocating on the LOH.
+        Seq.toArray |> // TODO: P1: use a preallocated array to avoid allocating on the LOH.
         Array.sortByDescending (fun struct (subsort, sort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
@@ -2481,9 +2481,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedForwardShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedBlurShader.PhysicallyBasedBlurShader
             OpenGL.Gl.DeleteProgram renderer.RenderPhysicallyBasedFxaaShader.PhysicallyBasedFxaaShader
-            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderCubeMapGeometry.CubeMapVao|] // TODO: also release vertex and index buffers?
-            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderBillboardGeometry.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
-            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderPhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: also release vertex and index buffers?
+            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderCubeMapGeometry.CubeMapVao|] // TODO: P1: also release vertex and index buffers?
+            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderBillboardGeometry.PhysicallyBasedVao|] // TODO: P1: also release vertex and index buffers?
+            OpenGL.Gl.DeleteVertexArrays [|renderer.RenderPhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: P1: also release vertex and index buffers?
             OpenGL.Gl.DeleteTextures [|renderer.RenderCubeMap|]
             OpenGL.Gl.DeleteTextures [|renderer.RenderBrdfTexture|]
             OpenGL.Gl.DeleteTextures [|renderer.RenderIrradianceMap|]

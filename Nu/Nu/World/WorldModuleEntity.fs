@@ -21,7 +21,7 @@ module WorldModuleEntity =
     let internal EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
-    /// TODO: put this in AmbientState instead of leaving it free-floating?
+    /// TODO: P1: put this in AmbientState instead of leaving it free-floating?
     let mutable private Clipboard : obj option = None
 
     /// Publishing IDs.
@@ -2307,8 +2307,6 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         static member createEntity5 dispatcherName overlayDescriptor surnames (group : Group) world =
-
-            (* TODO: factor out common code between this and readEntity - there's just too much. *)
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world

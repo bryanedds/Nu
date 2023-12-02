@@ -484,7 +484,7 @@ module BackdroppableFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: make this a constant.
+            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: P1: make this a constant.
              define Entity.BackdropImageOpt None]
 
         override this.Render (entity, world) =
@@ -1880,7 +1880,7 @@ module LayoutFacetModule =
                         | Flow (flowDirection, flowLimit) ->
                             flowLayout perimeter margin flowDirection flowLimit children world
                         | Dock (margins, percentageBased, resizeChildren) ->
-                            ignore (percentageBased, resizeChildren) // TODO: implement using these values.
+                            ignore (percentageBased, resizeChildren) // TODO: P1: implement using these values.
                             dockLayout perimeter margin margins children world
                         | Grid (dims, flowDirectionOpt, resizeChildren) ->
                             gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
@@ -2174,7 +2174,7 @@ module StaticBillboardFacetModule =
                 world
 
         override this.RayCast (ray, entity, world) =
-            // TODO: intersect against oriented quad rather than box.
+            // TODO: P1: intersect against oriented quad rather than box.
             match this.TryGetHighlightBounds (entity, world) with
             | Some bounds ->
                 let intersectionOpt = ray.Intersects bounds
@@ -2729,7 +2729,6 @@ module AnimatedModelFacetModule =
             | Some animatedModelMetadata ->
                 let intersectionses =
                     Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
-                        // TODO: include animation state.
                         let geometry = surface.PhysicallyBasedGeometry
                         let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
                         let raySurface = rayEntity.Transform inverse

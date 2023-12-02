@@ -153,7 +153,7 @@ module Content =
                 let propertyContent = propertyContents.[i]
                 if not propertyContent.PropertyInitializer || initializing then
                     let lens = propertyContent.PropertyLens
-                    if String.Equals (lens.Name, "MountOpt") then mountOptFound <- true // TODO: replace with strEq once Prime is updated.
+                    if strEq lens.Name "MountOpt" then mountOptFound <- true
                     let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
                     world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.

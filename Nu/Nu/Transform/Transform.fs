@@ -174,7 +174,7 @@ type [<NoEquality; NoComparison>] Transform =
         affineMatrix.Translation <- this.Position_ + positionUnscaledOffset * sizeScaled
         affineMatrix
 
-    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement Row properties.
+    member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement row properties.
     member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
     member this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
     member this.Left = -this.Right

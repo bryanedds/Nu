@@ -387,7 +387,6 @@ module EffectSystem =
         | Set -> value2
 
     let private evalInset (celSize : Vector2i) celCount celRun delay playback effectSystem =
-        // TODO: make sure Bounce playback works as intended!
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
         let celUnmodulated = int (effectSystem.EffectTime / delay)
         let cel = celUnmodulated % celCount

@@ -6,11 +6,8 @@ open System
 open Prime
 
 /// Describes the form of an element's presence.
-/// TODO: see if implemented IEquatable<_> will keep an expression like `pres = pres2` from boxing. If so, consolidate
-/// the eq and neq functions below into the definition. This could need to be done for our other user-defined value
-/// types as well.
 [<Syntax
-    ("Enclosed Exposed Imposter Prominent Omnipresent", "", "", "", "",
+    ("Enclosed Exposed Imposter Omnipresent", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Presence =

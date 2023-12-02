@@ -223,7 +223,6 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
     static member inline (<--) (lens : Lens<_, _>, value) = lens.Set value
 
     /// Get a lensed property's value.
-    /// TODO: see if this operator is actually useful / understandable.
     static member inline (!.) (lens : Lens<_, _>) = fun world -> lens.Get world
 
 /// A model-message-command-content (MMCC) signal tag type.
@@ -295,7 +294,7 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             | _ -> failwithumf ()
 
 /// Generalized interface tag for late-bound objects.
-/// TODO: consider renaming this to LateBound.
+/// TODO: P1: consider renaming this to LateBound.
 and LateBindings = interface end
 
 /// Generalized interface tag for dispatchers.
@@ -1066,7 +1065,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
     member this.Is2d with get () = this.Dispatcher.Is2d
     member this.Is3d with get () = this.Dispatcher.Is3d
-    member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: P1: consider using a cache flag to keep from recomputing this.
+    member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: consider using a cache flag to keep from recomputing this.
     member this.Centered with get () = this.Transform.Centered and set value = this.Transform.Centered <- value
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.LightProbe with get () = this.Transform.LightProbe and set value = this.Transform.LightProbe <- value
@@ -1595,8 +1594,8 @@ and [<ReferenceEquality>] World =
           mutable Octree : Entity Octree MutantCache // mutated when Imperative
           mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative
           AmbientState : World AmbientState
-          Subsystems : Subsystems // TODO: move this to WorldExtension.
-          Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances. TODO: move this to WorldExtension.
+          Subsystems : Subsystems
+          Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
           WorldExtension : WorldExtension }
 
     /// Check that the world is advancing (not halted).
