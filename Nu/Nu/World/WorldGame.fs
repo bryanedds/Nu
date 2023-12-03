@@ -77,6 +77,7 @@ module WorldGameModule =
         member this.GamepadButtonChangeEvent index = Events.GamepadButtonChangeEvent index --> Game.Handle
         member this.GamepadButtonDownEvent index = Events.GamepadButtonDownEvent index --> Game.Handle
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUpEvent index --> Game.Handle
+        member this.TextInputEvent = Events.TextInputEvent --> Game.Handle
         member this.AssetsReloadEvent = Events.AssetsReloadEvent --> Game.Handle
         member this.BodyAddingEvent = Events.BodyAddingEvent --> Game.Handle
         member this.BodyRemovingEvent = Events.BodyRemovingEvent --> Game.Handle
