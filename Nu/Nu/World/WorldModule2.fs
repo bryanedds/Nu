@@ -628,10 +628,15 @@ module WorldModule2 =
                     // TODO: P1: publish mouse wheel engine events.
                     world
                 | SDL.SDL_EventType.SDL_TEXTINPUT ->
+                    let io = ImGui.GetIO ()
                     let imGui = World.getImGui world
-                    imGui.HandleKeyChar (char evt.text.text.FixedElementField)
-                    // TODO: P1: publish text input engine events.
-                    world
+                    let textInput = char evt.text.text.FixedElementField
+                    imGui.HandleKeyChar textInput
+                    if not (io.WantCaptureKeyboardPlus) then
+                        let eventData = { TextInput = textInput }
+                        let eventTrace = EventTrace.debug "World" "processInput" "TextInput" EventTrace.empty
+                        World.publishPlus eventData Nu.Game.Handle.TextInputEvent eventTrace Nu.Game.Handle true true world
+                    else world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let io = ImGui.GetIO ()
                     if not (io.WantCaptureKeyboardPlus) then

@@ -31,6 +31,10 @@ type GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
 
+/// The data for a text input event.
+type TextInputData =
+    { TextInput : char }
+
 /// The data for a physics integration event.
 type IntegrationData =
     { /// The integration messages sourced from a physics engine.
@@ -142,4 +146,5 @@ module Events =
     let GamepadButtonChangeEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Change"; "Event"|]
     let GamepadButtonDownEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Down"; "Event"|]
     let GamepadButtonUpEvent (index : int) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Up"; "Event"|]
+    let TextInputEvent = stoa<TextInputData> "TextInput/Event"
     let AssetsReloadEvent = stoa<unit> "Assets/Reload/Event"
