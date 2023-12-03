@@ -277,7 +277,7 @@ module WorldGroupModule =
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
             let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
-            let entities = World.getEntitiesFlattened group world
+            let entities = World.getEntitiesSovereign group world
             { groupDescriptor with EntityDescriptors = World.writeEntities entities world }
 
         /// Write multiple groups to a screen descriptor.
