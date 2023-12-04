@@ -44,7 +44,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
     static member private tryGetTextureData tryGetAssetFilePath (assetTag : Image AssetTag) =
         match tryGetAssetFilePath (AssetTag.generalize assetTag) with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateTextureData (Constants.OpenGl.UncompressedTextureFormat, false, filePath) with
+            match OpenGL.Texture.TryCreateTextureData (Constants.OpenGL.UncompressedTextureFormat, false, filePath) with
             | Some (metadata, textureDataPtr, disposer) ->
                 use _ = disposer
                 let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)

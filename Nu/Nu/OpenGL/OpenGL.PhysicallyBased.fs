@@ -299,7 +299,7 @@ module PhysicallyBased =
         albedoTextureSlot.FilePath <- albedoTextureSlot.FilePath.Trim () // trim
         let (albedoMetadata, albedoTexture) =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + albedoTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + albedoTextureSlot.FilePath, textureMemo) with
                 | Right (textureMetadata, texture) -> (textureMetadata, texture)
                 | Left _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
             else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
@@ -340,28 +340,28 @@ module PhysicallyBased =
         roughnessTextureSlot.FilePath <- roughnessTextureSlot.FilePath // trim
         let roughnessTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + roughnessTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + gTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + gTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + sTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + sTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_mTextureFilePath, textureMemo) with
+                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + g_mTextureFilePath, textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
+                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + roughnessTextureFilePath, textureMemo) with
+                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + roughnessTextureFilePath, textureMemo) with
                                     | Right (_, texture) -> texture
                                     | Left _ ->
-                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmTextureFilePath, textureMemo) with
+                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + rmTextureFilePath, textureMemo) with
                                         | Right (_, texture) -> texture
                                         | Left _ ->
-                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
+                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
                                             | Right (_, texture) -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
@@ -373,28 +373,28 @@ module PhysicallyBased =
         metallicTextureSlot.FilePath <- metallicTextureSlot.FilePath.Trim () // trim
         let metallicTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + metallicTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + mTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + mTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_mTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + g_mTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
+                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metallicTextureFilePath, textureMemo) with
+                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + metallicTextureFilePath, textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + metalnessTextureFilePath, textureMemo) with
+                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + metalnessTextureFilePath, textureMemo) with
                                     | Right (_, texture) -> texture
                                     | Left _ ->
-                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmTextureFilePath, textureMemo) with
+                                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + rmTextureFilePath, textureMemo) with
                                         | Right (_, texture) -> texture
                                         | Left _ ->
-                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
+                                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
                                             | Right (_, texture) -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
             else defaultMaterial.MetallicTexture
@@ -406,22 +406,22 @@ module PhysicallyBased =
         ambientOcclusionTextureSlot.FilePath <- ambientOcclusionTextureSlot.FilePath.Trim () // trim
         let ambientOcclusionTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + ambientOcclusionTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + ambientOcclusionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + aoTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + aoTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + g_m_aoTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + ambientOcclusionTextureFilePath, textureMemo) with
+                            match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + ambientOcclusionTextureFilePath, textureMemo) with
                             | Right (_, texture) -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + aoTextureFilePath', textureMemo) with
+                                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + aoTextureFilePath', textureMemo) with
                                 | Right (_, texture) -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
+                                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + rmaTextureFilePath, textureMemo) with
                                     | Right (_, texture) -> texture
                                     | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
@@ -433,13 +433,13 @@ module PhysicallyBased =
         emissionTextureSlot.FilePath <- emissionTextureSlot.FilePath.Trim () // trim
         let emissionTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + emissionTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + emissionTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + eTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + eTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + emissionTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + emissionTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.EmissionTexture
             else defaultMaterial.EmissionTexture
@@ -450,13 +450,13 @@ module PhysicallyBased =
         normalTextureSlot.FilePath <- normalTextureSlot.FilePath.Trim () // trim
         let normalTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.UncompressedTextureFormat, dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.UncompressedTextureFormat, dirPath + "/" + normalTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.UncompressedTextureFormat, dirPath + "/" + nTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.UncompressedTextureFormat, dirPath + "/" + nTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.UncompressedTextureFormat, dirPath + "/" + normalTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.UncompressedTextureFormat, dirPath + "/" + normalTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
@@ -468,13 +468,13 @@ module PhysicallyBased =
         heightTextureSlot.FilePath <- heightTextureSlot.FilePath.Trim () // trim
         let heightTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + heightTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + heightTextureSlot.FilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + hTextureFilePath, textureMemo) with
+                    match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + hTextureFilePath, textureMemo) with
                     | Right (_, texture) -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGl.CompressedColorTextureFormat, dirPath + "/" + heightTextureFilePath, textureMemo) with
+                        match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPath + "/" + heightTextureFilePath, textureMemo) with
                         | Right (_, texture) -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture
