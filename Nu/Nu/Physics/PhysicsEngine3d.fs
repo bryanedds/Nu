@@ -15,7 +15,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : DynamicsWorld
           Constraints : OrderedDictionary<JointId, TypedConstraint>
-          Bodies : OrderedDictionary<BodyId, Vector3 option * RigidBody>
+          NonStaticBodies : OrderedDictionary<BodyId, Vector3 option * RigidBody>
+          Bodies : OrderedDictionary<BodyId, RigidBody>
           Ghosts : OrderedDictionary<BodyId, GhostObject>
           Objects : OrderedDictionary<BodyId, CollisionObject>
           CollisionsFiltered : SDictionary<BodyId * BodyId, Vector3>
@@ -279,8 +280,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             body.UserIndex <- userIndex
             PhysicsEngine3d.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverride, body))
-            then physicsEngine.Objects.Add (bodyId, body)
+            if physicsEngine.Bodies.TryAdd (bodyId, body) then
+                if not body.IsStaticObject then physicsEngine.NonStaticBodies.Add (bodyId, (bodyProperties.GravityOverride, body))
+                physicsEngine.Objects.Add (bodyId, body)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
         else
             let ghost = new GhostObject ()
@@ -320,6 +322,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match object with
             | :? RigidBody as body ->
                 physicsEngine.Objects.Remove bodyId |> ignore
+                physicsEngine.NonStaticBodies.Remove bodyId |> ignore
                 physicsEngine.Bodies.Remove bodyId |> ignore
                 physicsEngine.PhysicsContext.RemoveRigidBody body
                 let userObject = body.UserObject :?> BodyUserObject
@@ -345,7 +348,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | JointEmpty -> ()
         | JointAngle jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
-            | ((true, (_, body)), (true, (_, body2))) ->
+            | ((true, body), (true, body2)) ->
                 let hinge = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
                 hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor, jointAngle.RelaxationFactor)
                 hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
@@ -454,7 +457,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyObservableMessage.BodyId with
-        | (true, (_, body)) -> body.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
+        | (true, body) -> body.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
         | (false, _) ->
             match physicsEngine.Ghosts.TryGetValue setBodyObservableMessage.BodyId with
             | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
@@ -482,9 +485,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SetBodyObservableMessage setBodyObservableMessage -> PhysicsEngine3d.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
 
-            // set gravity of ALL bodies
+            // set gravity of all non-static bodies
             physicsEngine.PhysicsContext.Gravity <- gravity
-            for bodyEntry in physicsEngine.Bodies do
+            for bodyEntry in physicsEngine.NonStaticBodies do
                 let (gravityOverride, body) = bodyEntry.Value
                 match gravityOverride with
                 | Some gravity -> body.Gravity <- gravity
@@ -511,9 +514,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Ghosts.Clear ()
 
+            // clear non-static bodies
+            physicsEngine.NonStaticBodies.Clear ()
+
             // destroy bodies
             for body in physicsEngine.Bodies.Values do
-                physicsEngine.PhysicsContext.RemoveRigidBody (snd body)
+                physicsEngine.PhysicsContext.RemoveRigidBody body
             physicsEngine.Bodies.Clear ()
 
             // dispose body user objects
@@ -608,7 +614,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 PhysicsEngine3d.handleSeparation physicsEngine bodySourceB bodySourceA
 
         // create transform messages
-        for bodyEntry in physicsEngine.Bodies do
+        for bodyEntry in physicsEngine.NonStaticBodies do
             let (_, body) = bodyEntry.Value
             if body.IsActive then
                 let bodyTransformMessage =
@@ -635,6 +641,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         world.Gravity <- gravity
         { PhysicsContext = world
           Constraints = OrderedDictionary HashIdentity.Structural
+          NonStaticBodies = OrderedDictionary HashIdentity.Structural
           Bodies = OrderedDictionary HashIdentity.Structural
           Ghosts = OrderedDictionary HashIdentity.Structural
           Objects = OrderedDictionary HashIdentity.Structural
@@ -669,14 +676,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, (_, body)) -> body.LinearVelocity
+            | (true, body) -> body.LinearVelocity
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
                 else failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, (_, body)) -> body.AngularVelocity
+            | (true, body) -> body.AngularVelocity
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
                 else failwith ("No body with BodyId = " + scstring bodyId + ".")
