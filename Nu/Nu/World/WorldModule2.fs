@@ -1056,6 +1056,10 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
+            let groupsInvisible =
+                if world.Accompanied
+                then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
+                else hashSetPlus HashIdentity.Structural []
             let (elements3d, world) = if skipCulling then World.getElements3d CachedHashSet3d world else World.getElementsInView3d CachedHashSet3d world
             let (elements2d, world) = if skipCulling then World.getElements2d CachedHashSet2d world else World.getElementsInView2d CachedHashSet2d world
             RenderGatherTimer.Stop ()
@@ -1064,13 +1068,12 @@ module WorldModule2 =
             let world = World.renderGame game world
             let world = List.fold (fun world screen -> World.renderScreen screen world) world screens
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> world
-            let world = Seq.fold (fun world (group : Group) -> if group.GetVisible world then World.renderGroup group world else world) world groups
+            let world = Seq.fold (fun world (group : Group) -> if not (groupsInvisible.Contains group) then World.renderGroup group world else world) world groups
 
             // render entities
             RenderEntitiesTimer.Start ()
-            let invisibleGroups = hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups) // OPTIMIZATION: skip checking group visibility for each entity if proven unecessary.
             let world =
-                if world.Unaccompanied || invisibleGroups.Count = 0 then
+                if world.Unaccompanied || groupsInvisible.Count = 0 then
                     Seq.fold (fun world (element : Entity Octelement) ->
                         if element.Visible
                         then World.renderEntity element.Entry world
@@ -1078,12 +1081,12 @@ module WorldModule2 =
                         world elements3d
                 else
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Visible && not (invisibleGroups.Contains element.Entry.Group)
+                        if element.Visible && not (groupsInvisible.Contains element.Entry.Group)
                         then World.renderEntity element.Entry world
                         else world)
                         world elements3d
             let world =
-                if world.Unaccompanied || invisibleGroups.Count = 0 then
+                if world.Unaccompanied || groupsInvisible.Count = 0 then
                     Seq.fold (fun world (element : Entity Quadelement) ->
                         if element.Visible
                         then World.renderEntity element.Entry world
@@ -1091,7 +1094,7 @@ module WorldModule2 =
                         world elements2d
                 else
                     Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Visible && not (invisibleGroups.Contains element.Entry.Group)
+                        if element.Visible && not (groupsInvisible.Contains element.Entry.Group)
                         then World.renderEntity element.Entry world
                         else world)
                         world elements2d
