@@ -40,6 +40,16 @@ module AssetMemo =
         // run texture data loading ops
         let textureDataArray = textureDataLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously
 
+        // instantiate assimp scene loading ops
+        let assimpSceneLoadOps =
+            [for assimpSceneAsset in assimpSceneAssets do
+                vsync
+                    { use assimp = new Assimp.AssimpContext ()
+                      try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
+                          return Right (assimpSceneAsset.FilePath, scene)
+                      with exn ->
+                          return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
+
         // run texture data loading ops
         for textureData in textureDataArray do
             match textureData with
@@ -61,16 +71,6 @@ module AssetMemo =
 
         // run texture data dispose ops
         textureDataDisposeOps |> Vsync.Parallel |> Vsync.RunSynchronously |> ignore<unit array>
-
-        // instantiate assimp scene loading ops
-        let assimpSceneLoadOps =
-            [for assimpSceneAsset in assimpSceneAssets do
-                vsync
-                    { use assimp = new Assimp.AssimpContext ()
-                      try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
-                          return Right (assimpSceneAsset.FilePath, scene)
-                      with exn ->
-                          return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
 
         // run assimp scene loading op
         for assimpScene in assimpSceneLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously do
