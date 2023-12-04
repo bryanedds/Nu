@@ -1274,20 +1274,24 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let previousOpt = World.tryGetPreviousEntity next world
                             let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                            let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
-                            let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
-                            world <- World.insertEntityOrder sourceEntity previousOpt next world
-                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                            world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                            selectEntityOpt (Some sourceEntity')
-                            showSelectedEntity <- true
+                            if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
+                                let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                                let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
+                                world <- World.insertEntityOrder sourceEntity previousOpt next world
+                                world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                                selectEntityOpt (Some sourceEntity')
+                                showSelectedEntity <- true
                         else
-                            let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames) / sourceEntity.Name
-                            let mount = Relation.makeParent ()
-                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                            world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
-                            selectEntityOpt (Some sourceEntity')
-                            showSelectedEntity <- true
+                            let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                            let sourceEntity' = parent / sourceEntity.Name
+                            if not ((scstring parent).Contains (scstring sourceEntity)) then
+                                let mount = Relation.makeParent ()
+                                world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
+                                selectEntityOpt (Some sourceEntity')
+                                showSelectedEntity <- true
+
                     else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
         if expanded then
