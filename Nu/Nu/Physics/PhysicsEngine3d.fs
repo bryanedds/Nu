@@ -540,7 +540,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (DynamicFrameRate _, ClockTime physicsStepAmount) ->
             if physicsStepAmount > 0.0f then
                 // The following line is what Bullet seems to recommend (https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=2438) -
-                //let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 32, 1.0f / 120.0f)
+                //let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 16, 1.0f / 120.0f)
                 // However, the following line of code seems to give smoother results -
                 let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 2, physicsStepAmount / 2.0f - 0.0001f)
                 ignore stepsTaken
