@@ -22,8 +22,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CollisionsFiltered : SDictionary<BodyId * BodyId, Vector3>
           CollisionsGround : SDictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
-          PhysicsDispatcher : Dispatcher
+          CollisionDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
+          ConstraintSolverPool : ConstraintSolverPoolMultiThreaded
           ConstraintSolver : ConstraintSolver
           TryGetAssetFilePath : obj AssetTag -> string option
           TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
@@ -534,14 +535,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (StaticFrameRate frameRate, UpdateTime frames) ->
             let physicsStepAmount = 1.0f / single frameRate * single frames
             if physicsStepAmount > 0.0f then
-                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 32, 1.0f / single (frameRate * 2L))
+                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 16, 1.0f / single (frameRate * 2L))
                 ignore stepsTaken
         | (DynamicFrameRate _, ClockTime physicsStepAmount) ->
             if physicsStepAmount > 0.0f then
                 // The following line is what Bullet seems to recommend (https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=2438) -
                 //let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 32, 1.0f / 120.0f)
                 // However, the following line of code seems to give smoother results -
-                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 4, physicsStepAmount / 4.0f - 0.0001f)
+                let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 2, physicsStepAmount / 2.0f - 0.0001f)
                 ignore stepsTaken
         | (_, _) -> failwithumf ()
 
@@ -633,34 +634,43 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member make imperative gravity tryGetAssetFilePath tryGetStaticModelMetadata =
         let config = if imperative then Imperative else Functional
         let physicsMessages = UList.makeEmpty config
-        let collisionConfiguration = new DefaultCollisionConfiguration ()
-        let physicsDispatcher = new CollisionDispatcher (collisionConfiguration)
+        let taskScheduler = Threads.GetSequentialTaskScheduler () // NOTE: we're just using the non-threaded schedular since none of the others are available (perhaps because I didn't enable them when I previously built bullet).
+        taskScheduler.NumThreads <- taskScheduler.MaxNumThreads
+        Threads.TaskScheduler <- taskScheduler
+        use collisionConfigurationInfo = new DefaultCollisionConstructionInfo (DefaultMaxPersistentManifoldPoolSize = 80000, DefaultMaxCollisionAlgorithmPoolSize = 80000)
+        let collisionConfiguration = new DefaultCollisionConfiguration (collisionConfigurationInfo)
+        let collisionDispatcher = new CollisionDispatcherMultiThreaded (collisionConfiguration)
         let broadPhaseInterface = new DbvtBroadphase ()
-        let constraintSolver = new SequentialImpulseConstraintSolver ()
-        let world = new DiscreteDynamicsWorld (physicsDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
+        let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
+        let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()
+        let world = new DiscreteDynamicsWorldMultiThreaded (collisionDispatcher, broadPhaseInterface, constraintSolverPool, constraintSolver, collisionConfiguration)
         world.Gravity <- gravity
-        { PhysicsContext = world
-          Constraints = OrderedDictionary HashIdentity.Structural
-          NonStaticBodies = OrderedDictionary HashIdentity.Structural
-          Bodies = OrderedDictionary HashIdentity.Structural
-          Ghosts = OrderedDictionary HashIdentity.Structural
-          Objects = OrderedDictionary HashIdentity.Structural
-          CollisionsFiltered = SDictionary.make HashIdentity.Structural
-          CollisionsGround = SDictionary.make HashIdentity.Structural
-          CollisionConfiguration = collisionConfiguration
-          PhysicsDispatcher = physicsDispatcher
-          BroadPhaseInterface = broadPhaseInterface
-          ConstraintSolver = constraintSolver
-          TryGetAssetFilePath = tryGetAssetFilePath
-          TryGetStaticModelMetadata = tryGetStaticModelMetadata
-          PhysicsMessages = physicsMessages
-          IntegrationMessages = List () }
+        let physicsEngine =
+            { PhysicsContext = world
+              Constraints = OrderedDictionary HashIdentity.Structural
+              NonStaticBodies = OrderedDictionary HashIdentity.Structural
+              Bodies = OrderedDictionary HashIdentity.Structural
+              Ghosts = OrderedDictionary HashIdentity.Structural
+              Objects = OrderedDictionary HashIdentity.Structural
+              CollisionsFiltered = SDictionary.make HashIdentity.Structural
+              CollisionsGround = SDictionary.make HashIdentity.Structural
+              CollisionConfiguration = collisionConfiguration
+              CollisionDispatcher = collisionDispatcher
+              BroadPhaseInterface = broadPhaseInterface
+              ConstraintSolverPool = constraintSolverPool
+              ConstraintSolver = constraintSolver
+              TryGetAssetFilePath = tryGetAssetFilePath
+              TryGetStaticModelMetadata = tryGetStaticModelMetadata
+              PhysicsMessages = physicsMessages
+              IntegrationMessages = List () }
+        physicsEngine
 
     static member cleanUp physicsEngine =
         physicsEngine.PhysicsContext.Dispose ()
         physicsEngine.ConstraintSolver.Dispose ()
+        physicsEngine.ConstraintSolverPool.Dispose ()
         physicsEngine.BroadPhaseInterface.Dispose ()
-        physicsEngine.PhysicsDispatcher.Dispose ()
+        physicsEngine.CollisionDispatcher.Dispose ()
         physicsEngine.CollisionConfiguration.Dispose ()
 
     interface PhysicsEngine with
