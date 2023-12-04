@@ -31,7 +31,7 @@ module AssetMemo =
                 vsync
                     { let internalFormat =
                         if is2d
-                        then Constants.OpenGl.UncompressedTextureFormat
+                        then Constants.OpenGL.UncompressedTextureFormat
                         else AssetTag.inferInternalFormatFromAssetName textureAsset.AssetTag
                       match OpenGL.Texture.TryCreateTextureData (internalFormat, true, textureAsset.FilePath) with
                       | Some (metadata, textureData, disposable) -> return Right (textureAsset.FilePath, metadata, textureData, disposable)

@@ -170,7 +170,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match Pathf.GetExtensionLower asset.FilePath with
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
-            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (Constants.OpenGl.UncompressedTextureFormat, asset.FilePath, packageState.TextureMemo) with
+            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (Constants.OpenGL.UncompressedTextureFormat, asset.FilePath, packageState.TextureMemo) with
             | Right (textureMetadata, texture) ->
                 Some (TextureAsset (textureMetadata, texture))
             | Left error ->
@@ -627,7 +627,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // upload texture
                             let textTexture = OpenGL.Gl.GenTexture ()
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
-                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGl.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)

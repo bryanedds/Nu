@@ -38,7 +38,7 @@ module Nu =
             // init OpenGL assert mechanism
             OpenGL.Hl.Init
 #if DEBUG
-                true
+                Constants.OpenGL.HlAssert
 #else
                 false
 #endif

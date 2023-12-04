@@ -88,7 +88,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             // vertex shader code
             // TODO: let's put this code into a .glsl file and load it from there.
             let vertexStr =
-                [Constants.OpenGl.GlslVersionPragma
+                [Constants.OpenGL.GlslVersionPragma
                  ""
                  "uniform mat4 projection;"
                  ""
@@ -108,7 +108,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
 
             // fragment shader code
             let fragmentStr =
-                [Constants.OpenGl.GlslVersionPragma
+                [Constants.OpenGL.GlslVersionPragma
                  ""
                  "uniform sampler2D fontTexture;"
                  ""

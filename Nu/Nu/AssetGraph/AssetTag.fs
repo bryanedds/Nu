@@ -48,8 +48,8 @@ module AssetTag =
             assetTag.AssetName.EndsWith "_u" ||
             assetTag.AssetName.EndsWith "Normal" ||
             assetTag.AssetName.EndsWith "Uncompressed" then
-            Constants.OpenGl.UncompressedTextureFormat
-        else Constants.OpenGl.CompressedColorTextureFormat
+            Constants.OpenGL.UncompressedTextureFormat
+        else Constants.OpenGL.CompressedColorTextureFormat
 
 [<AutoOpen>]
 module AssetTagOperators =

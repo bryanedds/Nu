@@ -139,7 +139,7 @@ module Render =
     let [<Literal>] HeightDefault = 1.0f
     let [<Literal>] InvertRoughnessDefault = false
 
-module OpenGl =
+module OpenGL =
 
     let [<Literal>] VersionMajor = 4
     let [<Literal>] VersionMinor = 1
@@ -147,6 +147,7 @@ module OpenGl =
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0 " + if CoreProfile then "core" else ""
     let [<Literal>] CompressedColorTextureFormat = OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
     let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
+    let [<Uniform>] mutable HlAssert = match ConfigurationManager.AppSettings.["HlAssert"] with null -> false | vsync -> scvalue<bool> vsync
 
 [<RequireQualifiedAccess>]
 module Assimp =
