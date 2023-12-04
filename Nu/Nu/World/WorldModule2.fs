@@ -1068,8 +1068,9 @@ module WorldModule2 =
 
             // render entities
             RenderEntitiesTimer.Start ()
+            let invisibleGroups = hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups) // OPTIMIZATION: skip checking group visibility for each entity if proven unecessary.
             let world =
-                if world.Unaccompanied then
+                if world.Unaccompanied || invisibleGroups.Count = 0 then
                     Seq.fold (fun world (element : Entity Octelement) ->
                         if element.Visible
                         then World.renderEntity element.Entry world
@@ -1077,12 +1078,12 @@ module WorldModule2 =
                         world elements3d
                 else
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Visible && element.Entry.Group.GetVisible world
+                        if element.Visible && not (invisibleGroups.Contains element.Entry.Group)
                         then World.renderEntity element.Entry world
                         else world)
                         world elements3d
             let world =
-                if world.Unaccompanied then
+                if world.Unaccompanied || invisibleGroups.Count = 0 then
                     Seq.fold (fun world (element : Entity Quadelement) ->
                         if element.Visible
                         then World.renderEntity element.Entry world
@@ -1090,7 +1091,7 @@ module WorldModule2 =
                         world elements2d
                 else
                     Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Visible && element.Entry.Group.GetVisible world
+                        if element.Visible && not (invisibleGroups.Contains element.Entry.Group)
                         then World.renderEntity element.Entry world
                         else world)
                         world elements2d
