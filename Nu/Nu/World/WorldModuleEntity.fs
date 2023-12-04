@@ -640,9 +640,9 @@ module WorldModuleEntity =
                 World.publishPlus mountData (Events.UnmountEvent --> mountOld) eventTrace entity false false world
             | None -> world
 
-        static member internal propagateEntityAffineMatrix3 mount mounter world =
+        static member internal propagateEntityAffineMatrix3 fromPhysical mount mounter world =
             let mounterState = World.getEntityState mounter world
-            if world.Halted || not mounterState.Physical then
+            if not (fromPhysical && mounterState.Physical) then
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
                 let affineMatrix = affineMatrixLocal * affineMatrixWorld
@@ -658,16 +658,18 @@ module WorldModuleEntity =
 
         static member internal propagateEntityProperties3 mountOpt entity world =
             match Option.bind (tryResolve entity) mountOpt with
-            | Some mountNew when World.getEntityExists mountNew world ->
-                let world = World.propagateEntityAffineMatrix3 mountNew entity world
-                let world = World.propagateEntityElevation3 mountNew entity world
-                let world = World.propagateEntityEnabled3 mountNew entity world
-                let world = World.propagateEntityVisible3 mountNew entity world
+            | Some mount when World.getEntityExists mount world ->
+                let fromPhysical = World.getEntityPhysical mount world
+                let world = World.propagateEntityAffineMatrix3 fromPhysical mount entity world
+                let world = World.propagateEntityElevation3 mount entity world
+                let world = World.propagateEntityEnabled3 mount entity world
+                let world = World.propagateEntityVisible3 mount entity world
                 world
             | _ -> world
 
         static member internal propagateEntityAffineMatrix entity world =
-            World.traverseEntityMounters World.propagateEntityAffineMatrix3 entity world
+            let fromPhysical = World.getEntityPhysical entity world
+            World.traverseEntityMounters (World.propagateEntityAffineMatrix3 fromPhysical) entity world
 
         static member internal setEntityMountOpt value entity world =
             let entityState = World.getEntityState entity world
