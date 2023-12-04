@@ -2531,6 +2531,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginPopupModal (title, &showNewGroupDialog) then
                             ImGui.Text "Group Name:"
                             ImGui.SameLine ()
+                            ImGui.SetKeyboardFocusHere ()
                             ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
                             let newGroup = selectedScreen / newGroupName
                             if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
