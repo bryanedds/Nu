@@ -79,7 +79,7 @@ module AssetMemo =
             | Left error -> Log.info error
 
         // memoize cube maps directly
-            for cubeMap in cubeMapAssets do
+        for cubeMap in cubeMapAssets do
             match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
                 let dirPath = Pathf.GetDirectoryName cubeMap.FilePath
