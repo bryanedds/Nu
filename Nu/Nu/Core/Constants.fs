@@ -60,7 +60,8 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Literal>] SurfaceForwardRenderSuffix = "Forward"
+    let [<Literal>] DeferredName = "Deferred"
+    let [<Literal>] ForwardName = "Forward"
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | vsync -> scvalue<bool> vsync
     let [<Literal>] VirtualResolutionX = 960
     let [<Literal>] VirtualResolutionY = 540

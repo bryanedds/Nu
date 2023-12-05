@@ -3,6 +3,7 @@
 
 namespace OpenGL
 open System
+open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
@@ -59,18 +60,36 @@ module PhysicallyBased =
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         { HashCode : int
           SurfaceNames : string array
+          SurfaceMetadata : IReadOnlyDictionary<string, Assimp.Metadata.Entry>
           SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
           SurfaceMatrix : Matrix4x4
           SurfaceBounds : Box3
           SurfaceMaterial : PhysicallyBasedMaterial
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
+        member this.RenderStyleOpt =
+            if  this.SurfaceMetadata.ContainsKey Constants.Render.DeferredName ||
+                this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.DeferredName then
+                Some Deferred
+            elif this.SurfaceMetadata.ContainsKey Constants.Render.ForwardName ||
+                 this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.ForwardName then
+                 Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
+            else
+                match this.SurfaceMetadata.TryGetValue "RenderStyle" with
+                | (true, entry) ->
+                    match entry.DataType with
+                    | Assimp.MetaDataType.String ->
+                        try entry.Data :?> string |> scvalueMemo |> Some
+                        with _ -> None
+                    | _ -> None
+                | (false, _) -> None
+
         static member inline hash surface =
             (int surface.SurfaceMaterial.AlbedoTexture) ^^^
             (int surface.SurfaceMaterial.RoughnessTexture <<< 2) ^^^
             (int surface.SurfaceMaterial.MetallicTexture <<< 4) ^^^
             (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 6) ^^^
-            (int surface.SurfaceMaterial.EmissionTexture <<< 7) ^^^
+            (int surface.SurfaceMaterial.EmissionTexture <<< 8) ^^^
             (int surface.SurfaceMaterial.NormalTexture <<< 10) ^^^
             (int surface.SurfaceMaterial.HeightTexture <<< 12) ^^^
             (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 14) ^^^
@@ -93,10 +112,11 @@ module PhysicallyBased =
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member internal make names (surfaceMatrix : Matrix4x4) bounds material geometry =
+        static member internal make names metadata (surfaceMatrix : Matrix4x4) bounds material geometry =
             let result =
                 { HashCode = 0
                   SurfaceNames = names
+                  SurfaceMetadata = metadata
                   SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
                   SurfaceMatrix = surfaceMatrix
                   SurfaceBounds = bounds
@@ -1320,8 +1340,8 @@ module PhysicallyBased =
         CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create a physically-based surface.
-    let CreatePhysicallyBasedSurface (surfaceNames, surfaceMatrix, surfaceBounds, physicallyBasedMaterial, physicallyBasedGeometry) =
-        PhysicallyBasedSurface.make surfaceNames surfaceMatrix surfaceBounds physicallyBasedMaterial physicallyBasedGeometry
+    let CreatePhysicallyBasedSurface (surfaceNames, surfaceMetadata, surfaceMatrix, surfaceBounds, physicallyBasedMaterial, physicallyBasedGeometry) =
+        PhysicallyBasedSurface.make surfaceNames surfaceMetadata surfaceMatrix surfaceBounds physicallyBasedMaterial physicallyBasedGeometry
 
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if renderable = false.
@@ -1463,7 +1483,7 @@ module PhysicallyBased =
                                 let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                 let material = materials.[materialIndex]
                                 let geometry = geometries.[meshIndex]
-                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material geometry
+                                let surface = PhysicallyBasedSurface.make names node.Metadata transform geometry.Bounds material geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                 surfaces.Add surface
                                 yield PhysicallyBasedSurface surface|] |>
