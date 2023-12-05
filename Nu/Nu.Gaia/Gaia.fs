@@ -1212,7 +1212,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then focusedPropertyDescriptorOpt <- None; selectEntityOpt None
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
-        let children = world |> entity.GetChildren |> Seq.toArray
+        let children =
+            entity.GetChildren world |>
+            Array.ofSeq |>
+            Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
+            Array.ofSeq |>
+            Array.sortBy fst |>
+            Array.map snd
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
@@ -2119,8 +2125,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | None -> ()
                         let entities =
                             World.getEntitiesSovereign selectedGroup world |>
-                            Seq.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
                             Array.ofSeq |>
+                            Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
                             Array.sortBy fst |>
                             Array.map snd
                         for entity in entities do
