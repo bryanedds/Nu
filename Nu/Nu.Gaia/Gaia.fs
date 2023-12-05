@@ -1806,11 +1806,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let affine' = Matrix4x4.CreateFromArray affine
                             let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
-                                let (p, _, s) =
-                                    if  not snaps2dSelected &&
-                                        ImGui.IsCtrlReleased () then
-                                        snaps3d else (0.0f, 0.0f, 0.0f)
                                 position <- Math.SnapF3d p position
+                                rotation <- rotation.Normalized // try to avoid weird angle combinations
                                 scale <- Math.SnapF3d s scale
                                 if scale.X < 0.01f then scale.X <- 0.01f
                                 if scale.Y < 0.01f then scale.Y <- 0.01f
@@ -1827,7 +1824,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 match entity.TryGetProperty (nameof entity.AngularVelocity) world with
                                 | Some property when property.PropertyType = typeof<Vector3> -> world <- entity.SetAngularVelocity v3Zero world
                                 | Some _ | None -> ()
-                        if ImGui.IsMouseReleased ImGuiMouseButton.Left then manipulationActive <- false
+                        if ImGui.IsMouseReleased ImGuiMouseButton.Left then
+                            if manipulationActive then
+                                match manipulationOperation with
+                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f -> world <- entity.SetDegrees (Math.SnapDegree3d r (entity.GetDegrees world)) world
+                                | _ -> ()
+                                manipulationOperation <- OPERATION.TRANSLATE
+                                manipulationActive <- false
                     | Some _ | None -> ()
 
                     // view manipulation
