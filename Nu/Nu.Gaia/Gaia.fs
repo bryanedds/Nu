@@ -17,23 +17,23 @@ open ImGuizmoNET
 open Prime
 open Nu
 
-//////////////////////////////////////////////////////////////////////////////
-// TODO:                                                                    //
-// Log Output window.                                                       //
-// Perhaps look up (Value)Some-constructed default property values from overlayer. //
-// Custom properties in order of priority:                                  //
-//  NormalOpt (for terrain)                                                 //
-//  Enums                                                                   //
-//  Layout                                                                  //
-//  CollisionMask                                                           //
-//  CollisionCategories                                                     //
-//  CollisionDetection                                                      //
-//  BodyShape                                                               //
-//  JointDevice                                                             //
-//  DateTimeOffset?                                                         //
-//  SymbolicCompression                                                     //
-//  Flag Enums                                                              //
-//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// TODO:                                                                            //
+// Log Output window.                                                               //
+// Perhaps look up (Value)Some-constructed default property values from overlayer.  //
+// Custom properties in order of priority:                                          //
+//  NormalOpt (for terrain)                                                         //
+//  Enums                                                                           //
+//  Layout                                                                          //
+//  CollisionMask                                                                   //
+//  CollisionCategories                                                             //
+//  CollisionDetection                                                              //
+//  BodyShape                                                                       //
+//  JointDevice                                                                     //
+//  DateTimeOffset?                                                                 //
+//  SymbolicCompression                                                             //
+//  Flag Enums                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
 module Gaia =
@@ -1231,7 +1231,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     desiredEyeCenter2d <- (entity.GetCenter world).V2
                 else
                     let eyeRotation = World.getEyeRotation3d world
-                    let eyeCenterOffset = Vector3.Transform (v3Forward * newEntityDistance, eyeRotation)
+                    let eyeCenterOffset = Vector3.Transform (v3Back * newEntityDistance, eyeRotation)
                     desiredEyeCenter3d <- entity.GetPosition world + eyeCenterOffset
         if ImGui.BeginPopupContextItem () then
             selectEntityOpt (Some entity)
