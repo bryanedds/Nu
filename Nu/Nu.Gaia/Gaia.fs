@@ -81,7 +81,7 @@ module Gaia =
 
     let mutable private fullScreen = false
     let mutable private editWhileAdvancing = false
-    let mutable private snaps2dSelected = false
+    let mutable private snaps2dSelected = true
     let mutable private snaps2d = (Constants.Gaia.Position2dSnapDefault, Constants.Gaia.Degrees2dSnapDefault, Constants.Gaia.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Gaia.Position3dSnapDefault, Constants.Gaia.Degrees3dSnapDefault, Constants.Gaia.Scale3dSnapDefault)
     let mutable private snapDrag = 0.1f
@@ -174,31 +174,37 @@ Size=282,1024
 Collapsed=0
 DockId=0x0000000C,1
 
-[Window][Asset Graph]
+[Window][Event Tracing]
 Pos=953,854
 Size=669,226
 Collapsed=0
-DockId=0x00000009,2
+DockId=0x00000009,5
 
 [Window][Overlayer]
 Pos=953,854
 Size=669,226
 Collapsed=0
-DockId=0x00000009,3
+DockId=0x00000009,4
 
-[Window][Event Tracing]
+[Window][Asset Graph]
 Pos=953,854
 Size=669,226
 Collapsed=0
-DockId=0x00000009,4
+DockId=0x00000009,3
 
 [Window][Renderer]
 Pos=953,854
 Size=669,226
 Collapsed=0
-DockId=0x00000009,1
+DockId=0x00000009,2
 
 [Window][Audio Player]
+Pos=953,854
+Size=669,226
+Collapsed=0
+DockId=0x00000009,1
+
+[Window][Edit Params]
 Pos=953,854
 Size=669,226
 Collapsed=0
@@ -348,7 +354,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
           DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,796 CentralNode=1
           DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,226 Split=X Selected=0xD4E24632
             DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=667,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0xD4E24632
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0x004ABF05
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
@@ -1989,15 +1995,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     newEntityDispatcherName <- overlayName
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
-                        ImGui.Text "@d|e"
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 40.0f
-                        ImGui.DragFloat ("##newEntityDistance", &newEntityDistance, snapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 40.0f
-                        ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, snapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
-                        ImGui.SameLine ()
-                        if ImGui.Button "Q. Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
+                        if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
                         ImGui.SameLine ()
                         if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
                         ImGui.SameLine ()
@@ -2012,34 +2010,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 world <- World.setAdvancing false world
                             ImGui.SameLine ()
                             ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
-                        ImGui.SameLine ()
-                        ImGui.Text "|"
-                        ImGui.SameLine ()
-                        ImGui.Text "Snap:"
-                        ImGui.SameLine ()
-                        ImGui.Text "2d"
-                        ImGui.SameLine ()
-                        ImGui.Checkbox ("##snaps2dSelected", &snaps2dSelected) |> ignore<bool>
-                        ImGui.SameLine ()
-                        let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
-                        ImGui.Text "Pos"
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 36.0f
-                        ImGui.DragFloat ("##p", &p, (if snaps2dSelected then 0.1f else 0.01f), 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
-                        ImGui.SameLine ()
-                        ImGui.Text "Deg"
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 36.0f
-                        if snaps2dSelected
-                        then ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
-                        else ImGui.DragFloat ("##d", &d, 0.0f, 0.0f, 0.0f, "%2.2f") |> ignore<bool> // unchangable 3d rotation
-                        ImGui.SameLine ()
-                        ImGui.Text "Scl"
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 36.0f
-                        ImGui.DragFloat ("##s", &s, 0.01f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
-                        ImGui.SameLine ()
-                        if snaps2dSelected then snaps2d <- (p, d, s) else snaps3d <- (p, d, s)
                         ImGui.SameLine ()
                         ImGui.Text "|"
                         ImGui.SameLine ()
@@ -2342,6 +2312,40 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then world <- World.setMasterSongVolume masterSongVolume world
                         ImGui.SameLine ()
                         ImGui.Text (string masterSongVolume)
+                        ImGui.End ()
+
+                    // edit params window
+                    if ImGui.Begin ("Edit Params", ImGuiWindowFlags.NoNav) then
+                        ImGui.Text "Transform Snapping"
+                        ImGui.SetNextItemWidth 50.0f
+                        let mutable index = if snaps2dSelected then 0 else 1
+                        if ImGui.Combo ("##snapsSelection", &index, [|"2d"; "3d"|], 2) then
+                            match index with
+                            | 0 -> snaps2dSelected <- true
+                            | _ -> snaps2dSelected <- false
+                        ImGui.SameLine ()
+                        let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
+                        ImGui.Text "Pos"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 36.0f
+                        ImGui.DragFloat ("##p", &p, (if snaps2dSelected then 0.1f else 0.01f), 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.SameLine ()
+                        ImGui.Text "Deg"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 36.0f
+                        if snaps2dSelected
+                        then ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        else ImGui.DragFloat ("##d", &d, 0.0f, 0.0f, 0.0f, "%2.2f") |> ignore<bool> // unchangable 3d rotation
+                        ImGui.SameLine ()
+                        ImGui.Text "Scl"
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 36.0f
+                        ImGui.DragFloat ("##s", &s, 0.01f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        if snaps2dSelected then snaps2d <- (p, d, s) else snaps3d <- (p, d, s)
+                        ImGui.Text "Creation Elevation (2d)"
+                        ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, snapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.Text "Creation Distance (3d)"
+                        ImGui.DragFloat ("##newEntityDistance", &newEntityDistance, snapDrag, 0.5f, Single.MaxValue, "%2.2f") |> ignore<bool>
                         ImGui.End ()
 
                 // in full-screen mode, just show full-screen short cut window
