@@ -1016,7 +1016,7 @@ module WorldEntityModule =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard atMouse rightClickPosition snapsEir (parent : Simulant) world =
+        static member pasteEntityFromClipboard atMouse (distance : single) rightClickPosition snapsEir (parent : Simulant) world =
             match Clipboard with
             | Some entityDescriptor ->
                 let nameOpt =
@@ -1050,10 +1050,10 @@ module WorldEntityModule =
                                 let viewport = Constants.Render.Viewport
                                 let ray = viewport.MouseToWorld3d (absolute, rightClickPosition, eyeCenter, eyeRotation)
                                 let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
+                                let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value
-                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
+                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * distance
                         match snapsEir with
                         | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Left _ -> (position, None)
