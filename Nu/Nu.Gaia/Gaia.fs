@@ -1216,7 +1216,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             entity.GetChildren world |>
             Array.ofSeq |>
             Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
-            Array.ofSeq |>
             Array.sortBy fst |>
             Array.map snd
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
