@@ -1203,6 +1203,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                               SortableLightDistanceSquared = Single.MaxValue }
                         renderer.RenderTasks.RenderLights.Add light
                 for surface in modelAsset.Surfaces do
+                    let renderType =
+                        if surface.SurfaceNames.Length > 0 && (Array.last surface.SurfaceNames).EndsWith Constants.Render.SurfaceForwardRenderSuffix
+                        then ForwardRenderType (0.0f, 0.0f) // TODO: consider also parsing out the sorting parameters as well?
+                        else renderType
                     let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
                     let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence then

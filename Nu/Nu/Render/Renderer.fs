@@ -61,7 +61,7 @@ type RenderAsset =
     | StaticModelAsset of UserDefined : bool * Model : OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedModel
 
-/// The type of rendering used on a surface.
+/// The type of rendering used on a surface (for use by the lower-level renderer API).
 type [<StructuralEquality; NoComparison; Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType of Subsort : single * Sort : single

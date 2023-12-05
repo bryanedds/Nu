@@ -701,6 +701,10 @@ module StaticModelHierarchyDispatcherModule =
                                 if Matrix4x4.Decompose (transform, &scale, &rotation, &position)
                                 then (position, rotation, scale, world)
                                 else (transform.Translation, quatIdentity, transform.Scale, world) // use translation and scale, even from invalid transform
+                            let renderStyle =
+                                if surface.SurfaceNames.Length > 0 && (Array.last surface.SurfaceNames).EndsWith Constants.Render.SurfaceForwardRenderSuffix
+                                then Forward (0.0f, 0.0f) // TODO: consider also parsing out the sorting parameters as well?
+                                else Deferred
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
@@ -718,6 +722,7 @@ module StaticModelHierarchyDispatcherModule =
                                   HeightOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.Height
                                   InvertRoughnessOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.InvertRoughness }
                             let world = child.SetMaterialProperties materialProperties world
+                            let world = child.SetRenderStyle renderStyle world
                             let world = child.QuickSize world
                             world' <- world
                             i <- inc i)
