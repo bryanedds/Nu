@@ -1810,6 +1810,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     world <- entity.SetRotation rotation world
                                     let degrees = entity.GetDegrees world
                                     let degrees = if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
+                                    let degrees = v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
+                                    let degrees = v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
                                     world <- entity.SetDegrees degrees world
                                 | OPERATION.SCALE -> world <- entity.SetScale scale world
                                 | _ -> () // nothing to do
