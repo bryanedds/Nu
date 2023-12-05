@@ -1790,10 +1790,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not manipulationActive then
                             if ImGui.IsShiftDown () then manipulationOperation <- OPERATION.SCALE
                             elif ImGui.IsAltDown () then manipulationOperation <- OPERATION.ROTATE
+                            elif ImGui.IsKeyDown ImGuiKey.X then manipulationOperation <- OPERATION.ROTATE_X
+                            elif ImGui.IsKeyDown ImGuiKey.Y then manipulationOperation <- OPERATION.ROTATE_Y
+                            elif ImGui.IsKeyDown ImGuiKey.Z then manipulationOperation <- OPERATION.ROTATE_Z
                             else manipulationOperation <- OPERATION.TRANSLATE
                         let mutable snap =
                             match manipulationOperation with
-                            | OPERATION.ROTATE -> r
+                            | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
                             | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
                         let deltaMatrix = m4Identity.ToArray ()
                         if ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0], &deltaMatrix.[0], &snap) then
@@ -1814,7 +1817,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if scale.Z < 0.01f then scale.Z <- 0.01f
                                 match manipulationOperation with
                                 | OPERATION.TRANSLATE -> world <- entity.SetPosition position world
-                                | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
+                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> world <- entity.SetRotation rotation world
                                 | OPERATION.SCALE -> world <- entity.SetScale scale world
                                 | _ -> () // nothing to do
                             if world.Advancing then
