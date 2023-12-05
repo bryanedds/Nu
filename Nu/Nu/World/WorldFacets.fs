@@ -2088,11 +2088,6 @@ module LightFacet3dModule =
 [<AutoOpen>]
 module StaticBillboardFacetModule =
 
-    /// The type of rendering used on a surface (for use by the higher-level engine API).
-    type [<StructuralEquality; StructuralComparison>] RenderStyle =
-        | Deferred
-        | Forward of Subsort : single * Sort : single
-
     type Entity with
         // OPTIMIZATION: override allows surface properties to be fetched with a single look-up.
         member this.GetMaterialProperties world : MaterialProperties = this.Get (nameof this.MaterialProperties) world

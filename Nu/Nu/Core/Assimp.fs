@@ -23,10 +23,19 @@ type [<StructuralEquality; NoComparison>] Animation =
       Weight : single
       BoneFilterOpt : string Set option }
 
+/// The type of rendering used on a surface (for use by the higher-level engine API).
+type [<StructuralEquality; StructuralComparison>] RenderStyle =
+    | Deferred
+    | Forward of Subsort : single * Sort : single
+
 /// Additional assimp functionality.
 /// Intentionally prevents the original Assimp namespace from being opened.
 [<RequireQualifiedAccess>]
 module Assimp =
+
+    /// The empty metadata dictionary.
+    let MetadataEmpty =
+        readOnlyDict<string, Assimp.Metadata.Entry> Seq.empty
 
     /// Convert a matrix from an Assimp representation to Nu's.
     let ExportMatrix (m : Assimp.Matrix4x4) =
