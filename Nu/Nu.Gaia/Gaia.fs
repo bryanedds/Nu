@@ -68,6 +68,7 @@ module Gaia =
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
     let mutable private newEntityDispatcherName = null // this will be initialized on start
     let mutable private newEntityOverlayName = "(Default Overlay)"
+    let mutable private newEntityDistance = 2.0f
     let mutable private newEntityElevation = 0.0f
     let mutable private newGroupName = ""
     let mutable private groupRename = ""
@@ -664,9 +665,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if atMouse then
                     let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, rightClickPosition, eyeCenter, eyeRotation)
                     let forward = Vector3.Transform (v3Forward, eyeRotation)
-                    let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
+                    let plane = plane3 (eyeCenter + forward * newEntityDistance) -forward
                     (ray.Intersection plane).Value
-                else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
+                else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * newEntityDistance
             entityTransform.Position <- entityPosition
             entityTransform.Size <- entity.GetQuickSize world
             if not snaps2dSelected && ImGui.IsCtrlReleased ()
@@ -804,7 +805,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         snapshot ()
         let snapsEir = if snaps2dSelected then Left snaps2d else Right snaps3d
         let parent = match parentOpt with Some parent -> parent | None -> selectedGroup :> Simulant
-        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir parent world in world <- wtemp
+        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse newEntityDistance rightClickPosition snapsEir parent world in world <- wtemp
         match entityOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
@@ -1230,7 +1231,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     desiredEyeCenter2d <- (entity.GetCenter world).V2
                 else
                     let eyeRotation = World.getEyeRotation3d world
-                    let eyeCenterOffset = Vector3.Transform (Constants.Engine.EyeCenter3dOffset, eyeRotation)
+                    let eyeCenterOffset = Vector3.Transform (v3Forward * newEntityDistance, eyeRotation)
                     desiredEyeCenter3d <- entity.GetPosition world + eyeCenterOffset
         if ImGui.BeginPopupContextItem () then
             selectEntityOpt (Some entity)
@@ -1982,12 +1983,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     newEntityDispatcherName <- overlayName
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
-                        ImGui.Text "@ Elev."
+                        ImGui.Text "@d|e"
                         ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 50.0f
+                        ImGui.SetNextItemWidth 40.0f
+                        ImGui.DragFloat ("##newEntityDistance", &newEntityDistance, snapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.SameLine ()
+                        ImGui.SetNextItemWidth 40.0f
                         ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, snapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
                         ImGui.SameLine ()
-                        if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
+                        if ImGui.Button "Q. Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
                         ImGui.SameLine ()
                         if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
                         ImGui.SameLine ()
