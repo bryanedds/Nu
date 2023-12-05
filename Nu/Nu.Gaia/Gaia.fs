@@ -508,19 +508,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         entitiesInGroup
 
-    let rec private generateEntityName3 dispatcherName existingEntityNames =
-        let mutable name = Gen.nameForEditor dispatcherName
-        if Set.contains name existingEntityNames
-        then generateEntityName3 dispatcherName existingEntityNames
-        else name
-
-    let private generateEntityName dispatcherName =
-        let existingEntityNames =
-            World.getEntitiesFlattened selectedGroup world |>
-            Seq.map (fun entity -> entity.Name) |>
-            Set.ofSeq
-        generateEntityName3 dispatcherName existingEntityNames
-
     let private tryMousePick mousePosition =
         let entities2d = getPickCandidates2d ()
         let pickedOpt = World.tryPickEntity2d mousePosition entities2d world
@@ -648,7 +635,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | "(Routed Overlay)" -> RoutedOverlay
             | "(No Overlay)" -> NoOverlay
             | overlayName -> ExplicitOverlay overlayName
-        let name = generateEntityName dispatcherName
+        let name = World.generateEntitySequentialName dispatcherName selectedGroup world
         let surnames =
             match selectedEntityOpt with
             | Some entity when entity.Exists world && inHierarchy -> Array.add name entity.Surnames
@@ -813,14 +800,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         | Some _ | None -> false
 
-    let private tryPaste atMouse =
+    let private tryPaste atMouse parentOpt =
         snapshot ()
-        let surnamesOpt =
-            World.tryGetEntityDispatcherNameOnClipboard world |>
-            Option.map (fun dispatcherName -> generateEntityName dispatcherName) |>
-            Option.map Array.singleton
         let snapsEir = if snaps2dSelected then Left snaps2d else Right snaps3d
-        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt selectedGroup world in world <- wtemp
+        let parent = match parentOpt with Some parent -> parent | None -> selectedGroup :> Simulant
+        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse rightClickPosition snapsEir parent world in world <- wtemp
         match entityOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
@@ -1206,7 +1190,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false None |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then focusedPropertyDescriptorOpt <- None; selectEntityOpt None
@@ -1252,6 +1236,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             selectEntityOpt (Some entity)
             if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
             if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem "Paste" then tryPaste false (Some entity) |> ignore<bool>
             ImGui.Separator ()
             if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
             ImGui.Separator ()
@@ -1282,21 +1267,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
                                 let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
                                 let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
-                                world <- World.insertEntityOrder sourceEntity previousOpt next world
-                                world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                selectEntityOpt (Some sourceEntity')
-                                showSelectedEntity <- true
+                                if not (sourceEntity'.Exists world) then
+                                    world <- World.insertEntityOrder sourceEntity previousOpt next world
+                                    world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                    world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                                    selectEntityOpt (Some sourceEntity')
+                                    showSelectedEntity <- true
+                                else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                         else
                             let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let sourceEntity' = parent / sourceEntity.Name
                             if not ((scstring parent).Contains (scstring sourceEntity)) then
-                                let mount = Relation.makeParent ()
-                                world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                world <- sourceEntity'.SetMountOptWithAdjustment (Some mount) world
-                                selectEntityOpt (Some sourceEntity')
-                                showSelectedEntity <- true
-
+                                if not (sourceEntity'.Exists world) then
+                                    world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                    world <- sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                                    selectEntityOpt (Some sourceEntity')
+                                    showSelectedEntity <- true
+                                else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                     else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
         if expanded then
@@ -1954,7 +1941,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ImGui.BeginMenu "Entity" then
                                 if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste false |> ignore<bool>
+                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste false None |> ignore<bool>
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
                                 if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
@@ -2139,10 +2126,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let sourceEntity = Nu.Entity sourceEntityAddressStr
                                     if not (sourceEntity.GetProtected world) then
                                         let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
-                                        world <- sourceEntity.SetMountOptWithAdjustment None world
-                                        world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                        selectEntityOpt (Some sourceEntity')
-                                        showSelectedEntity <- true
+                                        if not (sourceEntity'.Exists world) then
+                                            world <- sourceEntity.SetMountOptWithAdjustment None world
+                                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                            selectEntityOpt (Some sourceEntity')
+                                            showSelectedEntity <- true
+                                        else messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
                                 | None -> ()
                         let entities =
                             World.getEntitiesSovereign selectedGroup world |>
@@ -2710,7 +2699,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Separator ()
                         if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
-                        if ImGui.Button "Paste" then tryPaste true |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Paste" then tryPaste true None |> ignore<bool>; showEntityContextMenu <- false
                         ImGui.Separator ()
                         if ImGui.Button "Show in Hierarchy" then showSelectedEntity <- true; showEntityContextMenu <- false
                         ImGui.End ()
