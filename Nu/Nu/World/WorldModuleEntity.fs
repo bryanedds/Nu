@@ -20,10 +20,6 @@ module WorldModuleEntity =
     let internal EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
     let internal EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
 
-    /// Mutable clipboard that allows its state to persist beyond undo / redo.
-    /// TODO: P1: put this in AmbientState instead of leaving it free-floating?
-    let mutable private Clipboard : obj option = None
-
     /// Publishing IDs.
     let internal EntityChangeCountsId = Gen.id
     let internal EntityBindingCountsId = Gen.id
@@ -2575,72 +2571,6 @@ module WorldModuleEntity =
         static member internal viewEntityProperties entity world =
             let state = World.getEntityState entity world
             World.viewSimulantStateProperties state
-
-        /// Clear the content of the clipboard.
-        static member clearClipboard (_ : World) =
-            Clipboard <- None
-
-        /// Attempt to get the dispatcher name for an entity currently on the world's clipboard.
-        static member tryGetEntityDispatcherNameOnClipboard (_ : World) =
-            match Clipboard with
-            | Some (:? EntityState as entityState) -> Some (getTypeName entityState.Dispatcher)
-            | _ -> None
-
-        /// Copy an entity to the world's clipboard.
-        static member copyEntityToClipboard entity world =
-            let entityState = EntityState.makeFromEntityState None (World.getEntityState entity world)
-            Clipboard <- Some (entityState :> obj)
-
-        /// Cut an entity to the world's clipboard.
-        static member cutEntityToClipboard (entity : Entity) world =
-            World.copyEntityToClipboard entity world
-            World.destroyEntityImmediate entity world
-
-        /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard atMouse rightClickPosition snapsEir surnamesOpt (group : Group) world =
-            match Clipboard with
-            | Some entityStateObj ->
-                let entityState = EntityState.makeFromEntityState surnamesOpt (entityStateObj :?> EntityState)
-                entityState.Protected <- false // ensure pasted entity is not protected in case user pastes an MMCC entity
-                let (position, snapsOpt) =
-                    if entityState.Is2d then
-                        let viewport = World.getViewport world
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
-                        let position =
-                            if atMouse
-                            then (viewport.MouseToWorld2d (entityState.Absolute, rightClickPosition, eyeCenter, eyeSize)).V3
-                            else (viewport.MouseToWorld2d (entityState.Absolute, World.getEyeSize2d world, eyeCenter, eyeSize)).V3
-                        match snapsEir with
-                        | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
-                        | Right _ -> (position, None)
-                    else
-                        let eyeCenter = World.getEyeCenter3d world
-                        let eyeRotation = World.getEyeRotation3d world
-                        let position =
-                            if atMouse then
-                                let viewport = Constants.Render.Viewport
-                                let ray = viewport.MouseToWorld3d (entityState.Absolute, rightClickPosition, eyeCenter, eyeRotation)
-                                let forward = Vector3.Transform (v3Forward, eyeRotation)
-                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
-                                let intersectionOpt = ray.Intersection plane
-                                intersectionOpt.Value
-                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
-                        match snapsEir with
-                        | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
-                        | Left _ -> (position, None)
-                entityState.Transform.Position <- position
-                match snapsOpt with
-                | Some (positionSnap, degreesSnap, scaleSnap) -> entityState.Transform.Snap (positionSnap, degreesSnap, scaleSnap)
-                | None -> ()
-                entityState.PositionLocal <- v3Zero
-                entityState.RotationLocal <- quatIdentity
-                entityState.ScaleLocal <- v3One
-                entityState.MountOpt <- None
-                let entity = Entity (group.GroupAddress <-- rtoa<Entity> entityState.Surnames)
-                let world = World.addEntity false entityState entity world
-                (Some entity, world)
-            | None -> (None, world)
 
     /// Initialize property getters.
     let private initGetters () =

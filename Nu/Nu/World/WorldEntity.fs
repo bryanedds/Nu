@@ -10,6 +10,9 @@ open Prime
 [<AutoOpen>]
 module WorldEntityModule =
 
+    /// Mutable clipboard that allows its state to persist beyond undo / redo.
+    let mutable private Clipboard : EntityDescriptor option = None
+
     [<RequireQualifiedAccess>]
     module private Cached =
         let mutable Dispatcher = Unchecked.defaultof<Lens<EntityDispatcher, Entity>>
@@ -983,3 +986,84 @@ module WorldEntityModule =
                         ([], world)
                         entityDescriptors
             (List.rev entitiesRev, world)
+
+        static member private generateEntitySequentialName2 dispatcherName existingEntityNames =
+            let mutable name = Gen.nameForEditor dispatcherName
+            if Set.contains name existingEntityNames
+            then World.generateEntitySequentialName2 dispatcherName existingEntityNames
+            else name
+
+        /// Generate a sequential, editor-friendly entity name.
+        static member generateEntitySequentialName dispatcherName group world =
+            let existingEntityNames =
+                World.getEntitiesFlattened group world |>
+                Seq.map (fun entity -> entity.Name) |>
+                Set.ofSeq
+            World.generateEntitySequentialName2 dispatcherName existingEntityNames
+
+        /// Clear the content of the clipboard.
+        static member clearClipboard (_ : World) =
+            Clipboard <- None
+
+        /// Copy an entity to the world's clipboard.
+        static member copyEntityToClipboard entity world =
+            let entityDescriptor = World.writeEntity entity EntityDescriptor.empty world
+            Clipboard <- Some entityDescriptor
+
+        /// Cut an entity to the world's clipboard.
+        static member cutEntityToClipboard (entity : Entity) world =
+            World.copyEntityToClipboard entity world
+            World.destroyEntityImmediate entity world
+
+        /// Paste an entity from the world's clipboard.
+        static member pasteEntityFromClipboard atMouse rightClickPosition snapsEir (parent : Simulant) world =
+            match Clipboard with
+            | Some entityDescriptor ->
+                let nameOpt =
+                    match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
+                    | (true, nameSymbol) ->
+                        let name = symbolToValue nameSymbol
+                        let entityProposed = parent.Names |> Array.add name |> Entity
+                        if World.getEntityExists entityProposed world
+                        then Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entityProposed.Group world)
+                        else Some name
+                    | (_, _) -> failwithumf () // entity descriptor should always have a name property
+                let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
+                let (position, snapsOpt) =
+                    let absolute = entity.GetAbsolute world
+                    if entity.GetIs2d world then
+                        let viewport = World.getViewport world
+                        let eyeCenter = World.getEyeCenter2d world
+                        let eyeSize = World.getEyeSize2d world
+                        let position =
+                            if atMouse
+                            then (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
+                            else (viewport.MouseToWorld2d (absolute, World.getEyeSize2d world, eyeCenter, eyeSize)).V3
+                        match snapsEir with
+                        | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
+                        | Right _ -> (position, None)
+                    else
+                        let eyeCenter = World.getEyeCenter3d world
+                        let eyeRotation = World.getEyeRotation3d world
+                        let position =
+                            if atMouse then
+                                let viewport = Constants.Render.Viewport
+                                let ray = viewport.MouseToWorld3d (absolute, rightClickPosition, eyeCenter, eyeRotation)
+                                let forward = Vector3.Transform (v3Forward, eyeRotation)
+                                let plane = plane3 (eyeCenter + forward * Constants.Engine.EyeCenter3dOffset.Z) -forward
+                                let intersectionOpt = ray.Intersection plane
+                                intersectionOpt.Value
+                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * Constants.Engine.EyeCenter3dOffset.Z
+                        match snapsEir with
+                        | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
+                        | Left _ -> (position, None)
+                let mutable transform = entity.GetTransform world
+                transform.Position <- position
+                match snapsOpt with
+                | Some (positionSnap, degreesSnap, scaleSnap) -> transform.Snap (positionSnap, degreesSnap, scaleSnap)
+                | None -> ()
+                let world = entity.SetTransform transform world
+                let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
+                let world = entity.SetMountOpt mountOpt world
+                (Some entity, world)
+            | None -> (None, world)

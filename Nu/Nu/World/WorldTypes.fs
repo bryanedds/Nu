@@ -1095,15 +1095,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           Id = id
           Surnames = surnames }
 
-    /// Make a new entity state from an existing one.
-    static member makeFromEntityState surnamesOpt (entityStateOrig : EntityState) =
-        let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
-        { entityStateOrig with
-            Xtension = Xtension.makeFromXtension entityStateOrig.Xtension
-            Order = Core.getTimeStampUnique ()
-            Id = id
-            Surnames = surnames }
-
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.
     static member inline copy (entityState : EntityState) =
