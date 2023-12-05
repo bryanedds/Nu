@@ -2088,7 +2088,7 @@ module LightFacet3dModule =
 [<AutoOpen>]
 module StaticBillboardFacetModule =
 
-    /// Determines the means by which an entity's surfaces are rendered.
+    /// The type of rendering used on a surface (for use by the higher-level engine API).
     type [<StructuralEquality; StructuralComparison>] RenderStyle =
         | Deferred
         | Forward of Subsort : single * Sort : single
