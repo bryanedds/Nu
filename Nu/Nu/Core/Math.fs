@@ -1121,3 +1121,13 @@ module Math =
     /// Has a minimum granularity of 0.001f.
     let SnapF3d offset (v3 : Vector3) =
         Vector3 (SnapF offset v3.X, SnapF offset v3.Y, SnapF offset v3.Z)
+
+    /// Snap a degree value to an offset.
+    /// Has a minimum granularity of 1.0f.
+    let SnapDegree (offset : single) (value : single) =
+        single (SnapI (int (round offset)) (int (round value)))
+
+    /// Snap a degree value to an offset.
+    /// Has a minimum granularity of 1.0f.
+    let SnapDegree3d offset (v3 : Vector3) =
+        Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
