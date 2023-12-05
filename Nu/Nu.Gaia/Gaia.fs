@@ -1787,7 +1787,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
                             | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
                         let deltaMatrix = m4Identity.ToArray ()
-                        if ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0], &deltaMatrix.[0], &snap) then
+                        let manipulationResult =
+                            if snap = 0.0f
+                            then ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0], &deltaMatrix.[0])
+                            else ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0], &deltaMatrix.[0], &snap)
+                        if manipulationResult then
                             if not manipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
                                 snapshot ()
                                 manipulationActive <- true
