@@ -1783,11 +1783,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
+                        let (p, r, s) =
+                            if not snaps2dSelected && ImGui.IsCtrlReleased ()
+                            then snaps3d
+                            else (0.0f, 0.0f, 0.0f)
                         if not manipulationActive then
                             if ImGui.IsShiftDown () then manipulationOperation <- OPERATION.SCALE
                             elif ImGui.IsAltDown () then manipulationOperation <- OPERATION.ROTATE
                             else manipulationOperation <- OPERATION.TRANSLATE
-                        if ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0]) then
+                        let mutable snap =
+                            match manipulationOperation with
+                            | OPERATION.ROTATE -> r
+                            | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
+                        let deltaMatrix = m4Identity.ToArray ()
+                        if ImGuizmo.Manipulate (&view.[0], &projection.[0], manipulationOperation, MODE.WORLD, &affine.[0], &deltaMatrix.[0], &snap) then
                             if not manipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
                                 snapshot ()
                                 manipulationActive <- true
@@ -1798,15 +1807,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if  not snaps2dSelected &&
                                         ImGui.IsCtrlReleased () then
                                         snaps3d else (0.0f, 0.0f, 0.0f)
+                                position <- Math.SnapF3d p position
                                 scale <- Math.SnapF3d s scale
                                 if scale.X < 0.01f then scale.X <- 0.01f
                                 if scale.Y < 0.01f then scale.Y <- 0.01f
                                 if scale.Z < 0.01f then scale.Z <- 0.01f
-                                position <- Math.SnapF3d p position
                                 match manipulationOperation with
-                                | OPERATION.SCALE -> world <- entity.SetScale scale world
-                                | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
                                 | OPERATION.TRANSLATE -> world <- entity.SetPosition position world
+                                | OPERATION.ROTATE -> world <- entity.SetRotation rotation world
+                                | OPERATION.SCALE -> world <- entity.SetScale scale world
                                 | _ -> () // nothing to do
                             if world.Advancing then
                                 match entity.TryGetProperty (nameof entity.LinearVelocity) world with
