@@ -1826,6 +1826,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | Some _ | None -> ()
                         if ImGui.IsMouseReleased ImGuiMouseButton.Left then
                             if manipulationActive then
+                                do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
                                 match manipulationOperation with
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f -> world <- entity.SetDegrees (Math.SnapDegree3d r (entity.GetDegrees world)) world
                                 | _ -> ()
