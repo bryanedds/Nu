@@ -378,6 +378,29 @@ namespace Nu
         }
 
         /// <summary>
+        /// Get an array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.
+        /// </summary>
+        /// <returns>An array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.</returns>
+        public Vector3[] Centers
+		{
+            get
+            {
+                Vector3 min = this.Min;
+                Vector3 size = this.Size;
+                Vector3 max = min + size;
+                Vector3 center = min + size * 0.5f;
+                return new Vector3[] {
+                    new Vector3(max.X, center.Y, center.Z),
+                    new Vector3(center.X, max.Y, center.Z),
+                    new Vector3(center.X, center.Y, max.Z),
+                    new Vector3(min.X, center.Y, center.Z),
+                    new Vector3(center.X, min.Y, center.Z),
+                    new Vector3(center.X, center.Y, min.Z),
+                };
+            }
+        }
+
+        /// <summary>
         /// Resize the box by a scalar factor while keeping its center fixed.
         /// </summary>
         public Box3 ScaleUniform(float scalar)
