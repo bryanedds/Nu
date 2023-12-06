@@ -524,6 +524,10 @@ module Quaternion =
         member this.Normalized =
             Quaternion.Normalize this
 
+        /// The inverted value of a quaternion.
+        member inline this.Inverted =
+            Quaternion.Inverse this
+
     let quatIdentity = Quaternion.Identity
     let inline quat x y z w = Quaternion (x, y, z, w)
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
@@ -834,11 +838,14 @@ module Matrix4x4 =
             if Matrix4x4.Decompose (this, &scale, &rotation, &position) then rotation
             else quatIdentity
 
+        /// The inverted value of a matrix.
+        /// Throws if no determinant.
         member inline this.Inverted =
             let mutable result = Unchecked.defaultof<_>
             if not (Matrix4x4.Invert (this, &result)) then failwith "Failed to invert matrix."
             result
 
+        /// Create a matrix from an array of 16 single values.
         static member CreateFromArray (arr : single array) =
             Matrix4x4
                 (arr.[00], arr.[01], arr.[02], arr.[03],
