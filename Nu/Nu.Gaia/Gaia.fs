@@ -402,11 +402,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private selectScreen screen =
         if screen <> selectedScreen then
             ImGui.SetWindowFocus null
+            desiredEntityParentOpt <- None
             selectedScreen <- screen
 
     let private selectGroup group =
         if group <> selectedGroup then
             ImGui.SetWindowFocus null
+            desiredEntityParentOpt <- None
             selectedGroup <- group
 
     let private selectGroupInitial screen =
@@ -458,7 +460,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | [] -> false
              else false) then
             propertyValueStrPrevious <- ""
-            selectedScreen <- World.getSelectedScreen world
+            selectScreen (World.getSelectedScreen world)
             if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
                 selectGroup group
@@ -481,7 +483,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | [] -> false
              else false) then
             propertyValueStrPrevious <- ""
-            selectedScreen <- World.getSelectedScreen world
+            selectScreen (World.getSelectedScreen world)
             if not (selectedGroup.Exists world) || not (selectedGroup.Selected world) then
                 let group = Seq.head (World.getGroups selectedScreen world)
                 selectGroup group
@@ -1258,7 +1260,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.MenuItem "Paste" then tryPaste false (Some entity) |> ignore<bool>
             ImGui.Separator ()
             if desiredEntityParentOpt = Some entity then
-                if ImGui.MenuItem "Cancel as Creation Parent" then desiredEntityParentOpt <- None; showEntityContextMenu <- false
+                if ImGui.MenuItem "Reset Creation Parent" then desiredEntityParentOpt <- None; showEntityContextMenu <- false
             else
                 if ImGui.MenuItem "Set as Creation Parent" then desiredEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
             ImGui.Separator ()
@@ -2104,7 +2106,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.Button (scstring (Address.skip 2 selectedGroup.GroupAddress)) |> ignore<bool>
                             desiredEntityParentOpt <- None
                         ImGui.SameLine ()
-                        ImGui.Text "<- creation parent"
+                        ImGui.Text "(creation parent)"
                         entityHierarchyFocused <- ImGui.IsWindowFocused ()
                         if ImGui.Button "Collapse" then
                             collapseEntityHierarchy <- true
@@ -2651,7 +2653,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
                                     snapshot ()
                                     world <- World.renameGroupImmediate group group' world
-                                    selectedGroup <- group'
+                                    selectGroup group'
                                     showRenameGroupDialog <- false
                                 if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameGroupDialog <- false
                                 ImGui.EndPopup ()
