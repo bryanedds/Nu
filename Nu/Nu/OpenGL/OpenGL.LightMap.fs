@@ -57,8 +57,8 @@ module LightMap =
         let eyeRotations =
             [|(v3Right, v3Down)     // (+x) right
               (v3Left, v3Down)      // (-x) left
-              (v3Down, v3Forward)   // (+y) top
-              (v3Up, v3Back)        // (-y) bottom
+              (v3Up, v3Back)        // (+y) top
+              (v3Down, v3Forward)   // (-y) bottom
               (v3Back, v3Down)      // (+z) back
               (v3Forward, v3Down)|] // (-z) front
 
@@ -80,7 +80,7 @@ module LightMap =
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
             let viewAbsolute = m4Identity
             let viewRelative = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
-            let viewSkyBox = Matrix4x4.Transpose eyeRotationMatrix // transpose = inverse rotation when rotation only
+            let viewSkyBox = m4Identity
             render
                 false origin eyeRotation
                 viewAbsolute viewRelative viewSkyBox
