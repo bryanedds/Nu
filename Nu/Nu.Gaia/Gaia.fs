@@ -1928,6 +1928,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
                         let viewProjection = view * projection
                         let corners = Array.map (fun corner -> ImGui.PositionToWindow (viewProjection, corner)) bounds.Corners
+                        let centers = Array.map (fun center -> ImGui.PositionToWindow (viewProjection, center)) bounds.Centers
                         let segments =
                             [|(corners.[0], corners.[1])
                               (corners.[1], corners.[2])
@@ -1943,13 +1944,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                               (corners.[3], corners.[7])|]
                         for (a, b) in segments do drawList.AddLine (a, b, uint 0xFF00CFCF)
                         let mutable found = false
-                        for i in 0 .. dec corners.Length do
-                            let corner = corners.[i]
+                        for i in 0 .. dec centers.Length do
+                            let center = centers.[i]
                             if  not found &&
                                 not (ImGuizmo.IsOver ()) &&
                                 ImGui.IsMouseDragging ImGuiMouseButton.Left &&
-                                (ImGui.GetMousePos () - corner).Magnitude < 10.0f then
-                                drawList.AddCircleFilled (corner, 5.0f, uint 0xFF0000CF)
+                                (ImGui.GetMousePos () - center).Magnitude < 10.0f then
+                                drawList.AddCircleFilled (center, 5.0f, uint 0xFF0000CF)
                                 io.SwallowMouse ()
                                 // WIP
                                 //let (x, y) =
@@ -1963,7 +1964,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 //
                                 //let delta = ImGui.GetMouseDragDelta ImGuiMouseButton.Left
                                 //found <- true
-                            else drawList.AddCircleFilled (corner, 5.0f, uint 0xFF00CFCF)
+                            else drawList.AddCircleFilled (center, 5.0f, uint 0xFF00CFCF)
                     | _ -> ()
 
                     // user-defined viewport manipulation
