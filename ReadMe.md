@@ -41,7 +41,7 @@ A critical battle with evil itself!
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/f2cee3b3-5bef-4c18-8b08-e75e979352a7)
+![image](https://github.com/bryanedds/Nu/assets/1625560/e52a031c-cbad-4828-bf3f-ab15af9c7787)
 Local light probes allow for efficient localized reflection and image-based lighting.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/f9945d52-9ab4-4263-ae08-195c31a45c30)
