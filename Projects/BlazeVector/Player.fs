@@ -33,10 +33,10 @@ module PlayerDispatcher =
     type PlayerDispatcher () =
         inherit EntityDispatcher2d<Player, PlayerMessage, PlayerCommand> (true, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
-        static let [<Literal>] WalkForce = 1750.0f
-        static let [<Literal>] FallForce = -5000.0f
-        static let [<Literal>] ClimbForce = 2000.0f
-        static let [<Literal>] JumpForce = 3000.0f
+        static let [<Literal>] WalkForce = 1200.0f
+        static let [<Literal>] FallForce = -4000.0f
+        static let [<Literal>] ClimbForce = 1800.0f
+        static let [<Literal>] JumpForce = 2100.0f
         static let [<Literal>] BulletForce = 25.0f
 
         static member Facets =
