@@ -1958,14 +1958,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 io.SwallowMouse ()
                                 let direction =
                                     match i with
-                                    | 0 -> v3Right
-                                    | 1 -> v3Up
-                                    | 2 -> v3Forward
-                                    | 3 -> v3Right
-                                    | 4 -> v3Up
-                                    | 5 -> v3Forward
+                                    | 0 | 3 -> v3Right
+                                    | 1 | 4 -> v3Up
+                                    | 2 | 5 -> v3Back
                                     | _ -> failwithumf ()
-
                                 let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
                                 let forward = eyeRotation.Forward
                                 let plane = plane3 center -forward
