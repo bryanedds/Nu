@@ -1051,7 +1051,7 @@ module WorldEntityModule =
                             | PasteAtMouse ->
                                 let viewport = Constants.Render.Viewport
                                 let ray = viewport.MouseToWorld3d (absolute, rightClickPosition, eyeCenter, eyeRotation)
-                                let forward = Vector3.Transform (v3Forward, eyeRotation)
+                                let forward = eyeRotation.Forward
                                 let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value

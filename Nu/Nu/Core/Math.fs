@@ -998,7 +998,7 @@ type ColorConverter () =
 [<AutoOpen>]
 module Plane3 =
 
-    let inline plane3 (min : Vector3) (normal : Vector3) = Plane3 (min, normal)
+    let inline plane3 (pointOnPlane : Vector3) (normal : Vector3) = Plane3 (pointOnPlane, normal)
     let inline plane3Equation (normal : Vector3) (d : single) = Plane3 (normal, d)
     let inline plane3Eq (left : Plane3) (right : Plane3) = left.Equals right
     let inline plane3Neq (left : Plane3) (right : Plane3) = not (left.Equals right)
@@ -1013,7 +1013,7 @@ module Plane3 =
 [<AutoOpen>]
 module Ray3 =
 
-    let inline ray (min : Vector3) (direction : Vector3) = Ray3 (min, direction)
+    let inline ray (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
     let inline rayEq (left : Ray3) (right : Ray3) = left.Equals right
     let inline rayNeq (left : Ray3) (right : Ray3) = not (left.Equals right)
 
