@@ -1825,7 +1825,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             for i in 0 .. dec centers.Length do
                                 let center = centers.[i]
                                 let centerWindow = centersWindow.[i]
-                                if not found && (mousePosition - centerWindow).Magnitude < 20.0f then
+                                if not found && (mousePosition - centerWindow).Magnitude < 24.0f then
                                     io.SwallowMouse ()
                                     drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                                     if ImGui.IsMouseDragging ImGuiMouseButton.Left then
