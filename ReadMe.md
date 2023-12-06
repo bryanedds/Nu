@@ -41,17 +41,11 @@ A critical battle with evil itself!
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/90f304e7-d2c8-4fc1-8548-2a9c81d05a66)
-Editing a 3D scene imported from Unity in the new editor.
+![image](https://github.com/bryanedds/Nu/assets/1625560/f2cee3b3-5bef-4c18-8b08-e75e979352a7)
+Local light probes allow for efficient localized reflection and image-based lighting.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/f9945d52-9ab4-4263-ae08-195c31a45c30)
 Animated 3D model rendering from Mixamo.
-
-![image](https://user-images.githubusercontent.com/1625560/232184477-dbb1102e-f4f5-4fd1-9008-57a07fe450f7.png)
-Efficient, detailed 3D with deferred physically-based rendering.
-
-![image](https://user-images.githubusercontent.com/1625560/235253590-2f86a584-478a-4406-8df9-3a1e7daafcbe.png)
-Local light probes allow for efficient localized reflection and image-based lighting.
 
 ![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
 And another 3D scene screenshot from editor.
