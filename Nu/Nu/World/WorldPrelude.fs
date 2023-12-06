@@ -101,6 +101,12 @@ type [<StructuralEquality; NoComparison>] Transition =
           DissolveImageOpt = None
           SongOpt = None }
 
+/// The manner in which an entity paste operation should be executed.
+type PasteType =
+    | PasteAtLook
+    | PasteAtMouse
+    | PasteAt of Vector3
+
 /// Describes the behavior of the screen dissolving algorithm.
 type DissolveDescriptor =
     { IncomingTime : GameTime

@@ -1070,8 +1070,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         else
                             let entity =
-                                if World.isKeyboardCtrlDown world && tryCopySelectedEntity ()
-                                then tryPaste false (Option.map cast desiredEntityParentOpt) |> ignore<bool>; Option.defaultValue entity selectedEntityOpt
+                                if  World.isKeyboardCtrlDown world &&
+                                    tryCopySelectedEntity () &&
+                                    tryPaste (PasteAt (entity.GetPosition world)) (Option.map cast desiredEntityParentOpt) then
+                                    Option.defaultValue entity selectedEntityOpt
                                 else entity
                             let viewport = World.getViewport world
                             let eyeCenter = World.getEyeCenter2d world
@@ -1211,7 +1213,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste false (Option.map cast desiredEntityParentOpt) |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast desiredEntityParentOpt) |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then focusedPropertyDescriptorOpt <- None; selectEntityOpt None
@@ -1261,7 +1263,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Separator ()
             if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
             if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
-            if ImGui.MenuItem "Paste" then tryPaste false (Some entity) |> ignore<bool>
+            if ImGui.MenuItem "Paste" then tryPaste PasteAtLook (Some entity) |> ignore<bool>
             ImGui.Separator ()
             if desiredEntityParentOpt = Some entity then
                 if ImGui.MenuItem "Reset Creation Parent" then desiredEntityParentOpt <- None; showEntityContextMenu <- false
@@ -1826,8 +1828,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if not manipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
                                 snapshot ()
                                 manipulationActive <- true
-                            if copying && tryCopySelectedEntity () then
-                                tryPaste false (Option.map cast desiredEntityParentOpt) |> ignore<bool>
                             let affine' = Matrix4x4.CreateFromArray affine
                             let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
@@ -1844,6 +1844,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if scale.X < 0.01f then scale.X <- 0.01f
                                 if scale.Y < 0.01f then scale.Y <- 0.01f
                                 if scale.Z < 0.01f then scale.Z <- 0.01f
+                            let entity =
+                                if  copying &&
+                                    tryCopySelectedEntity () &&
+                                    tryPaste (PasteAt position) (Option.map cast desiredEntityParentOpt) then
+                                    Option.defaultValue entity selectedEntityOpt
+                                else entity
                             match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
                             | Some mount ->
                                 let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
@@ -2012,7 +2018,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ImGui.BeginMenu "Entity" then
                                 if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste false (Option.map cast desiredEntityParentOpt) |> ignore<bool>
+                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste PasteAtLook (Option.map cast desiredEntityParentOpt) |> ignore<bool>
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
                                 if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
@@ -2783,7 +2789,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Separator ()
                         if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
-                        if ImGui.Button "Paste" then tryPaste true (Option.map cast desiredEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Paste" then tryPaste PasteAtMouse (Option.map cast desiredEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
                         ImGui.Separator ()
                         if ImGui.Button "Set as Creation Parent" then desiredEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
                         ImGui.Separator ()

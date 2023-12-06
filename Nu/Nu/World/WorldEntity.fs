@@ -1016,7 +1016,7 @@ module WorldEntityModule =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard atMouse (distance : single) rightClickPosition snapsEir (parent : Simulant) world =
+        static member pasteEntityFromClipboard pasteType (distance : single) rightClickPosition snapsEir (parent : Simulant) world =
             match Clipboard with
             | Some entityDescriptor ->
                 let nameOpt =
@@ -1036,9 +1036,10 @@ module WorldEntityModule =
                         let eyeCenter = World.getEyeCenter2d world
                         let eyeSize = World.getEyeSize2d world
                         let position =
-                            if atMouse
-                            then (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
-                            else (viewport.MouseToWorld2d (absolute, World.getEyeSize2d world, eyeCenter, eyeSize)).V3
+                            match pasteType with
+                            | PasteAtMouse -> (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
+                            | PasteAtLook -> (viewport.MouseToWorld2d (absolute, World.getEyeSize2d world, eyeCenter, eyeSize)).V3
+                            | PasteAt position -> position
                         match snapsEir with
                         | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Right _ -> (position, None)
@@ -1046,14 +1047,16 @@ module WorldEntityModule =
                         let eyeCenter = World.getEyeCenter3d world
                         let eyeRotation = World.getEyeRotation3d world
                         let position =
-                            if atMouse then
+                            match pasteType with
+                            | PasteAtMouse ->
                                 let viewport = Constants.Render.Viewport
                                 let ray = viewport.MouseToWorld3d (absolute, rightClickPosition, eyeCenter, eyeRotation)
                                 let forward = Vector3.Transform (v3Forward, eyeRotation)
                                 let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value
-                            else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * distance
+                            | PasteAtLook -> eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * distance
+                            | PasteAt position -> position
                         match snapsEir with
                         | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Left _ -> (position, None)
