@@ -680,7 +680,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let entityPosition =
                 if atMouse then
                     let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, rightClickPosition, eyeCenter, eyeRotation)
-                    let forward = Vector3.Transform (v3Forward, eyeRotation)
+                    let forward = eyeRotation.Forward
                     let plane = plane3 (eyeCenter + forward * newEntityDistance) -forward
                     (ray.Intersection plane).Value
                 else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * newEntityDistance
@@ -1927,44 +1927,56 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let view = viewport.View3d (entity.GetAbsolute world, eyeCenter, eyeRotation)
                         let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
                         let viewProjection = view * projection
-                        let corners = Array.map (fun corner -> ImGui.PositionToWindow (viewProjection, corner)) bounds.Corners
-                        let centers = Array.map (fun center -> ImGui.PositionToWindow (viewProjection, center)) bounds.Centers
+                        let centers = bounds.Corners
+                        let cornersWindow = Array.map (fun corner -> ImGui.PositionToWindow (viewProjection, corner)) centers
+                        let centers = bounds.Centers
+                        let centersWindow = Array.map (fun center -> ImGui.PositionToWindow (viewProjection, center)) bounds.Centers
                         let segments =
-                            [|(corners.[0], corners.[1])
-                              (corners.[1], corners.[2])
-                              (corners.[2], corners.[3])
-                              (corners.[3], corners.[0])
-                              (corners.[4], corners.[5])
-                              (corners.[5], corners.[6])
-                              (corners.[6], corners.[7])
-                              (corners.[7], corners.[4])
-                              (corners.[0], corners.[6])
-                              (corners.[1], corners.[5])
-                              (corners.[2], corners.[4])
-                              (corners.[3], corners.[7])|]
+                            [|(cornersWindow.[0], cornersWindow.[1])
+                              (cornersWindow.[1], cornersWindow.[2])
+                              (cornersWindow.[2], cornersWindow.[3])
+                              (cornersWindow.[3], cornersWindow.[0])
+                              (cornersWindow.[4], cornersWindow.[5])
+                              (cornersWindow.[5], cornersWindow.[6])
+                              (cornersWindow.[6], cornersWindow.[7])
+                              (cornersWindow.[7], cornersWindow.[4])
+                              (cornersWindow.[0], cornersWindow.[6])
+                              (cornersWindow.[1], cornersWindow.[5])
+                              (cornersWindow.[2], cornersWindow.[4])
+                              (cornersWindow.[3], cornersWindow.[7])|]
                         for (a, b) in segments do drawList.AddLine (a, b, uint 0xFF00CFCF)
+                        let mousePosition = ImGui.GetMousePos ()
                         let mutable found = false
                         for i in 0 .. dec centers.Length do
                             let center = centers.[i]
+                            let centerWindow = centersWindow.[i]
                             if  not found &&
                                 not (ImGuizmo.IsOver ()) &&
                                 ImGui.IsMouseDragging ImGuiMouseButton.Left &&
-                                (ImGui.GetMousePos () - center).Magnitude < 10.0f then
-                                drawList.AddCircleFilled (center, 5.0f, uint 0xFF0000CF)
+                                (mousePosition - centerWindow).Magnitude < 20.0f then
+                                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                                 io.SwallowMouse ()
-                                // WIP
-                                //let (x, y) =
-                                //    let eyeForward = eyeRotation.Forward
-                                //    let dotXZ = eyeForward.Y * eyeForward.Y
-                                //    let dotXY = eyeForward.Z * eyeForward.Z
-                                //    let dotYZ = eyeForward.X * eyeForward.X
-                                //    if dotXZ >= dotXY && dotXZ >= dotYZ then (v3Right, v3Forward)
-                                //    elif dotXY >= dotXZ && dotXY >= dotYZ then (v3Right, v3Up)
-                                //    else (v3Up, v3Forward)
-                                //
-                                //let delta = ImGui.GetMouseDragDelta ImGuiMouseButton.Left
-                                //found <- true
-                            else drawList.AddCircleFilled (center, 5.0f, uint 0xFF00CFCF)
+                                let direction =
+                                    match i with
+                                    | 0 -> v3Right
+                                    | 1 -> v3Up
+                                    | 2 -> v3Forward
+                                    | 3 -> v3Right
+                                    | 4 -> v3Up
+                                    | 5 -> v3Forward
+                                    | _ -> failwithumf ()
+
+                                let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
+                                let forward = eyeRotation.Forward
+                                let plane = plane3 center -forward
+                                let mouse = (ray.Intersection plane).Value
+                                let delta = mouse - center
+                                let movement = delta * direction
+                                centers.[i] <- centers.[i] + movement
+                                let bounds = Box3.Enclose centers
+                                world <- entity.SetProbeBounds bounds world
+                                found <- true
+                            else drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CFCF)
                     | _ -> ()
 
                     // user-defined viewport manipulation
