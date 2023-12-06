@@ -1796,7 +1796,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
-                        let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
                         let (p, r, s) =
                             if not snaps2dSelected && ImGui.IsCtrlReleased ()
                             then snaps3d
@@ -1822,6 +1821,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 snapshot ()
                                 manipulationActive <- true
                             let affine' = Matrix4x4.CreateFromArray affine
+                            let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
                                 position <- Math.SnapF3d p position
                                 rotation <- rotation.Normalized // try to avoid weird angle combinations
@@ -1841,12 +1841,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
                                 let positionLocal = Vector3.Transform (position, mountAffineMatrixInverse)
                                 let mountRotationInverse = (mount.GetRotation world).Inverted
-                                let rotationLocal = mountRotationInverse * rotation // NOTE: we don't attempt to use local rotation snapping due to complications.
+                                let rotationLocal = mountRotationInverse * rotation
+                                let rollPitchYawLocal = rotationLocal.RollPitchYaw
+                                let mutable degreesLocal = v3Zero
+                                degreesLocal.X <- Math.RadiansToDegrees rollPitchYawLocal.X
+                                degreesLocal.Y <- Math.RadiansToDegrees rollPitchYawLocal.Y
+                                degreesLocal.Z <- Math.RadiansToDegrees rollPitchYawLocal.Z
+                                degreesLocal <- if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
+                                degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
+                                degreesLocal <- v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
                                 let mountScaleInverse = v3One / mount.GetScale world
                                 let scaleLocal = mountScaleInverse * scale
                                 match manipulationOperation with
                                 | OPERATION.TRANSLATE -> world <- entity.SetPositionLocal positionLocal world
-                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> world <- entity.SetRotationLocal rotationLocal world
+                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> world <- entity.SetDegreesLocal degreesLocal world
                                 | OPERATION.SCALE -> world <- entity.SetScaleLocal scaleLocal world
                                 | _ -> () // nothing to do
                             | None ->
@@ -1875,7 +1883,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | None ->
                                     match manipulationOperation with
                                     | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
-                                        degrees <- Math.SnapDegree3d r degrees
+                                        let degrees = Math.SnapDegree3d r (entity.GetDegrees world)
                                         world <- entity.SetDegrees degrees world
                                     | _ -> ()
                                 manipulationOperation <- OPERATION.TRANSLATE
