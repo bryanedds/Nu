@@ -59,6 +59,7 @@ module Assets =
         let [<Literal>] StaticModelName = "StaticModel"
         let [<Literal>] HighlightModelName = "HighlightModel"
         let [<Literal>] LightbulbModelName = "LightbulbModel"
+        let [<Literal>] LightProbeModelName = "LightProbeModel"
         let [<Literal>] AnimatedModelName = "AnimatedModel"
         let [<Literal>] SoundName = "Sound"
         let [<Literal>] SongName = "Song"
