@@ -2095,18 +2095,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
-                        match desiredEntityParentOpt with
-                        | Some desiredEntityParent when desiredEntityParent.Exists world ->
-                            let creationParentStr = scstring (Address.skip 2 desiredEntityParent.EntityAddress)
-                            if ImGui.Button creationParentStr then desiredEntityParentOpt <- None
-                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                                ImGui.Text (creationParentStr + " (click to reset)")
-                                ImGui.EndTooltip ()
-                        | Some _ | None ->
-                            ImGui.Button (scstring (Address.skip 2 selectedGroup.GroupAddress)) |> ignore<bool>
-                            desiredEntityParentOpt <- None
-                        ImGui.SameLine ()
-                        ImGui.Text "(creation parent)"
                         entityHierarchyFocused <- ImGui.IsWindowFocused ()
                         if ImGui.Button "Collapse" then
                             collapseEntityHierarchy <- true
@@ -2119,6 +2107,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.Button "Show Selected" then
                             showSelectedEntity <- true
                             ImGui.SetWindowFocus "Viewport"
+                        match desiredEntityParentOpt with
+                        | Some desiredEntityParent when desiredEntityParent.Exists world ->
+                            let creationParentStr = scstring (Address.skip 2 desiredEntityParent.EntityAddress)
+                            if ImGui.Button creationParentStr then desiredEntityParentOpt <- None
+                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                ImGui.Text (creationParentStr + " (click to reset)")
+                                ImGui.EndTooltip ()
+                        | Some _ | None ->
+                            ImGui.Button (scstring (Address.skip 2 selectedGroup.GroupAddress)) |> ignore<bool>
+                            desiredEntityParentOpt <- None
+                        ImGui.SameLine ()
+                        ImGui.Text "(creation parent)"
                         let groups = World.getGroups selectedScreen world
                         let mutable selectedGroupName = selectedGroup.Name
                         ImGui.SetNextItemWidth -1.0f
