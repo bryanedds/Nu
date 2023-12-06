@@ -47,9 +47,6 @@ Local light probes allow for efficient localized reflection and image-based ligh
 ![image](https://github.com/bryanedds/Nu/assets/1625560/f9945d52-9ab4-4263-ae08-195c31a45c30)
 Animated 3D model rendering from Mixamo.
 
-![image](https://user-images.githubusercontent.com/1625560/231018049-5c4247aa-0940-4d18-9173-2780982c22f7.png)
-And another 3D scene screenshot from editor.
-
 **Public Sponsors We Wish to Thank**
 ====================================
 
