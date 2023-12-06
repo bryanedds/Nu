@@ -1832,20 +1832,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
                             | Some mount ->
                                 let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
+                                let mountRotationInverse = (mount.GetRotation world).Inverted
+                                let mountScaleInverse = v3One / mount.GetScale world
                                 let positionLocal = Vector3.Transform (position, mountAffineMatrixInverse)
-                                //let rotationLocal = Quaternion.Transform (rotation, mountAffineMatrixInverse)
-                                //let scaleLocal = Vector3.Transform (scale, mountAffineMatrixInverse)
+                                let rotationLocal = mountRotationInverse * rotation
+                                let scaleLocal = mountScaleInverse * scale
                                 match manipulationOperation with
                                 | OPERATION.TRANSLATE -> world <- entity.SetPositionLocal positionLocal world
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z ->
-                                    //world <- entity.SetRotationLocal rotationLocal world
-                                    //let degrees = entity.GetDegreesLocal world
-                                    //let degrees = if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
-                                    //let degrees = v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
-                                    //let degrees = v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
-                                    //world <- entity.SetDegreesLocal degrees world
-                                    ()
-                                | OPERATION.SCALE -> () //world <- entity.SetScaleLocal scaleLocal world
+                                    world <- entity.SetRotationLocal rotationLocal world
+                                    let degreesLocal = entity.GetDegreesLocal world
+                                    let degreesLocal = if degreesLocal.X = 180.0f && degreesLocal.Z = 180.0f then v3 0.0f (180.0f - degreesLocal.Y) 0.0f else degreesLocal
+                                    let degreesLocal = v3 degreesLocal.X (if degreesLocal.Y > 180.0f then degreesLocal.Y - 360.0f else degreesLocal.Y) degreesLocal.Z
+                                    let degreesLocal = v3 degreesLocal.X (if degreesLocal.Y < -180.0f then degreesLocal.Y + 360.0f else degreesLocal.Y) degreesLocal.Z
+                                    world <- entity.SetDegreesLocal degreesLocal world
+                                | OPERATION.SCALE -> world <- entity.SetScaleLocal scaleLocal world
                                 | _ -> () // nothing to do
                             | None ->
                                 match manipulationOperation with
@@ -1869,11 +1870,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.IsMouseReleased ImGuiMouseButton.Left then
                             if manipulationActive then
                                 do (ImGuizmo.Enable false; ImGuizmo.Enable true) // HACK: forces imguizmo to end manipulation when mouse is release over an imgui window.
-                                match manipulationOperation with
-                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
-                                    let degrees = Math.SnapDegree3d r (entity.GetDegrees world)
-                                    world <- entity.SetDegrees degrees world
-                                | _ -> ()
+                                match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                                | Some _ ->
+                                    match manipulationOperation with
+                                    | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
+                                        let degrees = Math.SnapDegree3d r (entity.GetDegreesLocal world)
+                                        world <- entity.SetDegreesLocal degrees world
+                                    | _ -> ()
+                                | None ->
+                                    match manipulationOperation with
+                                    | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
+                                        let degrees = Math.SnapDegree3d r (entity.GetDegrees world)
+                                        world <- entity.SetDegrees degrees world
+                                    | _ -> ()
                                 manipulationOperation <- OPERATION.TRANSLATE
                                 manipulationActive <- false
                     | Some _ | None -> ()
