@@ -1829,6 +1829,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if scale.X < 0.01f then scale.X <- 0.01f
                                 if scale.Y < 0.01f then scale.Y <- 0.01f
                                 if scale.Z < 0.01f then scale.Z <- 0.01f
+                            match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
+                            | Some mount ->
+                                let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
+                                let positionLocal = Vector3.Transform (position, mountAffineMatrixInverse)
+                                //let rotationLocal = Quaternion.Transform (rotation, mountAffineMatrixInverse)
+                                //let scaleLocal = Vector3.Transform (scale, mountAffineMatrixInverse)
+                                match manipulationOperation with
+                                | OPERATION.TRANSLATE -> world <- entity.SetPositionLocal positionLocal world
+                                | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z ->
+                                    //world <- entity.SetRotationLocal rotationLocal world
+                                    //let degrees = entity.GetDegreesLocal world
+                                    //let degrees = if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
+                                    //let degrees = v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
+                                    //let degrees = v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
+                                    //world <- entity.SetDegreesLocal degrees world
+                                    ()
+                                | OPERATION.SCALE -> () //world <- entity.SetScaleLocal scaleLocal world
+                                | _ -> () // nothing to do
+                            | None ->
                                 match manipulationOperation with
                                 | OPERATION.TRANSLATE -> world <- entity.SetPosition position world
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z ->
