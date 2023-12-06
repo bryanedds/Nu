@@ -1069,6 +1069,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
                             dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         else
+                            let entity =
+                                if World.isKeyboardCtrlDown world && tryCopySelectedEntity ()
+                                then tryPaste false (Option.map cast desiredEntityParentOpt) |> ignore<bool>; Option.defaultValue entity selectedEntityOpt
+                                else entity
                             let viewport = World.getViewport world
                             let eyeCenter = World.getEyeCenter2d world
                             let eyeSize = World.getEyeSize2d world
@@ -1822,9 +1826,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if not manipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
                                 snapshot ()
                                 manipulationActive <- true
-                            if copying then
-                                if tryCopySelectedEntity () then
-                                    tryPaste false (Option.map cast desiredEntityParentOpt) |> ignore<bool>
+                            if copying && tryCopySelectedEntity () then
+                                tryPaste false (Option.map cast desiredEntityParentOpt) |> ignore<bool>
                             let affine' = Matrix4x4.CreateFromArray affine
                             let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
                             if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
