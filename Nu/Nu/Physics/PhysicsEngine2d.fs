@@ -50,15 +50,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | Kinematic -> Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
 
-    static member private toPhysicsDensity substance =
-        match substance with
-        | Density density -> density
-        | Mass mass ->
-            if mass <> 1.0f then
-                Log.infoOnce "Currently 2D physics supports Substance only in terms of Density; using Density = 1.0f."
-                1.0f
-            else mass
-
     static member private handleCollision
         (bodyShape : Dynamics.Fixture)
         (bodyShape2 : Dynamics.Fixture)
@@ -130,12 +121,14 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyBox.TransformOpt
-        let shape =
-            body.CreateRectangle
-                (PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBox.Size.X * transform.Scale.X),
-                 PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBox.Size.Y * transform.Scale.Y),
-                 PhysicsEngine2d.toPhysicsDensity bodyProperties.Substance,
-                 PhysicsEngine2d.toPhysicsV2 transform.Translation)
+        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBox.Size.X * transform.Scale.X)
+        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBox.Size.Y * transform.Scale.Y)
+        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass -> mass / (width * height)
+        let shape = body.CreateRectangle (width, height, density, offset)
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -143,11 +136,13 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodySphere.TransformOpt
-        let shape =
-            body.CreateCircle
-                (PhysicsEngine2d.toPhysicsPolygonRadius (bodySphere.Radius * transform.Scale.X),
-                 PhysicsEngine2d.toPhysicsDensity bodyProperties.Substance,
-                 PhysicsEngine2d.toPhysicsV2 transform.Translation)
+        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (bodySphere.Radius * transform.Scale.X)
+        let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass -> mass / (single Math.PI * radius * radius)
+        let shape = body.CreateCircle (radius, density, offset)
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -157,14 +152,18 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyCapsule.TransformOpt
         let height = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyCapsule.Height * transform.Scale.Y)
         let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (bodyCapsule.Radius * transform.Scale.Y)
-        let density = PhysicsEngine2d.toPhysicsDensity bodyProperties.Substance
+        let skinnyScalar = 0.9f // scales in the capsule's width to stop corner sticking.
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass -> mass / (endRadius * skinnyScalar * height * 0.5f + single Math.PI * endRadius * endRadius)
         let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
-        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.9f, height * 0.5f, center, 0.0f) // scaled in the capsule's box to stop corner sticking.
+        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, center, 0.0f)
         let list = List<Common.Vertices> ()
         list.Add rectangle
         let bodyShapes = body.CreateCompoundPolygon (list, density)
-        let bodyShapeTop = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, height * 0.5f) + center)
-        let bodyShapeBottom = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, 0.0f - height * 0.5f) + center)
+        let bodyShapeTop = body.CreateCircle (endRadius, density * 0.5f, Common.Vector2 (0.0f, height * 0.5f) + center)
+        let bodyShapeBottom = body.CreateCircle (endRadius, density * 0.5f, Common.Vector2 (0.0f, 0.0f - height * 0.5f) + center)
         bodyShapes.Add bodyShapeTop
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
@@ -182,17 +181,20 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let boxVerticalWidth = width - radius * 2.0f
         let boxHorizontalHeight = height - radius * 2.0f
-        let density = PhysicsEngine2d.toPhysicsDensity bodyProperties.Substance
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass -> mass / (width * height)
         let rectangleV = Common.PolygonTools.CreateRectangle (boxVerticalWidth * 0.5f, height * 0.5f * 0.9f, center, 0.0f) // scaled in height to stop corner sticking
         let rectangleH = Common.PolygonTools.CreateRectangle (width * 0.5f * 0.9f, boxHorizontalHeight * 0.5f, center, 0.0f) // scaled in width to stop corner sticking
         let list = List<Common.Vertices> ()
         list.Add rectangleV
         list.Add rectangleH
         let bodyShapes =            body.CreateCompoundPolygon (list, density)
-        let bodyShapeTopLeft =      body.CreateCircle (radius, density, Common.Vector2 (-width * 0.5f + radius, +height * 0.5f - radius) + center)
-        let bodyShapeTopRight =     body.CreateCircle (radius, density, Common.Vector2 (+width * 0.5f - radius, +height * 0.5f - radius) + center)
-        let bodyShapeBottomLeft =   body.CreateCircle (radius, density, Common.Vector2 (-width * 0.5f + radius, -height * 0.5f + radius) + center)
-        let bodyShapeBottomRight =  body.CreateCircle (radius, density, Common.Vector2 (+width * 0.5f - radius, -height * 0.5f + radius) + center)
+        let bodyShapeTopLeft =      body.CreateCircle (radius, density * 0.25f, Common.Vector2 (-width * 0.5f + radius, +height * 0.5f - radius) + center)
+        let bodyShapeTopRight =     body.CreateCircle (radius, density * 0.25f, Common.Vector2 (+width * 0.5f - radius, +height * 0.5f - radius) + center)
+        let bodyShapeBottomLeft =   body.CreateCircle (radius, density * 0.25f, Common.Vector2 (-width * 0.5f + radius, -height * 0.5f + radius) + center)
+        let bodyShapeBottomRight =  body.CreateCircle (radius, density * 0.25f, Common.Vector2 (+width * 0.5f - radius, -height * 0.5f + radius) + center)
         bodyShapes.Add bodyShapeTopLeft
         bodyShapes.Add bodyShapeTopRight
         bodyShapes.Add bodyShapeBottomLeft
@@ -209,10 +211,13 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let vertices = Array.zeroCreate bodyConvexHull.Vertices.Length
         for i in 0 .. dec bodyConvexHull.Vertices.Length do
             vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (bodyConvexHull.Vertices.[i], transform))
-        let bodyShape =
-            body.CreatePolygon
-                (Common.Vertices vertices,
-                 PhysicsEngine2d.toPhysicsDensity bodyProperties.Substance)
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass ->
+                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
+                mass / (box.Width * box.Height)
+        let bodyShape = body.CreatePolygon (Common.Vertices vertices, density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }

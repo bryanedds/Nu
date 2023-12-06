@@ -27,7 +27,7 @@ module EnemyDispatcher =
     type EnemyDispatcher () =
         inherit EntityDispatcher2d<Enemy, EnemyMessage, EnemyCommand> (true, { Health = 7 })
 
-        static let WalkForce = v3 -750.0f -5000.0f 0.0f
+        static let WalkForce = v3 -750.0f -4000.0f 0.0f
 
         static member Facets =
             [typeof<RigidBodyFacet>
