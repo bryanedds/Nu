@@ -569,8 +569,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 (RenderStaticModels
                     { Absolute = false
                       StaticModels = lightProbeModels
-                      RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
-                      StaticModel = Assets.Default.LightbulbModel })
+                      RenderType = DeferredRenderType
+                      StaticModel = Assets.Default.LightProbeModel })
                 world
 
         // render lights of the selected group in play

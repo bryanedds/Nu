@@ -61,6 +61,7 @@ module Assets =
         let [<Uniform>] StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
         let [<Uniform>] HighlightModel = asset<StaticModel> PackageName Assets.Default.HighlightModelName
         let [<Uniform>] LightbulbModel = asset<StaticModel> PackageName Assets.Default.LightbulbModelName
+        let [<Uniform>] LightProbeModel = asset<StaticModel> PackageName Assets.Default.LightProbeModelName
         let [<Uniform>] AnimatedModel = asset<AnimatedModel> PackageName Assets.Default.AnimatedModelName
         let [<Uniform>] Sound = asset<Sound> PackageName Assets.Default.SoundName
         let [<Uniform>] Song = asset<Song> PackageName Assets.Default.SongName
