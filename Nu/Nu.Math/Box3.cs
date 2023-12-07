@@ -381,7 +381,7 @@ namespace Nu
         /// Get an array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.
         /// </summary>
         /// <returns>An array of <see cref="Vector3"/> containing the face centers of this <see cref="Box3"/>.</returns>
-        public Vector3[] Centers
+        public Vector3[] FaceCenters
 		{
             get
             {

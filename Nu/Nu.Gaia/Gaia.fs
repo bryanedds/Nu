@@ -1920,7 +1920,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // light probe bounds manipulation
                     match selectedEntityOpt with
-                    | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world && not io.WantCaptureMousePlus ->
+                    | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world ->
                         let mutable lightProbeBounds = entity.GetProbeBounds world
                         let manipulationResult =
                             ImGuizmo.ManipulateBox3
@@ -2374,19 +2374,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
                         ImGui.Text "Pos"
                         ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 36.0f
+                        ImGui.SetNextItemWidth 50.0f
                         ImGui.DragFloat ("##p", &p, (if snaps2dSelected then 0.1f else 0.01f), 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
                         ImGui.SameLine ()
                         ImGui.Text "Deg"
                         ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 36.0f
+                        ImGui.SetNextItemWidth 50.0f
                         if snaps2dSelected
                         then ImGui.DragFloat ("##d", &d, 0.1f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
                         else ImGui.DragFloat ("##d", &d, 0.0f, 0.0f, 0.0f, "%2.2f") |> ignore<bool> // unchangable 3d rotation
                         ImGui.SameLine ()
                         ImGui.Text "Scl"
                         ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 36.0f
+                        ImGui.SetNextItemWidth 50.0f
                         ImGui.DragFloat ("##s", &s, 0.01f, 0.0f, Single.MaxValue, "%2.2f") |> ignore<bool>
                         if snaps2dSelected then snaps2d <- (p, d, s) else snaps3d <- (p, d, s)
                         ImGui.Text "Creation Elevation (2d)"
