@@ -68,6 +68,7 @@ module Gaia =
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
     let mutable private newEntityDispatcherName = null // this will be initialized on start
     let mutable private newEntityOverlayName = "(Default Overlay)"
+    let mutable private newEntityParentOpt = Option<Entity>.None
     let mutable private newEntityElevation = 0.0f
     let mutable private newEntityDistance = 2.0f
     let mutable private newGroupName = ""
@@ -76,7 +77,6 @@ module Gaia =
     let mutable private desiredEyeCenter2d = v2Zero
     let mutable private desiredEyeCenter3d = v3Zero
     let mutable private desiredEyeRotation3d = quatIdentity
-    let mutable private desiredEntityParentOpt = Option<Entity>.None
 
     (* Configuration States *)
 
@@ -413,13 +413,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private selectScreen screen =
         if screen <> selectedScreen then
             ImGui.SetWindowFocus null
-            desiredEntityParentOpt <- None
+            newEntityParentOpt <- None
             selectedScreen <- screen
 
     let private selectGroup group =
         if group <> selectedGroup then
             ImGui.SetWindowFocus null
-            desiredEntityParentOpt <- None
+            newEntityParentOpt <- None
             selectedGroup <- group
 
     let private selectGroupInitial screen =
@@ -664,8 +664,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if entity.Exists world then Array.add name entity.Surnames
                     else [|name|]
                 else
-                    match desiredEntityParentOpt with
-                    | Some desiredEntityParent when desiredEntityParent.Exists world -> Array.add name desiredEntityParent.Surnames
+                    match newEntityParentOpt with
+                    | Some newEntityParent when newEntityParent.Exists world -> Array.add name newEntityParent.Surnames
                     | Some _ | None -> [|name|]
             | None -> [|name|]
         let (entity, wtemp) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup world in world <- wtemp
@@ -1081,7 +1081,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let entity =
                                 if  World.isKeyboardCtrlDown world &&
                                     tryCopySelectedEntity () &&
-                                    tryPaste (PasteAt (entity.GetPosition world)) (Option.map cast desiredEntityParentOpt) then
+                                    tryPaste (PasteAt (entity.GetPosition world)) (Option.map cast newEntityParentOpt) then
                                     Option.defaultValue entity selectedEntityOpt
                                 else entity
                             let viewport = World.getViewport world
@@ -1223,7 +1223,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast desiredEntityParentOpt) |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then focusedPropertyDescriptorOpt <- None; selectEntityOpt None
@@ -1233,7 +1233,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
             (if not branch || searchActive then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
-            (if desiredEntityParentOpt = Some entity && DateTimeOffset.UtcNow.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
+            (if newEntityParentOpt = Some entity && DateTimeOffset.UtcNow.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
         if not searchActive then
             if expandEntityHierarchy then ImGui.SetNextItemOpen true
@@ -1273,10 +1273,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
             if ImGui.MenuItem "Paste" then tryPaste PasteAtLook (Some entity) |> ignore<bool>
             ImGui.Separator ()
-            if desiredEntityParentOpt = Some entity then
-                if ImGui.MenuItem "Reset Creation Parent" then desiredEntityParentOpt <- None; showEntityContextMenu <- false
+            if newEntityParentOpt = Some entity then
+                if ImGui.MenuItem "Reset Creation Parent" then newEntityParentOpt <- None; showEntityContextMenu <- false
             else
-                if ImGui.MenuItem "Set as Creation Parent" then desiredEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
+                if ImGui.MenuItem "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
             ImGui.Separator ()
             match selectedEntityOpt with
             | Some entity when entity.Exists world ->
@@ -1312,7 +1312,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     world <- World.insertEntityOrder sourceEntity previousOpt next world
                                     world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                     world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                    if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
+                                    if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
                                     selectEntityOpt (Some sourceEntity')
                                     showSelectedEntity <- true
                                 else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
@@ -1324,7 +1324,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     snapshot ()
                                     world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                     world <- sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
-                                    if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
+                                    if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
                                     selectEntityOpt (Some sourceEntity')
                                     showSelectedEntity <- true
                                 else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
@@ -1878,7 +1878,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let entity =
                                 if  copying &&
                                     tryCopySelectedEntity () &&
-                                    tryPaste (PasteAt position) (Option.map cast desiredEntityParentOpt) then
+                                    tryPaste (PasteAt position) (Option.map cast newEntityParentOpt) then
                                     Option.defaultValue entity selectedEntityOpt
                                 else entity
                             match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
@@ -2018,7 +2018,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ImGui.BeginMenu "Entity" then
                                 if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste PasteAtLook (Option.map cast desiredEntityParentOpt) |> ignore<bool>
+                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
                                 if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
@@ -2158,7 +2158,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             expandEntityHierarchy <- true
                             ImGui.SetWindowFocus "Viewport"
                         ImGui.SameLine ()
-                        if ImGui.Button "Show Selected" then
+                        if ImGui.Button "Show Entity" then
                             showSelectedEntity <- true
                             ImGui.SetWindowFocus "Viewport"
 
@@ -2169,16 +2169,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             entityHierarchySearchStr <- ""
                         
                         // creation parent display
-                        match desiredEntityParentOpt with
-                        | Some desiredEntityParent when desiredEntityParent.Exists world ->
-                            let creationParentStr = scstring (Address.skip 2 desiredEntityParent.EntityAddress)
-                            if ImGui.Button creationParentStr then desiredEntityParentOpt <- None
+                        match newEntityParentOpt with
+                        | Some newEntityParent when newEntityParent.Exists world ->
+                            let creationParentStr = scstring (Address.skip 2 newEntityParent.EntityAddress)
+                            if ImGui.Button creationParentStr then newEntityParentOpt <- None
                             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                                 ImGui.Text (creationParentStr + " (click to reset)")
                                 ImGui.EndTooltip ()
                         | Some _ | None ->
                             ImGui.Button (scstring (Address.skip 2 selectedGroup.GroupAddress)) |> ignore<bool>
-                            desiredEntityParentOpt <- None
+                            newEntityParentOpt <- None
                         ImGui.SameLine ()
                         ImGui.Text "(creation parent)"
 
@@ -2203,7 +2203,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         if not (sourceEntity'.Exists world) then
                                             world <- sourceEntity.SetMountOptWithAdjustment None world
                                             world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                            if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
+                                            if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
                                             selectEntityOpt (Some sourceEntity')
                                             showSelectedEntity <- true
                                         else messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
@@ -2822,9 +2822,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Separator ()
                         if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
-                        if ImGui.Button "Paste" then tryPaste PasteAtMouse (Option.map cast desiredEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Paste" then tryPaste PasteAtMouse (Option.map cast newEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
                         ImGui.Separator ()
-                        if ImGui.Button "Set as Creation Parent" then desiredEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
+                        if ImGui.Button "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
                         ImGui.Separator ()
                         if ImGui.Button "Show in Hierarchy" then showSelectedEntity <- true; showEntityContextMenu <- false
                         ImGui.End ()
