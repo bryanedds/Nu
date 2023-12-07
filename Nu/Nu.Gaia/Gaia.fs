@@ -2707,10 +2707,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let opening = not (ImGui.IsPopupOpen title)
                             if opening then ImGui.OpenPopup title
                             if ImGui.BeginPopupModal (title, &showRenameGroupDialog) then
-                                groupRename <- group.Name
                                 ImGui.Text "Group Name:"
                                 ImGui.SameLine ()
-                                if opening then ImGui.SetKeyboardFocusHere ()
+                                if opening then
+                                    ImGui.SetKeyboardFocusHere ()
+                                    groupRename <- group.Name
                                 ImGui.InputTextWithHint ("##groupName", "[enter group name]", &groupRename, 4096u) |> ignore<bool>
                                 let group' = group.Screen / groupRename
                                 if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
@@ -2730,10 +2731,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let opening = not (ImGui.IsPopupOpen title)
                             if opening then ImGui.OpenPopup title
                             if ImGui.BeginPopupModal (title, &showRenameEntityDialog) then
-                                entityRename <- entity.Name
                                 ImGui.Text "Entity Name:"
                                 ImGui.SameLine ()
-                                if opening then ImGui.SetKeyboardFocusHere ()
+                                if opening then
+                                    ImGui.SetKeyboardFocusHere ()
+                                    entityRename <- entity.Name
                                 ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &entityRename, 4096u) |> ignore<bool>
                                 let entity' = Nu.Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
                                 if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
