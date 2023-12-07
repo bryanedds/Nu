@@ -2738,7 +2738,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // entity context menu
                 if showEntityContextMenu then
                     ImGui.SetNextWindowPos rightClickPosition
-                    ImGui.SetNextWindowSize (v2 250.0f 158.0f)
+                    ImGui.SetNextWindowSize (v2 280.0f 185.0f)
                     if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoResize) then
                         if ImGui.Button "Create" then
                             createEntity true false
