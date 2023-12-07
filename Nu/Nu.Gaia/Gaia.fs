@@ -1255,7 +1255,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let eyeRotation = World.getEyeRotation3d world
                     let eyeCenterOffset = Vector3.Transform (v3Back * newEntityDistance, eyeRotation)
                     desiredEyeCenter3d <- entity.GetPosition world + eyeCenterOffset
-        if ImGui.BeginPopupContextItem () then
+        let mutable openPopupContextItemWhenUnselected = false
+        if ImGui.BeginPopupContextItem "##popupContextItem" then
+            if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
             selectEntityOpt (Some entity)
             if ImGui.MenuItem "Create" then createEntity false true
             if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
@@ -1276,6 +1278,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true
             | Some _ | None -> ()
             ImGui.EndPopup ()
+        if openPopupContextItemWhenUnselected then
+            ImGui.OpenPopup "##popupContextItem"
         if ImGui.BeginDragDropSource () then
             let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
             dragDropPayloadOpt <- Some entityAddressStr
