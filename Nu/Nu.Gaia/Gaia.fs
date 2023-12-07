@@ -378,6 +378,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         worldsPast <- world :: worldsPast
         worldsFuture <- []
 
+    let private makeGaiaState projectDllPath editModeOpt : GaiaState =
+        GaiaState.make
+            projectDllPath editModeOpt openProjectImperativeExecution true
+            desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
+            snaps2dSelected snaps2d snaps3d newEntityElevation newEntityDistance alternativeEyeTravelInput
+
+    let private printGaiaState gaiaState =
+        PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
+
     let private containsProperty propertyDescriptor simulant =
         SimulantPropertyDescriptor.containsPropertyDescriptor propertyDescriptor simulant world
 
@@ -984,11 +993,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match trySelectTargetDirAndMakeNuPluginFromFilePathOpt gaiaState.ProjectDllPath with
         | Right (Some (filePath, targetDir, plugin)) ->
             Constants.Override.fromAppConfig filePath
-            try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
             with _ -> Log.info "Could not save gaia state."
             (gaiaState, targetDir, plugin)
         | Right None ->
-            try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+            try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
             with _ -> Log.info "Could not save gaia state."
             (gaiaState, ".", gaiaPlugin)
         | Left () ->
@@ -2574,10 +2583,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         Log.info ("Project '" + newProjectName + "'" + "created.")
 
                                         // configure editor to open new project then exit
-                                        let gaiaState = GaiaState.make newProjectDllPath (Some "Title") openProjectImperativeExecution true desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world) alternativeEyeTravelInput
+                                        let gaiaState = makeGaiaState newProjectDllPath (Some "Title")
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                         let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
-                                        try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+                                        try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                             Directory.SetCurrentDirectory gaiaDirectory
                                             showRestartDialog <- true
                                         with _ -> Log.trace "Could not save gaia state and open new project."
@@ -2620,10 +2629,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 String.notEmpty openProjectFilePath &&
                                 File.Exists openProjectFilePath then
                                 showOpenProjectDialog <- false
-                                let gaiaState = GaiaState.make openProjectFilePath (Some openProjectEditMode) openProjectImperativeExecution true desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world) alternativeEyeTravelInput
+                                let gaiaState = makeGaiaState openProjectFilePath (Some openProjectEditMode)
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
-                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
                                 with _ -> Log.info "Could not save editor state and open project."
@@ -2649,7 +2658,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let gaiaState = GaiaState.defaultState
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
-                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
                                 with _ -> Log.info "Could not clear editor state and close project."
@@ -2758,10 +2767,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
                             ImGui.Text "Any unsaved changes will be lost."
                             if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
-                                let gaiaState = GaiaState.make projectDllPath (Some projectEditMode) projectImperativeExecution false desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world) alternativeEyeTravelInput
+                                let gaiaState = makeGaiaState projectDllPath (Some projectEditMode)
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
-                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
+                                try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                 with _ -> Log.trace "Could not save gaia state."
                                 world <- World.exit world
