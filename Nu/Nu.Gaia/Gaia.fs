@@ -1802,30 +1802,37 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let view = viewport.View3d (entity.GetAbsolute world, eyeCenter, eyeRotation)
                             let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
                             let viewProjection = view * projection
-                            let centers = bounds.Corners
-                            let cornersWindow = Array.map (fun corner -> ImGui.PositionToWindow (viewProjection, corner)) centers
+                            let frustum = World.getEyeFrustumView3d world
+                            let corners = bounds.Corners
                             let centers = bounds.Centers
-                            let centersWindow = Array.map (fun center -> ImGui.PositionToWindow (viewProjection, center)) bounds.Centers
                             let segments =
-                                [|(cornersWindow.[0], cornersWindow.[1])
-                                  (cornersWindow.[1], cornersWindow.[2])
-                                  (cornersWindow.[2], cornersWindow.[3])
-                                  (cornersWindow.[3], cornersWindow.[0])
-                                  (cornersWindow.[4], cornersWindow.[5])
-                                  (cornersWindow.[5], cornersWindow.[6])
-                                  (cornersWindow.[6], cornersWindow.[7])
-                                  (cornersWindow.[7], cornersWindow.[4])
-                                  (cornersWindow.[0], cornersWindow.[6])
-                                  (cornersWindow.[1], cornersWindow.[5])
-                                  (cornersWindow.[2], cornersWindow.[4])
-                                  (cornersWindow.[3], cornersWindow.[7])|]
-                            for (a, b) in segments do drawList.AddLine (a, b, uint 0xFF00CFCF)
+                                [|(corners.[0], corners.[1])
+                                  (corners.[1], corners.[2])
+                                  (corners.[2], corners.[3])
+                                  (corners.[3], corners.[0])
+                                  (corners.[4], corners.[5])
+                                  (corners.[5], corners.[6])
+                                  (corners.[6], corners.[7])
+                                  (corners.[7], corners.[4])
+                                  (corners.[0], corners.[6])
+                                  (corners.[1], corners.[5])
+                                  (corners.[2], corners.[4])
+                                  (corners.[3], corners.[7])|]
+                            for (a, b) in segments do
+                                match Math.tryUnionSegmentAndFrustum a b frustum with
+                                | Some (a, b) ->
+                                    let aWindow = ImGui.PositionToWindow (viewProjection, a)
+                                    let bWindow = ImGui.PositionToWindow (viewProjection, b)
+                                    drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
+                                | None -> ()
                             let mousePosition = ImGui.GetMousePos ()
                             let mutable found = false
                             for i in 0 .. dec centers.Length do
                                 let center = centers.[i]
-                                let centerWindow = centersWindow.[i]
-                                if not found && (mousePosition - centerWindow).Magnitude < 24.0f then
+                                let centerWindow = ImGui.PositionToWindow (viewProjection, center)
+                                if  not found &&
+                                    frustum.Contains center <> ContainmentType.Disjoint &&
+                                    (mousePosition - centerWindow).Magnitude < 24.0f then
                                     io.SwallowMouse ()
                                     drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                                     if ImGui.IsMouseDragging ImGuiMouseButton.Left then

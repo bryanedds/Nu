@@ -1138,3 +1138,27 @@ module Math =
     /// Has a minimum granularity of 1.0f.
     let SnapDegree3d offset (v3 : Vector3) =
         Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
+
+    /// Find the the union of a line segment and a frustum if one exists.
+    let tryUnionSegmentAndFrustum (beginPoint : Vector3) (endPoint : Vector3) (frustum : Frustum) =
+        let beginContained = frustum.Contains beginPoint <> ContainmentType.Disjoint
+        let endContained = frustum.Contains endPoint <> ContainmentType.Disjoint
+        if beginContained || endContained then
+            let beginPoint =
+                if not beginContained then
+                    let ray = Ray3 (beginPoint, (endPoint - beginPoint).Normalized)
+                    let tOpt = frustum.Intersects ray
+                    if tOpt.HasValue
+                    then Vector3.Lerp (beginPoint, endPoint, tOpt.Value)
+                    else beginPoint // TODO: figure out why intersection could fail here.
+                else beginPoint
+            let endPoint =
+                if not endContained then
+                    let ray = Ray3 (endPoint, (beginPoint - endPoint).Normalized)
+                    let tOpt = frustum.Intersects ray
+                    if tOpt.HasValue
+                    then Vector3.Lerp (endPoint, beginPoint, tOpt.Value)
+                    else endPoint // TODO: figure out why intersection could fail here.
+                else endPoint
+            Some (beginPoint, endPoint)
+        else None
