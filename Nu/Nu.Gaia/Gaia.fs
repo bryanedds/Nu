@@ -1193,8 +1193,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private updateHotkeys entityHierarchyFocused =
         if not (modal ()) then
-            if ImGui.IsKeyPressed ImGuiKey.Keypad2 then snaps2dSelected <- true
-            elif ImGui.IsKeyPressed ImGuiKey.Keypad3 then snaps2dSelected <- false
+            if ImGui.IsKeyPressed ImGuiKey._2 || ImGui.IsKeyPressed ImGuiKey.Keypad2 then snaps2dSelected <- true
+            elif ImGui.IsKeyPressed ImGuiKey._3 || ImGui.IsKeyPressed ImGuiKey.Keypad3 then snaps2dSelected <- false
             elif ImGui.IsKeyPressed ImGuiKey.F2 && selectedEntityOpt.IsSome && not (selectedEntityOpt.Value.GetProtected world) then showRenameEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
