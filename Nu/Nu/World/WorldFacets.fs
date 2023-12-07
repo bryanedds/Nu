@@ -1980,6 +1980,19 @@ module LightProbeFacet3dModule =
         member this.SetProbeStale (value : bool) world = this.Set (nameof this.ProbeStale) value world
         member this.ProbeStale = lens (nameof this.ProbeStale) this this.GetProbeStale this.SetProbeStale
 
+        member this.ResetProbeBounds world =
+            let bounds =
+                box3
+                    (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + this.GetPosition world)
+                    (v3Dup Constants.Render.LightProbeSizeDefault)
+            this.SetProbeBounds bounds world
+
+        member this.RecenterInProbeBounds world =
+            let probeBounds = this.GetProbeBounds world
+            if Option.isSome (this.GetMountOpt world)
+            then this.SetPositionLocal probeBounds.Center world
+            else this.SetPosition probeBounds.Center world
+
     /// Augments an entity with a 3d light probe.
     type LightProbeFacet3d () =
         inherit Facet (false)
@@ -2020,6 +2033,35 @@ module LightProbeFacet3dModule =
 
         override this.GetQuickSize (_, _) =
             v3Dup 0.5f
+
+        override this.Edit (op, entity, world) =
+            match op with
+            | ReplaceProperty replace ->
+                match replace.PropertyDescriptor.PropertyName with
+                | nameof Entity.ProbeStale ->
+                    let world =
+                        if ImGuiNET.ImGui.Button "Relight Probe" then
+                            let world = replace.Snapshot world
+                            entity.SetProbeStale true world
+                        else world
+                    replace.IndicateReplaced world
+                | _ -> world
+            | AppendProperties append ->
+                let world =
+                    if ImGuiNET.ImGui.Button "Reset Probe Bounds" then
+                        let world = append.Snapshot world
+                        entity.ResetProbeBounds world
+                    else world
+                let world =
+                    if ImGuiNET.ImGui.Button "Recenter in Probe Bounds" then
+                        let world = append.Snapshot world
+                        let probeBounds = entity.GetProbeBounds world
+                        if Option.isSome (entity.GetMountOpt world)
+                        then entity.SetPositionLocal probeBounds.Center world
+                        else entity.SetPosition probeBounds.Center world
+                    else world
+                world
+            | _ -> world
 
 [<AutoOpen>]
 module LightFacet3dModule =
