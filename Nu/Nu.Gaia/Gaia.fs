@@ -769,19 +769,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some _ | None -> false
 
     let private tryReorderSelectedEntity up =
-        match selectedEntityOpt with
-        | Some entity when entity.Exists world ->
-            let peerOpt =
-                if up
-                then World.tryGetPreviousEntity entity world
-                else World.tryGetNextEntity entity world
-            match peerOpt with
-            | Some peer ->
-                if not (entity.GetProtected world) && not (peer.GetProtected world)
-                then world <- World.swapEntityOrders entity peer world
-                else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the MMCC API)."
-            | None -> ()
-        | Some _ | None -> ()
+        if String.IsNullOrWhiteSpace entityHierarchySearchStr then
+            match selectedEntityOpt with
+            | Some entity when entity.Exists world ->
+                let peerOpt =
+                    if up
+                    then World.tryGetPreviousEntity entity world
+                    else World.tryGetNextEntity entity world
+                match peerOpt with
+                | Some peer ->
+                    if not (entity.GetProtected world) && not (peer.GetProtected world) then
+                        snapshot ()
+                        world <- World.swapEntityOrders entity peer world
+                    else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the MMCC API)."
+                | None -> ()
+            | Some _ | None -> ()
 
     let private tryDeleteSelectedEntity () =
         match selectedEntityOpt with
@@ -1250,8 +1252,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let eyeRotation = World.getEyeRotation3d world
                     let eyeCenterOffset = Vector3.Transform (v3Back * newEntityDistance, eyeRotation)
                     desiredEyeCenter3d <- entity.GetPosition world + eyeCenterOffset
+        let popupContextItemTitle = "##popupContextItem"
         let mutable openPopupContextItemWhenUnselected = false
-        if ImGui.BeginPopupContextItem "##popupContextItem" then
+        if ImGui.BeginPopupContextItem popupContextItemTitle then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
             selectEntityOpt (Some entity)
             if ImGui.MenuItem "Create" then createEntity false true
@@ -1274,49 +1277,50 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Some _ | None -> ()
             ImGui.EndPopup ()
         if openPopupContextItemWhenUnselected then
-            ImGui.OpenPopup "##popupContextItem"
-        if not searchActive then
-            if ImGui.BeginDragDropSource () then
-                let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
-                dragDropPayloadOpt <- Some entityAddressStr
-                ImGui.Text entity.Name
-                ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
-                ImGui.EndDragDropSource ()
-            if ImGui.BeginDragDropTarget () then
-                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
-                    match dragDropPayloadOpt with
-                    | Some payload ->
-                        let sourceEntityAddressStr = payload
-                        let sourceEntity = Nu.Entity sourceEntityAddressStr
-                        if not (sourceEntity.GetProtected world) then
-                            if ImGui.IsAltDown () then
-                                let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                                let previousOpt = World.tryGetPreviousEntity next world
-                                let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                                if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
-                                    let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
-                                    let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
-                                    if not (sourceEntity'.Exists world) then
-                                        world <- World.insertEntityOrder sourceEntity previousOpt next world
-                                        world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                        world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                        if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
-                                        selectEntityOpt (Some sourceEntity')
-                                        showSelectedEntity <- true
-                                    else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
-                            else
-                                let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                                let sourceEntity' = parent / sourceEntity.Name
-                                if not ((scstring parent).Contains (scstring sourceEntity)) then
-                                    if not (sourceEntity'.Exists world) then
-                                        world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                        world <- sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
-                                        if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
-                                        selectEntityOpt (Some sourceEntity')
-                                        showSelectedEntity <- true
-                                    else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
-                        else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
-                    | None -> ()
+            ImGui.OpenPopup popupContextItemTitle
+        if ImGui.BeginDragDropSource () then
+            let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
+            dragDropPayloadOpt <- Some entityAddressStr
+            ImGui.Text entity.Name
+            ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
+            ImGui.EndDragDropSource ()
+        if ImGui.BeginDragDropTarget () then
+            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                match dragDropPayloadOpt with
+                | Some payload ->
+                    let sourceEntityAddressStr = payload
+                    let sourceEntity = Nu.Entity sourceEntityAddressStr
+                    if not (sourceEntity.GetProtected world) then
+                        if ImGui.IsAltDown () then
+                            let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                            let previousOpt = World.tryGetPreviousEntity next world
+                            let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
+                            if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
+                                let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                                let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
+                                if not (sourceEntity'.Exists world) then
+                                    snapshot ()
+                                    world <- World.insertEntityOrder sourceEntity previousOpt next world
+                                    world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                    world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                                    if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
+                                    selectEntityOpt (Some sourceEntity')
+                                    showSelectedEntity <- true
+                                else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
+                        else
+                            let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                            let sourceEntity' = parent / sourceEntity.Name
+                            if not ((scstring parent).Contains (scstring sourceEntity)) then
+                                if not (sourceEntity'.Exists world) then
+                                    snapshot ()
+                                    world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                    world <- sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                                    if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
+                                    selectEntityOpt (Some sourceEntity')
+                                    showSelectedEntity <- true
+                                else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
+                    else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
+                | None -> ()
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
