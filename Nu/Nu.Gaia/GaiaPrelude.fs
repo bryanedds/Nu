@@ -25,8 +25,9 @@ type [<SymbolicExpansion>] GaiaState =
       DesiredEyeCenter3d : Vector3
       DesiredEyeRotation3d : Quaternion
       MasterSoundVolume : single
-      MasterSongVolume : single }
-    static member make dllPath editModeOpt imperativeExecution freshlyLoaded desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d masterSoundVolume masterSongVolume =
+      MasterSongVolume : single
+      AlternativeEyeTravelInput : bool }
+    static member make dllPath editModeOpt imperativeExecution freshlyLoaded desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d masterSoundVolume masterSongVolume alternativeEyeTravelInput =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
           ProjectImperativeExecution = imperativeExecution
@@ -35,6 +36,7 @@ type [<SymbolicExpansion>] GaiaState =
           DesiredEyeCenter3d = desiredEyeCenter3d
           DesiredEyeRotation3d = desiredEyeRotation3d
           MasterSoundVolume = masterSoundVolume
-          MasterSongVolume = masterSongVolume }
+          MasterSongVolume = masterSongVolume
+          AlternativeEyeTravelInput = alternativeEyeTravelInput }
     static member defaultState =
-        GaiaState.make "" None false false v2Zero Constants.Engine.EyeCenter3dDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
+        GaiaState.make "" None false false v2Zero Constants.Engine.EyeCenter3dDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault false
