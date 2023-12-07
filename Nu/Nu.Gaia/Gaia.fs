@@ -86,6 +86,7 @@ module Gaia =
     let mutable private snaps2d = (Constants.Gaia.Position2dSnapDefault, Constants.Gaia.Degrees2dSnapDefault, Constants.Gaia.Scale2dSnapDefault)
     let mutable private snaps3d = (Constants.Gaia.Position3dSnapDefault, Constants.Gaia.Degrees3dSnapDefault, Constants.Gaia.Scale3dSnapDefault)
     let mutable private snapDrag = 0.1f
+    let mutable private alternativeEyeTravelInput = false
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
     let mutable private lightMappingConfig = { LightMappingEnabled = true }
@@ -1172,15 +1173,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 desiredEyeCenter3d <- position + Vector3.Transform (v3Left, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlReleased () then
                 desiredEyeCenter3d <- position + Vector3.Transform (v3Right, rotation) * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.Q && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Up) < 0.999f then desiredEyeRotation3d <- rotation'
-            if ImGui.IsKeyDown ImGuiKey.E && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Down) < 0.999f then desiredEyeRotation3d <- rotation'
-            if ImGui.IsKeyDown ImGuiKey.UpArrow && ImGui.IsAltReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltReleased () then
                 desiredEyeCenter3d <- position + Vector3.Transform (v3Up, rotation) * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.DownArrow && ImGui.IsAltReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltReleased () then
                 desiredEyeCenter3d <- position + Vector3.Transform (v3Down, rotation) * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltReleased () then
                 desiredEyeRotation3d <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
@@ -2389,6 +2390,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.DragFloat ("##newEntityElevation", &newEntityElevation, snapDrag, Single.MinValue, Single.MaxValue, "%2.2f") |> ignore<bool>
                         ImGui.Text "Creation Distance (3d)"
                         ImGui.DragFloat ("##newEntityDistance", &newEntityDistance, snapDrag, 0.5f, Single.MaxValue, "%2.2f") |> ignore<bool>
+                        ImGui.Text "Input"
+                        ImGui.Checkbox ("Alternative Eye Travel Input", &alternativeEyeTravelInput) |> ignore<bool>
                         ImGui.End ()
 
                 // in full-screen mode, just show full-screen short cut window
@@ -2519,7 +2522,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         Log.info ("Project '" + newProjectName + "'" + "created.")
 
                                         // configure editor to open new project then exit
-                                        let gaiaState = GaiaState.make newProjectDllPath (Some "Title") openProjectImperativeExecution true desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)
+                                        let gaiaState = GaiaState.make newProjectDllPath (Some "Title") openProjectImperativeExecution true desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world) alternativeEyeTravelInput
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                         let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
                                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2565,7 +2568,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 String.notEmpty openProjectFilePath &&
                                 File.Exists openProjectFilePath then
                                 showOpenProjectDialog <- false
-                                let gaiaState = GaiaState.make openProjectFilePath (Some openProjectEditMode) openProjectImperativeExecution true desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)
+                                let gaiaState = GaiaState.make openProjectFilePath (Some openProjectEditMode) openProjectImperativeExecution true desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world) alternativeEyeTravelInput
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2701,7 +2704,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
                             ImGui.Text "Any unsaved changes will be lost."
                             if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
-                                let gaiaState = GaiaState.make projectDllPath (Some projectEditMode) projectImperativeExecution false desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)
+                                let gaiaState = GaiaState.make projectDllPath (Some projectEditMode) projectImperativeExecution false desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world) alternativeEyeTravelInput
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, scstring gaiaState)
@@ -2850,8 +2853,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         openProjectFilePath <- gaiaState.ProjectDllPath
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
-        if  not (String.IsNullOrWhiteSpace gaiaState.ProjectDllPath) &&
-            not gaiaState.ProjectFreshlyLoaded then
+        if not gaiaState.ProjectFreshlyLoaded then
+            alternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
             desiredEyeCenter2d <- gaiaState.DesiredEyeCenter2d
             desiredEyeCenter3d <- gaiaState.DesiredEyeCenter3d
             desiredEyeRotation3d <- gaiaState.DesiredEyeRotation3d
