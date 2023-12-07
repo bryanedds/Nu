@@ -390,12 +390,12 @@ namespace Nu
                 Vector3 max = min + size;
                 Vector3 center = min + size * 0.5f;
                 return new Vector3[] {
-                    new Vector3(max.X, center.Y, center.Z),
-                    new Vector3(center.X, max.Y, center.Z),
-                    new Vector3(center.X, center.Y, max.Z),
-                    new Vector3(min.X, center.Y, center.Z),
-                    new Vector3(center.X, min.Y, center.Z),
-                    new Vector3(center.X, center.Y, min.Z),
+                    new Vector3(max.X, center.Y, center.Z), // right
+                    new Vector3(min.X, center.Y, center.Z), // left
+                    new Vector3(center.X, max.Y, center.Z), // top
+                    new Vector3(center.X, min.Y, center.Z), // bottom
+                    new Vector3(center.X, center.Y, max.Z), // back
+                    new Vector3(center.X, center.Y, min.Z), // front
                 };
             }
         }
