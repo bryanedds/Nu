@@ -693,11 +693,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world <- entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
         match entity.TryGetProperty (nameof entity.ProbeBounds) world with
         | Some property when property.PropertyType = typeof<Box3> ->
-            let bounds =
-                box3
-                    (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + entity.GetPosition world)
-                    (v3Dup Constants.Render.LightProbeSizeDefault)
-            world <- entity.SetProbeBounds bounds world
+            world <- entity.ResetProbeBounds world
         | Some _ | None -> ()
         selectEntityOpt (Some entity)
         ImGui.SetWindowFocus "Viewport"
