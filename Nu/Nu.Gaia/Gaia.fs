@@ -87,6 +87,7 @@ module Gaia =
     let mutable private snaps3d = (Constants.Gaia.Position3dSnapDefault, Constants.Gaia.Degrees3dSnapDefault, Constants.Gaia.Scale3dSnapDefault)
     let mutable private snapDrag = 0.1f
     let mutable private alternativeEyeTravelInput = false
+    let mutable private entityHierarchySearchStr = ""
     let mutable private assetViewerSearchStr = ""
     let mutable private assetPickerSearchStr = ""
     let mutable private lightMappingConfig = { LightMappingEnabled = true }
@@ -1190,9 +1191,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private updateHotkeys entityHierarchyFocused =
         if not (modal ()) then
-            if ImGui.IsKeyPressed ImGuiKey._2 || ImGui.IsKeyPressed ImGuiKey.Keypad2 then snaps2dSelected <- true
-            elif ImGui.IsKeyPressed ImGuiKey._3 || ImGui.IsKeyPressed ImGuiKey.Keypad3 then snaps2dSelected <- false
-            elif ImGui.IsKeyPressed ImGuiKey.F2 && selectedEntityOpt.IsSome && not (selectedEntityOpt.Value.GetProtected world) then showRenameEntityDialog <- true
+            if ImGui.IsKeyPressed ImGuiKey.F2 && selectedEntityOpt.IsSome && not (selectedEntityOpt.Value.GetProtected world) then showRenameEntityDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.F3 then snaps2dSelected <- not snaps2dSelected
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then showConfirmExitDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing ()
             elif ImGui.IsKeyPressed ImGuiKey.F6 then editWhileAdvancing <- not editWhileAdvancing
@@ -1217,21 +1217,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then focusedPropertyDescriptorOpt <- None; selectEntityOpt None
 
-    let rec private imGuiEntityHierarchy (entity : Entity) =
-        let children =
-            entity.GetChildren world |>
-            Array.ofSeq |>
-            Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
-            Array.sortBy fst |>
-            Array.map snd
+    let private imGuiEntity branch searchActive (entity : Entity) =
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
-            (if Array.isEmpty children then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
+            (if not branch || searchActive then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             (if desiredEntityParentOpt = Some entity && DateTimeOffset.UtcNow.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
-        if expandEntityHierarchy then ImGui.SetNextItemOpen true
-        if collapseEntityHierarchy then ImGui.SetNextItemOpen false
+        if not searchActive then
+            if expandEntityHierarchy then ImGui.SetNextItemOpen true
+            if collapseEntityHierarchy then ImGui.SetNextItemOpen false
         match selectedEntityOpt with
         | Some selectedEntity when showSelectedEntity ->
             let relation = relate entity selectedEntity
@@ -1280,50 +1275,70 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.EndPopup ()
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup "##popupContextItem"
-        if ImGui.BeginDragDropSource () then
-            let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
-            dragDropPayloadOpt <- Some entityAddressStr
-            ImGui.Text entity.Name
-            ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
-            ImGui.EndDragDropSource ()
-        if ImGui.BeginDragDropTarget () then
-            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
-                match dragDropPayloadOpt with
-                | Some payload ->
-                    let sourceEntityAddressStr = payload
-                    let sourceEntity = Nu.Entity sourceEntityAddressStr
-                    if not (sourceEntity.GetProtected world) then
-                        if ImGui.IsAltDown () then
-                            let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                            let previousOpt = World.tryGetPreviousEntity next world
-                            let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                            if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
-                                let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
-                                let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
-                                if not (sourceEntity'.Exists world) then
-                                    world <- World.insertEntityOrder sourceEntity previousOpt next world
-                                    world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                    world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                    if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
-                                    selectEntityOpt (Some sourceEntity')
-                                    showSelectedEntity <- true
-                                else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
-                        else
-                            let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                            let sourceEntity' = parent / sourceEntity.Name
-                            if not ((scstring parent).Contains (scstring sourceEntity)) then
-                                if not (sourceEntity'.Exists world) then
-                                    world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                    world <- sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
-                                    if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
-                                    selectEntityOpt (Some sourceEntity')
-                                    showSelectedEntity <- true
-                                else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
-                    else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
-                | None -> ()
-        if expanded then
+        if not searchActive then
+            if ImGui.BeginDragDropSource () then
+                let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
+                dragDropPayloadOpt <- Some entityAddressStr
+                ImGui.Text entity.Name
+                ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
+                ImGui.EndDragDropSource ()
+            if ImGui.BeginDragDropTarget () then
+                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                    match dragDropPayloadOpt with
+                    | Some payload ->
+                        let sourceEntityAddressStr = payload
+                        let sourceEntity = Nu.Entity sourceEntityAddressStr
+                        if not (sourceEntity.GetProtected world) then
+                            if ImGui.IsAltDown () then
+                                let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                                let previousOpt = World.tryGetPreviousEntity next world
+                                let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
+                                if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
+                                    let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                                    let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
+                                    if not (sourceEntity'.Exists world) then
+                                        world <- World.insertEntityOrder sourceEntity previousOpt next world
+                                        world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                        world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                                        if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
+                                        selectEntityOpt (Some sourceEntity')
+                                        showSelectedEntity <- true
+                                    else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
+                            else
+                                let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                                let sourceEntity' = parent / sourceEntity.Name
+                                if not ((scstring parent).Contains (scstring sourceEntity)) then
+                                    if not (sourceEntity'.Exists world) then
+                                        world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                        world <- sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                                        if desiredEntityParentOpt = Some sourceEntity then desiredEntityParentOpt <- Some sourceEntity'
+                                        selectEntityOpt (Some sourceEntity')
+                                        showSelectedEntity <- true
+                                    else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
+                        else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
+                    | None -> ()
+        expanded
+
+    let rec private imGuiEntityHierarchy (entity : Entity) =
+        let children =
+            entity.GetChildren world |>
+            Array.ofSeq |>
+            Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
+            Array.sortBy fst |>
+            Array.map snd
+        let searchActive =
+            not (String.IsNullOrWhiteSpace entityHierarchySearchStr)
+        let visible =
+            not searchActive || entity.Name.Contains entityHierarchySearchStr
+        let expanded =
+            if visible then
+                let branch = Array.notEmpty children
+                imGuiEntity branch searchActive entity
+            else false
+        if expanded || searchActive then
             for child in children do imGuiEntityHierarchy child
-            ImGui.TreePop ()
+            if visible then
+                ImGui.TreePop ()
 
     let private imGuiEditMaterialProperiesProperty mp propertyDescriptor simulant =
 
@@ -2084,9 +2099,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.Text "Re-render all light maps."
                             ImGui.EndTooltip ()
                         ImGui.SameLine ()
-                        ImGui.Text "Full (F11)"
+                        ImGui.Text "|"
+                        ImGui.SameLine ()
+                        ImGui.Text "Full Screen"
                         ImGui.SameLine ()
                         ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Toggle full screen view (F11 to toggle)."
+                            ImGui.EndTooltip ()
                         ImGui.End ()
 
                     // asset viewer window
@@ -2112,18 +2132,30 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
+                        
+                        // allow defocus of entity hierarchy?
                         entityHierarchyFocused <- ImGui.IsWindowFocused ()
-                        if ImGui.Button "Collapse" then
+
+                        // hierarchy operations
+                        if ImGui.Button "Collapse All" then
                             collapseEntityHierarchy <- true
                             ImGui.SetWindowFocus "Viewport"
                         ImGui.SameLine ()
-                        if ImGui.Button "Expand" then
+                        if ImGui.Button "Expand All" then
                             expandEntityHierarchy <- true
                             ImGui.SetWindowFocus "Viewport"
                         ImGui.SameLine ()
                         if ImGui.Button "Show Selected" then
                             showSelectedEntity <- true
                             ImGui.SetWindowFocus "Viewport"
+
+                        // entity search
+                        ImGui.SetNextItemWidth -1.0f
+                        ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &entityHierarchySearchStr, 4096u) |> ignore<bool>
+                        if ImGui.IsKeyReleased ImGuiKey.Escape then
+                            entityHierarchySearchStr <- ""
+                        
+                        // creation parent display
                         match desiredEntityParentOpt with
                         | Some desiredEntityParent when desiredEntityParent.Exists world ->
                             let creationParentStr = scstring (Address.skip 2 desiredEntityParent.EntityAddress)
@@ -2136,6 +2168,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             desiredEntityParentOpt <- None
                         ImGui.SameLine ()
                         ImGui.Text "(creation parent)"
+
+                        // group selection
                         let groups = World.getGroups selectedScreen world
                         let mutable selectedGroupName = selectedGroup.Name
                         ImGui.SetNextItemWidth -1.0f
@@ -2161,6 +2195,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                             showSelectedEntity <- true
                                         else messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
                                 | None -> ()
+                        
+                        // entity editing
                         let entities =
                             World.getEntitiesSovereign selectedGroup world |>
                             Array.ofSeq |>
@@ -2170,6 +2206,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         for entity in entities do
                             imGuiEntityHierarchy entity
                         ImGui.End ()
+
+                    // allow defocus of entity hierarchy?
                     else entityHierarchyFocused <- false
                     expandEntityHierarchy <- false
                     collapseEntityHierarchy <- false
@@ -2371,6 +2409,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             match index with
                             | 0 -> snaps2dSelected <- true
                             | _ -> snaps2dSelected <- false
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Use 2d or 3d snapping (F3 to swap mode)."
+                            ImGui.EndTooltip ()
                         ImGui.SameLine ()
                         let mutable (p, d, s) = if snaps2dSelected then snaps2d else snaps3d
                         ImGui.Text "Pos"
@@ -2404,6 +2445,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "Full Screen (F11)"
                         ImGui.SameLine ()
                         ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Toggle full screen view (F11 to toggle)."
+                            ImGui.EndTooltip ()
                         ImGui.End ()
 
                 // if message box not shown, may show another popup
