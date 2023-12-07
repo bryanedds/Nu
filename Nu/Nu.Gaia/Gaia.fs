@@ -68,8 +68,8 @@ module Gaia =
     let mutable private newGroupDispatcherName = nameof GroupDispatcher
     let mutable private newEntityDispatcherName = null // this will be initialized on start
     let mutable private newEntityOverlayName = "(Default Overlay)"
-    let mutable private newEntityDistance = 2.0f
     let mutable private newEntityElevation = 0.0f
+    let mutable private newEntityDistance = 2.0f
     let mutable private newGroupName = ""
     let mutable private groupRename = ""
     let mutable private entityRename = ""
@@ -83,8 +83,8 @@ module Gaia =
     let mutable private fullScreen = false
     let mutable private editWhileAdvancing = false
     let mutable private snaps2dSelected = true
-    let mutable private snaps2d = (Constants.Gaia.Position2dSnapDefault, Constants.Gaia.Degrees2dSnapDefault, Constants.Gaia.Scale2dSnapDefault)
-    let mutable private snaps3d = (Constants.Gaia.Position3dSnapDefault, Constants.Gaia.Degrees3dSnapDefault, Constants.Gaia.Scale3dSnapDefault)
+    let mutable private snaps2d = Constants.Gaia.Snaps2dDefault
+    let mutable private snaps3d = Constants.Gaia.Snaps3dDefault
     let mutable private snapDrag = 0.1f
     let mutable private alternativeEyeTravelInput = false
     let mutable private entityHierarchySearchStr = ""
@@ -2907,8 +2907,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         openProjectFilePath <- gaiaState.ProjectDllPath
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        snaps2dSelected <- gaiaState.Snaps2dSelected
+        snaps2d <- gaiaState.Snaps2d
+        snaps3d <- gaiaState.Snaps3d
+        newEntityElevation <- gaiaState.CreationElevation
+        newEntityDistance <- gaiaState.CreationDistance
+        alternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         if not gaiaState.ProjectFreshlyLoaded then
-            alternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
             desiredEyeCenter2d <- gaiaState.DesiredEyeCenter2d
             desiredEyeCenter3d <- gaiaState.DesiredEyeCenter3d
             desiredEyeRotation3d <- gaiaState.DesiredEyeRotation3d

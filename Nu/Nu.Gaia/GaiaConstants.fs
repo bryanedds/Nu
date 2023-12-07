@@ -12,12 +12,14 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gaia =
 
-        let [<Literal>] Position2dSnapDefault = 12.0f
-        let [<Literal>] Position3dSnapDefault = 0.1f
-        let [<Literal>] Degrees2dSnapDefault = 5.0f
-        let [<Literal>] Degrees3dSnapDefault = 5.0f
-        let [<Literal>] Scale2dSnapDefault = 0.1f
-        let [<Literal>] Scale3dSnapDefault = 0.1f
+        let [<Literal>] PositionSnap2dDefault = 12.0f
+        let [<Literal>] DegreesSnap2dDefault = 5.0f
+        let [<Literal>] ScaleSnap2dDefault = 0.1f
+        let [<Uniform>] Snaps2dDefault = (PositionSnap2dDefault, DegreesSnap2dDefault, ScaleSnap2dDefault)
+        let [<Literal>] PositionSnap3dDefault = 0.1f
+        let [<Literal>] DegreesSnap3dDefault = 5.0f
+        let [<Literal>] ScaleSnap3dDefault = 0.1f
+        let [<Uniform>] Snaps3dDefault = (PositionSnap3dDefault, DegreesSnap3dDefault, ScaleSnap3dDefault)
         let [<Literal>] CreationElevationDefault = 0.0f
         let [<Literal>] EyeSpeed = 3.0f // NOTE: might be nice to be able to configure this just like entity creation elevation in the editor.
         let [<Literal>] DragMinimumSeconds = 0.2
