@@ -60,7 +60,7 @@ module ImGuizmo =
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
             elif dragging then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
-                let direction = match i with | 0 | 3 -> v3Right | 1 | 4 -> v3Up | 2 | 5 -> v3Back | _ -> failwithumf ()
+                let direction = match i with | 0 | 1 -> v3Right | 2 | 3 -> v3Up | 4 | 5 -> v3Back | _ -> failwithumf ()
                 let ray = viewport.MouseToWorld3d (absolute, mousePosition, eyeCenter, eyeRotation)
                 let forward = eyeRotation.Forward
                 let plane = plane3 center -forward
