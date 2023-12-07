@@ -9,6 +9,11 @@ open ImGuiNET
 open ImGuizmoNET
 open Prime
 
+/// The result of an imgui editing operation.
+type ImGuiEditResult =
+    | ImGuiEditActive of Started : bool
+    | ImGuiEditInactive
+
 /// Wraps ImGui context, state, and calls. Also extends the ImGui interface with static methods.
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port of a port.
 type ImGui (windowWidth : int, windowHeight : int) =

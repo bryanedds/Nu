@@ -1791,78 +1791,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsKeyPressed ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
 
-                    // light probe bounds manipulation
-                    // NOTE: this focused flags seems like a hack that work well in other contexts.
-                    let lightProbeBoundsFocused =
-                        match selectedEntityOpt with
-                        | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world && not io.WantCaptureMousePlus ->
-                            let bounds = entity.GetProbeBounds world
-                            let drawList = ImGui.GetBackgroundDrawList ()
-                            let eyeRotation = World.getEyeRotation3d world
-                            let eyeCenter = World.getEyeCenter3d world
-                            let viewport = Constants.Render.Viewport
-                            let view = viewport.View3d (entity.GetAbsolute world, eyeCenter, eyeRotation)
-                            let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
-                            let viewProjection = view * projection
-                            let frustum = World.getEyeFrustumView3d world
-                            let corners = bounds.Corners
-                            let centers = bounds.Centers
-                            let segments =
-                                [|(corners.[0], corners.[1])
-                                  (corners.[1], corners.[2])
-                                  (corners.[2], corners.[3])
-                                  (corners.[3], corners.[0])
-                                  (corners.[4], corners.[5])
-                                  (corners.[5], corners.[6])
-                                  (corners.[6], corners.[7])
-                                  (corners.[7], corners.[4])
-                                  (corners.[0], corners.[6])
-                                  (corners.[1], corners.[5])
-                                  (corners.[2], corners.[4])
-                                  (corners.[3], corners.[7])|]
-                            for (a, b) in segments do
-                                match Math.tryUnionSegmentAndFrustum a b frustum with
-                                | Some (a, b) ->
-                                    let aWindow = ImGui.PositionToWindow (viewProjection, a)
-                                    let bWindow = ImGui.PositionToWindow (viewProjection, b)
-                                    drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
-                                | None -> ()
-                            let mousePosition = ImGui.GetMousePos ()
-                            let mutable found = false
-                            for i in 0 .. dec centers.Length do
-                                let center = centers.[i]
-                                let centerWindow = ImGui.PositionToWindow (viewProjection, center)
-                                if  not found &&
-                                    frustum.Contains center <> ContainmentType.Disjoint &&
-                                    (mousePosition - centerWindow).Magnitude < 24.0f then
-                                    io.SwallowMouse ()
-                                    drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
-                                    if ImGui.IsMouseDragging ImGuiMouseButton.Left then
-                                        let direction =
-                                            match i with
-                                            | 0 | 3 -> v3Right
-                                            | 1 | 4 -> v3Up
-                                            | 2 | 5 -> v3Back
-                                            | _ -> failwithumf ()
-                                        let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeRotation)
-                                        let forward = eyeRotation.Forward
-                                        let plane = plane3 center -forward
-                                        let mouse = (ray.Intersection plane).Value
-                                        let delta = mouse - center
-                                        let movement = delta * direction
-                                        let snap =
-                                            if not snaps2dSelected && ImGui.IsCtrlReleased ()
-                                            then Triple.fst snaps3d
-                                            else 0.0f
-                                        let center = Math.SnapF3d snap (centers.[i] + movement)
-                                        centers.[i] <- center
-                                        let bounds = Box3.Enclose centers
-                                        world <- entity.SetProbeBounds bounds world
-                                    found <- true
-                                else drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CFCF)
-                            found
-                        | _ -> false
-
                     // guizmo manipulation
                     let viewport = Constants.Render.Viewport
                     let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
@@ -1871,7 +1799,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
                     ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
                     match selectedEntityOpt with
-                    | Some entity when entity.Exists world && entity.GetIs3d world && not lightProbeBoundsFocused ->
+                    | Some entity when entity.Exists world && entity.GetIs3d world ->
                         let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
@@ -1980,20 +1908,38 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // view manipulation
                     // NOTE: this code is the current failed attempt to integrate ImGuizmo view manipulation as reported here - https://github.com/CedricGuillemet/ImGuizmo/issues/304
-                    //if not lightProbeBoundsFocused then
-                    //    let eyeCenter = (World.getEyeCenter3d world |> Matrix4x4.CreateTranslation).ToArray ()
-                    //    let eyeRotation = (World.getEyeRotation3d world |> Matrix4x4.CreateFromQuaternion).ToArray ()
-                    //    let eyeScale = m4Identity.ToArray ()
-                    //    let view = m4Identity.ToArray ()
-                    //    ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
-                    //    ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, uint 0x10101010)
-                    //    ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
-                    //    eyeCenter3d <- (eyeCenter |> Matrix4x4.CreateFromArray).Translation
-                    //    eyeRotation3d <- (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix)
+                    //let eyeCenter = (World.getEyeCenter3d world |> Matrix4x4.CreateTranslation).ToArray ()
+                    //let eyeRotation = (World.getEyeRotation3d world |> Matrix4x4.CreateFromQuaternion).ToArray ()
+                    //let eyeScale = m4Identity.ToArray ()
+                    //let view = m4Identity.ToArray ()
+                    //ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
+                    //ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, uint 0x10101010)
+                    //ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
+                    //eyeCenter3d <- (eyeCenter |> Matrix4x4.CreateFromArray).Translation
+                    //eyeRotation3d <- (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix)
+
+                    // light probe bounds manipulation
+                    match selectedEntityOpt with
+                    | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world && not io.WantCaptureMousePlus ->
+                        let mutable lightProbeBounds = entity.GetProbeBounds world
+                        let manipulationResult =
+                            ImGuizmo.ManipulateBox3
+                                (World.getEyeCenter3d world,
+                                 World.getEyeRotation3d world,
+                                 World.getEyeFrustumView3d world,
+                                 entity.GetAbsolute world,
+                                 (if not snaps2dSelected && ImGui.IsCtrlReleased () then Triple.fst snaps3d else 0.0f),
+                                 &lightProbeBounds)
+                        match manipulationResult with
+                        | ImGuiEditActive started ->
+                            if started then snapshot ()
+                            world <- entity.SetProbeBounds lightProbeBounds world
+                        | ImGuiEditInactive -> ()
+                    | Some _ | None -> ()
 
                     // user-defined viewport manipulation
                     match selectedEntityOpt with
-                    | Some entity when entity.Exists world && entity.GetIs3d world && not lightProbeBoundsFocused ->
+                    | Some entity when entity.Exists world && entity.GetIs3d world ->
                         let viewMatrix =
                             viewport.View3d (entity.GetAbsolute world, World.getEyeCenter3d world, World.getEyeRotation3d world)
                         let operation =

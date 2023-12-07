@@ -63,6 +63,7 @@
 		<Compile Include="ImGui\ImGuiIOPtr.fs" />
 		<Compile Include="ImGui\ImGuiFileDialog.fs" />
 		<Compile Include="ImGui\ImGui.fs" />
+		<Compile Include="ImGui\ImGuizmo.fs" />
 		<Compile Include="Reflection\Reflection.fs" />
 		<Compile Include="Reflection\Overlayer.fs" />
 		<Compile Include="Reflection\OverlayRouter.fs" />
