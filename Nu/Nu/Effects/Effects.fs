@@ -58,7 +58,7 @@ type Slice =
       Brightness : single
       AttenuationLinear : single
       AttenuationQuadratic : single
-      Cutoff : single
+      LightCutoff : single
       Volume : single
       Enabled : bool
       Centered : bool }
@@ -175,7 +175,7 @@ and Aspect =
     | Brightness of single
     | AttenuationLinear of single
     | AttenuationQuadratic of single
-    | Cutoff of single
+    | LightCutoff of single
     | Volume of single
     | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
     | Positions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
@@ -468,7 +468,7 @@ module EffectSystem =
         | Brightness brightness -> { slice with Brightness = brightness }
         | AttenuationLinear attenuationLinear -> { slice with AttenuationLinear = attenuationLinear }
         | AttenuationQuadratic attenuationQuadratic -> { slice with AttenuationQuadratic = attenuationQuadratic }
-        | Cutoff cutoff -> { slice with Cutoff = cutoff }
+        | LightCutoff lightCutoff -> { slice with LightCutoff = lightCutoff }
         | Volume volume -> { slice with Volume = volume }
         | Enableds (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -814,7 +814,7 @@ module EffectSystem =
                               Brightness = slice.Brightness
                               AttenuationLinear = slice.AttenuationLinear
                               AttenuationQuadratic = slice.AttenuationQuadratic
-                              Cutoff = slice.Cutoff
+                              LightCutoff = slice.LightCutoff
                               LightType = lightType })
                 addView modelView effectSystem
             else effectSystem

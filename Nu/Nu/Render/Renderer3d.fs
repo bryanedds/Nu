@@ -271,7 +271,7 @@ and [<ReferenceEquality>] RenderLight3d =
       Brightness : single
       AttenuationLinear : single
       AttenuationQuadratic : single
-      Cutoff : single
+      LightCutoff : single
       LightType : LightType }
 
 and [<ReferenceEquality>] RenderBillboard =
@@ -2073,7 +2073,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SortableLightBrightness = rl.Brightness
                       SortableLightAttenuationLinear = rl.AttenuationLinear
                       SortableLightAttenuationQuadratic = rl.AttenuationQuadratic
-                      SortableLightCutoff = rl.Cutoff
+                      SortableLightCutoff = rl.LightCutoff
                       SortableLightDirectional = match rl.LightType with DirectionalLight -> 1 | _ -> 0
                       SortableLightConeInner = match rl.LightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
                       SortableLightConeOuter = match rl.LightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
