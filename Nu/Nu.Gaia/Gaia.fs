@@ -1245,7 +1245,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             showSelectedEntity <- false
         if ImGui.IsKeyPressed ImGuiKey.Space && ImGui.IsItemFocused () && ImGui.IsWindowFocused () then
             selectEntityOpt (Some entity)
-        if ImGui.IsMouseClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
+        if ImGui.IsMouseReleased ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             selectEntityOpt (Some entity)
         if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             if not (entity.GetAbsolute world) then
@@ -1785,7 +1785,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let io = ImGui.GetIO ()
                 ImGui.SetNextWindowPos v2Zero
                 ImGui.SetNextWindowSize io.DisplaySize
-                if ImGui.IsKeyPressed ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
+                if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
 
                     // guizmo manipulation
@@ -2433,7 +2433,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                     showAssetPickerDialog <- false
                                                 ImGui.TreePop ()
                                     ImGui.TreePop ()
-                            if ImGui.IsKeyPressed ImGuiKey.Escape then showAssetPickerDialog <- false
+                            if ImGui.IsKeyReleased ImGuiKey.Escape then showAssetPickerDialog <- false
                             ImGui.EndPopup ()
 
                     // new project dialog
@@ -2464,7 +2464,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if not validName then ImGui.Text "Invalid project name!"
                                 let validDirectory = not (Directory.Exists newProjectDir)
                                 if not validDirectory then ImGui.Text "Project already exists!"
-                                if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) then
+                                if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) then
 
                                     // attempt to create project files
                                     try Log.info ("Creating project '" + newProjectName + "' in '" + projectsDir + "'...")
@@ -2538,7 +2538,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     with exn -> Log.trace ("Failed to create new project '" + newProjectName + "' due to: " + scstring exn)
 
                                 // escape to cancel
-                                if ImGui.IsKeyPressed ImGuiKey.Escape then
+                                if ImGui.IsKeyReleased ImGuiKey.Escape then
                                     showNewProjectDialog <- false
                                     newProjectName <- "MyGame"
 
@@ -2564,7 +2564,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.SameLine ()
                             ImGui.InputText ("##openProjectEditMode", &openProjectEditMode, 4096u) |> ignore<bool>
                             ImGui.Checkbox ("Use Imperative Execution (faster, but no Undo / Redo)", &openProjectImperativeExecution) |> ignore<bool>
-                            if  (ImGui.Button "Open" || ImGui.IsKeyPressed ImGuiKey.Enter) &&
+                            if  (ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter) &&
                                 String.notEmpty openProjectFilePath &&
                                 File.Exists openProjectFilePath then
                                 showOpenProjectDialog <- false
@@ -2575,7 +2575,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
                                 with _ -> Log.info "Could not save editor state and open project."
-                            if ImGui.IsKeyPressed ImGuiKey.Escape then showOpenProjectDialog <- false
+                            if ImGui.IsKeyReleased ImGuiKey.Escape then showOpenProjectDialog <- false
                             ImGui.EndPopup ()
 
                     // open project file dialog
@@ -2592,7 +2592,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal (title, &showCloseProjectDialog) then
                             ImGui.Text "Close the project and use Gaia in its default state?"
-                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                            if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
                                 showCloseProjectDialog <- false
                                 let gaiaState = GaiaState.defaultState
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
@@ -2601,7 +2601,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
                                 with _ -> Log.info "Could not clear editor state and close project."
-                            if ImGui.IsKeyPressed ImGuiKey.Escape then showCloseProjectDialog <- false
+                            if ImGui.IsKeyReleased ImGuiKey.Escape then showCloseProjectDialog <- false
                             ImGui.EndPopup ()
 
                     // new group dialog
@@ -2619,7 +2619,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
                                         newGroupDispatcherName <- dispatcherName
                                 ImGui.EndCombo ()
-                            if (ImGui.Button "Create" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
+                            if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty newGroupName && Address.validName newGroupName && not (newGroup.Exists world) then
                                 let worldOld = world
                                 try world <- World.createGroup4 newGroupDispatcherName (Some newGroupName) selectedScreen world |> snd
                                     selectEntityOpt None
@@ -2629,7 +2629,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 with exn ->
                                     world <- World.choose worldOld
                                     messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
-                            if ImGui.IsKeyPressed ImGuiKey.Escape then showNewGroupDialog <- false
+                            if ImGui.IsKeyReleased ImGuiKey.Escape then showNewGroupDialog <- false
                             ImGui.EndPopup ()
 
                     // open group dialog
@@ -2665,12 +2665,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if opening then ImGui.SetKeyboardFocusHere ()
                                 ImGui.InputTextWithHint ("##groupName", "[enter group name]", &groupRename, 4096u) |> ignore<bool>
                                 let group' = group.Screen / groupRename
-                                if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
+                                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty groupRename && Address.validName groupRename && not (group'.Exists world) then
                                     snapshot ()
                                     world <- World.renameGroupImmediate group group' world
                                     selectGroup group'
                                     showRenameGroupDialog <- false
-                                if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameGroupDialog <- false
+                                if ImGui.IsKeyReleased ImGuiKey.Escape then showRenameGroupDialog <- false
                                 ImGui.EndPopup ()
                         | _ -> showRenameGroupDialog <- false
 
@@ -2688,12 +2688,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if opening then ImGui.SetKeyboardFocusHere ()
                                 ImGui.InputTextWithHint ("##entityRename", "[enter entity name]", &entityRename, 4096u) |> ignore<bool>
                                 let entity' = Nu.Entity (Array.add entityRename entity.Parent.SimulantAddress.Names)
-                                if (ImGui.Button "Apply" || ImGui.IsKeyPressed ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
+                                if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty entityRename && Address.validName entityRename && not (entity'.Exists world) then
                                     snapshot ()
                                     world <- World.renameEntityImmediate entity entity' world
                                     selectedEntityOpt <- Some entity'
                                     showRenameEntityDialog <- false
-                                if ImGui.IsKeyPressed ImGuiKey.Escape then showRenameEntityDialog <- false
+                                if ImGui.IsKeyReleased ImGuiKey.Escape then showRenameEntityDialog <- false
                                 ImGui.EndPopup ()
                         | Some _ | None -> showRenameEntityDialog <- false
 
@@ -2703,7 +2703,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
                             ImGui.Text "Any unsaved changes will be lost."
-                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then
+                            if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
                                 let gaiaState = GaiaState.make projectDllPath (Some projectEditMode) projectImperativeExecution false desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world) alternativeEyeTravelInput
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
@@ -2712,7 +2712,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 with _ -> Log.trace "Could not save gaia state."
                                 world <- World.exit world
                             ImGui.SameLine ()
-                            if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then showConfirmExitDialog <- false
+                            if ImGui.Button "Cancel" || ImGui.IsKeyReleased ImGuiKey.Escape then showConfirmExitDialog <- false
                             ImGui.EndPopup ()
 
                     // restart dialog
@@ -2721,7 +2721,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal title then
                             ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
-                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then world <- World.exit world
+                            if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then world <- World.exit world
                             ImGui.EndPopup ()
                 
                 // message box dialog
@@ -2731,7 +2731,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                     if ImGui.BeginPopupModal (title, &showing) then
                         ImGui.TextWrapped messageBox
-                        if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter || ImGui.IsKeyPressed ImGuiKey.Escape then showing <- false
+                        if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter || ImGui.IsKeyReleased ImGuiKey.Escape then showing <- false
                         if not showing then messageBoxOpt <- None
                         ImGui.EndPopup ()
 
@@ -2753,8 +2753,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     showEntityContextMenu <- false
                             ImGui.EndCombo ()
                         if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
-                        if  ImGui.IsMouseClicked ImGuiMouseButton.Right ||
-                            ImGui.IsKeyPressed ImGuiKey.Escape then
+                        if  ImGui.IsMouseReleased ImGuiMouseButton.Right ||
+                            ImGui.IsKeyReleased ImGuiKey.Escape then
                             showEntityContextMenu <- false
                         ImGui.Separator ()
                         if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
