@@ -1471,7 +1471,7 @@ module PhysicallyBased =
                                           LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
                                           LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
                                           LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
-                                          LightCutoff = Constants.Render.CutoffDefault // TODO: figure out if we can populate this properly.
+                                          LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
                                           PhysicallyBasedLightType = lightType }
                                     lights.Add physicallyBasedLight
                                     yield PhysicallyBasedLight physicallyBasedLight

@@ -475,6 +475,7 @@ module LightDispatcher3dModule =
              define Entity.Brightness Constants.Render.BrightnessDefault
              define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
              define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
+             define Entity.LightCutoff Constants.Render.LightCutoffDefault
              define Entity.LightType PointLight]
 
         override this.GetQuickSize (_, _) =
