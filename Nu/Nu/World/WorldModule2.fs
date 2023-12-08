@@ -1075,34 +1075,23 @@ module WorldModule2 =
 
             // render entities
             RenderEntitiesTimer.Start ()
-            let tasks3d =
-                if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    [|for elements in elements3d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible then
-                                    World.renderEntity element.Entry world }|]
-                else
-                    [|for elements in elements3d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                                    World.renderEntity element.Entry world }|]
-            let tasks2d =
-                if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    [|for elements in elements2d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible then
-                                    World.renderEntity element.Entry world }|]
-                else
-                    [|for elements in elements2d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                                    World.renderEntity element.Entry world }|]
-            tasks3d |> Vsync.Parallel |> Vsync.RunSynchronously |> ignore<unit array>
-            tasks2d |> Vsync.Parallel |> Vsync.RunSynchronously |> ignore<unit array>
+            if world.Unaccompanied || groupsInvisible.Count = 0 then
+                for element in elements3d do
+                    if element.Visible then
+                        World.renderEntity element.Entry world
+            else
+                for element in elements3d do
+                    if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                        World.renderEntity element.Entry world
+            if world.Unaccompanied || groupsInvisible.Count = 0 then
+                for element in elements2d do
+                    if element.Visible then
+                        World.renderEntity element.Entry world
+            else
+                for element in elements2d do
+                    if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                        World.renderEntity element.Entry world
+            RenderEntitiesTimer.Stop ()
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
