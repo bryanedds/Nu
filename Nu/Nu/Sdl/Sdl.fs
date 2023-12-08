@@ -143,7 +143,12 @@ module SdlDeps =
                     SDL.SDL_INIT_HAPTIC |||
                     SDL.SDL_INIT_GAMECONTROLLER |||
                     SDL.SDL_INIT_EVENTS
-                SDL.SDL_Init initConfig)
+                let result = SDL.SDL_Init initConfig
+                if result = 0 then
+                    let mutable sdlVersion = Unchecked.defaultof<_>
+                    SDL.SDL_GetVersion (&sdlVersion)
+                    Log.info ("Initialized SDL " + string sdlVersion.major + "." + string sdlVersion.minor + "." + string sdlVersion.patch + ".")
+                result)
             (fun () -> SDL.SDL_Quit ()) with
         | Left error -> Left error
         | Right ((), destroy) ->
