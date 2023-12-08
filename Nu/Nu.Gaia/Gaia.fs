@@ -2056,7 +2056,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
                             for overlayName in overlayNames do
                                 if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
-                                    newEntityDispatcherName <- overlayName
+                                    newEntityOverlayName <- overlayName
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
                         if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
