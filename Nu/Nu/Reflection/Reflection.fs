@@ -74,7 +74,6 @@ module Reflection =
              ("PublishPreUpdates", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
-             ("PublishRenders", true)
              ("Mounted", true)
              ("Is2d", true)
              ("Is3d", true)

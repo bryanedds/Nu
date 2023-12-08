@@ -43,13 +43,17 @@ module AvatarDispatcher =
         override this.View (avatar, entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize avatar.AnimationSheet,
-                    RenderSprite
-                        { Transform = transform
-                          InsetOpt = ValueSome (getSpriteInset entity world)
-                          Image = avatar.AnimationSheet
-                          Color = Color.One
-                          Blend = Transparent
-                          Emission = Color.Zero
-                          Flip = FlipNone })
-            else View.empty
+                World.enqueueLayeredOperation2d
+                    { Elevation = transform.Elevation
+                      Horizon = transform.Horizon
+                      AssetTag = AssetTag.generalize avatar.AnimationSheet
+                      RenderOperation2d =
+                        RenderSprite
+                            { Transform = transform
+                              InsetOpt = ValueSome (getSpriteInset entity world)
+                              Image = avatar.AnimationSheet
+                              Color = Color.One
+                              Blend = Transparent
+                              Emission = Color.Zero
+                              Flip = FlipNone }}
+                    world

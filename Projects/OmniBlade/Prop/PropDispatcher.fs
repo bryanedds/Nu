@@ -275,15 +275,17 @@ module PropDispatcher =
                     | ChestSpawn | PortalSpawn | EmptyProp ->
                         (false, Assets.Default.ImageEmpty, Color.One, Transparent, Color.Zero, ValueNone, FlipNone)
                 let elevation = if background then Constants.Field.FlooringElevation else Constants.Field.ForegroundElevation
-                let horizon = transform.Horizon
-                let assetTag = AssetTag.generalize image
-                Render2d (elevation, horizon, assetTag,
-                    RenderSprite
-                        { Transform = transform
-                          InsetOpt = insetOpt
-                          Image = image
-                          Color = color
-                          Blend = blend
-                          Emission = emission
-                          Flip = flip })
-            else View.empty
+                World.enqueueLayeredOperation2d
+                    { Elevation = elevation
+                      Horizon = transform.Horizon
+                      AssetTag = AssetTag.generalize image
+                      RenderOperation2d =
+                        RenderSprite
+                            { Transform = transform
+                              InsetOpt = insetOpt
+                              Image = image
+                              Color = color
+                              Blend = blend
+                              Emission = emission
+                              Flip = flip }}
+                    world

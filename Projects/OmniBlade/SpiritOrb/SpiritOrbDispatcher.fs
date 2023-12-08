@@ -24,9 +24,9 @@ module SpiritOrbDispatcher =
                Narratives = [||]
                Spirits = [||] })
 
-        static let makeViews time avatarLowerCenter (orbTransform : Transform) inhabitants =
+        static let viewInhabitants time avatarLowerCenter (orbTransform : Transform) inhabitants world =
             let mutable orbTransform = orbTransform
-            Array.fold (fun views inhabitant ->
+            for inhabitant in inhabitants do
                 let (center, image, color, insetOpt) =
                     match inhabitant with
                     | ChestInhabitant chest ->
@@ -59,16 +59,23 @@ module SpiritOrbDispatcher =
                         let distanceNormalized = (Constants.Field.SpiritRadius - distance) / Constants.Field.SpiritRadius
                         if distanceNormalized < 0.25f then color.MapA ((*) (distanceNormalized / 0.25f)) else color
                     let descriptor = { Transform = transform; InsetOpt = insetOpt; Image = image; Blend = Transparent; Color = colorFadeIn; Emission = Color.Zero; Flip = FlipNone }
-                    let view = Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image, RenderSprite descriptor)
-                    view :: views
-                else views)
-                [] inhabitants
+                    World.enqueueLayeredOperation2d
+                        { Elevation = transform.Elevation
+                          Horizon = transform.Horizon
+                          AssetTag = AssetTag.generalize image
+                          RenderOperation2d = RenderSprite descriptor }
+                        world
 
         override this.View (spiritOrb, entity, world) =
             let mutable orbTransform = entity.GetTransform world
             let orbImage = Assets.Field.SpiritOrbImage
             let orbDescriptor = { Transform = orbTransform; InsetOpt = ValueNone; Image = orbImage; Color = Color.One; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
-            let orbView = Render2d (orbTransform.Elevation, orbTransform.Horizon, AssetTag.generalize orbImage, RenderSprite orbDescriptor)
+            World.enqueueLayeredOperation2d
+                { Elevation = orbTransform.Elevation
+                  Horizon = orbTransform.Horizon
+                  AssetTag = AssetTag.generalize orbImage
+                  RenderOperation2d = RenderSprite orbDescriptor }
+                world
             let mutable avatarTransform = Transform.makeDefault false
             avatarTransform.Position <- orbTransform.Position + orbTransform.Size * 0.5f - Constants.Field.SpiritOrbBlipSize * 0.5f
             avatarTransform.Size <- Constants.Field.SpiritOrbBlipSize
@@ -76,11 +83,14 @@ module SpiritOrbDispatcher =
             avatarTransform.Absolute <- orbTransform.Absolute
             let avatarImage = Assets.Field.SpiritAvatarImage
             let avatarDescriptor = { Transform = avatarTransform; InsetOpt = ValueNone; Image = avatarImage; Color = Color.One; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
-            let avatarView = Render2d (avatarTransform.Elevation, avatarTransform.Horizon, AssetTag.generalize avatarImage, RenderSprite avatarDescriptor)
+            World.enqueueLayeredOperation2d
+                { Elevation = avatarTransform.Elevation
+                  Horizon = avatarTransform.Horizon
+                  AssetTag = AssetTag.generalize avatarImage
+                  RenderOperation2d = RenderSprite avatarDescriptor }
+                world
             let chests = Array.filter (fun (chest : Chest) -> spiritOrb.ShowUnopenedChests || chest.Opened) spiritOrb.Chests
-            let chestViews = makeViews world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant chests)
-            let portalViews = makeViews world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals)
-            let narrativeViews = makeViews world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map NarrativeInhabitant spiritOrb.Narratives)
-            let spiritViews = makeViews world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits)
-            let views = orbView :: chestViews @ portalViews @ narrativeViews @ avatarView :: spiritViews
-            Views (List.toArray views)
+            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant chests) world
+            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals) world
+            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map NarrativeInhabitant spiritOrb.Narratives) world
+            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits) world

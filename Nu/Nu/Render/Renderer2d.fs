@@ -3,8 +3,8 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
-open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
 open SDL2
@@ -103,7 +103,7 @@ and Renderer2d =
     /// The sprite batch operational environment if it exists for this implementation.
     abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.SpriteBatchEnv option
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
+    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d ConcurrentBag -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 

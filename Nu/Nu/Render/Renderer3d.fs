@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
@@ -506,7 +507,7 @@ and Renderer3d =
     /// The physically-based shader.
     abstract PhysicallyBasedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
     /// Render a frame of the game.
-    abstract Render : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
+    abstract Render : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d ConcurrentBag -> unit
     /// Swap a rendered frame of the game.
     abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.

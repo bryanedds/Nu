@@ -1039,13 +1039,13 @@ module WorldModule2 =
                               Emission = Color.Zero
                               Flip = FlipNone }}
                     world
-            | None -> world
+            | None -> ()
 
         static member private renderScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
             | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
             | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
-            | IdlingState _ -> world
+            | IdlingState _ -> ()
 
         static member private renderSimulants skipCulling world =
 
@@ -1065,39 +1065,44 @@ module WorldModule2 =
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
-            let world = World.renderGame game world
-            let world = List.fold (fun world screen -> World.renderScreen screen world) world screens
-            let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> world
-            let world = Seq.fold (fun world (group : Group) -> if not (groupsInvisible.Contains group) then World.renderGroup group world else world) world groups
+            World.renderGame game world
+            for screen in screens do
+                World.renderScreen screen world
+            match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> ()
+            for group in groups do
+                if not (groupsInvisible.Contains group) then
+                    World.renderGroup group world
 
             // render entities
             RenderEntitiesTimer.Start ()
-            let world =
+            let tasks3d =
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Visible
-                        then World.renderEntity element.Entry world
-                        else world)
-                        world elements3d
+                    [|for elements in elements3d |> Seq.chunkBySize 512 |> Array.ofSeq do
+                        vsync {
+                            for element in elements do
+                                if element.Visible then
+                                    World.renderEntity element.Entry world }|]
                 else
-                    Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Visible && not (groupsInvisible.Contains element.Entry.Group)
-                        then World.renderEntity element.Entry world
-                        else world)
-                        world elements3d
-            let world =
+                    [|for elements in elements3d |> Seq.chunkBySize 512 |> Array.ofSeq do
+                        vsync {
+                            for element in elements do
+                                if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                                    World.renderEntity element.Entry world }|]
+            let tasks2d =
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Visible
-                        then World.renderEntity element.Entry world
-                        else world)
-                        world elements2d
+                    [|for elements in elements2d |> Seq.chunkBySize 512 |> Array.ofSeq do
+                        vsync {
+                            for element in elements do
+                                if element.Visible then
+                                    World.renderEntity element.Entry world }|]
                 else
-                    Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Visible && not (groupsInvisible.Contains element.Entry.Group)
-                        then World.renderEntity element.Entry world
-                        else world)
-                        world elements2d
+                    [|for elements in elements2d |> Seq.chunkBySize 512 |> Array.ofSeq do
+                        vsync {
+                            for element in elements do
+                                if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                                    World.renderEntity element.Entry world }|]
+            tasks3d |> Vsync.Parallel |> Vsync.RunSynchronously |> ignore<unit array>
+            tasks2d |> Vsync.Parallel |> Vsync.RunSynchronously |> ignore<unit array>
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -1387,8 +1392,7 @@ module EntityDispatcherModule2 =
             Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
 
         override this.Render (entity, world) =
-            let view = this.View (this.GetModel entity world, entity, world)
-            World.renderView view world
+            this.View (this.GetModel entity world, entity, world)
 
         override this.Edit (operation, entity, world) =
             let model = entity.GetModelGeneric<'model> world
@@ -1460,9 +1464,10 @@ module EntityDispatcherModule2 =
         abstract Content : 'model * Entity -> EntityContent list
         default this.Content (_, _) = []
 
-        /// Describes how the entity is to be viewed using the View API.
-        abstract View : 'model * Entity * World -> View
-        default this.View (_, _, _) = View.empty
+        /// Render the entity using the given model.
+        /// Thread-safe.
+        abstract View : 'model * Entity * World -> unit
+        default this.View (_, _, _) = ()
 
         /// Truncate the given model.
         abstract TruncateModel : 'model -> 'model
@@ -1674,8 +1679,7 @@ module GroupDispatcherModule =
             World.setGroupModel<'model> true model group world |> snd'
 
         override this.Render (group, world) =
-            let view = this.View (this.GetModel group world, group, world)
-            World.renderView view world
+            this.View (this.GetModel group world, group, world)
 
         override this.Signal (signalObj : obj, group, world) =
             match signalObj with
@@ -1733,9 +1737,10 @@ module GroupDispatcherModule =
         abstract Content : 'model * Group -> EntityContent list
         default this.Content (_, _) = []
 
-        /// Describes how the group is to be viewed using the View API.
-        abstract View : 'model * Group * World -> View
-        default this.View (_, _, _) = View.empty
+        /// Render the group using the given model.
+        /// Thread-safe.
+        abstract View : 'model * Group * World -> unit
+        default this.View (_, _, _) = ()
 
         /// Implements additional editing behavior for a group via the ImGui API.
         abstract Edit : 'model * EditOperation * Group * World -> Signal list * 'model
@@ -1844,8 +1849,7 @@ module ScreenDispatcherModule =
             World.setScreenModel<'model> true model screen world |> snd'
 
         override this.Render (screen, world) =
-            let view = this.View (this.GetModel screen world, screen, world)
-            World.renderView view world
+            this.View (this.GetModel screen world, screen, world)
 
         override this.Signal (signalObj : obj, screen, world) =
             match signalObj with
@@ -1903,9 +1907,10 @@ module ScreenDispatcherModule =
         abstract Content : 'model * Screen -> GroupContent list
         default this.Content (_, _) = []
 
-        /// Describes how the screen is to be viewed using the View API.
-        abstract View : 'model * Screen * World -> View
-        default this.View (_, _, _) = View.empty
+        /// Render the screen using the given model.
+        /// Thread-safe.
+        abstract View : 'model * Screen * World -> unit
+        default this.View (_, _, _) = ()
 
         /// Implements additional editing behavior for a screen via the ImGui API.
         abstract Edit : 'model * EditOperation * Screen * World -> Signal list * 'model
@@ -2021,8 +2026,7 @@ module GameDispatcherModule =
             World.setGameModel<'model> true model game world |> snd'
 
         override this.Render (game, world) =
-            let view = this.View (this.GetModel game world, game, world)
-            World.renderView view world
+            this.View (this.GetModel game world, game, world)
 
         override this.Signal (signalObj : obj, game, world) =
             match signalObj with
@@ -2074,9 +2078,10 @@ module GameDispatcherModule =
         abstract Content : 'model * Game -> ScreenContent list
         default this.Content (_, _) = []
 
-        /// Describes how the game is to be viewed using the View API.
-        abstract View : 'model * Game * World -> View
-        default this.View (_, _, _) = View.empty
+        /// Render the game using the given model.
+        /// Thread-safe.
+        abstract View : 'model * Game * World -> unit
+        default this.View (_, _, _) = ()
 
         /// Implements additional editing behavior for a game via the ImGui API.
         abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model

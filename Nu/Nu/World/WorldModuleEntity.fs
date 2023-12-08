@@ -24,59 +24,19 @@ module WorldModuleEntity =
     let internal EntityChangeCountsId = Gen.id
     let internal EntityBindingCountsId = Gen.id
 
-    // OPTIMIZATION: avoids closure allocation in tight-loop.
-    type private KeyEquality () =
-        inherit OptimizedClosures.FSharpFunc<
-            KeyValuePair<Entity, SUMap<Entity, EntityState>>,
-            KeyValuePair<Entity, SUMap<Entity, EntityState>>,
-            bool> ()
-        override this.Invoke _ = failwithumf ()
-        override this.Invoke
-            (entityStateKey : KeyValuePair<Entity, SUMap<Entity, EntityState>>,
-             entityStateKey2 : KeyValuePair<Entity, SUMap<Entity, EntityState>>) =
-            refEq entityStateKey.Key entityStateKey2.Key &&
-            refEq entityStateKey.Value entityStateKey2.Value
-    let private keyEquality = KeyEquality ()
-
-    // OPTIMIZATION: avoids closure allocation in tight-loop.
-    let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
-    let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
-    let private getFreshKeyAndValue () =
-        let mutable entityStateOpt = Unchecked.defaultof<_>
-        let _ = SUMap.tryGetValue (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
-        KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
-    let private getFreshKeyAndValueCached =
-        getFreshKeyAndValue
-
     // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
     let mutable changeEventNamesFree = true
     let changeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
 
     type World with
 
-        // OPTIMIZATION: a ton of optimization has gone down in here...!
-        static member private entityStateRefresher (entity : Entity) world =
-            getFreshKeyAndValueEntity <- entity
-            getFreshKeyAndValueWorld <- world
-            let entityStateOpt =
-                KeyedCache.getValueFast
-                    keyEquality
-                    getFreshKeyAndValueCached
-                    (KeyValuePair (entity, world.EntityStates))
-                    (World.getEntityCachedOpt world)
-            getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
-            getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
-            match entityStateOpt :> obj with
-            | null ->
-                Unchecked.defaultof<EntityState>
-            | _ ->
-                if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
-                entityStateOpt
-
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
-            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated
-            then World.entityStateRefresher entity world
+            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
+                let mutable entityStateOpt = Unchecked.defaultof<_>
+                let _ = SUMap.tryGetValue (entity, world.EntityStates, &entityStateOpt)
+                if notNull (entityStateOpt :> obj) && entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
+                entityStateOpt
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
@@ -388,7 +348,6 @@ module WorldModuleEntity =
         static member internal getEntityPublishPreUpdates entity world = (World.getEntityState entity world).PublishPreUpdates
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
-        static member internal getEntityPublishRenders entity world = (World.getEntityState entity world).PublishRenders
         static member internal getEntityProtected entity world = (World.getEntityState entity world).Protected
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
@@ -474,22 +433,6 @@ module WorldModuleEntity =
                 struct (true, world)
             else struct (false, world)
         
-        static member internal setEntityPublishRenders value entity world =
-            let entityState = World.getEntityState entity world
-            let previous = entityState.PublishRenders
-            if value <> previous then
-                let struct (entityState, world) =
-                    if entityState.Imperative then
-                        entityState.PublishRenders <- value
-                        struct (entityState, world)
-                    else
-                        let entityState = EntityState.diverge entityState
-                        entityState.PublishRenders <- value
-                        struct (entityState, World.setEntityState entityState entity world)
-                let world = World.publishEntityChange (nameof entityState.PublishRenders) previous value entityState.PublishChangeEvents entity world
-                struct (true, world)
-            else struct (false, world)
-
         static member internal setEntityProtected value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Protected
@@ -2105,9 +2048,6 @@ module WorldModuleEntity =
             World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa (Events.PostUpdateEvent --> entity)) world
 #endif
 
-        static member internal updateEntityPublishRenderFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishRenders entity (atooa (Events.RenderEvent --> entity)) world
-
         static member internal updateEntityPublishFlags entity world =
             let mutable changed = false // bit of funky mutation in the face of #if
 #if !DISABLE_ENTITY_PRE_UPDATE
@@ -2120,8 +2060,6 @@ module WorldModuleEntity =
             let struct (changed', world) = World.updateEntityPublishPostUpdateFlag entity world
             changed <- changed || changed'
 #endif
-            let struct (changed', world) = World.updateEntityPublishRenderFlag entity world
-            changed <- changed || changed'
             struct (changed, world)
 
         static member internal divergeEntity entity world =
@@ -2621,7 +2559,6 @@ module WorldModuleEntity =
         EntityGetters.["AlwaysRender"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world }
         EntityGetters.["PublishUpdates"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world }
         EntityGetters.["PublishPostUpdates"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world }
-        EntityGetters.["PublishRenders"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishRenders entity world }
         EntityGetters.["Protected"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityProtected entity world }
         EntityGetters.["Persistent"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
         EntityGetters.["Mounted"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world }

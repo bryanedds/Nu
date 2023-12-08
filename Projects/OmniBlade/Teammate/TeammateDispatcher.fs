@@ -17,7 +17,7 @@ module TeammateDispatcher =
     type TeammateDispatcher () =
         inherit GuiDispatcher<Teammate, Message, Command> (Teammate.empty)
 
-        static let viewFillBar borderImage (borderImageColor : Color) fillImage (fillImageColor : Color) (transform : Transform byref) fillInset fill =
+        static let viewFillBar borderImage (borderImageColor : Color) fillImage (fillImageColor : Color) (transform : Transform byref) fillInset fill world =
 
             // border sprite
             let perimeter = transform.Perimeter // gui currently ignores rotation
@@ -28,8 +28,11 @@ module TeammateDispatcher =
             borderTransform.Offset <- transform.Offset
             borderTransform.Elevation <- transform.Elevation + 0.5f
             borderTransform.Absolute <- transform.Absolute
-            let borderView =
-                Render2d (borderTransform.Elevation, horizon, AssetTag.generalize borderImage, 
+            World.enqueueLayeredOperation2d
+                { Elevation = borderTransform.Elevation
+                  Horizon = horizon
+                  AssetTag = AssetTag.generalize borderImage
+                  RenderOperation2d =
                     RenderSprite
                         { Transform = borderTransform
                           InsetOpt = ValueNone
@@ -37,7 +40,8 @@ module TeammateDispatcher =
                           Color = borderImageColor
                           Blend = Transparent
                           Emission = Color.Zero
-                          Flip = FlipNone })
+                          Flip = FlipNone }}
+                world
 
             // fill sprite
             let fillSize = perimeter.Size
@@ -52,8 +56,11 @@ module TeammateDispatcher =
             fillTransform.Offset <- transform.Offset
             fillTransform.Elevation <- transform.Elevation
             fillTransform.Absolute <- transform.Absolute
-            let fillView =
-                Render2d (fillTransform.Elevation, horizon, AssetTag.generalize fillImage,
+            World.enqueueLayeredOperation2d
+                { Elevation = fillTransform.Elevation
+                  Horizon = horizon
+                  AssetTag = AssetTag.generalize fillImage
+                  RenderOperation2d =
                     RenderSprite
                         { Transform = fillTransform
                           InsetOpt = ValueNone
@@ -61,10 +68,8 @@ module TeammateDispatcher =
                           Color = fillImageColor
                           Blend = Transparent
                           Emission = Color.Zero
-                          Flip = FlipNone })
-
-            // fin
-            Views [|borderView; fillView|]
+                          Flip = FlipNone }}
+                world
 
         static member Facets =
             [typeof<TextFacet>
@@ -81,32 +86,35 @@ module TeammateDispatcher =
              Entity.ClickSoundOpt == Some Assets.Gui.AffirmSound]
 
         override this.View (character, entity, world) =
+
+            // render hit points
             let mutable transform = entity.GetTransform world
             let mutable hitPointsTransform = transform
             let downOffset = if entity.GetDown world then entity.GetDownOffset world else v2Zero
             hitPointsTransform.Size <- v3 48.0f 6.0f 0.0f
             hitPointsTransform.Position <- v3 (transform.Min.X + (transform.Size.X + hitPointsTransform.Size.X) * 0.5f - hitPointsTransform.Size.X) (hitPointsTransform.Min.Y + 16.0f + downOffset.Y) 0.0f
             hitPointsTransform.Elevation <- hitPointsTransform.Elevation + 0.25f
-            let hitPointsView =
-                viewFillBar
-                    Assets.Gui.HealthBorderImage
-                    (color8 (byte 51) (byte 51) (byte 51) (byte 255)) // TODO: use a constant.
-                    Assets.Default.White
-                    (Color.Red.WithA8 (byte 131)) // TODO: use a constant.
-                    &hitPointsTransform
-                    (1.0f / 12.0f)
-                    (single character.HitPoints / single character.HitPointsMax)
+            viewFillBar
+                Assets.Gui.HealthBorderImage
+                (color8 (byte 51) (byte 51) (byte 51) (byte 255)) // TODO: use a constant.
+                Assets.Default.White
+                (Color.Red.WithA8 (byte 131)) // TODO: use a constant.
+                &hitPointsTransform
+                (1.0f / 12.0f)
+                (single character.HitPoints / single character.HitPointsMax)
+                world
+
+            // render tech points
             let mutable techPointsTransform = transform
             techPointsTransform.Size <- v3 48.0f 6.0f 0.0f
             techPointsTransform.Position <- v3 (transform.Min.X + (transform.Size.X + techPointsTransform.Size.X) * 0.5f - techPointsTransform.Size.X) (techPointsTransform.Min.Y + 12.0f + downOffset.Y) 0.0f
             techPointsTransform.Elevation <- techPointsTransform.Elevation + 0.25f
-            let techPointsView =
-                viewFillBar
-                    Assets.Gui.HealthBorderImage
-                    (color8 (byte 51) (byte 51) (byte 51) (byte 255)) // TODO: use a constant.
-                    Assets.Default.White
-                    ((color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA8 (byte 131)) // TODO: use a constant.
-                    &techPointsTransform
-                    (1.0f / 12.0f)
-                    (single character.TechPoints / single character.TechPointsMax)
-            Views [|hitPointsView; techPointsView|]
+            viewFillBar
+                Assets.Gui.HealthBorderImage
+                (color8 (byte 51) (byte 51) (byte 51) (byte 255)) // TODO: use a constant.
+                Assets.Default.White
+                ((color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA8 (byte 131)) // TODO: use a constant.
+                &techPointsTransform
+                (1.0f / 12.0f)
+                (single character.TechPoints / single character.TechPointsMax)
+                world
