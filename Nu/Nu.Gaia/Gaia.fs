@@ -575,14 +575,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>
             Seq.map (fun light -> (light.GetAffineMatrixOffset world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
-        world <-
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightProbeModels
-                      RenderType = DeferredRenderType
-                      StaticModel = Assets.Default.LightProbeModel })
-                world
+        World.enqueueRenderMessage3d
+            (RenderStaticModels
+                { Absolute = false
+                  StaticModels = lightProbeModels
+                  RenderType = DeferredRenderType
+                  StaticModel = Assets.Default.LightProbeModel })
+            world
 
         // render lights of the selected group in play
         world <- wtemp
@@ -592,14 +591,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>
             Seq.map (fun light -> (light.GetAffineMatrixOffset world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
-        world <-
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightModels
-                      RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
-                      StaticModel = Assets.Default.LightbulbModel })
-                world
+        World.enqueueRenderMessage3d
+            (RenderStaticModels
+                { Absolute = false
+                  StaticModels = lightModels
+                  RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
+                  StaticModel = Assets.Default.LightbulbModel })
+            world
 
         // render selection highlights
         match selectedEntityOpt with
@@ -610,36 +608,34 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let elevation = Single.MaxValue
                 let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
                 let image = Assets.Default.HighlightImage
-                world <-
-                    World.enqueueRenderMessage2d
-                        (LayeredOperation2d
-                            { Elevation = elevation
-                              Horizon = bounds.Bottom.Y
-                              AssetTag = AssetTag.generalize image
-                              RenderOperation2d =
-                                RenderSprite
-                                    { Transform = transform
-                                      InsetOpt = ValueNone
-                                      Image = image
-                                      Color = Color.One
-                                      Blend = Transparent
-                                      Emission = Color.Zero
-                                      Flip = FlipNone }})
-                        world
+                World.enqueueRenderMessage2d
+                    (LayeredOperation2d
+                        { Elevation = elevation
+                          Horizon = bounds.Bottom.Y
+                          AssetTag = AssetTag.generalize image
+                          RenderOperation2d =
+                            RenderSprite
+                                { Transform = transform
+                                  InsetOpt = ValueNone
+                                  Image = image
+                                  Color = Color.One
+                                  Blend = Transparent
+                                  Emission = Color.Zero
+                                  Flip = FlipNone }})
+                    world
             else
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center
-                world <-
-                    World.enqueueRenderMessage3d
-                        (RenderStaticModel
-                            { Absolute = absolute
-                              ModelMatrix = boundsMatrix
-                              Presence = Omnipresent
-                              InsetOpt = None
-                              MaterialProperties = MaterialProperties.defaultProperties
-                              RenderType = ForwardRenderType (0.0f, Single.MinValue)
-                              StaticModel = Assets.Default.HighlightModel })
-                        world
+                World.enqueueRenderMessage3d
+                    (RenderStaticModel
+                        { Absolute = absolute
+                          ModelMatrix = boundsMatrix
+                          Presence = Omnipresent
+                          InsetOpt = None
+                          MaterialProperties = MaterialProperties.defaultProperties
+                          RenderType = ForwardRenderType (0.0f, Single.MinValue)
+                          StaticModel = Assets.Default.HighlightModel })
+                    world
         | Some _ | None -> ()
 
         // fin
@@ -2374,7 +2370,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
                         ImGui.Checkbox ("Light-Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
                         lightMappingConfig <- { LightMappingEnabled = lightMappingEnabled }
-                        world <- World.enqueueRenderMessage3d (ConfigureLightMapping lightMappingConfig) world
+                        World.enqueueRenderMessage3d (ConfigureLightMapping lightMappingConfig) world
                         ImGui.Text "Ssao (screen-space ambient occlusion)"
                         let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
                         let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
@@ -2396,7 +2392,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                               SsaoRadius = ssaoRadius
                               SsaoDistanceMax = ssaoDistanceMax
                               SsaoSampleCount = ssaoSampleCount }
-                        world <- World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
+                        World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
                         ImGui.End ()
 
                     // audio player window
@@ -2999,7 +2995,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world
                 let world = World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world
-                let world = World.subscribe handleNuRender Game.RenderEvent Game world
+                let world = World.subscribe handleNuRender ??? Game world
                 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world

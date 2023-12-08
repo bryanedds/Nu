@@ -52,7 +52,6 @@ module WorldGameModule =
         member this.PreUpdateEvent = Events.PreUpdateEvent --> Game.Handle
         member this.UpdateEvent = Events.UpdateEvent --> Game.Handle
         member this.PostUpdateEvent = Events.PostUpdateEvent --> Game.Handle
-        member this.RenderEvent = Events.RenderEvent --> Game.Handle
         member this.MouseMoveEvent = Events.MouseMoveEvent --> Game.Handle
         member this.MouseDragEvent = Events.MouseDragEvent --> Game.Handle
         member this.MouseLeftChangeEvent = Events.MouseLeftChangeEvent --> Game.Handle
@@ -181,14 +180,8 @@ module WorldGameModule =
             World.publishPlus () game.PostUpdateEvent eventTrace game false false world
 
         static member internal renderGame (game : Game) world =
-
-            // render via dispatcher
             let dispatcher = game.GetDispatcher world
-            let world = dispatcher.Render (game, world)
-
-            // publish render event
-            let eventTrace = EventTrace.debug "World" "renderGame" "" EventTrace.empty
-            World.publishPlus () game.RenderEvent eventTrace game false false world
+            dispatcher.Render (game, world)
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

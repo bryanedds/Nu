@@ -328,8 +328,9 @@ and GameDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a game.
-    abstract Render : Game * World -> World
-    default this.Render (_, world) = world
+    /// Thread-safe.
+    abstract Render : Game * World -> unit
+    default this.Render (_, _) = ()
 
     /// Send a signal to a game.
     abstract Signal : obj * Game * World -> World
@@ -380,8 +381,9 @@ and ScreenDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a screen.
-    abstract Render : Screen * World -> World
-    default this.Render (_, world) = world
+    /// Thread-safe.
+    abstract Render : Screen * World -> unit
+    default this.Render (_, _) = ()
 
     /// Send a signal to a screen.
     abstract Signal : obj * Screen * World -> World
@@ -432,8 +434,9 @@ and GroupDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a group.
-    abstract Render : Group * World -> World
-    default this.Render (_, world) = world
+    /// Thread-safe.
+    abstract Render : Group * World -> unit
+    default this.Render (_, _) = ()
 
     /// Send a signal to a group.
     abstract Signal : obj * Group * World -> World
@@ -498,7 +501,6 @@ and EntityDispatcher (is2d, centered, physical) =
          Define? PublishPreUpdates false
          Define? PublishUpdates false
          Define? PublishPostUpdates false
-         Define? PublishRenders false
          Define? Persistent true]
 
     /// Register an entity when adding it to a group.
@@ -526,8 +528,9 @@ and EntityDispatcher (is2d, centered, physical) =
 #endif
 
     /// Render an entity.
-    abstract Render : Entity * World -> World
-    default this.Render (_, world) = world
+    /// Thread-safe.
+    abstract Render : Entity * World -> unit
+    default this.Render (_, _) = ()
 
     /// Apply physics changes from a physics engine to an entity.
     abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
@@ -620,8 +623,9 @@ and Facet (physical) =
 #endif
 
     /// Render a facet.
-    abstract Render : Entity * World -> World
-    default this.Render (_, world) = world
+    /// Thread-safe.
+    abstract Render : Entity * World -> unit
+    default this.Render (_, _) = ()
 
     /// Participate in attempting to pick an entity with a ray.
     abstract RayCast : Ray3 * Entity * World -> single array
@@ -1059,7 +1063,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.PublishPreUpdates with get () = this.Transform.PublishPreUpdates and set value = this.Transform.PublishPreUpdates <- value
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
     member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
-    member this.PublishRenders with get () = this.Transform.PublishRenders and set value = this.Transform.PublishRenders <- value
     member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value

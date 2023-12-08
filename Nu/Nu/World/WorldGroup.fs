@@ -39,7 +39,6 @@ module WorldGroupModule =
         member this.PreUpdateEvent = Events.PreUpdateEvent --> this
         member this.UpdateEvent = Events.UpdateEvent --> this
         member this.PostUpdateEvent = Events.PostUpdateEvent --> this
-        member this.RenderEvent = Events.RenderEvent --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -136,14 +135,8 @@ module WorldGroupModule =
             World.publishPlus () group.PostUpdateEvent eventTrace group false false world
 
         static member internal renderGroup (group : Group) world =
-
-            // render via dispatcher
             let dispatcher = group.GetDispatcher world
-            let world = dispatcher.Render (group, world)
-
-            // publish render event
-            let eventTrace = EventTrace.debug "World" "renderGroup" "" EventTrace.empty
-            World.publishPlus () group.RenderEvent eventTrace group false false world
+            dispatcher.Render (group, world)
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

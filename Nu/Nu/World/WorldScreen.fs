@@ -48,7 +48,6 @@ module WorldScreenModule =
         member this.PreUpdateEvent = Events.PreUpdateEvent --> this
         member this.UpdateEvent = Events.UpdateEvent --> this
         member this.PostUpdateEvent = Events.PostUpdateEvent --> this
-        member this.RenderEvent = Events.RenderEvent --> this
         member this.SelectEvent = Events.SelectEvent --> this
         member this.DeselectingEvent = Events.DeselectingEvent --> this
         member this.IncomingStartEvent = Events.IncomingStartEvent --> this
@@ -176,11 +175,7 @@ module WorldScreenModule =
 
             // render via dispatcher
             let dispatcher = screen.GetDispatcher world
-            let world = dispatcher.Render (screen, world)
-
-            // publish render event
-            let eventTrace = EventTrace.debug "World" "renderScreen" "" EventTrace.empty
-            World.publishPlus () screen.RenderEvent eventTrace screen false false world
+            dispatcher.Render (screen, world)
 
         /// Edit a screen with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

@@ -192,34 +192,32 @@ module Effect =
 
             // render particles
             let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
-            let world =
-                List.fold (fun world descriptor ->
-                    match descriptor with
-                    | SpriteParticlesDescriptor descriptor ->
-                        let message =
-                            { Elevation = descriptor.Elevation
-                              Horizon = descriptor.Horizon
-                              AssetTag = AssetTag.generalize descriptor.Image
-                              RenderOperation2d = RenderSpriteParticles descriptor }
-                        World.enqueueLayeredOperation2d message world
-                    | BillboardParticlesDescriptor descriptor ->
-                        let message =
-                            RenderBillboardParticles
-                                { Absolute = descriptor.Absolute
-                                  MaterialProperties = descriptor.MaterialProperties
-                                  AlbedoImage = descriptor.AlbedoImage
-                                  RoughnessImage = descriptor.RoughnessImage
-                                  MetallicImage = descriptor.MetallicImage
-                                  AmbientOcclusionImage = descriptor.AmbientOcclusionImage
-                                  EmissionImage = descriptor.EmissionImage
-                                  NormalImage = descriptor.NormalImage
-                                  HeightImage = descriptor.HeightImage
-                                  MinFilterOpt = descriptor.MinFilterOpt
-                                  MagFilterOpt = descriptor.MagFilterOpt
-                                  RenderType = descriptor.RenderType
-                                  Particles = descriptor.Particles }
-                        World.enqueueRenderMessage3d message world)
-                    world descriptors
+            for descriptor in descriptors do
+                match descriptor with
+                | SpriteParticlesDescriptor descriptor ->
+                    let message =
+                        { Elevation = descriptor.Elevation
+                          Horizon = descriptor.Horizon
+                          AssetTag = AssetTag.generalize descriptor.Image
+                          RenderOperation2d = RenderSpriteParticles descriptor }
+                    World.enqueueLayeredOperation2d message world
+                | BillboardParticlesDescriptor descriptor ->
+                    let message =
+                        RenderBillboardParticles
+                            { Absolute = descriptor.Absolute
+                              MaterialProperties = descriptor.MaterialProperties
+                              AlbedoImage = descriptor.AlbedoImage
+                              RoughnessImage = descriptor.RoughnessImage
+                              MetallicImage = descriptor.MetallicImage
+                              AmbientOcclusionImage = descriptor.AmbientOcclusionImage
+                              EmissionImage = descriptor.EmissionImage
+                              NormalImage = descriptor.NormalImage
+                              HeightImage = descriptor.HeightImage
+                              MinFilterOpt = descriptor.MinFilterOpt
+                              MagFilterOpt = descriptor.MagFilterOpt
+                              RenderType = descriptor.RenderType
+                              Particles = descriptor.Particles }
+                    World.enqueueRenderMessage3d message world
 
             // fin
             (Live, effect, world)
