@@ -246,50 +246,49 @@ module internal Octnode =
                         set.Add element |> ignore
 
     let rec internal getElementsInViewFrustum enclosed exposed frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
-            match node.Children_ with
-            | ValueLeft nodes ->
-                for i in 0 .. dec nodes.Length do
-                    let node = nodes.[i]
-                    if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
-                        getElementsInViewFrustum enclosed exposed frustum set node
-            | ValueRight elements ->
-                for element in elements do
-                    if enclosed then
-                        if element.Enclosed || element.Exposed then
-                            if frustum.Intersects element.Bounds then
-                                set.Add element |> ignore
-                    elif exposed then
-                        if element.Exposed then
-                            if frustum.Intersects element.Bounds then
-                                set.Add element |> ignore
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = nodes.[i]
+                if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
+                    getElementsInViewFrustum enclosed exposed frustum set node
+        | ValueRight elements ->
+            for element in elements do
+                if enclosed then
+                    if element.Enclosed || element.Exposed then
+                        if frustum.Intersects element.Bounds then
+                            set.Add element |> ignore
+                elif exposed then
+                    if element.Exposed then
+                        if frustum.Intersects element.Bounds then
+                            set.Add element |> ignore
 
     let rec internal getElementsInView frustumEnclosed frustumExposed lightBox (set : 'e Octelement HashSet) (node : 'e Octnode) =
-            match node.Children_ with
-            | ValueLeft nodes ->
-                for i in 0 .. dec nodes.Length do
-                    let node = nodes.[i]
-                    if node.ElementsCount_ > 0 then
-                        let intersectingEnclosed = isIntersectingFrustum frustumEnclosed node
-                        let intersectingExposed = isIntersectingFrustum frustumExposed node
-                        if intersectingEnclosed || intersectingExposed then
-                            if intersectingEnclosed then getElementsInViewFrustum true false frustumEnclosed set node
-                            if intersectingExposed then getElementsInViewFrustum false true frustumExposed set node
-                        if isIntersectingBox lightBox node then
-                            getLightsInBox lightBox set node
-            | ValueRight _ -> ()
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = nodes.[i]
+                if node.ElementsCount_ > 0 then
+                    let intersectingEnclosed = isIntersectingFrustum frustumEnclosed node
+                    let intersectingExposed = isIntersectingFrustum frustumExposed node
+                    if intersectingEnclosed || intersectingExposed then
+                        if intersectingEnclosed then getElementsInViewFrustum true false frustumEnclosed set node
+                        if intersectingExposed then getElementsInViewFrustum false true frustumExposed set node
+                    if isIntersectingBox lightBox node then
+                        getLightsInBox lightBox set node
+        | ValueRight _ -> ()
 
     let rec internal getElementsInPlay playBox playFrustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
-        if node.ElementsCount_ > 0 then
-            match node.Children_ with
-            | ValueLeft nodes ->
-                for i in 0 .. dec nodes.Length do
-                    let node = nodes.[i]
-                    if node.ElementsCount_ > 0 then
-                        if isIntersectingBox playBox node then
-                            getElementsInPlayBox playBox set node
-                        if isIntersectingFrustum playFrustum node then
-                            getElementsInPlayFrustum playFrustum set node
-            | ValueRight _ -> ()
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = nodes.[i]
+                if node.ElementsCount_ > 0 then
+                    if isIntersectingBox playBox node then
+                        getElementsInPlayBox playBox set node
+                    if isIntersectingFrustum playFrustum node then
+                        getElementsInPlayFrustum playFrustum set node
+        | ValueRight _ -> ()
 
     let rec internal getElements (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
