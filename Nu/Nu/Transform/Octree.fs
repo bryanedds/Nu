@@ -256,11 +256,11 @@ module internal Octnode =
             for element in elements do
                 if enclosed then
                     if element.Enclosed || element.Exposed then
-                        if frustum.Intersects element.Bounds then
+                        if element.Visible && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
                 elif exposed then
                     if element.Exposed then
-                        if frustum.Intersects element.Bounds then
+                        if element.Visible && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
 
     let rec internal getElementsInView frustumEnclosed frustumExposed lightBox (set : 'e Octelement HashSet) (node : 'e Octnode) =

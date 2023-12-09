@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
@@ -631,7 +632,7 @@ module StaticModelHierarchyDispatcherModule =
     type World with
 
         /// Attempt to import a static model hierarchy below the target entity.
-        static member tryImportHierarchy rigid presence staticModel (parent : Either<Group, Entity>) world =
+        static member tryImportHierarchy presenceConferred staticModel rigid (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
@@ -645,7 +646,7 @@ module StaticModelHierarchyDispatcherModule =
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
                             let (child, world) = World.createEntity<EntityDispatcher3d> DefaultOverlay (Some surnames) group world
-                            let world = child.SetPresence presence world
+                            let world = child.SetPresence presenceConferred world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
@@ -680,7 +681,7 @@ module StaticModelHierarchyDispatcherModule =
                                 else (transform.Translation, quatIdentity, world) // use translation, even from invalid transform
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
-                            let world = child.SetPresence presence world
+                            let world = child.SetPresence presenceConferred world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.QuickSize world
@@ -706,7 +707,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
-                            let world = child.SetPresence presence world
+                            let world = child.SetPresence presenceConferred world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
@@ -731,17 +732,13 @@ module StaticModelHierarchyDispatcherModule =
         static member freezeHierarchy (parent : Entity) wtemp =
             let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
             let rec getFrozenArtifacts (entity : Entity) =
-                [|if entity.Has<StaticModelSurfaceFacet> world then
-                    let mutable transform = entity.GetTransform world
-                    let absolute = transform.Absolute
-                    let affineMatrixOffset = transform.AffineMatrixOffset
-                    let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
-                    let properties = entity.GetMaterialProperties world
-                    let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                    let staticModel = entity.GetStaticModel world
-                    let surfaceIndex = entity.GetSurfaceIndex world
-                    Right { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
-                    world <- entity.SetVisibleLocal false world
+                [|if entity.Has<LightProbeFacet3d> world then
+                    let id = entity.GetId world
+                    let enabled = entity.GetEnabled world
+                    let position = entity.GetPosition world
+                    let bounds = entity.GetProbeBounds world
+                    let stale = entity.GetProbeStalePrevious world
+                    Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
                   if entity.Has<LightFacet3d> world then
                     if entity.GetEnabled world then
                         let position = entity.GetPosition world
@@ -752,13 +749,30 @@ module StaticModelHierarchyDispatcherModule =
                         let attenuationQuadratic = entity.GetAttenuationQuadratic world
                         let lightCutoff = entity.GetLightCutoff world
                         let lightType = entity.GetLightType world
-                        Left { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
+                        Choice2Of3 { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
+                  if entity.Has<StaticModelSurfaceFacet> world then
+                    let mutable transform = entity.GetTransform world
+                    let absolute = transform.Absolute
+                    let affineMatrixOffset = transform.AffineMatrixOffset
+                    let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
+                    let properties = entity.GetMaterialProperties world
+                    let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+                    let staticModel = entity.GetStaticModel world
+                    let surfaceIndex = entity.GetSurfaceIndex world
+                    Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
                     world <- entity.SetVisibleLocal false world
                   if entity <> parent then
                     boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
+                    world <- entity.SetVisibleLocal false world
                   for child in entity.GetChildren world do
                     yield! getFrozenArtifacts child|]
-            let (frozenLights, frozenSurfaces) = getFrozenArtifacts parent |> Either.split |> fun (l, s) -> (Array.ofList l, Array.ofList s)
+            let (frozenProbes, frozenLights, frozenSurfaces) = (List (), List (), List ())
+            for artifact in getFrozenArtifacts parent do
+                match artifact with
+                | Choice1Of3 probe -> frozenProbes.Add probe
+                | Choice2Of3 light -> frozenLights.Add light
+                | Choice3Of3 surface -> frozenSurfaces.Add surface
+            world <- parent.SetPresence Omnipresent world
             world <- parent.SetPickable false world
             match boundsOpt with
             | Some bounds ->
@@ -768,10 +782,10 @@ module StaticModelHierarchyDispatcherModule =
             | None ->
                 world <- parent.SetSize v3One world
                 world <- parent.SetOffset v3Zero world
-            (frozenLights, frozenSurfaces, world)
+            (Array.ofSeq frozenProbes, Array.ofSeq frozenLights, Array.ofSeq frozenSurfaces, world)
 
         ///
-        static member thawHierarchy (parent : Entity) wtemp =
+        static member thawHierarchy presenceConferred (parent : Entity) wtemp =
             let mutable world = wtemp
             let rec showChildren (entity : Entity) =
                 if  entity.Has<LightFacet3d> world ||
@@ -780,6 +794,7 @@ module StaticModelHierarchyDispatcherModule =
                 for child in entity.GetChildren world do
                     showChildren child
             showChildren parent
+            world <- parent.SetPresence presenceConferred world // just choosing a default...
             world <- parent.SetPickable true world
             world <- parent.SetSize v3One world
             world <- parent.SetOffset v3Zero world
@@ -792,6 +807,9 @@ module StaticModelHierarchyDispatcherModule =
         member this.GetLoaded world : bool = this.Get (nameof this.Loaded) world
         member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
         member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
+        member this.GetFrozenRenderLightProbe3ds world : RenderLightProbe3d array = this.Get (nameof this.FrozenRenderLightProbe3ds) world
+        member this.SetFrozenRenderLightProbe3ds (value : RenderLightProbe3d array) world = this.Set (nameof this.FrozenRenderLightProbe3ds) value world
+        member this.FrozenRenderLightProbe3ds = lens (nameof this.FrozenRenderLightProbe3ds) this this.GetFrozenRenderLightProbe3ds this.SetFrozenRenderLightProbe3ds
         member this.GetFrozenRenderLight3ds world : RenderLight3d array = this.Get (nameof this.FrozenRenderLight3ds) world
         member this.SetFrozenRenderLight3ds (value : RenderLight3d array) world = this.Set (nameof this.FrozenRenderLight3ds) value world
         member this.FrozenRenderLight3ds = lens (nameof this.FrozenRenderLight3ds) this this.GetFrozenRenderLight3ds this.SetFrozenRenderLight3ds
@@ -808,14 +826,16 @@ module StaticModelHierarchyDispatcherModule =
 
         static let updateFrozenHierarchy (entity : Entity) world =
             if entity.GetFrozen world then
-                let (frozenLights, frozenSurfaces, world) = World.freezeHierarchy entity world
+                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeHierarchy entity world
+                let world = entity.SetFrozenRenderLightProbe3ds frozenProbes world
                 let world = entity.SetFrozenRenderLight3ds frozenLights world
                 let world = entity.SetFrozenRenderStaticModelSurfaces frozenSurfaces world
                 world
             else
-                let world = entity.SetFrozenRenderStaticModelSurfaces [||] world
+                let world = entity.SetFrozenRenderLightProbe3ds [||] world
                 let world = entity.SetFrozenRenderLight3ds [||] world
-                let world = World.thawHierarchy entity world
+                let world = entity.SetFrozenRenderStaticModelSurfaces [||] world
+                let world = World.thawHierarchy (entity.GetPresenceConferred world) entity world
                 world
 
         static let updateLoadedHierarchy (entity : Entity) world =
@@ -825,9 +845,9 @@ module StaticModelHierarchyDispatcherModule =
                     world (entity.GetChildren world)
             let world =
                 World.tryImportHierarchy
-                    false
                     (entity.GetPresenceConferred world)
                     (entity.GetStaticModel world)
+                    false
                     (Right entity)
                     world
             updateFrozenHierarchy entity world
@@ -846,6 +866,7 @@ module StaticModelHierarchyDispatcherModule =
             [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.PresenceConferred Exposed
              define Entity.Loaded false
+             nonPersistent Entity.FrozenRenderLightProbe3ds [||]
              nonPersistent Entity.FrozenRenderLight3ds [||]
              nonPersistent Entity.FrozenRenderStaticModelSurfaces [||]
              define Entity.Frozen false]
@@ -864,10 +885,23 @@ module StaticModelHierarchyDispatcherModule =
             world
 
         override this.Render (entity, world) =
-            for light in entity.GetFrozenRenderLight3ds world do
-                World.enqueueRenderMessage3d (RenderLight3d light) world
-            for message in entity.GetFrozenRenderStaticModelSurfaces world do
-                World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
+
+            // render probes
+            let bounds = entity.GetBounds world
+            let presenceConferred = entity.GetPresenceConferred world
+            if World.boundsInView3d false true presenceConferred bounds world then
+                for probe in entity.GetFrozenRenderLightProbe3ds world do
+                    World.enqueueRenderMessage3d (RenderLightProbe3d probe) world
+
+            // render lights
+            if World.boundsInView3d true false presenceConferred bounds world then
+                for light in entity.GetFrozenRenderLight3ds world do
+                    World.enqueueRenderMessage3d (RenderLight3d light) world
+
+            // render surfaces
+            if World.boundsInView3d false false presenceConferred bounds world then
+                for message in entity.GetFrozenRenderStaticModelSurfaces world do
+                    World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
 
 [<AutoOpen>]
 module RigidModelHierarchyDispatcherModule =
@@ -878,14 +912,16 @@ module RigidModelHierarchyDispatcherModule =
 
         static let updateFrozenHierarchy (entity : Entity) world =
             if entity.GetFrozen world then
-                let (frozenLights, frozenSurfaces, world) = World.freezeHierarchy entity world
+                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeHierarchy entity world
+                let world = entity.SetFrozenRenderLightProbe3ds frozenProbes world
                 let world = entity.SetFrozenRenderLight3ds frozenLights world
                 let world = entity.SetFrozenRenderStaticModelSurfaces frozenSurfaces world
                 world
             else
-                let world = entity.SetFrozenRenderStaticModelSurfaces [||] world
+                let world = entity.SetFrozenRenderLightProbe3ds [||] world
                 let world = entity.SetFrozenRenderLight3ds [||] world
-                let world = World.thawHierarchy entity world
+                let world = entity.SetFrozenRenderStaticModelSurfaces [||] world
+                let world = World.thawHierarchy (entity.GetPresenceConferred world)entity world
                 world
 
         static let updateLoadedHierarchy (entity : Entity) world =
@@ -895,9 +931,9 @@ module RigidModelHierarchyDispatcherModule =
                     world (entity.GetChildren world)
             let world =
                 World.tryImportHierarchy
-                    true
                     (entity.GetPresenceConferred world)
                     (entity.GetStaticModel world)
+                    true
                     (Right entity)
                     world
             updateFrozenHierarchy entity world
@@ -917,6 +953,7 @@ module RigidModelHierarchyDispatcherModule =
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.PresenceConferred Exposed
              define Entity.Loaded false
+             nonPersistent Entity.FrozenRenderLightProbe3ds [||]
              nonPersistent Entity.FrozenRenderLight3ds [||]
              nonPersistent Entity.FrozenRenderStaticModelSurfaces [||]
              define Entity.Frozen false]
@@ -935,10 +972,23 @@ module RigidModelHierarchyDispatcherModule =
             world
 
         override this.Render (entity, world) =
-            for light in entity.GetFrozenRenderLight3ds world do
-                World.enqueueRenderMessage3d (RenderLight3d light) world
-            for message in entity.GetFrozenRenderStaticModelSurfaces world do
-                World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
+
+            // render probes
+            let bounds = entity.GetBounds world
+            let presenceConferred = entity.GetPresenceConferred world
+            if World.boundsInView3d false true presenceConferred bounds world then
+                for probe in entity.GetFrozenRenderLightProbe3ds world do
+                    World.enqueueRenderMessage3d (RenderLightProbe3d probe) world
+
+            // render lights
+            if World.boundsInView3d true false presenceConferred bounds world then
+                for light in entity.GetFrozenRenderLight3ds world do
+                    World.enqueueRenderMessage3d (RenderLight3d light) world
+
+            // render surfaces
+            if World.boundsInView3d false false presenceConferred bounds world then
+                for message in entity.GetFrozenRenderStaticModelSurfaces world do
+                    World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
 
 [<AutoOpen>]
 module BasicStaticBillboardEmitterDispatcherModule =
