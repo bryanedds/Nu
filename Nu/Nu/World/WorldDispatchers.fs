@@ -732,38 +732,39 @@ module StaticModelHierarchyDispatcherModule =
         static member freezeHierarchy (parent : Entity) wtemp =
             let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
             let rec getFrozenArtifacts (entity : Entity) =
-                [|if entity.Has<LightProbeFacet3d> world then
-                    let id = entity.GetId world
-                    let enabled = entity.GetEnabled world
-                    let position = entity.GetPosition world
-                    let bounds = entity.GetProbeBounds world
-                    let stale = entity.GetProbeStalePrevious world
-                    Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
-                  if entity.Has<LightFacet3d> world then
-                    if entity.GetEnabled world then
+                [|if entity <> parent then
+                    if entity.Has<LightProbeFacet3d> world then
+                        let id = entity.GetId world
+                        let enabled = entity.GetEnabled world
                         let position = entity.GetPosition world
-                        let rotation = entity.GetRotation world
-                        let color = entity.GetColor world
-                        let brightness = entity.GetBrightness world
-                        let attenuationLinear = entity.GetAttenuationLinear world
-                        let attenuationQuadratic = entity.GetAttenuationQuadratic world
-                        let lightCutoff = entity.GetLightCutoff world
-                        let lightType = entity.GetLightType world
-                        Choice2Of3 { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
-                  if entity.Has<StaticModelSurfaceFacet> world then
-                    let mutable transform = entity.GetTransform world
-                    let absolute = transform.Absolute
-                    let affineMatrixOffset = transform.AffineMatrixOffset
-                    let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
-                    let properties = entity.GetMaterialProperties world
-                    let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                    let staticModel = entity.GetStaticModel world
-                    let surfaceIndex = entity.GetSurfaceIndex world
-                    Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
-                    world <- entity.SetVisibleLocal false world
-                  if entity <> parent then
-                    boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
-                    world <- entity.SetVisibleLocal false world
+                        let bounds = entity.GetProbeBounds world
+                        let stale = entity.GetProbeStalePrevious world
+                        Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
+                    if entity.Has<LightFacet3d> world then
+                        if entity.GetEnabled world then
+                            let position = entity.GetPosition world
+                            let rotation = entity.GetRotation world
+                            let color = entity.GetColor world
+                            let brightness = entity.GetBrightness world
+                            let attenuationLinear = entity.GetAttenuationLinear world
+                            let attenuationQuadratic = entity.GetAttenuationQuadratic world
+                            let lightCutoff = entity.GetLightCutoff world
+                            let lightType = entity.GetLightType world
+                            Choice2Of3 { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
+                    if entity.Has<StaticModelSurfaceFacet> world then
+                        let mutable transform = entity.GetTransform world
+                        let absolute = transform.Absolute
+                        let affineMatrixOffset = transform.AffineMatrixOffset
+                        let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
+                        let properties = entity.GetMaterialProperties world
+                        let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+                        let staticModel = entity.GetStaticModel world
+                        let surfaceIndex = entity.GetSurfaceIndex world
+                        Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
+                        world <- entity.SetVisibleLocal false world
+                    if entity <> parent then
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
+                        world <- entity.SetVisibleLocal false world
                   for child in entity.GetChildren world do
                     yield! getFrozenArtifacts child|]
             let (frozenProbes, frozenLights, frozenSurfaces) = (List (), List (), List ())
@@ -788,8 +789,7 @@ module StaticModelHierarchyDispatcherModule =
         static member thawHierarchy presenceConferred (parent : Entity) wtemp =
             let mutable world = wtemp
             let rec showChildren (entity : Entity) =
-                if  entity.Has<LightFacet3d> world ||
-                    entity.Has<StaticModelSurfaceFacet> world then
+                if entity <> parent then
                     world <- entity.SetVisibleLocal true world
                 for child in entity.GetChildren world do
                     showChildren child

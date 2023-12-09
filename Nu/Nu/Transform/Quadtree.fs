@@ -68,8 +68,8 @@ module internal Quadnode =
     let internal isIntersectingBounds (bounds : Box2) (node : 'e Quadnode) =
         node.Bounds_.Intersects bounds
 
-    let inline internal containsBounds (bounds : Box2) (node : 'e Quadnode) =
-        node.Bounds_.Contains bounds = ContainmentType.Contains
+    let inline internal containsBoundsExclusive (bounds : Box2) (node : 'e Quadnode) =
+        node.Bounds_.ContainsExclusive bounds = ContainmentType.Contains
 
     let rec internal addElement bounds (element : 'e Quadelement inref) (node : 'e Quadnode) : int =
         let delta =
@@ -283,7 +283,7 @@ module Quadtree =
         let evens = v2 (divs.X |> int |> single) (divs.Y |> int |> single)
         let leafKey = evens * tree.LeafSize - offset
         match tree.Leaves.TryGetValue leafKey with
-        | (true, leaf) when Quadnode.containsBounds bounds leaf -> Some leaf
+        | (true, leaf) when Quadnode.containsBoundsExclusive bounds leaf -> Some leaf
         | (_, _) -> None
 
     /// Add an element with the given presence and bounds to the tree.
@@ -382,14 +382,14 @@ module Quadtree =
             failwith "Invalid size for Quadtree. Expected value whose components are a power of two."
         let leaves = dictPlus HashIdentity.Structural []
         let mutable leafSize = size
-        for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
+        for _ in 0 .. dec depth do leafSize <- leafSize * 0.5f
         let comparer = QuadelementEqualityComparer<'e> ()
         let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box2 min size
         { Leaves = leaves
           LeafSize = leafSize
           Ubiquitous = HashSet comparer
-          Node = Quadnode.make<'e> comparer depth bounds leaves
+          Node = Quadnode.make<'e> comparer (inc depth) bounds leaves
           Depth = depth
           Bounds = bounds }
 

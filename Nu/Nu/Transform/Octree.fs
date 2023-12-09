@@ -88,8 +88,8 @@ module internal Octnode =
     let inline internal isIntersectingFrustum (frustum : Frustum) (node : 'e Octnode) =
         frustum.Intersects node.Bounds_
 
-    let inline internal containsBox (bounds : Box3) (node : 'e Octnode) =
-        node.Bounds_.Contains bounds = ContainmentType.Contains
+    let inline internal containsBoxExclusive (bounds : Box3) (node : 'e Octnode) =
+        node.Bounds_.ContainsExclusive bounds = ContainmentType.Contains
 
     let rec internal addElement bounds (element : 'e Octelement inref) (node : 'e Octnode) : int =
         let delta =
@@ -430,7 +430,7 @@ module Octree =
         let evens = v3 (divs.X |> int |> single) (divs.Y |> int |> single) (divs.Z |> int |> single)
         let leafKey = evens * tree.LeafSize - offset
         match tree.Leaves.TryGetValue leafKey with
-        | (true, leaf) when Octnode.containsBox bounds leaf -> Some leaf
+        | (true, leaf) when Octnode.containsBoxExclusive bounds leaf -> Some leaf
         | (_, _) -> None
 
     /// Add an element with the given presence and bounds to the tree.
@@ -561,14 +561,14 @@ module Octree =
         if  not (Math.IsPowerOfTwo size.X) ||
             not (Math.IsPowerOfTwo size.Y) ||
             not (Math.IsPowerOfTwo size.Z) then
-            failwith "InvaliIsd size for Octtree. Expected value whose components are a power of two."
+            failwith "Invalid size for Octtree. Expected value whose components are a power of two."
         let leafComparer = // OPTIMIZATION: avoid allocation on Equals calls.
             { new IEqualityComparer<Vector3> with
                 member this.Equals (left, right) = left.Equals right
                 member this.GetHashCode v = v.GetHashCode () }
         let leaves = dictPlus leafComparer []
         let mutable leafSize = size
-        for _ in 1 .. dec depth do leafSize <- leafSize * 0.5f
+        for _ in 0 .. dec depth do leafSize <- leafSize * 0.5f
         let elementComparer = OctelementEqualityComparer<'e> ()
         let min = size * -0.5f + leafSize * 0.5f // OPTIMIZATION: offset min by half leaf size to minimize margin hits at origin.
         let bounds = box3 min size
@@ -576,7 +576,7 @@ module Octree =
           LeafSize = leafSize
           Imposter = HashSet elementComparer
           Omnipresent = HashSet elementComparer
-          Node = Octnode.make<'e> elementComparer depth bounds leaves
+          Node = Octnode.make<'e> elementComparer (inc depth) bounds leaves
           Depth = depth
           Bounds = bounds }
 
