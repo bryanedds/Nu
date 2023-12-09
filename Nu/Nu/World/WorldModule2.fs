@@ -88,9 +88,10 @@ module WorldModule2 =
             for entity in entities do
                 let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world || entity.GetAlwaysRender world
+                let static_ = entity.GetStatic world
                 let presence = entity.GetPresence world
                 if entity.GetIs2d world then
-                    let element = Quadelement.make visible entity
+                    let element = Quadelement.make visible static_ entity
                     Quadtree.addElement presence bounds.Box2 element quadtree
             quadtree
 
