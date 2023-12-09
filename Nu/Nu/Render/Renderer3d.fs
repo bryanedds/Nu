@@ -1192,7 +1192,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false true lightBounds presence then
                         let light =
                             { SortableLightOrigin = lightMatrix.Translation
-                              SortableLightDirection = Vector3.Transform (v3Forward, lightMatrix.Rotation)
+                              SortableLightDirection = Vector3.Transform (v3Up, lightMatrix.Rotation)
                               SortableLightColor = light.LightColor
                               SortableLightBrightness = light.LightBrightness
                               SortableLightAttenuationLinear = light.LightAttenuationLinear
