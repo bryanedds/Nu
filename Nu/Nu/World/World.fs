@@ -198,7 +198,7 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entity
+                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
                                 Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
                             quadtree)
                         (World.getQuadtree world)
@@ -227,7 +227,7 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entity
+                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
                                 Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
                             quadtree)
                         (World.getQuadtree world)

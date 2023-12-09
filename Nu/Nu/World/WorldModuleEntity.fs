@@ -2180,7 +2180,7 @@ module WorldModuleEntity =
                                     (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entity
+                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
                                         Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element entityTree
                                         entityTree)
                                     (World.getQuadtree world)
@@ -2238,7 +2238,7 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
                                     (fun quadtree ->
                                         let entityState = World.getEntityState entity worldOld
-                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entity
+                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
                                         Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
                                         quadtree)
                                     (World.getQuadtree world)
@@ -2524,7 +2524,7 @@ module WorldModuleEntity =
                             MutantCache.mutateMutant
                                 (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
                                 (fun quadree ->
-                                    let element = Quadelement.make visibleNew entity
+                                    let element = Quadelement.make visibleNew staticNew entity
                                     Quadtree.updateElement presenceOld boundsOld.Box2 presenceNew boundsNew.Box2 element quadree
                                     quadree)
                                 (World.getQuadtree world)

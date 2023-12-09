@@ -13,6 +13,7 @@ module QuadelementMasks =
 
     // OPTIMIZATION: Quadelement flag bit-masks for performance.
     let [<Literal>] VisibleMask =   0b00000001u
+    let [<Literal>] StaticMask =    0b00000010u
 
 // NOTE: opening this in order to make the Quadelement property implementations reasonably succinct.
 open QuadelementMasks
@@ -28,12 +29,15 @@ module Quadelement =
               Flags_ : uint
               Entry_ : 'e }
         member this.Visible = this.Flags_ &&& VisibleMask <> 0u
+        member this.Static = this.Flags_ &&& StaticMask <> 0u
         member this.Entry = this.Entry_
         override this.GetHashCode () = this.HashCode_
         override this.Equals that = match that with :? Quadelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
-        static member make visible (entry : 'e) =
+        static member make visible static_ (entry : 'e) =
             let hashCode = entry.GetHashCode ()
-            let flags = if visible then VisibleMask else 0u
+            let flags =
+                (if visible then VisibleMask else 0u) |||
+                (if static_ then StaticMask else 0u)
             { HashCode_ = hashCode; Flags_ = flags; Entry_ = entry }
 
 /// An element in a quadree.
@@ -147,6 +151,30 @@ module internal Quadnode =
         | ValueRight elements ->
             for element in elements do
                 set.Add element |> ignore
+
+    let rec internal getElementsInView bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
+                    getElementsInView bounds set node
+        | ValueRight elements ->
+            for element in elements do
+                if element.Visible then
+                    set.Add element |> ignore
+
+    let rec internal getElementsInPlay bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
+                    getElementsInView bounds set node
+        | ValueRight elements ->
+            for element in elements do
+                if not element.Static then
+                    set.Add element |> ignore
 
     let rec internal getElements (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
@@ -321,12 +349,12 @@ module Quadtree =
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInView bounds set tree =
-        Quadnode.getElementsInBounds bounds set tree.Node
+        Quadnode.getElementsInView bounds set tree.Node
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInPlay bounds set tree =
-        Quadnode.getElementsInBounds bounds set tree.Node
+        Quadnode.getElementsInPlay bounds set tree.Node
         new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
 
     /// Get all of the elements in a tree.
