@@ -19,7 +19,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         { PhysicsContext : Dynamics.World
           Bodies : OrderedDictionary<BodyId, Vector3 option * Dynamics.Body>
           Joints : OrderedDictionary<JointId, Dynamics.Joints.Joint>
-          PhysicsMessages : PhysicsMessage UList
+          PhysicsMessages : PhysicsMessage List
           IntegrationMessages : IntegrationMessage List
           CollisionHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler }
@@ -464,8 +464,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 body.LinearVelocity <- body.LinearVelocity + gravity * physicsStepAmount
 
     /// Make a physics engine.
-    static member make imperative gravity =
-        let config = if imperative then Imperative else Functional
+    static member make gravity =
         let integrationMessages = List ()
         let collisionHandler = fun fixture fixture2 collision -> PhysicsEngine2d.handleCollision fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages
@@ -473,7 +472,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
               Bodies = OrderedDictionary<BodyId, Vector3 option * Dynamics.Body> (HashIdentity.FromFunctions BodyId.hash BodyId.equals)
               Joints = OrderedDictionary<JointId, Dynamics.Joints.Joint> HashIdentity.Structural
-              PhysicsMessages = UList.makeEmpty config
+              PhysicsMessages = List ()
               IntegrationMessages = integrationMessages
               CollisionHandler = collisionHandler
               SeparationHandler = separationHandler }
@@ -526,22 +525,18 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 inspect message
 
         member physicsEngine.PopMessages () =
-            let messages = physicsEngine.PhysicsMessages
-            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
-            (messages, physicsEngine :> PhysicsEngine)
+            let messages = List physicsEngine.PhysicsMessages
+            physicsEngine.PhysicsMessages.Clear ()
+            messages
 
         member physicsEngine.ClearMessages () =
-            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
-            physicsEngine :> PhysicsEngine
+            physicsEngine.PhysicsMessages.Clear ()
 
         member physicsEngine.EnqueueMessage physicsMessage =
 #if HANDLE_PHYSICS_MESSAGES_DEFERRED
-            let physicsMessages = UList.add physicsMessage physicsEngine.PhysicsMessages
-            let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
-            physicsEngine :> PhysicsEngine
+            physicsEngine.PhysicsMessages.Add physicsMessage
 #else
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
-            physicsEngine
 #endif
 
         member physicsEngine.Integrate stepTime physicsMessages =

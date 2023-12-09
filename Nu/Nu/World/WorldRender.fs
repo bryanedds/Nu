@@ -18,29 +18,24 @@ module WorldRender =
             updater (World.getRendererProcess world)
 
         /// Enqueue a 2d rendering message.
-        /// Thread-safe.
         static member enqueueRenderMessage2d (message : RenderMessage2d) world =
             (World.getRendererProcess world).EnqueueMessage2d message
 
         /// Enqueue multiple 2d rendering messages.
-        /// Thread-safe.
         static member enqueueRenderMessages2d (messages : RenderMessage2d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage2d message
             
         /// Enqueue a layered operation for 2d rendering.
-        /// Thread-safe.
         static member enqueueLayeredOperation2d operation world =
             (World.getRendererProcess world).EnqueueMessage2d (LayeredOperation2d operation)
 
         /// Enqueue multiple layered operation for 2d rendering, bypassing enqueueRenderMessage for speed.
-        /// Thread-safe.
         static member enqueueLayeredOperations2d (operations : LayeredOperation2d seq) world =
             let rendererProcess = World.getRendererProcess world
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
 
         /// Send a message to the render system to render a static model using a fast path.
-        /// Thread-safe.
         static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
             (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, image, &color, blend, &emission, flip)
 
@@ -64,28 +59,23 @@ module WorldRender =
             world
 
         /// Enqueue a rendering message to the world.
-        /// Thread-safe.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
             (World.getRendererProcess world).EnqueueMessage3d message
 
         /// Enqueue multiple 3d rendering messages to the world.
-        /// Thread-safe.
         static member enqueueRenderMessages3d (messages : RenderMessage3d seq) world =
             let rendererProcess = World.getRendererProcess world
             for message in messages do rendererProcess.EnqueueMessage3d message
 
         /// Send a message to the render system to render a static model using a fast path.
-        /// Thread-safe.
         static member renderStaticModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, world) =
             (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, renderType, staticModel)
 
         /// Send a message to the render system to render a static model surface using a fast path.
-        /// Thread-safe.
         static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, surfaceIndex, world) =
             (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, insetOpt, &materialProperties, renderType, staticModel, surfaceIndex)
 
         /// Send a message to the render system to render an animated model using a fast path.
-        /// Thread-safe.
         static member renderAnimatedModelFast (time, absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, world) =
             (World.getRendererProcess world).RenderAnimatedModelFast (time, absolute, &modelMatrix, insetOpt, &materialProperties, animations, animatedModel)
 

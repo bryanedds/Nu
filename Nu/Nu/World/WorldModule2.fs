@@ -521,11 +521,11 @@ module WorldModule2 =
             let world = World.unshelveAmbientState world
 
             // clear existing 3d physics messages and rebuild
-            let world = World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+            let world = World.clearPhysicsMessages3d world
             let world = World.enqueuePhysicsMessage3d ClearPhysicsMessageInternal world
 
             // clear existing 2d physics messages and rebuild
-            let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+            let world = World.clearPhysicsMessages2d world
             let world = World.enqueuePhysicsMessage2d ClearPhysicsMessageInternal world
 
             // register the physics of entities in the current screen
@@ -1075,34 +1075,23 @@ module WorldModule2 =
 
             // render entities
             RenderEntitiesTimer.Start ()
-            let tasks3d =
-                if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    [|for elements in elements3d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible then
-                                    World.renderEntity element.Entry world }|]
-                else
-                    [|for elements in elements3d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                                    World.renderEntity element.Entry world }|]
-            let tasks2d =
-                if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    [|for elements in elements2d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible then
-                                    World.renderEntity element.Entry world }|]
-                else
-                    [|for elements in elements2d |> Seq.chunkBySize 512 |> Array.ofSeq do
-                        vsync {
-                            for element in elements do
-                                if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                                    World.renderEntity element.Entry world }|]
-            tasks3d |> Vsync.Parallel |> Vsync.RunSynchronously |> ignore<unit array>
-            tasks2d |> Vsync.Parallel |> Vsync.RunSynchronously |> ignore<unit array>
+            if world.Unaccompanied || groupsInvisible.Count = 0 then
+                for element in elements3d do
+                    if element.Visible then
+                        World.renderEntity element.Entry world
+            else
+                for element in elements3d do
+                    if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                        World.renderEntity element.Entry world
+            if world.Unaccompanied || groupsInvisible.Count = 0 then
+                for element in elements2d do
+                    if element.Visible then
+                        World.renderEntity element.Entry world
+            else
+                for element in elements2d do
+                    if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
+                        World.renderEntity element.Entry world
+            RenderEntitiesTimer.Stop ()
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -1126,8 +1115,7 @@ module WorldModule2 =
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
-            let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
-            let world = World.setPhysicsEngine2d physicsEngine world
+            let physicsMessages = physicsEngine.PopMessages ()
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
             let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
@@ -1136,8 +1124,7 @@ module WorldModule2 =
 
         static member private processPhysics3d world =
             let physicsEngine = World.getPhysicsEngine3d world
-            let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
-            let world = World.setPhysicsEngine3d physicsEngine world
+            let physicsMessages = physicsEngine.PopMessages ()
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
             let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
@@ -1233,7 +1220,7 @@ module WorldModule2 =
                                                     match World.getLiveness world with
                                                     | Live ->
                                                     
-                                                        // run engine and user-defined per-process callbacks
+                                                        // run engine and user-defined post-process callbacks
                                                         PostProcessTimer.Start ()
                                                         let world = World.postProcess world
                                                         let world = postProcess world
@@ -1465,7 +1452,6 @@ module EntityDispatcherModule2 =
         default this.Content (_, _) = []
 
         /// Render the entity using the given model.
-        /// Thread-safe.
         abstract View : 'model * Entity * World -> unit
         default this.View (_, _, _) = ()
 
@@ -1738,7 +1724,6 @@ module GroupDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the group using the given model.
-        /// Thread-safe.
         abstract View : 'model * Group * World -> unit
         default this.View (_, _, _) = ()
 
@@ -1908,7 +1893,6 @@ module ScreenDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the screen using the given model.
-        /// Thread-safe.
         abstract View : 'model * Screen * World -> unit
         default this.View (_, _, _) = ()
 
@@ -2079,7 +2063,6 @@ module GameDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the game using the given model.
-        /// Thread-safe.
         abstract View : 'model * Game * World -> unit
         default this.View (_, _, _) = ()
 

@@ -2005,8 +2005,8 @@ module LightProbeFacet3dModule =
             [define Entity.LightProbe true
              define Entity.Presence Omnipresent
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
-             define Entity.ProbeStalePrevious false
-             define Entity.ProbeStale false]
+             nonPersistent Entity.ProbeStalePrevious false
+             nonPersistent Entity.ProbeStale false]
 
         override this.Register (entity, world) =
             let world = World.sense handleProbeStaleChange (entity.GetChangeEvent (nameof entity.ProbeStale)) entity (nameof LightProbeFacet3d) world
@@ -2041,21 +2041,11 @@ module LightProbeFacet3dModule =
 
         override this.Edit (op, entity, world) =
             match op with
-            | ReplaceProperty replace ->
-                match replace.PropertyDescriptor.PropertyName with
-                | nameof Entity.ProbeStale ->
-                    let world =
-                        if ImGuiNET.ImGui.Button "Relight Probe" then
-                            let world = replace.Snapshot world
-                            entity.SetProbeStale true world
-                        else world
-                    replace.IndicateReplaced world
-                | _ -> world
             | AppendProperties append ->
                 let world =
-                    if ImGuiNET.ImGui.Button "Reset Probe Bounds" then
+                    if ImGuiNET.ImGui.Button "Rerender Light Map" then
                         let world = append.Snapshot world
-                        entity.ResetProbeBounds world
+                        entity.SetProbeStale true world
                     else world
                 let world =
                     if ImGuiNET.ImGui.Button "Recenter in Probe Bounds" then
@@ -2064,6 +2054,11 @@ module LightProbeFacet3dModule =
                         if Option.isSome (entity.GetMountOpt world)
                         then entity.SetPositionLocal probeBounds.Center world
                         else entity.SetPosition probeBounds.Center world
+                    else world
+                let world =
+                    if ImGuiNET.ImGui.Button "Reset Probe Bounds" then
+                        let world = append.Snapshot world
+                        entity.ResetProbeBounds world
                     else world
                 world
             | _ -> world
