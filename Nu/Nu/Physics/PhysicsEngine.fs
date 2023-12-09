@@ -595,6 +595,8 @@ type PhysicsMessage =
     | ClearPhysicsMessageInternal
 
 /// Represents a physics engine in Nu.
+/// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
+/// SList instead of List.
 type PhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
     abstract GetBodyExists : BodyId -> bool
