@@ -20,5 +20,4 @@ module WorldView =
             | StopSong -> World.stopSong world
             | SpawnEmitter (_, _) -> world
             | Tag _ -> world
-            | Views views -> Array.fold (fun world view -> World.renderView view world) world views
-            | ViewsSegmented views -> SArray.fold (fun world view -> World.renderView view world) world views
+            | Views views -> SArray.fold (fun world view -> World.renderView view world) world views

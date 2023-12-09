@@ -286,7 +286,7 @@ module EffectSystem =
               EffectAbsolute : bool
               EffectPresence : Presence
               EffectRenderType : RenderType
-              EffectViews : View List
+              EffectViews : View SList
               EffectEnv : Definitions }
 
     let rec private addView view effectSystem =
@@ -965,8 +965,8 @@ module EffectSystem =
             contents
 
     let private release effectSystem =
-        let views = Views (effectSystem.EffectViews.ToArray ())
-        let effectSystem = { effectSystem with EffectViews = List<View> () }
+        let views = Views (SArray.ofSeq effectSystem.EffectViews) // NOTE: this is slow now, but will be faster once Prime is updated.
+        let effectSystem = { effectSystem with EffectViews = SList.make () }
         (views, effectSystem)
 
     /// Evaluates an EffectDescriptor, applying the effect if it is still alive, with the following parameters:
@@ -1007,7 +1007,7 @@ module EffectSystem =
           EffectAbsolute = absolute
           EffectPresence = presence
           EffectRenderType = renderType
-          EffectViews = List<View> ()
+          EffectViews = SList.make ()
           EffectEnv = globalEnv }
 
 /// Evaluates effect descriptors.
