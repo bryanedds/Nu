@@ -739,6 +739,7 @@ module StaticModelHierarchyDispatcherModule =
                         let position = entity.GetPosition world
                         let bounds = entity.GetProbeBounds world
                         let stale = entity.GetProbeStalePrevious world
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                         Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
                     if entity.Has<LightFacet3d> world then
                         if entity.GetEnabled world then
@@ -750,6 +751,7 @@ module StaticModelHierarchyDispatcherModule =
                             let attenuationQuadratic = entity.GetAttenuationQuadratic world
                             let lightCutoff = entity.GetLightCutoff world
                             let lightType = entity.GetLightType world
+                            boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                             Choice2Of3 { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
                     if entity.Has<StaticModelSurfaceFacet> world then
                         let mutable transform = entity.GetTransform world
@@ -761,9 +763,9 @@ module StaticModelHierarchyDispatcherModule =
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
                         Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                         world <- entity.SetVisibleLocal false world
                     if entity <> parent then
-                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                         world <- entity.SetVisibleLocal false world
                   for child in entity.GetChildren world do
                     yield! getFrozenArtifacts child|]
