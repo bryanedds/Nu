@@ -565,7 +565,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // just keep current group selection and screen if no screen selected
             (Cascade, world)
 
-    let private handleNuRender (_ : Event<unit, Game>) wtemp =
+    let private imGuiRender wtemp =
 
         // render light probes of the selected group in play
         world <- wtemp
@@ -595,7 +595,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (RenderStaticModels
                 { Absolute = false
                   StaticModels = lightModels
-                  RenderType = ForwardRenderType (0.0f, Single.MinValue / 2.0f)
+                  RenderType = DeferredRenderType
                   StaticModel = Assets.Default.LightbulbModel })
             world
 
@@ -639,7 +639,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some _ | None -> ()
 
         // fin
-        (Cascade, world)
+        world
 
     (* Editor Commands *)
 
@@ -2880,14 +2880,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         tryReloadAll ()
                         reloadAllRequested <- 0
 
-                // fin
-                world
-
             // propagate exception to dialog
             with exn ->
                 let worldOld = World.shelveNonCurrent worldOld
                 recoverableExceptionOpt <- Some (exn, worldOld)
-                world
 
         // exception handling dialog
         | Some (exn, worldOld) ->
@@ -2906,7 +2902,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     showConfirmExitDialog <- true
                     recoverableExceptionOpt <- None
                 ImGui.EndPopup ()
-            world
+
+        // fin
+        world
 
     let rec private runWithCleanUp gaiaState targetDir_ screen wtemp =
         world <- wtemp
@@ -2955,7 +2953,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                 ""
-        let result = World.runWithCleanUp tautology id id id imGuiProcess Live true world
+        let result = World.runWithCleanUp tautology id id imGuiRender imGuiProcess Live true world
         world <- Unchecked.defaultof<_>
         result
 
@@ -2995,7 +2993,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world
                 let world = World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world
-                let world = World.subscribe handleNuRender ??? Game world
                 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world

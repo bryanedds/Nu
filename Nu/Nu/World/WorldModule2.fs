@@ -1222,7 +1222,7 @@ module WorldModule2 =
                                                     match World.getLiveness world with
                                                     | Live ->
                                                     
-                                                        // run engine and user-defined per-process callbacks
+                                                        // run engine and user-defined post-process callbacks
                                                         PostProcessTimer.Start ()
                                                         let world = World.postProcess world
                                                         let world = postProcess world
