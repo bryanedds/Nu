@@ -1092,7 +1092,6 @@ module WorldModule2 =
                     if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
                         World.renderEntity element.Entry world
             RenderEntitiesTimer.Stop ()
-            RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
             CachedHashSet3d.Clear ()

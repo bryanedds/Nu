@@ -218,10 +218,8 @@ type BodyShapeProperties =
       CollisionMaskOpt : int option
       SensorOpt : bool option }
 
-[<RequireQualifiedAccess>]
-module BodyShapeProperties =
-
-    let empty =
+    /// The empty body shape properties value.
+    static member empty =
         { ShapeIndex = 0
           FrictionOpt = None
           RestitutionOpt = None
