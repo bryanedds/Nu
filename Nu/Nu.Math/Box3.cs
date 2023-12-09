@@ -99,6 +99,54 @@ namespace Nu
         }
 
         /// <summary>
+        ///   Check if this <see cref="Box3"/> contains another <see cref="Box3"/> AND no box outside of this box intersects with it.
+        /// </summary>
+        /// <param name="box">The <see cref="Box3"/> to test for overlap.</param>
+        /// <returns>
+        ///   A value indicating if this <see cref="Box3"/> contains,
+        ///   intersects with or is disjoint with <paramref name="box"/>.
+        /// </returns>
+        public ContainmentType ContainsExclusive(Box3 box)
+        {
+            //test if all corner is in the same side of a face by just checking min and max
+            var min = Min;
+            var max = min + Size;
+            var min2 = box.Min;
+            var max2 = min2 + box.Size;
+            if (max2.X < Min.X
+                || min2.X > max.X
+                || max2.Y < min.Y
+                || min2.Y > max.Y
+                || max2.Z < min.Z
+                || min2.Z > max.Z)
+                return ContainmentType.Disjoint;
+
+
+            if (min2.X > Min.X
+                && max2.X < max.X
+                && min2.Y > min.Y
+                && max2.Y < max.Y
+                && min2.Z > min.Z
+                && max2.Z < max.Z)
+                return ContainmentType.Contains;
+
+            return ContainmentType.Intersects;
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box3"/> contains another <see cref="Box3"/> AND no box outside of this box intersects with it.
+        /// </summary>
+        /// <param name="box">The <see cref="Box3"/> to test for overlap.</param>
+        /// <param name="result">
+        ///   A value indicating if this <see cref="Box3"/> contains,
+        ///   intersects with or is disjoint with <paramref name="box"/>.
+        /// </param>
+        public void ContainsExclusive(ref Box3 box, out ContainmentType result)
+        {
+            result = ContainsExclusive(box);
+        }
+
+        /// <summary>
         ///   Check if this <see cref="Box3"/> contains a <see cref="Sphere"/>.
         /// </summary>
         /// <param name="sphere">The <see cref="Sphere"/> to test for overlap.</param>

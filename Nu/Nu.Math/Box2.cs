@@ -95,6 +95,50 @@ namespace Nu
         }
 
         /// <summary>
+        ///   Check if this <see cref="Box2"/> contains another <see cref="Box2"/> AND no box outside of this box intersects with it.
+        /// </summary>
+        /// <param name="box">The <see cref="Box2"/> to test for overlap.</param>
+        /// <returns>
+        ///   A value indicating if this <see cref="Box2"/> contains,
+        ///   intersects with or is disjoint with <paramref name="box"/>.
+        /// </returns>
+        public ContainmentType ContainsExclusive(Box2 box)
+        {
+            //test if all corner is in the same side of a face by just checking min and max
+            var min = Min;
+            var max = min + Size;
+            var min2 = box.Min;
+            var max2 = min2 + box.Size;
+            if (max2.X < Min.X
+                || min2.X > max.X
+                || max2.Y < min.Y
+                || min2.Y > max.Y)
+                return ContainmentType.Disjoint;
+
+
+            if (min2.X >= Min.X
+                && max2.X <= max.X
+                && min2.Y >= min.Y
+                && max2.Y <= max.Y)
+                return ContainmentType.Contains;
+
+            return ContainmentType.Intersects;
+        }
+
+        /// <summary>
+        ///   Check if this <see cref="Box2"/> contains another <see cref="Box2"/> AND no box outside of this box intersects with it.
+        /// </summary>
+        /// <param name="box">The <see cref="Box2"/> to test for overlap.</param>
+        /// <param name="result">
+        ///   A value indicating if this <see cref="Box2"/> contains,
+        ///   intersects with or is disjoint with <paramref name="box"/>.
+        /// </param>
+        public void ContainsExclusive(ref Box2 box, out ContainmentType result)
+        {
+            result = ContainsExclusive(box);
+        }
+
+        /// <summary>
         ///   Check if this <see cref="Box2"/> contains a point.
         /// </summary>
         /// <param name="point">The <see cref="Vector3"/> to test.</param>
