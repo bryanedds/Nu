@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Buffers.Binary
+open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
@@ -594,8 +595,6 @@ type PhysicsMessage =
     | ClearPhysicsMessageInternal
 
 /// Represents a physics engine in Nu.
-/// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
-/// SList instead of List.
 type PhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
     abstract GetBodyExists : BodyId -> bool
@@ -616,13 +615,13 @@ type PhysicsEngine =
     /// Inspect messages with the given lambda.
     abstract InspectMessages : (PhysicsMessage -> unit) -> unit
     /// Pop all of the physics messages that have been enqueued.
-    abstract PopMessages : unit -> PhysicsMessage UList * PhysicsEngine
+    abstract PopMessages : unit -> PhysicsMessage List
     /// Clear all of the physics messages that have been enqueued.
-    abstract ClearMessages : unit -> PhysicsEngine
+    abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
-    abstract EnqueueMessage : PhysicsMessage -> PhysicsEngine
+    abstract EnqueueMessage : PhysicsMessage -> unit
     /// Integrate the physics system one step.
-    abstract Integrate : GameTime -> PhysicsMessage UList -> IntegrationMessage SArray
+    abstract Integrate : GameTime -> PhysicsMessage List -> IntegrationMessage SArray
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 
@@ -640,9 +639,9 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.IsBodyOnGround _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.InspectMessages _ = ()
-        member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
-        member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
-        member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
+        member physicsEngine.PopMessages () = List ()
+        member physicsEngine.ClearMessages () = ()
+        member physicsEngine.EnqueueMessage _ = ()
         member physicsEngine.Integrate _ _ = SArray.empty
         member physicsEngine.CleanUp () = ()
 

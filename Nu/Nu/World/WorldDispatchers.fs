@@ -727,6 +727,51 @@ module StaticModelHierarchyDispatcherModule =
                 world'
             | None -> world
 
+        ///
+        static member freezeHierarchy (entity : Entity) wtemp =
+            let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
+            let rec getFrozenRenderMessages (entity' : Entity) =
+                [|if entity'.Has<StaticModelSurfaceFacet> world then
+                    let mutable transform = entity'.GetTransform world
+                    let absolute = transform.Absolute
+                    let affineMatrixOffset = transform.AffineMatrixOffset
+                    let insetOpt = match entity'.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
+                    let properties = entity'.GetMaterialProperties world
+                    let renderType = match entity'.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+                    let staticModel = entity'.GetStaticModel world
+                    let surfaceIndex = entity'.GetSurfaceIndex world
+                    { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
+                    world <- entity'.SetVisibleLocal false world
+                  if entity' <> entity then
+                    boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity'.GetBounds world)) | None -> Some (entity'.GetBounds world)
+                  for child in entity'.GetChildren world do
+                    yield! getFrozenRenderMessages child|]
+            let frozenRenderMessages = getFrozenRenderMessages entity
+            world <- entity.SetPickable false world
+            match boundsOpt with
+            | Some bounds ->
+                let center = entity.GetCenter world
+                world <- entity.SetSize bounds.Size world
+                world <- entity.SetOffset ((bounds.Center - center) / bounds.Size) world
+            | None ->
+                world <- entity.SetSize v3One world
+                world <- entity.SetOffset v3Zero world
+            (frozenRenderMessages, world)
+
+        ///
+        static member thawHierarchy (entity : Entity) wtemp =
+            let mutable world = wtemp
+            let rec showChildren (entity : Entity) =
+                if entity.Has<StaticModelSurfaceFacet> world then
+                    world <- entity.SetVisibleLocal true world
+                for child in entity.GetChildren world do
+                    showChildren child
+            showChildren entity
+            world <- entity.SetPickable true world
+            world <- entity.SetSize v3One world
+            world <- entity.SetOffset v3Zero world
+            world
+
     type Entity with
         member this.GetPresenceConferred world : Presence = this.Get (nameof this.PresenceConferred) world
         member this.SetPresenceConferred (value : Presence) world = this.Set (nameof this.PresenceConferred) value world
@@ -734,37 +779,73 @@ module StaticModelHierarchyDispatcherModule =
         member this.GetLoaded world : bool = this.Get (nameof this.Loaded) world
         member this.SetLoaded (value : bool) world = this.Set (nameof this.Loaded) value world
         member this.Loaded = lens (nameof this.Loaded) this this.GetLoaded this.SetLoaded
+        member this.GetFrozenRenderMessage3ds world : RenderStaticModelSurface array = this.Get (nameof this.FrozenRenderMessage3ds) world
+        member this.SetFrozenRenderMessage3ds (value : RenderStaticModelSurface array) world = this.Set (nameof this.FrozenRenderMessage3ds) value world
+        member this.FrozenRenderMessage3ds = lens (nameof this.FrozenRenderMessage3ds) this this.GetFrozenRenderMessage3ds this.SetFrozenRenderMessage3ds
+        member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
+        member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
+        member this.Frozen = lens (nameof this.Frozen) this this.GetFrozen this.SetFrozen
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
     type StaticModelHierarchyDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
-        static let destroyChildren (entity : Entity) world =
-            Seq.fold (fun world child ->
-                World.destroyEntity child world)
-                world (entity.GetChildren world)
+        static let updateFrozenHierarchy (entity : Entity) world =
+            if entity.GetFrozen world then
+                let (frozenRenderMessages, world) = World.freezeHierarchy entity world
+                entity.SetFrozenRenderMessage3ds frozenRenderMessages world
+            else
+                let world = entity.SetFrozenRenderMessage3ds [||] world
+                World.thawHierarchy entity world
 
-        static let synchronizeChildren evt world =
+        static let updateLoadedHierarchy (entity : Entity) world =
+            let world =
+                Seq.fold (fun world child ->
+                    World.destroyEntityImmediate child world)
+                    world (entity.GetChildren world)
+            let world =
+                World.tryImportHierarchy
+                    false
+                    (entity.GetPresenceConferred world)
+                    (entity.GetStaticModel world)
+                    (Right entity)
+                    world
+            updateFrozenHierarchy entity world
+
+        static let handleUpdateFrozenHierarchy evt world =
             let entity = evt.Subscriber : Entity
-            let world = destroyChildren entity world
-            let world = World.tryImportHierarchy false (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
+            let world = updateFrozenHierarchy entity world
+            (Cascade, world)
+
+        static let handleUpdateLoadedHierarchy evt world =
+            let entity = evt.Subscriber : Entity
+            let world = updateLoadedHierarchy entity world
             (Cascade, world)
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.PresenceConferred Exposed
-             define Entity.Loaded false]
+             define Entity.Loaded false
+             nonPersistent Entity.FrozenRenderMessage3ds [||]
+             define Entity.Frozen false]
 
         override this.Register (entity, world) =
             let world =
                 if not (entity.GetLoaded world) then
-                    let world = World.tryImportHierarchy false (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
-                    let world = entity.SetLoaded true world
-                    world
-                else world
-            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+                    let world = updateLoadedHierarchy entity world
+                    entity.SetLoaded true world
+                else
+                    let world = entity.SetOffset v3Zero world
+                    World.frame (updateFrozenHierarchy entity) entity world // children not loaded yet, so freeze at end of frame
+            let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+            let world = World.monitor handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity world
             world
+
+        override this.Render (entity, world) =
+            let frozenRenderMessages = entity.GetFrozenRenderMessage3ds world
+            for message in frozenRenderMessages do
+                World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
 
 [<AutoOpen>]
 module RigidModelHierarchyDispatcherModule =
@@ -773,33 +854,63 @@ module RigidModelHierarchyDispatcherModule =
     type RigidModelHierarchyDispatcher () =
         inherit EntityDispatcher3d (true, false)
 
-        static let destroyChildren (entity : Entity) world =
-            Seq.fold (fun world child ->
-                World.destroyEntity child world)
-                world (entity.GetChildren world)
+        static let updateFrozenHierarchy (entity : Entity) world =
+            if entity.GetFrozen world then
+                let (frozenRenderMessages, world) = World.freezeHierarchy entity world
+                entity.SetFrozenRenderMessage3ds frozenRenderMessages world
+            else
+                let world = entity.SetFrozenRenderMessage3ds [||] world
+                World.thawHierarchy entity world
 
-        static let synchronizeChildren evt world =
+        static let updateLoadedHierarchy (entity : Entity) world =
+            let world =
+                Seq.fold (fun world child ->
+                    World.destroyEntityImmediate child world)
+                    world (entity.GetChildren world)
+            let world =
+                World.tryImportHierarchy
+                    true
+                    (entity.GetPresenceConferred world)
+                    (entity.GetStaticModel world)
+                    (Right entity)
+                    world
+            updateFrozenHierarchy entity world
+
+        static let handleUpdateFrozenHierarchy evt world =
             let entity = evt.Subscriber : Entity
-            let world = destroyChildren entity world
-            let world = World.tryImportHierarchy true (entity.GetPresenceConferred world) (entity.GetStaticModel world) (Right entity) world
+            let world = updateFrozenHierarchy entity world
+            (Cascade, world)
+
+        static let handleUpdateLoadedHierarchy evt world =
+            let entity = evt.Subscriber : Entity
+            let world = updateLoadedHierarchy entity world
             (Cascade, world)
 
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.PresenceConferred Exposed
-             define Entity.Loaded false]
+             define Entity.Loaded false
+             nonPersistent Entity.FrozenRenderMessage3ds [||]
+             define Entity.Frozen false]
 
         override this.Register (entity, world) =
             let world =
                 if not (entity.GetLoaded world) then
-                    let world = World.tryImportHierarchy true (entity.GetPresence world) (entity.GetStaticModel world) (Right entity) world
-                    let world = entity.SetLoaded true world
-                    world
-                else world
-            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
-            let world = World.monitor synchronizeChildren (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+                    let world = updateLoadedHierarchy entity world
+                    entity.SetLoaded true world
+                else
+                    let world = entity.SetOffset v3Zero world
+                    World.frame (updateFrozenHierarchy entity) entity world // children not loaded yet, so freeze at end of frame
+            let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
+            let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+            let world = World.monitor handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity world
             world
+
+        override this.Render (entity, world) =
+            let frozenRenderMessages = entity.GetFrozenRenderMessage3ds world
+            for message in frozenRenderMessages do
+                World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
 
 [<AutoOpen>]
 module BasicStaticBillboardEmitterDispatcherModule =

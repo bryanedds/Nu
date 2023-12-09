@@ -14,25 +14,17 @@ module WorldPhysics =
         static member internal getPhysicsEngine2d world =
             world.Subsystems.PhysicsEngine2d
 
-        static member internal setPhysicsEngine2d physicsEngine world =
-            World.updateSubsystems (fun subsystems -> { subsystems with PhysicsEngine2d = physicsEngine }) world
-
-        static member internal updatePhysicsEngine2d updater world =
-            World.setPhysicsEngine2d (updater (World.getPhysicsEngine2d world)) world
-
         static member internal getPhysicsEngine3d world =
             world.Subsystems.PhysicsEngine3d
-
-        static member internal setPhysicsEngine3d physicsEngine world =
-            World.updateSubsystems (fun subsystems -> { subsystems with PhysicsEngine3d = physicsEngine }) world
-
-        static member internal updatePhysicsEngine3d updater world =
-            World.setPhysicsEngine3d (updater (World.getPhysicsEngine3d world)) world
 
         /// Localize a body shape to a specific size.
         static member localizeBodyShape (size : Vector3) (bodyShape : BodyShape) (world : World) =
             ignore world // for world parameter for scripting
             Physics.localizeBodyShape size bodyShape
+
+        static member internal clearPhysicsMessages2d world =
+            (World.getPhysicsEngine2d world).ClearMessages ()
+            world
 
         /// Enqueue a 2d physics message in the world.
         static member enqueuePhysicsMessage2d (message : PhysicsMessage) world =
@@ -60,7 +52,12 @@ module WorldPhysics =
                         world)
                         world message.BodyIds
                 | _ -> world
-            World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.EnqueueMessage message) world
+            (World.getPhysicsEngine2d world).EnqueueMessage message
+            world
+
+        static member internal clearPhysicsMessages3d world =
+            (World.getPhysicsEngine3d world).ClearMessages ()
+            world
 
         /// Enqueue multiple 2d physics messages to the world.
         static member enqueuePhysicsMessages2d (messages : PhysicsMessage seq) world =
@@ -92,7 +89,8 @@ module WorldPhysics =
                         world)
                         world message.BodyIds
                 | _ -> world
-            World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.EnqueueMessage message) world
+            (World.getPhysicsEngine3d world).EnqueueMessage message
+            world
 
         /// Enqueue multiple 3d physics messages to the world.
         static member enqueuePhysicsMessages3d (messages : PhysicsMessage seq) world =

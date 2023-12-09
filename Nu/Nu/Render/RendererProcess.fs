@@ -48,8 +48,8 @@ type RendererInline () =
     let mutable started = false
     let mutable terminated = false
     let mutable windowOpt = Option<Window>.None
-    let mutable messages3d = ConcurrentBag ()
-    let mutable messages2d = ConcurrentBag ()
+    let mutable messages3d = List ()
+    let mutable messages2d = List ()
     let mutable renderersOpt = Option<Renderer3d * Renderer2d * RendererImGui>.None
 
     interface RendererProcess with
@@ -200,11 +200,11 @@ type RendererThread () =
     let mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable submissionOpt = Option<bool * Frustum * Frustum * Frustum * Box3 * RenderMessage3d ConcurrentBag * RenderMessage2d ConcurrentBag * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i * ImDrawDataPtr>.None
+    let [<VolatileField>] mutable submissionOpt = Option<bool * Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i * ImDrawDataPtr>.None
     let [<VolatileField>] mutable swap = false
     let mutable messageBufferIndex = 0
-    let messageBuffers3d = [|ConcurrentBag (); ConcurrentBag ()|]
-    let messageBuffers2d = [|ConcurrentBag (); ConcurrentBag ()|]
+    let messageBuffers3d = [|List (); List ()|]
+    let messageBuffers2d = [|List (); List ()|]
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
@@ -440,19 +440,19 @@ type RendererThread () =
         member this.EnqueueMessage3d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             match message with
-            | RenderStaticModel rsm ->
-                let cachedStaticModelMessage = allocStaticModelMessage ()
-                match cachedStaticModelMessage with
-                | RenderCachedStaticModel cachedMessage ->
-                    cachedMessage.CachedStaticModelAbsolute <- rsm.Absolute
-                    cachedMessage.CachedStaticModelMatrix <- rsm.ModelMatrix
-                    cachedMessage.CachedStaticModelPresence <- rsm.Presence
-                    cachedMessage.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
-                    cachedMessage.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
-                    cachedMessage.CachedStaticModelRenderType <- rsm.RenderType
-                    cachedMessage.CachedStaticModel <- rsm.StaticModel
-                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
-                | _ -> failwithumf ()
+            //| RenderStaticModel rsm ->
+            //    let cachedStaticModelMessage = allocStaticModelMessage ()
+            //    match cachedStaticModelMessage with
+            //    | RenderCachedStaticModel cachedMessage ->
+            //        cachedMessage.CachedStaticModelAbsolute <- rsm.Absolute
+            //        cachedMessage.CachedStaticModelMatrix <- rsm.ModelMatrix
+            //        cachedMessage.CachedStaticModelPresence <- rsm.Presence
+            //        cachedMessage.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
+            //        cachedMessage.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
+            //        cachedMessage.CachedStaticModelRenderType <- rsm.RenderType
+            //        cachedMessage.CachedStaticModel <- rsm.StaticModel
+            //        messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+            //    | _ -> failwithumf ()
             | RenderStaticModelSurface rsms ->
                 let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
                 match cachedStaticModelSurfaceMessage with
