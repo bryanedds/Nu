@@ -13,11 +13,11 @@ module Gameplay =
         | Quit
 
     // this is our MMCC model type representing gameplay.
-    // this model representation uses clock time, that is, time based on seconds.
-    // unlike the other demo projects, this project uses ClockTime rather than UpdateTime. This will allows your frame
-    // rate to vary based on the deployment machine's specs.
+    // this model representation uses update time, that is, time based on number of engine updates.
+    // if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
+    // you could use `GameplayTime : single` instead.
     type Gameplay =
-        { GameplayTime : single
+        { GameplayTime : int64
           GameplayState : GameplayState }
 
     // this is our MMCC message type.
@@ -36,7 +36,7 @@ module Gameplay =
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> ({ GameplayTime = 0.0f; GameplayState = Quit })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> ({ GameplayTime = 0L; GameplayState = Quit })
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
@@ -44,10 +44,10 @@ module Gameplay =
              Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the above messages
-        override this.Message (gameplay, message, _, world) =
+        override this.Message (gameplay, message, _, _) =
             match message with
             | Update ->
-                just { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Seconds) }
+                just { gameplay with GameplayTime = inc gameplay.GameplayTime }
             | StartQuitting ->
                 just { gameplay with GameplayState = Quitting }
             | FinishQuitting ->
