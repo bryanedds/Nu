@@ -18,8 +18,7 @@ type [<ReferenceEquality>] View =
     | StopSong
     | SpawnEmitter of string * EmitterDescriptor
     | Tag of string * obj
-    | Views of View array
-    | ViewsSegmented of View SArray
+    | Views of View SArray
 
 [<RequireQualifiedAccess>]
 module View =
@@ -29,8 +28,7 @@ module View =
         seq {
             match view with
             | Views views -> for view in views do yield! toSeq view
-            | ViewsSegmented views -> for view in views do yield! toSeq view
             | _ -> yield view }
 
     /// The empty view.
-    let empty = Views [||]
+    let empty = Views SArray.empty
