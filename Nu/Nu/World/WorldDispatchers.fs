@@ -889,12 +889,12 @@ module StaticModelHierarchyDispatcherModule =
             // render probes
             let bounds = entity.GetBounds world
             let presenceConferred = entity.GetPresenceConferred world
-            if World.boundsInView3d false true presenceConferred bounds world then
+            if World.boundsInView3d true false presenceConferred bounds world then
                 for probe in entity.GetFrozenRenderLightProbe3ds world do
                     World.enqueueRenderMessage3d (RenderLightProbe3d probe) world
 
             // render lights
-            if World.boundsInView3d true false presenceConferred bounds world then
+            if World.boundsInView3d false true presenceConferred bounds world then
                 for light in entity.GetFrozenRenderLight3ds world do
                     World.enqueueRenderMessage3d (RenderLight3d light) world
 
@@ -976,12 +976,12 @@ module RigidModelHierarchyDispatcherModule =
             // render probes
             let bounds = entity.GetBounds world
             let presenceConferred = entity.GetPresenceConferred world
-            if World.boundsInView3d false true presenceConferred bounds world then
+            if World.boundsInView3d true false presenceConferred bounds world then
                 for probe in entity.GetFrozenRenderLightProbe3ds world do
                     World.enqueueRenderMessage3d (RenderLightProbe3d probe) world
 
             // render lights
-            if World.boundsInView3d true false presenceConferred bounds world then
+            if World.boundsInView3d false true presenceConferred bounds world then
                 for light in entity.GetFrozenRenderLight3ds world do
                     World.enqueueRenderMessage3d (RenderLight3d light) world
 
