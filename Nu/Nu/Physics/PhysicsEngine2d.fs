@@ -534,9 +534,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.EnqueueMessage physicsMessage =
 #if HANDLE_PHYSICS_MESSAGES_DEFERRED
-            let physicsMessages = UList.add physicsMessage physicsEngine.PhysicsMessages
-            let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
-            physicsEngine :> PhysicsEngine
+            physicsEngine.PhysicsMessages.Add physicsMessage
 #else
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
 #endif
