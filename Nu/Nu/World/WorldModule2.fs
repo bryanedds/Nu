@@ -521,11 +521,11 @@ module WorldModule2 =
             let world = World.unshelveAmbientState world
 
             // clear existing 3d physics messages and rebuild
-            let world = World.updatePhysicsEngine3d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+            let world = World.clearPhysicsMessages3d world
             let world = World.enqueuePhysicsMessage3d ClearPhysicsMessageInternal world
 
             // clear existing 2d physics messages and rebuild
-            let world = World.updatePhysicsEngine2d (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+            let world = World.clearPhysicsMessages2d world
             let world = World.enqueuePhysicsMessage2d ClearPhysicsMessageInternal world
 
             // register the physics of entities in the current screen
@@ -1115,8 +1115,7 @@ module WorldModule2 =
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
-            let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
-            let world = World.setPhysicsEngine2d physicsEngine world
+            let physicsMessages = physicsEngine.PopMessages ()
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
             let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
@@ -1125,8 +1124,7 @@ module WorldModule2 =
 
         static member private processPhysics3d world =
             let physicsEngine = World.getPhysicsEngine3d world
-            let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
-            let world = World.setPhysicsEngine3d physicsEngine world
+            let physicsMessages = physicsEngine.PopMessages ()
             let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
             let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
             let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
