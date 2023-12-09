@@ -92,7 +92,7 @@ module CharacterDispatcher =
                 let leftwardness = (Vector3.Dot (linearVelocity, -rotation.Right))
                 let turnRightwardness = (angularVelocity * v3Up).Length ()
                 let turnLeftwardness = -turnRightwardness
-                let animations = [{ StartTime = 0.0f; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
+                let animations = [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
                 let animations =
                     if forwardness >= 0.1f then { StartTime = 0.0f; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.5f; Weight = forwardness; BoneFilterOpt = None } :: animations
                     elif backwardness >= 0.1f then { StartTime = 0.0f; LifeTimeOpt = None; Name = "Armature|WalkBackward"; Playback = Loop; Rate = 1.5f; Weight = backwardness; BoneFilterOpt = None } :: animations
