@@ -28,7 +28,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           ConstraintSolver : ConstraintSolver
           TryGetAssetFilePath : obj AssetTag -> string option
           TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
-          PhysicsMessages : PhysicsMessage UList
+          PhysicsMessages : PhysicsMessage List
           IntegrationMessages : IntegrationMessage List }
 
     static member private handleCollision physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
@@ -631,9 +631,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         for physicsMessage in physicsMessages do
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
 
-    static member make imperative gravity tryGetAssetFilePath tryGetStaticModelMetadata =
-        let config = if imperative then Imperative else Functional
-        let physicsMessages = UList.makeEmpty config
+    static member make gravity tryGetAssetFilePath tryGetStaticModelMetadata =
         let taskScheduler = Threads.GetSequentialTaskScheduler () // NOTE: we're just using the non-threaded schedular since none of the others are available (perhaps because I didn't enable them when I previously built bullet).
         taskScheduler.NumThreads <- taskScheduler.MaxNumThreads
         Threads.TaskScheduler <- taskScheduler
@@ -661,7 +659,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               ConstraintSolver = constraintSolver
               TryGetAssetFilePath = tryGetAssetFilePath
               TryGetStaticModelMetadata = tryGetStaticModelMetadata
-              PhysicsMessages = physicsMessages
+              PhysicsMessages = List ()
               IntegrationMessages = List () }
         physicsEngine
 
@@ -725,13 +723,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 inspect message
 
         member physicsEngine.PopMessages () =
-            let messages = physicsEngine.PhysicsMessages
-            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
-            (messages, physicsEngine :> PhysicsEngine)
+            let messages = List physicsEngine.PhysicsMessages
+            physicsEngine.PhysicsMessages.Clear ()
+            messages
 
         member physicsEngine.ClearMessages () =
-            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
-            physicsEngine :> PhysicsEngine
+            physicsEngine.PhysicsMessages.Clear ()
 
         member physicsEngine.EnqueueMessage physicsMessage =
 #if HANDLE_PHYSICS_MESSAGES_DEFERRED
@@ -740,7 +737,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine :> PhysicsEngine
 #else
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
-            physicsEngine
 #endif
 
         member physicsEngine.Integrate stepTime physicsMessages =
