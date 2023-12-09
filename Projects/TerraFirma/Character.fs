@@ -8,15 +8,15 @@ open Nu
 module CharacterDispatcher =
 
     type CharacterModel =
-        { CharacterTime : single
-          LastTimeJump : single
-          LastTimeOnGround : single
+        { CharacterTime : int64
+          LastTimeJump : int64
+          LastTimeOnGround : int64
           AnimatedModel : AnimatedModel AssetTag }
 
         static member initial =
-            { CharacterTime = 0.0f
-              LastTimeJump = 0.0f
-              LastTimeOnGround = 0.0f
+            { CharacterTime = 0L
+              LastTimeJump = 0L
+              LastTimeOnGround = 0L
               AnimatedModel = Assets.Default.AnimatedModel }
 
     type CharacterMessage =
@@ -58,7 +58,7 @@ module CharacterDispatcher =
 
             match message with
             | UpdateMessage ->
-                let time = character.CharacterTime + (let d = world.GameDelta in d.Seconds)
+                let time = inc character.CharacterTime
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let character =
@@ -70,7 +70,7 @@ module CharacterDispatcher =
             | TryJump keyboardKeyData ->
                 let sinceJump = character.CharacterTime - character.LastTimeJump
                 let sinceOnGround = character.CharacterTime - character.LastTimeOnGround
-                if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 0.1f && sinceOnGround < 0.1f then
+                if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
                     let character = { character with LastTimeJump = character.CharacterTime }
                     withSignal Jump character
                 else just character
