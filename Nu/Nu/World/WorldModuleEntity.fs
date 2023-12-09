@@ -24,19 +24,59 @@ module WorldModuleEntity =
     let internal EntityChangeCountsId = Gen.id
     let internal EntityBindingCountsId = Gen.id
 
+    // OPTIMIZATION: avoids closure allocation in tight-loop.
+    type private KeyEquality () =
+        inherit OptimizedClosures.FSharpFunc<
+            KeyValuePair<Entity, SUMap<Entity, EntityState>>,
+            KeyValuePair<Entity, SUMap<Entity, EntityState>>,
+            bool> ()
+        override this.Invoke _ = failwithumf ()
+        override this.Invoke
+            (entityStateKey : KeyValuePair<Entity, SUMap<Entity, EntityState>>,
+             entityStateKey2 : KeyValuePair<Entity, SUMap<Entity, EntityState>>) =
+            refEq entityStateKey.Key entityStateKey2.Key &&
+            refEq entityStateKey.Value entityStateKey2.Value
+    let private keyEquality = KeyEquality ()
+
+    // OPTIMIZATION: avoids closure allocation in tight-loop.
+    let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
+    let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
+    let private getFreshKeyAndValue () =
+        let mutable entityStateOpt = Unchecked.defaultof<_>
+        let _ = SUMap.tryGetValue (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
+        KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
+    let private getFreshKeyAndValueCached =
+        getFreshKeyAndValue
+
     // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
     let mutable changeEventNamesFree = true
     let changeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
 
     type World with
 
+        // OPTIMIZATION: a ton of optimization has gone down in here...!
+        static member private entityStateRefresher (entity : Entity) world =
+            getFreshKeyAndValueEntity <- entity
+            getFreshKeyAndValueWorld <- world
+            let entityStateOpt =
+                KeyedCache.getValueFast
+                    keyEquality
+                    getFreshKeyAndValueCached
+                    (KeyValuePair (entity, world.EntityStates))
+                    (World.getEntityCachedOpt world)
+            getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
+            getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
+            match entityStateOpt :> obj with
+            | null ->
+                Unchecked.defaultof<EntityState>
+            | _ ->
+                if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
+                entityStateOpt
+
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
-            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
-                let mutable entityStateOpt = Unchecked.defaultof<_>
-                let _ = SUMap.tryGetValue (entity, world.EntityStates, &entityStateOpt)
-                if notNull (entityStateOpt :> obj) && entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
-                entityStateOpt
+            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated
+            then World.entityStateRefresher entity world
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =

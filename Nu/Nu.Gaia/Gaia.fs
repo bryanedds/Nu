@@ -1338,7 +1338,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let searchActive =
             not (String.IsNullOrWhiteSpace entityHierarchySearchStr)
         let visible =
-            not searchActive || entity.Name.Contains entityHierarchySearchStr
+            not searchActive || entity.Name.ToLowerInvariant().Contains (entityHierarchySearchStr.ToLowerInvariant ())
         let expanded =
             if visible then
                 let branch = Array.notEmpty children
