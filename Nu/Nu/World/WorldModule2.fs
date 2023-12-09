@@ -1454,7 +1454,6 @@ module EntityDispatcherModule2 =
         default this.Content (_, _) = []
 
         /// Render the entity using the given model.
-        /// Thread-safe.
         abstract View : 'model * Entity * World -> unit
         default this.View (_, _, _) = ()
 
@@ -1727,7 +1726,6 @@ module GroupDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the group using the given model.
-        /// Thread-safe.
         abstract View : 'model * Group * World -> unit
         default this.View (_, _, _) = ()
 
@@ -1897,7 +1895,6 @@ module ScreenDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the screen using the given model.
-        /// Thread-safe.
         abstract View : 'model * Screen * World -> unit
         default this.View (_, _, _) = ()
 
@@ -2068,7 +2065,6 @@ module GameDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the game using the given model.
-        /// Thread-safe.
         abstract View : 'model * Game * World -> unit
         default this.View (_, _, _) = ()
 

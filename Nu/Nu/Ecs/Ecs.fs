@@ -389,14 +389,12 @@ and [<TypeConverter (typeof<EcsConverter>)>] Ecs () =
             query.TryRegisterArchetype archetype
         archetype
 
-    /// Thread-safe.
     member private this.AllocSubscriptionId () =
         lock subscriptionIdLock $ fun () ->
             subscriptionIdCurrent <- inc subscriptionIdCurrent
             if subscriptionIdCurrent = UInt32.MaxValue then failwith "Unbounded use of Ecs subscription ids not supported."
             subscriptionIdCurrent
 
-    /// Thread-safe.
     member private this.BoxCallback<'d, 'w when 'w : not struct> (callback : EcsCallbackUnscheduled<'d, 'w>) =
         let boxableCallback = fun (evt : EcsEvent<obj, 'w>) store ->
             let evt = { EcsEventData = evt.EcsEventData :?> 'd }

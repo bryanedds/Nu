@@ -328,7 +328,6 @@ and GameDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a game.
-    /// Thread-safe.
     abstract Render : Game * World -> unit
     default this.Render (_, _) = ()
 
@@ -381,7 +380,6 @@ and ScreenDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a screen.
-    /// Thread-safe.
     abstract Render : Screen * World -> unit
     default this.Render (_, _) = ()
 
@@ -434,7 +432,6 @@ and GroupDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a group.
-    /// Thread-safe.
     abstract Render : Group * World -> unit
     default this.Render (_, _) = ()
 
@@ -528,7 +525,6 @@ and EntityDispatcher (is2d, centered, physical) =
 #endif
 
     /// Render an entity.
-    /// Thread-safe.
     abstract Render : Entity * World -> unit
     default this.Render (_, _) = ()
 
@@ -623,7 +619,6 @@ and Facet (physical) =
 #endif
 
     /// Render a facet.
-    /// Thread-safe.
     abstract Render : Entity * World -> unit
     default this.Render (_, _) = ()
 
