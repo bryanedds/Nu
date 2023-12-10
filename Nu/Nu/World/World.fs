@@ -198,7 +198,7 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
+                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                                 Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
                             quadtree)
                         (World.getQuadtree world)
@@ -209,7 +209,7 @@ module Nu =
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
-                                let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                                let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                                 Octree.addElement entityState.Presence entityState.Bounds element octree
                             octree)
                         (World.getOctree world)
@@ -227,7 +227,7 @@ module Nu =
                         (fun quadtree ->
                             for entity in entities2d do
                                 let entityState = World.getEntityState entity world
-                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
+                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                                 Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
                             quadtree)
                         (World.getQuadtree world)
@@ -238,7 +238,7 @@ module Nu =
                         (fun octree ->
                             for entity in entities3d do
                                 let entityState = World.getEntityState entity world
-                                let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                                let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                                 Octree.removeElement entityState.Presence entityState.Bounds element octree
                             octree)
                         (World.getOctree world)

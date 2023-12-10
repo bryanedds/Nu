@@ -698,7 +698,7 @@ module WorldModuleEntity =
             if value <> previous then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -722,7 +722,7 @@ module WorldModuleEntity =
             if value <> previous then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -746,7 +746,7 @@ module WorldModuleEntity =
             if value <> previous then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -770,7 +770,7 @@ module WorldModuleEntity =
             if value <> previous then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -794,7 +794,7 @@ module WorldModuleEntity =
             if value <> previous then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -818,7 +818,7 @@ module WorldModuleEntity =
             if value <> previous then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -842,7 +842,7 @@ module WorldModuleEntity =
             if presenceNeq value previous && (value.OmnipresentType || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -864,7 +864,7 @@ module WorldModuleEntity =
             if not (Transform.equalsByRef (&value, &entityState.Transform)) then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -885,7 +885,7 @@ module WorldModuleEntity =
             if not (Transform.equalsByRef (&value, &previous)) then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -1424,7 +1424,7 @@ module WorldModuleEntity =
             if value <> previous then
                 let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static
+                let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
                 let presenceOld = entityState.Presence
@@ -1636,7 +1636,7 @@ module WorldModuleEntity =
                     let worldOld = world
                     let entityStateOld = entityState
                     let visibleOld = entityState.Visible || entityState.AlwaysRender
-                    let staticOld = entityStateOld.Static
+                    let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
                     let lightProbeOld = entityStateOld.LightProbe
                     let lightOld = entityStateOld.Light
                     let presenceOld = entityStateOld.Presence
@@ -1665,7 +1665,7 @@ module WorldModuleEntity =
                         let worldOld = world
                         let entityStateOld = entityState
                         let visibleOld = entityState.Visible || entityState.AlwaysRender
-                        let staticOld = entityStateOld.Static
+                        let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
                         let lightProbeOld = entityStateOld.LightProbe
                         let lightOld = entityStateOld.Light
                         let presenceOld = entityStateOld.Presence
@@ -1744,7 +1744,7 @@ module WorldModuleEntity =
                     let worldOld = world
                     let entityStateOld = entityState
                     let visibleOld = entityState.Visible || entityState.AlwaysRender
-                    let staticOld = entityStateOld.Static
+                    let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
                     let lightProbeOld = entityStateOld.LightProbe
                     let lightOld = entityStateOld.Light
                     let presenceOld = entityStateOld.Presence
@@ -2167,7 +2167,7 @@ module WorldModuleEntity =
                                     (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
+                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                                         Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element entityTree
                                         entityTree)
                                     (World.getQuadtree world)
@@ -2178,7 +2178,7 @@ module WorldModuleEntity =
                                     (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
                                     (fun entityTree ->
                                         let entityState = World.getEntityState entity world
-                                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                                         Octree.addElement entityState.Presence entityState.Bounds element entityTree
                                         entityTree)
                                     (World.getOctree world)
@@ -2225,7 +2225,7 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
                                     (fun quadtree ->
                                         let entityState = World.getEntityState entity worldOld
-                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entity
+                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                                         Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
                                         quadtree)
                                     (World.getQuadtree world)
@@ -2236,7 +2236,7 @@ module WorldModuleEntity =
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
                                     (fun octree ->
                                         let entityState = World.getEntityState entity worldOld
-                                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) entityState.Static entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                                         Octree.removeElement entityState.Presence entityState.Bounds element octree
                                         octree)
                                     (World.getOctree world)
@@ -2434,7 +2434,7 @@ module WorldModuleEntity =
                 let worldOld = world
                 let entityStateOld = entityState
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityStateOld.Static
+                let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityStateOld.LightProbe
                 let lightOld = entityStateOld.Light
                 let presenceOld = entityStateOld.Presence
@@ -2464,7 +2464,7 @@ module WorldModuleEntity =
                     let worldOld = world
                     let entityStateOld = entityState
                     let visibleOld = entityState.Visible || entityState.AlwaysRender
-                    let staticOld = entityStateOld.Static
+                    let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
                     let lightProbeOld = entityStateOld.LightProbe
                     let lightOld = entityStateOld.Light
                     let presenceOld = entityStateOld.Presence
@@ -2491,7 +2491,7 @@ module WorldModuleEntity =
                 // OPTIMIZATION: work with the entity state directly to avoid function call overheads
                 let entityState = World.getEntityState entity world
                 let visibleNew = entityState.Visible || entityState.AlwaysRender
-                let staticNew = entityState.Static
+                let staticNew = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeNew = entityState.LightProbe
                 let lightNew = entityState.Light
                 let presenceNew = entityState.Presence

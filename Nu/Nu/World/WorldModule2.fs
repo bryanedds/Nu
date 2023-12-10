@@ -902,8 +902,18 @@ module WorldModule2 =
             // pre-update entities
             PreUpdateEntitiesTimer.Start ()
             let advancing = world.Advancing
-            let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.preUpdateEntity element.Entry world else world) world elements3d
-            let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.preUpdateEntity element.Entry world else world) world elements2d
+            let world =
+                Seq.fold (fun world (element : Entity Octelement) ->
+                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                    then World.preUpdateEntity element.Entry world
+                    else world)
+                    world elements3d
+            let world =
+                Seq.fold (fun world (element : Entity Quadelement) ->
+                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                    then World.preUpdateEntity element.Entry world
+                    else world)
+                    world elements2d
             PreUpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -945,8 +955,18 @@ module WorldModule2 =
 
             // update entities
             UpdateEntitiesTimer.Start ()
-            let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements3d
-            let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.updateEntity element.Entry world else world) world elements2d
+            let world =
+                Seq.fold (fun world (element : Entity Octelement) ->
+                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                    then World.updateEntity element.Entry world
+                    else world)
+                    world elements3d
+            let world =
+                Seq.fold (fun world (element : Entity Quadelement) ->
+                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                    then World.updateEntity element.Entry world
+                    else world)
+                    world elements2d
             UpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -967,8 +987,18 @@ module WorldModule2 =
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
-            let (elements3d, world) = World.getElementsInPlay3d CachedHashSet3d world
-            let (elements2d, world) = World.getElementsInPlay2d CachedHashSet2d world
+            let world =
+                Seq.fold (fun world (element : Entity Octelement) ->
+                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                    then World.postUpdateEntity element.Entry world
+                    else world)
+                    world elements3d
+            let world =
+                Seq.fold (fun world (element : Entity Quadelement) ->
+                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                    then World.postUpdateEntity element.Entry world
+                    else world)
+                    world elements2d
 #endif
             PostUpdateGatherTimer.Stop ()
 
