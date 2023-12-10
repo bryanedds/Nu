@@ -9,6 +9,20 @@ open SDL2
 open TiledSharp
 open Prime
 
+// The inferred attributes of an entity that are used to construct its bounds.
+type [<NoComparison>] AttributesInferred =
+    { SizeInferred : Vector3
+      OffsetInferred : Vector3 }
+
+    static member make size offset =
+        { SizeInferred = size
+          OffsetInferred = offset }
+
+    static member choose left right =
+        if right.SizeInferred.MagnitudeSquared > left.SizeInferred.MagnitudeSquared // mostly an arbitrary choice...
+        then right
+        else left
+
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
     { mutable Tile : TmxLayerTile

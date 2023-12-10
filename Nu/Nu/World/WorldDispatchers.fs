@@ -12,26 +12,26 @@ open Nu
 module EntityDispatcherModule =
 
     /// A 2d entity dispatcher.
-    type EntityDispatcher2d (centered, physical) =
-        inherit EntityDispatcher (true, centered, physical)
+    type EntityDispatcher2d (perimeterCentered, physical) =
+        inherit EntityDispatcher (true, perimeterCentered, physical)
 
         new (physical) =
-            EntityDispatcher2d (Constants.Engine.EntityCentered2dDefault, physical)
+            EntityDispatcher2d (Constants.Engine.EntityPerimeterCentered2dDefault, physical)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.Centered Constants.Engine.EntityCentered2dDefault]
+             define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
 
     /// A gui entity dispatcher.
     type GuiDispatcher () =
-        inherit EntityDispatcher (true, Constants.Engine.EntityCenteredGuiDefault, false)
+        inherit EntityDispatcher (true, Constants.Engine.EntityPerimeterCenteredGuiDefault, false)
 
         static member Facets =
             [typeof<LayoutFacet>]
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.Centered Constants.Engine.EntityCenteredGuiDefault
+             define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
              define Entity.Presence Omnipresent
@@ -43,30 +43,28 @@ module EntityDispatcherModule =
              define Entity.GridPosition v2iZero]
 
     /// A 3d entity dispatcher.
-    type EntityDispatcher3d (centered, physical) =
-        inherit EntityDispatcher (false, centered, physical)
+    type EntityDispatcher3d (physical) =
+        inherit EntityDispatcher (false, true, physical)
 
         new (physical) =
-            EntityDispatcher3d (Constants.Engine.EntityCentered3dDefault, physical)
+            EntityDispatcher3d (physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault
-             define Entity.Centered Constants.Engine.EntityCentered3dDefault]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
-                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
                 if intersectionOpt.HasValue then [|intersectionOpt.Value|]
                 else [||]
             else base.RayCast (ray, entity, world)
 
     /// A vui dispatcher (gui in 3d).
     and [<AbstractClass>] VuiDispatcher () =
-        inherit EntityDispatcher (false, Constants.Engine.EntityCenteredVuiDefault, false)
+        inherit EntityDispatcher (false, true, false)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeVuiDefault
-             define Entity.Centered Constants.Engine.EntityCenteredVuiDefault]
+            [define Entity.Size Constants.Engine.EntitySizeVuiDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -119,13 +117,13 @@ module TextDispatcherModule =
         static member Properties =
             [define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match entity.GetBackdropImageOpt world with
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
-                | Some size -> size.V3
-                | None -> Constants.Engine.EntitySizeGuiDefault
-            | None -> Constants.Engine.EntitySizeGuiDefault
+                | Some size -> AttributesInferred.make size.V3 v3Zero
+                | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -243,7 +241,7 @@ module BasicStaticSpriteEmitterDispatcherModule =
             [typeof<BasicStaticSpriteEmitterFacet>]
 
         static member Properties =
-            [define Entity.Centered true]
+            [define Entity.PerimeterCentered true]
 
 [<AutoOpen>]
 module EffectDispatcher2dModule =
@@ -256,7 +254,7 @@ module EffectDispatcher2dModule =
             [typeof<EffectFacet>]
 
         static member Properties =
-            [define Entity.Centered true
+            [define Entity.PerimeterCentered true
              define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
 
 [<AutoOpen>]
@@ -431,7 +429,7 @@ module SkyBoxDispatcherModule =
 
     /// Gives an entity the base behavior of sky box.
     type SkyBoxDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<SkyBoxFacet>]
@@ -446,7 +444,7 @@ module LightProbeDispatcher3dModule =
 
     /// Gives an entity the base behavior of a 3d light probe.
     type LightProbeDispatcher3d () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<LightProbeFacet3d>]
@@ -457,15 +455,15 @@ module LightProbeDispatcher3dModule =
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
              define Entity.ProbeStale false]
 
-        override this.GetQuickSize (_, _) =
-            v3Dup 0.5f
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.make (v3Dup 0.5f) v3Zero
 
 [<AutoOpen>]
 module LightDispatcher3dModule =
 
     /// Gives an entity the base behavior of a 3d light.
     type LightDispatcher3d () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<LightFacet3d>]
@@ -479,15 +477,15 @@ module LightDispatcher3dModule =
              define Entity.LightCutoff Constants.Render.LightCutoffDefault
              define Entity.LightType PointLight]
 
-        override this.GetQuickSize (_, _) =
-            v3Dup 0.5f
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.make (v3Dup 0.5f) v3Zero
 
 [<AutoOpen>]
 module StaticBillboardDispatcherModule =
 
     /// Gives an entity the base behavior of a static billboard.
     type StaticBillboardDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<StaticBillboardFacet>]
@@ -513,7 +511,7 @@ module StaticModelDispatcherModule =
 
     /// Gives an entity the base behavior of a static model.
     type StaticModelDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<StaticModelFacet>]
@@ -529,7 +527,7 @@ module AnimatedModelDispatcherModule =
 
     /// Gives an entity the base behavior of an animated model.
     type AnimatedModelDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<AnimatedModelFacet>]
@@ -544,7 +542,7 @@ module RigidModelDispatcherModule =
 
     /// Gives an entity the base behavior of physics-driven rigid model.
     type RigidModelDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (true)
 
         static let updateBodyShape evt world =
             let entity = evt.Subscriber : Entity
@@ -577,7 +575,7 @@ module StaticModelSurfaceDispatcherModule =
 
     /// Gives an entity the base behavior of an indexed static model.
     type StaticModelSurfaceDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<StaticModelSurfaceFacet>]
@@ -594,7 +592,7 @@ module RigidModelSurfaceDispatcherModule =
 
     /// Gives an entity the base behavior of an indexed, physics-driven rigid model.
     type RigidModelSurfaceDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (true)
 
         static let updateBodyShape evt world =
             let entity = evt.Subscriber : Entity
@@ -649,7 +647,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPresence presenceConferred world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
-                            let world = child.QuickSize world
+                            let world = child.AutoBounds world
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLightProbe lightProbe ->
                             let world = world'
@@ -662,7 +660,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
-                            let world = child.QuickSize world
+                            let world = child.AutoBounds world
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedLight light ->
                             let world = world'
@@ -684,7 +682,7 @@ module StaticModelHierarchyDispatcherModule =
                             let world = child.SetPresence presenceConferred world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
-                            let world = child.QuickSize world
+                            let world = child.AutoBounds world
                             world' <- world
                         | OpenGL.PhysicallyBased.PhysicallyBasedSurface surface ->
                             let world = world'
@@ -722,7 +720,7 @@ module StaticModelHierarchyDispatcherModule =
                                   InvertRoughnessOpt = ValueSome surface.SurfaceMaterial.MaterialProperties.InvertRoughness }
                             let world = child.SetMaterialProperties materialProperties world
                             let world = child.SetRenderStyle renderStyle world
-                            let world = child.QuickSize world
+                            let world = child.AutoBounds world
                             world' <- world
                             i <- inc i)
                 world'
@@ -739,8 +737,9 @@ module StaticModelHierarchyDispatcherModule =
                         let position = entity.GetPosition world
                         let bounds = entity.GetProbeBounds world
                         let stale = entity.GetProbeStalePrevious world
-                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                         Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds3d world)) | None -> Some (entity.GetBounds3d world)
+                        world <- entity.SetVisibleLocal false world
                     if entity.Has<LightFacet3d> world then
                         if entity.GetEnabled world then
                             let position = entity.GetPosition world
@@ -751,19 +750,19 @@ module StaticModelHierarchyDispatcherModule =
                             let attenuationQuadratic = entity.GetAttenuationQuadratic world
                             let lightCutoff = entity.GetLightCutoff world
                             let lightType = entity.GetLightType world
-                            boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                             Choice2Of3 { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
+                            boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds3d world)) | None -> Some (entity.GetBounds3d world)
                     if entity.Has<StaticModelSurfaceFacet> world then
                         let mutable transform = entity.GetTransform world
                         let absolute = transform.Absolute
-                        let affineMatrixOffset = transform.AffineMatrixOffset
+                        let affineMatrix = transform.AffineMatrix
                         let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
                         let properties = entity.GetMaterialProperties world
                         let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
-                        Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
-                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
+                        Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds3d world)) | None -> Some (entity.GetBounds3d world)
                         world <- entity.SetVisibleLocal false world
                     if entity <> parent then
                         world <- entity.SetVisibleLocal false world
@@ -779,9 +778,8 @@ module StaticModelHierarchyDispatcherModule =
             world <- parent.SetPickable false world
             match boundsOpt with
             | Some bounds ->
-                let center = parent.GetCenter world
                 world <- parent.SetSize bounds.Size world
-                world <- parent.SetOffset ((bounds.Center - center) / bounds.Size) world
+                world <- parent.SetOffset (bounds.Center - parent.GetPosition world) world
             | None ->
                 world <- parent.SetSize v3One world
                 world <- parent.SetOffset v3Zero world
@@ -824,7 +822,7 @@ module StaticModelHierarchyDispatcherModule =
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
     type StaticModelHierarchyDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static let updateFrozenHierarchy (entity : Entity) world =
             if entity.GetFrozen world then
@@ -889,7 +887,7 @@ module StaticModelHierarchyDispatcherModule =
         override this.Render (entity, world) =
 
             // render probes
-            let bounds = entity.GetBounds world
+            let bounds = entity.GetBounds3d world
             let presenceConferred = entity.GetPresenceConferred world
             if World.boundsInView3d true false presenceConferred bounds world then
                 for probe in entity.GetFrozenRenderLightProbe3ds world do
@@ -910,7 +908,7 @@ module RigidModelHierarchyDispatcherModule =
 
     /// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
     type RigidModelHierarchyDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (true)
 
         static let updateFrozenHierarchy (entity : Entity) world =
             if entity.GetFrozen world then
@@ -976,7 +974,7 @@ module RigidModelHierarchyDispatcherModule =
         override this.Render (entity, world) =
 
             // render probes
-            let bounds = entity.GetBounds world
+            let bounds = entity.GetBounds3d world
             let presenceConferred = entity.GetPresenceConferred world
             if World.boundsInView3d true false presenceConferred bounds world then
                 for probe in entity.GetFrozenRenderLightProbe3ds world do
@@ -997,27 +995,23 @@ module BasicStaticBillboardEmitterDispatcherModule =
 
     /// Gives an entity the base behavior of basic static billboard emitter.
     type BasicStaticBillboardEmitterDispatcher () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<BasicStaticBillboardEmitterFacet>]
-
-        static member Properties =
-            [define Entity.Centered true]
 
 [<AutoOpen>]
 module EffectDispatcher3dModule =
 
     /// Gives an entity the base behavior of a 3d effect.
     type EffectDispatcher3d () =
-        inherit EntityDispatcher3d (true, false)
+        inherit EntityDispatcher3d (false)
 
         static member Facets =
             [typeof<EffectFacet>]
 
         static member Properties =
-            [define Entity.Centered true
-             define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
+            [define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
 
 [<AutoOpen>]
 module BlockDispatcher3dModule =
@@ -1054,7 +1048,7 @@ module CharacterDispatcher3dModule =
 
     /// Gives an entity the base behavior of a 3d character.
     type CharacterDispatcher3d () =
-        inherit EntityDispatcher3d (true, true)
+        inherit EntityDispatcher3d (true)
 
         static member Facets =
             [typeof<AnimatedModelFacet>

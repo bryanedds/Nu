@@ -19,18 +19,18 @@ module WorldEntityModule =
         let mutable Ecs = Unchecked.defaultof<Lens<Ecs.Ecs, Entity>>
         let mutable Facets = Unchecked.defaultof<Lens<Facet array, Entity>>
         let mutable Transform = Unchecked.defaultof<Lens<Transform, Entity>>
+        let mutable PerimeterCenter = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterBottom = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterBottomLeft = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterMin = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterMax = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterCenterLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterBottomLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterBottomLeftLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterMinLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
+        let mutable PerimeterMaxLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
         let mutable Position = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable Center = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable Bottom = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable BottomLeft = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable Min = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable Max = Unchecked.defaultof<Lens<Vector3, Entity>>
         let mutable PositionLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable CenterLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable BottomLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable BottomLeftLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable MinLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
-        let mutable MaxLocal = Unchecked.defaultof<Lens<Vector3, Entity>>
         let mutable Rotation = Unchecked.defaultof<Lens<Quaternion, Entity>>
         let mutable RotationLocal = Unchecked.defaultof<Lens<Quaternion, Entity>>
         let mutable Scale = Unchecked.defaultof<Lens<Vector3, Entity>>
@@ -45,12 +45,11 @@ module WorldEntityModule =
         let mutable ElevationLocal = Unchecked.defaultof<Lens<single, Entity>>
         let mutable Overflow = Unchecked.defaultof<Lens<single, Entity>>
         let mutable AffineMatrix = Unchecked.defaultof<Lens<Matrix4x4, Entity>>
-        let mutable AffineMatrixOffset = Unchecked.defaultof<Lens<Matrix4x4, Entity>>
         let mutable AffineMatrixLocal = Unchecked.defaultof<Lens<Matrix4x4, Entity>>
         let mutable PerimeterUnscaled = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Perimeter = Unchecked.defaultof<Lens<Box3, Entity>>
-        let mutable PerimeterOriented = Unchecked.defaultof<Lens<Box3, Entity>>
-        let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity>>
+        let mutable Bounds2d = Unchecked.defaultof<Lens<Box3, Entity>>
+        let mutable Bounds3d = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Presence = Unchecked.defaultof<Lens<Presence, Entity>>
         let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Imperative = Unchecked.defaultof<Lens<bool, Entity>>
@@ -66,7 +65,7 @@ module WorldEntityModule =
         let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is2d = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is3d = Unchecked.defaultof<Lens<bool, Entity>>
-        let mutable Centered = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable PerimeterCentered = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Static = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable LightProbe = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Light = Unchecked.defaultof<Lens<bool, Entity>>
@@ -91,42 +90,42 @@ module WorldEntityModule =
         member this.GetTransform world = World.getEntityTransform this world
         member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> snd'
         member this.Transform = if notNull (this :> obj) then lens (nameof this.Transform) this this.GetTransform this.SetTransform else Cached.Transform
+        member this.SetPerimeterCenter value world = World.setEntityPerimeterCenter value this world |> snd'
+        member this.GetPerimeterCenter world = World.getEntityPerimeterCenter this world
+        member this.PerimeterCenter = if notNull (this :> obj) then lens (nameof this.PerimeterCenter) this this.GetPerimeterCenter this.SetPerimeterCenter else Cached.PerimeterCenter
+        member this.SetPerimeterBottom value world = World.setEntityPerimeterBottom value this world |> snd'
+        member this.GetPerimeterBottom world = World.getEntityPerimeterBottom this world
+        member this.PerimeterBottom = if notNull (this :> obj) then lens (nameof this.PerimeterBottom) this this.GetPerimeterBottom this.SetPerimeterBottom else Cached.PerimeterBottom
+        member this.SetPerimeterBottomLeft value world = World.setEntityPerimeterBottomLeft value this world |> snd'
+        member this.GetPerimeterBottomLeft world = World.getEntityPerimeterBottomLeft this world
+        member this.PerimeterBottomLeft = if notNull (this :> obj) then lens (nameof this.PerimeterBottomLeft) this this.GetPerimeterBottomLeft this.SetPerimeterBottomLeft else Cached.PerimeterBottomLeft
+        member this.SetPerimeterMin value world = World.setEntityPerimeterMin value this world |> snd'
+        member this.GetPerimeterMin world = World.getEntityPerimeterMin this world
+        member this.PerimeterMin = if notNull (this :> obj) then lens (nameof this.PerimeterMin) this this.GetPerimeterMin this.SetPerimeterMin else Cached.PerimeterMin
+        member this.SetPerimeterMax value world = World.setEntityPerimeterMax value this world |> snd'
+        member this.GetPerimeterMax world = World.getEntityPerimeterMax this world
+        member this.PerimeterMax = if notNull (this :> obj) then lens (nameof this.PerimeterMax) this this.GetPerimeterMax this.SetPerimeterMax else Cached.PerimeterMax
+        member this.GetPerimeterCenterLocal world = World.getEntityPerimeterCenterLocal this world
+        member this.SetPerimeterCenterLocal value world = World.setEntityPerimeterCenterLocal value this world |> snd'
+        member this.PerimeterCenterLocal = if notNull (this :> obj) then lens (nameof this.PerimeterCenterLocal) this this.GetPerimeterCenterLocal this.SetPerimeterCenterLocal else Cached.PerimeterCenterLocal
+        member this.GetPerimeterBottomLocal world = World.getEntityPerimeterBottomLocal this world
+        member this.SetPerimeterBottomLocal value world = World.setEntityPerimeterBottomLocal value this world |> snd'
+        member this.PerimeterBottomLocal = if notNull (this :> obj) then lens (nameof this.PerimeterBottomLocal) this this.GetPerimeterBottomLocal this.SetPerimeterBottomLocal else Cached.PerimeterBottomLocal
+        member this.GetPerimeterBottomLeftLocal world = World.getEntityPerimeterBottomLeftLocal this world
+        member this.SetPerimeterBottomLeftLocal value world = World.setEntityPerimeterBottomLeftLocal value this world |> snd'
+        member this.PerimeterBottomLeftLocal = if notNull (this :> obj) then lens (nameof this.PerimeterBottomLeftLocal) this this.GetPerimeterBottomLeftLocal this.SetPerimeterBottomLeftLocal else Cached.PerimeterBottomLeftLocal
+        member this.GetPerimeterMinLocal world = World.getEntityPerimeterMinLocal this world
+        member this.SetPerimeterMinLocal value world = World.setEntityPerimeterMinLocal value this world |> snd'
+        member this.PerimeterMinLocal = if notNull (this :> obj) then lens (nameof this.PerimeterMinLocal) this this.GetPerimeterMinLocal this.SetPerimeterMinLocal else Cached.PerimeterMinLocal
+        member this.GetPerimeterMaxLocal world = World.getEntityPerimeterMaxLocal this world
+        member this.SetPerimeterMaxLocal value world = World.setEntityPerimeterMaxLocal value this world |> snd'
+        member this.PerimeterMaxLocal = if notNull (this :> obj) then lens (nameof this.PerimeterMaxLocal) this this.GetPerimeterMaxLocal this.SetPerimeterMaxLocal else Cached.PerimeterMaxLocal
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> snd'
         member this.Position = if notNull (this :> obj) then lens (nameof this.Position) this this.GetPosition this.SetPosition else Cached.Position
-        member this.SetCenter value world = World.setEntityCenter value this world |> snd'
-        member this.GetCenter world = World.getEntityCenter this world
-        member this.Center = if notNull (this :> obj) then lens (nameof this.Center) this this.GetCenter this.SetCenter else Cached.Center
-        member this.SetBottom value world = World.setEntityBottom value this world |> snd'
-        member this.GetBottom world = World.getEntityBottom this world
-        member this.Bottom = if notNull (this :> obj) then lens (nameof this.Bottom) this this.GetBottom this.SetBottom else Cached.Bottom
-        member this.SetBottomLeft value world = World.setEntityBottomLeft value this world |> snd'
-        member this.GetBottomLeft world = World.getEntityBottomLeft this world
-        member this.BottomLeft = if notNull (this :> obj) then lens (nameof this.BottomLeft) this this.GetBottomLeft this.SetBottomLeft else Cached.BottomLeft
-        member this.SetMin value world = World.setEntityMin value this world |> snd'
-        member this.GetMin world = World.getEntityMin this world
-        member this.Min = if notNull (this :> obj) then lens (nameof this.Min) this this.GetMin this.SetMin else Cached.Min
-        member this.SetMax value world = World.setEntityMax value this world |> snd'
-        member this.GetMax world = World.getEntityMax this world
-        member this.Max = if notNull (this :> obj) then lens (nameof this.Max) this this.GetMax this.SetMax else Cached.Max
         member this.GetPositionLocal world = World.getEntityPositionLocal this world
         member this.SetPositionLocal value world = World.setEntityPositionLocal value this world |> snd'
         member this.PositionLocal = if notNull (this :> obj) then lens (nameof this.PositionLocal) this this.GetPositionLocal this.SetPositionLocal else Cached.PositionLocal
-        member this.GetCenterLocal world = World.getEntityCenterLocal this world
-        member this.SetCenterLocal value world = World.setEntityCenterLocal value this world |> snd'
-        member this.CenterLocal = if notNull (this :> obj) then lens (nameof this.CenterLocal) this this.GetCenterLocal this.SetCenterLocal else Cached.CenterLocal
-        member this.GetBottomLocal world = World.getEntityBottomLocal this world
-        member this.SetBottomLocal value world = World.setEntityBottomLocal value this world |> snd'
-        member this.BottomLocal = if notNull (this :> obj) then lens (nameof this.BottomLocal) this this.GetBottomLocal this.SetBottomLocal else Cached.BottomLocal
-        member this.GetBottomLeftLocal world = World.getEntityBottomLeftLocal this world
-        member this.SetBottomLeftLocal value world = World.setEntityBottomLeftLocal value this world |> snd'
-        member this.BottomLeftLocal = if notNull (this :> obj) then lens (nameof this.BottomLeftLocal) this this.GetBottomLeftLocal this.SetBottomLeftLocal else Cached.BottomLeftLocal
-        member this.GetMinLocal world = World.getEntityMinLocal this world
-        member this.SetMinLocal value world = World.setEntityMinLocal value this world |> snd'
-        member this.MinLocal = if notNull (this :> obj) then lens (nameof this.MinLocal) this this.GetMinLocal this.SetMinLocal else Cached.MinLocal
-        member this.GetMaxLocal world = World.getEntityMaxLocal this world
-        member this.SetMaxLocal value world = World.setEntityMaxLocal value this world |> snd'
-        member this.MaxLocal = if notNull (this :> obj) then lens (nameof this.MaxLocal) this this.GetMaxLocal this.SetMaxLocal else Cached.MaxLocal
         member this.GetRotation world = World.getEntityRotation this world
         member this.SetRotation value world = World.setEntityRotation value this world |> snd'
         member this.Rotation = if notNull (this :> obj) then lens (nameof this.Rotation) this this.GetRotation this.SetRotation else Cached.Rotation
@@ -168,8 +167,6 @@ module WorldEntityModule =
         member this.Overflow = if notNull (this :> obj) then lens (nameof this.Overflow) this this.GetOverflow this.SetOverflow else Cached.Overflow
         member this.GetAffineMatrix world = World.getEntityAffineMatrix this world
         member this.AffineMatrix = if notNull (this :> obj) then lensReadOnly (nameof this.AffineMatrix) this this.GetAffineMatrix else Cached.AffineMatrix
-        member this.GetAffineMatrixOffset world = World.getEntityAffineMatrixOffset this world
-        member this.AffineMatrixOffset = if notNull (this :> obj) then lensReadOnly (nameof this.AffineMatrixOffset) this this.GetAffineMatrixOffset else Cached.AffineMatrixOffset
         member this.GetAffineMatrixLocal world = World.getEntityAffineMatrixLocal this world
         member this.AffineMatrixLocal = if notNull (this :> obj) then lensReadOnly (nameof this.AffineMatrixLocal) this this.GetAffineMatrixLocal else Cached.AffineMatrixLocal
         member this.SetPerimeterUnscaled value world = World.setEntityPerimeterUnscaled value this world |> snd'
@@ -178,10 +175,10 @@ module WorldEntityModule =
         member this.SetPerimeter value world = World.setEntityPerimeter value this world |> snd'
         member this.GetPerimeter world = World.getEntityPerimeter this world
         member this.Perimeter = if notNull (this :> obj) then lens (nameof this.Perimeter) this this.GetPerimeter this.SetPerimeter else Cached.Perimeter
-        member this.GetPerimeterOriented world = World.getEntityPerimeterOriented this world
-        member this.PerimeterOriented = if notNull (this :> obj) then lensReadOnly (nameof this.PerimeterOriented) this this.GetPerimeterOriented else Cached.PerimeterOriented
-        member this.GetBounds world = World.getEntityBounds this world
-        member this.Bounds = if notNull (this :> obj) then lensReadOnly (nameof this.Bounds) this this.GetBounds else Cached.Bounds
+        member this.GetBounds2d world = World.getEntityBounds2d this world
+        member this.Bounds2d = if notNull (this :> obj) then lensReadOnly (nameof this.Bounds2d) this this.GetBounds2d else Cached.Bounds2d
+        member this.GetBounds3d world = World.getEntityBounds3d this world
+        member this.Bounds3d = if notNull (this :> obj) then lensReadOnly (nameof this.Bounds3d) this this.GetBounds3d else Cached.Bounds3d
         member this.GetPresence world = World.getEntityPresence this world
         member this.SetPresence value world = World.setEntityPresence value this world |> snd'
         member this.Presence = if notNull (this :> obj) then lens (nameof this.Presence) this this.GetPresence this.SetPresence else Cached.Presence
@@ -224,9 +221,9 @@ module WorldEntityModule =
         member this.Is2d = if notNull (this :> obj) then lensReadOnly (nameof this.Is2d) this this.GetIs2d else Cached.Is2d
         member this.GetIs3d world = World.getEntityIs3d this world
         member this.Is3d = if notNull (this :> obj) then lensReadOnly (nameof this.Is3d) this this.GetIs3d else Cached.Is3d
-        member this.GetCentered world = World.getEntityCentered this world
-        member this.SetCentered value world = World.setEntityCentered value this world |> snd'
-        member this.Centered = if notNull (this :> obj) then lens (nameof this.Centered) this this.GetCentered this.SetCentered else Cached.Centered
+        member this.GetPerimeterCentered world = World.getEntityPerimeterCentered this world
+        member this.SetPerimeterCentered value world = World.setEntityPerimeterCentered value this world |> snd'
+        member this.PerimeterCentered = if notNull (this :> obj) then lens (nameof this.PerimeterCentered) this this.GetPerimeterCentered this.SetPerimeterCentered else Cached.PerimeterCentered
         member this.GetStatic world = World.getEntityStatic this world
         member this.SetStatic value world = World.setEntityStatic value this world |> snd'
         member this.Static = if notNull (this :> obj) then lens (nameof this.Static) this this.GetStatic this.SetStatic else Cached.Static
@@ -257,20 +254,20 @@ module WorldEntityModule =
             Cached.Transform <- lens (nameof Cached.Transform) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterUnscaled <- lens (nameof Cached.PerimeterUnscaled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Perimeter <- lens (nameof Cached.Perimeter) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.PerimeterOriented <- lensReadOnly (nameof Cached.PerimeterOriented) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Bounds <- lensReadOnly (nameof Cached.Bounds) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Bounds2d <- lensReadOnly (nameof Cached.Bounds2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Bounds3d <- lensReadOnly (nameof Cached.Bounds3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterCenter <- lens (nameof Cached.PerimeterCenter) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterBottom <- lens (nameof Cached.PerimeterBottom) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterBottomLeft <- lens (nameof Cached.PerimeterBottomLeft) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterMin <- lens (nameof Cached.PerimeterMin) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterMax <- lens (nameof Cached.PerimeterMax) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterCenterLocal <- lens (nameof Cached.PerimeterCenterLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterBottomLocal <- lens (nameof Cached.PerimeterBottomLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterBottomLeftLocal <- lens (nameof Cached.PerimeterBottomLeftLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterMinLocal <- lens (nameof Cached.PerimeterMinLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterMaxLocal <- lens (nameof Cached.PerimeterMaxLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Position <- lens (nameof Cached.Position) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Center <- lens (nameof Cached.Center) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Bottom <- lens (nameof Cached.Bottom) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.BottomLeft <- lens (nameof Cached.BottomLeft) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Min <- lens (nameof Cached.Min) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Max <- lens (nameof Cached.Max) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PositionLocal <- lens (nameof Cached.PositionLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.CenterLocal <- lens (nameof Cached.CenterLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.BottomLocal <- lens (nameof Cached.BottomLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.BottomLeftLocal <- lens (nameof Cached.BottomLeftLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.MinLocal <- lens (nameof Cached.MinLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.MaxLocal <- lens (nameof Cached.MaxLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Rotation <- lens (nameof Cached.Rotation) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.RotationLocal <- lens (nameof Cached.RotationLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Scale <- lens (nameof Cached.Scale) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -285,7 +282,6 @@ module WorldEntityModule =
             Cached.ElevationLocal <- lens (nameof Cached.ElevationLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Overflow <- lens (nameof Cached.Overflow) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AffineMatrix <- lensReadOnly (nameof Cached.AffineMatrix) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.AffineMatrixOffset <- lensReadOnly (nameof Cached.AffineMatrixOffset) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AffineMatrixLocal <- lensReadOnly (nameof Cached.AffineMatrixLocal) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Presence <- lens (nameof Cached.Presence) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Absolute <- lens (nameof Cached.Absolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -300,7 +296,7 @@ module WorldEntityModule =
             Cached.Persistent <- lens (nameof Cached.Persistent) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is2d <- lensReadOnly (nameof Cached.Is2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Centered <- lens (nameof Cached.Centered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PerimeterCentered <- lens (nameof Cached.PerimeterCentered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Static <- lens (nameof Cached.Static) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.LightProbe <- lens (nameof Cached.LightProbe) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Light <- lens (nameof Cached.Light) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -421,8 +417,8 @@ module WorldEntityModule =
         /// Get an entity's sorting priority in 2d.
         member this.GetSortingPriority2d world = World.getEntitySortingPriority2d this world
 
-        /// Get an entity's quick size.
-        member this.GetQuickSize world = World.getEntityQuickSize this world
+        /// Get an entity's inferred attributes.
+        member this.GetAttributesInferred world = World.getEntityAttributesInferred this world
 
         /// Check that an entity is in view irrespective of eye center.
         member this.GetInView2dAbsolute world = World.getEntityInView2dAbsolute this world
@@ -458,8 +454,12 @@ module WorldEntityModule =
         /// Get the entity's highlight bounds.
         member this.GetHighlightBounds world = World.getEntityHighlightBounds this world
 
-        /// Set an entity's size by its quick size.
-        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world |> snd'
+        /// Automatically change an entity's bounds using its inferred attributes.
+        member this.AutoBounds world =
+            let attributes = this.GetAttributesInferred world
+            let world = World.setEntitySize attributes.SizeInferred this world |> snd'
+            let world = World.setEntityOffset attributes.OffsetInferred this world |> snd'
+            world
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
@@ -557,12 +557,20 @@ module WorldEntityModule =
             let mutable transformOld = this.GetTransform world
             let mutable transformNew = transformOld
             let world =
-                if  v3Neq transformOld.Center center ||
-                    quatNeq transformOld.Rotation rotation then
-                    transformNew.Center <- center
-                    transformNew.Rotation <- rotation
-                    this.SetTransformByRefWithoutEvent (&transformNew, world)
-                else world
+                if this.GetIs2d world then
+                    if  v3Neq transformOld.PerimeterCenter center ||
+                        quatNeq transformOld.Rotation rotation then
+                        transformNew.PerimeterCenter <- center
+                        transformNew.Rotation <- rotation
+                        this.SetTransformByRefWithoutEvent (&transformNew, world)
+                    else world
+                else
+                    if  v3Neq transformOld.Position center ||
+                        quatNeq transformOld.Rotation rotation then
+                        transformNew.Position <- center
+                        transformNew.Rotation <- rotation
+                        this.SetTransformByRefWithoutEvent (&transformNew, world)
+                    else world
             let world = this.SetXtensionPropertyWithoutEvent "LinearVelocity" linearVelocity world
             let world = this.SetXtensionPropertyWithoutEvent "AngularVelocity" angularVelocity world
             let dispatcher = this.GetDispatcher world
@@ -725,8 +733,8 @@ module WorldEntityModule =
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
                     let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyeCenter, eyeSize)
-                    let perimeterOriented = (entity.GetPerimeterOriented world).Box2
-                    perimeterOriented.Intersects positionWorld
+                    let bounds = (entity.GetBounds2d world).Box2
+                    bounds.Intersects positionWorld
                 else false)
                 entitiesSorted
 
@@ -739,8 +747,8 @@ module WorldEntityModule =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
                         let rayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, position, eyeCenter, eyeRotation)
-                        let entityBounds = entity.GetBounds world
-                        let intersectionOpt = rayWorld.Intersects entityBounds
+                        let bounds = entity.GetBounds3d world
+                        let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
                             let intersections = entity.RayCast rayWorld world
                             Array.map (fun intersection -> (intersection, entity)) intersections

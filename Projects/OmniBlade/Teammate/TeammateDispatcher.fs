@@ -22,7 +22,7 @@ module TeammateDispatcher =
             // border sprite
             let perimeter = transform.Perimeter // gui currently ignores rotation
             let horizon = transform.Horizon
-            let mutable borderTransform = Transform.makeDefault transform.Centered
+            let mutable borderTransform = Transform.makeDefault transform.PerimeterCentered
             borderTransform.Position <- perimeter.Min
             borderTransform.Size <- perimeter.Size
             borderTransform.Offset <- transform.Offset
@@ -50,7 +50,7 @@ module TeammateDispatcher =
             let fillWidth = (fillSize.X - fillInset * 2.0f) * fill
             let fillHeight = fillSize.Y - fillInset * 2.0f
             let fillSize = v3 fillWidth fillHeight 0.0f
-            let mutable fillTransform = Transform.makeDefault transform.Centered
+            let mutable fillTransform = Transform.makeDefault transform.PerimeterCentered
             fillTransform.Position <- fillPosition
             fillTransform.Size <- fillSize
             fillTransform.Offset <- transform.Offset
@@ -92,7 +92,7 @@ module TeammateDispatcher =
             let mutable hitPointsTransform = transform
             let downOffset = if entity.GetDown world then entity.GetDownOffset world else v2Zero
             hitPointsTransform.Size <- v3 48.0f 6.0f 0.0f
-            hitPointsTransform.Position <- v3 (transform.Min.X + (transform.Size.X + hitPointsTransform.Size.X) * 0.5f - hitPointsTransform.Size.X) (hitPointsTransform.Min.Y + 16.0f + downOffset.Y) 0.0f
+            hitPointsTransform.Position <- v3 (transform.PerimeterMin.X + (transform.Size.X + hitPointsTransform.Size.X) * 0.5f - hitPointsTransform.Size.X) (hitPointsTransform.PerimeterMin.Y + 16.0f + downOffset.Y) 0.0f
             hitPointsTransform.Elevation <- hitPointsTransform.Elevation + 0.25f
             viewFillBar
                 Assets.Gui.HealthBorderImage
@@ -107,7 +107,7 @@ module TeammateDispatcher =
             // render tech points
             let mutable techPointsTransform = transform
             techPointsTransform.Size <- v3 48.0f 6.0f 0.0f
-            techPointsTransform.Position <- v3 (transform.Min.X + (transform.Size.X + techPointsTransform.Size.X) * 0.5f - techPointsTransform.Size.X) (techPointsTransform.Min.Y + 12.0f + downOffset.Y) 0.0f
+            techPointsTransform.Position <- v3 (transform.PerimeterMin.X + (transform.Size.X + techPointsTransform.Size.X) * 0.5f - techPointsTransform.Size.X) (techPointsTransform.PerimeterMin.Y + 12.0f + downOffset.Y) 0.0f
             techPointsTransform.Elevation <- techPointsTransform.Elevation + 0.25f
             viewFillBar
                 Assets.Gui.HealthBorderImage

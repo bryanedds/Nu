@@ -40,7 +40,7 @@ module Effect =
     and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
             { StartTime_ : GameTime
-              Centered_ : bool
+              PerimeterCentered_ : bool
               Offset_ : Vector3
               Transform_ : Transform
               RenderType_ : RenderType
@@ -118,7 +118,7 @@ module Effect =
                   LightCutoff = Constants.Render.LightCutoffDefault
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true
-                  Centered = effect.Centered_ }
+                  PerimeterCentered = effect.PerimeterCentered_ }
             let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.Presence effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
@@ -226,9 +226,9 @@ module Effect =
         | Dead -> (Dead, effect, world)
 
     /// Make an effect.
-    let makePlus startTime centered offset transform renderType particleSystem historyMax history definitions descriptor =
+    let makePlus startTime perimeterCentered offset transform renderType particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
-          Centered_ = centered
+          PerimeterCentered_ = perimeterCentered
           Offset_ = offset
           Transform_ = transform
           RenderType_ = renderType

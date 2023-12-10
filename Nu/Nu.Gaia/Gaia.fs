@@ -567,13 +567,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiRender wtemp =
 
-        // render light probes of the selected group in play
+        // render light probes of the selected group in icon frustum
         world <- wtemp
-        let (entities, wtemp) = World.getLightProbesInPlay3d (HashSet ()) world in world <- wtemp
+        let iconFrustum = World.getEyeFrustum3dEnclosed world
+        let (entities, wtemp) = World.getLightProbesInFrustum3d iconFrustum (HashSet ()) world in world <- wtemp
         let lightProbeModels =
             entities |>
-            Seq.filter (fun entity -> entity.Group = selectedGroup) |>
-            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+            Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |>
+            Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         World.enqueueRenderMessage3d
             (RenderStaticModels
@@ -584,12 +585,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world
 
         // render lights of the selected group in play
-        world <- wtemp
-        let (entities, wtemp) = World.getLightsInPlay3d (HashSet ()) world in world <- wtemp
+        let (entities, wtemp) = World.getLightsInFrustum3d iconFrustum (HashSet ()) world in world <- wtemp
         let lightModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>
-            Seq.map (fun light -> (light.GetAffineMatrixOffset world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+            Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         World.enqueueRenderMessage3d
             (RenderStaticModels
@@ -602,9 +602,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // render selection highlights
         match selectedEntityOpt with
         | Some entity when entity.Exists world ->
-            let absolute = entity.GetAbsolute world
-            let bounds = entity.GetHighlightBounds world
             if entity.GetIs2d world then
+                let absolute = entity.GetAbsolute world
+                let bounds = entity.GetHighlightBounds world
                 let elevation = Single.MaxValue
                 let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
                 let image = Assets.Default.HighlightImage
@@ -624,6 +624,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                   Flip = FlipNone }})
                     world
             else
+                let absolute = entity.GetAbsolute world
+                let bounds = entity.GetHighlightBounds world
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center
                 World.enqueueRenderMessage3d
@@ -675,8 +677,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if atMouse
                 then viewport.MouseToWorld2d (entity.GetAbsolute world, rightClickPosition, eyeCenter, eyeSize)
                 else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEyeSize2d world, eyeCenter, eyeSize)
+            let attributes = entity.GetAttributesInferred world
             entityTransform.Position <- entityPosition.V3
-            entityTransform.Size <- entity.GetQuickSize world
+            entityTransform.Size <- attributes.SizeInferred
+            entityTransform.Offset <- attributes.OffsetInferred
             entityTransform.Elevation <- newEntityElevation
             if snaps2dSelected && ImGui.IsCtrlReleased ()
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
@@ -691,8 +695,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let plane = plane3 (eyeCenter + forward * newEntityDistance) -forward
                     (ray.Intersection plane).Value
                 else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * newEntityDistance
+            let attributes = entity.GetAttributesInferred world
             entityTransform.Position <- entityPosition
-            entityTransform.Size <- entity.GetQuickSize world
+            entityTransform.Size <- attributes.SizeInferred
+            entityTransform.Offset <- attributes.OffsetInferred
             if not snaps2dSelected && ImGui.IsCtrlReleased ()
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
@@ -765,11 +771,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC API)."
             false
 
-    let private tryQuickSizeSelectedEntity () =
+    let private tryAutoBoundsSelectedEntity () =
         match selectedEntityOpt with
         | Some entity when entity.Exists world ->
             snapshot ()
-            world <- entity.SetSize (entity.GetQuickSize world) world
+            world <- entity.AutoBounds world
             true
         | Some _ | None -> false
 
@@ -1210,7 +1216,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.Q && ImGui.IsCtrlDown () then tryQuickSizeSelectedEntity () |> ignore<bool>
+            elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () then tryAutoBoundsSelectedEntity () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then reloadAllRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
@@ -1252,7 +1258,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
             if not (entity.GetAbsolute world) then
                 if entity.GetIs2d world then
-                    desiredEyeCenter2d <- (entity.GetCenter world).V2
+                    desiredEyeCenter2d <- (entity.GetPerimeterCenter world).V2
                 else
                     let eyeRotation = World.getEyeRotation3d world
                     let eyeCenterOffset = Vector3.Transform (v3Back * newEntityDistance, eyeRotation)
@@ -2018,7 +2024,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
                                 if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Quick Size", "Ctrl+Q") then tryQuickSizeSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Auto Bounds", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Edit" then
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
@@ -2055,7 +2061,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     newEntityOverlayName <- overlayName
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
-                        if ImGui.Button "Quick Size" then tryQuickSizeSelectedEntity () |> ignore<bool>
+                        if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity () |> ignore<bool>
                         ImGui.SameLine ()
                         if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
                         ImGui.SameLine ()

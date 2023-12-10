@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.IO
 open System.Numerics
 open TiledSharp
 open Prime
@@ -70,10 +69,10 @@ module StaticSpriteFacetModule =
             let flip = entity.GetFlip world
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, AssetTag.generalize staticImage, &transform, &insetOpt, staticImage, &color, blend, &emission, flip, world)
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
-            | Some size -> size.V3
-            | None -> Constants.Engine.EntitySize2dDefault
+            | Some size -> AttributesInferred.make size.V3 v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -144,8 +143,8 @@ module AnimatedSpriteFacetModule =
             let flip = entity.GetFlip world
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, AssetTag.generalize animationSheet, &transform, &insetOpt, animationSheet, &color, blend, &emission, flip, world)
 
-        override this.GetQuickSize (entity, world) =
-            (entity.GetCelSize world).V3
+        override this.GetAttributesInferred (entity, world) =
+            AttributesInferred.make (entity.GetCelSize world).V3 v3Zero
 
 [<AutoOpen>]
 module BasicStaticSpriteEmitterFacetModule =
@@ -464,8 +463,8 @@ module TextFacetModule =
                               Justification = entity.GetJustification world }}
                     world
 
-        override this.GetQuickSize (_, _) =
-            Constants.Engine.EntitySize2dDefault
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
 
 [<AutoOpen>]
 module BackdroppableFacetModule =
@@ -490,7 +489,7 @@ module BackdroppableFacetModule =
             match entity.GetBackdropImageOpt world with
             | Some spriteImage ->
                 let mutable transform = entity.GetTransform world
-                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+                let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered
                 World.enqueueLayeredOperation2d
                     { Elevation = spriteTransform.Elevation
                       Horizon = spriteTransform.Horizon
@@ -507,13 +506,13 @@ module BackdroppableFacetModule =
                     world
             | None -> ()
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match entity.GetBackdropImageOpt world with
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
-                | Some size -> size.V3
-                | None -> Constants.Engine.EntitySize2dDefault
-            | None -> Constants.Engine.EntitySize2dDefault
+                | Some size -> AttributesInferred.make size.V3 v3Zero
+                | None -> AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
 
 [<AutoOpen>]
 module LabelFacetModule =
@@ -533,7 +532,7 @@ module LabelFacetModule =
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignore rotation
             let spriteImage = entity.GetLabelImage world
             World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
@@ -550,10 +549,10 @@ module LabelFacetModule =
                           Flip = FlipNone }}
                 world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
-            | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | Some size -> AttributesInferred.make size.V3 v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module ButtonFacetModule =
@@ -589,9 +588,9 @@ module ButtonFacetModule =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
+                let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
                 let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then
                     if transform.Enabled then
                         let world = entity.SetDown true world
                         let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) (entity.GetDownOffset world) world
@@ -609,9 +608,9 @@ module ButtonFacetModule =
             let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) v2Zero world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
+                let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
                 let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then
                     if transform.Enabled && wasDown then
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Up" EventTrace.empty
                         let world = World.publishPlus () entity.UpEvent eventTrace entity true false world
@@ -642,7 +641,7 @@ module ButtonFacetModule =
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignore rotation
             let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
             World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
@@ -659,10 +658,10 @@ module ButtonFacetModule =
                           Flip = FlipNone }}
                 world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
-            | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | Some size -> AttributesInferred.make size.V3 v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module ToggleButtonFacetModule =
@@ -704,9 +703,9 @@ module ToggleButtonFacetModule =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
+                let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
                 let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then
                     if transform.Enabled then
                         let world = entity.SetPressed true world
                         (Resolve, world)
@@ -720,9 +719,9 @@ module ToggleButtonFacetModule =
             let world = if wasPressed then entity.SetPressed false world else world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
+                let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
                 let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then
                     if transform.Enabled && wasPressed then
                         let world = entity.SetToggled (not (entity.GetToggled world)) world
                         let toggled = entity.GetToggled world
@@ -766,7 +765,7 @@ module ToggleButtonFacetModule =
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignores rotation
             let spriteImage =
                 if entity.GetToggled world || entity.GetPressed world
                 then entity.GetToggledImage world
@@ -786,10 +785,10 @@ module ToggleButtonFacetModule =
                           Flip = FlipNone }}
                 world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
-            | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | Some size -> AttributesInferred.make size.V3 v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module RadioButtonFacetModule =
@@ -825,9 +824,9 @@ module RadioButtonFacetModule =
             let entity = evt.Subscriber : Entity
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
+                let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
                 let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then
                     if transform.Enabled then
                         let world = entity.SetPressed true world
                         (Resolve, world)
@@ -842,9 +841,9 @@ module RadioButtonFacetModule =
             let wasDialed = entity.GetDialed world
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
+                let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
                 let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then
                     if transform.Enabled && wasPressed && not wasDialed then
                         let world = entity.SetDialed true world
                         let dialed = entity.GetDialed world
@@ -888,7 +887,7 @@ module RadioButtonFacetModule =
 
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.Centered
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignores rotation
             let spriteImage =
                 if entity.GetDialed world || entity.GetPressed world
                 then entity.GetDialedImage world
@@ -908,10 +907,10 @@ module RadioButtonFacetModule =
                           Flip = FlipNone }}
                 world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
-            | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | Some size -> AttributesInferred.make size.V3 v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module FillBarFacetModule =
@@ -955,7 +954,7 @@ module FillBarFacetModule =
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter // gui currently ignores rotation
             let horizon = transform.Horizon
-            let mutable borderTransform = Transform.makeDefault transform.Centered
+            let mutable borderTransform = Transform.makeDefault transform.PerimeterCentered
             borderTransform.Position <- perimeter.Min
             borderTransform.Size <- perimeter.Size
             borderTransform.Offset <- transform.Offset
@@ -986,7 +985,7 @@ module FillBarFacetModule =
             let fillWidth = (fillSize.X - fillInset * 2.0f) * entity.GetFill world
             let fillHeight = fillSize.Y - fillInset * 2.0f
             let fillSize = v3 fillWidth fillHeight 0.0f
-            let mutable fillTransform = Transform.makeDefault transform.Centered
+            let mutable fillTransform = Transform.makeDefault transform.PerimeterCentered
             fillTransform.Position <- fillPosition
             fillTransform.Size <- fillSize
             fillTransform.Offset <- transform.Offset
@@ -1009,10 +1008,10 @@ module FillBarFacetModule =
                             Flip = FlipNone }}
                 world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
-            | Some size -> size.V3
-            | None -> Constants.Engine.EntitySizeGuiDefault
+            | Some size -> AttributesInferred.make size.V3 v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module FeelerFacetModule =
@@ -1034,9 +1033,9 @@ module FeelerFacetModule =
             let data = evt.Data : MouseButtonData
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
-                let perimeter = transform.Perimeter.Box2
+                let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
                 let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
-                if perimeter.Intersects mousePositionWorld then // gui currently ignores rotation
+                if perimeter.Intersects mousePositionWorld then
                     if transform.Enabled then
                         let world = entity.SetTouched true world
                         let eventTrace = EventTrace.debug "FeelerFacet" "handleMouseLeftDown" "" EventTrace.empty
@@ -1095,8 +1094,8 @@ module FeelerFacetModule =
                 else world
             else world
 
-        override this.GetQuickSize (_, _) =
-            Constants.Engine.EntitySize2dDefault
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -1126,9 +1125,9 @@ module EffectFacetModule =
         /// effect due to a semantic limitation in Nu.
         member this.SetEffectDescriptor (value : Effects.EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
         member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
-        member this.GetEffectCentered world : bool = this.Get (nameof this.EffectCentered) world
-        member this.SetEffectCentered (value : bool) world = this.Set (nameof this.EffectCentered) value world
-        member this.EffectCentered = lens (nameof this.EffectCentered) this this.GetEffectCentered this.SetEffectCentered
+        member this.GetEffectPerimeterCentered world : bool = this.Get (nameof this.EffectPerimeterCentered) world
+        member this.SetEffectPerimeterCentered (value : bool) world = this.Set (nameof this.EffectPerimeterCentered) value world
+        member this.EffectPerimeterCentered = lens (nameof this.EffectPerimeterCentered) this this.GetEffectPerimeterCentered this.SetEffectPerimeterCentered
         member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
         member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
         member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
@@ -1143,12 +1142,6 @@ module EffectFacetModule =
         member this.GetEffectTags world : Map<string, Effects.Slice> = this.Get (nameof this.EffectTags) world
         member this.SetEffectTags (value : Map<string, Effects.Slice>) world = this.Set (nameof this.EffectTags) value world
         member this.EffectTags = lens (nameof this.EffectTags) this this.GetEffectTags this.SetEffectTags
-
-        /// The start time of the effect, or zero if none.
-        member this.GetEffectStartTime world =
-            match this.GetEffectStartTimeOpt world with
-            | Some effectStartTime -> effectStartTime
-            | None -> GameTime.zero
 
     /// Augments an entity with an effect.
     type EffectFacet () =
@@ -1168,8 +1161,8 @@ module EffectFacetModule =
             // make effect
             let effect =
                 Effect.makePlus
-                    (entity.GetEffectStartTime world)
-                    (entity.GetEffectCentered world)
+                    (match this.GetEffectStartTimeOpt world with Some effectStartTime -> effectStartTime | None -> GameTime.zeroentity.GetEffectStartTime world)
+                    (entity.GetEffectPerimeterCentered world)
                     (entity.GetEffectOffset world)
                     (entity.GetTransform world)
                     (entity.GetEffectRenderType world)
@@ -1237,9 +1230,9 @@ module EffectFacetModule =
              define Entity.RunMode RunLate
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
+             define Entity.EffectPerimeterCentered true
              define Entity.EffectDefinitions Map.empty
              define Entity.EffectDescriptor Effects.EffectDescriptor.empty
-             define Entity.EffectCentered true
              define Entity.EffectOffset v3Zero
              define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
@@ -1276,7 +1269,7 @@ module EffectFacetModule =
 
         override this.RayCast (ray, entity, world) =
             if entity.GetIs3d world then
-                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
                 if intersectionOpt.HasValue then [|intersectionOpt.Value|]
                 else [||]
             else [||]
@@ -1389,7 +1382,7 @@ module RigidBodyFacetModule =
             let (_, world) = World.subscribePlus subIds.[4] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Scale)) entity world
             let (_, world) = World.subscribePlus subIds.[5] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Offset)) entity world
             let (_, world) = World.subscribePlus subIds.[6] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Size)) entity world
-            let (_, world) = World.subscribePlus subIds.[7] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Centered)) entity world
+            let (_, world) = World.subscribePlus subIds.[7] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.PerimeterCentered)) entity world
             let (_, world) = World.subscribePlus subIds.[8] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
             let (_, world) = World.subscribePlus subIds.[9] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyType)) entity world
             let (_, world) = World.subscribePlus subIds.[10] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world
@@ -1422,7 +1415,7 @@ module RigidBodyFacetModule =
             let mutable transform = entity.GetTransform world
             let bodyProperties =
                 { BodyIndex = (entity.GetBodyId world).BodyIndex
-                  Center = transform.Center
+                  Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
                   Rotation = transform.Rotation
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
@@ -1518,7 +1511,7 @@ module TileMapFacetModule =
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
         override this.Register (entity, world) =
-            let world = entity.SetSize (entity.GetQuickSize world) world
+            let world = entity.AutoBounds world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TileMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TileMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TileMapFacet) world
@@ -1528,9 +1521,10 @@ module TileMapFacetModule =
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
             let world =
                 World.sense (fun _ world ->
-                    let quickSize = entity.GetQuickSize world
+                    let attributes = entity.GetAttributesInferred world
                     let mutable transform = entity.GetTransform world
-                    transform.Size <- quickSize
+                    transform.Size <- attributes.SizeInferred
+                    transform.Offset <- attributes.OffsetInferred
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
                     (entity.ChangeEvent (nameof entity.TileMap))
@@ -1585,10 +1579,10 @@ module TileMapFacetModule =
                 World.enqueueLayeredOperations2d tileMapMessages world
             | None -> ()
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) with
-            | Some tileMap -> TmxMap.getQuickSize tileMap
-            | None -> Constants.Engine.EntitySize2dDefault
+            | Some tileMap -> TmxMap.getAttributesInferred tileMap
+            | None -> AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
 
 [<AutoOpen>]
 module TmxMapFacetModule =
@@ -1619,7 +1613,7 @@ module TmxMapFacetModule =
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
         override this.Register (entity, world) =
-            let world = entity.SetSize (entity.GetQuickSize world) world
+            let world = entity.AutoBounds world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity (nameof TmxMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof TmxMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity (nameof TmxMapFacet) world
@@ -1629,9 +1623,10 @@ module TmxMapFacetModule =
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
             let world =
                 World.sense (fun _ world ->
-                    let quickSize = entity.GetQuickSize world
+                    let attributes = entity.GetAttributesInferred world
                     let mutable transform = entity.GetTransform world
-                    transform.Size <- quickSize
+                    transform.Size <- attributes.SizeInferred
+                    transform.Offset <- attributes.OffsetInferred
                     let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
                     (entity.ChangeEvent (nameof entity.TmxMap))
@@ -1682,9 +1677,9 @@ module TmxMapFacetModule =
                     tmxMap
             World.enqueueLayeredOperations2d tmxMapMessages world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             let tmxMap = entity.GetTmxMap world
-            TmxMap.getQuickSize tmxMap
+            TmxMap.getAttributesInferred tmxMap
 
 [<AutoOpen>]
 module LayoutFacetModule =
@@ -1712,7 +1707,7 @@ module LayoutFacetModule =
 
         static let rec flowRightward
             reentry leftX (margin : Vector2) wrapLimit (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
-            let childPerimeter = child.GetPerimeter world
+            let childPerimeter = child.GetPerimeter world // gui currently ignores rotation
             let childHalfWidth = childPerimeter.Width * 0.5f
             let childHalfHeight = childPerimeter.Height * 0.5f
             let childCenter = v2 offsetX offsetY + v2 margin.X -margin.Y + v2 childHalfWidth -childHalfHeight
@@ -1725,14 +1720,14 @@ module LayoutFacetModule =
                     maximum <- 0.0f
                     if not reentry
                     then flowRightward true leftX margin wrapLimit &offsetX &offsetY &maximum child world
-                    else child.SetCenterLocal childCenter.V3 world
-                else child.SetCenterLocal childCenter.V3 world
+                    else child.SetPerimeterCenterLocal childCenter.V3 world
+                else child.SetPerimeterCenterLocal childCenter.V3 world
             if childPerimeter.Height > maximum then maximum <- childPerimeter.Height
             world
 
         static let rec flowDownward
             reentry topY (margin : Vector2) wrapLimit (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
-            let childPerimeter = child.GetPerimeter world
+            let childPerimeter = child.GetPerimeter world // gui currently ignores rotation
             let childHalfWidth = childPerimeter.Width * 0.5f
             let childHalfHeight = childPerimeter.Height * 0.5f
             let childCenter = v2 offsetX offsetY + v2 margin.X -margin.Y + v2 childHalfWidth -childHalfHeight
@@ -1745,8 +1740,8 @@ module LayoutFacetModule =
                     maximum <- 0.0f
                     if not reentry
                     then flowDownward true topY margin wrapLimit &offsetX &offsetY &maximum child world
-                    else child.SetCenterLocal childCenter.V3 world
-                else child.SetCenterLocal childCenter.V3 world
+                    else child.SetPerimeterCenterLocal childCenter.V3 world
+                else child.SetPerimeterCenterLocal childCenter.V3 world
             if childPerimeter.Width > maximum then maximum <- childPerimeter.Width
             world
 
@@ -1851,7 +1846,7 @@ module LayoutFacetModule =
                 world children
 
         static let performLayout (entity : Entity) world =
-            if entity.GetCentered world then // NOTE: layouts only supported for centered entities.
+            if entity.GetPerimeterCentered world then // NOTE: layouts only supported for centered entities.
                 match entity.GetLayout world with
                 | Manual -> world // OPTIMIZATION: early exit.
                 | layout ->
@@ -1867,7 +1862,7 @@ module LayoutFacetModule =
                             (layoutOrder, order, child)) |>
                         Array.sortBy ab_ |>
                         Array.map __c
-                    let perimeter = (entity.GetPerimeter world).Box2
+                    let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation
                     let margin = entity.GetLayoutMargin world
                     let world =
                         match layout with
@@ -2029,15 +2024,12 @@ module LightProbeFacet3dModule =
             World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }) world
 
         override this.RayCast (ray, entity, world) =
-            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
 
-        override this.TryGetHighlightBounds (entity, world) =
-            Some (entity.GetBounds world)
-
-        override this.GetQuickSize (_, _) =
-            v3Dup 0.5f
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.make (v3Dup 0.5f) v3Zero
 
         override this.Edit (op, entity, world) =
             match op with
@@ -2116,15 +2108,12 @@ module LightFacet3dModule =
                     world
 
         override this.RayCast (ray, entity, world) =
-            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
 
-        override this.TryGetHighlightBounds (entity, world) =
-            Some (entity.GetBounds world)
-
-        override this.GetQuickSize (_, _) =
-            v3Dup 0.5f
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.make (v3Dup 0.5f) v3Zero
 
 [<AutoOpen>]
 module StaticBillboardFacetModule =
@@ -2186,7 +2175,7 @@ module StaticBillboardFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
-            let affineMatrixOffset = transform.AffineMatrixOffset
+            let affineMatrix = transform.AffineMatrix
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
             let albedoImage = entity.GetAlbedoImage world
@@ -2204,7 +2193,7 @@ module StaticBillboardFacetModule =
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    { Absolute = absolute; ModelMatrix = affineMatrixOffset; InsetOpt = insetOpt; MaterialProperties = properties
+                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties
                       AlbedoImage = albedoImage; RoughnessImage = roughnessImage; MetallicImage = metallicImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
                       MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
                 world
@@ -2217,10 +2206,6 @@ module StaticBillboardFacetModule =
                 if intersectionOpt.HasValue then [|intersectionOpt.Value|]
                 else [||]
             | None -> [||]
-
-        override this.TryGetHighlightBounds (entity, world) =
-            let bounds = entity.GetBounds world
-            Some bounds
 
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetModule =
@@ -2551,7 +2536,7 @@ module BasicStaticBillboardEmitterFacetModule =
             World.enqueueRenderMessages3d particlesMessages world
 
         override this.RayCast (ray, entity, world) =
-            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
 
@@ -2577,7 +2562,7 @@ module StaticModelFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
-            let affineMatrixOffset = transform.AffineMatrixOffset
+            let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
@@ -2586,21 +2571,20 @@ module StaticModelFacetModule =
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             let staticModel = entity.GetStaticModel world
-            World.enqueueRenderMessage3d (RenderStaticModel { Absolute = absolute; ModelMatrix = affineMatrixOffset; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; StaticModel = staticModel }) world
+            World.enqueueRenderMessage3d (RenderStaticModel { Absolute = absolute; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; StaticModel = staticModel }) world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             let staticModel = entity.GetStaticModel world
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let bounds = staticModelMetadata.Bounds
-                let boundsExtended = bounds.Combine bounds.Mirror
-                boundsExtended.Size
-            | None -> base.GetQuickSize (entity, world)
+                AttributesInferred.make bounds.Size bounds.Center
+            | None -> base.GetAttributesInferred (entity, world)
 
         override this.RayCast (ray, entity, world) =
-            let affineMatrixOffset = entity.GetAffineMatrixOffset world
-            let inverseMatrixOffset = Matrix4x4.Invert affineMatrixOffset |> snd
-            let rayEntity = ray.Transform inverseMatrixOffset
+            let affineMatrix = entity.GetAffineMatrix world
+            let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
+            let rayEntity = ray.Transform inverseMatrix
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModelMetadata ->
                 let intersectionses =
@@ -2614,29 +2598,13 @@ module StaticModelFacetModule =
                             raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                             Seq.map snd' |>
                             Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrixOffset)) |>
+                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrix)) |>
                             Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
                             Seq.toArray
                         else [||])
                         staticModelMetadata.Surfaces
                 Array.concat intersectionses
             | None -> [||]
-
-        override this.TryGetHighlightBounds (entity, world) =
-            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-            | Some staticModelMetadata ->
-                let mutable boundsOpt = None
-                for surface in staticModelMetadata.Surfaces do
-                    let bounds2 = surface.SurfaceBounds.Transform surface.SurfaceMatrix
-                    match boundsOpt with
-                    | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
-                    | None -> boundsOpt <- Some bounds2
-                match boundsOpt with
-                | Some bounds ->
-                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
-                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
-                | None -> None
-            | None -> None
 
 [<AutoOpen>]
 module StaticModelSurfaceFacetModule =
@@ -2663,7 +2631,7 @@ module StaticModelSurfaceFacetModule =
             | surfaceIndex ->
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
-                let affineMatrixOffset = transform.AffineMatrixOffset
+                let affineMatrix = transform.AffineMatrix
                 let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
                 let renderType =
@@ -2671,21 +2639,20 @@ module StaticModelSurfaceFacetModule =
                     | Deferred -> DeferredRenderType
                     | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                 let staticModel = entity.GetStaticModel world
-                World.renderStaticModelSurfaceFast (absolute, &affineMatrixOffset, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
+                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModelMetadata ->
                 let surfaceIndex = entity.GetSurfaceIndex world
                 if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
                     let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
-                    let boundsExtended = bounds.Combine bounds.Mirror
-                    boundsExtended.Size
-                else base.GetQuickSize (entity, world)
-            | None -> base.GetQuickSize (entity, world)
+                    AttributesInferred.make bounds.Size bounds.Center
+                else base.GetAttributesInferred (entity, world)
+            | None -> base.GetAttributesInferred (entity, world)
 
         override this.RayCast (ray, entity, world) =
-            let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrixOffset world) |> snd)
+            let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
             | Some staticModelMetadata ->
                 let surfaceIndex = entity.GetSurfaceIndex world
@@ -2700,18 +2667,6 @@ module StaticModelSurfaceFacetModule =
                     else [||]
                 else [||]
             | None -> [||]
-
-        override this.TryGetHighlightBounds (entity, world) =
-            match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-            | Some staticModelMetadata ->
-                let surfaceIndex = entity.GetSurfaceIndex world
-                if surfaceIndex < staticModelMetadata.Surfaces.Length then
-                    let surface = staticModelMetadata.Surfaces.[surfaceIndex]
-                    let bounds = surface.PhysicallyBasedGeometry.Bounds
-                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
-                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
-                else None
-            | None -> None
 
 [<AutoOpen>]
 module AnimatedModelFacetModule =
@@ -2739,28 +2694,27 @@ module AnimatedModelFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
-            let affineMatrixOffset = transform.AffineMatrixOffset
+            let affineMatrix = transform.AffineMatrix
             let startTime = entity.GetStartTime world
             let localTime = world.GameTime - startTime
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            World.renderAnimatedModelFast (localTime, absolute, &affineMatrixOffset, insetOpt, &properties, animations, animatedModel, world)
+            World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, animations, animatedModel, world)
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
             match Metadata.tryGetAnimatedModelMetadata animatedModel with
             | Some animatedModelMetadata ->
                 let bounds = animatedModelMetadata.Bounds
-                let boundsExtended = bounds.Combine bounds.Mirror
-                boundsExtended.Size
-            | None -> base.GetQuickSize (entity, world)
+                AttributesInferred.make bounds.Size bounds.Center
+            | None -> base.GetAttributesInferred (entity, world)
 
         override this.RayCast (ray, entity, world) =
-            let affineMatrixOffset = entity.GetAffineMatrixOffset world
-            let inverseMatrixOffset = Matrix4x4.Invert affineMatrixOffset |> snd
-            let rayEntity = ray.Transform inverseMatrixOffset
+            let affineMatrix = entity.GetAffineMatrix world
+            let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
+            let rayEntity = ray.Transform inverseMatrix
             match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
             | Some animatedModelMetadata ->
                 let intersectionses =
@@ -2774,29 +2728,13 @@ module AnimatedModelFacetModule =
                             raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                             Seq.map snd' |>
                             Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrixOffset)) |>
+                            Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrix)) |>
                             Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
                             Seq.toArray
                         else [||])
                         animatedModelMetadata.Surfaces
                 Array.concat intersectionses
             | None -> [||]
-
-        override this.TryGetHighlightBounds (entity, world) =
-            match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
-            | Some animatedModelMetadata ->
-                let mutable boundsOpt = None
-                for surface in animatedModelMetadata.Surfaces do
-                    let bounds2 = surface.SurfaceBounds.Transform surface.SurfaceMatrix
-                    match boundsOpt with
-                    | Some (bounds : Box3) -> boundsOpt <- Some (bounds.Combine bounds2)
-                    | None -> boundsOpt <- Some bounds2
-                match boundsOpt with
-                | Some bounds ->
-                    let boundsOverflow = bounds.ScaleUniform (entity.GetOverflow world)
-                    Some (boundsOverflow.Transform (entity.GetAffineMatrixOffset world))
-                | None -> None
-            | None -> None
 
 [<AutoOpen>]
 module TerrainFacetModule =
@@ -2833,7 +2771,7 @@ module TerrainFacetModule =
             | RawHeightMap map -> Some map.Resolution
 
         member this.TryGetTerrainQuadSize world =
-            let bounds = this.GetBounds world
+            let bounds = this.GetBounds3d world
             match this.TryGetTerrainResolution world with
             | Some resolution -> Some (v2 (bounds.Size.X / single (dec resolution.X)) (bounds.Size.Z / single (dec resolution.Y)))
             | None -> None
@@ -2893,13 +2831,13 @@ module TerrainFacetModule =
                 let mutable transform = entity.GetTransform world
                 let bodyTerrain =
                     { Resolution = resolution
-                      Bounds = transform.Bounds
+                      Bounds = transform.Bounds3d
                       HeightMap = entity.GetHeightMap world
                       TransformOpt = None
                       PropertiesOpt = None }
                 let bodyProperties =
                     { BodyIndex = (entity.GetBodyId world).BodyIndex
-                      Center = transform.Center
+                      Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
                       Rotation = transform.Rotation
                       BodyShape = BodyTerrain bodyTerrain
                       BodyType = Static
@@ -2927,7 +2865,7 @@ module TerrainFacetModule =
         override this.Render (entity, world) =
             let mutable transform = entity.GetTransform world
             let terrainDescriptor =
-                { Bounds = transform.Bounds
+                { Bounds = transform.Bounds3d
                   InsetOpt = entity.GetInsetOpt world
                   MaterialProperties = entity.GetTerrainMaterialProperties world
                   Material = entity.GetTerrainMaterial world
@@ -2943,7 +2881,7 @@ module TerrainFacetModule =
                       TerrainDescriptor = terrainDescriptor })
                 world
 
-        override this.GetQuickSize (entity, world) =
+        override this.GetAttributesInferred (entity, world) =
             match entity.TryGetTerrainResolution world with
-            | Some resolution -> v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))
-            | None -> v3 512.0f 128.0f 512.0f
+            | Some resolution -> AttributesInferred.make (v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))) v3Zero
+            | None -> AttributesInferred.make (v3 512.0f 128.0f 512.0f) v3Zero

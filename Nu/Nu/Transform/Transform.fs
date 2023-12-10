@@ -10,33 +10,32 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b00000000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b00000000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b00000000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b00000000000000000000001000u
-    let [<Literal>] ImperativeMask =                0b00000000000000000000010000u
-    let [<Literal>] EnabledMask =                   0b00000000000000000000100000u
-    let [<Literal>] VisibleMask =                   0b00000000000000000001000000u
-    let [<Literal>] PickableMask =                  0b00000000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b00000000000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b00000000000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b00000000000000010000000000u
-    let [<Literal>] PublishPreUpdatesMask =         0b00000000000000100000000000u
-    let [<Literal>] PublishUpdatesMask =            0b00000000000001000000000000u
-    let [<Literal>] PublishPostUpdatesMask =        0b00000000000010000000000000u
-    let [<Literal>] ProtectedMask =                 0b00000000000100000000000000u
-    let [<Literal>] PersistentMask =                0b00000000001000000000000000u
-    let [<Literal>] MountedMask =                   0b00000000010000000000000000u
-    let [<Literal>] EnabledLocalMask =              0b00000000100000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b00000001000000000000000000u
-    let [<Literal>] CenteredMask =                  0b00000010000000000000000000u
-    let [<Literal>] StaticMask =                    0b00000100000000000000000000u
-    let [<Literal>] LightProbeMask =                0b00001000000000000000000000u
-    let [<Literal>] LightMask =                     0b00010000000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b00100000000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b01000000000000000000000000u
-    let [<Literal>] PerimeterOrientedDirtyMask =    0b10000000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b11000011101000000011110001u
+    let [<Literal>] ActiveMask =                    0b0000000000000000000000001u
+    let [<Literal>] DirtyMask =                     0b0000000000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b0000000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b0000000000000000000001000u
+    let [<Literal>] ImperativeMask =                0b0000000000000000000010000u
+    let [<Literal>] EnabledMask =                   0b0000000000000000000100000u
+    let [<Literal>] VisibleMask =                   0b0000000000000000001000000u
+    let [<Literal>] PickableMask =                  0b0000000000000000010000000u
+    let [<Literal>] AlwaysUpdateMask =              0b0000000000000000100000000u
+    let [<Literal>] AlwaysRenderMask =              0b0000000000000001000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b0000000000000010000000000u
+    let [<Literal>] PublishPreUpdatesMask =         0b0000000000000100000000000u
+    let [<Literal>] PublishUpdatesMask =            0b0000000000001000000000000u
+    let [<Literal>] PublishPostUpdatesMask =        0b0000000000010000000000000u
+    let [<Literal>] ProtectedMask =                 0b0000000000100000000000000u
+    let [<Literal>] PersistentMask =                0b0000000001000000000000000u
+    let [<Literal>] MountedMask =                   0b0000000010000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b0000000100000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b0000001000000000000000000u
+    let [<Literal>] PerimeterCenteredMask =         0b0000010000000000000000000u // TODO: remove PerimeterCentered from the engine.
+    let [<Literal>] StaticMask =                    0b0000100000000000000000000u
+    let [<Literal>] LightProbeMask =                0b0001000000000000000000000u
+    let [<Literal>] LightMask =                     0b0010000000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b0100000000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b1000000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b1000011101000000011110001u
 
 // NOTE: opening masks for succintness.
 open TransformMasks
@@ -50,7 +49,6 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
         val mutable private RotationMatrixOpt_ : Matrix4x4 ref
-        val mutable private PerimeterOrientedOpt_ : Box3 ref
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
         val mutable private Elevation_ : single
@@ -80,16 +78,15 @@ type [<NoEquality; NoComparison>] Transform =
     member this.LightProbe with get () = this.Flags_ &&& LightProbeMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| LightProbeMask else this.Flags_ &&& ~~~LightProbeMask
     member this.Light with get () = this.Flags_ &&& LightMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| LightMask else this.Flags_ &&& ~~~LightMask
     member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
-    member this.PerimeterOrientedDirty with get () = this.Flags_ &&& PerimeterOrientedDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterOrientedDirtyMask else this.Flags_ &&& ~~~PerimeterOrientedDirtyMask
     member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
     member this.Optimized with get () = this.Imperative && this.Presence_.OmnipresentType && not this.PublishChangeEvents
 
-    member this.Position with get () = this.Position_ and set value = this.Position_ <- value; this.PerimeterOrientedDirty <- true
-    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value; this.PerimeterOrientedDirty <- true
-    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value; this.PerimeterOrientedDirty <- true
-    member this.Size with get () = this.Size_ and set value = this.Size_ <- value; this.PerimeterOrientedDirty <- true
+    member this.Position with get () = this.Position_ and set value = this.Position_ <- value
+    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value
+    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value
+    member this.Size with get () = this.Size_ and set value = this.Size_ <- value
     member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value
-    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value; this.PerimeterOrientedDirty <- true
+    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value
 
     member this.Absolute
         with get () = this.Flags_ &&& AbsoluteMask <> 0u
@@ -98,11 +95,9 @@ type [<NoEquality; NoComparison>] Transform =
             if this.Absolute then // setting a transform to Absolute requires that it also be Omnipresent
                 this.Presence_ <- Omnipresent
 
-    member this.Centered
-        with get () = this.Flags_ &&& CenteredMask <> 0u
-        and set value =
-            this.Flags_ <- if value then this.Flags_ ||| CenteredMask else this.Flags_ &&& ~~~CenteredMask
-            this.PerimeterOrientedDirty <- true
+    member this.PerimeterCentered
+        with get () = this.Flags_ &&& PerimeterCenteredMask <> 0u
+        and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterCenteredMask else this.Flags_ &&& ~~~PerimeterCenteredMask
 
     member this.Presence
         with get () = this.Presence_
@@ -116,7 +111,6 @@ type [<NoEquality; NoComparison>] Transform =
         and set value =
             this.Rotation_ <- value
             this.RotationMatrixDirty <- true
-            this.PerimeterOrientedDirty <- true
             this.AnglesDirty <- true
 
     member this.Angles
@@ -128,7 +122,6 @@ type [<NoEquality; NoComparison>] Transform =
             this.AnglesDirty <- false
             this.Rotation_ <- value.RollPitchYaw
             this.RotationMatrixDirty <- true
-            this.PerimeterOrientedDirty <- true
 
     member this.Degrees
         with get () =
@@ -155,23 +148,6 @@ type [<NoEquality; NoComparison>] Transform =
         affineMatrix.Translation <- this.Position_
         affineMatrix
 
-    member this.AffineMatrixOffset =
-        let scale = this.Scale_
-        let sizeScaled = this.Size_ * scale
-        let positionUnscaledOffset = if not this.Centered then this.Offset_ + v3UncenteredOffset else this.Offset_
-        let mutable affineMatrix = this.RotationMatrix
-        affineMatrix.M11 <- affineMatrix.M11 * scale.X
-        affineMatrix.M12 <- affineMatrix.M12 * scale.X
-        affineMatrix.M13 <- affineMatrix.M13 * scale.X
-        affineMatrix.M21 <- affineMatrix.M21 * scale.Y
-        affineMatrix.M22 <- affineMatrix.M22 * scale.Y
-        affineMatrix.M23 <- affineMatrix.M23 * scale.Y
-        affineMatrix.M31 <- affineMatrix.M31 * scale.Z
-        affineMatrix.M32 <- affineMatrix.M32 * scale.Z
-        affineMatrix.M33 <- affineMatrix.M33 * scale.Z
-        affineMatrix.Translation <- this.Position_ + positionUnscaledOffset * sizeScaled
-        affineMatrix
-
     member this.Right = Vector3 (this.RotationMatrix.M11, this.RotationMatrix.M12, this.RotationMatrix.M13) // TODO: implement row properties.
     member this.Up = Vector3 (this.RotationMatrix.M21, this.RotationMatrix.M22, this.RotationMatrix.M23)
     member this.Forward = -Vector3 (this.RotationMatrix.M31, this.RotationMatrix.M32, this.RotationMatrix.M33)
@@ -179,52 +155,52 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Down = -this.Up
     member this.Back = -this.Forward
 
-    member this.Center
+    member this.PerimeterCenter
         with get () =
             let perimeter = this.Perimeter
             perimeter.Center
         and set (value : Vector3) =
-            let delta = value - this.Center
+            let delta = value - this.PerimeterCenter
             this.Position <- this.Position + delta
 
-    member this.Bottom
+    member this.PerimeterBottom
         with get () =
             let perimeter = this.Perimeter
             perimeter.Bottom
         and set (value : Vector3) =
-            let delta = value - this.Bottom
+            let delta = value - this.PerimeterBottom
             this.Position <- this.Position + delta
 
-    member this.BottomLeft
+    member this.PerimeterBottomLeft
         with get () =
             let perimeter = this.Perimeter
             perimeter.BottomLeft
         and set (value : Vector3) =
-            let delta = value - this.BottomLeft
+            let delta = value - this.PerimeterBottomLeft
             this.Position <- this.Position + delta
 
-    member this.Min
+    member this.PerimeterMin
         with get () =
             let perimeter = this.Perimeter
             perimeter.Min
         and set (value : Vector3) =
-            let delta = value - this.Min
+            let delta = value - this.PerimeterMin
             this.Position <- this.Position + delta
 
-    member this.Max
+    member this.PerimeterMax
         with get () =
             let perimeter = this.Perimeter
             perimeter.Max
         and set (value : Vector3) =
-            let delta = value - this.Max
+            let delta = value - this.PerimeterMax
             this.Position <- this.Position + delta
 
     member this.PerimeterUnscaled
         with get () =
-            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            let perimeterUnscaledOffset = if this.PerimeterCentered then this.Offset_ - v3UncenteredOffset else this.Offset_
             Box3 (this.Position_ + perimeterUnscaledOffset * this.Size_, this.Size_)
         and set (value : Box3) =
-            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            let perimeterUnscaledOffset = if this.PerimeterCentered then this.Offset_ - v3UncenteredOffset else this.Offset_
             this.Position <- value.Min - perimeterUnscaledOffset * value.Size
             this.Size <- value.Size
 
@@ -232,39 +208,98 @@ type [<NoEquality; NoComparison>] Transform =
         with get () : Box3 =
             let scale = this.Scale_
             let sizeScaled = this.Size_ * scale
-            let perimeterUnscaledOffset = if this.Centered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            let perimeterUnscaledOffset = if this.PerimeterCentered then this.Offset_ - v3UncenteredOffset else this.Offset_
             Box3 (this.Position_ + perimeterUnscaledOffset * sizeScaled, sizeScaled)
         and set (value : Box3) =
             this.Scale_ <- Vector3.One
             this.PerimeterUnscaled <- value
 
-    member this.PerimeterOriented =
-        this.CleanPerimeterOriented ()
-        this.PerimeterOrientedOpt_.Value
-
-    member this.Bounds =
-        let perimeterOriented = this.PerimeterOriented
+    member this.Bounds2d =
+        let perimeterOriented =
+            let perimeter = this.Perimeter
+            let rotation = this.Rotation_
+            if not rotation.IsIdentity then
+                let pivot = this.PerimeterPivot
+                let min = perimeter.Min
+                let max = perimeter.Max
+                let corners = NativePtr.stackalloc<Vector3> 8 // OPTIMIZATION: computing corners on the stack.
+                NativePtr.set corners 0 (Vector3 (min.X, min.Y, min.Z))
+                NativePtr.set corners 1 (Vector3 (min.X, min.Y, max.Z))
+                NativePtr.set corners 2 (Vector3 (max.X, min.Y, max.Z))
+                NativePtr.set corners 3 (Vector3 (max.X, min.Y, min.Z))
+                NativePtr.set corners 4 (Vector3 (max.X, max.Y, max.Z))
+                NativePtr.set corners 5 (Vector3 (min.X, max.Y, max.Z))
+                NativePtr.set corners 6 (Vector3 (min.X, max.Y, min.Z))
+                NativePtr.set corners 7 (Vector3 (max.X, max.Y, min.Z))
+                let mutable minX = Single.MaxValue
+                let mutable minY = Single.MaxValue
+                let mutable minZ = Single.MaxValue
+                let mutable maxX = Single.MinValue
+                let mutable maxY = Single.MinValue
+                let mutable maxZ = Single.MinValue
+                for i in 0 .. 8 - 1 do
+                    let mutable corner = NativePtr.get corners i
+                    corner <- Vector3.Transform (corner + pivot, rotation) - pivot
+                    minX <- Operators.min minX corner.X
+                    minY <- Operators.min minY corner.Y
+                    minZ <- Operators.min minZ corner.Z
+                    maxX <- Operators.max maxX corner.X
+                    maxY <- Operators.max maxY corner.Y
+                    maxZ <- Operators.max maxZ corner.Z
+                Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
+            else perimeter
         let sizeOverflowed = perimeterOriented.Size * this.Overflow_
         let center = perimeterOriented.Center
         let positionOverflowed = center - sizeOverflowed * 0.5f
         Box3 (positionOverflowed, sizeOverflowed)
 
+    member this.Bounds3d =
+        let bounds =
+            let position = this.Position_ + this.Offset
+            let size = this.Size_ * this.Scale_ * this.Overflow_
+            Box3 (position - size * 0.5f, size)
+        let rotation = this.Rotation_
+        if not rotation.IsIdentity then
+            let min = bounds.Min
+            let max = bounds.Max
+            let corners = NativePtr.stackalloc<Vector3> 8 // OPTIMIZATION: computing corners on the stack.
+            NativePtr.set corners 0 (Vector3 (min.X, min.Y, min.Z))
+            NativePtr.set corners 1 (Vector3 (min.X, min.Y, max.Z))
+            NativePtr.set corners 2 (Vector3 (max.X, min.Y, max.Z))
+            NativePtr.set corners 3 (Vector3 (max.X, min.Y, min.Z))
+            NativePtr.set corners 4 (Vector3 (max.X, max.Y, max.Z))
+            NativePtr.set corners 5 (Vector3 (min.X, max.Y, max.Z))
+            NativePtr.set corners 6 (Vector3 (min.X, max.Y, min.Z))
+            NativePtr.set corners 7 (Vector3 (max.X, max.Y, min.Z))
+            let mutable minX = Single.MaxValue
+            let mutable minY = Single.MaxValue
+            let mutable minZ = Single.MaxValue
+            let mutable maxX = Single.MinValue
+            let mutable maxY = Single.MinValue
+            let mutable maxZ = Single.MinValue
+            for i in 0 .. 8 - 1 do
+                let mutable corner = NativePtr.get corners i
+                corner <- Vector3.Transform (corner - this.Position_, rotation) + this.Position_
+                minX <- Operators.min minX corner.X
+                minY <- Operators.min minY corner.Y
+                minZ <- Operators.min minZ corner.Z
+                maxX <- Operators.max maxX corner.X
+                maxY <- Operators.max maxY corner.Y
+                maxZ <- Operators.max maxZ corner.Z
+            Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
+        else bounds
+
     member this.HorizonUnscaled =
-        if this.Centered
+        if this.PerimeterCentered
         then this.PerimeterUnscaled.Center.Y
         else this.PerimeterUnscaled.Bottom.Y
 
     member this.Horizon =
-        if this.Centered
+        if this.PerimeterCentered
         then this.Perimeter.Center.Y
         else this.Perimeter.Bottom.Y
 
-    member this.HorizonOriented =
-        if this.Centered
-        then this.PerimeterOriented.Center.Y
-        else this.PerimeterOriented.Bottom.Y
-
-    member this.Pivot =
+    member this.PerimeterPivot =
         let perimeter = this.Perimeter
         -perimeter.Center + perimeter.Size * this.Offset_
 
@@ -280,44 +315,6 @@ type [<NoEquality; NoComparison>] Transform =
         if isNull (this.RotationMatrixOpt_ :> obj) || this.RotationMatrixDirty then
             this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
             this.RotationMatrixDirty <- false
-
-    member this.CleanPerimeterOriented () =
-        if isNull (this.PerimeterOrientedOpt_ :> obj) || this.PerimeterOrientedDirty then
-            let perimeterOriented =
-                let perimeter = this.Perimeter
-                let rotation = this.Rotation_
-                if not rotation.IsIdentity then
-                    let pivot = this.Pivot
-                    let min = perimeter.Min
-                    let max = perimeter.Max
-                    let corners = NativePtr.stackalloc<Vector3> 8 // OPTIMIZATION: computing corners on the stack.
-                    NativePtr.set corners 0 (Vector3 (min.X, min.Y, min.Z))
-                    NativePtr.set corners 1 (Vector3 (min.X, min.Y, max.Z))
-                    NativePtr.set corners 2 (Vector3 (max.X, min.Y, max.Z))
-                    NativePtr.set corners 3 (Vector3 (max.X, min.Y, min.Z))
-                    NativePtr.set corners 4 (Vector3 (max.X, max.Y, max.Z))
-                    NativePtr.set corners 5 (Vector3 (min.X, max.Y, max.Z))
-                    NativePtr.set corners 6 (Vector3 (min.X, max.Y, min.Z))
-                    NativePtr.set corners 7 (Vector3 (max.X, max.Y, min.Z))
-                    let mutable minX = Single.MaxValue
-                    let mutable minY = Single.MaxValue
-                    let mutable minZ = Single.MaxValue
-                    let mutable maxX = Single.MinValue
-                    let mutable maxY = Single.MinValue
-                    let mutable maxZ = Single.MinValue
-                    for i in 0 .. 8 - 1 do
-                        let mutable corner = NativePtr.get corners i
-                        corner <- Vector3.Transform (corner + pivot, rotation) - pivot
-                        minX <- Operators.min minX corner.X
-                        minY <- Operators.min minY corner.Y
-                        minZ <- Operators.min minZ corner.Z
-                        maxX <- Operators.max maxX corner.X
-                        maxY <- Operators.max maxY corner.Y
-                        maxZ <- Operators.max maxZ corner.Z
-                    Box3 (minX, minY, minZ, maxX - minX, maxY - minY, maxZ - minZ)
-                else perimeter
-            this.PerimeterOrientedOpt_ <- ref perimeterOriented
-            this.PerimeterOrientedDirty <- false
 
     member this.Snap (positionSnap, degreesSnap, scaleSnap) =
         this.Position <- Math.SnapF3d positionSnap this.Position
@@ -350,7 +347,6 @@ type [<NoEquality; NoComparison>] Transform =
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
         if source.Flags_ &&& RotationMatrixDirtyMask = 0u then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value; target.RotationMatrixDirty <- false
-        if source.Flags_ &&& PerimeterOrientedDirtyMask = 0u then target.PerimeterOrientedOpt_ <- ref source.PerimeterOrientedOpt_.Value; target.PerimeterOrientedDirty <- false
         target.Angles_ <- source.Angles_
         target.Size_ <- source.Size_
         target.Elevation_ <- source.Elevation_
@@ -365,33 +361,33 @@ type [<NoEquality; NoComparison>] Transform =
         Unchecked.defaultof<Transform>
 
     /// Make a transform with default values.
-    static member makeDefault centered =
+    static member makeDefault perimeterCentered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
         transform.Size_ <- Vector3.One
         transform.Overflow_ <- 1.0f
-        transform.Centered <- centered
+        transform.PerimeterCentered <- perimeterCentered
         transform
 
     /// Make a transform based on a perimeter.
-    static member makePerimeter (perimeter : Box3) offset elevation absolute centered =
+    static member makePerimeter (perimeter : Box3) offset elevation absolute perimeterCentered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- if centered then perimeter.Center else perimeter.Min
+        transform.Position_ <- if perimeterCentered then perimeter.Center else perimeter.Min
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
         transform.Offset_ <- offset
         transform.Size_ <- perimeter.Size
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
-        transform.Centered <- centered
+        transform.PerimeterCentered <- perimeterCentered
         transform
 
     /// Make a transform based on human-intuited values.
-    static member makeIntuitive position scale offset size angles elevation absolute centered =
-        let mutable transform = Transform.makeDefault centered
+    static member makeIntuitive position scale offset size angles elevation absolute perimeterCentered =
+        let mutable transform = Transform.makeDefault perimeterCentered
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- position
         transform.Scale_ <- scale

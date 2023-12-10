@@ -2094,7 +2094,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for particle in rbps.Particles do
                     let billboardMatrix =
                         Matrix4x4.CreateFromTrs
-                            (particle.Transform.Center,
+                            (particle.Transform.Position,
                              particle.Transform.Rotation,
                              particle.Transform.Size * particle.Transform.Scale)
                     let billboardMaterialProperties = { billboardMaterial.MaterialProperties with Albedo = billboardMaterial.MaterialProperties.Albedo * particle.Color; Emission = particle.Emission.R }
