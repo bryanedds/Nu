@@ -555,10 +555,6 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     abstract RayCast : Ray3 * Entity * World -> single array
     default this.RayCast (_, _, _) = [||]
 
-    /// Attempt to get the highlight bounds of an entity.
-    abstract TryGetHighlightBounds : Entity * World -> Box3 option
-    default this.TryGetHighlightBounds (_, _) = None
-
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Entity * World -> World
     default this.Edit (_, _, world) = world
@@ -625,10 +621,6 @@ and Facet (physical) =
     /// Participate in attempting to pick an entity with a ray.
     abstract RayCast : Ray3 * Entity * World -> single array
     default this.RayCast (_, _, _) = [||]
-
-    /// Attempt to get the highlight bounds of a facet.
-    abstract TryGetHighlightBounds : Entity * World -> Box3 option
-    default this.TryGetHighlightBounds (_, _) = None
 
     /// Participate in getting the default size of an entity.
     abstract GetAttributesInferred : Entity * World -> AttributesInferred

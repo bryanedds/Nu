@@ -2199,13 +2199,11 @@ module StaticBillboardFacetModule =
                 world
 
         override this.RayCast (ray, entity, world) =
-            // TODO: P1: intersect against oriented quad rather than box.
-            match this.TryGetHighlightBounds (entity, world) with
-            | Some bounds ->
-                let intersectionOpt = ray.Intersects bounds
-                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-                else [||]
-            | None -> [||]
+            // TODO: P1: intersect against oriented quad rather than bounds.
+            let bounds = entity.GetBounds3d world
+            let intersectionOpt = ray.Intersects bounds
+            if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+            else [||]
 
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetModule =
