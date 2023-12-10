@@ -6,7 +6,7 @@
  <tileset firstgid="3416" source="CastleObjects2.tsx"/>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zSQFU8NeNq6BtX+whD8rF0MDLrlVvMM//Y3aP2r/qP1Dw35kzMVFX/tYuVDZWXS2H4RBdRbbANhLTQwAPXUq3g==
+   eJzrYGZg6CAT90IxufopxaP2j9o/av+o/aP2j9o/aj91zSQFU8NeNq6BtX+whD8rF0MDLrlVvMM//Y3aP2r/qP1Dw35kzMVFX/tYubCz6YlBdRbbANlNLQwAWYQq9Q==
   </data>
  </layer>
  <layer id="5" name="Flooring" width="32" height="32">

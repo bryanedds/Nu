@@ -9,7 +9,7 @@ open System.Reflection
 open Prime
 
 /// Describes the overlay state of a property.
-type [<StructuralEquality; StructuralComparison>] internal OverlayState =
+type internal OverlayState =
     | Bare
     | Altered
     | Overlaid
@@ -19,8 +19,7 @@ type [<StructuralEquality; StructuralComparison>] internal OverlayState =
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
-     Constants.PrettyPrinter.DetailedThresholdMax);
-     StructuralEquality; StructuralComparison>]
+     Constants.PrettyPrinter.DetailedThresholdMax)>]
 type Overlay =
     { OverlayName : string
       OverlaysInherited : string list

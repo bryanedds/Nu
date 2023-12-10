@@ -28,13 +28,13 @@ and [<ReferenceEquality>] private EcsCallbackScheduledObj =
       EcsCallbackObj : obj }
 
 /// The type of Ecs event.
-and [<StructuralEquality; NoComparison; Struct>] EcsEventType =
+and [<NoComparison; Struct>] EcsEventType =
     | GlobalEvent
     | EntityEvent of Entity : EcsEntity
     | ComponentEvent of Entity2 : EcsEntity * ComponentEvent : string
 
 /// An Ecs event.
-and [<StructuralEquality; NoComparison; Struct>] EcsEvent =
+and [<NoComparison; Struct>] EcsEvent =
     { EcsEventName : string
       EcsEventType : EcsEventType }
 
@@ -43,12 +43,12 @@ and EcsEvent<'d, 'w when 'w : not struct> =
     { EcsEventData : 'd }
 
 /// Data for an Ecs registration event.
-and [<StructuralEquality; NoComparison; Struct>] EcsChangeData =
+and [<NoComparison; Struct>] EcsChangeData =
     { EcsEntity : EcsEntity
       ComponentName : string }
 
 /// Data for an Ecs registration event.
-and [<StructuralEquality; NoComparison; Struct>] EcsRegistrationData =
+and [<NoComparison; Struct>] EcsRegistrationData =
     { EcsEntity : EcsEntity
       ComponentName : string }
 
@@ -728,7 +728,7 @@ and [<TypeConverter (typeof<EcsConverter>)>] Ecs () =
         entities
 
 /// An entity's slot in an archetype.
-and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
+and [<NoComparison; Struct>] EcsEntitySlot =
     { ArchetypeIndex : int
       Archetype : Archetype }
 
@@ -922,7 +922,7 @@ and [<StructuralEquality; NoComparison; Struct>] EcsEntitySlot =
             (&store.[i], &store2.[i], &store3.[i], &store4.[i], &store5.[i], &store6.[i], &store7.[i], &store8.[i], &store9.[i],
              Option.defaultValue Unchecked.defaultof<'s> state)
 
-and [<StructuralEquality; NoComparison; Struct>] EcsEntity =
+and [<NoComparison; Struct>] EcsEntity =
     { EntityId : uint64
       Ecs : Ecs }
 

@@ -8,13 +8,13 @@ open System.Numerics
 open Prime
 
 /// Determines how an animation is played.
-type [<StructuralEquality; NoComparison>] Playback =
+type [<NoComparison>] Playback =
     | Once
     | Loop
     | Bounce
 
 /// Describes an animation.
-type [<StructuralEquality; NoComparison>] Animation =
+type [<NoComparison>] Animation =
     { StartTime : GameTime
       LifeTimeOpt : GameTime option
       Name : string
@@ -24,7 +24,7 @@ type [<StructuralEquality; NoComparison>] Animation =
       BoneFilterOpt : string Set option }
 
 /// The type of rendering used on a surface (for use by the higher-level engine API).
-type [<StructuralEquality; StructuralComparison>] RenderStyle =
+type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 

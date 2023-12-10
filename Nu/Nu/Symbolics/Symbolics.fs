@@ -10,7 +10,7 @@ open Prime
 /// Symbol loading metadata.
 /// OPTIMIZATION: made this a struct because, well, it's two booleans. If we add non-trivial fields to this, it will be
 /// okay to make it a reference type.
-type [<StructuralEquality; StructuralComparison; Struct>] SymbolLoadMetadata =
+type [<Struct>] SymbolLoadMetadata =
     { ImplicitDelimiters : bool
       StripCsvHeader : bool }
 

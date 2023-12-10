@@ -10,7 +10,7 @@ open Prime
     ("Transparent Additive Overwrite", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Blend =
+type [<NoComparison; Struct>] Blend =
     | Transparent
     | Additive
     | Overwrite
@@ -20,7 +20,7 @@ type [<StructuralEquality; NoComparison; Struct>] Blend =
     ("JustifyLeft JustifyRight JustifyCenter", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] JustificationH =
+type [<NoComparison; Struct>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
@@ -30,7 +30,7 @@ type [<StructuralEquality; NoComparison; Struct>] JustificationH =
     ("JustifyTop JustifyMiddle JustifyBottom", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] JustificationV =
+type [<NoComparison; Struct>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
@@ -62,7 +62,7 @@ type RenderAsset =
     | AnimatedModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedModel
 
 /// The type of rendering used on a surface (for use by the lower-level renderer API).
-type [<StructuralEquality; NoComparison; Struct>] RenderType =
+type [<NoComparison; Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType of Subsort : single * Sort : single
 

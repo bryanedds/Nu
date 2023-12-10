@@ -11,19 +11,19 @@ open System.Runtime.InteropServices
 open Prime
 
 /// The endianness which indicates byte order in a raw asset.
-type [<StructuralEquality; NoComparison; Struct>] Endianness =
+type [<NoComparison; Struct>] Endianness =
     | LittleEndian
     | BigEndian
 
 /// The format of a raw asset.
-type [<StructuralEquality; NoComparison>] RawFormat =
+type [<NoComparison>] RawFormat =
     | RawUInt8
     | RawUInt16 of Endianness
     | RawUInt32 of Endianness
     | RawSingle of Endianness
 
 /// A height map for 3d terrain constructed from a raw asset.
-type [<StructuralEquality; NoComparison; Struct>] RawHeightMap =
+type [<NoComparison; Struct>] RawHeightMap =
     { Resolution : Vector2i
       RawFormat : RawFormat
       RawAsset : Raw AssetTag }
@@ -38,7 +38,7 @@ type [<NoComparison; NoEquality>] HeightMapMetadata =
     ("ImageHeightMap RawHeightMap", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison>] HeightMap =
+type [<NoComparison>] HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
 
@@ -237,7 +237,7 @@ type [<NoEquality; NoComparison>] BodyUserObject =
     ("Mass Density", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax);
-     StructuralEquality; StructuralComparison; Struct>]
+     Struct>]
 type Substance =
     | Mass of Mass : single
     | Density of Density : single
@@ -247,7 +247,7 @@ type Substance =
     ("DiscontinuousDetection ContinuousDetection", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax);
-     StructuralEquality; NoComparison; Struct>]
+     NoComparison; Struct>]
 type CollisionDetection =
     | Discontinuous
     | Continuous of MotionThreshold : single * SweptSphereRadius : single
@@ -328,8 +328,7 @@ type BodyShape =
 [<Syntax
     ("Static Kinematic Dynamic", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax);
-     StructuralEquality; StructuralComparison>]
+     Constants.PrettyPrinter.SimpleThresholdMax)>]
 type BodyType =
     | Static
     | Kinematic
@@ -434,7 +433,7 @@ type JointWheel =
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax);
-     StructuralEquality; NoComparison>]
+     NoComparison>]
 type JointDevice =
     | JointEmpty
     | JointAngle of JointAngle

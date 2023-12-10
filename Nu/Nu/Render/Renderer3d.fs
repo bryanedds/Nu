@@ -41,7 +41,7 @@ type [<NoEquality; NoComparison>] SurfaceDescriptor =
 
 /// A layer from which a 3d terrain's material is composed.
 /// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
-type [<StructuralEquality; NoComparison>] TerrainLayer =
+type [<NoComparison>] TerrainLayer =
     { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
@@ -49,12 +49,12 @@ type [<StructuralEquality; NoComparison>] TerrainLayer =
       HeightImage : Image AssetTag }
 
 /// Blend-weights for a 3d terrain.
-type [<StructuralEquality; NoComparison>] BlendMap =
+type [<NoComparison>] BlendMap =
     | RgbaMap of Image AssetTag
     | RedsMap of Image AssetTag array
 
 /// A material as projected from images to a 3d terrain.
-type [<StructuralEquality; NoComparison>] FlatMaterial =
+type [<NoComparison>] FlatMaterial =
     { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
@@ -62,17 +62,17 @@ type [<StructuralEquality; NoComparison>] FlatMaterial =
       HeightImage : Image AssetTag }
 
 /// Blend-weighted material for a 3d terrain.
-type [<StructuralEquality; NoComparison>] BlendMaterial =
+type [<NoComparison>] BlendMaterial =
     { TerrainLayers : TerrainLayer array
       BlendMap : BlendMap }
 
 /// Describes the material of which a 3d terrain is composed.
-type [<StructuralEquality; NoComparison>] TerrainMaterial =
+type [<NoComparison>] TerrainMaterial =
     | FlatMaterial of FlatMaterial
     | BlendMaterial of BlendMaterial
 
 /// Material properties for terrain surfaces.
-type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMaterialProperties =
+type [<NoComparison; SymbolicExpansion; Struct>] TerrainMaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
       AmbientOcclusionOpt : single voption
@@ -89,7 +89,7 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] TerrainMate
 
 /// Material properties for surfaces.
 /// NOTE: this type has to go after TerrainMaterialProperties lest the latter's field names shadow this one's.
-type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
+type [<NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
       MetallicOpt : single voption
@@ -109,7 +109,7 @@ type [<StructuralEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPro
         Unchecked.defaultof<MaterialProperties>
 
 /// Describes a static 3d terrain geometry.
-type [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
+type [<NoComparison>] TerrainGeometryDescriptor =
     { Bounds : Box3
       Material : TerrainMaterial
       TintImage : Image AssetTag
@@ -119,7 +119,7 @@ type [<StructuralEquality; NoComparison>] TerrainGeometryDescriptor =
       Segments : Vector2i }
 
 /// Describes a static 3d terrain.
-type [<StructuralEquality; NoComparison>] TerrainDescriptor =
+type [<NoComparison>] TerrainDescriptor =
     { Bounds : Box3
       InsetOpt : Box2 option
       MaterialProperties : TerrainMaterialProperties

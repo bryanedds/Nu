@@ -5,7 +5,7 @@ namespace Nu
 open System
 
 /// Describes a means for looking up an asset.
-type [<StructuralEquality; StructuralComparison; Struct>] 'a AssetTag =
+type [<Struct>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
 

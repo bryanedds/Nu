@@ -10,7 +10,7 @@ open Prime
 #nowarn "9"
 
 /// Describes a mouse button.
-type [<StructuralEquality; StructuralComparison>] MouseButton =
+type MouseButton =
     | MouseLeft
     | MouseMiddle
     | MouseRight
@@ -20,7 +20,7 @@ type [<StructuralEquality; StructuralComparison>] MouseButton =
     static member ofEventName eventName = scvalue<MouseButton> ("Mouse" + eventName)
 
 /// Describes a gamepad direction.
-type [<StructuralEquality; StructuralComparison>] GamepadDirection =
+type GamepadDirection =
     | DirectionUp
     | DirectionUpLeft
     | DirectionLeft
@@ -32,7 +32,7 @@ type [<StructuralEquality; StructuralComparison>] GamepadDirection =
     | DirectionCentered
 
 /// Describes a gamepad button.
-type [<StructuralEquality; StructuralComparison>] GamepadButton =
+type GamepadButton =
     | ButtonA
     | ButtonB
     | ButtonX

@@ -7,26 +7,26 @@ open Prime
 open Nu
 open Nu.Ecs
 
-type [<StructuralEquality; NoComparison; Struct>] StaticSpriteComponent =
+type [<NoComparison; Struct>] StaticSpriteComponent =
     { mutable Active : bool
       mutable Entity : Entity
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<StructuralEquality; NoComparison; Struct>] Position =
+type [<NoComparison; Struct>] Position =
     { mutable Active : bool
       mutable Position : Vector2 }
     interface Position Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<StructuralEquality; NoComparison; Struct>] Velocity =
+type [<NoComparison; Struct>] Velocity =
     { mutable Active : bool
       mutable Velocity : Vector2 }
     interface Velocity Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
 
-type [<StructuralEquality; NoComparison; Struct>] Shake =
+type [<NoComparison; Struct>] Shake =
     { mutable Active : bool
       mutable Origin : Vector2
       mutable Offset : Vector2 }
