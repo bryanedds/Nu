@@ -11,24 +11,24 @@ open System.Runtime.InteropServices
 open Prime
 
 /// The endianness which indicates byte order in a raw asset.
-type [<NoComparison; Struct>] Endianness =
+type [<Struct>] Endianness =
     | LittleEndian
     | BigEndian
 
 /// The format of a raw asset.
-type [<NoComparison>] RawFormat =
+type RawFormat =
     | RawUInt8
     | RawUInt16 of Endianness
     | RawUInt32 of Endianness
     | RawSingle of Endianness
 
 /// A height map for 3d terrain constructed from a raw asset.
-type [<NoComparison; Struct>] RawHeightMap =
+type [<Struct>] RawHeightMap =
     { Resolution : Vector2i
       RawFormat : RawFormat
       RawAsset : Raw AssetTag }
 
-type [<NoComparison; NoEquality>] HeightMapMetadata =
+type HeightMapMetadata =
     { Resolution : Vector2i
       HeightsNormalized : single array
       PositionsAndTexCoordses : struct (Vector3 * Vector2) array }
@@ -38,7 +38,7 @@ type [<NoComparison; NoEquality>] HeightMapMetadata =
     ("ImageHeightMap RawHeightMap", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<NoComparison>] HeightMap =
+type HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
 
@@ -236,9 +236,8 @@ type [<NoEquality; NoComparison>] BodyUserObject =
 [<Syntax
     ("Mass Density", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax);
-     Struct>]
-type Substance =
+     Constants.PrettyPrinter.SimpleThresholdMax)>]
+type [<Struct>] Substance =
     | Mass of Mass : single
     | Density of Density : single
 
@@ -246,9 +245,8 @@ type Substance =
 [<Syntax
     ("DiscontinuousDetection ContinuousDetection", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax);
-     NoComparison; Struct>]
-type CollisionDetection =
+     Constants.PrettyPrinter.SimpleThresholdMax)>]
+type [<Struct>] CollisionDetection =
     | Discontinuous
     | Continuous of MotionThreshold : single * SweptSphereRadius : single
 
@@ -432,8 +430,7 @@ type JointWheel =
     ("JointAngle JointDistance JointFriction JointGear JointMotor JointPrismatic JointPulley JointRevolute JointRope JointWheel",
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DetailedThresholdMax);
-     NoComparison>]
+     Constants.PrettyPrinter.DetailedThresholdMax)>]
 type JointDevice =
     | JointEmpty
     | JointAngle of JointAngle

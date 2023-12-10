@@ -26,7 +26,7 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         end
 
 /// The component that holds an entity's id.
-type [<NoComparison; Struct>] EntityId =
+type [<Struct>] EntityId =
     { mutable Active : bool
       mutable EntityId : uint64 }
     interface EntityId Component with

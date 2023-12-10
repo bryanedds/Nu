@@ -10,7 +10,7 @@ open TiledSharp
 open Prime
 
 // The inferred attributes of an entity that are used to construct its bounds.
-type [<NoComparison>] AttributesInferred =
+type AttributesInferred =
     { SizeInferred : Vector3
       OffsetInferred : Vector3 }
 
@@ -24,7 +24,7 @@ type [<NoComparison>] AttributesInferred =
         else left
 
 /// Describes a Tiled tile.
-type [<NoComparison; Struct>] TileDescriptor =
+type [<Struct>] TileDescriptor =
     { mutable Tile : TmxLayerTile
       mutable TileI : int
       mutable TileJ : int
@@ -33,7 +33,7 @@ type [<NoComparison; Struct>] TileDescriptor =
       mutable TileSetTileOpt : TmxTilesetTile option }
 
 /// Describes a Tiled tile animation.
-type [<NoComparison; Struct>] TileAnimationDescriptor =
+type [<Struct>] TileAnimationDescriptor =
     { TileAnimationRun : int
       TileAnimationStride : int
       TileAnimationDelay : GameTime }
@@ -85,12 +85,12 @@ type Layout =
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
-type [<NoComparison; Struct>] TransitionType =
+type [<Struct>] TransitionType =
     | Incoming
     | Outgoing
 
 /// The state of a screen's transition.
-type [<NoComparison>] TransitionState =
+type TransitionState =
     | IncomingState of GameTime
     | OutgoingState of GameTime
     | IdlingState of GameTime
@@ -101,7 +101,7 @@ type [<NoComparison>] TransitionState =
         | IdlingState time -> time
 
 /// Describes one of a screen's transition processes.
-type [<NoComparison>] Transition =
+type Transition =
     { TransitionType : TransitionType
       TransitionLifeTime : GameTime
       DissolveImageOpt : Image AssetTag option

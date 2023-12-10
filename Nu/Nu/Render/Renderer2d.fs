@@ -12,7 +12,7 @@ open TiledSharp
 open Prime
 
 /// A mutable sprite value.
-type [<NoEquality; NoComparison; Struct>] Sprite =
+type [<Struct>] Sprite =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 ValueOption
       mutable Image : Image AssetTag
@@ -22,7 +22,7 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
       mutable Flip : Flip }
 
 /// Describes how to render a sprite to a rendering subsystem.
-type [<NoEquality; NoComparison>] SpriteDescriptor =
+type SpriteDescriptor =
     { mutable Transform : Transform
       InsetOpt : Box2 ValueOption
       Image : Image AssetTag
@@ -40,7 +40,7 @@ type [<NoEquality; NoComparison>] SpriteDescriptors =
     { SpriteDescriptors : SpriteDescriptor SList }
 
 /// Describes an internally cached sprite used to avoid GC promotion of sprite descriptors.
-type [<NoEquality; NoComparison>] CachedSpriteDescriptor =
+type CachedSpriteDescriptor =
     { mutable CachedSprite : Sprite }
 
 /// Describes how to render tile map tiles to the rendering system.
@@ -64,7 +64,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Particles : Particle SArray }
 
 /// Describes how to render text to a rendering subsystem.
-type [<NoEquality; NoComparison>] TextDescriptor =
+type TextDescriptor =
     { mutable Transform : Transform
       Text : string
       Font : Font AssetTag

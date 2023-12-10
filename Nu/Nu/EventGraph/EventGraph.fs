@@ -7,12 +7,12 @@ open System.Collections.Generic
 open Prime
 
 /// Specifies whether a process is live or dead.
-type [<NoComparison; Struct>] Liveness =
+type [<Struct>] Liveness =
    | Live
    | Dead
 
 /// Describes whether an in-flight event has been resolved or should cascade to down-stream handlers.
-type [<NoComparison; Struct>] Handling =
+type [<Struct>] Handling =
     | Resolve
     | Cascade
 

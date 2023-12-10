@@ -8,13 +8,13 @@ open System.Numerics
 open Prime
 
 /// Determines how an animation is played.
-type [<NoComparison>] Playback =
+type Playback =
     | Once
     | Loop
     | Bounce
 
 /// Describes an animation.
-type [<NoComparison>] Animation =
+type Animation =
     { StartTime : GameTime
       LifeTimeOpt : GameTime option
       Name : string
@@ -138,7 +138,7 @@ module AssimpExtensions =
 
     let private AnimationChannelsDict = dictPlus HashIdentity.Reference []
 
-    type [<NoEquality; NoComparison; Struct>] private BoneInfo =
+    type [<Struct>] private BoneInfo =
         { BoneTransformOffset : Assimp.Matrix4x4
           mutable BoneTransformFinal : Assimp.Matrix4x4 }
 

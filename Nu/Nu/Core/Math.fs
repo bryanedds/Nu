@@ -1021,7 +1021,7 @@ module Ray3 =
     let inline rayNeq (left : Ray3) (right : Ray3) = not (left.Equals right)
 
 /// Composition of individual affine matrix components.
-type [<NoComparison; Struct>] Affine =
+type [<Struct>] Affine =
     { mutable Translation : Vector3
       mutable Rotation : Quaternion
       mutable Scale : Vector3 }
@@ -1043,7 +1043,7 @@ type [<NoComparison; Struct>] Affine =
     ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<NoComparison; Struct>] Flip =
+type [<Struct>] Flip =
     | FlipNone
     | FlipH
     | FlipV
@@ -1060,12 +1060,12 @@ type LightType =
     | SpotLight of ConeInner : single * ConeOuter : single
 
 /// The input for a 2d ray cast operation.
-type [<NoComparison; Struct>] RayCast2Input =
+type [<Struct>] RayCast2Input =
     { RayBegin : Vector2
       RayEnd : Vector2 }
       
 /// The output of a 2d ray cast operation.
-type [<NoComparison; Struct>] RayCast2Output =
+type [<Struct>] RayCast2Output =
     { mutable Normal : Vector2
       mutable Fraction : single }
     static member inline defaultOutput =
