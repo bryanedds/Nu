@@ -2076,28 +2076,9 @@ module WorldModuleEntity =
             Array.sort intersections
 
         static member internal getEntityHighlightBounds (entity : Entity) world =
-            let mutable boundsOpt = None : Box3 option
-            let facets = World.getEntityFacets entity world
-            let dispatcher = World.getEntityDispatcher entity world
-            for facet in facets do
-                let bounds2Opt = facet.TryGetHighlightBounds (entity, world)
-                match (boundsOpt, bounds2Opt) with
-                | (Some bounds, Some bounds2) -> boundsOpt <- Some (bounds.Combine bounds2)
-                | (Some _, None) -> ()
-                | (None, Some _) -> boundsOpt <- bounds2Opt
-                | (None, None) -> ()
-            let bounds2Opt = dispatcher.TryGetHighlightBounds (entity, world)
-            match (boundsOpt, bounds2Opt) with
-            | (Some bounds, Some bounds2) -> boundsOpt <- Some (bounds.Combine bounds2)
-            | (Some _, None) -> ()
-            | (None, Some _) -> boundsOpt <- bounds2Opt
-            | (None, None) -> ()
-            match boundsOpt with
-            | Some bounds -> bounds
-            | None ->
-                if dispatcher.Is2d
-                then World.getEntityBounds2d entity world
-                else World.getEntityBounds3d entity world
+            if World.getEntityIs2d entity world
+            then World.getEntityBounds2d entity world
+            else World.getEntityBounds3d entity world
 
 #if !DISABLE_ENTITY_PRE_UPDATE
         static member internal updateEntityPublishPreUpdateFlag entity world =
