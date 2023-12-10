@@ -48,8 +48,7 @@ module WorldEntityModule =
         let mutable AffineMatrixLocal = Unchecked.defaultof<Lens<Matrix4x4, Entity>>
         let mutable PerimeterUnscaled = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Perimeter = Unchecked.defaultof<Lens<Box3, Entity>>
-        let mutable Bounds2d = Unchecked.defaultof<Lens<Box3, Entity>>
-        let mutable Bounds3d = Unchecked.defaultof<Lens<Box3, Entity>>
+        let mutable Bounds = Unchecked.defaultof<Lens<Box3, Entity>>
         let mutable Presence = Unchecked.defaultof<Lens<Presence, Entity>>
         let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Imperative = Unchecked.defaultof<Lens<bool, Entity>>
@@ -175,10 +174,8 @@ module WorldEntityModule =
         member this.SetPerimeter value world = World.setEntityPerimeter value this world |> snd'
         member this.GetPerimeter world = World.getEntityPerimeter this world
         member this.Perimeter = if notNull (this :> obj) then lens (nameof this.Perimeter) this this.GetPerimeter this.SetPerimeter else Cached.Perimeter
-        member this.GetBounds2d world = World.getEntityBounds2d this world
-        member this.Bounds2d = if notNull (this :> obj) then lensReadOnly (nameof this.Bounds2d) this this.GetBounds2d else Cached.Bounds2d
-        member this.GetBounds3d world = World.getEntityBounds3d this world
-        member this.Bounds3d = if notNull (this :> obj) then lensReadOnly (nameof this.Bounds3d) this this.GetBounds3d else Cached.Bounds3d
+        member this.GetBounds world = World.getEntityBounds this world
+        member this.Bounds = if notNull (this :> obj) then lensReadOnly (nameof this.Bounds) this this.GetBounds else Cached.Bounds
         member this.GetPresence world = World.getEntityPresence this world
         member this.SetPresence value world = World.setEntityPresence value this world |> snd'
         member this.Presence = if notNull (this :> obj) then lens (nameof this.Presence) this this.GetPresence this.SetPresence else Cached.Presence
@@ -254,8 +251,7 @@ module WorldEntityModule =
             Cached.Transform <- lens (nameof Cached.Transform) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterUnscaled <- lens (nameof Cached.PerimeterUnscaled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Perimeter <- lens (nameof Cached.Perimeter) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Bounds2d <- lensReadOnly (nameof Cached.Bounds2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Bounds3d <- lensReadOnly (nameof Cached.Bounds3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Bounds <- lensReadOnly (nameof Cached.Bounds) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterCenter <- lens (nameof Cached.PerimeterCenter) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterBottom <- lens (nameof Cached.PerimeterBottom) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterBottomLeft <- lens (nameof Cached.PerimeterBottomLeft) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -450,9 +446,6 @@ module WorldEntityModule =
 
         /// Check if an entity is intersected by a ray.
         member this.RayCast ray world = World.rayCastEntity ray this world
-
-        /// Get the entity's highlight bounds.
-        member this.GetHighlightBounds world = World.getEntityHighlightBounds this world
 
         /// Automatically change an entity's bounds using its inferred attributes.
         member this.AutoBounds world =
@@ -733,7 +726,7 @@ module WorldEntityModule =
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
                     let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyeCenter, eyeSize)
-                    let bounds = (entity.GetBounds2d world).Box2
+                    let bounds = (entity.GetBounds world).Box2
                     bounds.Intersects positionWorld
                 else false)
                 entitiesSorted
@@ -747,7 +740,7 @@ module WorldEntityModule =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
                         let rayWorld = viewport.MouseToWorld3d (entity.GetAbsolute world, position, eyeCenter, eyeRotation)
-                        let bounds = entity.GetBounds3d world
+                        let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
                             let intersections = entity.RayCast rayWorld world

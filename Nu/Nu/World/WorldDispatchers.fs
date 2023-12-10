@@ -54,7 +54,7 @@ module EntityDispatcherModule =
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
-                let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
                 if intersectionOpt.HasValue then [|intersectionOpt.Value|]
                 else [||]
             else base.RayCast (ray, entity, world)
@@ -738,7 +738,7 @@ module StaticModelHierarchyDispatcherModule =
                         let bounds = entity.GetProbeBounds world
                         let stale = entity.GetProbeStalePrevious world
                         Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
-                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds3d world)) | None -> Some (entity.GetBounds3d world)
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                         world <- entity.SetVisibleLocal false world
                     if entity.Has<LightFacet3d> world then
                         if entity.GetEnabled world then
@@ -751,7 +751,7 @@ module StaticModelHierarchyDispatcherModule =
                             let lightCutoff = entity.GetLightCutoff world
                             let lightType = entity.GetLightType world
                             Choice2Of3 { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
-                            boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds3d world)) | None -> Some (entity.GetBounds3d world)
+                            boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                     if entity.Has<StaticModelSurfaceFacet> world then
                         let mutable transform = entity.GetTransform world
                         let absolute = transform.Absolute
@@ -762,7 +762,7 @@ module StaticModelHierarchyDispatcherModule =
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
                         Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
-                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds3d world)) | None -> Some (entity.GetBounds3d world)
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                         world <- entity.SetVisibleLocal false world
                     if entity <> parent then
                         world <- entity.SetVisibleLocal false world
@@ -887,7 +887,7 @@ module StaticModelHierarchyDispatcherModule =
         override this.Render (entity, world) =
 
             // render probes
-            let bounds = entity.GetBounds3d world
+            let bounds = entity.GetBounds world
             let presenceConferred = entity.GetPresenceConferred world
             if World.boundsInView3d true false presenceConferred bounds world then
                 for probe in entity.GetFrozenRenderLightProbe3ds world do
@@ -974,7 +974,7 @@ module RigidModelHierarchyDispatcherModule =
         override this.Render (entity, world) =
 
             // render probes
-            let bounds = entity.GetBounds3d world
+            let bounds = entity.GetBounds world
             let presenceConferred = entity.GetPresenceConferred world
             if World.boundsInView3d true false presenceConferred bounds world then
                 for probe in entity.GetFrozenRenderLightProbe3ds world do

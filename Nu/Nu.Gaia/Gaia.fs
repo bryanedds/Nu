@@ -604,7 +604,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some entity when entity.Exists world ->
             if entity.GetIs2d world then
                 let absolute = entity.GetAbsolute world
-                let bounds = entity.GetHighlightBounds world
+                let bounds = entity.GetBounds world
                 let elevation = Single.MaxValue
                 let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
                 let image = Assets.Default.HighlightImage
@@ -625,7 +625,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     world
             else
                 let absolute = entity.GetAbsolute world
-                let bounds = entity.GetHighlightBounds world
+                let bounds = entity.GetBounds world
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center
                 World.enqueueRenderMessage3d
