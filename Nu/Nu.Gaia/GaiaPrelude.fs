@@ -19,8 +19,8 @@ type DragEyeState =
 type [<SymbolicExpansion>] GaiaState =
     { ProjectDllPath : string
       ProjectEditModeOpt : string option
-      ProjectImperativeExecution : bool
       ProjectFreshlyLoaded : bool
+      ProjectImperativeExecution : bool
       DesiredEyeCenter2d : Vector2
       DesiredEyeCenter3d : Vector3
       DesiredEyeRotation3d : Quaternion
@@ -33,13 +33,13 @@ type [<SymbolicExpansion>] GaiaState =
       CreationDistance : single
       AlternativeEyeTravelInput : bool }
     static member make
-        dllPath editModeOpt imperativeExecution freshlyLoaded
+        dllPath editModeOpt freshlyLoaded imperativeExecution
         desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d masterSoundVolume masterSongVolume
         snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
-          ProjectImperativeExecution = imperativeExecution
           ProjectFreshlyLoaded = freshlyLoaded
+          ProjectImperativeExecution = imperativeExecution
           DesiredEyeCenter2d = desiredEyeCenter2d
           DesiredEyeCenter3d = desiredEyeCenter3d
           DesiredEyeRotation3d = desiredEyeRotation3d
