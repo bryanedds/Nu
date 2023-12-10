@@ -1345,7 +1345,7 @@ module RigidBodyFacetModule =
             let scalar = entity.GetScale world * entity.GetSize world
             let bodyShape = entity.GetBodyShape world
             if entity.GetIs2d world
-            then World.localizeBodyShape scalar bodyShape world
+            then World.localizeBodyShape scalar bodyShape
             else bodyShape
 
         static member Properties =

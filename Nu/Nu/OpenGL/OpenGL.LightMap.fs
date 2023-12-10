@@ -356,7 +356,7 @@ module LightMap =
         cubeMap
 
     /// A collection of maps consisting a light map.
-    type [<NoComparison; Struct>] LightMap =
+    type [<Struct>] LightMap =
         { Enabled : bool
           Origin : Vector3
           Bounds : Box3

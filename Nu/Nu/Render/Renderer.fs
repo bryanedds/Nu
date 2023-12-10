@@ -10,7 +10,7 @@ open Prime
     ("Transparent Additive Overwrite", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<NoComparison; Struct>] Blend =
+type [<Struct>] Blend =
     | Transparent
     | Additive
     | Overwrite
@@ -20,7 +20,7 @@ type [<NoComparison; Struct>] Blend =
     ("JustifyLeft JustifyRight JustifyCenter", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<NoComparison; Struct>] JustificationH =
+type [<Struct>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
@@ -30,7 +30,7 @@ type [<NoComparison; Struct>] JustificationH =
     ("JustifyTop JustifyMiddle JustifyBottom", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<NoComparison; Struct>] JustificationV =
+type [<Struct>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
@@ -45,7 +45,7 @@ type Justification =
     | Unjustified of bool
 
 /// A mutable particle type.
-type [<NoEquality; NoComparison; Struct>] Particle =
+type [<Struct>] Particle =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 ValueOption
       mutable Color : Color
@@ -62,7 +62,7 @@ type RenderAsset =
     | AnimatedModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedModel
 
 /// The type of rendering used on a surface (for use by the lower-level renderer API).
-type [<NoComparison; Struct>] RenderType =
+type [<Struct>] RenderType =
     | DeferredRenderType
     | ForwardRenderType of Subsort : single * Sort : single
 

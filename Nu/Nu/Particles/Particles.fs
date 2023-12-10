@@ -11,7 +11,7 @@ open Nu
 /// OPTIMIZATION: LifeTimeOpt uses GameTime.zero to represent infinite life.
 /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
 /// OPTIMIZATION: pre-computes progress scalar to minimize number of divides.
-type [<NoComparison; Struct>] Life =
+type [<Struct>] Life =
     { StartTime : GameTime
       LifeTimeOpt : GameTime
       ProgressScalar : single }
@@ -118,7 +118,7 @@ type Force =
     | Velocity of Constraint
 
 /// Describes the body of an instance value.
-type [<NoComparison; Struct>] Body =
+type [<Struct>] Body =
     { mutable Position : Vector3
       mutable Scale : Vector3
       mutable Angles : Vector3
@@ -632,7 +632,7 @@ type [<ReferenceEquality>] Behaviors =
         outputs
 
 /// A basic particle.
-type [<NoComparison; SymbolicExpansion; Struct>] BasicParticle =
+type [<SymbolicExpansion; Struct>] BasicParticle =
     { mutable Life : Life
       mutable Body : Body
       mutable Offset : Vector3

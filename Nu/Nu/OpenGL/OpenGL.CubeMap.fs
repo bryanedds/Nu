@@ -88,7 +88,7 @@ module CubeMap =
           CubeMapVao : uint }
 
     /// Describes a renderable cube map surface.
-    type [<NoComparison; Struct>] CubeMapSurface =
+    type [<Struct>] CubeMapSurface =
         { CubeMap : uint
           CubeMapGeometry : CubeMapGeometry }
 
