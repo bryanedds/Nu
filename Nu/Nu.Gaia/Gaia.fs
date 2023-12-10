@@ -378,9 +378,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         worldsPast <- world :: worldsPast
         worldsFuture <- []
 
-    let private makeGaiaState projectDllPath editModeOpt : GaiaState =
+    let private makeGaiaState projectDllPath editModeOpt freshlyLoaded : GaiaState =
         GaiaState.make
-            projectDllPath editModeOpt openProjectImperativeExecution true
+            projectDllPath editModeOpt freshlyLoaded openProjectImperativeExecution
             desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
             snaps2dSelected snaps2d snaps3d newEntityElevation newEntityDistance alternativeEyeTravelInput
 
@@ -2585,7 +2585,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         Log.info ("Project '" + newProjectName + "'" + "created.")
 
                                         // configure editor to open new project then exit
-                                        let gaiaState = makeGaiaState newProjectDllPath (Some "Title")
+                                        let gaiaState = makeGaiaState newProjectDllPath (Some "Title") true
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                         let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
                                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
@@ -2631,7 +2631,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 String.notEmpty openProjectFilePath &&
                                 File.Exists openProjectFilePath then
                                 showOpenProjectDialog <- false
-                                let gaiaState = makeGaiaState openProjectFilePath (Some openProjectEditMode)
+                                let gaiaState = makeGaiaState openProjectFilePath (Some openProjectEditMode) true
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
@@ -2769,7 +2769,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginPopupModal (title, &showConfirmExitDialog) then
                             ImGui.Text "Any unsaved changes will be lost."
                             if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
-                                let gaiaState = makeGaiaState projectDllPath (Some projectEditMode)
+                                let gaiaState = makeGaiaState projectDllPath (Some projectEditMode) false
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                                 let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
