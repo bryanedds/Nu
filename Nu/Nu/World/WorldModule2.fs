@@ -86,7 +86,7 @@ module WorldModule2 =
             let entities = Seq.append omniEntities selectedEntities
             let quadtree = World.makeQuadtree ()
             for entity in entities do
-                let bounds = entity.GetBounds2d world
+                let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world || entity.GetAlwaysRender world
                 let static_ = entity.GetStatic world
                 let presence = entity.GetPresence world
@@ -107,7 +107,7 @@ module WorldModule2 =
             let entities = Seq.append omniEntities selectedEntities
             let octree = World.makeOctree ()
             for entity in entities do
-                let bounds = entity.GetBounds3d world
+                let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world || entity.GetAlwaysRender world
                 let static_ = entity.GetStatic world
                 let lightProbe = entity.GetLightProbe world

@@ -1268,10 +1268,8 @@ module EffectFacetModule =
 #endif
 
         override this.RayCast (ray, entity, world) =
-            if entity.GetIs3d world then
-                let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
-                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
-                else [||]
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
 
 [<AutoOpen>]
@@ -2024,7 +2022,7 @@ module LightProbeFacet3dModule =
             World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }) world
 
         override this.RayCast (ray, entity, world) =
-            let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
 
@@ -2108,7 +2106,7 @@ module LightFacet3dModule =
                     world
 
         override this.RayCast (ray, entity, world) =
-            let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
 
@@ -2200,7 +2198,7 @@ module StaticBillboardFacetModule =
 
         override this.RayCast (ray, entity, world) =
             // TODO: P1: intersect against oriented quad rather than bounds.
-            let bounds = entity.GetBounds3d world
+            let bounds = entity.GetBounds world
             let intersectionOpt = ray.Intersects bounds
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
@@ -2534,7 +2532,7 @@ module BasicStaticBillboardEmitterFacetModule =
             World.enqueueRenderMessages3d particlesMessages world
 
         override this.RayCast (ray, entity, world) =
-            let intersectionOpt = ray.Intersects (entity.GetBounds3d world)
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
             if intersectionOpt.HasValue then [|intersectionOpt.Value|]
             else [||]
 
@@ -2769,7 +2767,7 @@ module TerrainFacetModule =
             | RawHeightMap map -> Some map.Resolution
 
         member this.TryGetTerrainQuadSize world =
-            let bounds = this.GetBounds3d world
+            let bounds = this.GetBounds world
             match this.TryGetTerrainResolution world with
             | Some resolution -> Some (v2 (bounds.Size.X / single (dec resolution.X)) (bounds.Size.Z / single (dec resolution.Y)))
             | None -> None

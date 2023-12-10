@@ -1030,8 +1030,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.AffineMatrix with get () = this.Transform.AffineMatrix
     member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
-    member this.Bounds2d with get () = this.Transform.Bounds2d
-    member this.Bounds3d with get () = this.Transform.Bounds3d
+    member this.Bounds with get () = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
     member this.Presence with get () = this.Transform.Presence and set value = this.Transform.Presence <- value
     member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
@@ -1538,7 +1537,7 @@ and [<ReferenceEquality>] Dispatchers =
       GroupDispatchers : Map<string, GroupDispatcher>
       ScreenDispatchers : Map<string, ScreenDispatcher>
       GameDispatchers : Map<string, GameDispatcher>
-      UpdateEntityInEntityTree : bool -> bool -> bool -> bool -> Presence -> Box3 -> Box3 -> Entity -> World -> World -> World
+      UpdateEntityInEntityTree : bool -> bool -> bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
       RebuildQuadtree : World -> Entity Quadtree
       RebuildOctree : World -> Entity Octree }
 
