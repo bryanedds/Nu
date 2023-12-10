@@ -1161,7 +1161,7 @@ module EffectFacetModule =
             // make effect
             let effect =
                 Effect.makePlus
-                    (match this.GetEffectStartTimeOpt world with Some effectStartTime -> effectStartTime | None -> GameTime.zeroentity.GetEffectStartTime world)
+                    (match entity.GetEffectStartTimeOpt world with Some effectStartTime -> effectStartTime | None -> GameTime.zero)
                     (entity.GetEffectPerimeterCentered world)
                     (entity.GetEffectOffset world)
                     (entity.GetTransform world)
