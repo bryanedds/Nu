@@ -6,7 +6,7 @@ open System
 open Prime
 open Nu
 
-type [<StructuralEquality; NoComparison>] CharacterPlus =
+type [<NoComparison>] CharacterPlus =
     { UpdateTime : int64
       Character : Character }
 

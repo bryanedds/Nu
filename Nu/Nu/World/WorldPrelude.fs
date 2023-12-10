@@ -24,7 +24,7 @@ type [<NoComparison>] AttributesInferred =
         else left
 
 /// Describes a Tiled tile.
-type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
+type [<NoComparison; Struct>] TileDescriptor =
     { mutable Tile : TmxLayerTile
       mutable TileI : int
       mutable TileJ : int
@@ -33,7 +33,7 @@ type [<StructuralEquality; NoComparison; Struct>] TileDescriptor =
       mutable TileSetTileOpt : TmxTilesetTile option }
 
 /// Describes a Tiled tile animation.
-type [<StructuralEquality; NoComparison; Struct>] TileAnimationDescriptor =
+type [<NoComparison; Struct>] TileAnimationDescriptor =
     { TileAnimationRun : int
       TileAnimationStride : int
       TileAnimationDelay : GameTime }
@@ -85,12 +85,12 @@ type Layout =
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
-type [<StructuralEquality; NoComparison; Struct>] TransitionType =
+type [<NoComparison; Struct>] TransitionType =
     | Incoming
     | Outgoing
 
 /// The state of a screen's transition.
-type [<StructuralEquality; NoComparison>] TransitionState =
+type [<NoComparison>] TransitionState =
     | IncomingState of GameTime
     | OutgoingState of GameTime
     | IdlingState of GameTime
@@ -101,7 +101,7 @@ type [<StructuralEquality; NoComparison>] TransitionState =
         | IdlingState time -> time
 
 /// Describes one of a screen's transition processes.
-type [<StructuralEquality; NoComparison>] Transition =
+type [<NoComparison>] Transition =
     { TransitionType : TransitionType
       TransitionLifeTime : GameTime
       DissolveImageOpt : Image AssetTag option

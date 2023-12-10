@@ -10,7 +10,7 @@ open Prime
     ("Enclosed Exposed Imposter Omnipresent", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
-type [<StructuralEquality; NoComparison; Struct>] Presence =
+type [<NoComparison; Struct>] Presence =
     /// Inside an enclosed structure so you have to be close to see them.
     | Enclosed
     /// Outside an enclosed structure so visible near and from a distance.

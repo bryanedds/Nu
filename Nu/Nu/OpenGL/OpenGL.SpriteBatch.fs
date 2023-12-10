@@ -10,7 +10,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 
-    type [<StructuralEquality; NoComparison; Struct>] private SpriteBatchState =
+    type [<NoComparison; Struct>] private SpriteBatchState =
         { Absolute : bool
           BlendingFactorSrc : BlendingFactor
           BlendingFactorDst : BlendingFactor

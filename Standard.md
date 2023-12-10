@@ -167,5 +167,3 @@ Correctness, Consistency, Simplicity
 -   privatizing all of its fields like so - `type MyContainer = private { ... }`
 -   exposing a narrow set of static member functions that provide only the desired functionality in a more abstract way.
 -   either use PascalCasing for private record fields with a trailing underscore (such as either `MyField_`) OR use camelCasing (such as `myField`). Prime's symbolic serializer will detect the trailing underscore or lowercasing when the SymbolicExpansion attribute is used in order to normalize the field name (such as making it `MyField`).
-
-As to abstract data types, here are some detailed slides here - [*Structuring F\# Programs with Abstract Data Types*](https://jetecommerce.sharepoint.com/corporate/tech/Shared%20Documents/Tech%20Talk%20Presentations/%5bTranscripted%5d%20Structuring%20FSharp%20Programs%20with%20Abstract%20Data%20Types.pptx) (view presentation here - [*https://vimeo.com/128464151*](https://vimeo.com/128464151))

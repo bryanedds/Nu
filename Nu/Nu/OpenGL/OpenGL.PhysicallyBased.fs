@@ -15,7 +15,7 @@ open Nu
 module PhysicallyBased =
 
     /// Describes the configurable properties of a physically-based material.
-    type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterialProperties =
+    type [<NoComparison; Struct>] PhysicallyBasedMaterialProperties =
         { Albedo : Color
           Roughness : single
           Metallic : single
@@ -25,7 +25,7 @@ module PhysicallyBased =
           InvertRoughness : bool }
 
     /// Describes a physically-based material.
-    type [<StructuralEquality; NoComparison; Struct>] PhysicallyBasedMaterial =
+    type [<NoComparison; Struct>] PhysicallyBasedMaterial =
         { MaterialProperties : PhysicallyBasedMaterialProperties
           AlbedoMetadata : Texture.TextureMetadata
           AlbedoTexture : uint

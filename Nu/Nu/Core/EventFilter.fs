@@ -53,7 +53,7 @@ and [<TypeConverter (typeof<RexprConverter>)>] Rexpr (pattern) =
         hash pattern
 
 /// Conveys debugging information about an event.
-type [<StructuralEquality; StructuralComparison; CLIMutable>] EventInfo =
+type [<CLIMutable>] EventInfo =
     { ModuleName : string
       FunctionName : string
       MoreInfo : string }
