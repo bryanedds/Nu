@@ -903,6 +903,14 @@ module StaticModelHierarchyDispatcherModule =
                 for message in entity.GetFrozenRenderStaticModelSurfaces world do
                     World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
 
+        override this.Edit (op, _, world) =
+            match op with
+            | ReplaceProperty replace ->
+                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded
+                then replace.IndicateReplaced world
+                else world
+            | _ -> world
+
 [<AutoOpen>]
 module RigidModelHierarchyDispatcherModule =
 
@@ -989,6 +997,14 @@ module RigidModelHierarchyDispatcherModule =
             if World.boundsInView3d false false presenceConferred bounds world then
                 for message in entity.GetFrozenRenderStaticModelSurfaces world do
                     World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
+
+        override this.Edit (op, _, world) =
+            match op with
+            | ReplaceProperty replace ->
+                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded
+                then replace.IndicateReplaced world
+                else world
+            | _ -> world
 
 [<AutoOpen>]
 module BasicStaticBillboardEmitterDispatcherModule =
