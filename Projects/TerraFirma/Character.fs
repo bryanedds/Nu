@@ -31,7 +31,7 @@ module CharacterDispatcher =
         interface Command
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher3d<CharacterModel, CharacterMessage, CharacterCommand> (true, true, CharacterModel.initial)
+        inherit EntityDispatcher3d<CharacterModel, CharacterMessage, CharacterCommand> (true, CharacterModel.initial)
 
         static let [<Literal>] WalkForce = 12.0f
         static let [<Literal>] TurnForce = 8.0f

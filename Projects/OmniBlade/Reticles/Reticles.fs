@@ -43,7 +43,7 @@ module ReticlesDispatcher =
                 Content.button (CharacterIndex.toEntityName index)
                     [Entity.MountOpt == None
                      Entity.Size == v3 96.0f 96.0f 0.0f
-                     Entity.Center := center
+                     Entity.PerimeterCenter := center
                      Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
                      Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
                      Entity.ClickEvent => TargetSelect index]]

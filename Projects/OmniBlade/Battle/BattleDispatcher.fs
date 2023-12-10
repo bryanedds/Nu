@@ -25,8 +25,8 @@ module BattleDispatcher =
                 let world =
                     match positioning with
                     | Position position -> entity.SetPosition position world
-                    | Center center -> entity.SetCenter center world
-                    | Bottom bottom -> entity.SetBottom bottom world
+                    | Center center -> entity.SetPerimeterCenter center world
+                    | Bottom bottom -> entity.SetPerimeterBottom bottom world
                 let world =
                     match layering with
                     | Under -> entity.SetElevation Constants.Battle.EffectElevationUnder world
@@ -404,7 +404,7 @@ module BattleDispatcher =
                             Content.fillBar ("HealthBar+" + string i)
                                 [Entity.MountOpt == None
                                  Entity.Size == v3 48.0f 6.0f 0.0f
-                                 Entity.Center := character.BottomOriginalOffset
+                                 Entity.PerimeterCenter := character.BottomOriginalOffset
                                  Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                                  Entity.Fill := single character.HitPoints / single character.HitPointsMax
                                  Entity.FillInset := 1.0f / 12.0f
@@ -431,7 +431,7 @@ module BattleDispatcher =
                                 Content.fillBar ("TechBar+" + string i)
                                     [Entity.MountOpt == None
                                      Entity.Size == v3 48.0f 6.0f 0.0f
-                                     Entity.Center := character.BottomOriginalOffset2
+                                     Entity.PerimeterCenter := character.BottomOriginalOffset2
                                      Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                                      Entity.Fill := single character.TechPoints / single character.TechPointsMax
                                      Entity.FillInset := 1.0f / 12.0f

@@ -203,32 +203,32 @@ module internal Octnode =
                     if bounds.Intersects box then
                         set.Add element |> ignore
 
-    let rec internal getLightProbesInPlayBox box (set : 'e Octelement HashSet) (node : 'e Octnode) =
+    let rec internal getLightProbesInViewFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = nodes.[i]
-                if node.ElementsCount_ > 0 && isIntersectingBox box node then
-                    getLightProbesInPlayBox box set node
+                if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
+                    getLightProbesInViewFrustum frustum set node
         | ValueRight elements ->
             for element in elements do
-                if element.LightProbe && not element.Static then
+                if element.LightProbe && element.Visible then
                     let bounds = element.Bounds
-                    if bounds.Intersects box then
+                    if frustum.Intersects bounds then
                         set.Add element |> ignore
 
-    let rec internal getLightsInPlayBox box (set : 'e Octelement HashSet) (node : 'e Octnode) =
+    let rec internal getLightsInViewFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = nodes.[i]
-                if node.ElementsCount_ > 0 && isIntersectingBox box node then
-                    getLightsInPlayBox box set node
+                if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
+                    getLightsInViewFrustum frustum set node
         | ValueRight elements ->
             for element in elements do
                 if element.Light && not element.Static then
                     let bounds = element.Bounds
-                    if bounds.Intersects box then
+                    if frustum.Intersects bounds then
                         set.Add element |> ignore
 
     let rec internal getLightsInViewBox box (set : 'e Octelement HashSet) (node : 'e Octnode) =
@@ -531,15 +531,15 @@ module Octree =
         Octnode.getElements set tree.Node
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
-    /// Get all of the light probe elements in the given light box.
-    let getLightProbesInPlay lightBox (set : _ HashSet) tree =
-        Octnode.getLightProbesInPlayBox lightBox set tree.Node
+    /// Get all of the light probe elements in the given frustum.
+    let getLightProbesInFrustum frustum (set : _ HashSet) tree =
+        Octnode.getLightProbesInViewFrustum frustum set tree.Node
         let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.LightProbe)
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
 
-    /// Get all of the light elements in the given light box.
-    let getLightsInPlay lightBox (set : _ HashSet) tree =
-        Octnode.getLightsInPlayBox lightBox set tree.Node
+    /// Get all of the light elements in the given frustum.
+    let getLightsInFrustum frustum (set : _ HashSet) tree =
+        Octnode.getLightsInViewFrustum frustum set tree.Node
         let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
 

@@ -36,9 +36,8 @@ module Override =
                 let value = settings.[key].Value
                 match key with
                 | nameof GameTime.DesiredFrameRate -> GameTime.DesiredFrameRate <- scvalue value
-                | nameof Engine.EntityCentered2dDefault -> Engine.EntityCentered2dDefault <- scvalue value
-                | nameof Engine.EntityCenteredGuiDefault -> Engine.EntityCenteredGuiDefault <- scvalue value
-                | nameof Engine.EntityCentered3dDefault -> Engine.EntityCentered3dDefault <- scvalue value
+                | nameof Engine.EntityPerimeterCentered2dDefault -> Engine.EntityPerimeterCentered2dDefault <- scvalue value
+                | nameof Engine.EntityPerimeterCenteredGuiDefault -> Engine.EntityPerimeterCenteredGuiDefault <- scvalue value
                 | nameof Engine.QuadnodeSize -> Engine.QuadnodeSize <- scvalue value
                 | nameof Engine.QuadtreeDepth -> Engine.QuadtreeDepth <- scvalue value
                 | nameof Engine.OctnodeSize -> Engine.OctnodeSize <- scvalue value

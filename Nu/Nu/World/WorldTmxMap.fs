@@ -427,8 +427,10 @@ module TmxMap =
                 [] layers
         List.concat descriptorLists
 
-    let getQuickSize (tileMap : TmxMap) =
-        v3
-            (single (tileMap.Width * tileMap.TileWidth))
-            (single (tileMap.Height * tileMap.TileHeight))
-            0.0f
+    let getAttributesInferred (tileMap : TmxMap) =
+        AttributesInferred.make
+            (v3
+                (single (tileMap.Width * tileMap.TileWidth))
+                (single (tileMap.Height * tileMap.TileHeight))
+                0.0f)
+            v3Zero

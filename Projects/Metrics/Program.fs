@@ -34,7 +34,7 @@ type [<StructuralEquality; NoComparison; Struct>] Shake =
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 type MetricsEntityDispatcher () =
-    inherit EntityDispatcher3d<StaticModel AssetTag, Message, Command> (true, false, Assets.Default.StaticModel)
+    inherit EntityDispatcher3d<StaticModel AssetTag, Message, Command> (false, Assets.Default.StaticModel)
 
 #if !MMCC
     override this.Update (entity, world) =
@@ -44,16 +44,15 @@ type MetricsEntityDispatcher () =
     override this.Render (entity, world) =
         let staticModel = entity.GetModelGeneric world
         let mutable transform = entity.GetTransform world
-        let affineMatrixOffset = transform.AffineMatrixOffset
+        let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let properties = MaterialProperties.empty
-        World.renderStaticModelFast (false, &affineMatrixOffset, presence, ValueNone, &properties, DeferredRenderType, staticModel, world)
+        World.renderStaticModelFast (false, &affineMatrix, presence, ValueNone, &properties, DeferredRenderType, staticModel, world)
 
-    override this.GetQuickSize (entity, world) =
+    override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetModelGeneric world
         let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
-        let boundsExtended = bounds.Combine bounds.Mirror
-        boundsExtended.Size
+        AttributesInferred.make bounds.Size bounds.Center
 
 #if !MMCC
 type MyGameDispatcher () =

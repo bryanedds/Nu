@@ -61,7 +61,7 @@ type Slice =
       LightCutoff : single
       Volume : single
       Enabled : bool
-      Centered : bool }
+      PerimeterCentered : bool }
 
 /// An effect key frame with abstract properties.
 type KeyFrame =
@@ -618,7 +618,7 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
                 let spriteView =
                     Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
                         RenderSprite
@@ -656,7 +656,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
+                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
                     let animatedSpriteView =
                         Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
                             RenderSprite
@@ -687,7 +687,7 @@ module EffectSystem =
         // build text views
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.Centered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
                 let textView =
                     Render2d (transform.Elevation, transform.Horizon, font,
                         RenderText
