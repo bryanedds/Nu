@@ -18,8 +18,7 @@ module WorldPhysics =
             world.Subsystems.PhysicsEngine3d
 
         /// Localize a body shape to a specific size.
-        static member localizeBodyShape (size : Vector3) (bodyShape : BodyShape) (world : World) =
-            ignore world // for world parameter for scripting
+        static member localizeBodyShape (size : Vector3) (bodyShape : BodyShape) =
             Physics.localizeBodyShape size bodyShape
 
         static member internal clearPhysicsMessages2d world =
