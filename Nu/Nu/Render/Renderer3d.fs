@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
@@ -2215,6 +2214,14 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create environment filter shader
         let environmentFilterShader = OpenGL.LightMap.CreateEnvironmentFilterShader Constants.Paths.EnvironmentFilterShaderFilePath
+        OpenGL.Hl.Assert ()
+
+        // create shadow shaders
+        let (shadowStaticShader, shadowAnimatedShader, shadowTerrainShader) =
+            OpenGL.PhysicallyBased.CreatePhysicallyBasedShadowShaders
+                (Constants.Paths.PhysicallyBasedShadowStaticShaderFilePath,
+                 Constants.Paths.PhysicallyBasedShadowAnimatedShaderFilePath,
+                 Constants.Paths.PhysicallyBasedShadowTerrainShaderFilePath)
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
