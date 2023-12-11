@@ -9,12 +9,12 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldHierarchy =
+module WorldEntityHierarchy =
 
     type World with
 
         /// Attempt to import a static model hierarchy below the target entity.
-        static member tryImportHierarchy presenceConferred staticModel rigid (parent : Either<Group, Entity>) world =
+        static member tryImportEntityHierarchy presenceConferred staticModel rigid (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
@@ -109,9 +109,10 @@ module WorldHierarchy =
                             i <- inc i)
                 world'
             | None -> world
-
-        ///
-        static member freezeHierarchy (parent : Entity) wtemp =
+            
+        /// Attempt to freeze an entity hierarchy where certain types of children's rendering functionality are baked
+        /// into a manually renderable array.
+        static member freezeEntityHierarchy (parent : Entity) wtemp =
             let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
             let rec getFrozenArtifacts (entity : Entity) =
                 [|if entity <> parent then
@@ -172,8 +173,9 @@ module WorldHierarchy =
                 world <- parent.SetOffset v3Zero world
             (Array.ofSeq frozenProbes, Array.ofSeq frozenLights, Array.ofSeq frozenSurfaces, world)
 
-        ///
-        static member thawHierarchy presenceConferred (parent : Entity) wtemp =
+        /// Attempt to thaw an entity hierarchy where certain types of children's rendering functionality were baked
+        /// into a manually renderable array.
+        static member thawEntityHierarchy presenceConferred (parent : Entity) wtemp =
             let mutable world = wtemp
             let rec showChildren (entity : Entity) =
                 if entity <> parent then
@@ -208,7 +210,7 @@ module FreezeFacetModule =
         member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
         member this.UpdateFrozenHierarchy world =
             if this.GetFrozen world then
-                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeHierarchy this world
+                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeEntityHierarchy this world
                 let world = this.SetFrozenRenderLightProbe3ds frozenProbes world
                 let world = this.SetFrozenRenderLight3ds frozenLights world
                 let world = this.SetFrozenRenderStaticModelSurfaces frozenSurfaces world
@@ -217,7 +219,7 @@ module FreezeFacetModule =
                 let world = this.SetFrozenRenderLightProbe3ds [||] world
                 let world = this.SetFrozenRenderLight3ds [||] world
                 let world = this.SetFrozenRenderStaticModelSurfaces [||] world
-                let world = World.thawHierarchy (this.GetPresenceConferred world) this world
+                let world = World.thawEntityHierarchy (this.GetPresenceConferred world) this world
                 world
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
@@ -283,7 +285,7 @@ module StaticModelHierarchyDispatcherModule =
                     World.destroyEntityImmediate child world)
                     world (entity.GetChildren world)
             let world =
-                World.tryImportHierarchy
+                World.tryImportEntityHierarchy
                     (entity.GetPresenceConferred world) (entity.GetStaticModel world) false (Right entity) world
             entity.UpdateFrozenHierarchy world
 
@@ -330,7 +332,7 @@ module RigidModelHierarchyDispatcherModule =
                     World.destroyEntityImmediate child world)
                     world (entity.GetChildren world)
             let world =
-                World.tryImportHierarchy
+                World.tryImportEntityHierarchy
                     (entity.GetPresenceConferred world) (entity.GetStaticModel world) true (Right entity) world
             entity.UpdateFrozenHierarchy world
 
