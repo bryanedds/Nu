@@ -19,7 +19,7 @@ type AttributesInferred =
           OffsetInferred = offset }
 
     static member choose left right =
-        if right.SizeInferred.MagnitudeSquared > left.SizeInferred.MagnitudeSquared // mostly an arbitrary choice...
+        if right.OffsetInferred.MagnitudeSquared > left.OffsetInferred.MagnitudeSquared // mostly an arbitrary choice...
         then right
         else left
 
