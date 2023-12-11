@@ -226,7 +226,7 @@ module internal Octnode =
                     getLightsInViewFrustum frustum set node
         | ValueRight elements ->
             for element in elements do
-                if element.Light && not element.Static then
+                if element.Light && element.Visible then
                     let bounds = element.Bounds
                     if frustum.Intersects bounds then
                         set.Add element |> ignore
