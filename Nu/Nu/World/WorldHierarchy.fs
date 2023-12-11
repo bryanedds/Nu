@@ -122,7 +122,8 @@ module WorldHierarchy =
                         let bounds = entity.GetProbeBounds world
                         let stale = entity.GetProbeStalePrevious world
                         Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
-                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
+                        let probeBounds = entity.GetProbeBounds world
+                        boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine probeBounds) | None -> Some probeBounds
                         world <- entity.SetVisibleLocal false world
                     if entity.Has<LightFacet3d> world then
                         if entity.GetEnabled world then
@@ -135,7 +136,9 @@ module WorldHierarchy =
                             let lightCutoff = entity.GetLightCutoff world
                             let lightType = entity.GetLightType world
                             Choice2Of3 { Origin = position; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType }
-                            boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
+                            let lightCutoff = entity.GetLightCutoff world
+                            let lightBounds = box3 (entity.GetPosition world - lightCutoff * v3One * 0.5f) (lightCutoff * v3One)
+                            boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine lightBounds) | None -> Some lightBounds
                     if entity.Has<StaticModelSurfaceFacet> world then
                         let mutable transform = entity.GetTransform world
                         let absolute = transform.Absolute
