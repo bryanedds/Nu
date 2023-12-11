@@ -117,6 +117,7 @@
 		<Compile Include="World\WorldEffects.fs" />
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />
+		<Compile Include="World\WorldHierarchy.fs" />
 		<Compile Include="World\WorldContent.fs" />
 		<Compile Include="World\WorldModule2.fs" />
 		<Compile Include="World\World.fs" />
