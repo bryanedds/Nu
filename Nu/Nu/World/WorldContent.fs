@@ -448,9 +448,6 @@ module Content =
     /// Describe a static model surface with the given initializers.
     let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
 
-    /// Describe a static model expanded into an entity hierarchy with the given initializers.
-    let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
-
     /// Describe an animated model with the given initializers.
     let animatedModel entityName initializers = entity<AnimatedModelDispatcher> entityName initializers
 
@@ -459,6 +456,12 @@ module Content =
 
     /// Describe a terrain with the given initializers.
     let terrain entityName initializers = entity<TerrainDispatcher> entityName initializers
+
+    /// Describe a static model expanded into an entity hierarchy with the given initializers.
+    let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
+
+    /// Describe a rigid model expanded into an entity hierarchy with the given initializers.
+    let rigidModelHierarchy entityName initializers = entity<RigidModelHierarchyDispatcher> entityName initializers
 
     /// Describe a group with the given dispatcher type and initializers as well as its contained entities.
     let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
