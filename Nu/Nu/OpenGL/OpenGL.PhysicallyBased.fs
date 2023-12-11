@@ -1587,8 +1587,8 @@ module PhysicallyBased =
           LightsCountUniform = lightsCountUniform
           PhysicallyBasedShader = shader }
 
-    /// Create a physically-based deferred terrain shader.
-    let CreatePhysicallyBasedDeferredTerrainShader (shaderFilePath : string) =
+    /// Create a physically-based terrain shader.
+    let CreatePhysicallyBasedTerrainShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -1815,11 +1815,18 @@ module PhysicallyBased =
         { InputTextureUniform = inputTextureUniform
           PhysicallyBasedFxaaShader = shader }
 
+    /// Create the shaders for physically-based shadow rendering.
+    let CreatePhysicallyBasedShadowShaders (shaderStaticShadowFilePath, shaderAnimatedShadowFilePath, shaderTerrainShadowFilePath) =
+        let shaderStaticShadow = CreatePhysicallyBasedShader shaderStaticShadowFilePath
+        let shaderAnimatedShadow = CreatePhysicallyBasedShader shaderAnimatedShadowFilePath
+        let shaderTerrainShadow = CreatePhysicallyBasedTerrainShader shaderTerrainShadowFilePath
+        (shaderStaticShadow, shaderAnimatedShadow, shaderTerrainShadow)
+
     /// Create the shaders for physically-based deferred rendering.
     let CreatePhysicallyBasedDeferredShaders (shaderStaticFilePath, shaderAnimatedFilePath, terrainShaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
         let shaderStatic = CreatePhysicallyBasedShader shaderStaticFilePath
         let shaderAnimated = CreatePhysicallyBasedShader shaderAnimatedFilePath
-        let shaderTerrain = CreatePhysicallyBasedDeferredTerrainShader terrainShaderFilePath
+        let shaderTerrain = CreatePhysicallyBasedTerrainShader terrainShaderFilePath
         let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath
         let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath
         let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath
