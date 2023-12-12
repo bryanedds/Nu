@@ -1147,7 +1147,7 @@ module WorldModule2 =
 
         static member private renderSimulants skipCulling world =
 
-            // gather lights
+            // render shadows
             let tempHashSet = HashSet ()
             let lightBox = World.getLight3dBox world
             let (lights, world) = World.getLights3dInBox lightBox tempHashSet world // NOTE: this may not be the optimal way to query.
