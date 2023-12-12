@@ -528,11 +528,6 @@ module EffectDescriptors =
                        { TweenValue = Color.One; TweenLength = 30L }
                        { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                  Nil)
-        let thunderSoundEffect =
-            SoundEffect
-                (Resource (AssetTag.toPair Assets.Field.ThunderSound),
-                 [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
-                 Nil)
         { EffectName = "Bolt"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty
@@ -540,8 +535,7 @@ module EffectDescriptors =
             Contents
                 (Shift 0.0f,
                  [|boltSprite
-                   Delay (10L, explosionSprite)
-                   Delay (10L, thunderSoundEffect)|]) }
+                   Delay (10L, explosionSprite)|]) }
 
     let inferno =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)

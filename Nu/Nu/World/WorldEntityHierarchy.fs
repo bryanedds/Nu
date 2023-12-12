@@ -146,10 +146,10 @@ module WorldEntityHierarchy =
                         let affineMatrix = transform.AffineMatrix
                         let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
                         let properties = entity.GetMaterialProperties world
-                        let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
-                        Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; SurfaceIndex = surfaceIndex; StaticModel = staticModel }
+                        let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+                        Choice3Of3 { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
                         boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine (entity.GetBounds world)) | None -> Some (entity.GetBounds world)
                         world <- entity.SetVisibleLocal false world
                     if entity <> parent then
@@ -199,8 +199,8 @@ module FreezeFacetModule =
         member this.GetFrozenRenderLight3ds world : RenderLight3d array = this.Get (nameof this.FrozenRenderLight3ds) world
         member this.SetFrozenRenderLight3ds (value : RenderLight3d array) world = this.Set (nameof this.FrozenRenderLight3ds) value world
         member this.FrozenRenderLight3ds = lens (nameof this.FrozenRenderLight3ds) this this.GetFrozenRenderLight3ds this.SetFrozenRenderLight3ds
-        member this.GetFrozenRenderStaticModelSurfaces world : RenderStaticModelSurface array = this.Get (nameof this.FrozenRenderStaticModelSurfaces) world
-        member this.SetFrozenRenderStaticModelSurfaces (value : RenderStaticModelSurface array) world = this.Set (nameof this.FrozenRenderStaticModelSurfaces) value world
+        member this.GetFrozenRenderStaticModelSurfaces world : StaticModelSurfaceValue array = this.Get (nameof this.FrozenRenderStaticModelSurfaces) world
+        member this.SetFrozenRenderStaticModelSurfaces (value : StaticModelSurfaceValue array) world = this.Set (nameof this.FrozenRenderStaticModelSurfaces) value world
         member this.FrozenRenderStaticModelSurfaces = lens (nameof this.FrozenRenderStaticModelSurfaces) this this.GetFrozenRenderStaticModelSurfaces this.SetFrozenRenderStaticModelSurfaces
         member this.GetFrozen world : bool = this.Get (nameof this.Frozen) world
         member this.SetFrozen (value : bool) world = this.Set (nameof this.Frozen) value world
@@ -245,7 +245,7 @@ module FreezeFacetModule =
             let world = World.monitor handleUpdateFrozenHierarchy (entity.ChangeEvent (nameof entity.Frozen)) entity world
             world
 
-        override this.Render (entity, world) =
+        override this.Render (renderPass, entity, world) =
 
             // render probes, clearing staleness when appropriate
             let bounds = entity.GetBounds world
@@ -264,8 +264,8 @@ module FreezeFacetModule =
 
             // render surfaces
             if World.boundsInView3d false false presenceConferred bounds world then
-                for message in entity.GetFrozenRenderStaticModelSurfaces world do
-                    World.renderStaticModelSurfaceFast (message.Absolute, &message.ModelMatrix, Option.toValueOption message.InsetOpt, &message.MaterialProperties, message.RenderType, message.StaticModel, message.SurfaceIndex, world)
+                for surface in entity.GetFrozenRenderStaticModelSurfaces world do
+                    World.renderStaticModelSurfaceFast (surface.Absolute, &surface.ModelMatrix, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =

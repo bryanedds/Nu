@@ -35,7 +35,7 @@ type [<Struct>] JustificationV =
     | JustifyMiddle
     | JustifyBottom
 
-/// Justification (such as for text alignement).
+/// Justification (such as for text alignment).
 [<Syntax
     ("Justified Unjustified", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
@@ -52,19 +52,25 @@ type [<Struct>] Particle =
       mutable Emission : Color
       mutable Flip : Flip }
 
+/// The type of rendering used on a surface (for use by the lower-level renderer API).
+type [<Struct>] RenderType =
+    | DeferredRenderType
+    | ForwardRenderType of Subsort : single * Sort : single
+
+/// Desribes the render pass at play.
+type RenderPass =
+    | NormalPass
+    | ShadowPass of LightId : int64
+    | ReflectionPass of ReflectorId : int64
+
 /// An asset that is used for rendering.
 type RenderAsset =
     | RawAsset
     | TextureAsset of TextureMetadata : OpenGL.Texture.TextureMetadata * Texture : uint
     | FontAsset of PointSize : int * Font : nativeint
     | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapMemoKey * CubeMap : uint * IrradianceAndEnvironmentMapOptRef : (uint * uint) option ref
-    | StaticModelAsset of UserDefined : bool * Model : OpenGL.PhysicallyBased.PhysicallyBasedModel
-    | AnimatedModelAsset of OpenGL.PhysicallyBased.PhysicallyBasedModel
-
-/// The type of rendering used on a surface (for use by the lower-level renderer API).
-type [<Struct>] RenderType =
-    | DeferredRenderType
-    | ForwardRenderType of Subsort : single * Sort : single
+    | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedModel
+    | AnimatedModelAsset of AnimatedModel : OpenGL.PhysicallyBased.PhysicallyBasedModel
 
 /// A renderer tag interface.
 type Renderer = interface end

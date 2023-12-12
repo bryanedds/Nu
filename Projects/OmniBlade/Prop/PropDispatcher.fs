@@ -78,7 +78,7 @@ module PropDispatcher =
                 | Flame _ | ChestSpawn | PortalSpawn | EmptyProp ->
                     BodyEmpty]
 
-        override this.View (propPlus, entity, world) =
+        override this.Render (propPlus, _, entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 let (background, image, color, blend, emission, insetOpt, flip) =

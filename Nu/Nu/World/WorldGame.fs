@@ -179,9 +179,9 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "postUpdateGame" "" EventTrace.empty
             World.publishPlus () game.PostUpdateEvent eventTrace game false false world
 
-        static member internal renderGame (game : Game) world =
+        static member internal renderGame renderPass (game : Game) world =
             let dispatcher = game.GetDispatcher world
-            dispatcher.Render (game, world)
+            dispatcher.Render (renderPass, game, world)
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

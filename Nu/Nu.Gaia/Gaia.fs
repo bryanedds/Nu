@@ -580,8 +580,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (RenderStaticModels
                 { Absolute = false
                   StaticModels = lightProbeModels
-                  RenderType = DeferredRenderType
-                  StaticModel = Assets.Default.LightProbeModel })
+                  StaticModel = Assets.Default.LightProbeModel
+                  RenderType = DeferredRenderType })
             world
 
         // render lights of the selected group in play
@@ -595,8 +595,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (RenderStaticModels
                 { Absolute = false
                   StaticModels = lightModels
-                  RenderType = DeferredRenderType
-                  StaticModel = Assets.Default.LightbulbModel })
+                  StaticModel = Assets.Default.LightbulbModel
+                  RenderType = DeferredRenderType })
             world
 
         // render selection highlights
@@ -635,8 +635,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                           Presence = Omnipresent
                           InsetOpt = None
                           MaterialProperties = MaterialProperties.defaultProperties
+                          StaticModel = Assets.Default.HighlightModel
                           RenderType = ForwardRenderType (0.0f, Single.MinValue)
-                          StaticModel = Assets.Default.HighlightModel })
+                          RenderPass = NormalPass })
                     world
         | Some _ | None -> ()
 

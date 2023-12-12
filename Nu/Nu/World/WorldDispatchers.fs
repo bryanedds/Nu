@@ -344,7 +344,7 @@ module CharacterDispatcher2dModule =
                 else world
             else world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let bodyId = entity.GetBodyId world
             let facingLeft = entity.GetCharacter2dFacingLeft world
             let velocity = World.getBodyLinearVelocity bodyId world

@@ -68,16 +68,16 @@ module WorldRender =
             for message in messages do rendererProcess.EnqueueMessage3d message
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderStaticModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, world) =
-            (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, renderType, staticModel)
+        static member renderStaticModelFast (absolute, modelMatrix : Matrix4x4 inref, presence, insetOpt, materialProperties : MaterialProperties inref, staticModel, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, staticModel, renderType, renderPass)
 
         /// Send a message to the render system to render a static model surface using a fast path.
-        static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, renderType, staticModel, surfaceIndex, world) =
-            (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, insetOpt, &materialProperties, renderType, staticModel, surfaceIndex)
+        static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, staticModel, surfaceIndex, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, insetOpt, &materialProperties, staticModel, surfaceIndex, renderType, renderPass)
 
         /// Send a message to the render system to render an animated model using a fast path.
-        static member renderAnimatedModelFast (time, absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, world) =
-            (World.getRendererProcess world).RenderAnimatedModelFast (time, absolute, &modelMatrix, insetOpt, &materialProperties, animations, animatedModel)
+        static member renderAnimatedModelFast (time, absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, renderPass, world) =
+            (World.getRendererProcess world).RenderAnimatedModelFast (time, absolute, &modelMatrix, insetOpt, &materialProperties, animations, animatedModel, renderPass)
 
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
@@ -100,7 +100,7 @@ module WorldRender =
 
         /// Send a message to the render to create the given user-defined static model.
         static member createUserDefinedStaticModel surfaceDescriptors bounds staticModel world =
-            let message = CreateUserDefinedStaticModel { SurfaceDescriptors = surfaceDescriptors; Bounds = bounds; StaticModel = staticModel }
+            let message = CreateUserDefinedStaticModel { StaticModelSurfaceDescriptors = surfaceDescriptors; Bounds = bounds; StaticModel = staticModel }
             World.enqueueRenderMessage3d message world
 
         /// Send a message to the render to destroy the given user-defined static model.

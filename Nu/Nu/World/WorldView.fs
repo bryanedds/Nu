@@ -10,14 +10,89 @@ module WorldView =
 
     type World with
 
-        static member internal renderView view world =
+        static member internal renderView renderPass view world =
             match view with
-            | Render2d (elevation, horizon, assetTag, operation) -> World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = AssetTag.generalize assetTag; RenderOperation2d = operation } world; world
-            | Render3d renderMessage -> World.enqueueRenderMessage3d renderMessage world; world
-            | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-            | PlaySong (fadeIn, fadeOut, start, volume, assetTag) -> World.playSong fadeIn fadeOut start volume assetTag world
-            | FadeOutSong fade -> World.fadeOutSong fade world
-            | StopSong -> World.stopSong world
-            | SpawnEmitter (_, _) -> world
-            | Tag _ -> world
-            | Views views -> SArray.fold (fun world view -> World.renderView view world) world views
+
+            // render sprite
+            | SpriteView (elevation, horizon, assetTag, sprite) ->
+                World.renderLayeredSpriteFast (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
+
+            // render text
+            | TextView (elevation, horizon, assetTag, text) ->
+                let renderText =
+                    { Transform = text.Transform
+                      Text = text.Text
+                      Font = text.Font
+                      Color = text.Color
+                      Justification = text.Justification }
+                World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world
+
+            // render 3d light
+            | Light3dView light ->
+                let renderLight =
+                    { Origin = light.Origin
+                      Direction = light.Direction
+                      Color = light.Color
+                      Brightness = light.Brightness
+                      AttenuationLinear = light.AttenuationLinear
+                      AttenuationQuadratic = light.AttenuationQuadratic
+                      LightCutoff = light.LightCutoff
+                      LightType = light.LightType }
+                World.enqueueRenderMessage3d (RenderLight3d renderLight) world
+
+            // render billboard
+            | BillboardView billboard ->
+                let renderBillboard =
+                    { Absolute = billboard.Absolute
+                      ModelMatrix = billboard.ModelMatrix
+                      InsetOpt = billboard.InsetOpt
+                      MaterialProperties = billboard.MaterialProperties
+                      AlbedoImage = billboard.AlbedoImage
+                      RoughnessImage = billboard.RoughnessImage
+                      MetallicImage = billboard.MetallicImage
+                      AmbientOcclusionImage = billboard.AmbientOcclusionImage
+                      EmissionImage = billboard.EmissionImage
+                      NormalImage = billboard.NormalImage
+                      HeightImage = billboard.HeightImage
+                      MinFilterOpt = billboard.MinFilterOpt
+                      MagFilterOpt = billboard.MagFilterOpt
+                      RenderType = billboard.RenderType
+                      RenderPass = renderPass }
+                World.enqueueRenderMessage3d (RenderBillboard renderBillboard) world
+
+            // render static model
+            | StaticModelView staticModel ->
+                let renderStaticModel =
+                    { Absolute = staticModel.Absolute
+                      ModelMatrix = staticModel.ModelMatrix
+                      Presence = staticModel.Presence
+                      InsetOpt = staticModel.InsetOpt
+                      MaterialProperties = staticModel.MaterialProperties
+                      StaticModel = staticModel.StaticModel
+                      RenderType = staticModel.RenderType
+                      RenderPass = renderPass }
+                World.enqueueRenderMessage3d (RenderStaticModel renderStaticModel) world
+
+            // render static model surface
+            | StaticModelSurfaceView staticModelSurface ->
+                let renderStaticModelSurface =
+                    { Absolute = staticModelSurface.Absolute
+                      ModelMatrix = staticModelSurface.ModelMatrix
+                      InsetOpt = staticModelSurface.InsetOpt
+                      MaterialProperties = staticModelSurface.MaterialProperties
+                      StaticModel = staticModelSurface.StaticModel
+                      SurfaceIndex = staticModelSurface.SurfaceIndex
+                      RenderType = staticModelSurface.RenderType
+                      RenderPass = renderPass }
+                World.enqueueRenderMessage3d (RenderStaticModelSurface renderStaticModelSurface) world
+
+            // nothing to do
+            | SpawnEmitter (_, _) -> ()
+
+            // nothing to do
+            | Tag (_, _) -> ()
+
+            // recur
+            | Views views ->
+                for view in views do
+                    World.renderView renderPass view world

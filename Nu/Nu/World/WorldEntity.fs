@@ -625,12 +625,12 @@ module WorldEntityModule =
             else world
 #endif
 
-        static member internal renderEntity (entity : Entity) world =
+        static member internal renderEntity renderPass (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
-            dispatcher.Render (entity, world)
+            dispatcher.Render (renderPass, entity, world)
             let facets = entity.GetFacets world
             for facet in facets do
-                facet.Render (entity, world)
+                facet.Render (renderPass, entity, world)
 
         static member internal updateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world

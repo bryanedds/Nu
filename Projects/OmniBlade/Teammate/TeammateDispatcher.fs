@@ -85,7 +85,7 @@ module TeammateDispatcher =
              Entity.DownImage == Assets.Gui.ButtonBigDownImage
              Entity.ClickSoundOpt == Some Assets.Gui.AffirmSound]
 
-        override this.View (character, entity, world) =
+        override this.Render (character, _, entity, world) =
 
             // render hit points
             let mutable transform = entity.GetTransform world

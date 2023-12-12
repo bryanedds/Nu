@@ -6,9 +6,9 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
+open System.Runtime.InteropServices
 open SDL2
 open Prime
-open System.Runtime.InteropServices
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // TODO: add TwoSidedOpt as render message parameter.                                   //
@@ -17,26 +17,6 @@ open System.Runtime.InteropServices
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 //////////////////////////////////////////////////////////////////////////////////////////
-
-/// Describes a static model surface.
-type SurfaceDescriptor =
-    { Positions : Vector3 array
-      TexCoordses : Vector2 array
-      Normals : Vector3 array
-      Indices : int array
-      ModelMatrix : Matrix4x4
-      Bounds : Box3
-      MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
-      AlbedoImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
-      TextureMinFilterOpt : OpenGL.TextureMinFilter option
-      TextureMagFilterOpt : OpenGL.TextureMagFilter option
-      TwoSided : bool }
 
 /// A layer from which a 3d terrain's material is composed.
 /// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
@@ -107,6 +87,70 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
+/// A mutable 3d light value.
+type [<Struct>] Light3dValue =
+    { mutable Origin : Vector3
+      mutable Direction : Vector3
+      mutable Color : Color
+      mutable Brightness : single
+      mutable AttenuationLinear : single
+      mutable AttenuationQuadratic : single
+      mutable LightCutoff : single
+      mutable LightType : LightType }
+
+/// A mutable billboard value.
+type [<Struct>] BillboardValue =
+    { mutable Absolute : bool
+      mutable ModelMatrix : Matrix4x4
+      mutable InsetOpt : Box2 option
+      mutable MaterialProperties : MaterialProperties
+      mutable AlbedoImage : Image AssetTag
+      mutable RoughnessImage : Image AssetTag
+      mutable MetallicImage : Image AssetTag
+      mutable AmbientOcclusionImage : Image AssetTag
+      mutable EmissionImage : Image AssetTag
+      mutable NormalImage : Image AssetTag
+      mutable HeightImage : Image AssetTag
+      mutable MinFilterOpt : OpenGL.TextureMinFilter option
+      mutable MagFilterOpt : OpenGL.TextureMagFilter option
+      mutable RenderType : RenderType }
+
+/// A mutable static model value.
+type [<Struct>] StaticModelValue =
+    { mutable Absolute : bool
+      mutable ModelMatrix : Matrix4x4
+      mutable Presence : Presence
+      mutable InsetOpt : Box2 option
+      mutable MaterialProperties : MaterialProperties
+      mutable StaticModel : StaticModel AssetTag
+      mutable RenderType : RenderType }
+
+/// A mutable static model surface value.
+type [<Struct>] StaticModelSurfaceValue =
+    { mutable Absolute : bool
+      mutable ModelMatrix : Matrix4x4
+      mutable InsetOpt : Box2 option
+      mutable MaterialProperties : MaterialProperties
+      mutable StaticModel : StaticModel AssetTag
+      mutable SurfaceIndex : int
+      mutable RenderType : RenderType }
+
+/// Describes billboard-based particles.
+type BillboardParticlesDescriptor =
+    { Absolute : bool
+      MaterialProperties : MaterialProperties
+      AlbedoImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      EmissionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      HeightImage : Image AssetTag
+      MinFilterOpt : OpenGL.TextureMinFilter option
+      MagFilterOpt : OpenGL.TextureMagFilter option
+      Particles : Particle SArray
+      RenderType : RenderType }
+
 /// Describes a static 3d terrain geometry.
 type TerrainGeometryDescriptor =
     { Bounds : Box3
@@ -137,22 +181,6 @@ type TerrainDescriptor =
           Tiles = this.Tiles
           HeightMap = this.HeightMap
           Segments = this.Segments }
-
-/// Describes billboard-based particles.
-type BillboardParticlesDescriptor =
-    { Absolute : bool
-      MaterialProperties : MaterialProperties
-      AlbedoImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter option
-      MagFilterOpt : OpenGL.TextureMagFilter option
-      RenderType : RenderType
-      Particles : Particle SArray }
 
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
@@ -219,8 +247,9 @@ and CachedStaticModelMessage =
       mutable CachedStaticModelPresence : Presence
       mutable CachedStaticModelInsetOpt : Box2 voption
       mutable CachedStaticModelMaterialProperties : MaterialProperties
+      mutable CachedStaticModel : StaticModel AssetTag
       mutable CachedStaticModelRenderType : RenderType
-      mutable CachedStaticModel : StaticModel AssetTag }
+      mutable CachedStaticModelRenderPass : RenderPass }
 
 /// An internally cached static model surface used to reduce GC promotion or pressure.
 and CachedStaticModelSurfaceMessage =
@@ -228,9 +257,10 @@ and CachedStaticModelSurfaceMessage =
       mutable CachedStaticModelSurfaceMatrix : Matrix4x4
       mutable CachedStaticModelSurfaceInsetOpt : Box2 voption
       mutable CachedStaticModelSurfaceMaterialProperties : MaterialProperties
-      mutable CachedStaticModelSurfaceRenderType : RenderType
       mutable CachedStaticModelSurfaceModel : StaticModel AssetTag
-      mutable CachedStaticModelSurfaceIndex : int }
+      mutable CachedStaticModelSurfaceIndex : int
+      mutable CachedStaticModelSurfaceRenderType : RenderType
+      mutable CachedStaticModelSurfaceRenderPass : RenderPass }
 
 /// An internally cached animated model used to reduce GC promotion or pressure.
 and CachedAnimatedModelMessage =
@@ -240,10 +270,31 @@ and CachedAnimatedModelMessage =
       mutable CachedAnimatedModelInsetOpt : Box2 voption
       mutable CachedAnimatedModelMaterialProperties : MaterialProperties
       mutable CachedAnimatedModelAnimations : Animation array
-      mutable CachedAnimatedModel : AnimatedModel AssetTag }
+      mutable CachedAnimatedModel : AnimatedModel AssetTag
+      mutable CachedAnimatedModelRenderPass : RenderPass }
+
+/// Describes a static model surface.
+and StaticModelSurfaceDescriptor =
+    { Positions : Vector3 array
+      TexCoordses : Vector2 array
+      Normals : Vector3 array
+      Indices : int array
+      ModelMatrix : Matrix4x4
+      Bounds : Box3
+      MaterialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties
+      AlbedoImage : Image AssetTag
+      RoughnessImage : Image AssetTag
+      MetallicImage : Image AssetTag
+      AmbientOcclusionImage : Image AssetTag
+      EmissionImage : Image AssetTag
+      NormalImage : Image AssetTag
+      HeightImage : Image AssetTag
+      TextureMinFilterOpt : OpenGL.TextureMinFilter option
+      TextureMagFilterOpt : OpenGL.TextureMagFilter option
+      TwoSided : bool }
 
 and [<ReferenceEquality>] CreateUserDefinedStaticModel =
-    { SurfaceDescriptors : SurfaceDescriptor array
+    { StaticModelSurfaceDescriptors : StaticModelSurfaceDescriptor array
       Bounds : Box3
       StaticModel : StaticModel AssetTag }
 
@@ -288,7 +339,8 @@ and [<ReferenceEquality>] RenderBillboard =
       HeightImage : Image AssetTag
       MinFilterOpt : OpenGL.TextureMinFilter option
       MagFilterOpt : OpenGL.TextureMagFilter option
-      RenderType : RenderType }
+      RenderType : RenderType
+      RenderPass : RenderPass }
 
 and [<ReferenceEquality>] RenderBillboards =
     { Absolute : bool
@@ -303,7 +355,8 @@ and [<ReferenceEquality>] RenderBillboards =
       HeightImage : Image AssetTag
       MinFilterOpt : OpenGL.TextureMinFilter option
       MagFilterOpt : OpenGL.TextureMagFilter option
-      RenderType : RenderType }
+      RenderType : RenderType
+      RenderPass : RenderPass }
 
 and [<ReferenceEquality>] RenderBillboardParticles =
     { Absolute : bool
@@ -317,17 +370,18 @@ and [<ReferenceEquality>] RenderBillboardParticles =
       HeightImage : Image AssetTag
       MinFilterOpt : OpenGL.TextureMinFilter option
       MagFilterOpt : OpenGL.TextureMagFilter option
-      RenderType : RenderType
-      Particles : Particle SArray }
+      Particles : Particle SArray
+      RenderType : RenderType }
 
 and [<ReferenceEquality>] RenderStaticModelSurface =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
-      RenderType : RenderType
       StaticModel : StaticModel AssetTag
-      SurfaceIndex : int }
+      SurfaceIndex : int
+      RenderType : RenderType
+      RenderPass : RenderPass }
 
 and [<ReferenceEquality>] RenderStaticModel =
     { Absolute : bool
@@ -335,14 +389,15 @@ and [<ReferenceEquality>] RenderStaticModel =
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
+      StaticModel : StaticModel AssetTag
       RenderType : RenderType
-      StaticModel : StaticModel AssetTag }
+      RenderPass : RenderPass }
 
 and [<ReferenceEquality>] RenderStaticModels =
     { Absolute : bool
       StaticModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
-      RenderType : RenderType
-      StaticModel : StaticModel AssetTag }
+      StaticModel : StaticModel AssetTag
+      RenderType : RenderType }
 
 and [<ReferenceEquality>] RenderAnimatedModel =
     { Time : GameTime
@@ -351,7 +406,8 @@ and [<ReferenceEquality>] RenderAnimatedModel =
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
       Animations : Animation array
-      AnimatedModel : AnimatedModel AssetTag }
+      AnimatedModel : AnimatedModel AssetTag
+      RenderPass : RenderPass }
 
 and [<ReferenceEquality>] RenderAnimatedModels =
     { Time : GameTime
@@ -366,9 +422,9 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
-      RenderType : RenderType
-      SurfaceDescriptors : SurfaceDescriptor array
-      Bounds : Box3 }
+      StaticModelSurfaceDescriptors : StaticModelSurfaceDescriptor array
+      Bounds : Box3
+      RenderType : RenderType }
 
 and [<ReferenceEquality>] RenderTerrain =
     { Absolute : bool
@@ -822,7 +878,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // create surfaces
             let surfaces = List ()
-            for (surfaceDescriptor : SurfaceDescriptor) in surfaceDescriptors do
+            for (surfaceDescriptor : StaticModelSurfaceDescriptor) in surfaceDescriptors do
 
                 // get albedo metadata and texture
                 let (albedoMetadata, albedoTexture) =
@@ -1070,8 +1126,8 @@ type [<ReferenceEquality>] GlRenderer3d =
          albedoMetadata : OpenGL.Texture.TextureMetadata,
          orientUp,
          properties,
-         renderType,
          billboardSurface,
+         renderType,
          renderer) =
         let texCoordsOffset =
             match insetOpt with
@@ -1116,8 +1172,8 @@ type [<ReferenceEquality>] GlRenderer3d =
          modelMatrix : Matrix4x4 inref,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
-         renderType : RenderType,
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
+         renderType : RenderType,
          renderer) =
         let texCoordsOffset =
             match insetOpt with
@@ -1153,9 +1209,9 @@ type [<ReferenceEquality>] GlRenderer3d =
          modelMatrix : Matrix4x4 inref,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
-         renderType : RenderType,
          staticModel : StaticModel AssetTag,
-         surfaceIndex,
+         surfaceIndex : int,
+         renderType : RenderType,
          renderer) =
         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize staticModel) renderer with
         | ValueSome renderAsset ->
@@ -1163,7 +1219,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | StaticModelAsset (_, modelAsset) ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &insetOpt, &properties, renderType, surface, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &insetOpt, &properties, surface, renderType, renderer)
             | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
         | _ -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
@@ -1178,8 +1234,8 @@ type [<ReferenceEquality>] GlRenderer3d =
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
-         renderType : RenderType,
          staticModel : StaticModel AssetTag,
+         renderType : RenderType,
          renderer) =
         match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize staticModel) renderer with
         | ValueSome renderAsset ->
@@ -1203,15 +1259,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                               SortableLightDistanceSquared = Single.MaxValue }
                         renderer.RenderTasks.RenderLights.Add light
                 for surface in modelAsset.Surfaces do
+                    let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
+                    let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
                     let renderType =
                         match surface.RenderStyleOpt with
                         | Some Deferred -> DeferredRenderType
                         | Some (Forward (subsort, sort)) -> ForwardRenderType (subsort, sort)
                         | None -> renderType
-                    let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
-                    let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence then
-                        GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, renderType, surface, renderer)
+                        GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, surface, renderType, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
         | _ -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
@@ -2055,7 +2111,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for message in renderMessages do
             match message with
             | CreateUserDefinedStaticModel cudsm ->
-                GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.SurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
+                GlRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             | DestroyUserDefinedStaticModel dudsm ->
                 userDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
             | RenderSkyBox rsb ->
@@ -2082,12 +2138,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderBillboard rb ->
                 let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.AlbedoImage rb.RoughnessImage rb.MetallicImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.HeightImage rb.MinFilterOpt rb.MagFilterOpt renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, rb.RenderType, billboardSurface, renderer)
+                GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, renderer)
             | RenderBillboards rbs ->
                 let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.AlbedoImage rbs.RoughnessImage rbs.MetallicImage rbs.AmbientOcclusionImage rbs.EmissionImage rbs.NormalImage rbs.HeightImage rbs.MinFilterOpt rbs.MagFilterOpt renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.RenderBillboardGeometry)
                 for (modelMatrix, insetOpt) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, rbs.RenderType, billboardSurface, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, renderer)
             | RenderBillboardParticles rbps ->
                 let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.AlbedoImage rbps.RoughnessImage rbps.MetallicImage rbps.AmbientOcclusionImage rbps.EmissionImage rbps.NormalImage rbps.HeightImage rbps.MinFilterOpt rbps.MagFilterOpt renderer
                 for particle in rbps.Particles do
@@ -2099,26 +2155,26 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let billboardMaterialProperties = { billboardMaterial.MaterialProperties with Albedo = billboardMaterial.MaterialProperties.Albedo * particle.Color; Emission = particle.Emission.R }
                     let billboardMaterial = { billboardMaterial with MaterialProperties = billboardMaterialProperties }
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3Zero, billboardMaterial, renderer.RenderBillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, false, rbps.MaterialProperties, rbps.RenderType, billboardSurface, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, false, rbps.MaterialProperties, billboardSurface, rbps.RenderType, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, &insetOpt, &rsms.MaterialProperties, rsms.RenderType, rsms.StaticModel, rsms.SurfaceIndex, renderer)
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, &insetOpt, &rsms.MaterialProperties, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.RenderType, rsm.StaticModel,  renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.RenderType, renderer)
             | RenderStaticModels rsms ->
                 for (modelMatrix, presence, insetOpt, properties) in rsms.StaticModels do
                     let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, &insetOpt, &properties, rsms.RenderType, rsms.StaticModel, renderer)
+                    GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, &insetOpt, &properties, rsms.StaticModel, rsms.RenderType, renderer)
             | RenderCachedStaticModel csmm ->
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModelRenderType, csmm.CachedStaticModel, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelRenderType, renderer)
             | RenderCachedStaticModelSurface csmsm ->
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (csmsm.CachedStaticModelSurfaceAbsolute, &csmsm.CachedStaticModelSurfaceMatrix, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, renderer)
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (csmsm.CachedStaticModelSurfaceAbsolute, &csmsm.CachedStaticModelSurfaceMatrix, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
-                GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.SurfaceDescriptors rudsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rudsm.Absolute, &rudsm.ModelMatrix, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, rudsm.RenderType, assetTag, renderer)
+                GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rudsm.Absolute, &rudsm.ModelMatrix, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.RenderType, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt

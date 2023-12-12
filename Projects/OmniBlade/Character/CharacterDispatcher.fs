@@ -66,7 +66,7 @@ module CharacterDispatcher =
              Entity.Perimeter := character.Perimeter
              Entity.Elevation == Constants.Battle.ForegroundElevation]
 
-        override this.View (characterPlus, entity, world) =
+        override this.Render (characterPlus, _, entity, world) =
             let time = characterPlus.UpdateTime
             let character = characterPlus.Character
             if entity.GetVisible world then

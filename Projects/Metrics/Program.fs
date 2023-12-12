@@ -41,13 +41,13 @@ type MetricsEntityDispatcher () =
         entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
 #endif
 
-    override this.Render (entity, world) =
+    override this.Render (renderPass, entity, world) =
         let staticModel = entity.GetModelGeneric world
         let mutable transform = entity.GetTransform world
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let properties = MaterialProperties.empty
-        World.renderStaticModelFast (false, &affineMatrix, presence, ValueNone, &properties, DeferredRenderType, staticModel, world)
+        World.renderStaticModelFast (false, &affineMatrix, presence, ValueNone, &properties, staticModel, renderPass, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetModelGeneric world
