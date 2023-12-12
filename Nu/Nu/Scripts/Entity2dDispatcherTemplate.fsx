@@ -24,10 +24,10 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module TemplateDispatcher3d =
+module Template2dDispatcher =
 
     type TemplateModel =
-        { StaticModel : StaticModel AssetTag }
+        { StaticImage : Image AssetTag }
 
     type TemplateMessage =
         | Update
@@ -37,14 +37,14 @@ module TemplateDispatcher3d =
         | Unregistering
         interface Command
 
-    type TemplateDispatcher3d () =
-        inherit EntityDispatcher3d<TemplateModel, TemplateMessage, TemplateCommand> (false, { StaticModel = Assets.Default.StaticModel })
+    type Template2dDispatcher () =
+        inherit Entity2dDispatcher<TemplateModel, TemplateMessage, TemplateCommand> (false, { StaticImage = Assets.Default.Image })
 
         static member Facets =
-            [typeof<StaticModelFacet>]
+            [typeof<StaticSpriteFacet>]
 
         override this.Initialize (template, entity) =
-            [Entity.StaticModel := template.StaticModel
+            [Entity.StaticImage := template.StaticImage
              Entity.UpdateEvent => Update
              Entity.UnregisteringEvent => Unregistering]
 

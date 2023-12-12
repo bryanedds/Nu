@@ -3,7 +3,7 @@
   [Name Scene]
   [Persistent True]
   [Visible True]]
- [[LightDispatcher3d
+ [[Light3dDispatcher
    [[Brightness 3]
     [Cutoff 1000000]
     [LightType DirectionalLight]
@@ -63,27 +63,27 @@
     [Rotation [0 0.8844361 0 0.46666142]]
     [Size [2.6602979 3.5022092 1.984515]]]
    []]
-  [BlockDispatcher3d
+  [Block3dDispatcher
    [[Name Block3d-0001]
     [Position [-59.1 -29.2 -150.4]]]
    []]
-  [BlockDispatcher3d
+  [Block3dDispatcher
    [[Name Block3d-0007]
     [Position [-61.9 -28.8 -149.7]]]
    []]
-  [BlockDispatcher3d
+  [Block3dDispatcher
    [[Name Block3d-0008]
     [Position [-63 -28.3 -151.2]]]
    []]
-  [BlockDispatcher3d
+  [Block3dDispatcher
    [[Name Block3d-0009]
     [Position [-63.1 -27.6 -153.9]]]
    []]
-  [BlockDispatcher3d
+  [Block3dDispatcher
    [[Name Block3d-0010]
     [Position [-63 -26.3 -156.3]]]
    []]
-  [BlockDispatcher3d
+  [Block3dDispatcher
    [[Name Block3d-0011]
     [Position [-64.7 -27.1 -156.6]]]
    []]]]

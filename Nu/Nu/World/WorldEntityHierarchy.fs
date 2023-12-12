@@ -27,7 +27,7 @@ module WorldEntityHierarchy =
                                 match parent with
                                 | Left group -> (names.Length > 0, names, group)
                                 | Right entity -> (true, Array.append entity.Surnames names, entity.Group)
-                            let (child, world) = World.createEntity<EntityDispatcher3d> DefaultOverlay (Some surnames) group world
+                            let (child, world) = World.createEntity<Entity3dDispatcher> DefaultOverlay (Some surnames) group world
                             let world = child.SetPresence presenceConferred world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
@@ -39,7 +39,7 @@ module WorldEntityHierarchy =
                                 match parent with
                                 | Left group -> (lightProbe.LightProbeNames.Length > 0, lightProbe.LightProbeNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames lightProbe.LightProbeNames, entity.Group)
-                            let (child, world) = World.createEntity<LightProbeDispatcher3d> DefaultOverlay (Some surnames) group world
+                            let (child, world) = World.createEntity<LightProbe3dDispatcher> DefaultOverlay (Some surnames) group world
                             let world = child.SetProbeBounds lightProbe.LightProbeBounds world
                             let world = child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
                             let world = child.SetStatic true world
@@ -52,7 +52,7 @@ module WorldEntityHierarchy =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
-                            let (child, world) = World.createEntity<LightDispatcher3d> DefaultOverlay (Some surnames) group world
+                            let (child, world) = World.createEntity<Light3dDispatcher> DefaultOverlay (Some surnames) group world
                             let world = child.SetColor light.LightColor world
                             let world = child.SetLightType light.PhysicallyBasedLightType world
                             let (position, rotation, world) =
@@ -116,7 +116,7 @@ module WorldEntityHierarchy =
             let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
             let rec getFrozenArtifacts (entity : Entity) =
                 [|if entity <> parent then
-                    if entity.Has<LightProbeFacet3d> world then
+                    if entity.Has<LightProbe3dFacet> world then
                         let id = entity.GetId world
                         let enabled = entity.GetEnabled world
                         let position = entity.GetPosition world
@@ -126,7 +126,7 @@ module WorldEntityHierarchy =
                         let probeBounds = entity.GetProbeBounds world
                         boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine probeBounds) | None -> Some probeBounds
                         world <- entity.SetVisibleLocal false world
-                    if entity.Has<LightFacet3d> world then
+                    if entity.Has<Light3dFacet> world then
                         if entity.GetEnabled world then
                             let position = entity.GetPosition world
                             let rotation = entity.GetRotation world
@@ -277,7 +277,7 @@ module StaticModelHierarchyDispatcherModule =
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
     type StaticModelHierarchyDispatcher () =
-        inherit EntityDispatcher3d (false)
+        inherit Entity3dDispatcher (false)
 
         static let updateLoadedHierarchy (entity : Entity) world =
             let world =
@@ -324,7 +324,7 @@ module RigidModelHierarchyDispatcherModule =
 
     /// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
     type RigidModelHierarchyDispatcher () =
-        inherit EntityDispatcher3d (true)
+        inherit Entity3dDispatcher (true)
 
         static let updateLoadedHierarchy (entity : Entity) world =
             let world =

@@ -31,7 +31,7 @@ module PlayerDispatcher =
         member this.Player = this.ModelGeneric<Player> ()
 
     type PlayerDispatcher () =
-        inherit EntityDispatcher2d<Player, PlayerMessage, PlayerCommand> (true, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
+        inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
         static let [<Literal>] WalkForce = 1200.0f
         static let [<Literal>] FallForce = -4000.0f

@@ -1998,7 +1998,7 @@ module SkyBoxFacetModule =
                 world
 
 [<AutoOpen>]
-module LightProbeFacet3dModule =
+module LightProbe3dFacetModule =
 
     type Entity with
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
@@ -2025,7 +2025,7 @@ module LightProbeFacet3dModule =
             else this.SetPosition probeBounds.Center world
 
     /// Augments an entity with a 3d light probe.
-    type LightProbeFacet3d () =
+    type LightProbe3dFacet () =
         inherit Facet (false)
 
         static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
@@ -2044,7 +2044,7 @@ module LightProbeFacet3dModule =
              nonPersistent Entity.ProbeStale false]
 
         override this.Register (entity, world) =
-            let world = World.sense handleProbeStaleChange (entity.GetChangeEvent (nameof entity.ProbeStale)) entity (nameof LightProbeFacet3d) world
+            let world = World.sense handleProbeStaleChange (entity.GetChangeEvent (nameof entity.ProbeStale)) entity (nameof LightProbe3dFacet) world
             entity.SetProbeStale true world
 
         override this.Update (entity, world) =
@@ -2096,7 +2096,7 @@ module LightProbeFacet3dModule =
             | _ -> world
 
 [<AutoOpen>]
-module LightFacet3dModule =
+module Light3dFacetModule =
 
     type Entity with
         member this.GetAttenuationLinear world : single = this.Get (nameof this.AttenuationLinear) world
@@ -2113,7 +2113,7 @@ module LightFacet3dModule =
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
 
     /// Augments an entity with a 3d light.
-    type LightFacet3d () =
+    type Light3dFacet () =
         inherit Facet (false)
 
         static member Properties =

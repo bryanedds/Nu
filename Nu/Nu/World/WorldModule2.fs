@@ -1492,17 +1492,17 @@ module EntityDispatcherModule2 =
         default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
-    and [<AbstractClass>] EntityDispatcher2d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, makeInitial : World -> 'model) =
+    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, perimeterCentered, physical, makeInitial)
 
         new (centered, physical, initial : 'model) =
-            EntityDispatcher2d<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+            Entity2dDispatcher<'model, 'message, 'command> (centered, physical, fun _ -> initial)
 
         new (physical, makeInitial : World -> 'model) =
-            EntityDispatcher2d<'model, 'message, 'command> (Constants.Engine.EntityPerimeterCentered2dDefault, physical, makeInitial)
+            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.EntityPerimeterCentered2dDefault, physical, makeInitial)
 
         new (physical, initial : 'model) =
-            EntityDispatcher2d<'model, 'message, 'command> (physical, fun _ -> initial)
+            Entity2dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize2dDefault
@@ -1532,11 +1532,11 @@ module EntityDispatcherModule2 =
              define Entity.GridPosition v2iZero]
 
     /// A 3d entity dispatcher.
-    and [<AbstractClass>] EntityDispatcher3d<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, makeInitial : World -> 'model) =
+    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, true, physical, makeInitial)
 
         new (physical, initial : 'model) =
-            EntityDispatcher3d<'model, 'message, 'command> (physical, fun _ -> initial)
+            Entity3dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntitySize3dDefault]

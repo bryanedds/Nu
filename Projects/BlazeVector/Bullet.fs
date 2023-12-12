@@ -12,7 +12,7 @@ module BulletDispatcher =
         interface Command
 
     type BulletDispatcher () =
-        inherit EntityDispatcher2d<int64, Message, BulletCommand> (true, fun world -> world.UpdateTime)
+        inherit Entity2dDispatcher<int64, Message, BulletCommand> (true, fun world -> world.UpdateTime)
 
         static let [<Literal>] BulletLifeTime = 27L
 

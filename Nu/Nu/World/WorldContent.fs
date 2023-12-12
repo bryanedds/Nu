@@ -371,7 +371,7 @@ module Content =
         composite<'entityDispatcher> entityName initializers []
 
     /// Describe a 2d effect with the given initializers.
-    let effect2d entityName initializers = entity<EffectDispatcher2d> entityName initializers
+    let effect2d entityName initializers = entity<Effect2dDispatcher> entityName initializers
 
     /// Describe a static sprite with the given initializers.
     let staticSprite entityName initializers = entity<StaticSpriteDispatcher> entityName initializers
@@ -413,13 +413,13 @@ module Content =
     let fps entityName initializers = entity<FpsDispatcher> entityName initializers
 
     /// Describe a 2d block with the given initializers.
-    let block2d entityName initializers = entity<BlockDispatcher2d> entityName initializers
+    let block2d entityName initializers = entity<Block2dDispatcher> entityName initializers
 
     /// Describe a 2d box with the given initializers.
-    let box2d entityName initializers = entity<BoxDispatcher2d> entityName initializers
+    let box2d entityName initializers = entity<Box2dDispatcher> entityName initializers
 
     /// Describe a 2d character with the given initializers.
-    let character2d entityName initializers = entity<CharacterDispatcher2d> entityName initializers
+    let character2d entityName initializers = entity<Character2dDispatcher> entityName initializers
 
     /// Describe a tile map with the given initializers.
     let tileMap entityName initializers = entity<TileMapDispatcher> entityName initializers
@@ -428,10 +428,10 @@ module Content =
     let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
 
     /// Describe a 3d light probe with the given initializers.
-    let lightProbe3d entityName initializers = entity<LightProbeDispatcher3d> entityName initializers
+    let lightProbe3d entityName initializers = entity<LightProbe3dDispatcher> entityName initializers
 
     /// Describe a 3d light with the given initializers.
-    let light3d entityName initializers = entity<LightDispatcher3d> entityName initializers
+    let light3d entityName initializers = entity<Light3dDispatcher> entityName initializers
 
     /// Describe a sky box with the given initializers.
     let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers
@@ -452,7 +452,7 @@ module Content =
     let animatedModel entityName initializers = entity<AnimatedModelDispatcher> entityName initializers
 
     /// Describe a 3d character with the given initializers.
-    let character3d entityName initializers = entity<CharacterDispatcher3d> entityName initializers
+    let character3d entityName initializers = entity<Character3dDispatcher> entityName initializers
 
     /// Describe a terrain with the given initializers.
     let terrain entityName initializers = entity<TerrainDispatcher> entityName initializers
