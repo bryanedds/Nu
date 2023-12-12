@@ -58,7 +58,7 @@ module EffectDescriptors =
                 (Resource (AssetTag.toPair Assets.Battle.CancelImage),
                  [|Angleses
                     (Sum, Linear, Bounce,
-                     [|{ TweenValue = v3 0.0f 0.0f (single Math.PI * 2.0f); TweenLength = 10L }
+                     [|{ TweenValue = v3 0.0f 0.0f (MathF.TWO_PI); TweenLength = 10L }
                        { TweenValue = v3Zero; TweenLength = 30L }
                        { TweenValue = v3Zero; TweenLength = 0L }|])
                    Sizes

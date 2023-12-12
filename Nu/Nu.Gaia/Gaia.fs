@@ -581,7 +581,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 { Absolute = false
                   StaticModels = lightProbeModels
                   StaticModel = Assets.Default.LightProbeModel
-                  RenderType = DeferredRenderType })
+                  RenderType = DeferredRenderType
+                  RenderPass = NormalPass })
             world
 
         // render lights of the selected group in play
@@ -596,7 +597,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 { Absolute = false
                   StaticModels = lightModels
                   StaticModel = Assets.Default.LightbulbModel
-                  RenderType = DeferredRenderType })
+                  RenderType = DeferredRenderType
+                  RenderPass = NormalPass })
             world
 
         // render selection highlights

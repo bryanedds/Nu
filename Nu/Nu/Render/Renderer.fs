@@ -60,7 +60,7 @@ type [<Struct>] RenderType =
 /// Desribes the render pass at play.
 type RenderPass =
     | NormalPass
-    | ShadowPass of LightId : int64
+    | ShadowPass of LightId : uint64
     | ReflectionPass of ReflectorId : int64
 
 /// An asset that is used for rendering.

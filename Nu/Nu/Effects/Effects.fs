@@ -715,7 +715,8 @@ module EffectSystem =
                           AttenuationLinear = slice.AttenuationLinear
                           AttenuationQuadratic = slice.AttenuationQuadratic
                           LightCutoff = slice.LightCutoff
-                          LightType = lightType }
+                          LightType = lightType
+                          DesireShadows = false }
                 addView modelView effectSystem
             else effectSystem
 

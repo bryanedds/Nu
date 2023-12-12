@@ -823,6 +823,9 @@ module WorldModule2 =
             let lightBox = World.getLight3dBox world
             World.getElements3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
 
+        static member private getElements3dInViewFrustum frustum set world =
+            World.getElements3dBy (Octree.getElementsInView frustum frustum frustum box3Zero set) world
+
         static member private getElements3d set world =
             World.getElements3dBy (Octree.getElements set) world
 
@@ -862,6 +865,10 @@ module WorldModule2 =
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
         static member getLights3dInFrustum frustum set world =
             World.getEntities3dBy (Octree.getLightsInFrustum frustum set) world
+
+        /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
+        static member getLights3dInBox box set world =
+            World.getEntities3dBy (Octree.getLightsInBox box set) world
 
         /// Get all 3d entities in the current selected screen, including all uncullable entities.
         static member getEntities3d set world =
@@ -1076,7 +1083,7 @@ module WorldModule2 =
             | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dCenter world) (World.getEye2dSize world) screen (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
-        static member private renderSimulants skipCulling world =
+        static member private renderSimulantsInternal skipCulling frustumOpt renderPass world =
 
             // gather simulants
             RenderGatherTimer.Start ()
@@ -1089,37 +1096,46 @@ module WorldModule2 =
                 if world.Accompanied
                 then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                 else hashSetPlus HashIdentity.Structural []
-            let (elements3d, world) = if skipCulling then World.getElements3d CachedHashSet3d world else World.getElements3dInView CachedHashSet3d world
-            let (elements2d, world) = if skipCulling then World.getElements2d CachedHashSet2d world else World.getElements2dInView CachedHashSet2d world
+            let (elements3d, world) =
+                if skipCulling then
+                    World.getElements3d CachedHashSet3d world
+                else
+                    match frustumOpt with
+                    | Some frustum -> World.getElements3dInViewFrustum frustum CachedHashSet3d world
+                    | None -> World.getElements3dInView CachedHashSet3d world
+            let (elements2d, world) =
+                if skipCulling
+                then World.getElements2d CachedHashSet2d world
+                else World.getElements2dInView CachedHashSet2d world
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
-            World.renderGame NormalPass game world
+            World.renderGame renderPass game world
             for screen in screens do
-                World.renderScreen NormalPass screen world
+                World.renderScreen renderPass screen world
             match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> ()
             for group in groups do
                 if not (groupsInvisible.Contains group) then
-                    World.renderGroup NormalPass group world
+                    World.renderGroup renderPass group world
 
             // render entities
             RenderEntitiesTimer.Start ()
             if world.Unaccompanied || groupsInvisible.Count = 0 then
                 for element in elements3d do
                     if element.Visible then
-                        World.renderEntity NormalPass element.Entry world
+                        World.renderEntity renderPass element.Entry world
             else
                 for element in elements3d do
                     if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                        World.renderEntity NormalPass element.Entry world
+                        World.renderEntity renderPass element.Entry world
             if world.Unaccompanied || groupsInvisible.Count = 0 then
                 for element in elements2d do
                     if element.Visible then
-                        World.renderEntity NormalPass element.Entry world
+                        World.renderEntity renderPass element.Entry world
             else
                 for element in elements2d do
                     if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                        World.renderEntity NormalPass element.Entry world
+                        World.renderEntity renderPass element.Entry world
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -1128,6 +1144,45 @@ module WorldModule2 =
 
             // fin
             world
+
+        static member private renderSimulants skipCulling world =
+
+            // gather lights
+            let tempHashSet = HashSet ()
+            let lightBox = World.getLight3dBox world
+            let (lights, world) = World.getLights3dInBox lightBox tempHashSet world // NOTE: this may not be the optimal way to query.
+            let eyeCenter = World.getEye3dCenter world
+            let lightsWithShadows =
+                lights |>
+                Seq.filter (fun (light : Entity) -> light.GetDesireShadows world) |>
+                Seq.map (fun (light : Entity) -> (Vector3.DistanceSquared (eyeCenter, light.GetPosition world)), light) |>
+                Array.ofSeq |>
+                Array.sortBy fst |>
+                Array.tryTake Constants.Render.LightsWithShadowsMax |>
+                Array.map snd
+            let world =
+                Seq.fold (fun world (light : Entity) ->
+                    let lightViewInverse =
+                        Matrix4x4.CreateFromQuaternion (light.GetRotation world) *
+                        Matrix4x4.CreateTranslation (light.GetPosition world)
+                    let lightView = lightViewInverse.Inverted
+                    let lightFov =
+                        match light.GetLightType world with
+                        | PointLight -> MathF.PI_OVER_2 // TODO: P1: using point shadows here.
+                        | DirectionalLight -> MathF.PI_OVER_2 // TODO: P1: using orthogonal shadows here.
+                        | SpotLight (_, coneOuter) -> coneOuter
+                    let lightProjection =
+                        Matrix4x4.CreatePerspectiveFieldOfView
+                            (lightFov,
+                             1.0f,
+                             Constants.Render.NearPlaneDistanceEnclosed,
+                             light.GetLightCutoff world)
+                    let lightFrustum = Frustum (lightView * lightProjection)
+                    World.renderSimulantsInternal skipCulling (Some lightFrustum) (ShadowPass (light.GetId world)) world)
+                    world lightsWithShadows
+
+            // render simulants normally
+            World.renderSimulantsInternal skipCulling None NormalPass world
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
