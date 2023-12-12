@@ -764,11 +764,11 @@ module WorldModule2 =
             let elements = getElementsFromQuadree quadtree
             (elements, world)
 
-        static member private getElementsInView2d set world =
+        static member private getElements2dInView set world =
             let viewBounds = World.getViewBounds2dRelative world
             World.getElements2dBy (Quadtree.getElementsInView viewBounds set) world
 
-        static member private getElementsInPlay2d set world =
+        static member private getElements2dInPlay set world =
             let playBounds = World.getPlayBounds2dRelative world
             World.getElements2dBy (Quadtree.getElementsInPlay playBounds set) world
 
@@ -784,20 +784,20 @@ module WorldModule2 =
             (entities, world)
 
         /// Get all 2d entities in the given bounds, including all uncullable entities.
-        static member getEntitiesInBounds2d bounds set world =
+        static member getEntities2dInBounds bounds set world =
             World.getEntities2dBy (Quadtree.getElementsInBounds bounds set) world
 
         /// Get all 2d entities at the given point, including all uncullable entities.
-        static member getEntitiesAtPoint2d point set world =
+        static member getEntities2dAtPoint point set world =
             World.getEntities2dBy (Quadtree.getElementsAtPoint point set) world
 
         /// Get all 2d entities in the current 2d view, including all uncullable entities.
-        static member getEntitiesInView2d set world =
+        static member getEntities2dInView set world =
             let viewBounds = World.getViewBounds2dRelative world
             World.getEntities2dBy (Quadtree.getElementsInView viewBounds set) world
 
         /// Get all 2d entities needing to update for the current 2d play zone, including all uncullable entities.
-        static member getEntitiesInPlay2d set world =
+        static member getEntities2dInPlay set world =
             let playBounds = World.getPlayBounds2dRelative world
             World.getEntities2dBy (Quadtree.getElementsInPlay playBounds set) world
 
@@ -812,11 +812,11 @@ module WorldModule2 =
             let elements = getElementsFromOctree octree
             (elements, world)
 
-        static member private getElementsInPlay3d set world =
+        static member private getElements3dInPlay set world =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
             World.getElements3dBy (Octree.getElementsInPlay playBox playFrustum set) world
 
-        static member private getElementsInView3d set world =
+        static member private getElements3dInView set world =
             let frustumEnclosed = World.getEye3dFrustumEnclosed world
             let frustumExposed = World.getEye3dFrustumExposed world
             let frustumImposter = World.getEye3dFrustumImposter world
@@ -835,20 +835,20 @@ module WorldModule2 =
             (entities, world)
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
-        static member getEntitiesInBounds3d bounds set world =
+        static member getEntities3dInBounds bounds set world =
             World.getEntities3dBy (Octree.getElementsInBounds bounds set) world
 
         /// Get all 3d entities at the given point, including all uncullable entities.
-        static member getEntitiesAtPoint3d point set world =
+        static member getEntities3dAtPoint point set world =
             World.getEntities3dBy (Octree.getElementsAtPoint point set) world
 
         /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
-        static member getEntitiesInPlay3d set world =
+        static member getEntities3dInPlay set world =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
             World.getEntities3dBy (Octree.getElementsInPlay playBox playFrustum set) world
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
-        static member getEntitiesInView3d set world =
+        static member getEntities3dInView set world =
             let frustumEnclosed = World.getEye3dFrustumEnclosed world
             let frustumExposed = World.getEye3dFrustumExposed world
             let frustumImposter = World.getEye3dFrustumImposter world
@@ -856,11 +856,11 @@ module WorldModule2 =
             World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
-        static member getLightProbesInFrustum3d frustum set world =
+        static member getLightProbes3dInFrustum frustum set world =
             World.getEntities3dBy (Octree.getLightProbesInFrustum frustum set) world
 
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
-        static member getLightsInFrustum3d frustum set world =
+        static member getLights3dInFrustum frustum set world =
             World.getEntities3dBy (Octree.getLightsInFrustum frustum set) world
 
         /// Get all 3d entities in the current selected screen, including all uncullable entities.
@@ -934,8 +934,8 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (elements3d, world) = World.getElementsInPlay3d CachedHashSet3d world
-            let (elements2d, world) = World.getElementsInPlay2d CachedHashSet2d world
+            let (elements3d, world) = World.getElements3dInPlay CachedHashSet3d world
+            let (elements2d, world) = World.getElements2dInPlay CachedHashSet2d world
             UpdateGatherTimer.Stop ()
 
             // update game
@@ -1089,8 +1089,8 @@ module WorldModule2 =
                 if world.Accompanied
                 then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                 else hashSetPlus HashIdentity.Structural []
-            let (elements3d, world) = if skipCulling then World.getElements3d CachedHashSet3d world else World.getElementsInView3d CachedHashSet3d world
-            let (elements2d, world) = if skipCulling then World.getElements2d CachedHashSet2d world else World.getElementsInView2d CachedHashSet2d world
+            let (elements3d, world) = if skipCulling then World.getElements3d CachedHashSet3d world else World.getElements3dInView CachedHashSet3d world
+            let (elements2d, world) = if skipCulling then World.getElements2d CachedHashSet2d world else World.getElements2dInView CachedHashSet2d world
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
