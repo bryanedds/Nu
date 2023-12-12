@@ -19,7 +19,7 @@ type AttributesInferred =
           OffsetInferred = offset }
 
     static member choose left right =
-        if right.OffsetInferred.MagnitudeSquared > left.OffsetInferred.MagnitudeSquared // HACK: picking the attribute whose offset is more impactful...
+        if right.OffsetInferred.MagnitudeSquared >= left.OffsetInferred.MagnitudeSquared // HACK: picking the attribute whose offset is more impactful...
         then right
         else left
 
