@@ -34,9 +34,9 @@ module Reflection =
              ("ScriptFrame", true)
 
              // game properties
-             ("EyeFrustum3dEnclosed", true)
-             ("EyeFrustum3dExposed", true)
-             ("EyeFrustum3dImposter", true)
+             ("Eye3dFrustumEnclosed", true)
+             ("Eye3dFrustumExposed", true)
+             ("Eye3dFrustumImposter", true)
 
              // screen properties
              ("Ecs", true)

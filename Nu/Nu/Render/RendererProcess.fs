@@ -149,7 +149,7 @@ type RendererInline () =
             messages3d.Clear ()
             messages2d.Clear ()
 
-        member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d windowSize drawData =
+        member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eye3dCenter eye3dRotation eye2dCenter eye2dSize windowSize drawData =
             match renderersOpt with
             | Some (renderer3d, renderer2d, rendererImGui) ->
                 
@@ -158,12 +158,12 @@ type RendererInline () =
                 OpenGL.Hl.Assert ()
 
                 // render 3d
-                renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d windowSize messages3d
+                renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
                 messages3d.Clear ()
                 OpenGL.Hl.Assert ()
 
                 // render 2d
-                renderer2d.Render eyeCenter2d eyeSize2d windowSize messages2d
+                renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
                 messages2d.Clear ()
                 OpenGL.Hl.Assert ()
 
@@ -371,7 +371,7 @@ type RendererThread () =
             if not terminated then
 
                 // receie submission
-                let (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, windowSize, drawData) = Option.get submissionOpt
+                let (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
                 
                 // begin frame
@@ -379,14 +379,14 @@ type RendererThread () =
                 OpenGL.Hl.Assert ()
 
                 // render 3d
-                renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d windowSize messages3d
+                renderer3d.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
                 freeStaticModelMessages messages3d
                 freeStaticModelSurfaceMessages messages3d
                 freeAnimatedModelMessages messages3d
                 OpenGL.Hl.Assert ()
 
                 // render 2d
-                renderer2d.Render eyeCenter2d eyeSize2d windowSize messages2d
+                renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
                 freeSpriteMessages messages2d
                 OpenGL.Hl.Assert ()
             
@@ -587,14 +587,14 @@ type RendererThread () =
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
 
-        member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter3d eyeRotation3d eyeCenter2d eyeSize2d eyeMargin drawData =
+        member this.SubmitMessages skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eye3dCenter eye3dRotation eye2dCenter eye2dSize eyeMargin drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let messages3d = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
-            submissionOpt <- Some (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, messages3d, messages2d, eyeCenter3d, eyeRotation3d, eyeCenter2d, eyeSize2d, eyeMargin, drawData)
+            submissionOpt <- Some (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, eyeMargin, drawData)
 
         member this.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

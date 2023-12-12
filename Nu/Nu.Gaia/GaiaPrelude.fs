@@ -13,7 +13,7 @@ type DragEntityState =
     | DragEntityInactive
 
 type DragEyeState =
-    | DragEyeCenter2d of Vector2 * Vector2
+    | DragEye2dCenter of Vector2 * Vector2
     | DragEyeInactive
 
 type [<SymbolicExpansion>] GaiaState =
@@ -21,9 +21,9 @@ type [<SymbolicExpansion>] GaiaState =
       ProjectEditModeOpt : string option
       ProjectFreshlyLoaded : bool
       ProjectImperativeExecution : bool
-      DesiredEyeCenter2d : Vector2
-      DesiredEyeCenter3d : Vector3
-      DesiredEyeRotation3d : Quaternion
+      DesiredEye2dCenter : Vector2
+      DesiredEye3dCenter : Vector3
+      DesiredEye3dRotation : Quaternion
       MasterSoundVolume : single
       MasterSongVolume : single
       Snaps2dSelected : bool
@@ -34,15 +34,15 @@ type [<SymbolicExpansion>] GaiaState =
       AlternativeEyeTravelInput : bool }
     static member make
         dllPath editModeOpt freshlyLoaded imperativeExecution
-        desiredEyeCenter2d desiredEyeCenter3d desiredEyeRotation3d masterSoundVolume masterSongVolume
+        desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
         snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
           ProjectFreshlyLoaded = freshlyLoaded
           ProjectImperativeExecution = imperativeExecution
-          DesiredEyeCenter2d = desiredEyeCenter2d
-          DesiredEyeCenter3d = desiredEyeCenter3d
-          DesiredEyeRotation3d = desiredEyeRotation3d
+          DesiredEye2dCenter = desiredEye2dCenter
+          DesiredEye3dCenter = desiredEye3dCenter
+          DesiredEye3dRotation = desiredEye3dRotation
           MasterSoundVolume = masterSoundVolume
           MasterSongVolume = masterSongVolume
           Snaps2dSelected = snaps2dSelected
@@ -54,5 +54,5 @@ type [<SymbolicExpansion>] GaiaState =
     static member defaultState =
         GaiaState.make
             "" None false false
-            v2Zero Constants.Engine.EyeCenter3dDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
+            v2Zero Constants.Engine.Eye3dCenterDefault quatIdentity Constants.Audio.SoundVolumeDefault Constants.Audio.SongVolumeDefault
             true Constants.Gaia.Snaps2dDefault Constants.Gaia.Snaps3dDefault 0.0f 2.0f false

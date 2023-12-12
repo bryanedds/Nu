@@ -44,15 +44,15 @@ module WorldInputModule =
         /// Get the 2d screen position of the mouse.
         static member getMousePosition2dScreen world =
             let viewport = World.getViewport world
-            let eyeCenter = World.getEyeCenter2d world
-            let eyeSize = World.getEyeSize2d world
+            let eyeCenter = World.getEye2dCenter world
+            let eyeSize = World.getEye2dSize world
             viewport.MouseTo2dScreen (World.getMousePosition world, eyeCenter, eyeSize)
 
         /// Get the 2d world position of the mouse.
         static member getMousePostion2dWorld absolute world =
             let viewport = World.getViewport world
-            let eyeCenter = World.getEyeCenter2d world
-            let eyeSize = World.getEyeSize2d world
+            let eyeCenter = World.getEye2dCenter world
+            let eyeSize = World.getEye2dSize world
             viewport.MouseToWorld2d (absolute, World.getMousePosition world, eyeCenter, eyeSize)
 
         /// Get the 3d screen position of the mouse.
@@ -63,8 +63,8 @@ module WorldInputModule =
         /// Get the 3d world ray of the mouse.
         static member getMouseRay3dWorld absolute world =
             let viewport = World.getViewport world
-            let eyeCenter = World.getEyeCenter3d world
-            let eyeRotation = World.getEyeRotation3d world
+            let eyeCenter = World.getEye3dCenter world
+            let eyeRotation = World.getEye3dRotation world
             viewport.MouseToWorld3d (absolute, World.getMousePosition world, eyeCenter, eyeRotation)
 
         /// Check that the given keyboard key is down.

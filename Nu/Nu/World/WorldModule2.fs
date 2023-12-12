@@ -371,7 +371,7 @@ module WorldModule2 =
             let world = World.destroyGroupImmediate slideGroup world
 
             // create slide group
-            let eyeSize = World.getEyeSize2d world
+            let eyeSize = World.getEye2dSize world
             let world = screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> snd
             let world = World.setGroupProtected true slideGroup world |> snd'
@@ -817,10 +817,10 @@ module WorldModule2 =
             World.getElements3dBy (Octree.getElementsInPlay playBox playFrustum set) world
 
         static member private getElementsInView3d set world =
-            let frustumEnclosed = World.getEyeFrustum3dEnclosed world
-            let frustumExposed = World.getEyeFrustum3dExposed world
-            let frustumImposter = World.getEyeFrustum3dImposter world
-            let lightBox = World.getLightBox3d world
+            let frustumEnclosed = World.getEye3dFrustumEnclosed world
+            let frustumExposed = World.getEye3dFrustumExposed world
+            let frustumImposter = World.getEye3dFrustumImposter world
+            let lightBox = World.getLight3dBox world
             World.getElements3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
 
         static member private getElements3d set world =
@@ -849,10 +849,10 @@ module WorldModule2 =
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntitiesInView3d set world =
-            let frustumEnclosed = World.getEyeFrustum3dEnclosed world
-            let frustumExposed = World.getEyeFrustum3dExposed world
-            let frustumImposter = World.getEyeFrustum3dImposter world
-            let lightBox = World.getLightBox3d world
+            let frustumEnclosed = World.getEye3dFrustumEnclosed world
+            let frustumExposed = World.getEye3dFrustumExposed world
+            let frustumImposter = World.getEye3dFrustumImposter world
+            let lightBox = World.getLight3dBox world
             World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
@@ -1072,8 +1072,8 @@ module WorldModule2 =
 
         static member private renderScreenTransition (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetIncoming world) world
-            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEyeCenter2d world) (World.getEyeSize2d world) screen (screen.GetOutgoing world) world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dCenter world) (World.getEye2dSize world) screen (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dCenter world) (World.getEye2dSize world) screen (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
         static member private renderSimulants skipCulling world =
@@ -1304,14 +1304,14 @@ module WorldModule2 =
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
                                                                     skipCulling
-                                                                    (World.getEyeFrustum3dEnclosed world)
-                                                                    (World.getEyeFrustum3dExposed world)
-                                                                    (World.getEyeFrustum3dImposter world)
-                                                                    (World.getLightBox3d world)
-                                                                    (World.getEyeCenter3d world)
-                                                                    (World.getEyeRotation3d world)
-                                                                    (World.getEyeCenter2d world)
-                                                                    (World.getEyeSize2d world)
+                                                                    (World.getEye3dFrustumEnclosed world)
+                                                                    (World.getEye3dFrustumExposed world)
+                                                                    (World.getEye3dFrustumImposter world)
+                                                                    (World.getLight3dBox world)
+                                                                    (World.getEye3dCenter world)
+                                                                    (World.getEye3dRotation world)
+                                                                    (World.getEye2dCenter world)
+                                                                    (World.getEye2dSize world)
                                                                     (World.getWindowSize world)
                                                                     drawData
 
@@ -1505,7 +1505,7 @@ module EntityDispatcherModule2 =
             Entity2dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize2dDefault
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
 
     /// A gui entity dispatcher.
@@ -1519,7 +1519,7 @@ module EntityDispatcherModule2 =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
+            [define Entity.Size Constants.Engine.EntityGuiSizeDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Presence Omnipresent
              define Entity.Absolute true
@@ -1539,14 +1539,14 @@ module EntityDispatcherModule2 =
             Entity3dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
     /// A vui dispatcher (gui in 3d).
     and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, makeInitial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeVuiDefault]
+            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
@@ -2111,7 +2111,7 @@ module GamePropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "DesiredScreen" || propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
-             propertyName = "EyeCenter2d" || propertyName = "EyeSize2d" || propertyName = "EyeCenter3d" || propertyName = "EyeRotation3d" then
+             propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" then
              "Built-In Properties"
         else "Xtension Properties"
 
