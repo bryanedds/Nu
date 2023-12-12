@@ -6,7 +6,7 @@
  [[SkyBoxDispatcher
    [[AmbientBrightness 0.5] [Name SkyBox]]
    []]
-  [LightDispatcher3d
+  [Light3dDispatcher
    [[Brightness 3]
     [Cutoff 100000]
     [LightType DirectionalLight]

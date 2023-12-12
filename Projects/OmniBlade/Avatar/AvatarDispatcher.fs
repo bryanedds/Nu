@@ -16,7 +16,7 @@ module AvatarDispatcher =
         member this.Avatar = this.ModelGeneric<Avatar> ()
 
     type AvatarDispatcher () =
-        inherit EntityDispatcher2d<Avatar, Message, Command>
+        inherit Entity2dDispatcher<Avatar, Message, Command>
             (true, Avatar.make (box3 v3Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
         static let getSpriteInset (entity : Entity) world =

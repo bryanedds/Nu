@@ -510,7 +510,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             groups |>
             Seq.map (fun group -> World.getEntitiesFlattened group world) |>
             Seq.concat |>
-            Seq.filter (fun entity -> entity.Has<LightProbeFacet3d> world)
+            Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world)
         for lightProbe in lightProbes do
             world <- lightProbe.SetProbeStale true world
 
@@ -1952,7 +1952,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // light probe bounds manipulation
                     match selectedEntityOpt with
-                    | Some entity when entity.Exists world && entity.Has<LightProbeFacet3d> world ->
+                    | Some entity when entity.Exists world && entity.Has<LightProbe3dFacet> world ->
                         let mutable lightProbeBounds = entity.GetProbeBounds world
                         let manipulationResult =
                             ImGuizmo.ManipulateBox3

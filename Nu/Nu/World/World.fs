@@ -312,8 +312,8 @@ module WorldModule3 =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher (true, false, false)
-                 EntityDispatcher2d (false) :> EntityDispatcher
-                 EntityDispatcher3d (false) :> EntityDispatcher
+                 Entity2dDispatcher (false) :> EntityDispatcher
+                 Entity3dDispatcher (false) :> EntityDispatcher
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -326,14 +326,14 @@ module WorldModule3 =
                  FeelerDispatcher () :> EntityDispatcher
                  FpsDispatcher () :> EntityDispatcher
                  BasicStaticSpriteEmitterDispatcher () :> EntityDispatcher
-                 EffectDispatcher2d () :> EntityDispatcher
-                 BlockDispatcher2d () :> EntityDispatcher
-                 BoxDispatcher2d () :> EntityDispatcher
-                 CharacterDispatcher2d () :> EntityDispatcher
+                 Effect2dDispatcher () :> EntityDispatcher
+                 Block2dDispatcher () :> EntityDispatcher
+                 Box2dDispatcher () :> EntityDispatcher
+                 Character2dDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher
                  TmxMapDispatcher () :> EntityDispatcher
-                 LightProbeDispatcher3d () :> EntityDispatcher
-                 LightDispatcher3d () :> EntityDispatcher
+                 LightProbe3dDispatcher () :> EntityDispatcher
+                 Light3dDispatcher () :> EntityDispatcher
                  SkyBoxDispatcher () :> EntityDispatcher
                  StaticBillboardDispatcher () :> EntityDispatcher
                  StaticModelSurfaceDispatcher () :> EntityDispatcher
@@ -341,10 +341,10 @@ module WorldModule3 =
                  StaticModelDispatcher () :> EntityDispatcher
                  AnimatedModelDispatcher () :> EntityDispatcher
                  RigidModelDispatcher () :> EntityDispatcher
-                 EffectDispatcher3d () :> EntityDispatcher
-                 BlockDispatcher3d () :> EntityDispatcher
-                 BoxDispatcher3d () :> EntityDispatcher
-                 CharacterDispatcher3d () :> EntityDispatcher
+                 Effect3dDispatcher () :> EntityDispatcher
+                 Block3dDispatcher () :> EntityDispatcher
+                 Box3dDispatcher () :> EntityDispatcher
+                 Character3dDispatcher () :> EntityDispatcher
                  TerrainDispatcher () :> EntityDispatcher
                  StaticModelHierarchyDispatcher () :> EntityDispatcher
                  RigidModelHierarchyDispatcher () :> EntityDispatcher]
@@ -369,8 +369,8 @@ module WorldModule3 =
                  TileMapFacet () :> Facet
                  TmxMapFacet () :> Facet
                  LayoutFacet () :> Facet
-                 LightProbeFacet3d () :> Facet
-                 LightFacet3d () :> Facet
+                 LightProbe3dFacet () :> Facet
+                 Light3dFacet () :> Facet
                  SkyBoxFacet () :> Facet
                  StaticBillboardFacet () :> Facet
                  StaticModelSurfaceFacet () :> Facet

@@ -34,7 +34,7 @@ type [<Struct>] Shake =
         member this.Active with get () = this.Active and set value = this.Active <- value
 
 type MetricsEntityDispatcher () =
-    inherit EntityDispatcher3d<StaticModel AssetTag, Message, Command> (false, Assets.Default.StaticModel)
+    inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, Assets.Default.StaticModel)
 
 #if !MMCC
     override this.Update (entity, world) =
