@@ -50,6 +50,6 @@ module TemplateFacet =
             // TODO: optionally implement update code for the faceted entity.
             world
 
-        override this.Render (entity, world) =
+        override this.Render (renderPass, entity, world) =
             // TODO: optionally implement rendering code for the faceted entity.
             world

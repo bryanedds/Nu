@@ -39,8 +39,8 @@ module Effect =
     /// An effect.
     and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
-            { StartTime_ : GameTime
-              PerimeterCentered_ : bool
+            { PerimeterCentered_ : bool
+              StartTime_ : GameTime
               Offset_ : Vector3
               Transform_ : Transform
               RenderType_ : RenderType
@@ -54,27 +54,23 @@ module Effect =
         member this.StartTime = this.StartTime_
         member this.Transform = this.Transform_
         member this.RenderType = this.RenderType_
-        member this.Definitions = this.Definitions_
         member this.ParticleSystem = this.ParticleSystem_
         member this.HistoryMax = this.HistoryMax_
         member this.History = this.History_
+        member this.Definitions = this.Definitions_
         member this.Tags = this.Tags_
         member this.Descriptor = this.Descriptor_
 
     let rec private processParticleSystemOutput output effect world =
         match output with
-        | OutputSound (volume, sound) ->
-            let world = World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
-            (effect, world)
         | OutputEmitter (name, emitter) ->
             let particleSystem = { effect.ParticleSystem_ with Emitters = Map.add name emitter effect.ParticleSystem_.Emitters }
             let effect = { effect with ParticleSystem_ = particleSystem }
-            (effect, world)
+            effect
         | Outputs outputs ->
-            SArray.fold (fun (effect, world) output ->
+            SArray.fold (fun effect output ->
                 processParticleSystemOutput output effect world)
-                (effect, world)
-                outputs
+                effect outputs
 
     let private liveness effect (world : World) =
         let time = world.GameTime
@@ -87,8 +83,8 @@ module Effect =
             else ParticleSystem.getLiveness time particleSystem
         | None -> Live
 
-    /// Run an effect, applying side-effects such as issuing rendering and audio commands as needed.
-    let run effect (world : World) =
+    /// Run an effect, returning any side-effects as a view.
+    let run effect (world : World) : Liveness * Effect * View =
 
         // run if live
         match liveness effect world with
@@ -123,9 +119,6 @@ module Effect =
 
             // evaluate effect with effect system
             let (view, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
-
-            // render effect view
-            let world = World.renderView view world
 
             // convert view to array for storing tags and spawning emitters
             let views = View.toSeq view
@@ -188,42 +181,13 @@ module Effect =
             // run particles
             let (particleSystem, output) = ParticleSystem.run delta time particleSystem
             let effect = { effect with ParticleSystem_ = particleSystem }
-            let (effect, world) = processParticleSystemOutput output effect world
-
-            // render particles
-            let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
-            for descriptor in descriptors do
-                match descriptor with
-                | SpriteParticlesDescriptor descriptor ->
-                    let message =
-                        { Elevation = descriptor.Elevation
-                          Horizon = descriptor.Horizon
-                          AssetTag = AssetTag.generalize descriptor.Image
-                          RenderOperation2d = RenderSpriteParticles descriptor }
-                    World.enqueueLayeredOperation2d message world
-                | BillboardParticlesDescriptor descriptor ->
-                    let message =
-                        RenderBillboardParticles
-                            { Absolute = descriptor.Absolute
-                              MaterialProperties = descriptor.MaterialProperties
-                              AlbedoImage = descriptor.AlbedoImage
-                              RoughnessImage = descriptor.RoughnessImage
-                              MetallicImage = descriptor.MetallicImage
-                              AmbientOcclusionImage = descriptor.AmbientOcclusionImage
-                              EmissionImage = descriptor.EmissionImage
-                              NormalImage = descriptor.NormalImage
-                              HeightImage = descriptor.HeightImage
-                              MinFilterOpt = descriptor.MinFilterOpt
-                              MagFilterOpt = descriptor.MagFilterOpt
-                              RenderType = descriptor.RenderType
-                              Particles = descriptor.Particles }
-                    World.enqueueRenderMessage3d message world
+            let effect = processParticleSystemOutput output effect world
 
             // fin
-            (Live, effect, world)
+            (Live, effect, view)
 
         // dead
-        | Dead -> (Dead, effect, world)
+        | Dead -> (Dead, effect, View.empty)
 
     /// Make an effect.
     let makePlus startTime perimeterCentered offset transform renderType particleSystem historyMax history definitions descriptor =

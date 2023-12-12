@@ -203,7 +203,6 @@ and Content =
     | Billboard of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * HeightMap : Resource * MinFilterOpt : OpenGL.TextureMinFilter option * MagFilterOpt : OpenGL.TextureMagFilter option * Aspects : Aspect array * Content : Content
     | StaticModel of Resource * Aspects : Aspect array * Content : Content
     | Light3d of LightType * Aspects : Aspect array * Content : Content
-    | SoundEffect of Resource * Aspects : Aspect array * Content : Content
     | Mount of Shift : Shift * Aspects : Aspect array * Content : Content
     | Repeat of Shift : Shift * Repetition * Aspects : Aspect array * Content : Content
     | Emit of Shift : Shift * Rate : Rate * EmitterAspects : Aspect array * Aspects : Aspect array * Content : Content
@@ -239,7 +238,7 @@ type Definitions =
      "Enabled Position PositionLocal PositionAbsolute Scale Offset Angles Degrees Size Elevation Inset Color Emission Height Volume " +
      "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights Volumes Aspects " +
      "Expand " +
-     "StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
+     "StaticSprite AnimatedSprite TextSprite Light3d Billboard StaticModel Mount Repeat Emit Delay Segment Composite Tag Nil " +
      "View",
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
@@ -619,16 +618,15 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
-                let spriteView =
-                    Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
-                        RenderSprite
-                            { Transform = transform
-                              InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
-                              Image = AssetTag.specialize<Image> image
-                              Color = slice.Color
-                              Blend = slice.Blend
-                              Emission = slice.Emission
-                              Flip = slice.Flip })
+                let sprite =
+                    { SpriteValue.Transform = transform
+                      InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
+                      Image = AssetTag.specialize<Image> image
+                      Color = slice.Color
+                      Blend = slice.Blend
+                      Emission = slice.Emission
+                      Flip = slice.Flip }
+                let spriteView = SpriteView (transform.Elevation, transform.Horizon, AssetTag.generalize image, sprite)
                 addView spriteView effectSystem
             else effectSystem
 
@@ -657,17 +655,16 @@ module EffectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
                     let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
-                    let animatedSpriteView =
-                        Render2d (transform.Elevation, transform.Horizon, AssetTag.generalize image,
-                            RenderSprite
-                                { Transform = transform
-                                  InsetOpt = ValueSome inset
-                                  Image = AssetTag.specialize<Image> image
-                                  Color = slice.Color
-                                  Blend = slice.Blend
-                                  Emission = slice.Emission
-                                  Flip = slice.Flip })
-                    addView animatedSpriteView effectSystem
+                    let sprite =
+                        { SpriteValue.Transform = transform
+                          InsetOpt = ValueSome inset
+                          Image = AssetTag.specialize<Image> image
+                          Color = slice.Color
+                          Blend = slice.Blend
+                          Emission = slice.Emission
+                          Flip = slice.Flip }
+                    let spriteView = SpriteView (transform.Elevation, transform.Horizon, AssetTag.generalize image, sprite)
+                    addView spriteView effectSystem
                 else effectSystem
 
             // build implicitly mounted content
@@ -688,15 +685,38 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
-                let textView =
-                    Render2d (transform.Elevation, transform.Horizon, font,
-                        RenderText
-                            { Transform = transform
-                              Text = text
-                              Font = AssetTag.specialize<Font> font
-                              Color = slice.Color
-                              Justification = Justified (JustifyCenter, JustifyMiddle) })
+                let text =
+                    { TextValue.Transform = transform
+                      Text = text
+                      Font = AssetTag.specialize<Font> font
+                      Color = slice.Color
+                      Justification = Justified (JustifyCenter, JustifyMiddle) }
+                let textView = TextView (transform.Elevation, transform.Horizon, font, text)
                 addView textView effectSystem
+            else effectSystem
+
+        // build implicitly mounted content
+        evalContent content slice history effectSystem
+
+    and private evalLight3d lightType aspects content (slice : Slice) history effectSystem =
+
+        // eval aspects
+        let slice = evalAspects aspects slice effectSystem
+
+        // build model views
+        let effectSystem =
+            if slice.Enabled then
+                let modelView =
+                    Light3dView
+                        { Origin = slice.Position
+                          Direction = Vector3.Transform (v3Up, Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X))
+                          Color = slice.Color
+                          Brightness = slice.Brightness
+                          AttenuationLinear = slice.AttenuationLinear
+                          AttenuationQuadratic = slice.AttenuationQuadratic
+                          LightCutoff = slice.LightCutoff
+                          LightType = lightType }
+                addView modelView effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -737,22 +757,21 @@ module EffectSystem =
                       HeightOpt = ValueSome slice.Height
                       InvertRoughnessOpt = ValueNone }
                 let modelView =
-                    Render3d
-                        (RenderBillboard
-                            { Absolute = effectSystem.EffectAbsolute
-                              ModelMatrix = affineMatrix
-                              InsetOpt = insetOpt
-                              MaterialProperties = properties
-                              AlbedoImage = imageAlbedo
-                              RoughnessImage = imageRoughness
-                              MetallicImage = imageMetallic
-                              AmbientOcclusionImage = imageAmbientOcclusion
-                              EmissionImage = imageEmission
-                              NormalImage = imageNormal
-                              HeightImage = imageHeight
-                              MinFilterOpt = minFilterOpt
-                              MagFilterOpt = magFilterOpt
-                              RenderType = effectSystem.EffectRenderType })
+                    BillboardView
+                        { Absolute = effectSystem.EffectAbsolute
+                          ModelMatrix = affineMatrix
+                          InsetOpt = insetOpt
+                          MaterialProperties = properties
+                          AlbedoImage = imageAlbedo
+                          RoughnessImage = imageRoughness
+                          MetallicImage = imageMetallic
+                          AmbientOcclusionImage = imageAmbientOcclusion
+                          EmissionImage = imageEmission
+                          NormalImage = imageNormal
+                          HeightImage = imageHeight
+                          MinFilterOpt = minFilterOpt
+                          MagFilterOpt = magFilterOpt
+                          RenderType = effectSystem.EffectRenderType }
                 addView modelView effectSystem
             else effectSystem
 
@@ -782,58 +801,15 @@ module EffectSystem =
                       HeightOpt = ValueSome slice.Height
                       InvertRoughnessOpt = ValueNone }
                 let modelView =
-                    Render3d
-                        (RenderStaticModel
-                            { Absolute = effectSystem.EffectAbsolute
-                              ModelMatrix = affineMatrix
-                              Presence = effectSystem.EffectPresence
-                              InsetOpt = insetOpt
-                              MaterialProperties = properties
-                              RenderType = effectSystem.EffectRenderType
-                              StaticModel = staticModel })
+                    StaticModelView
+                        { Absolute = effectSystem.EffectAbsolute
+                          ModelMatrix = affineMatrix
+                          Presence = effectSystem.EffectPresence
+                          InsetOpt = insetOpt
+                          MaterialProperties = properties
+                          StaticModel = staticModel
+                          RenderType = effectSystem.EffectRenderType }
                 addView modelView effectSystem
-            else effectSystem
-
-        // build implicitly mounted content
-        evalContent content slice history effectSystem
-
-    and private evalLight3d lightType aspects content (slice : Slice) history effectSystem =
-
-        // eval aspects
-        let slice = evalAspects aspects slice effectSystem
-
-        // build model views
-        let effectSystem =
-            if slice.Enabled then
-                let modelView =
-                    Render3d
-                        (RenderLight3d
-                            { Origin = slice.Position
-                              Direction = Vector3.Transform (v3Up, Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X))
-                              Color = slice.Color
-                              Brightness = slice.Brightness
-                              AttenuationLinear = slice.AttenuationLinear
-                              AttenuationQuadratic = slice.AttenuationQuadratic
-                              LightCutoff = slice.LightCutoff
-                              LightType = lightType })
-                addView modelView effectSystem
-            else effectSystem
-
-        // build implicitly mounted content
-        evalContent content slice history effectSystem
-
-    and private evalSoundEffect resource aspects content slice history effectSystem =
-
-        // pull sound from resource
-        let sound = evalResource resource effectSystem
-
-        // eval aspects
-        let slice = evalAspects aspects slice effectSystem
-
-        // build sound views
-        let effectSystem =
-            if slice.Enabled
-            then addView (PlaySound (slice.Volume, AssetTag.specialize<Sound> sound)) effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -933,14 +909,12 @@ module EffectSystem =
             evalAnimatedSprite resource celSize celCount celRun delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
+        | Light3d (lightType, aspects, content) ->
+            evalLight3d lightType aspects content slice history effectSystem
         | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, minFilterOpt, magFilterOpt, aspects, content) ->
             evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight minFilterOpt magFilterOpt aspects content slice history effectSystem
         | StaticModel (resource, aspects, content) ->
             evalStaticModel resource aspects content slice history effectSystem
-        | Light3d (lightType, aspects, content) ->
-            evalLight3d lightType aspects content slice history effectSystem
-        | SoundEffect (resource, aspects, content) ->
-            evalSoundEffect resource aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
             evalMount shift aspects content slice history effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->
@@ -965,7 +939,7 @@ module EffectSystem =
             contents
 
     let private release effectSystem =
-        let views = Views (SArray.ofSeq effectSystem.EffectViews) // NOTE: this is slow now, but will be faster once Prime is updated.
+        let views = Views (SArray.ofSeq effectSystem.EffectViews)
         let effectSystem = { effectSystem with EffectViews = SList.make () }
         (views, effectSystem)
 

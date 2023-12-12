@@ -7,6 +7,7 @@ open System.Numerics
 open TiledSharp
 open Prime
 open Nu
+open Nu.Particles
 
 /// Declaratively exposes simulant lenses and events.
 [<AutoOpen>]
@@ -59,7 +60,7 @@ module StaticSpriteFacetModule =
              define Entity.Emission Color.Zero
              define Entity.Flip FlipNone]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let staticImage = entity.GetStaticImage world
             let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
@@ -133,7 +134,7 @@ module AnimatedSpriteFacetModule =
              define Entity.Emission Color.Zero
              define Entity.Flip FlipNone]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let animationSheet = entity.GetAnimationSheet world
             let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
@@ -246,7 +247,6 @@ module BasicStaticSpriteEmitterFacetModule =
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
 
@@ -374,7 +374,7 @@ module BasicStaticSpriteEmitterFacetModule =
                 processOutput output entity world
             else world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let time = world.GameTime
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
@@ -435,7 +435,7 @@ module TextFacetModule =
              define Entity.TextOffset v2Zero
              define Entity.TextShift 0.5f]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let text = entity.GetText world
             if not (String.IsNullOrWhiteSpace text) then
                 let mutable transform = entity.GetTransform world
@@ -485,7 +485,7 @@ module BackdroppableFacetModule =
             [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: P1: make this a constant.
              define Entity.BackdropImageOpt None]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             match entity.GetBackdropImageOpt world with
             | Some spriteImage ->
                 let mutable transform = entity.GetTransform world
@@ -530,7 +530,7 @@ module LabelFacetModule =
             [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
              define Entity.LabelImage Assets.Default.Label]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignore rotation
             let spriteImage = entity.GetLabelImage world
@@ -639,7 +639,7 @@ module ButtonFacetModule =
             let world = World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ButtonFacet) world
             world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignore rotation
             let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
@@ -763,7 +763,7 @@ module ToggleButtonFacetModule =
             let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
             world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignores rotation
             let spriteImage =
@@ -885,7 +885,7 @@ module RadioButtonFacetModule =
             let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
             world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignores rotation
             let spriteImage =
@@ -948,7 +948,7 @@ module FillBarFacetModule =
              define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
              define Entity.BorderImage Assets.Default.Border]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
 
             // border sprite
             let mutable transform = entity.GetTransform world
@@ -1142,6 +1142,9 @@ module EffectFacetModule =
         member this.GetEffectTags world : Map<string, Effects.Slice> = this.Get (nameof this.EffectTags) world
         member this.SetEffectTags (value : Map<string, Effects.Slice>) world = this.Set (nameof this.EffectTags) value world
         member this.EffectTags = lens (nameof this.EffectTags) this this.GetEffectTags this.SetEffectTags
+        member this.GetEffectView world : View = this.Get (nameof this.EffectView) world
+        member this.SetEffectView (value : View) world = this.Set (nameof this.EffectView) value world
+        member this.EffectView = lens (nameof this.EffectView) this this.GetEffectView this.SetEffectView
 
     /// Augments an entity with an effect.
     type EffectFacet () =
@@ -1173,9 +1176,10 @@ module EffectFacetModule =
                     (entity.GetEffectDescriptor world)
 
             // run effect, optionally destroying upon exhaustion
-            let (liveness, effect, world) = Effect.run effect world
+            let (liveness, effect, view) = Effect.run effect world
             let world = entity.SetParticleSystem effect.ParticleSystem world
             let world = entity.SetEffectTags effect.Tags world
+            let world = entity.SetEffectView view world
             if liveness = Dead && entity.GetSelfDestruct world
             then World.destroyEntity entity world
             else world
@@ -1237,7 +1241,8 @@ module EffectFacetModule =
              define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
-             nonPersistent Entity.EffectTags Map.empty]
+             nonPersistent Entity.EffectTags Map.empty
+             nonPersistent Entity.EffectView View.empty]
 
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue world.GameTime (entity.GetEffectStartTimeOpt world)
@@ -1266,6 +1271,42 @@ module EffectFacetModule =
             then run entity world
             else world
 #endif
+        override this.Render (renderPass, entity, world) =
+
+            // render effect view
+            let time = world.GameTime
+            let view = entity.GetEffectView world
+            World.renderView renderPass view world
+
+            // render particles
+            let particleSystem = entity.GetParticleSystem world
+            let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
+            for descriptor in descriptors do
+                match descriptor with
+                | SpriteParticlesDescriptor descriptor ->
+                    let message =
+                        { Elevation = descriptor.Elevation
+                          Horizon = descriptor.Horizon
+                          AssetTag = AssetTag.generalize descriptor.Image
+                          RenderOperation2d = RenderSpriteParticles descriptor }
+                    World.enqueueLayeredOperation2d message world
+                | BillboardParticlesDescriptor descriptor ->
+                    let message =
+                        RenderBillboardParticles
+                            { Absolute = descriptor.Absolute
+                              MaterialProperties = descriptor.MaterialProperties
+                              AlbedoImage = descriptor.AlbedoImage
+                              RoughnessImage = descriptor.RoughnessImage
+                              MetallicImage = descriptor.MetallicImage
+                              AmbientOcclusionImage = descriptor.AmbientOcclusionImage
+                              EmissionImage = descriptor.EmissionImage
+                              NormalImage = descriptor.NormalImage
+                              HeightImage = descriptor.HeightImage
+                              MinFilterOpt = descriptor.MinFilterOpt
+                              MagFilterOpt = descriptor.MagFilterOpt
+                              Particles = descriptor.Particles
+                              RenderType = descriptor.RenderType }
+                    World.enqueueRenderMessage3d message world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -1553,7 +1594,7 @@ module TileMapFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let tileMapAsset = entity.GetTileMap world
             match TmxMap.tryGetTileMap tileMapAsset with
             | Some tileMap ->
@@ -1653,7 +1694,7 @@ module TmxMapFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
             let viewBounds = World.getViewBounds2dRelative world
@@ -1946,7 +1987,7 @@ module SkyBoxFacetModule =
              define Entity.Brightness 1.0f
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             World.enqueueRenderMessage3d
                 (RenderSkyBox
                     { AmbientColor = entity.GetAmbientColor world
@@ -2014,7 +2055,7 @@ module LightProbeFacet3dModule =
                 entity.SetProbeStalePrevious false world
             else world
             
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let id = entity.GetId world
             let enabled = entity.GetEnabled world
             let position = entity.GetPosition world
@@ -2084,7 +2125,7 @@ module LightFacet3dModule =
              define Entity.LightCutoff Constants.Render.LightCutoffDefault
              define Entity.LightType PointLight]
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             if entity.GetEnabled world then
                 let position = entity.GetPosition world
                 let rotation = entity.GetRotation world
@@ -2171,7 +2212,7 @@ module StaticBillboardFacetModule =
              define Entity.TextureMagFilterOpt None
              define Entity.RenderStyle Deferred]
 
-        override this.Render (entity, world) =
+        override this.Render (renderPass, entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
@@ -2194,7 +2235,7 @@ module StaticBillboardFacetModule =
                 (RenderBillboard
                     { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties
                       AlbedoImage = albedoImage; RoughnessImage = roughnessImage; MetallicImage = metallicImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
-                      MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType })
+                      MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType; RenderPass = renderPass })
                 world
 
         override this.RayCast (ray, entity, world) =
@@ -2305,7 +2346,6 @@ module BasicStaticBillboardEmitterFacetModule =
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
             | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
 
@@ -2495,7 +2535,7 @@ module BasicStaticBillboardEmitterFacetModule =
                 processOutput output entity world
             else world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let time = world.GameTime
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
@@ -2526,8 +2566,8 @@ module BasicStaticBillboardEmitterFacetModule =
                                   HeightImage = descriptor.HeightImage
                                   MinFilterOpt = descriptor.MinFilterOpt
                                   MagFilterOpt = descriptor.MagFilterOpt
-                                  RenderType = descriptor.RenderType
-                                  Particles = descriptor.Particles })
+                                  Particles = descriptor.Particles
+                                  RenderType = descriptor.RenderType })
                     | _ -> None) |>
                 List.definitize
             World.enqueueRenderMessages3d particlesMessages world
@@ -2556,19 +2596,19 @@ module StaticModelFacetModule =
              define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel]
 
-        override this.Render (entity, world) =
+        override this.Render (renderPass, entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
+            let staticModel = entity.GetStaticModel world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            let staticModel = entity.GetStaticModel world
-            World.enqueueRenderMessage3d (RenderStaticModel { Absolute = absolute; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; RenderType = renderType; StaticModel = staticModel }) world
+            World.enqueueRenderMessage3d (RenderStaticModel { Absolute = absolute; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; StaticModel = staticModel; RenderType = renderType; RenderPass = renderPass }) world
 
         override this.GetAttributesInferred (entity, world) =
             let staticModel = entity.GetStaticModel world
@@ -2622,7 +2662,7 @@ module StaticModelSurfaceFacetModule =
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.SurfaceIndex 0]
 
-        override this.Render (entity, world) =
+        override this.Render (renderPass, entity, world) =
             match entity.GetSurfaceIndex world with
             | -1 -> ()
             | surfaceIndex ->
@@ -2631,12 +2671,12 @@ module StaticModelSurfaceFacetModule =
                 let affineMatrix = transform.AffineMatrix
                 let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
+                let staticModel = entity.GetStaticModel world
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                let staticModel = entity.GetStaticModel world
-                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, renderType, staticModel, surfaceIndex, world)
+                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, staticModel, surfaceIndex, renderType, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -2688,7 +2728,7 @@ module AnimatedModelFacetModule =
              define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
-        override this.Render (entity, world) =
+        override this.Render (renderPass, entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
@@ -2698,7 +2738,7 @@ module AnimatedModelFacetModule =
             let properties = entity.GetMaterialProperties world
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, animations, animatedModel, world)
+            World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, animations, animatedModel, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
@@ -2859,7 +2899,7 @@ module TerrainFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody false (entity.GetBodyId world) world
 
-        override this.Render (entity, world) =
+        override this.Render (_, entity, world) =
             let mutable transform = entity.GetTransform world
             let terrainDescriptor =
                 { Bounds = transform.Bounds3d

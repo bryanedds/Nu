@@ -134,9 +134,9 @@ module WorldGroupModule =
             let eventTrace = EventTrace.debug "World" "postUpdateGroup" "" EventTrace.empty
             World.publishPlus () group.PostUpdateEvent eventTrace group false false world
 
-        static member internal renderGroup (group : Group) world =
+        static member internal renderGroup renderPass (group : Group) world =
             let dispatcher = group.GetDispatcher world
-            dispatcher.Render (group, world)
+            dispatcher.Render (renderPass, group, world)
 
         /// Edit a game with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

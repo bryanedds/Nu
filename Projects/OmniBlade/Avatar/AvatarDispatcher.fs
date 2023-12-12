@@ -40,7 +40,7 @@ module AvatarDispatcher =
              Entity.BodyShape := bodyShape
              Entity.ModelDriven == true]
 
-        override this.View (avatar, entity, world) =
+        override this.Render (avatar, _, entity, world) =
             if entity.GetVisible world then
                 let mutable transform = entity.GetTransform world
                 World.enqueueLayeredOperation2d

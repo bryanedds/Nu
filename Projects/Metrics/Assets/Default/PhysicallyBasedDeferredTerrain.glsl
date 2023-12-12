@@ -140,6 +140,9 @@ void main()
         normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
+    // discard on zero alpha
+    if (albedoBlend.a == 0.0f) discard;
+
     // populate albedo, material, and normalAndHeight
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4((invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);

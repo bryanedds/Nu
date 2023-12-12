@@ -166,7 +166,7 @@ module WorldScreenModule =
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
             World.publishPlus () screen.PostUpdateEvent eventTrace screen false false world
 
-        static member internal renderScreen (screen : Screen) world =
+        static member internal renderScreen renderPass (screen : Screen) world =
 
             // render ecs
             let ecs = World.getScreenEcs screen world
@@ -175,7 +175,7 @@ module WorldScreenModule =
 
             // render via dispatcher
             let dispatcher = screen.GetDispatcher world
-            dispatcher.Render (screen, world)
+            dispatcher.Render (renderPass, screen, world)
 
         /// Edit a screen with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

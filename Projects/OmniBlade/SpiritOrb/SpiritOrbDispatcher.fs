@@ -66,7 +66,7 @@ module SpiritOrbDispatcher =
                           RenderOperation2d = RenderSprite descriptor }
                         world
 
-        override this.View (spiritOrb, entity, world) =
+        override this.Render (spiritOrb, _, entity, world) =
             let mutable orbTransform = entity.GetTransform world
             let orbImage = Assets.Field.SpiritOrbImage
             let orbDescriptor = { Transform = orbTransform; InsetOpt = ValueNone; Image = orbImage; Color = Color.One; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }

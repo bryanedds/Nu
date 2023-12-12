@@ -149,7 +149,6 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
 /// The output of a behavior.
 type [<ReferenceEquality>] Output =
     | OutputEmitter of string * Emitter
-    | OutputSound of single * Sound AssetTag
     | Outputs of Output SArray
 
     /// Combine two outputs.
@@ -1156,8 +1155,8 @@ module BasicStaticBillboardEmitter =
               HeightImage = emitter.HeightImage
               MinFilterOpt = emitter.MinFilterOpt
               MagFilterOpt = emitter.MagFilterOpt
-              RenderType = emitter.RenderType
-              Particles = particles' }
+              Particles = particles'
+              RenderType = emitter.RenderType }
         descriptor
 
     /// Resize the emitter.

@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
 
 /// A tag interface for describing an emitter.
@@ -10,12 +11,12 @@ type EmitterDescriptor = interface end
 
 /// IO artifacts passively produced and consumed by Nu.
 type [<ReferenceEquality>] View =
-    | Render2d of single * single * obj AssetTag * RenderOperation2d
-    | Render3d of RenderMessage3d
-    | PlaySound of single * Sound AssetTag
-    | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
-    | FadeOutSong of GameTime
-    | StopSong
+    | SpriteView of single * single * obj AssetTag * SpriteValue
+    | TextView of single * single * obj AssetTag * TextValue
+    | Light3dView of Light3dValue
+    | BillboardView of BillboardValue
+    | StaticModelView of StaticModelValue
+    | StaticModelSurfaceView of StaticModelSurfaceValue
     | SpawnEmitter of string * EmitterDescriptor
     | Tag of string * obj
     | Views of View SArray

@@ -328,8 +328,8 @@ and GameDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a game.
-    abstract Render : Game * World -> unit
-    default this.Render (_, _) = ()
+    abstract Render : RenderPass * Game * World -> unit
+    default this.Render (_, _, _) = ()
 
     /// Send a signal to a game.
     abstract Signal : obj * Game * World -> World
@@ -380,8 +380,8 @@ and ScreenDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a screen.
-    abstract Render : Screen * World -> unit
-    default this.Render (_, _) = ()
+    abstract Render : RenderPass * Screen * World -> unit
+    default this.Render (_, _, _) = ()
 
     /// Send a signal to a screen.
     abstract Signal : obj * Screen * World -> World
@@ -432,8 +432,8 @@ and GroupDispatcher () =
     default this.PostUpdate (_, world) = world
 
     /// Render a group.
-    abstract Render : Group * World -> unit
-    default this.Render (_, _) = ()
+    abstract Render : RenderPass * Group * World -> unit
+    default this.Render (_, _, _) = ()
 
     /// Send a signal to a group.
     abstract Signal : obj * Group * World -> World
@@ -525,8 +525,8 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
 #endif
 
     /// Render an entity.
-    abstract Render : Entity * World -> unit
-    default this.Render (_, _) = ()
+    abstract Render : RenderPass * Entity * World -> unit
+    default this.Render (_, _, _) = ()
 
     /// Apply physics changes from a physics engine to an entity.
     abstract ApplyPhysics : Vector3 * Quaternion * Vector3 * Vector3 * Entity * World -> World
@@ -615,8 +615,8 @@ and Facet (physical) =
 #endif
 
     /// Render a facet.
-    abstract Render : Entity * World -> unit
-    default this.Render (_, _) = ()
+    abstract Render : RenderPass * Entity * World -> unit
+    default this.Render (_, _, _) = ()
 
     /// Participate in attempting to pick an entity with a ray.
     abstract RayCast : Ray3 * Entity * World -> single array

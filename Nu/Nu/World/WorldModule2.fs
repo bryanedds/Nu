@@ -1094,32 +1094,32 @@ module WorldModule2 =
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
-            World.renderGame game world
+            World.renderGame NormalPass game world
             for screen in screens do
-                World.renderScreen screen world
+                World.renderScreen NormalPass screen world
             match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> ()
             for group in groups do
                 if not (groupsInvisible.Contains group) then
-                    World.renderGroup group world
+                    World.renderGroup NormalPass group world
 
             // render entities
             RenderEntitiesTimer.Start ()
             if world.Unaccompanied || groupsInvisible.Count = 0 then
                 for element in elements3d do
                     if element.Visible then
-                        World.renderEntity element.Entry world
+                        World.renderEntity NormalPass element.Entry world
             else
                 for element in elements3d do
                     if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                        World.renderEntity element.Entry world
+                        World.renderEntity NormalPass element.Entry world
             if world.Unaccompanied || groupsInvisible.Count = 0 then
                 for element in elements2d do
                     if element.Visible then
-                        World.renderEntity element.Entry world
+                        World.renderEntity NormalPass element.Entry world
             else
                 for element in elements2d do
                     if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
-                        World.renderEntity element.Entry world
+                        World.renderEntity NormalPass element.Entry world
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
@@ -1406,8 +1406,8 @@ module EntityDispatcherModule2 =
             let world = this.SetModel model entity world
             Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
 
-        override this.Render (entity, world) =
-            this.View (this.GetModel entity world, entity, world)
+        override this.Render (renderPass, entity, world) =
+            this.Render (this.GetModel entity world, renderPass, entity, world)
 
         override this.Edit (operation, entity, world) =
             let model = entity.GetModelGeneric<'model> world
@@ -1480,8 +1480,8 @@ module EntityDispatcherModule2 =
         default this.Content (_, _) = []
 
         /// Render the entity using the given model.
-        abstract View : 'model * Entity * World -> unit
-        default this.View (_, _, _) = ()
+        abstract Render : 'model * RenderPass * Entity * World -> unit
+        default this.Render (_, _, _, _) = ()
 
         /// Truncate the given model.
         abstract TruncateModel : 'model -> 'model
@@ -1684,8 +1684,8 @@ module GroupDispatcherModule =
                         makeInitial world
             World.setGroupModel<'model> true model group world |> snd'
 
-        override this.Render (group, world) =
-            this.View (this.GetModel group world, group, world)
+        override this.Render (renderPass, group, world) =
+            this.Render (this.GetModel group world, renderPass, group, world)
 
         override this.Signal (signalObj : obj, group, world) =
             match signalObj with
@@ -1744,8 +1744,8 @@ module GroupDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the group using the given model.
-        abstract View : 'model * Group * World -> unit
-        default this.View (_, _, _) = ()
+        abstract Render : 'model * RenderPass * Group * World -> unit
+        default this.Render (_, _, _, _) = ()
 
         /// Implements additional editing behavior for a group via the ImGui API.
         abstract Edit : 'model * EditOperation * Group * World -> Signal list * 'model
@@ -1853,8 +1853,8 @@ module ScreenDispatcherModule =
                         makeInitial world
             World.setScreenModel<'model> true model screen world |> snd'
 
-        override this.Render (screen, world) =
-            this.View (this.GetModel screen world, screen, world)
+        override this.Render (renderPass, screen, world) =
+            this.Render (this.GetModel screen world, renderPass, screen, world)
 
         override this.Signal (signalObj : obj, screen, world) =
             match signalObj with
@@ -1913,8 +1913,8 @@ module ScreenDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the screen using the given model.
-        abstract View : 'model * Screen * World -> unit
-        default this.View (_, _, _) = ()
+        abstract Render : 'model * RenderPass * Screen * World -> unit
+        default this.Render (_, _, _, _) = ()
 
         /// Implements additional editing behavior for a screen via the ImGui API.
         abstract Edit : 'model * EditOperation * Screen * World -> Signal list * 'model
@@ -2029,8 +2029,8 @@ module GameDispatcherModule =
                         makeInitial world
             World.setGameModel<'model> true model game world |> snd'
 
-        override this.Render (game, world) =
-            this.View (this.GetModel game world, game, world)
+        override this.Render (renderPass, game, world) =
+            this.Render (this.GetModel game world, renderPass, game, world)
 
         override this.Signal (signalObj : obj, game, world) =
             match signalObj with
@@ -2083,8 +2083,8 @@ module GameDispatcherModule =
         default this.Content (_, _) = []
 
         /// Render the game using the given model.
-        abstract View : 'model * Game * World -> unit
-        default this.View (_, _, _) = ()
+        abstract Render : 'model * RenderPass * Game * World -> unit
+        default this.Render (_, _, _, _) = ()
 
         /// Implements additional editing behavior for a game via the ImGui API.
         abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
