@@ -721,8 +721,8 @@ module WorldEntityModule =
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
             let viewport = World.getViewport world
-            let eyeCenter = World.getEyeCenter2d world
-            let eyeSize = World.getEyeSize2d world
+            let eyeCenter = World.getEye2dCenter world
+            let eyeSize = World.getEye2dSize world
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
                     let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyeCenter, eyeSize)
@@ -734,8 +734,8 @@ module WorldEntityModule =
         /// Attempt to pick a 3d entity with the given ray.
         static member tryPickEntity3d position entities world =
             let viewport = World.getViewport world
-            let eyeCenter = World.getEyeCenter3d world
-            let eyeRotation = World.getEyeRotation3d world
+            let eyeCenter = World.getEye3dCenter world
+            let eyeRotation = World.getEye3dRotation world
             let intersectionses =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
@@ -1027,19 +1027,19 @@ module WorldEntityModule =
                     let absolute = entity.GetAbsolute world
                     if entity.GetIs2d world then
                         let viewport = World.getViewport world
-                        let eyeCenter = World.getEyeCenter2d world
-                        let eyeSize = World.getEyeSize2d world
+                        let eyeCenter = World.getEye2dCenter world
+                        let eyeSize = World.getEye2dSize world
                         let position =
                             match pasteType with
                             | PasteAtMouse -> (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
-                            | PasteAtLook -> (viewport.MouseToWorld2d (absolute, World.getEyeSize2d world, eyeCenter, eyeSize)).V3
+                            | PasteAtLook -> (viewport.MouseToWorld2d (absolute, World.getEye2dSize world, eyeCenter, eyeSize)).V3
                             | PasteAt position -> position
                         match snapsEir with
                         | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
                         | Right _ -> (position, None)
                     else
-                        let eyeCenter = World.getEyeCenter3d world
-                        let eyeRotation = World.getEyeRotation3d world
+                        let eyeCenter = World.getEye3dCenter world
+                        let eyeRotation = World.getEye3dRotation world
                         let position =
                             match pasteType with
                             | PasteAtMouse ->

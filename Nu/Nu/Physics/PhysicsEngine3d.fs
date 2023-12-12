@@ -47,7 +47,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private configureBodyShapeProperties (_ : BodyProperties) (_ : BodyShapeProperties option) (shape : CollisionShape) =
-        shape.Margin <- Constants.Physics.CollisionMargin3d
+        shape.Margin <- Constants.Physics.Collision3dMargin
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
         match bodyProperties.Enabled with

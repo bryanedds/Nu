@@ -475,7 +475,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
          Define? AnglesLocal Vector3.Zero
          Define? Degrees Vector3.Zero
          Define? DegreesLocal Vector3.Zero
-         Define? Size Constants.Engine.EntitySize3dDefault
+         Define? Size Constants.Engine.Entity3dSizeDefault
          Define? Elevation 0.0f
          Define? ElevationLocal 0.0f
          Define? Overflow 1.0f
@@ -548,8 +548,8 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (_, _) =
         if this.Is2d
-        then AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
-        else AttributesInferred.make Constants.Engine.EntitySize3dDefault v3Zero
+        then AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
+        else AttributesInferred.make Constants.Engine.Entity3dSizeDefault v3Zero
 
     /// Attempt to pick an entity with a ray.
     abstract RayCast : Ray3 * Entity * World -> single array
@@ -626,8 +626,8 @@ and Facet (physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (entity, world) =
         if WorldTypes.getEntityIs2d entity world
-        then AttributesInferred.make Constants.Engine.EntitySize2dDefault v3Zero
-        else AttributesInferred.make Constants.Engine.EntitySize3dDefault v3Zero
+        then AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
+        else AttributesInferred.make Constants.Engine.Entity3dSizeDefault v3Zero
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Entity * World -> World
@@ -788,20 +788,20 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       SelectedScreenOpt : Screen option
       DesiredScreen : DesiredScreen
       ScreenTransitionDestinationOpt : Screen option
-      EyeCenter2d : Vector2
-      EyeSize2d : Vector2
-      EyeCenter3d : Vector3
-      EyeRotation3d : Quaternion
-      EyeFrustum3dEnclosed : Frustum // OPTIMIZATION: cached value
-      EyeFrustum3dExposed : Frustum // OPTIMIZATION: cached value
-      EyeFrustum3dImposter : Frustum // OPTIMIZATION: cached value
+      Eye2dCenter : Vector2
+      Eye2dSize : Vector2
+      Eye3dCenter : Vector3
+      Eye3dRotation : Quaternion
+      Eye3dFrustumEnclosed : Frustum // OPTIMIZATION: cached value
+      Eye3dFrustumExposed : Frustum // OPTIMIZATION: cached value
+      Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value
       Order : int64
       Id : Guid }
 
     /// Make a game state value.
     static member make (dispatcher : GameDispatcher) =
-        let eyeCenter3d = Constants.Engine.EyeCenter3dDefault
-        let eyeRotation3d = quatIdentity
+        let eye3dCenter = Constants.Engine.Eye3dCenterDefault
+        let eye3dRotation = quatIdentity
         let viewport = Constants.Render.Viewport
         { Dispatcher = dispatcher
           Xtension = Xtension.makeFunctional ()
@@ -811,13 +811,13 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           SelectedScreenOpt = None
           DesiredScreen = DesireIgnore
           ScreenTransitionDestinationOpt = None
-          EyeCenter2d = v2Zero
-          EyeSize2d = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
-          EyeCenter3d = eyeCenter3d
-          EyeRotation3d = eyeRotation3d
-          EyeFrustum3dEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eyeCenter3d, eyeRotation3d)
-          EyeFrustum3dExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eyeCenter3d, eyeRotation3d)
-          EyeFrustum3dImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eyeCenter3d, eyeRotation3d)
+          Eye2dCenter = v2Zero
+          Eye2dSize = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
+          Eye3dCenter = eye3dCenter
+          Eye3dRotation = eye3dRotation
+          Eye3dFrustumEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eye3dCenter, eye3dRotation)
+          Eye3dFrustumExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eye3dCenter, eye3dRotation)
+          Eye3dFrustumImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eye3dCenter, eye3dRotation)
           Order = Core.getTimeStampUnique ()
           Id = Gen.id }
 

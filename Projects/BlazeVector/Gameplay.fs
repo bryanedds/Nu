@@ -90,10 +90,10 @@ module Gameplay =
                 if world.Advancing then
                     let playerPosition = Simulants.GameplayPlayer.GetPosition world
                     let playerSize = Simulants.GameplayPlayer.GetSize world
-                    let eyeCenter = World.getEyeCenter2d world
-                    let eyeSize = World.getEyeSize2d world
+                    let eyeCenter = World.getEye2dCenter world
+                    let eyeSize = World.getEye2dSize world
                     let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
-                    let world = World.setEyeCenter2d eyeCenter world
+                    let world = World.setEye2dCenter eyeCenter world
                     just world
                 else just world
 

@@ -18,7 +18,7 @@ module EntityDispatcherModule =
             Entity2dDispatcher (Constants.Engine.EntityPerimeterCentered2dDefault, physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize2dDefault
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
 
     /// A gui entity dispatcher.
@@ -29,7 +29,7 @@ module EntityDispatcherModule =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
+            [define Entity.Size Constants.Engine.EntityGuiSizeDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
@@ -49,7 +49,7 @@ module EntityDispatcherModule =
             Entity3dDispatcher (physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
@@ -63,7 +63,7 @@ module EntityDispatcherModule =
         inherit EntityDispatcher (false, true, false)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeVuiDefault]
+            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -121,8 +121,8 @@ module TextDispatcherModule =
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
                 | Some size -> AttributesInferred.make size.V3 v3Zero
-                | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
-            | None -> AttributesInferred.make Constants.Engine.EntitySizeGuiDefault v3Zero
+                | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+            | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -663,10 +663,10 @@ module Block3dDispatcherModule =
              define Entity.StaticModel Assets.Default.StaticModel]
 
 [<AutoOpen>]
-module Box3dDispatcherModule =
+module 3dBoxDispatcherModule =
 
     /// Gives an entity the base behavior of a rigid 3d box using dynamic physics.
-    type Box3dDispatcher () =
+    type 3dBoxDispatcher () =
         inherit Entity3dDispatcher (true)
 
         static member Facets =

@@ -343,7 +343,7 @@ module WorldModule3 =
                  RigidModelDispatcher () :> EntityDispatcher
                  Effect3dDispatcher () :> EntityDispatcher
                  Block3dDispatcher () :> EntityDispatcher
-                 Box3dDispatcher () :> EntityDispatcher
+                 3dBoxDispatcher () :> EntityDispatcher
                  Character3dDispatcher () :> EntityDispatcher
                  TerrainDispatcher () :> EntityDispatcher
                  StaticModelHierarchyDispatcher () :> EntityDispatcher

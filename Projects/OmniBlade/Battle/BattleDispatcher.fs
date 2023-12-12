@@ -144,7 +144,7 @@ module BattleDispatcher =
 
             match command with
             | UpdateEye ->
-                let world = World.setEyeCenter2d v2Zero world
+                let world = World.setEye2dCenter v2Zero world
                 just world
 
             | BattleCommand.PlaySound (delay, volume, sound) ->
