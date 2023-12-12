@@ -520,12 +520,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else snaps3d
 
     let private getPickCandidates2d () =
-        let (entities, wtemp) = World.getEntitiesInView2d (HashSet ()) world in world <- wtemp
+        let (entities, wtemp) = World.getEntities2dInView (HashSet ()) world in world <- wtemp
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         entitiesInGroup
 
     let private getPickCandidates3d () =
-        let (entities, wtemp) = World.getEntitiesInView3d (HashSet ()) world in world <- wtemp
+        let (entities, wtemp) = World.getEntities3dInView (HashSet ()) world in world <- wtemp
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         entitiesInGroup
 
@@ -570,7 +570,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // render light probes of the selected group in icon frustum
         world <- wtemp
         let iconFrustum = World.getEye3dFrustumEnclosed world
-        let (entities, wtemp) = World.getLightProbesInFrustum3d iconFrustum (HashSet ()) world in world <- wtemp
+        let (entities, wtemp) = World.getLightProbes3dInFrustum iconFrustum (HashSet ()) world in world <- wtemp
         let lightProbeModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |>
@@ -585,7 +585,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world
 
         // render lights of the selected group in play
-        let (entities, wtemp) = World.getLightsInFrustum3d iconFrustum (HashSet ()) world in world <- wtemp
+        let (entities, wtemp) = World.getLights3dInFrustum iconFrustum (HashSet ()) world in world <- wtemp
         let lightModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup) |>

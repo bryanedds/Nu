@@ -193,12 +193,12 @@ module WorldEntityHierarchy =
 module FreezeFacetModule =
 
     type Entity with
-        member this.GetFrozenRenderLightProbe3ds world : RenderLightProbe3d array = this.Get (nameof this.FrozenRenderLightProbe3ds) world
-        member this.SetFrozenRenderLightProbe3ds (value : RenderLightProbe3d array) world = this.Set (nameof this.FrozenRenderLightProbe3ds) value world
-        member this.FrozenRenderLightProbe3ds = lens (nameof this.FrozenRenderLightProbe3ds) this this.GetFrozenRenderLightProbe3ds this.SetFrozenRenderLightProbe3ds
-        member this.GetFrozenRenderLight3ds world : RenderLight3d array = this.Get (nameof this.FrozenRenderLight3ds) world
-        member this.SetFrozenRenderLight3ds (value : RenderLight3d array) world = this.Set (nameof this.FrozenRenderLight3ds) value world
-        member this.FrozenRenderLight3ds = lens (nameof this.FrozenRenderLight3ds) this this.GetFrozenRenderLight3ds this.SetFrozenRenderLight3ds
+        member this.GetFrozenRenderLightProbes3d world : RenderLightProbe3d array = this.Get (nameof this.FrozenRenderLightProbes3d) world
+        member this.SetFrozenRenderLightProbes3d (value : RenderLightProbe3d array) world = this.Set (nameof this.FrozenRenderLightProbes3d) value world
+        member this.FrozenRenderLightProbes3d = lens (nameof this.FrozenRenderLightProbes3d) this this.GetFrozenRenderLightProbes3d this.SetFrozenRenderLightProbes3d
+        member this.GetFrozenRenderLights3d world : RenderLight3d array = this.Get (nameof this.FrozenRenderLights3d) world
+        member this.SetFrozenRenderLights3d (value : RenderLight3d array) world = this.Set (nameof this.FrozenRenderLights3d) value world
+        member this.FrozenRenderLights3d = lens (nameof this.FrozenRenderLights3d) this this.GetFrozenRenderLights3d this.SetFrozenRenderLights3d
         member this.GetFrozenRenderStaticModelSurfaces world : StaticModelSurfaceValue array = this.Get (nameof this.FrozenRenderStaticModelSurfaces) world
         member this.SetFrozenRenderStaticModelSurfaces (value : StaticModelSurfaceValue array) world = this.Set (nameof this.FrozenRenderStaticModelSurfaces) value world
         member this.FrozenRenderStaticModelSurfaces = lens (nameof this.FrozenRenderStaticModelSurfaces) this this.GetFrozenRenderStaticModelSurfaces this.SetFrozenRenderStaticModelSurfaces
@@ -211,13 +211,13 @@ module FreezeFacetModule =
         member this.UpdateFrozenHierarchy world =
             if this.GetFrozen world then
                 let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeEntityHierarchy this world
-                let world = this.SetFrozenRenderLightProbe3ds frozenProbes world
-                let world = this.SetFrozenRenderLight3ds frozenLights world
+                let world = this.SetFrozenRenderLightProbes3d frozenProbes world
+                let world = this.SetFrozenRenderLights3d frozenLights world
                 let world = this.SetFrozenRenderStaticModelSurfaces frozenSurfaces world
                 world
             else
-                let world = this.SetFrozenRenderLightProbe3ds [||] world
-                let world = this.SetFrozenRenderLight3ds [||] world
+                let world = this.SetFrozenRenderLightProbes3d [||] world
+                let world = this.SetFrozenRenderLights3d [||] world
                 let world = this.SetFrozenRenderStaticModelSurfaces [||] world
                 let world = World.thawEntityHierarchy (this.GetPresenceConferred world) this world
                 world
@@ -233,8 +233,8 @@ module FreezeFacetModule =
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
-             nonPersistent Entity.FrozenRenderLightProbe3ds [||]
-             nonPersistent Entity.FrozenRenderLight3ds [||]
+             nonPersistent Entity.FrozenRenderLightProbes3d [||]
+             nonPersistent Entity.FrozenRenderLights3d [||]
              nonPersistent Entity.FrozenRenderStaticModelSurfaces [||]
              define Entity.Frozen false
              define Entity.PresenceConferred Exposed]
@@ -251,7 +251,7 @@ module FreezeFacetModule =
             let bounds = entity.GetBounds world
             let presenceConferred = entity.GetPresenceConferred world
             if World.boundsInView3d true false presenceConferred bounds world then
-                let probes = entity.GetFrozenRenderLightProbe3ds world
+                let probes = entity.GetFrozenRenderLightProbes3d world
                 for i in 0 .. dec probes.Length do
                     let probe = probes.[i]
                     World.enqueueRenderMessage3d (RenderLightProbe3d probe) world
@@ -259,7 +259,7 @@ module FreezeFacetModule =
 
             // render lights
             if World.boundsInView3d false true presenceConferred bounds world then
-                for light in entity.GetFrozenRenderLight3ds world do
+                for light in entity.GetFrozenRenderLights3d world do
                     World.enqueueRenderMessage3d (RenderLight3d light) world
 
             // render surfaces

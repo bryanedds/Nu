@@ -663,10 +663,10 @@ module Block3dDispatcherModule =
              define Entity.StaticModel Assets.Default.StaticModel]
 
 [<AutoOpen>]
-module 3dBoxDispatcherModule =
+module Box3dDispatcherModule =
 
     /// Gives an entity the base behavior of a rigid 3d box using dynamic physics.
-    type 3dBoxDispatcher () =
+    type Box3dDispatcher () =
         inherit Entity3dDispatcher (true)
 
         static member Facets =
