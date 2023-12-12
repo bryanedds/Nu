@@ -37,7 +37,8 @@ module WorldView =
                       AttenuationLinear = light.AttenuationLinear
                       AttenuationQuadratic = light.AttenuationQuadratic
                       LightCutoff = light.LightCutoff
-                      LightType = light.LightType }
+                      LightType = light.LightType
+                      DesireShadows = false }
                 World.enqueueRenderMessage3d (RenderLight3d renderLight) world
 
             // render billboard

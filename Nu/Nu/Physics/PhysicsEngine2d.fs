@@ -141,7 +141,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let density =
             match bodyProperties.Substance with
             | Density density -> density
-            | Mass mass -> mass / (single Math.PI * radius * radius)
+            | Mass mass -> mass / (MathF.PI * radius * radius)
         let shape = body.CreateCircle (radius, density, offset)
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
@@ -156,7 +156,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let density =
             match bodyProperties.Substance with
             | Density density -> density
-            | Mass mass -> mass / (endRadius * skinnyScalar * height * 0.5f + single Math.PI * endRadius * endRadius)
+            | Mass mass -> mass / (endRadius * skinnyScalar * height * 0.5f + MathF.PI * endRadius * endRadius)
         let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * skinnyScalar, height * 0.5f, center, 0.0f)
         let list = List<Common.Vertices> ()

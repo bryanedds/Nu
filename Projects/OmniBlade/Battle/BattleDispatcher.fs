@@ -411,7 +411,7 @@ module BattleDispatcher =
                                  Entity.FillColor :=
                                     (let pulseTime = battle.UpdateTime % Constants.Battle.CharacterFillColorPulseDuration
                                      let pulseProgress = single pulseTime / single Constants.Battle.CharacterFillColorPulseDuration
-                                     let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 127.0f) / byte 2 + byte 32
+                                     let pulseIntensity = byte (sin (pulseProgress * MathF.PI) * 127.0f) / byte 2 + byte 32
                                      match character.AutoBattleOpt with
                                      | Some autoBattle ->
                                         if autoBattle.AutoTechOpt.IsSome then Color.Red.WithA8 pulseIntensity

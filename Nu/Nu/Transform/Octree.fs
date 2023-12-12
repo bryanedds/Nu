@@ -543,6 +543,12 @@ module Octree =
         let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
 
+    /// Get all of the light elements in the given box.
+    let getLightsInBox box (set : _ HashSet) tree =
+        Octnode.getLightsInViewBox box set tree.Node
+        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+
     /// Get the size of the tree's leaves.
     let getLeafSize tree =
         tree.LeafSize

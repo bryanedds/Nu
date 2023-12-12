@@ -355,7 +355,7 @@ module Character =
         if character.MaterializationOpt.IsNone then
             let pulseTime = time % Constants.Battle.CharacterSpritePulseDuration
             let pulseProgress = single pulseTime / single Constants.Battle.CharacterSpritePulseDuration
-            let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
+            let pulseIntensity = byte (sin (pulseProgress * MathF.PI) * 255.0f)
             let statuses = character.Statuses
             if character.Wounded then Color.Zero
             elif autoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red

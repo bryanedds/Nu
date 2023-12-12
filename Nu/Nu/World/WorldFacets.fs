@@ -1305,7 +1305,8 @@ module EffectFacetModule =
                               MinFilterOpt = descriptor.MinFilterOpt
                               MagFilterOpt = descriptor.MagFilterOpt
                               Particles = descriptor.Particles
-                              RenderType = descriptor.RenderType }
+                              RenderType = descriptor.RenderType
+                              RenderPass = renderPass }
                     World.enqueueRenderMessage3d message world
 
         override this.RayCast (ray, entity, world) =
@@ -2111,6 +2112,9 @@ module Light3dFacetModule =
         member this.GetLightType world : LightType = this.Get (nameof this.LightType) world
         member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
+        member this.GetDesireShadows world : bool = this.Get (nameof this.DesireShadows) world
+        member this.SetDesireShadows (value : bool) world = this.Set (nameof this.DesireShadows) value world
+        member this.DesireShadows = lens (nameof this.DesireShadows) this this.GetDesireShadows this.SetDesireShadows
 
     /// Augments an entity with a 3d light.
     type Light3dFacet () =
@@ -2123,7 +2127,8 @@ module Light3dFacetModule =
              define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
              define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
              define Entity.LightCutoff Constants.Render.LightCutoffDefault
-             define Entity.LightType PointLight]
+             define Entity.LightType PointLight
+             define Entity.DesireShadows false]
 
         override this.Render (_, entity, world) =
             if entity.GetEnabled world then
@@ -2135,6 +2140,7 @@ module Light3dFacetModule =
                 let attenuationQuadratic = entity.GetAttenuationQuadratic world
                 let lightCutoff = entity.GetLightCutoff world
                 let lightType = entity.GetLightType world
+                let desireShadows = entity.GetDesireShadows world
                 World.enqueueRenderMessage3d
                     (RenderLight3d
                         { Origin = position
@@ -2144,7 +2150,8 @@ module Light3dFacetModule =
                           AttenuationLinear = attenuationLinear
                           AttenuationQuadratic = attenuationQuadratic
                           LightCutoff = lightCutoff
-                          LightType = lightType })
+                          LightType = lightType
+                          DesireShadows = desireShadows })
                     world
 
         override this.RayCast (ray, entity, world) =
@@ -2535,7 +2542,7 @@ module BasicStaticBillboardEmitterFacetModule =
                 processOutput output entity world
             else world
 
-        override this.Render (_, entity, world) =
+        override this.Render (renderPass, entity, world) =
             let time = world.GameTime
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
@@ -2567,7 +2574,8 @@ module BasicStaticBillboardEmitterFacetModule =
                                   MinFilterOpt = descriptor.MinFilterOpt
                                   MagFilterOpt = descriptor.MagFilterOpt
                                   Particles = descriptor.Particles
-                                  RenderType = descriptor.RenderType })
+                                  RenderType = descriptor.RenderType
+                                  RenderPass = renderPass })
                     | _ -> None) |>
                 List.definitize
             World.enqueueRenderMessages3d particlesMessages world
@@ -2899,7 +2907,7 @@ module TerrainFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody false (entity.GetBodyId world) world
 
-        override this.Render (_, entity, world) =
+        override this.Render (renderPass, entity, world) =
             let mutable transform = entity.GetTransform world
             let terrainDescriptor =
                 { Bounds = transform.Bounds3d
@@ -2915,7 +2923,8 @@ module TerrainFacetModule =
                 (RenderTerrain
                     { Absolute = transform.Absolute
                       Visible = transform.Visible
-                      TerrainDescriptor = terrainDescriptor })
+                      TerrainDescriptor = terrainDescriptor
+                      RenderPass = renderPass })
                 world
 
         override this.GetAttributesInferred (entity, world) =
