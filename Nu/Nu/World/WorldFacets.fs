@@ -1700,7 +1700,7 @@ module TmxMapFacetModule =
             let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
             let viewBounds = World.getViewBounds2dRelative world
             let tmxMap = entity.GetTmxMap world
-            let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else Pathf.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
+            let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else PathF.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
             let tmxMapMessages =
                 TmxMap.getLayeredMessages2d
                     world.GameTime

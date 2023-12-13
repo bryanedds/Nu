@@ -7,7 +7,7 @@ open System.IO
 
 /// Performs operations on System.String instances that contain file or directory path information. These operations are performed in a normalized manner where '/' is use as the directory seperator.
 [<RequireQualifiedAccess>]
-module Pathf =
+module PathF =
 
     /// Normalize a path to use '/' separators.
     let Normalize (path : string) =
