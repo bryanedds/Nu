@@ -1753,7 +1753,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             for entry in renderTasks.RenderSurfacesDeferredStaticAbsolute do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray lightProjectionArray [||] lightOrigin entry.Value false
-                    [|0.0f; 0.0f; 0.0f|] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
+                    [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
                     [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
@@ -1762,7 +1762,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderTasks.RenderSurfacesDeferredStaticRelative do
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray lightProjectionArray [||] lightOrigin entry.Value false
-                    [|0.0f; 0.0f; 0.0f|] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
+                    [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
                     [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
@@ -1775,7 +1775,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray lightProjectionArray bonesArray lightOrigin parameters false
-                    [|0.0f; 0.0f; 0.0f|] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
+                    [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
                     [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
                     surface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
@@ -1787,7 +1787,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray lightProjectionArray bonesArray lightOrigin parameters false
-                [|0.0f; 0.0f; 0.0f|] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
+                [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
                 [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
                 surface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
@@ -1806,7 +1806,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticAbsoluteSorted do
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray lightProjectionArray [||] lightOrigin (SList.singleton (model, texCoordsOffset, properties)) true
-                    [|0.0f; 0.0f; 0.0f|] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
+                    [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
                     [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
@@ -1815,7 +1815,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticRelativeSorted do
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray lightProjectionArray [||] lightOrigin (SList.singleton (model, texCoordsOffset, properties)) true
-                    [|0.0f; 0.0f; 0.0f|] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
+                    [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] [||] [||] [||] 0
                     [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()

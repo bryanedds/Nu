@@ -1891,7 +1891,8 @@ module PhysicallyBased =
         for i in 0 .. dec bones.Length do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
+        if lightAmbientColor.Length = 3 then
+            Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
