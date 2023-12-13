@@ -89,5 +89,4 @@ void main()
     // compute albedo, discarding on zero alpha
     vec4 albedoSample = texture(albedoTexture, texCoords);
     if (albedoSample.a == 0.0f) discard;
-    gl_FragDepth = gl_FragCoord.z;
 }

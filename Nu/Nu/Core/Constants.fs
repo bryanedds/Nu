@@ -86,6 +86,10 @@ module Render =
     let [<Uniform>] ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
     let [<Uniform>] ViewportOffset (windowSize : Vector2i) = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
     let [<Uniform>] Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, Resolution))
+    let [<Uniform>] ShadowResolutionX = 1024
+    let [<Uniform>] ShadowResolutionY = ShadowResolutionX
+    let [<Uniform>] ShadowResolutionF = Vector2 (single ShadowResolutionX, single ShadowResolutionY)
+    let [<Uniform>] ShadowResolution = Vector2i (ShadowResolutionX, ShadowResolutionY)
     let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings.["SsaoResolutionDivisor"] with null -> 1 | ssaoResolutionDivisor -> scvalue<int> ssaoResolutionDivisor
     let [<Uniform>] SsaoResolutionX = ResolutionX / SsaoResolutionDivisor
     let [<Uniform>] SsaoResolutionY = ResolutionY / SsaoResolutionDivisor

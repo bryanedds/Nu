@@ -30,7 +30,9 @@ module WorldView =
             // render 3d light
             | Light3dView light ->
                 let renderLight =
-                    { Origin = light.Origin
+                    { LightId = light.LightId
+                      Origin = light.Origin
+                      Rotation = light.Rotation
                       Direction = light.Direction
                       Color = light.Color
                       Brightness = light.Brightness

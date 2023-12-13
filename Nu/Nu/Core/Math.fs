@@ -536,6 +536,12 @@ module Quaternion =
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
 
+    /// Create a look-at rotation quaternion.
+    /// NOTE: this might be less efficient since it uses Matrix4x4's look-at function then converts to quaternion.
+    let CreateLookAt (position, direction, up) =
+        Quaternion.CreateFromRotationMatrix
+            (Matrix4x4.CreateLookAt (position, direction, up))
+
 /// Converts Quaternion types.
 type QuaternionConverter () =
     inherit TypeConverter ()
