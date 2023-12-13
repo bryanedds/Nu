@@ -106,7 +106,7 @@ module AssetGraph =
         else rawAssetExtension
 
     let private writeMagickImageAsPng psdHack (filePath : string) (image : MagickImage) =
-        match Pathf.GetExtensionLower filePath with
+        match PathF.GetExtensionLower filePath with
         | ".png" ->
             use stream = File.OpenWrite filePath
             if psdHack then
@@ -123,16 +123,16 @@ module AssetGraph =
     let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
-        let intermediateFileExtension = Pathf.GetExtensionMixed intermediateFileSubpath
+        let intermediateFileExtension = PathF.GetExtensionMixed intermediateFileSubpath
         let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
 
         // build the refinement file path
         let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
-        let refinementFileSubpath = Pathf.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
+        let refinementFileSubpath = PathF.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
         let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
 
         // refine the asset
-        Directory.CreateDirectory (Pathf.GetDirectoryName refinementFilePath) |> ignore
+        Directory.CreateDirectory (PathF.GetDirectoryName refinementFilePath) |> ignore
         match refinement with
         | PsdToPng ->
             use image = new MagickImage (intermediateFilePath)
@@ -161,12 +161,12 @@ module AssetGraph =
 
             // build input file path
             let inputFileSubpath = asset.FilePath
-            let inputFileExtension = Pathf.GetExtensionMixed inputFileSubpath
+            let inputFileExtension = PathF.GetExtensionMixed inputFileSubpath
             let inputFilePath = inputDirectory + "/" + inputFileSubpath
 
             // build the output file path
             let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
-            let outputFileSubpath = Pathf.ChangeExtension (asset.FilePath, outputFileExtension)
+            let outputFileSubpath = PathF.ChangeExtension (asset.FilePath, outputFileExtension)
             let outputFilePath = outputDirectory + "/" + outputFileSubpath
 
             // build the asset if fully building or if it's out of date
@@ -182,7 +182,7 @@ module AssetGraph =
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
                 let outputFilePath = outputDirectory + "/" + intermediateFileSubpath
-                Directory.CreateDirectory (Pathf.GetDirectoryName outputFilePath) |> ignore
+                Directory.CreateDirectory (PathF.GetDirectoryName outputFilePath) |> ignore
                 try File.Copy (intermediateFilePath, outputFilePath, true)
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
@@ -192,10 +192,10 @@ module AssetGraph =
             let filePaths =
                 [for extension in extensions do
                     for filePath in Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) do
-                        Pathf.Normalize filePath]
+                        PathF.Normalize filePath]
             for filePath in filePaths do
-                let extension = Pathf.GetExtensionLower(filePath).Replace(".", "")
-                let assetName = Pathf.GetFileNameWithoutExtension filePath
+                let extension = PathF.GetExtensionLower(filePath).Replace(".", "")
+                let assetName = PathF.GetFileNameWithoutExtension filePath
                 let tag = AssetTag.make<obj> packageName assetName
                 let asset = Asset.make tag filePath refinements associations
                 if Option.isSome associationOpt
@@ -255,7 +255,7 @@ module AssetGraph =
         // compute the asset graph's tracker file path
         let outputFilePathOpt =
             Option.map (fun (filePath : string) ->
-                outputDirectory + "/" + Pathf.ChangeExtension (Pathf.GetFileName filePath, ".tracker"))
+                outputDirectory + "/" + PathF.ChangeExtension (PathF.GetFileName filePath, ".tracker"))
                 assetGraph.FilePathOpt
 
         // check if the output assetGraph file is newer than the current

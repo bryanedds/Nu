@@ -115,7 +115,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SDL_mixer.Mix_HaltChannel i |> ignore
 
     static member private tryLoadAudioAsset (asset : obj Asset) =
-        match Pathf.GetExtensionLower asset.FilePath with
+        match PathF.GetExtensionLower asset.FilePath with
         | ".wav" ->
             let wavOpt = SDL_mixer.Mix_LoadWAV asset.FilePath
             if wavOpt <> IntPtr.Zero then Some (WavAsset wavOpt)

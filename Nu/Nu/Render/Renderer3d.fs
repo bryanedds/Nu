@@ -704,7 +704,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         GlRenderer3d.invalidateCaches renderer
         match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
         | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
-            let dirPath = Pathf.GetDirectoryName asset.FilePath
+            let dirPath = PathF.GetDirectoryName asset.FilePath
             let faceRightFilePath = dirPath + "/" + faceRightFilePath.Trim ()
             let faceLeftFilePath = dirPath + "/" + faceLeftFilePath.Trim ()
             let faceTopFilePath = dirPath + "/" + faceTopFilePath.Trim ()
@@ -731,7 +731,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match Pathf.GetExtensionLower asset.FilePath with
+        match PathF.GetExtensionLower asset.FilePath with
         | ".raw" ->
             match GlRenderer3d.tryLoadRawAsset asset renderer with
             | Some () -> Some RawAsset
@@ -2422,6 +2422,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             if light.SortableLightDirectional <> 0
                             then MathF.PI_OVER_2 // TODO: P1: orthogonal projection here.
                             else min MathF.PI_OVER_2 light.SortableLightConeOuter // TODO: P1: allow point shadows here
+                        let lightFov = min (MathF.PI - 0.000002741f) lightFov
                         let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
                         GlRenderer3d.renderShadowTexture renderTasks renderer false lightOrigin m4Identity lightView lightProjection shadowFramebuffer
                         shadowBufferIndex <- inc shadowBufferIndex

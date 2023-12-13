@@ -502,7 +502,7 @@ module WorldModule2 =
         /// locked by the engine's subsystems.
         static member tryReloadAssets world =
             let targetDir = AppDomain.CurrentDomain.BaseDirectory
-            let assetSourceDir = Pathf.GetFullPath (targetDir + "../../..")
+            let assetSourceDir = PathF.GetFullPath (targetDir + "../../..")
             match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
             | (Right _, world) -> (true, world)
             | (Left _, world) -> (false, world)
@@ -1172,6 +1172,7 @@ module WorldModule2 =
                         | PointLight -> MathF.PI_OVER_2 // TODO: P1: using point shadows here.
                         | DirectionalLight -> MathF.PI_OVER_2 // TODO: P1: using orthogonal shadows here.
                         | SpotLight (_, coneOuter) -> coneOuter
+                    let lightFov = min (MathF.PI - 0.000002741f) lightFov
                     let lightProjection =
                         Matrix4x4.CreatePerspectiveFieldOfView
                             (lightFov,

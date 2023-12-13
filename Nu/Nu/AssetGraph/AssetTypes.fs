@@ -61,7 +61,7 @@ module TmxExtensions =
                             "This will specify where the engine can find the tile set's associated image asset."
                         raise (TileSetPropertyNotFoundException errorMessage)
                 | (false, _) ->
-                    let name = Pathf.GetFileNameWithoutExtension this.Image.Source
+                    let name = PathF.GetFileNameWithoutExtension this.Image.Source
                     asset tileMapPackage name // infer asset tag
             imageAsset
 

@@ -175,7 +175,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
-        match Pathf.GetExtensionLower asset.FilePath with
+        match PathF.GetExtensionLower asset.FilePath with
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
             match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (Constants.OpenGL.UncompressedTextureFormat, asset.FilePath, packageState.TextureMemo) with
             | Right (textureMetadata, texture) ->
@@ -184,7 +184,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 Log.infoOnce ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
         | ".ttf" ->
-            let fileFirstName = Pathf.GetFileNameWithoutExtension asset.FilePath
+            let fileFirstName = PathF.GetFileNameWithoutExtension asset.FilePath
             let fileFirstNameLength = String.length fileFirstName
             if fileFirstNameLength >= 3 then
                 let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)

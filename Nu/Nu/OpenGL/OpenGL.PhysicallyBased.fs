@@ -326,7 +326,7 @@ module PhysicallyBased =
         if isNull albedoTextureSlot.FilePath
         then albedoTextureSlot.FilePath <- "" // ensure not null
         else
-            albedoTextureSlot.FilePath <- Pathf.Normalize albedoTextureSlot.FilePath
+            albedoTextureSlot.FilePath <- PathF.Normalize albedoTextureSlot.FilePath
             let individualDirectories = albedoTextureSlot.FilePath.Split "/"
             let possibleFilePaths = [for i in dec individualDirectories.Length .. -1 .. 0 do String.join "/" (Array.skip i individualDirectories)]
             let mutable found = false
@@ -345,8 +345,8 @@ module PhysicallyBased =
             else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
 
         // infer possible substitute texture names
-        let albedoTextureDirName =              match albedoTextureSlot.FilePath with null -> "" | filePath -> Pathf.GetDirectoryName filePath
-        let albedoTextureFileName =             Pathf.GetFileName albedoTextureSlot.FilePath
+        let albedoTextureDirName =              match albedoTextureSlot.FilePath with null -> "" | filePath -> PathF.GetDirectoryName filePath
+        let albedoTextureFileName =             PathF.GetFileName albedoTextureSlot.FilePath
         let substitutionPrefix =                if albedoTextureDirName <> "" then albedoTextureDirName + "/" else ""
         let has_bc =                            albedoTextureFileName.Contains "_bc"
         let has_d =                             albedoTextureFileName.Contains "_d"
@@ -412,7 +412,7 @@ module PhysicallyBased =
         let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
         if isNull metallicTextureSlot.FilePath
         then metallicTextureSlot.FilePath <- "" // ensure not null
-        else metallicTextureSlot.FilePath <- Pathf.Normalize metallicTextureSlot.FilePath
+        else metallicTextureSlot.FilePath <- PathF.Normalize metallicTextureSlot.FilePath
         let metallicTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPrefix + metallicTextureSlot.FilePath, textureMemo) with
@@ -446,7 +446,7 @@ module PhysicallyBased =
         let mutable (_, ambientOcclusionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
         if isNull ambientOcclusionTextureSlot.FilePath
         then ambientOcclusionTextureSlot.FilePath <- "" // ensure not null
-        else ambientOcclusionTextureSlot.FilePath <- Pathf.Normalize ambientOcclusionTextureSlot.FilePath
+        else ambientOcclusionTextureSlot.FilePath <- PathF.Normalize ambientOcclusionTextureSlot.FilePath
         let ambientOcclusionTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPrefix + ambientOcclusionTextureSlot.FilePath, textureMemo) with
@@ -474,7 +474,7 @@ module PhysicallyBased =
         let mutable (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
         if isNull emissionTextureSlot.FilePath
         then emissionTextureSlot.FilePath <- "" // ensure not null
-        else emissionTextureSlot.FilePath <- Pathf.Normalize emissionTextureSlot.FilePath
+        else emissionTextureSlot.FilePath <- PathF.Normalize emissionTextureSlot.FilePath
         let emissionTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPrefix + emissionTextureSlot.FilePath, textureMemo) with
@@ -492,7 +492,7 @@ module PhysicallyBased =
         let mutable (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
         if isNull normalTextureSlot.FilePath
         then normalTextureSlot.FilePath <- "" // ensure not null
-        else normalTextureSlot.FilePath <- Pathf.Normalize normalTextureSlot.FilePath
+        else normalTextureSlot.FilePath <- PathF.Normalize normalTextureSlot.FilePath
         let normalTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.UncompressedTextureFormat, dirPrefix + normalTextureSlot.FilePath, textureMemo) with
@@ -511,7 +511,7 @@ module PhysicallyBased =
         let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
         if isNull heightTextureSlot.FilePath
         then heightTextureSlot.FilePath <- "" // ensure not null
-        else heightTextureSlot.FilePath <- Pathf.Normalize heightTextureSlot.FilePath
+        else heightTextureSlot.FilePath <- PathF.Normalize heightTextureSlot.FilePath
         let heightTexture =
             if renderable then
                 match Texture.TryCreateTextureFilteredMemoized (Constants.OpenGL.CompressedColorTextureFormat, dirPrefix + heightTextureSlot.FilePath, textureMemo) with
@@ -1410,7 +1410,7 @@ module PhysicallyBased =
         // attempt to import from assimp scene
         match sceneEir with
         | Right scene ->
-            let dirPath = Pathf.GetDirectoryName filePath
+            let dirPath = PathF.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
             | Right materials ->
                 let animated = scene.Animations.Count <> 0

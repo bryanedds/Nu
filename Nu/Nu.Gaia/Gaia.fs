@@ -717,8 +717,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private trySaveSelectedGroup filePath =
         try World.writeGroupToFile filePath selectedGroup world
-            try let deploymentPath = Pathf.Combine (targetDir, Pathf.GetRelativePath(targetDir, filePath).Replace("../", ""))
-                if Directory.Exists (Pathf.GetDirectoryName deploymentPath) then
+            try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
+                if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                     File.Copy (filePath, deploymentPath, true)
             with exn ->
                 messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
@@ -897,7 +897,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         Array.map (fun line -> line.Replace ("</HintPath>", "")) |>
                         Array.map (fun line -> line.Replace ("=", "")) |>
                         Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> Pathf.Normalize line) |>
+                        Array.map (fun line -> PathF.Normalize line) |>
                         Array.map (fun line -> line.Trim ())
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
                         ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Gaia.BuildName + "/netstandard2.0/Nu.Math.dll\""
@@ -912,7 +912,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         Array.map (fun line -> line.Replace ("/>", "")) |>
                         Array.map (fun line -> line.Replace ("=", "")) |>
                         Array.map (fun line -> line.Replace ("\"", "")) |>
-                        Array.map (fun line -> Pathf.Normalize line) |>
+                        Array.map (fun line -> PathF.Normalize line) |>
                         Array.map (fun line -> line.Trim ())
                     let fsxFileString =
                         String.Join ("\n", Array.map (fun (nugetPath : string) -> "#r \"" + nugetPath + "\"") fsprojNugetPaths) + "\n" +
@@ -963,7 +963,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let filePathAndDirNameAndTypesOpt =
             if not (String.IsNullOrWhiteSpace filePathOpt) then
                 let filePath = filePathOpt
-                try let dirName = Pathf.GetDirectoryName filePath
+                try let dirName = PathF.GetDirectoryName filePath
                     try Directory.SetCurrentDirectory dirName
                         let assembly = Assembly.Load (File.ReadAllBytes filePath)
                         Right (Some (filePath, dirName, assembly.GetTypes ()))
@@ -2506,9 +2506,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if showNewProjectDialog then
 
                         // ensure template directory exists
-                        let programDir = Pathf.GetDirectoryName (Reflection.Assembly.GetEntryAssembly().Location)
-                        let slnDir = Pathf.GetFullPath (programDir + "/../../../../..")
-                        let templateDir = Pathf.GetFullPath (programDir + "/../../../../Nu.Template")
+                        let programDir = PathF.GetDirectoryName (Reflection.Assembly.GetEntryAssembly().Location)
+                        let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
+                        let templateDir = PathF.GetFullPath (programDir + "/../../../../Nu.Template")
                         if Directory.Exists templateDir then
 
                             // prompt user to create new project
@@ -2519,14 +2519,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.SameLine ()
                                 ImGui.InputText ("##newProjectName", &newProjectName, 4096u) |> ignore<bool>
                                 newProjectName <- newProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
-                                let templateIdentifier = Pathf.Denormalize templateDir // this is what dotnet knows the template as for uninstall...
+                                let templateIdentifier = PathF.Denormalize templateDir // this is what dotnet knows the template as for uninstall...
                                 let templateFileName = "Nu.Template.fsproj"
-                                let projectsDir = Pathf.GetFullPath (programDir + "/../../../../../Projects")
-                                let newProjectDir = Pathf.GetFullPath (projectsDir + "/" + newProjectName)
+                                let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
+                                let newProjectDir = PathF.GetFullPath (projectsDir + "/" + newProjectName)
                                 let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net7.0/" + newProjectName + ".dll"
                                 let newFileName = newProjectName + ".fsproj"
-                                let newProject = Pathf.GetFullPath (newProjectDir + "/" + newFileName)
-                                let validName = not (String.IsNullOrWhiteSpace newProjectName) && Array.notExists (fun char -> newProjectName.Contains (string char)) (Pathf.GetInvalidPathChars ())
+                                let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
+                                let validName = not (String.IsNullOrWhiteSpace newProjectName) && Array.notExists (fun char -> newProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
                                 if not validName then ImGui.Text "Invalid project name!"
                                 let validDirectory = not (Directory.Exists newProjectDir)
                                 if not validDirectory then ImGui.Text "Project already exists!"
@@ -2590,7 +2590,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         // configure editor to open new project then exit
                                         let gaiaState = makeGaiaState newProjectDllPath (Some "Title") true
                                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                                        let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
+                                        let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                             Directory.SetCurrentDirectory gaiaDirectory
                                             showRestartDialog <- true
@@ -2636,7 +2636,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 showOpenProjectDialog <- false
                                 let gaiaState = makeGaiaState openProjectFilePath (Some openProjectEditMode) true
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                                let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
+                                let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
@@ -2662,7 +2662,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 showCloseProjectDialog <- false
                                 let gaiaState = GaiaState.defaultState
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                                let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
+                                let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
@@ -2714,7 +2714,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
                         if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
                             snapshot ()
-                            if not (Pathf.HasExtension groupFileDialogState.FilePath) then groupFileDialogState.FilePath <- groupFileDialogState.FilePath + ".nugroup"
+                            if not (PathF.HasExtension groupFileDialogState.FilePath) then groupFileDialogState.FilePath <- groupFileDialogState.FilePath + ".nugroup"
                             showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
 
                     // rename group dialog
@@ -2774,7 +2774,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
                                 let gaiaState = makeGaiaState projectDllPath (Some projectEditMode) false
                                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
-                                let gaiaDirectory = Pathf.GetDirectoryName gaiaFilePath
+                                let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                 with _ -> Log.trace "Could not save gaia state."

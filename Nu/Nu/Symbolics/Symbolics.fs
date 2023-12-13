@@ -24,7 +24,7 @@ module Symbolics =
 
     let private tryLoadSymbol3 metadata packageName (asset : Symbol Asset) =
         try let text = File.ReadAllText asset.FilePath
-            match Pathf.GetExtensionLower asset.FilePath with
+            match PathF.GetExtensionLower asset.FilePath with
             | ".csv" ->
                 try let symbol = Symbol.ofStringCsv metadata.StripCsvHeader text (Some asset.FilePath)
                     Some (metadata, symbol)
