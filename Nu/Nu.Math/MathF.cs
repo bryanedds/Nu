@@ -53,6 +53,11 @@ namespace Nu
         public const float THREE_OVER_PI = 3 * PI / 2;
 
         /// <summary>
+        /// Defines the value of Pi minus a small epsilon to keep it from blowing up operations like Matrix4x4.CreatePerspectiveFieldOfView.
+        /// </summary>
+        public const float PI_MINUS_EPSILON = 3.14159f;
+
+        /// <summary>
         /// Defines the value of E as a <see cref="System.Single"/>.
         /// </summary>
         public const float E = 2.71828182845904523536f;

@@ -1306,6 +1306,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let lightMatrix = light.LightMatrix * modelMatrix
                     let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false true lightBounds presence then
+                        let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> single (2.0 * Math.PI)
+                        let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> single (2.0 * Math.PI)
                         let light =
                             { SortableLightId = 0UL
                               SortableLightOrigin = lightMatrix.Translation
@@ -1317,8 +1319,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                               SortableLightAttenuationQuadratic = light.LightAttenuationQuadratic
                               SortableLightCutoff = light.LightCutoff
                               SortableLightDirectional = match light.LightType with DirectionalLight -> 1 | _ -> 0
-                              SortableLightConeInner = match light.LightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
-                              SortableLightConeOuter = match light.LightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
+                              SortableLightConeInner = coneInner
+                              SortableLightConeOuter = coneOuter
                               SortableLightDesireShadows = 0
                               SortableLightDistanceSquared = Single.MaxValue }
                         renderTasks.RenderLights.Add light
@@ -2324,6 +2326,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderTasks.RenderLightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.Bounds, rlp.Stale))
             | RenderLight3d rl ->
                 let renderTasks = GlRenderer3d.getRenderTasks rl.RenderPass renderer
+                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> single (2.0 * Math.PI)
+                let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> single (2.0 * Math.PI)
                 let light =
                     { SortableLightId = rl.LightId
                       SortableLightOrigin = rl.Origin
@@ -2335,8 +2339,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                       SortableLightAttenuationQuadratic = rl.AttenuationQuadratic
                       SortableLightCutoff = rl.LightCutoff
                       SortableLightDirectional = match rl.LightType with DirectionalLight -> 1 | _ -> 0
-                      SortableLightConeInner = match rl.LightType with SpotLight (coneInner, _) -> coneInner | _ -> single (2.0 * Math.PI)
-                      SortableLightConeOuter = match rl.LightType with SpotLight (_, coneOuter) -> coneOuter | _ -> single (2.0 * Math.PI)
+                      SortableLightConeInner = coneInner
+                      SortableLightConeOuter = coneOuter
                       SortableLightDesireShadows = if rl.DesireShadows then 1 else 0
                       SortableLightDistanceSquared = Single.MaxValue }
                 renderTasks.RenderLights.Add light
@@ -2421,8 +2425,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let lightFov =
                             if light.SortableLightDirectional <> 0
                             then MathF.PI_OVER_2 // TODO: P1: orthogonal projection here.
-                            else min MathF.PI_OVER_2 light.SortableLightConeOuter // TODO: P1: allow point shadows here
-                        let lightFov = min (MathF.PI - 0.000002741f) lightFov
+                            else min MathF.PI_OVER_2 light.SortableLightConeOuter // TODO: P1: emulate point shadows with two max spot lights.
+                        let lightFov = min lightFov MathF.PI_MINUS_EPSILON
                         let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
                         GlRenderer3d.renderShadowTexture renderTasks renderer false lightOrigin m4Identity lightView lightProjection shadowFramebuffer
                         shadowBufferIndex <- inc shadowBufferIndex
