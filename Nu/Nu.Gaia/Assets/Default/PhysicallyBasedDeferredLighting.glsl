@@ -20,6 +20,7 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
+const int SHADOWS_MAX = 4;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
@@ -32,6 +33,7 @@ uniform sampler2D brdfTexture;
 uniform sampler2D irradianceTexture;
 uniform sampler2D environmentFilterTexture;
 uniform sampler2D ssaoTexture;
+uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
