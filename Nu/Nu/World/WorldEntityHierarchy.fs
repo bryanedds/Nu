@@ -54,7 +54,7 @@ module WorldEntityHierarchy =
                                 | Right entity -> (true, Array.append entity.Surnames light.LightNames, entity.Group)
                             let (child, world) = World.createEntity<Light3dDispatcher> DefaultOverlay (Some surnames) group world
                             let world = child.SetColor light.LightColor world
-                            let world = child.SetLightType light.PhysicallyBasedLightType world
+                            let world = child.SetLightType light.LightType world
                             let (position, rotation, world) =
                                 let transform = light.LightMatrix
                                 let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
@@ -195,11 +195,11 @@ module WorldEntityHierarchy =
 module FreezeFacetModule =
 
     type Entity with
-        member this.GetFrozenRenderLightProbes3d world : RenderLightProbe3d array = this.Get (nameof this.FrozenRenderLightProbes3d) world
-        member this.SetFrozenRenderLightProbes3d (value : RenderLightProbe3d array) world = this.Set (nameof this.FrozenRenderLightProbes3d) value world
+        member this.GetFrozenRenderLightProbes3d world : LightProbe3dValue array = this.Get (nameof this.FrozenRenderLightProbes3d) world
+        member this.SetFrozenRenderLightProbes3d (value : LightProbe3dValue array) world = this.Set (nameof this.FrozenRenderLightProbes3d) value world
         member this.FrozenRenderLightProbes3d = lens (nameof this.FrozenRenderLightProbes3d) this this.GetFrozenRenderLightProbes3d this.SetFrozenRenderLightProbes3d
-        member this.GetFrozenRenderLights3d world : RenderLight3d array = this.Get (nameof this.FrozenRenderLights3d) world
-        member this.SetFrozenRenderLights3d (value : RenderLight3d array) world = this.Set (nameof this.FrozenRenderLights3d) value world
+        member this.GetFrozenRenderLights3d world : Light3dValue array = this.Get (nameof this.FrozenRenderLights3d) world
+        member this.SetFrozenRenderLights3d (value : Light3dValue array) world = this.Set (nameof this.FrozenRenderLights3d) value world
         member this.FrozenRenderLights3d = lens (nameof this.FrozenRenderLights3d) this this.GetFrozenRenderLights3d this.SetFrozenRenderLights3d
         member this.GetFrozenRenderStaticModelSurfaces world : StaticModelSurfaceValue array = this.Get (nameof this.FrozenRenderStaticModelSurfaces) world
         member this.SetFrozenRenderStaticModelSurfaces (value : StaticModelSurfaceValue array) world = this.Set (nameof this.FrozenRenderStaticModelSurfaces) value world
@@ -256,13 +256,15 @@ module FreezeFacetModule =
                 let probes = entity.GetFrozenRenderLightProbes3d world
                 for i in 0 .. dec probes.Length do
                     let probe = probes.[i]
-                    World.enqueueRenderMessage3d (RenderLightProbe3d probe) world
+                    let renderProbe = { LightProbeId = probe.LightProbeId; Enabled = probe.Enabled; Origin = probe.Origin; Bounds = probe.Bounds; Stale = probe.Stale; RenderPass = renderPass }
+                    World.enqueueRenderMessage3d (RenderLightProbe3d renderProbe) world
                     if probe.Stale then probes.[i] <- { probe with Stale = false }
 
             // render lights
             if World.boundsInView3d false true presenceConferred bounds world then
                 for light in entity.GetFrozenRenderLights3d world do
-                    World.enqueueRenderMessage3d (RenderLight3d light) world
+                    let renderLight = { LightId = light.LightId; Origin = light.Origin; Rotation = light.Rotation; Direction = light.Direction; Color = light.Color; Brightness = light.Brightness; AttenuationLinear = light.AttenuationLinear; AttenuationQuadratic = light.AttenuationQuadratic; LightCutoff = light.LightCutoff; LightType = light.LightType; DesireShadows = light.DesireShadows; RenderPass = renderPass }
+                    World.enqueueRenderMessage3d (RenderLight3d renderLight) world
 
             // render surfaces
             if World.boundsInView3d false false presenceConferred bounds world then

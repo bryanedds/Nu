@@ -42,6 +42,7 @@ uniform float lightCutoffs[LIGHTS_MAX];
 uniform int lightDirectionals[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
+uniform int lightShadowIndices[LIGHTS_MAX];
 uniform int lightsCount;
 
 in vec2 texCoordsOut;

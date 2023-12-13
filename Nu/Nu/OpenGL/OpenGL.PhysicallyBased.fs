@@ -152,7 +152,8 @@ module PhysicallyBased =
           LightAttenuationLinear : single
           LightAttenuationQuadratic : single
           LightCutoff : single
-          PhysicallyBasedLightType : LightType }
+          LightType : LightType
+          LightDesireShadows : bool }
 
     /// A part of a physically-based hierarchy.
     type PhysicallyBasedPart =
@@ -205,6 +206,7 @@ module PhysicallyBased =
           LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
+          LightShadowIndicesUniform : int
           LightsCountUniform : int
           PhysicallyBasedShader : uint }
 
@@ -290,6 +292,7 @@ module PhysicallyBased =
           LightDirectionalsUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
+          LightShadowIndicesUniform : int
           LightsCountUniform : int
           PhysicallyBasedDeferredLightingShader : uint }
 
@@ -1472,7 +1475,8 @@ module PhysicallyBased =
                                           LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
                                           LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
                                           LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
-                                          PhysicallyBasedLightType = lightType }
+                                          LightType = lightType
+                                          LightDesireShadows = false }
                                     lights.Add physicallyBasedLight
                                     yield PhysicallyBasedLight physicallyBasedLight
 
@@ -1549,6 +1553,7 @@ module PhysicallyBased =
         let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
+        let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
 
         // make shader record
@@ -1584,6 +1589,7 @@ module PhysicallyBased =
           LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
+          LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
           PhysicallyBasedShader = shader }
 
@@ -1762,6 +1768,7 @@ module PhysicallyBased =
         let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
+        let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
 
         // make shader record
@@ -1786,6 +1793,7 @@ module PhysicallyBased =
           LightDirectionalsUniform = lightDirectionalsUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
+          LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
           PhysicallyBasedDeferredLightingShader = shader }
 
@@ -1869,6 +1877,7 @@ module PhysicallyBased =
          lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
+         lightShadowIndices : int array,
          lightsCount : int,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
@@ -1922,6 +1931,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+        Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         Hl.Assert ()
 
@@ -2512,6 +2522,7 @@ module PhysicallyBased =
          lightDirectionals : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
+         lightShadowIndices : int array,
          lightsCount : int,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredLightingShader) =
@@ -2539,6 +2550,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+        Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         Hl.Assert ()
 

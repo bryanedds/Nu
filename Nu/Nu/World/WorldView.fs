@@ -40,7 +40,8 @@ module WorldView =
                       AttenuationQuadratic = light.AttenuationQuadratic
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
-                      DesireShadows = false }
+                      DesireShadows = false
+                      RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderLight3d renderLight) world
 
             // render billboard

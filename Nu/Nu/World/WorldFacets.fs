@@ -1988,14 +1988,15 @@ module SkyBoxFacetModule =
              define Entity.Brightness 1.0f
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
-        override this.Render (_, entity, world) =
+        override this.Render (renderPass, entity, world) =
             World.enqueueRenderMessage3d
                 (RenderSkyBox
                     { AmbientColor = entity.GetAmbientColor world
                       AmbientBrightness = entity.GetAmbientBrightness world
                       CubeMapColor = entity.GetColor world
                       CubeMapBrightness = entity.GetBrightness world
-                      CubeMap = entity.GetCubeMap world })
+                      CubeMap = entity.GetCubeMap world
+                      RenderPass = renderPass })
                 world
 
 [<AutoOpen>]
@@ -2056,13 +2057,13 @@ module LightProbe3dFacetModule =
                 entity.SetProbeStalePrevious false world
             else world
             
-        override this.Render (_, entity, world) =
+        override this.Render (renderPass, entity, world) =
             let id = entity.GetId world
             let enabled = entity.GetEnabled world
             let position = entity.GetPosition world
             let bounds = entity.GetProbeBounds world
             let stale = entity.GetProbeStalePrevious world
-            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }) world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale; RenderPass = renderPass }) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -2130,7 +2131,7 @@ module Light3dFacetModule =
              define Entity.LightType PointLight
              define Entity.DesireShadows false]
 
-        override this.Render (_, entity, world) =
+        override this.Render (renderPass, entity, world) =
             if entity.GetEnabled world then
                 let lightId = entity.GetId world
                 let position = entity.GetPosition world
@@ -2154,7 +2155,8 @@ module Light3dFacetModule =
                           AttenuationQuadratic = attenuationQuadratic
                           LightCutoff = lightCutoff
                           LightType = lightType
-                          DesireShadows = desireShadows })
+                          DesireShadows = desireShadows
+                          RenderPass = renderPass })
                     world
 
         override this.RayCast (ray, entity, world) =
