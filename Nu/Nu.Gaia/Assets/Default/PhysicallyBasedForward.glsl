@@ -69,6 +69,7 @@ const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
+const int SHADOWS_MAX = 4;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
@@ -85,6 +86,7 @@ uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
+uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];

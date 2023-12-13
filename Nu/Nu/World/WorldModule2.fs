@@ -1158,7 +1158,7 @@ module WorldModule2 =
                 Seq.map (fun (light : Entity) -> (Vector3.DistanceSquared (eyeCenter, light.GetPosition world)), light) |>
                 Array.ofSeq |>
                 Array.sortBy fst |>
-                Array.tryTake Constants.Render.LightsWithShadowsMax |>
+                Array.tryTake Constants.Render.ShadowsMax |>
                 Array.map snd
             let world =
                 Seq.fold (fun world (light : Entity) ->
