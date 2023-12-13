@@ -77,17 +77,17 @@ module Framebuffer =
         Gl.DeleteFramebuffers [|framebuffer|]
         Gl.DeleteTextures [|position|]
 
-    /// Create shadow mapping buffers.
-    let TryCreateShadowMappingBuffers () =
+    /// Create shadow buffers.
+    let TryCreateShadowBuffers () =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
         Hl.Assert ()
 
-        // create shadow mapping buffer
-        let shadowMapping = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, shadowMapping)
+        // create shadow texture buffer
+        let shadowTexture = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, shadowTexture)
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.DepthComponent, Constants.Render.ShadowResolutionX, Constants.Render.ShadowResolutionY, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
@@ -95,9 +95,9 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Hl.Assert ()
 
-        // associate shadow mapping with frame buffer
+        // associate shadow texture with frame buffer
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2d, shadowMapping, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2d, shadowTexture, 0)
         Gl.DrawBuffer DrawBufferMode.None
         Gl.ReadBuffer ReadBufferMode.None
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
@@ -105,13 +105,13 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete
-        then Right (shadowMapping, framebuffer)
+        then Right (shadowTexture, framebuffer)
         else Left "Could not create complete shadow mapping framebuffer."
 
-    /// Destroy light mapping buffers.
-    let DestroyShadowMappingBuffers (lightMapping, framebuffer) =
+    /// Destroy shadow buffers.
+    let DestroyShadowBuffers (shadowTexture, framebuffer) =
         Gl.DeleteFramebuffers [|framebuffer|]
-        Gl.DeleteTextures [|lightMapping|]
+        Gl.DeleteTextures [|shadowTexture|]
 
     /// Create a geometry buffers.
     let TryCreateGeometryBuffers () =
