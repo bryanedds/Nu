@@ -1945,10 +1945,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
         Gl.ActiveTexture TextureUnit.Texture9
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
-        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+        for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i])
-        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+        for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i])
         Hl.Assert ()
@@ -2057,10 +2057,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.ActiveTexture TextureUnit.Texture9
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+        for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
+        for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()

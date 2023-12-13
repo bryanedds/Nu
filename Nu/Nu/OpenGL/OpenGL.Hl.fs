@@ -104,10 +104,10 @@ module Hl =
     let EndFrame () =
         () // nothing to do
 
-    /// Save the current bound framebuffer to an image file.
+    /// Save the current bound RGBA framebuffer to an image file.
     /// Only works on Windows platforms for now.
     /// TODO: make this work on non-Windows platforms!
-    let SaveFramebufferToBitmap width height (filePath : string) =
+    let SaveFramebufferRgbaToBitmap width height (filePath : string) =
         let platform = Environment.OSVersion.Platform
         if platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
             let pixelFloats = Array.zeroCreate<single> (width * height * 4)
@@ -126,3 +126,21 @@ module Hl =
                 bitmap.UnlockBits bitmapData
                 bitmap.Save (filePath, Drawing.Imaging.ImageFormat.Bmp)
             finally handle.Free ()
+
+    /// Save the current bound framebuffer to an image file.
+    /// Only works on Windows platforms for now.
+    /// TODO: make this work on non-Windows platforms!
+    let SaveFramebufferDepthToBitmap width height (filePath : string) =
+        let pixelFloats = Array.zeroCreate<single> (width * height)
+        let handle = GCHandle.Alloc (pixelFloats, GCHandleType.Pinned)
+        try
+            let pixelDataPtr = handle.AddrOfPinnedObject ()
+            Gl.ReadPixels (0, 0, width, height, PixelFormat.DepthComponent, PixelType.Float, pixelDataPtr)
+            let pixelBytes = pixelFloats |> Array.map (fun depth -> [|0uy; 0uy; byte (depth * 255.0f); 255uy|]) |> Array.concat
+            use bitmap = new Drawing.Bitmap (width, height, Drawing.Imaging.PixelFormat.Format32bppArgb)
+            let bitmapData = bitmap.LockBits (Drawing.Rectangle (0, 0, width, height), Drawing.Imaging.ImageLockMode.WriteOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
+            Marshal.Copy (pixelBytes, 0, bitmapData.Scan0, pixelBytes.Length)
+            bitmap.UnlockBits bitmapData
+            bitmap.Save (filePath, Drawing.Imaging.ImageFormat.Bmp)
+        finally
+            handle.Free ()

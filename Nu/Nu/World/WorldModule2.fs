@@ -1164,6 +1164,7 @@ module WorldModule2 =
                 Seq.fold (fun world (light : Entity) ->
                     let lightViewInverse =
                         Matrix4x4.CreateFromQuaternion (light.GetRotation world) *
+                        Matrix4x4.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2) *
                         Matrix4x4.CreateTranslation (light.GetPosition world)
                     let lightView = lightViewInverse.Inverted
                     let lightFov =
@@ -1178,7 +1179,7 @@ module WorldModule2 =
                              Constants.Render.NearPlaneDistanceEnclosed,
                              light.GetLightCutoff world)
                     let lightFrustum = Frustum (lightView * lightProjection)
-                    World.renderSimulantsInternal skipCulling (Some lightFrustum) (ShadowPass (light.GetId world)) world)
+                    World.renderSimulantsInternal false (Some lightFrustum) (ShadowPass (light.GetId world)) world)
                     world lightsWithShadows
 
             // render simulants normally

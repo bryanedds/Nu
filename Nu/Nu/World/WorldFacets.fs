@@ -2132,6 +2132,7 @@ module Light3dFacetModule =
 
         override this.Render (_, entity, world) =
             if entity.GetEnabled world then
+                let lightId = entity.GetId world
                 let position = entity.GetPosition world
                 let rotation = entity.GetRotation world
                 let color = entity.GetColor world
@@ -2143,7 +2144,9 @@ module Light3dFacetModule =
                 let desireShadows = entity.GetDesireShadows world
                 World.enqueueRenderMessage3d
                     (RenderLight3d
-                        { Origin = position
+                        { LightId = lightId
+                          Origin = position
+                          Rotation = rotation
                           Direction = Vector3.Transform (v3Up, rotation)
                           Color = color
                           Brightness = brightness
