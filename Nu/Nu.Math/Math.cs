@@ -18,6 +18,11 @@ namespace Nu
     public static class Math
     {
         /// <summary>
+        /// Defines the value of Pi minus a small epsilon to keep it from blowing up operations like Matrix4x4.CreatePerspectiveFieldOfView.
+        /// </summary>
+        public const double PI_MINUS_EPSILON = 3.14159;
+
+        /// <summary>
         /// Returns the next power of two that is greater than or equal to the specified number.
         /// </summary>
         /// <param name="n">The specified number.</param>

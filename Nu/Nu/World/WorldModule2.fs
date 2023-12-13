@@ -1172,7 +1172,7 @@ module WorldModule2 =
                         | PointLight -> MathF.PI_OVER_2 // TODO: P1: using point shadows here.
                         | DirectionalLight -> MathF.PI_OVER_2 // TODO: P1: using orthogonal shadows here.
                         | SpotLight (_, coneOuter) -> coneOuter
-                    let lightFov = min (MathF.PI - 0.000002741f) lightFov
+                    let lightFov = min lightFov MathF.PI_MINUS_EPSILON
                     let lightProjection =
                         Matrix4x4.CreatePerspectiveFieldOfView
                             (lightFov,
