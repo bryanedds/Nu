@@ -20,7 +20,7 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
-const int SHADOWS_MAX = 4;
+const int SHADOWS_MAX = 2;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
