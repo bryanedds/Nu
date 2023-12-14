@@ -1162,20 +1162,20 @@ module WorldModule2 =
                 Array.map snd
             let world =
                 Seq.fold (fun world (light : Entity) ->
-                    let lightViewInverse =
+                    let shadowViewInverse =
                         Matrix4x4.CreateFromQuaternion (light.GetRotation world) *
                         Matrix4x4.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2) *
                         Matrix4x4.CreateTranslation (light.GetPosition world)
-                    let lightView = lightViewInverse.Inverted
-                    let lightFov =
+                    let shadowView = shadowViewInverse.Inverted
+                    let shadowFov =
                         match light.GetLightType world with
                         | PointLight -> MathF.PI_OVER_2 // TODO: P1: using point shadows here.
                         | DirectionalLight -> MathF.PI_OVER_2 // TODO: P1: using orthogonal shadows here.
                         | SpotLight (_, coneOuter) -> coneOuter
-                    let lightFov = min lightFov MathF.PI_MINUS_EPSILON
-                    let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.GetLightCutoff world)
-                    let lightFrustum = Frustum (lightView * lightProjection)
-                    World.renderSimulantsInternal false (Some lightFrustum) (ShadowPass (light.GetId world)) world)
+                    let shadowFov = min shadowFov MathF.PI_MINUS_EPSILON
+                    let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.GetLightCutoff world)
+                    let shadowFrustum = Frustum (shadowView * shadowProjection)
+                    World.renderSimulantsInternal false (Some shadowFrustum) (ShadowPass (light.GetId world, shadowFrustum)) world)
                     world lightsWithShadows
 
             // render simulants normally

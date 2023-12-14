@@ -58,10 +58,27 @@ type [<Struct>] RenderType =
     | ForwardRenderType of Subsort : single * Sort : single
 
 /// Desribes the render pass at play.
-type RenderPass =
+/// OPTIMIZATION: uses partial hashing for speed.
+type [<CustomEquality; NoComparison>] RenderPass =
     | NormalPass
-    | ShadowPass of LightId : uint64
-    | ReflectionPass of ReflectorId : int64
+    | ShadowPass of LightId : uint64 * ShadowFrustum : Frustum
+    | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
+
+    override this.Equals thatObj =
+        match thatObj with
+        | :? RenderPass as that ->
+            match (this, that) with
+            | (NormalPass, NormalPass) -> true
+            | (ShadowPass (lightId, _), ShadowPass (lightId2, _)) -> lightId = lightId2
+            | (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
+            | (_, _) -> false
+        | _ -> false
+
+    override this.GetHashCode () =
+        match this with
+        | NormalPass -> 0
+        | ShadowPass (lightId, _) -> hash lightId
+        | ReflectionPass (reflectorId, _) -> hash reflectorId
 
 /// An asset that is used for rendering.
 type RenderAsset =

@@ -1336,7 +1336,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let unculled =
                         match renderPass with // OPTIMIZATION: in normal pass, we cull surfaces based on view.
                         | NormalPass -> Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence
-                        | _ -> true
+                        | ShadowPass (_, shadowFrustum) -> Presence.intersects3d shadowFrustum shadowFrustum shadowFrustum box3Zero false false surfaceBounds presence
+                        | ReflectionPass (_, reflFrustum) -> Presence.intersects3d reflFrustum reflFrustum reflFrustum box3Zero false false surfaceBounds presence
                     if skipCulling || unculled then
                         GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, surface, renderType, renderPass, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
@@ -2420,24 +2421,24 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
             if shadowBufferIndex < Constants.Render.ShadowsMax then
                 match renderPass with
-                | ShadowPass lightId ->
+                | ShadowPass (lightId, _) ->
                     match renderer.LightsDesiringShadows.TryGetValue lightId with
                     | (true, light) ->
                         let (_, shadowFramebuffer) = renderer.ShadowBuffers.[shadowBufferIndex]
-                        let lightOrigin = light.SortableLightOrigin
-                        let lightViewInverse =
+                        let shadowOrigin = light.SortableLightOrigin
+                        let shadowViewInverse =
                             Matrix4x4.CreateFromQuaternion light.SortableLightRotation *
                             Matrix4x4.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2) *
                             Matrix4x4.CreateTranslation light.SortableLightOrigin
-                        let lightView = lightViewInverse.Inverted
-                        let lightFov =
+                        let shadowView = shadowViewInverse.Inverted
+                        let shadowFov =
                             if light.SortableLightDirectional <> 0
                             then MathF.PI_OVER_2 // TODO: P1: orthogonal projection here.
                             else min MathF.PI_OVER_2 light.SortableLightConeOuter // TODO: P1: emulate point shadows with two max spot lights.
-                        let lightFov = min lightFov MathF.PI_MINUS_EPSILON
-                        let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
-                        GlRenderer3d.renderShadowTexture renderTasks renderer false lightOrigin m4Identity lightView lightProjection shadowFramebuffer
-                        renderer.ShadowMatrices.[shadowBufferIndex] <- lightView * lightProjection
+                        let shadowFov = min shadowFov MathF.PI_MINUS_EPSILON
+                        let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
+                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowFramebuffer
+                        renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
                         shadowBufferIndex <- inc shadowBufferIndex
                     | (false, _) -> ()
                 | _ -> ()
