@@ -2037,8 +2037,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.RenderLights
 
         // compute light shadow indices according to sorted lights
-        let lightShadowIndices =
-            SortableLight.getLightShadowIndices renderer.LightsDesiringShadows lightIds lightDesireShadows renderTasks.RenderLights.Count
+        let lightShadowIndicesUnpadded = SortableLight.getLightShadowIndices renderer.LightsDesiringShadows lightIds lightDesireShadows renderTasks.RenderLights.Count
+        let lightShadowIndices = Array.pad (Constants.Render.ShadowsMax - lightShadowIndicesUnpadded.Length) -1 lightShadowIndicesUnpadded
 
         // grab shadow textures
         let shadowTextures = Array.map fst renderer.ShadowBuffers

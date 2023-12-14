@@ -122,7 +122,7 @@ void main()
     {
         // compute shadow factor
         int ShadowIndex = lightShadowIndices[i];
-        float ShadowFactor = 0.0;
+        float ShadowFactor = 1.0;
         if (ShadowIndex > -1)
         {
             vec4 LightSpacePos = shadowMatrices[ShadowIndex] * vec4(position, 1.0);
@@ -132,7 +132,7 @@ void main()
             UVCoords.y = 0.5 * ProjCoords.y + 0.5;
             float Z = 0.5 * ProjCoords.z + 0.5;
             float Depth = texture(shadowTextures[ShadowIndex], UVCoords).r;
-            ShadowFactor = Depth < Z + 0.00001 ? 0.5 : 1.0;
+            ShadowFactor = Depth < Z + 0.00001 ? 0.25 : 1.0;
         }
 
         // per-light radiance
