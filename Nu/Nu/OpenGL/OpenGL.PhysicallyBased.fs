@@ -209,6 +209,7 @@ module PhysicallyBased =
           LightConeOutersUniform : int
           LightShadowIndicesUniform : int
           LightsCountUniform : int
+          ShadowMatricesUniforms : int array
           PhysicallyBasedShader : uint }
 
     /// Describes a physically-based deferred terrain shader that's loaded into GPU.
@@ -296,6 +297,7 @@ module PhysicallyBased =
           LightConeOutersUniform : int
           LightShadowIndicesUniform : int
           LightsCountUniform : int
+          ShadowMatricesUniforms : int array
           PhysicallyBasedDeferredLightingShader : uint }
 
     /// Describes a blur pass of a physically-based shader that's loaded into GPU.
@@ -1560,6 +1562,9 @@ module PhysicallyBased =
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
+        let shadowMatricesUniforms =
+            Array.init Constants.Render.ShadowsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "shadowMatrices[" + string i + "]")
 
         // make shader record
         { ViewUniform = viewUniform
@@ -1597,6 +1602,7 @@ module PhysicallyBased =
           LightConeOutersUniform = lightConeOutersUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
+          ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedShader = shader }
 
     /// Create a physically-based terrain shader.
@@ -1779,6 +1785,9 @@ module PhysicallyBased =
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
+        let shadowMatricesUniforms =
+            Array.init Constants.Render.ShadowsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "shadowMatrices[" + string i + "]")
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
@@ -1805,6 +1814,7 @@ module PhysicallyBased =
           LightConeOutersUniform = lightConeOutersUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
           LightsCountUniform = lightsCountUniform
+          ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedDeferredLightingShader = shader }
 
     /// Create a physically-based shader for the blur pass of rendering.
@@ -1890,6 +1900,7 @@ module PhysicallyBased =
          lightConeOuters : single array,
          lightShadowIndices : int array,
          lightsCount : int,
+         shadowMatrices : single array array,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -1908,7 +1919,7 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        for i in 0 .. dec bones.Length do
+        for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         if lightAmbientColor.Length = 3 then
@@ -1946,6 +1957,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+        for i in 0 .. dec (min Constants.Render.ShadowsMax shadowMatrices.Length) do
+            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
         Hl.Assert ()
 
         // setup textures
@@ -2544,6 +2557,7 @@ module PhysicallyBased =
          lightConeOuters : single array,
          lightShadowIndices : int array,
          lightsCount : int,
+         shadowMatrices : single array array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredLightingShader) =
 
@@ -2574,6 +2588,8 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+        for i in 0 .. dec (min Constants.Render.ShadowsMax shadowMatrices.Length) do
+            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
         Hl.Assert ()
 
         // setup textures

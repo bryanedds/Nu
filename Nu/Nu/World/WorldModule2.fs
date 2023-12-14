@@ -1173,12 +1173,7 @@ module WorldModule2 =
                         | DirectionalLight -> MathF.PI_OVER_2 // TODO: P1: using orthogonal shadows here.
                         | SpotLight (_, coneOuter) -> coneOuter
                     let lightFov = min lightFov MathF.PI_MINUS_EPSILON
-                    let lightProjection =
-                        Matrix4x4.CreatePerspectiveFieldOfView
-                            (lightFov,
-                             1.0f,
-                             Constants.Render.NearPlaneDistanceEnclosed,
-                             light.GetLightCutoff world)
+                    let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.GetLightCutoff world)
                     let lightFrustum = Frustum (lightView * lightProjection)
                     World.renderSimulantsInternal false (Some lightFrustum) (ShadowPass (light.GetId world)) world)
                     world lightsWithShadows

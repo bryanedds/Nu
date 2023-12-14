@@ -657,6 +657,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           SsaoBlurBuffers : uint * uint * uint
           FilterBuffers : uint * uint * uint
           ShadowBuffers : (uint * uint) array
+          ShadowMatrices : Matrix4x4 array
           CubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           BillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -1509,7 +1510,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private renderPhysicallyBasedSurfaces
         viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
         lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount
+        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
@@ -1582,7 +1583,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (viewArray, projectionArray, bonesArray, eyeCenter, parameters.Length,
                  renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
                  lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
-                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount,
+                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedTerrain viewArray geometryProjectionArray eyeCenter terrainDescriptor geometry shader renderer =
@@ -1788,7 +1789,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray lightProjectionArray [||] lightOrigin entry.Value false
                     [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] shadowTextures [||] [||] [||] 0
-                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
+                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0 [||]
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -1797,7 +1798,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray lightProjectionArray [||] lightOrigin entry.Value false
                     [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] shadowTextures [||] [||] [||] 0
-                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
+                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0 [||]
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -1810,7 +1811,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray lightProjectionArray bonesArray lightOrigin parameters false
                     [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] shadowTextures [||] [||] [||] 0
-                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
+                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0 [||]
                     surface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -1822,7 +1823,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray lightProjectionArray bonesArray lightOrigin parameters false
                 [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] shadowTextures [||] [||] [||] 0
-                [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
+                [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0 [||]
                 surface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
@@ -1841,7 +1842,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray lightProjectionArray [||] lightOrigin (SList.singleton (model, texCoordsOffset, properties)) true
                     [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] shadowTextures [||] [||] [||] 0
-                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
+                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0 [||]
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -1850,7 +1851,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray lightProjectionArray [||] lightOrigin (SList.singleton (model, texCoordsOffset, properties)) true
                     [||] 0.0f renderer.BrdfTexture 0u 0u [||] [||] shadowTextures [||] [||] [||] 0
-                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0
+                    [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] 0 [||]
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2042,6 +2043,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         // grab shadow textures
         let shadowTextures = Array.map fst renderer.ShadowBuffers
 
+        // grab shadow matrices
+        let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
+
         // sort absolute forward surfaces from far to near
         let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderSurfacesForwardStaticAbsolute
         renderTasks.RenderSurfacesForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
@@ -2067,7 +2071,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value false
                     lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                     entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -2076,7 +2080,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value false
                 lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                 entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2089,7 +2093,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters false
                     lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                     surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -2101,7 +2105,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters false
                 lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                 surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2244,7 +2248,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, lightAmbientColor, lightAmbientBrightness,
              positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoBlurTexture, shadowTextures,
-             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount,
+             lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
 
@@ -2268,7 +2272,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                     lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                     surface renderer.PhysicallyBasedForwardStaticShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -2283,7 +2287,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                 lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                 surface renderer.PhysicallyBasedForwardStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2429,6 +2433,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let lightFov = min lightFov MathF.PI_MINUS_EPSILON
                         let lightProjection = Matrix4x4.CreatePerspectiveFieldOfView (lightFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
                         GlRenderer3d.renderShadowTexture renderTasks renderer false lightOrigin m4Identity lightView lightProjection shadowFramebuffer
+                        renderer.ShadowMatrices.[shadowBufferIndex] <- lightView * lightProjection
                         shadowBufferIndex <- inc shadowBufferIndex
                     | (false, _) -> ()
                 | _ -> ()
@@ -2572,6 +2577,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | Right shadowBuffers -> shadowBuffers
                 | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
 
+        // create shadow matrices array
+        let shadowMatrices =
+            Array.zeroCreate<Matrix4x4> Constants.Render.ShadowsMax
+
         // create white cube map
         let cubeMap =
             let white = "Assets/Default/White.bmp"
@@ -2699,6 +2708,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               SsaoBlurBuffers = ssaoBlurBuffers
               FilterBuffers = filterBuffers
               ShadowBuffers = shadowBuffers
+              ShadowMatrices = shadowMatrices
               CubeMapGeometry = cubeMapGeometry
               BillboardGeometry = billboardGeometry
               PhysicallyBasedQuad = physicallyBasedQuad

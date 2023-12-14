@@ -46,6 +46,7 @@ uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
 uniform int lightShadowIndices[LIGHTS_MAX];
 uniform int lightsCount;
+uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
@@ -119,6 +120,21 @@ void main()
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
     {
+        // compute shadow factor
+        int ShadowIndex = lightShadowIndices[i];
+        float ShadowFactor = 0.0;
+        if (ShadowIndex > -1)
+        {
+            vec4 LightSpacePos = shadowMatrices[ShadowIndex] * vec4(position, 1.0);
+            vec3 ProjCoords = LightSpacePos.xyz / LightSpacePos.w;
+            vec2 UVCoords;
+            UVCoords.x = 0.5 * ProjCoords.x + 0.5;
+            UVCoords.y = 0.5 * ProjCoords.y + 0.5;
+            float Z = 0.5 * ProjCoords.z + 0.5;
+            float Depth = texture(shadowTextures[ShadowIndex], UVCoords).r;
+            ShadowFactor = Depth < Z + 0.00001 ? 0.5 : 1.0;
+        }
+
         // per-light radiance
         vec3 d = lightOrigins[i] - position;
         float distanceSquared = dot(d, d);
@@ -165,7 +181,7 @@ void main()
         float nDotL = max(dot(normal, l), 0.0);
 
         // add to outgoing lightAccum
-        lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
+        lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * ShadowFactor;
     }
 
     // compute light ambient terms
