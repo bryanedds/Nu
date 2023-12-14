@@ -1333,7 +1333,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | Some Deferred -> DeferredRenderType
                         | Some (Forward (subsort, sort)) -> ForwardRenderType (subsort, sort)
                         | None -> renderType
-                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence then
+                    let unculled =
+                        match renderPass with // OPTIMIZATION: in normal pass, we cull surfaces based on view.
+                        | NormalPass -> Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence
+                        | _ -> true
+                    if skipCulling || unculled then
                         GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, surface, renderType, renderPass, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
         | _ -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
