@@ -221,19 +221,17 @@ void main()
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
     {
-        // compute shadow factor
-        int ShadowIndex = lightShadowIndices[i];
-        float ShadowFactor = 1.0;
-        if (ShadowIndex > -1)
+        // compute shadow scalar
+        int shadowIndex = lightShadowIndices[i];
+        float shadowScalar = 1.0;
+        if (shadowIndex > -1)
         {
-            vec4 LightSpacePos = shadowMatrices[ShadowIndex] * vec4(position, 1.0);
-            vec3 ProjCoords = LightSpacePos.xyz / LightSpacePos.w;
-            vec2 UVCoords;
-            UVCoords.x = 0.5 * ProjCoords.x + 0.5;
-            UVCoords.y = 0.5 * ProjCoords.y + 0.5;
-            float Z = 0.5 * ProjCoords.z + 0.5;
-            float Depth = texture(shadowTextures[ShadowIndex], UVCoords).r;
-            ShadowFactor = Depth < Z - 0.00001 ? 0.25 : 1.0;
+            vec4 lightPosition = shadowMatrices[shadowIndex] * vec4(position, 1.0);
+            vec3 shadowTexCoordsProj = lightPosition.xyz / lightPosition.w;
+            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+            float z = 0.5 * shadowTexCoordsProj.z + 0.5;
+            float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
+            shadowScalar = depth < z - 0.00001 ? 0.0 : 1.0;
         }
 
         // per-light radiance
@@ -284,7 +282,7 @@ void main()
         float nDotL = max(dot(n, l), 0.0);
 
         // add to outgoing lightAccum
-        lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL * ShadowFactor;
+        lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL * shadowScalar;
     }
 
     // determine light map indices, including their validity
