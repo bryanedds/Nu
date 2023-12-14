@@ -37,7 +37,7 @@ type [<Struct>] Presence =
             | Omnipresent -> true
         else
             match presence with
-            | Enclosed | Exposed | Imposter -> lightBox.Intersects bounds
+            | Enclosed | Exposed | Imposter -> lightBox.Intersects bounds // TODO: P1: consider making lightBox optional so it doesn't just intersect everything at origin.
             | Omnipresent -> true
 
 [<AutoOpen>]
