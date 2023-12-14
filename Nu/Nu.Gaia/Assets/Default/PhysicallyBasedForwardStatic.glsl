@@ -224,12 +224,12 @@ void main()
         // compute shadow scalar
         int shadowIndex = lightShadowIndices[i];
         float shadowScalar = 1.0;
-        if (shadowIndex > -1)
+        if (shadowIndex >= 0)
         {
-            vec4 lightPosition = shadowMatrices[shadowIndex] * vec4(position, 1.0);
-            vec3 shadowTexCoordsProj = lightPosition.xyz / lightPosition.w;
+            vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
+            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-            float z = 0.5 * shadowTexCoordsProj.z + 0.5;
+            float z = shadowTexCoordsProj.z * 0.5 + 0.5;
             float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
             shadowScalar = depth < z - 0.00001 ? 0.0 : 1.0;
         }
