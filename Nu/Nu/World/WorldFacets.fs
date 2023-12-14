@@ -2614,14 +2614,14 @@ module StaticModelFacetModule =
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
-            let insetOpt = entity.GetInsetOpt world
+            let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.enqueueRenderMessage3d (RenderStaticModel { Absolute = absolute; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; StaticModel = staticModel; RenderType = renderType; RenderPass = renderPass }) world
+            World.renderStaticModelFast (absolute, &affineMatrix, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             let staticModel = entity.GetStaticModel world
