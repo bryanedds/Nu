@@ -13,6 +13,7 @@ module Gen =
     let private RandomLock = obj ()
     let mutable private Id32 = 0u
     let mutable private Id64 = 0UL
+    let mutable private IdForInternal = 0UL
     let mutable private IdForEditor = 0UL
 
     /// The prefix of a generated name
@@ -191,6 +192,10 @@ module Gen =
                 let id = Gen.id64
                 let name = NamePrefix + string id
                 (id, [|name|])
+
+        /// Generate a unique non-zero 64-bit id for internal engine use as to not consume as many user-visible ids.
+        static member internal idForInternal =
+            lock RandomLock (fun () -> IdForInternal <- inc IdForInternal; IdForInternal)
 
         /// Generate a unique non-zero 64-bit id for use in editor naming.
         static member idForEditor =

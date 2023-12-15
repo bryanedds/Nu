@@ -202,7 +202,7 @@ module internal Quadnode =
             else ValueRight (HashSet<'e Quadelement> (comparer : 'e QuadelementEqualityComparer))
         let node =
             { ElementsCount_ = 0
-              Id_ = Gen.id64
+              Id_ = Gen.idForInternal
               Depth_ = depth
               Bounds_ = bounds
               Children_ = children }

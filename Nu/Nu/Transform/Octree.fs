@@ -347,7 +347,7 @@ module internal Octnode =
             else ValueRight (HashSet<'e Octelement> (comparer : 'e OctelementEqualityComparer))
         let node =
             { ElementsCount_ = 0
-              Id_ = Gen.id64
+              Id_ = Gen.idForInternal
               Depth_ = depth
               Bounds_ = bounds
               Children_ = children }
