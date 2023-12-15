@@ -507,9 +507,21 @@ module Quaternion =
         member inline this.Right =
             Vector3.Transform (v3Right, this)
 
+        /// The left vector of the quaternion.
+        member inline this.Left =
+            Vector3.Transform (v3Left, this)
+
         /// The up vector of the quaternion.
         member inline this.Up =
             Vector3.Transform (v3Up, this)
+
+        /// The down vector of the quaternion.
+        member inline this.Down =
+            Vector3.Transform (v3Down, this)
+
+        /// The back vector of the quaternion.
+        member inline this.Back =
+            Vector3.Transform (v3Back, this)
 
         /// The forward vector of the quaternion.
         member inline this.Forward =

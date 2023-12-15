@@ -594,7 +594,8 @@ and [<ReferenceEquality>] SortableLight =
             if lightDesireShadows <> 0 then
                 match Seq.tryFindIndex (fun (entry : KeyValuePair<uint64, _>) -> entry.Key = lightId) lightsDesiringShadows with
                 | Some index -> index
-                | None -> -1|]
+                | None -> -1 // TODO: see if we should failwithumf here.
+            else -1|]
 
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 and Renderer3d =
@@ -1306,6 +1307,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for light in modelAsset.Lights do
                     let lightMatrix = light.LightMatrix * modelMatrix
                     let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
+                    let lightDirection = lightMatrix.Rotation.Down
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false true lightBounds presence then
                         let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> single (2.0 * Math.PI)
                         let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> single (2.0 * Math.PI)
@@ -1313,7 +1315,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             { SortableLightId = 0UL
                               SortableLightOrigin = lightMatrix.Translation
                               SortableLightRotation = lightMatrix.Rotation
-                              SortableLightDirection = Vector3.Transform (v3Up, lightMatrix.Rotation)
+                              SortableLightDirection = lightDirection
                               SortableLightColor = light.LightColor
                               SortableLightBrightness = light.LightBrightness
                               SortableLightAttenuationLinear = light.LightAttenuationLinear
@@ -2334,6 +2336,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderTasks.RenderLightProbes.Remove rlp.LightProbeId |> ignore<bool>
                 renderTasks.RenderLightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.Bounds, rlp.Stale))
             | RenderLight3d rl ->
+                let direction = rl.Rotation.Down
                 let renderTasks = GlRenderer3d.getRenderTasks rl.RenderPass renderer
                 let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> single (2.0 * Math.PI)
                 let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> single (2.0 * Math.PI)
@@ -2341,7 +2344,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     { SortableLightId = rl.LightId
                       SortableLightOrigin = rl.Origin
                       SortableLightRotation = rl.Rotation
-                      SortableLightDirection = rl.Direction
+                      SortableLightDirection = direction
                       SortableLightColor = rl.Color
                       SortableLightBrightness = rl.Brightness
                       SortableLightAttenuationLinear = rl.AttenuationLinear
@@ -2426,19 +2429,17 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | (true, light) ->
                         let (_, shadowFramebuffer) = renderer.ShadowBuffers.[shadowBufferIndex]
                         let shadowOrigin = light.SortableLightOrigin
-                        let shadowViewInverse =
-                            Matrix4x4.CreateFromQuaternion light.SortableLightRotation *
-                            Matrix4x4.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2) *
-                            Matrix4x4.CreateTranslation light.SortableLightOrigin
-                        let shadowView = shadowViewInverse.Inverted
+                        let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
+                        shadowView.Translation <- light.SortableLightOrigin
+                        shadowView <- shadowView.Inverted
                         let shadowFov =
                             if light.SortableLightDirectional <> 0
                             then MathF.PI_OVER_2 // TODO: P1: orthogonal projection here.
                             else min MathF.PI_OVER_2 light.SortableLightConeOuter // TODO: P1: emulate point shadows with two max spot lights.
                         let shadowFov = min shadowFov MathF.PI_MINUS_EPSILON
                         let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
-                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowFramebuffer
                         renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
+                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowFramebuffer
                         shadowBufferIndex <- inc shadowBufferIndex
                     | (false, _) -> ()
                 | _ -> ()

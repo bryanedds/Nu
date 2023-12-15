@@ -1162,11 +1162,10 @@ module WorldModule2 =
                 Array.map snd
             let world =
                 Seq.fold (fun world (light : Entity) ->
-                    let shadowViewInverse =
-                        Matrix4x4.CreateFromQuaternion (light.GetRotation world) *
-                        Matrix4x4.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2) *
-                        Matrix4x4.CreateTranslation (light.GetPosition world)
-                    let shadowView = shadowViewInverse.Inverted
+                    let lightRotation = light.GetRotation world
+                    let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
+                    shadowView.Translation <- light.GetPosition world
+                    shadowView <- shadowView.Inverted
                     let shadowFov =
                         match light.GetLightType world with
                         | PointLight -> MathF.PI_OVER_2 // TODO: P1: using point shadows here.

@@ -706,14 +706,14 @@ module EffectSystem =
         // build model views
         let effectSystem =
             if slice.Enabled then
-                let rotation =
-                    Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X)
+                let rotation = Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X)
+                let direction = rotation.Down
                 let modelView =
                     Light3dView
                         { LightId = 0UL
                           Origin = slice.Position
                           Rotation = rotation
-                          Direction = Vector3.Transform (v3Up, rotation)
+                          Direction = direction
                           Color = slice.Color
                           Brightness = slice.Brightness
                           AttenuationLinear = slice.AttenuationLinear
