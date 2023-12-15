@@ -130,7 +130,7 @@ void main()
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             float z = shadowTexCoordsProj.z * 0.5 + 0.5;
             float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-            shadowScalar = depth < z - 0.00001 ? 0.0 : 1.0;
+            shadowScalar = depth < z ? 0.0 : 1.0;
         }
 
         // per-light radiance
@@ -144,7 +144,7 @@ void main()
             l = normalize(d);
             h = normalize(v + l);
             float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
-            float angle = acos(dot(lightDirections[i], l));
+            float angle = acos(dot(l, -lightDirections[i]));
             float halfConeInner = lightConeInners[i] * 0.5f;
             float halfConeOuter = lightConeOuters[i] * 0.5f;
             float halfConeDelta = halfConeOuter - halfConeInner;
@@ -155,7 +155,7 @@ void main()
         }
         else
         {
-            l = lightDirections[i];
+            l = -lightDirections[i];
             h = normalize(v + l);
             radiance = lightColors[i] * lightBrightnesses[i] * inRange;
         }

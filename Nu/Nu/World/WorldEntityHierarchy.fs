@@ -131,6 +131,7 @@ module WorldEntityHierarchy =
                             let lightId = entity.GetId world
                             let position = entity.GetPosition world
                             let rotation = entity.GetRotation world
+                            let direction = rotation.Down
                             let color = entity.GetColor world
                             let brightness = entity.GetBrightness world
                             let attenuationLinear = entity.GetAttenuationLinear world
@@ -138,7 +139,7 @@ module WorldEntityHierarchy =
                             let lightCutoff = entity.GetLightCutoff world
                             let lightType = entity.GetLightType world
                             let desireShadows = entity.GetDesireShadows world
-                            Choice2Of3 { LightId = lightId; Origin = position; Rotation = rotation; Direction = Vector3.Transform (v3Up, rotation); Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType; DesireShadows = desireShadows }
+                            Choice2Of3 { LightId = lightId; Origin = position; Rotation = rotation; Direction = direction; Color = color; Brightness = brightness; AttenuationLinear = attenuationLinear; AttenuationQuadratic = attenuationQuadratic; LightCutoff = lightCutoff; LightType = lightType; DesireShadows = desireShadows }
                             let lightCutoff = entity.GetLightCutoff world
                             let lightBounds = box3 (entity.GetPosition world - lightCutoff * v3One * 0.5f) (lightCutoff * v3One)
                             boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine lightBounds) | None -> Some lightBounds
