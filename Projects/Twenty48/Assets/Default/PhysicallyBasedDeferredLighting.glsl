@@ -20,6 +20,7 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
+const int SHADOWS_MAX = 2;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
@@ -32,6 +33,7 @@ uniform sampler2D brdfTexture;
 uniform sampler2D irradianceTexture;
 uniform sampler2D environmentFilterTexture;
 uniform sampler2D ssaoTexture;
+uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
@@ -42,7 +44,9 @@ uniform float lightCutoffs[LIGHTS_MAX];
 uniform int lightDirectionals[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
+uniform int lightShadowIndices[LIGHTS_MAX];
 uniform int lightsCount;
+uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
@@ -116,18 +120,35 @@ void main()
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
     {
+        // compute shadow scalar
+        int shadowIndex = lightShadowIndices[i];
+        float shadowScalar = 1.0;
+        if (shadowIndex >= 0)
+        {
+            vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
+            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+            {
+                float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
+                float bias = lightDirectionals[i] == 0 ? 0.000005 : 0.0005;
+                shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
+            }
+        }
+
         // per-light radiance
-        vec3 d = lightOrigins[i] - position;
-        float distanceSquared = dot(d, d);
-        float distance = sqrt(distanceSquared);
-        float inRange = distance < lightCutoffs[i] ? 1.0 : 0.0;
         vec3 l, h, radiance;
         if (lightDirectionals[i] == 0)
         {
+            vec3 d = lightOrigins[i] - position;
             l = normalize(d);
             h = normalize(v + l);
+            float distanceSquared = dot(d, d);
+            float distance = sqrt(distanceSquared);
+            float inRange = distance < lightCutoffs[i] ? 1.0 : 0.0;
             float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
-            float angle = acos(dot(lightDirections[i], l));
+            float angle = acos(dot(l, -lightDirections[i]));
             float halfConeInner = lightConeInners[i] * 0.5f;
             float halfConeOuter = lightConeOuters[i] * 0.5f;
             float halfConeDelta = halfConeOuter - halfConeInner;
@@ -138,9 +159,9 @@ void main()
         }
         else
         {
-            l = lightDirections[i];
+            l = -lightDirections[i];
             h = normalize(v + l);
-            radiance = lightColors[i] * lightBrightnesses[i] * inRange;
+            radiance = lightColors[i] * lightBrightnesses[i];
         }
 
         // cook-torrance brdf
@@ -162,7 +183,7 @@ void main()
         float nDotL = max(dot(normal, l), 0.0);
 
         // add to outgoing lightAccum
-        lightAccum += (kD * albedo / PI + specular) * radiance * nDotL;
+        lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
     }
 
     // compute light ambient terms
