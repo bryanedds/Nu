@@ -2427,19 +2427,25 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | ShadowPass (lightId, _) ->
                     match renderer.LightsDesiringShadows.TryGetValue lightId with
                     | (true, light) ->
-                        let (_, shadowFramebuffer) = renderer.ShadowBuffers.[shadowBufferIndex]
-                        let shadowOrigin = light.SortableLightOrigin
-                        let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
-                        shadowView.Translation <- light.SortableLightOrigin
-                        shadowView <- shadowView.Inverted
-                        let shadowFov =
-                            if light.SortableLightDirectional <> 0
-                            then MathF.PI_OVER_2 // TODO: P1: orthogonal projection here.
-                            else min MathF.PI_OVER_2 light.SortableLightConeOuter // TODO: P1: emulate point shadows with two max spot lights.
-                        let shadowFov = min shadowFov MathF.PI_MINUS_EPSILON
-                        let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
+                        let (shadowOrigin, shadowView, shadowProjection) =
+                            if light.SortableLightDirectional = 0 then
+                                let shadowOrigin = light.SortableLightOrigin
+                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
+                                shadowView.Translation <- light.SortableLightOrigin
+                                shadowView <- shadowView.Inverted
+                                let shadowFov = min (min MathF.PI_OVER_2 light.SortableLightConeOuter) MathF.PI_MINUS_EPSILON
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
+                                (shadowOrigin, shadowView, shadowProjection)
+                            else
+                                let shadowOrigin = light.SortableLightOrigin
+                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
+                                shadowView.Translation <- light.SortableLightOrigin
+                                shadowView <- shadowView.Inverted
+                                let shadowCutoff = light.SortableLightCutoff
+                                let shadowProjection = Matrix4x4.CreateOrthographicOffCenter (shadowOrigin.X - shadowCutoff, shadowOrigin.X + shadowCutoff, shadowOrigin.Y - shadowCutoff, shadowOrigin.Y + shadowCutoff, shadowOrigin.Z - shadowCutoff, shadowOrigin.Z + shadowCutoff)
+                                (shadowOrigin, shadowView, shadowProjection)
                         renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
-                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowFramebuffer
+                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection (snd renderer.ShadowBuffers.[shadowBufferIndex])
                         shadowBufferIndex <- inc shadowBufferIndex
                     | (false, _) -> ()
                 | _ -> ()

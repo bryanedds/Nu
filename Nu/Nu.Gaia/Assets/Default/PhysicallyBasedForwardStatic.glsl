@@ -235,17 +235,15 @@ void main()
         }
 
         // per-light radiance
-        vec3 d = lightOrigins[i] - position;
-        float distanceSquared = dot(d, d);
-        float distance = sqrt(distanceSquared);
-        float inRange = distance < lightCutoffs[i] ? 1.0 : 0.0;
         vec3 l, h, radiance;
         if (lightDirectionals[i] == 0)
         {
+            vec3 d = lightOrigins[i] - position;
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
+            float inRange = distance < lightCutoffs[i] ? 1.0 : 0.0;
             float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(l, -lightDirections[i]));
             float halfConeInner = lightConeInners[i] * 0.5f;
@@ -260,7 +258,7 @@ void main()
         {
             l = -lightDirections[i];
             h = normalize(v + l);
-            radiance = lightColors[i] * lightBrightnesses[i] * inRange;
+            radiance = lightColors[i] * lightBrightnesses[i];
         }
 
         // cook-torrance brdf
