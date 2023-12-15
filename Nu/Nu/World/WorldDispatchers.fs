@@ -110,8 +110,8 @@ module TextDispatcherModule =
         inherit GuiDispatcher ()
 
         static member Facets =
-            [typeof<TextFacet>
-             typeof<BackdroppableFacet>]
+            [typeof<BackdroppableFacet>
+             typeof<TextFacet>]
 
         static member Properties =
             [define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
