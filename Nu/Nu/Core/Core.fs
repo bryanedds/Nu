@@ -42,22 +42,3 @@ module CoreOperators =
     /// OPTIMIZATION: always tests reference inequality first.
     let inline (=/=) (a : obj) (b : obj) =
         objNeq a b
-
-// TODO: P1: remove this after updating Prime.
-[<RequireQualifiedAccess>]
-module Array =
-
-    /// Pad an array with count instances of its last item, removing items from back if count is negative.
-    let pad count elem arr =
-        if count = 0 then arr
-        elif count > 0 then Array.append arr (Array.init count (fun _ -> elem))
-        else Array.take (Array.length arr + count) arr
-
-    /// Pad an array with count instances of its last item.
-    let padWithLast count arr =
-        pad count (Array.last arr) arr
-
-    /// Pad an array with instances of its last item so that it is proportion to another array.
-    let padWithLastToProportion arr arr2 =
-        let deficit = Array.length arr2 - Array.length arr
-        padWithLast deficit arr

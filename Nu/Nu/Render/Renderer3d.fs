@@ -585,18 +585,6 @@ and [<ReferenceEquality>] SortableLight =
                 lightDesireShadows.[i] <- light.SortableLightDesireShadows
         (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows)
 
-    /// Compute the shadow indices of the given lights.
-    /// TODO: see if we have to remove the linear search in here.
-    static member getLightShadowIndices (lightsDesiringShadows : Dictionary<uint64, _>) (lightIds : _ array) (lightDesireShadows : _ array) lightsCount =
-        [|for i in 0 .. dec lightsCount do
-            let lightId = lightIds.[i]
-            let lightDesireShadows = lightDesireShadows.[i]
-            if lightDesireShadows <> 0 then
-                match Seq.tryFindIndex (fun (entry : KeyValuePair<uint64, _>) -> entry.Key = lightId) lightsDesiringShadows with
-                | Some index -> index
-                | None -> -1 // TODO: see if we should failwithumf here.
-            else -1|]
-
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 and Renderer3d =
     inherit Renderer
@@ -659,6 +647,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           FilterBuffers : uint * uint * uint
           ShadowBuffers : (uint * uint) array
           ShadowMatrices : Matrix4x4 array
+          ShadowIndices : Dictionary<uint64, int>
           CubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           BillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -2044,8 +2033,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.RenderLights
 
         // compute light shadow indices according to sorted lights
-        let lightShadowIndicesUnpadded = SortableLight.getLightShadowIndices renderer.LightsDesiringShadows lightIds lightDesireShadows renderTasks.RenderLights.Count
-        let lightShadowIndices = Array.pad (Constants.Render.ShadowsMax - lightShadowIndicesUnpadded.Length) -1 lightShadowIndicesUnpadded
+        let lightShadowIndices =
+            [|for lightId in lightIds do
+                match renderer.ShadowIndices.TryGetValue lightId with
+                | (true, index) -> index
+                | (false, _) -> -1|]
 
         // grab shadow textures
         let shadowTextures = Array.map fst renderer.ShadowBuffers
@@ -2275,7 +2267,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
                     SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.RenderLights
                 let lightShadowIndices =
-                    SortableLight.getLightShadowIndices renderer.LightsDesiringShadows lightIds lightDesireShadows renderTasks.RenderLights.Count
+                    [|for lightId in lightIds do
+                        match renderer.ShadowIndices.TryGetValue lightId with
+                        | (true, index) -> index
+                        | (false, _) -> -1|]
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                     lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
@@ -2290,7 +2285,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
                 SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.RenderLights
             let lightShadowIndices =
-                SortableLight.getLightShadowIndices renderer.LightsDesiringShadows lightIds lightDesireShadows renderTasks.RenderLights.Count
+                [|for lightId in lightIds do
+                    match renderer.ShadowIndices.TryGetValue lightId with
+                    | (true, index) -> index
+                    | (false, _) -> -1|]
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                 lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
@@ -2444,8 +2442,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowCutoff = light.SortableLightCutoff
                                 let shadowProjection = Matrix4x4.CreateOrthographicOffCenter (shadowOrigin.X - shadowCutoff, shadowOrigin.X + shadowCutoff, shadowOrigin.Y - shadowCutoff, shadowOrigin.Y + shadowCutoff, shadowOrigin.Z - shadowCutoff, shadowOrigin.Z + shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
-                        renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
                         GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection (snd renderer.ShadowBuffers.[shadowBufferIndex])
+                        renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
+                        renderer.ShadowIndices.[light.SortableLightId] <- shadowBufferIndex
                         shadowBufferIndex <- inc shadowBufferIndex
                     | (false, _) -> ()
                 | _ -> ()
@@ -2590,8 +2589,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
 
         // create shadow matrices array
-        let shadowMatrices =
-            Array.zeroCreate<Matrix4x4> Constants.Render.ShadowsMax
+        let shadowMatrices = Array.zeroCreate<Matrix4x4> Constants.Render.ShadowsMax
+
+        // create shadow indices
+        let shadowIndices = dictPlus HashIdentity.Structural []
 
         // create white cube map
         let cubeMap =
@@ -2721,6 +2722,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               FilterBuffers = filterBuffers
               ShadowBuffers = shadowBuffers
               ShadowMatrices = shadowMatrices
+              ShadowIndices = shadowIndices
               CubeMapGeometry = cubeMapGeometry
               BillboardGeometry = billboardGeometry
               PhysicallyBasedQuad = physicallyBasedQuad
