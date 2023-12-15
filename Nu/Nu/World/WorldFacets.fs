@@ -464,7 +464,7 @@ module TextFacetModule =
                     world
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
+            AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module BackdroppableFacetModule =
