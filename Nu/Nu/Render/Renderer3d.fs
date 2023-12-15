@@ -2472,6 +2472,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         for renderTasks in renderer.RenderTasksDictionary.Values do
             RenderTasks.clear renderTasks
 
+        // clear shadow matrices
+        renderer.ShadowIndices.Clear ()
+
         // clear lights desiring shadows
         renderer.LightsDesiringShadows.Clear ()
 
