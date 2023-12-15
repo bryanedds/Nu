@@ -2071,7 +2071,7 @@ module LightProbe3dFacetModule =
             else [||]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.3f) v3Zero
+            AttributesInferred.make (v3Dup 0.25f) v3Zero
 
         override this.Edit (op, entity, world) =
             match op with
@@ -2166,7 +2166,7 @@ module Light3dFacetModule =
             else [||]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.3f) v3Zero
+            AttributesInferred.make (v3Dup 0.25f) v3Zero
 
 [<AutoOpen>]
 module StaticBillboardFacetModule =
