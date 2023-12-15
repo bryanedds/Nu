@@ -229,12 +229,12 @@ void main()
             vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
             vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-            if (shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
-                float z = shadowTexCoordsProj.z * 0.5 + 0.5;
                 float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
                 float bias = lightDirectionals[i] == 0 ? 0.00005 : 0.005;
-                shadowScalar = depth + bias < z ? 0.0 : 1.0;
+                shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
             }
         }
 
