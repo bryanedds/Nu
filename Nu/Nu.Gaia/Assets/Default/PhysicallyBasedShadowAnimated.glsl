@@ -37,11 +37,8 @@ layout (location = 9) in vec4 texCoordsOffset;
 layout (location = 10) in vec4 albedo;
 layout (location = 12) in float height;
 
-out vec4 positionOut;
 out vec2 texCoordsOut;
-out vec3 normalOut;
 flat out vec4 albedoOut;
-flat out float heightOut;
 
 void main()
 {
@@ -53,59 +50,25 @@ void main()
         if (boneId >= 0) boneBlended += bones[boneId] * weights[i];
     }
 
-    // compute blended position and normal
-    vec4 positionBlended = boneBlended * vec4(position, 1.0);
-    vec4 normalBlended = boneBlended * vec4(normal, 0.0);
-
-    // compute remaining values
-    positionOut = model * positionBlended;
-    int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
-    vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
-    vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
-    texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
+    // compute output values
+    texCoordsOut = texCoords;
     albedoOut = albedo;
-    normalOut = transpose(inverse(mat3(model))) * normalBlended.xyz;
-    heightOut = height;
-    gl_Position = projection * view * positionOut;
+    vec4 positionBlended = boneBlended * vec4(position, 1.0);
+    gl_Position = projection * view * model * positionBlended;
 }
 
 #shader fragment
 #version 410 core
 
-uniform vec3 eyeCenter;
 uniform sampler2D albedoTexture;
-uniform sampler2D normalTexture;
-uniform sampler2D heightTexture;
 
-in vec4 positionOut;
 in vec2 texCoordsOut;
-in vec3 normalOut;
 flat in vec4 albedoOut;
-flat in float heightOut;
 
 void main()
 {
-    // compute spatial converters
-    vec3 q1 = dFdx(positionOut.xyz);
-    vec3 q2 = dFdy(positionOut.xyz);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 normal = normalize(normalOut);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
-    mat3 toWorld = mat3(tangent, binormal, normal);
-    mat3 toTangent = transpose(toWorld);
-
-    // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * eyeCenter;
-    vec3 positionTangent = toTangent * positionOut.xyz;
-    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).r * heightOut;
-    vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoordsOut - parallax;
-
     // compute albedo, discarding on zero alpha
-    vec4 albedoSample = texture(albedoTexture, texCoords);
+    vec4 albedoSample = texture(albedoTexture, texCoordsOut) * albedoOut;
     if (albedoSample.a == 0.0f) discard;
     gl_FragDepth = gl_FragCoord.z;
 }
