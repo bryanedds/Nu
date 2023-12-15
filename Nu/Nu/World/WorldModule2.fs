@@ -1177,13 +1177,12 @@ module WorldModule2 =
                             let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.GetLightCutoff world)
                             (shadowView, shadowProjection)
                         else
-                            let shadowOrigin = light.GetPosition world
                             let shadowRotation = light.GetRotation world
                             let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                             shadowView.Translation <- light.GetPosition world
                             shadowView <- shadowView.Inverted
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowProjection = Matrix4x4.CreateOrthographicOffCenter (shadowOrigin.X - shadowCutoff, shadowOrigin.X + shadowCutoff, shadowOrigin.Y - shadowCutoff, shadowOrigin.Y + shadowCutoff, shadowOrigin.Z - shadowCutoff, shadowOrigin.Z + shadowCutoff)
+                            let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                             (shadowView, shadowProjection)
                     let shadowFrustum = Frustum (shadowView * shadowProjection)
                     World.renderSimulantsInternal false (Some shadowFrustum) (ShadowPass (light.GetId world, shadowFrustum)) world)

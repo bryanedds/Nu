@@ -585,6 +585,7 @@ and [<ReferenceEquality>] SortableLight =
                 lightDesireShadows.[i] <- light.SortableLightDesireShadows
         (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows)
 
+    /// Sort shadow indices.
     static member sortShadowIndices (shadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) (lightDesireShadows : int array) lightsCount =
         [|for i in 0 .. dec lightsCount do
             if lightDesireShadows.[i] <> 0 then
@@ -2438,7 +2439,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 shadowView.Translation <- light.SortableLightOrigin
                                 shadowView <- shadowView.Inverted
                                 let shadowCutoff = light.SortableLightCutoff
-                                let shadowProjection = Matrix4x4.CreateOrthographicOffCenter (shadowOrigin.X - shadowCutoff, shadowOrigin.X + shadowCutoff, shadowOrigin.Y - shadowCutoff, shadowOrigin.Y + shadowCutoff, shadowOrigin.Z - shadowCutoff, shadowOrigin.Z + shadowCutoff)
+                                let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
                         GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection (snd renderer.ShadowBuffers.[shadowBufferIndex])
                         renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
