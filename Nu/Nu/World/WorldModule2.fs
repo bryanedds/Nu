@@ -1162,17 +1162,29 @@ module WorldModule2 =
                 Array.map snd
             let world =
                 Seq.fold (fun world (light : Entity) ->
-                    let lightRotation = light.GetRotation world
-                    let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
-                    shadowView.Translation <- light.GetPosition world
-                    shadowView <- shadowView.Inverted
-                    let shadowFov =
+                    let (directional, coneOuter) =
                         match light.GetLightType world with
-                        | PointLight -> MathF.PI_OVER_2 // TODO: P1: using point shadows here.
-                        | DirectionalLight -> MathF.PI_OVER_2 // TODO: P1: using orthogonal shadows here.
-                        | SpotLight (_, coneOuter) -> coneOuter
-                    let shadowFov = min shadowFov MathF.PI_MINUS_EPSILON
-                    let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.GetLightCutoff world)
+                        | PointLight -> (false, MathF.PI_OVER_2)
+                        | SpotLight (_, coneOuter)-> (false, coneOuter)
+                        | DirectionalLight -> (true, 0.0f)
+                    let (shadowView, shadowProjection) =
+                        if not directional then
+                            let shadowRotation = light.GetRotation world
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                            shadowView.Translation <- light.GetPosition world
+                            shadowView <- shadowView.Inverted
+                            let shadowFov = min coneOuter MathF.PI_MINUS_EPSILON
+                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.GetLightCutoff world)
+                            (shadowView, shadowProjection)
+                        else
+                            let shadowOrigin = light.GetPosition world
+                            let shadowRotation = light.GetRotation world
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                            shadowView.Translation <- light.GetPosition world
+                            shadowView <- shadowView.Inverted
+                            let shadowCutoff = light.GetLightCutoff world
+                            let shadowProjection = Matrix4x4.CreateOrthographicOffCenter (shadowOrigin.X - shadowCutoff, shadowOrigin.X + shadowCutoff, shadowOrigin.Y - shadowCutoff, shadowOrigin.Y + shadowCutoff, shadowOrigin.Z - shadowCutoff, shadowOrigin.Z + shadowCutoff)
+                            (shadowView, shadowProjection)
                     let shadowFrustum = Frustum (shadowView * shadowProjection)
                     World.renderSimulantsInternal false (Some shadowFrustum) (ShadowPass (light.GetId world, shadowFrustum)) world)
                     world lightsWithShadows
