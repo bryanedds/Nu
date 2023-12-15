@@ -456,7 +456,7 @@ module LightProbe3dDispatcherModule =
              define Entity.ProbeStale false]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.5f) v3Zero
+            AttributesInferred.make (v3Dup 0.3f) v3Zero
 
 [<AutoOpen>]
 module Light3dDispatcherModule =
@@ -478,7 +478,7 @@ module Light3dDispatcherModule =
              define Entity.LightType PointLight]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.5f) v3Zero
+            AttributesInferred.make (v3Dup 0.3f) v3Zero
 
 [<AutoOpen>]
 module StaticBillboardDispatcherModule =
