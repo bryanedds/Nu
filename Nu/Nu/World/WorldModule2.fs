@@ -1104,9 +1104,11 @@ module WorldModule2 =
                     | Some frustum -> World.getElements3dInViewFrustum frustum CachedHashSet3d world
                     | None -> World.getElements3dInView CachedHashSet3d world
             let (elements2d, world) =
-                if skipCulling
-                then World.getElements2d CachedHashSet2d world
-                else World.getElements2dInView CachedHashSet2d world
+                if frustumOpt.IsNone then
+                    if skipCulling
+                    then World.getElements2d CachedHashSet2d world
+                    else World.getElements2dInView CachedHashSet2d world
+                else (Seq.empty, world)
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
