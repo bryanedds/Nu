@@ -9,8 +9,8 @@ layout (location = 6) in mat4 model;
 
 void main()
 {
-    vec4 positionModel = model * vec4(position, 1.0);
-    gl_Position = projection * view * positionModel;
+    vec4 positionWorld = model * vec4(position, 1.0);
+    gl_Position = projection * view * positionWorld;
 }
 
 #shader fragment
