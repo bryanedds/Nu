@@ -585,6 +585,14 @@ and [<ReferenceEquality>] SortableLight =
                 lightDesireShadows.[i] <- light.SortableLightDesireShadows
         (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows)
 
+    static member sortShadowIndices (shadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) (lightDesireShadows : int array) lightsCount =
+        [|for i in 0 .. dec lightsCount do
+            if lightDesireShadows.[i] <> 0 then
+                match shadowIndices.TryGetValue lightIds.[i] with
+                | (true, index) -> index
+                | (false, _) -> -1 // TODO: log here?
+            else -1|]
+
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 and Renderer3d =
     inherit Renderer
@@ -2033,11 +2041,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.RenderLights
 
         // compute light shadow indices according to sorted lights
-        let lightShadowIndices =
-            [|for lightId in lightIds do
-                match renderer.ShadowIndices.TryGetValue lightId with
-                | (true, index) -> index
-                | (false, _) -> -1|]
+        let lightShadowIndices = SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
 
         // grab shadow textures
         let shadowTextures = Array.map fst renderer.ShadowBuffers
@@ -2267,10 +2271,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
                     SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.RenderLights
                 let lightShadowIndices =
-                    [|for lightId in lightIds do
-                        match renderer.ShadowIndices.TryGetValue lightId with
-                        | (true, index) -> index
-                        | (false, _) -> -1|]
+                    SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
                 GlRenderer3d.renderPhysicallyBasedSurfaces
                     viewAbsoluteArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                     lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
@@ -2285,10 +2286,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
                 SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.RenderLights
             let lightShadowIndices =
-                [|for lightId in lightIds do
-                    match renderer.ShadowIndices.TryGetValue lightId with
-                    | (true, index) -> index
-                    | (false, _) -> -1|]
+                SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
             GlRenderer3d.renderPhysicallyBasedSurfaces
                 viewRelativeArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
                 lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount

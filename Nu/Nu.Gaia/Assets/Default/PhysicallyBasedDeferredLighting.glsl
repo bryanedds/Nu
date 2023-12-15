@@ -130,7 +130,8 @@ void main()
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             float z = shadowTexCoordsProj.z * 0.5 + 0.5;
             float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-            shadowScalar = depth + 0.00005 < z ? 0.0 : 1.0;
+            float bias = lightDirectionals[i] == 0 ? 0.00005 : 0.005;
+            shadowScalar = depth + bias < z ? 0.0 : 1.0;
         }
 
         // per-light radiance
