@@ -20,6 +20,8 @@ module Hl =
 
     let mutable private Initialized = false
     let mutable private AssertEnabled = false
+    let mutable private DrawCallsLock = obj ()
+    let mutable private DrawCalls = 0
 
     /// Initialize OpenGL assertion mechanism.
     let Init assertEnabled =
@@ -144,3 +146,15 @@ module Hl =
             bitmap.Save (filePath, Drawing.Imaging.ImageFormat.Bmp)
         finally
             handle.Free ()
+
+    /// Register the fact that a draw call has just been made.
+    let RegisterDrawCall () =
+        lock DrawCallsLock (fun () -> DrawCalls <- inc DrawCalls)
+
+    /// Reset the running number of draw calls.
+    let ResetDrawCalls () =
+        lock DrawCallsLock (fun () -> DrawCalls <- 0)
+
+    /// Get the running number of draw calls.
+    let GetDrawCalls () =
+        lock DrawCallsLock (fun () -> DrawCalls)

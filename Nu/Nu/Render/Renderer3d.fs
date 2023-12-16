@@ -2315,6 +2315,9 @@ type [<ReferenceEquality>] GlRenderer3d =
     /// Render 3d surfaces.
     static member render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
+        // reset draw call count
+        OpenGL.Hl.ResetDrawCalls ()
+
         // categorize messages
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do

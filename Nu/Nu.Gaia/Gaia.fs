@@ -177,6 +177,12 @@ Size=282,1024
 Collapsed=0
 DockId=0x0000000C,1
 
+[Window][Metrics]
+Pos=953,854
+Size=669,226
+Collapsed=0
+DockId=0x00000009,6
+
 [Window][Event Tracing]
 Pos=953,854
 Size=669,226
@@ -357,7 +363,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
           DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,796 CentralNode=1
           DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,226 Split=X Selected=0xD4E24632
             DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=667,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0x004ABF05
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0x8411189D
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
@@ -2316,6 +2322,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         | None -> ()
                                     ImGui.EndDragDropTarget ()
                         | Some _ | None -> ()
+                        ImGui.End ()
+
+                    // matrics window
+                    if ImGui.Begin ("Metrics", ImGuiWindowFlags.NoNav) then
+                        ImGui.Text "Draw Calls:"
+                        ImGui.SameLine ()
+                        ImGui.Text (string (OpenGL.Hl.GetDrawCalls ()))
                         ImGui.End ()
 
                     // asset graph window

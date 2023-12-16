@@ -181,6 +181,7 @@ module Sprite =
 
         // draw geometry
         Gl.DrawElements (PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.RegisterDrawCall ()
         Hl.Assert ()
 
         // teardown geometry
