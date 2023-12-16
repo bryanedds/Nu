@@ -1307,8 +1307,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
                     let lightDirection = lightMatrix.Rotation.Down
                     if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false true lightBounds presence then
-                        let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> single (2.0 * Math.PI)
-                        let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> single (2.0 * Math.PI)
+                        let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
+                        let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
                         let light =
                             { SortableLightId = 0UL
                               SortableLightOrigin = lightMatrix.Translation
@@ -2335,8 +2335,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderLight3d rl ->
                 let direction = rl.Rotation.Down
                 let renderTasks = GlRenderer3d.getRenderTasks rl.RenderPass renderer
-                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> single (2.0 * Math.PI)
-                let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> single (2.0 * Math.PI)
+                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
+                let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
                 let light =
                     { SortableLightId = rl.LightId
                       SortableLightOrigin = rl.Origin
@@ -2430,7 +2430,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
                                 shadowView.Translation <- light.SortableLightOrigin
                                 shadowView <- shadowView.Inverted
-                                let shadowFov = min (min MathF.PI_OVER_2 light.SortableLightConeOuter) MathF.PI_MINUS_EPSILON
+                                let shadowFov = min light.SortableLightConeOuter Constants.Render.ShadowsFovMax
                                 let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
                             else

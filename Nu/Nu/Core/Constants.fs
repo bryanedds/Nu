@@ -117,6 +117,7 @@ module Render =
     let [<Literal>] LightsMaxDeferred = 64
     let [<Literal>] LightsMaxForward = 8
     let [<Literal>] ShadowsMax = 4
+    let [<Uniform>] ShadowsFovMax = MathF.TWO_PI / 3.0f // NOTE: this can construct a pretty wide frustum far plane.
     let [<Literal>] ReflectionMapResolution = 512
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 128
