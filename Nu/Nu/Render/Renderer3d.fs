@@ -2457,7 +2457,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 shadowView.Translation <- light.SortableLightOrigin
                                 shadowView <- shadowView.Inverted
                                 let shadowFov = min light.SortableLightConeOuter Constants.Render.ShadowsFovMax
-                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.SortableLightCutoff)
+                                let shadowCutoff = max light.SortableLightCutoff 0.1f
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
                             else
                                 let shadowOrigin = light.SortableLightOrigin

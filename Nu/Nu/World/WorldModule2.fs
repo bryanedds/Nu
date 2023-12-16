@@ -1176,7 +1176,8 @@ module WorldModule2 =
                             shadowView.Translation <- light.GetPosition world
                             shadowView <- shadowView.Inverted
                             let shadowFov = min coneOuter Constants.Render.ShadowsFovMax
-                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, light.GetLightCutoff world)
+                            let shadowCutoff = max (light.GetLightCutoff world) 0.1f
+                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, shadowCutoff)
                             (shadowView, shadowProjection)
                         else
                             let shadowRotation = light.GetRotation world
