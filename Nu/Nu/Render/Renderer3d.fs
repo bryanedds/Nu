@@ -683,7 +683,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : string * Dictionary<string, string * RenderAsset> // OPTIMIZATION: nullable for speed
-          mutable RenderAssetCachedOpt : string * RenderAsset
+          mutable RenderAssetCachedOpt : obj AssetTag * RenderAsset
           RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
@@ -833,25 +833,25 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ValueNone -> None
 
     static member private tryGetRenderAsset (assetTag : obj AssetTag) renderer =
-        if  renderer.RenderPackageCachedOpt :> obj |> notNull &&
+        if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
+            assetEq assetTag (fst renderer.RenderAssetCachedOpt) then
+            ValueSome (snd renderer.RenderAssetCachedOpt)
+        elif
+            renderer.RenderPackageCachedOpt :> obj |> notNull &&
             fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
-            if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
-                fst renderer.RenderAssetCachedOpt = assetTag.AssetName then
-                ValueSome (snd renderer.RenderAssetCachedOpt)
-            else
-                let assets = snd renderer.RenderPackageCachedOpt
-                match assets.TryGetValue assetTag.AssetName with
-                | (true, (_, asset)) ->
-                    renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                    ValueSome asset
-                | (false, _) -> ValueNone
+            let assets = snd renderer.RenderPackageCachedOpt
+            match assets.TryGetValue assetTag.AssetName with
+            | (true, (_, asset)) ->
+                renderer.RenderAssetCachedOpt <- (assetTag, asset)
+                ValueSome asset
+            | (false, _) -> ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
                 renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package.Assets)
                 match package.Assets.TryGetValue assetTag.AssetName with
                 | (true, (_, asset)) ->
-                    renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
+                    renderer.RenderAssetCachedOpt <- (assetTag, asset)
                     ValueSome asset
                 | (false, _) -> ValueNone
             | None ->
@@ -862,7 +862,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package.Assets)
                     match package.Assets.TryGetValue assetTag.AssetName with
                     | (true, (_, asset)) ->
-                        renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
+                        renderer.RenderAssetCachedOpt <- (assetTag, asset)
                         ValueSome asset
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone

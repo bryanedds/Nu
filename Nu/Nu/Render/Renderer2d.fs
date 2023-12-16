@@ -156,7 +156,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, GlPackageState2d>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, GlPackageState2d> // OPTIMIZATION: nullable for speed.
-          mutable RenderAssetCachedOpt : string * RenderAsset
+          mutable RenderAssetCachedOpt : obj AssetTag * RenderAsset
           LayeredOperations : LayeredOperation2d List }
 
     static member private invalidateCaches renderer =
@@ -249,25 +249,25 @@ type [<ReferenceEquality>] GlRenderer2d =
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
     static member tryGetRenderAsset (assetTag : obj AssetTag) renderer =
-        if  renderer.RenderPackageCachedOpt :> obj |> notNull &&
+        if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
+            assetEq assetTag (fst renderer.RenderAssetCachedOpt) then
+            ValueSome (snd renderer.RenderAssetCachedOpt)
+        elif
+            renderer.RenderPackageCachedOpt :> obj |> notNull &&
             fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
-            if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
-                fst renderer.RenderAssetCachedOpt = assetTag.AssetName then
-                ValueSome (snd renderer.RenderAssetCachedOpt)
-            else
-                let package = snd renderer.RenderPackageCachedOpt
-                match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, (_, asset)) ->
-                    renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                    ValueSome asset
-                | (false, _) -> ValueNone
+            let package = snd renderer.RenderPackageCachedOpt
+            match package.Assets.TryGetValue assetTag.AssetName with
+            | (true, (_, asset)) ->
+                renderer.RenderAssetCachedOpt <- (assetTag, asset)
+                ValueSome asset
+            | (false, _) -> ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
                 renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package)
                 match package.Assets.TryGetValue assetTag.AssetName with
                 | (true, (_, asset)) ->
-                    renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
+                    renderer.RenderAssetCachedOpt <- (assetTag, asset)
                     ValueSome asset
                 | (false, _) -> ValueNone
             | None ->
@@ -278,7 +278,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package)
                     match package.Assets.TryGetValue assetTag.AssetName with
                     | (true, (_, asset)) ->
-                        renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
+                        renderer.RenderAssetCachedOpt <- (assetTag, asset)
                         ValueSome asset
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
