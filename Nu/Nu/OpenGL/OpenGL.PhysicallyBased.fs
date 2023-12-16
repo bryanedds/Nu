@@ -1862,8 +1862,101 @@ module PhysicallyBased =
         let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
         (shaderStatic, shaderAnimated, shaderTerrain, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
 
-    /// Draw a batch of physically-based surfaces.
-    let DrawPhysicallyBasedSurfaces
+    /// Draw a batch of physically-based surfaces' shadows.
+    let DrawPhysicallyBasedShadowSurfaces
+        (view : single array,
+         projection : single array,
+         bones : single array array,
+         surfacesCount : int,
+         modelsFields : single array,
+         albedosFields : single array,
+         material : PhysicallyBasedMaterial,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedShader) =
+
+        // setup state
+        Gl.DepthFunc DepthFunction.Lequal
+        Gl.Enable EnableCap.DepthTest
+        Hl.Assert ()
+
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedShader
+        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+        for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
+            Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+        Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
+        Hl.Assert ()
+
+        // setup texture filters
+        Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0))
+        match material.TextureMinFilterOpt with
+        | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+        | None -> ()
+        match material.TextureMagFilterOpt with
+        | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+        | None -> ()
+        Hl.Assert ()
+
+        // update models buffer
+        let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally modelsFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // update albedos buffer
+        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
+        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+        finally albedosFieldsPtr.Free ()
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
+        Hl.RegisterDrawCall ()
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown texture filters
+        Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0))
+        if material.TextureMinFilterOpt.IsSome then
+            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
+        if material.TextureMagFilterOpt.IsSome then
+            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+
+        // teardown shader
+        Gl.UseProgram 0u
+        Hl.Assert ()
+
+        // teardown state
+        Gl.DepthFunc DepthFunction.Less
+        Gl.Disable EnableCap.DepthTest
+
+    /// Draw a batch of physically-based geometry surfaces.
+    let DrawPhysicallyBasedGeometrySurfaces
         (view : single array,
          projection : single array,
          bones : single array array,
