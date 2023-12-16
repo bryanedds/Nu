@@ -132,7 +132,7 @@ void main()
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
                 float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-                float bias = lightDirectionals[i] == 0 ? 0.000005 : 0.0005;
+                float bias = lightDirectionals[i] == 0 ? 0.00005 : 0.0005;
                 shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
             }
         }
