@@ -146,7 +146,8 @@ void main()
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
-            float inRange = distance < lightCutoffs[i] ? 1.0 : 0.0;
+            float cutoff = lightCutoffs[i];
+            float cutoffScalar = 1.0f - smoothstep(cutoff * 0.75, cutoff, distance);
             float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(l, -lightDirections[i]));
             float halfConeInner = lightConeInners[i] * 0.5f;
@@ -155,7 +156,7 @@ void main()
             float halfConeBetween = angle - halfConeInner;
             float halfConeScalar = clamp(1.0f - halfConeBetween / halfConeDelta, 0.0f, 1.0);
             float intensity = attenuation * halfConeScalar;
-            radiance = lightColors[i] * lightBrightnesses[i] * intensity * inRange;
+            radiance = lightColors[i] * lightBrightnesses[i] * intensity * cutoffScalar;
         }
         else
         {

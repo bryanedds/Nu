@@ -2168,6 +2168,18 @@ module Light3dFacetModule =
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.make (v3Dup 0.25f) v3Zero
 
+        override this.Edit (op, entity, world) =
+            match op with
+            | AppendProperties _ ->
+                if ImGuiNET.ImGui.Button "Normalize Attenutation" then
+                    let brightness = entity.GetBrightness world
+                    let lightCutoff = entity.GetLightCutoff world
+                    let world = entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world
+                    let world = entity.SetAttenuationQuadratic (1.0f / (brightness * lightCutoff * lightCutoff)) world
+                    world
+                else world
+            | _ -> world
+
 [<AutoOpen>]
 module StaticBillboardFacetModule =
 
