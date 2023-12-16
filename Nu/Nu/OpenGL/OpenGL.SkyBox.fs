@@ -72,6 +72,7 @@ module SkyBox =
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.RegisterDrawCall ()
         Hl.Assert ()
 
         // teardown geometry

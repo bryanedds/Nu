@@ -2060,6 +2060,7 @@ module PhysicallyBased =
 
         // draw geometry
         Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
+        Hl.RegisterDrawCall ()
         Hl.Assert ()
 
         // teardown geometry
@@ -2249,6 +2250,7 @@ module PhysicallyBased =
 
         // draw geometry
         Gl.DrawElements (geometry.PrimitiveType, elementsCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.RegisterDrawCall ()
         Hl.Assert ()
 
         // teardown geometry

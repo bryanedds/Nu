@@ -209,6 +209,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
                             OpenGL.Gl.Scissor (int clip.X, windowHeight - int clip.W, int (clip.Z - clip.X), int (clip.W - clip.Y))
                             OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), int pcmd.VtxOffset + vertexOffset)
+                            OpenGL.Hl.RegisterDrawCall ()
                             OpenGL.Hl.Assert ()
                         else raise (NotImplementedException ())
                         indexOffset <- indexOffset + int pcmd.ElemCount
