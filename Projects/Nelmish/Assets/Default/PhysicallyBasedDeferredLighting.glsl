@@ -20,7 +20,7 @@ const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
-const int SHADOWS_MAX = 4;
+const int SHADOWS_MAX = 8;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
@@ -160,7 +160,7 @@ void main()
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
                 float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-                float biasFloor = lightDirectionals[i] == 0 ? 0.0002 : 0.002;
+                float biasFloor = lightDirectionals[i] == 0 ? 0.0005 : 0.002;
                 float bias = max(biasFloor * (1.0 - dot(normal, l)), biasFloor);
                 shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
             }
