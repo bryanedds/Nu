@@ -2488,10 +2488,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                     | Some (propertyDescriptor, simulant) when
                                                         World.getExists simulant world &&
                                                         propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
+                                                        let packageName = if Symbol.shouldBeExplicit package.Key then ("\"" + package.Key + "\"") else package.Key
+                                                        let assetName = if Symbol.shouldBeExplicit assetName then ("\"" + assetName + "\"") else assetName
+                                                        let assetTagStr = "[" + packageName + " " + assetName + "]"
                                                         let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                                                        let propertyValueStr = "[" + package.Key + " " + assetName + "]"
-                                                        let propertyValue = converter.ConvertFromString propertyValueStr
-                                                        setPropertyValue propertyValue propertyDescriptor simulant
+                                                        let assetTagObj = converter.ConvertFromString assetTagStr
+                                                        setPropertyValue assetTagObj propertyDescriptor simulant
                                                     | Some _ | None -> ()
                                                     showAssetPickerDialog <- false
                                                 ImGui.TreePop ()
