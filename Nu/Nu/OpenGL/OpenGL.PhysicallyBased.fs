@@ -1446,7 +1446,7 @@ module PhysicallyBased =
 
                               // collect surfaces
                               for i in 0 .. dec node.MeshIndices.Count do
-                                let names = Array.append names [|"Geometry" + if i > 0 then string i else ""|]
+                                let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
                                 let meshIndex = node.MeshIndices.[i]
                                 let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                 let material = materials.[materialIndex]
