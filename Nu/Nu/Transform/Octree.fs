@@ -217,6 +217,20 @@ module internal Octnode =
                     if frustum.Intersects bounds then
                         set.Add element |> ignore
 
+    let rec internal getLightProbesInLightBox box (set : 'e Octelement HashSet) (node : 'e Octnode) =
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = nodes.[i]
+                if node.ElementsCount_ > 0 && isIntersectingBox box node then
+                    getLightProbesInLightBox box set node
+        | ValueRight elements ->
+            for element in elements do
+                if element.LightProbe && element.Visible then
+                    let bounds = element.Bounds
+                    if box.Intersects bounds then
+                        set.Add element |> ignore
+
     let rec internal getLightsInViewFrustum frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
         | ValueLeft nodes ->
@@ -535,6 +549,12 @@ module Octree =
     let getLightProbesInFrustum frustum (set : _ HashSet) tree =
         Octnode.getLightProbesInViewFrustum frustum set tree.Node
         let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.LightProbe)
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+
+    /// Get all of the light probe elements in the given box.
+    let getLightProbesInBox box (set : _ HashSet) tree =
+        Octnode.getLightProbesInLightBox box set tree.Node
+        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
 
     /// Get all of the light elements in the given frustum.

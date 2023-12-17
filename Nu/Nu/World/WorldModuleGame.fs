@@ -391,7 +391,7 @@ module WorldModuleGame =
         static member internal getGameEye3dFrustumImposter game world =
             (World.getGameState game world).Eye3dFrustumImposter
 
-        static member internal getGameEyeFrustumView3d game world =
+        static member internal getGameEye3dFrustumView game world =
             Constants.Render.Viewport.Frustum
                 (Constants.Render.NearPlaneDistanceEnclosed,
                  Constants.Render.FarPlaneDistanceImposter,
@@ -411,8 +411,8 @@ module WorldModuleGame =
             World.getGameEye3dFrustumImposter Game.Handle world
 
         /// Get the current 3d eye view frustum.
-        static member getEyeFrustumView3d world =
-            World.getGameEyeFrustumView3d Game.Handle world
+        static member getEye3dFrustumView world =
+            World.getGameEye3dFrustumView Game.Handle world
 
         /// Get the current 3d light box.
         static member getLight3dBox world =

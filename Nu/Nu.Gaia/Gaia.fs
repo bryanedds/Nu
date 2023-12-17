@@ -573,13 +573,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiRender wtemp =
 
-        // render light probes of the selected group in icon frustum
+        // render light probes of the selected group in light box and view frustum
         world <- wtemp
-        let iconFrustum = World.getEye3dFrustumEnclosed world
-        let (entities, wtemp) = World.getLightProbes3dInFrustum iconFrustum (HashSet ()) world in world <- wtemp
+        let lightBox = World.getLight3dBox world
+        let viewFrustum = World.getEye3dFrustumView world
+        let (entities, wtemp) = World.getLightProbes3dInBox lightBox (HashSet ()) world in world <- wtemp
         let lightProbeModels =
             entities |>
-            Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |>
+            Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         World.enqueueRenderMessage3d
@@ -592,10 +593,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world
 
         // render lights of the selected group in play
-        let (entities, wtemp) = World.getLights3dInFrustum iconFrustum (HashSet ()) world in world <- wtemp
+        let (entities, wtemp) = World.getLights3dInBox lightBox (HashSet ()) world in world <- wtemp
         let lightModels =
             entities |>
-            Seq.filter (fun entity -> entity.Group = selectedGroup) |>
+            Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
         World.enqueueRenderMessage3d
@@ -1950,7 +1951,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGuizmo.ManipulateBox3
                                 (World.getEye3dCenter world,
                                  World.getEye3dRotation world,
-                                 World.getEyeFrustumView3d world,
+                                 World.getEye3dFrustumView world,
                                  entity.GetAbsolute world,
                                  (if not snaps2dSelected && ImGui.IsCtrlReleased () then Triple.fst snaps3d else 0.0f),
                                  &lightProbeBounds)
