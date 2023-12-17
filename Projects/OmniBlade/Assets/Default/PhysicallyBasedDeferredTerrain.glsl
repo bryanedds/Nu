@@ -35,7 +35,6 @@ layout (location = 10) in vec4 texCoordsOffset;
 layout (location = 11) in vec4 albedo;
 layout (location = 12) in vec4 material;
 layout (location = 13) in float height;
-layout (location = 14) in int invertRoughness;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -45,7 +44,6 @@ out vec3 tintOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
-flat out int invertRoughnessOut;
 
 void main()
 {
@@ -58,7 +56,6 @@ void main()
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightOut = height;
-    invertRoughnessOut = invertRoughness;
     blendsOut[0] = blends[0];
     blendsOut[1] = blends[1];
     tintOut = tint;
@@ -87,7 +84,6 @@ in vec3 tintOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
-flat in int invertRoughnessOut;
 
 layout (location = 0) out vec4 position;
 layout (location = 1) out vec3 albedo;
@@ -145,7 +141,7 @@ void main()
 
     // populate albedo, material, and normalAndHeight
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
-    material = vec4((invertRoughnessOut == 0 ? roughnessBlend : 1.0f - roughnessBlend) * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
+    material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
     normalAndHeight.xyz = normalize(toWorld * normalize(normalBlend));
     normalAndHeight.a = height;
 }

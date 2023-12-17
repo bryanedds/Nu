@@ -32,7 +32,6 @@ layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
 layout (location = 10) in float height;
-layout (location = 11) in int invertRoughness;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -40,7 +39,6 @@ out vec3 normalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
 flat out float heightOut;
-flat out int invertRoughnessOut;
 
 void main()
 {
@@ -53,7 +51,6 @@ void main()
     materialOut = material;
     normalOut = mat3(model) * normal;
     heightOut = height;
-    invertRoughnessOut = invertRoughness;
     gl_Position = projection * view * positionOut;
 }
 
@@ -69,7 +66,7 @@ const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
-const int SHADOWS_MAX = 8;
+const int SHADOWS_MAX = 4;
 
 uniform vec3 eyeCenter;
 uniform vec3 lightAmbientColor;
@@ -111,7 +108,6 @@ in vec3 normalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in float heightOut;
-flat in int invertRoughnessOut;
 
 out vec4 frag;
 
@@ -208,8 +204,7 @@ void main()
     albedo.a = mix(albedo.a, 1.0, clamp((distance - OPAQUING_DISTANCE_BEGIN) / OPAQUING_DISTANCE_RANGE, 0.0, 1.0));
 
     // compute material properties
-    vec4 roughnessSample = texture(roughnessTexture, texCoords);
-    float roughness = (invertRoughnessOut == 0 ? roughnessSample.r : 1.0f - roughnessSample.r) * materialOut.r;
+    float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;
     float metallic = texture(metallicTexture, texCoords).g * materialOut.g;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);

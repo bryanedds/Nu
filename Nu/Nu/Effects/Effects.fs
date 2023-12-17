@@ -759,8 +759,7 @@ module EffectSystem =
                       MetallicOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height
-                      InvertRoughnessOpt = ValueNone }
+                      HeightOpt = ValueSome slice.Height }
                 let modelView =
                     BillboardView
                         { Absolute = effectSystem.EffectAbsolute
@@ -803,8 +802,7 @@ module EffectSystem =
                       MetallicOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height
-                      InvertRoughnessOpt = ValueNone }
+                      HeightOpt = ValueSome slice.Height }
                 let modelView =
                     StaticModelView
                         { Absolute = effectSystem.EffectAbsolute
