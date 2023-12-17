@@ -556,7 +556,10 @@ and [<ReferenceEquality>] SortableLight =
         let lightDesireShadows = Array.zeroCreate<int> lightsMax
         for light in lights do
             light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
-        let lightsSorted = lights |> Seq.toArray |> Array.sortBy (fun light -> light.SortableLightDistanceSquared)
+        let lightsSorted =
+            lights |>
+            Seq.toArray |>
+            Array.sortBy (fun light -> struct (-light.SortableLightDirectional, light.SortableLightDistanceSquared))
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let i3 = i * 3
