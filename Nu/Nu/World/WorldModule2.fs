@@ -862,6 +862,10 @@ module WorldModule2 =
         static member getLightProbes3dInFrustum frustum set world =
             World.getEntities3dBy (Octree.getLightProbesInFrustum frustum set) world
 
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+        static member getLightProbes3dInBox box set world =
+            World.getEntities3dBy (Octree.getLightProbesInBox box set) world
+
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
         static member getLights3dInFrustum frustum set world =
             World.getEntities3dBy (Octree.getLightsInFrustum frustum set) world
@@ -1154,19 +1158,9 @@ module WorldModule2 =
             let lightBox = World.getLight3dBox world
             let (lights, world) = World.getLights3dInBox lightBox tempHashSet world // NOTE: this may not be the optimal way to query.
             let eyeCenter = World.getEye3dCenter world
-            let lightsWithShadows =
-                lights |>
-                Seq.filter (fun (light : Entity) -> light.GetDesireShadows world) |>
-                Seq.map (fun (light : Entity) ->
-                    let directionality = match light.GetLightType world with DirectionalLight -> 0 | _ -> 1
-                    let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
-                    struct (directionality, distanceSquared), light) |>
-                Array.ofSeq |>
-                Array.sortBy fst |>
-                Array.tryTake Constants.Render.ShadowsMax |>
-                Array.map snd
             let world =
-                Seq.fold (fun world (light : Entity) ->
+                lights |>
+                Seq.map (fun (light : Entity) ->
                     let (directional, coneOuter) =
                         match light.GetLightType world with
                         | PointLight -> (false, MathF.TWO_PI)
@@ -1190,9 +1184,30 @@ module WorldModule2 =
                             let shadowCutoff = light.GetLightCutoff world
                             let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                             (shadowView, shadowProjection)
-                    let shadowFrustum = Frustum (shadowView * shadowProjection)
+                    (Frustum (shadowView * shadowProjection), light)) |>
+                Seq.filter (fun (shadowFrustum, light) ->
+                    if light.GetDesireShadows world then
+                        let frustumEnclosed = World.getEye3dFrustumEnclosed world
+                        let frustumExposed = World.getEye3dFrustumExposed world
+                        let frustumImposter = World.getEye3dFrustumImposter world
+                        let presence = light.GetPresence world
+                        match presence with
+                        | Enclosed -> frustumEnclosed.Intersects shadowFrustum
+                        | Exposed -> frustumExposed.Intersects shadowFrustum || frustumEnclosed.Intersects shadowFrustum
+                        | Imposter -> frustumImposter.Intersects shadowFrustum
+                        | Omnipresent -> true
+                    else false) |>
+                Seq.map (fun (shadowFrustum, light) ->
+                    let directionality = match light.GetLightType world with DirectionalLight -> 0 | _ -> 1
+                    let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
+                    ((directionality, distanceSquared), shadowFrustum, light)) |>
+                Array.ofSeq |>
+                Array.sortBy a__ |>
+                Array.tryTake Constants.Render.ShadowsMax |>
+                Array.map _bc |>
+                Array.fold (fun world (shadowFrustum, light : Entity) ->
                     World.renderSimulantsInternal false (Some shadowFrustum) (ShadowPass (light.GetId world, shadowFrustum)) world)
-                    world lightsWithShadows
+                    world
 
             // render simulants normally
             World.renderSimulantsInternal skipCulling None NormalPass world
