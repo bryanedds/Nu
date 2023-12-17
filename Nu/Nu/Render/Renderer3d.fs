@@ -55,14 +55,12 @@ type [<SymbolicExpansion; Struct>] TerrainMaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
       AmbientOcclusionOpt : single voption
-      HeightOpt : single voption
-      InvertRoughnessOpt : bool voption }
+      HeightOpt : single voption }
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
-          HeightOpt = ValueSome Constants.Render.HeightDefault
-          InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault }
+          HeightOpt = ValueSome Constants.Render.HeightDefault }
     static member empty =
         Unchecked.defaultof<TerrainMaterialProperties>
 
@@ -74,16 +72,14 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
       MetallicOpt : single voption
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
-      HeightOpt : single voption
-      InvertRoughnessOpt : bool voption }
+      HeightOpt : single voption }
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
           MetallicOpt = ValueSome Constants.Render.MetallicDefault
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
-          HeightOpt = ValueSome Constants.Render.HeightDefault
-          InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault }
+          HeightOpt = ValueSome Constants.Render.HeightDefault }
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
@@ -677,7 +673,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable AlbedosFields : single array
           mutable PhysicallyBasedMaterialsFields : single array
           mutable PhysicallyBasedHeightsFields : single array
-          mutable PhysicallyBasedInvertRoughnessesFields : int array
           mutable UserDefinedStaticModelFields : single array
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
           RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
@@ -939,8 +934,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                       Metallic = surfaceDescriptor.MaterialProperties.Metallic
                       AmbientOcclusion = surfaceDescriptor.MaterialProperties.AmbientOcclusion
                       Emission = surfaceDescriptor.MaterialProperties.Emission
-                      Height = surfaceDescriptor.MaterialProperties.Height
-                      InvertRoughness = surfaceDescriptor.MaterialProperties.InvertRoughness }
+                      Height = surfaceDescriptor.MaterialProperties.Height }
 
                 // make material
                 let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
@@ -1586,12 +1580,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             if renderer.PhysicallyBasedHeightsFields.Length < length then
                 renderer.PhysicallyBasedHeightsFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough invert roughnesses fields array
-            let mutable length = renderer.PhysicallyBasedInvertRoughnessesFields.Length
-            while parameters.Length > length do length <- length * 2
-            if renderer.PhysicallyBasedInvertRoughnessesFields.Length < length then
-                renderer.PhysicallyBasedInvertRoughnessesFields <- Array.zeroCreate<int> length
-
             // blit parameters to field arrays
             for i in 0 .. dec parameters.Length do
                 let struct (model, texCoordsOffset, properties) = parameters.[i]
@@ -1606,7 +1594,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
                 let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
                 let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
-                let invertRoughness = match properties.InvertRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.InvertRoughness
                 renderer.AlbedosFields.[i * 4] <- albedo.R
                 renderer.AlbedosFields.[i * 4 + 1] <- albedo.G
                 renderer.AlbedosFields.[i * 4 + 2] <- albedo.B
@@ -1616,12 +1603,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
                 renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
                 renderer.PhysicallyBasedHeightsFields.[i] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
-                renderer.PhysicallyBasedInvertRoughnessesFields.[i] <- if invertRoughness then 1 else 0
 
             // draw geometry surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedGeometrySurfaces
                 (viewArray, projectionArray, bonesArray, eyeCenter, parameters.Length,
-                 renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, renderer.PhysicallyBasedInvertRoughnessesFields, blending,
+                 renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, blending,
                  lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
@@ -1636,8 +1622,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               Metallic = Constants.Render.MetallicDefault
               AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
               Emission = Constants.Render.EmissionDefault
-              Height = ValueOption.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
-              InvertRoughness = ValueOption.defaultValue Constants.Render.InvertRoughnessDefault terrainMaterialProperties.InvertRoughnessOpt }
+              Height = ValueOption.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt }
         let (texelWidthAvg, texelHeightAvg, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
@@ -1733,7 +1718,6 @@ type [<ReferenceEquality>] GlRenderer3d =
              [|materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A|],
              [|materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission|],
              [|texelHeightAvg * materialProperties.Height|],
-             [|if materialProperties.InvertRoughness then 1 else 0|],
              elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
@@ -1772,8 +1756,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
               AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
               Emission = ValueOption.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
-              Height = ValueOption.defaultValue Constants.Render.HeightDefault properties.HeightOpt
-              InvertRoughness = ValueOption.defaultValue Constants.Render.InvertRoughnessDefault properties.InvertRoughnessOpt }
+              Height = ValueOption.defaultValue Constants.Render.HeightDefault properties.HeightOpt }
         let billboardMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { MaterialProperties = properties
               AlbedoMetadata = albedoMetadata
@@ -1819,9 +1802,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Gl.Clear OpenGL.ClearBufferMask.DepthBufferBit
         OpenGL.Hl.Assert ()
-
-        // grab shadow textures
-        let shadowTextures = Array.map fst renderer.ShadowBuffers
 
         // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
@@ -2683,8 +2663,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               Metallic = Constants.Render.MetallicDefault
               AmbientOcclusion = Constants.Render.AmbientOcclusionDefault
               Emission = Constants.Render.EmissionDefault
-              Height = Constants.Render.HeightDefault
-              InvertRoughness = Constants.Render.InvertRoughnessDefault }
+              Height = Constants.Render.HeightDefault }
 
         // get albedo metadata and texture
         let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialAlbedo.tiff") |> Either.getRight
@@ -2772,7 +2751,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               AlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               PhysicallyBasedMaterialsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
               PhysicallyBasedHeightsFields = Array.zeroCreate<single> Constants.Render.GeometryBatchPrealloc
-              PhysicallyBasedInvertRoughnessesFields = Array.zeroCreate<int> Constants.Render.GeometryBatchPrealloc
               UserDefinedStaticModelFields = [||]
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               RenderTasksDictionary = renderTasksDictionary

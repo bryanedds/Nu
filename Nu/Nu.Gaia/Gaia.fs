@@ -1462,22 +1462,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
-        // edit invert roughness
-        let mutable isSome = ValueOption.isSome mp.InvertRoughnessOpt
-        if ImGui.Checkbox ((if isSome then "##mpInvertRoughnessIsSome" else "InvertRoughnessOpt"), &isSome) then
-            if isSome
-            then setPropertyValue { mp with InvertRoughnessOpt = ValueSome Constants.Render.InvertRoughnessDefault } propertyDescriptor simulant
-            else setPropertyValue { mp with InvertRoughnessOpt = ValueNone } propertyDescriptor simulant
-        else
-            match mp.InvertRoughnessOpt with
-            | ValueSome invertRoughness ->
-                let mutable invertRoughness = invertRoughness
-                ImGui.SameLine ()
-                if ImGui.Checkbox ("InvertRoughnessOpt", &invertRoughness) then setPropertyValue { mp with InvertRoughnessOpt = ValueSome invertRoughness } propertyDescriptor simulant
-                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-            | ValueNone -> ()
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-
     let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (focusProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName

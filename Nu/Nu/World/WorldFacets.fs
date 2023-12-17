@@ -2576,8 +2576,7 @@ module BasicStaticBillboardEmitterFacetModule =
                               MetallicOpt = match emitterProperties.MetallicOpt with ValueSome metallic -> ValueSome metallic | ValueNone -> descriptor.MaterialProperties.MetallicOpt
                               AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with ValueSome ambientOcclusion -> ValueSome ambientOcclusion | ValueNone -> descriptor.MaterialProperties.AmbientOcclusionOpt
                               EmissionOpt = match emitterProperties.EmissionOpt with ValueSome emission -> ValueSome emission | ValueNone -> descriptor.MaterialProperties.EmissionOpt
-                              HeightOpt = match emitterProperties.HeightOpt with ValueSome height -> ValueSome height | ValueNone -> descriptor.MaterialProperties.HeightOpt
-                              InvertRoughnessOpt = match emitterProperties.InvertRoughnessOpt with ValueSome invertRoughness -> ValueSome invertRoughness | ValueNone -> descriptor.MaterialProperties.InvertRoughnessOpt }
+                              HeightOpt = match emitterProperties.HeightOpt with ValueSome height -> ValueSome height | ValueNone -> descriptor.MaterialProperties.HeightOpt }
                         Some
                             (RenderBillboardParticles
                                 { Absolute = descriptor.Absolute

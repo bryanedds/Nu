@@ -21,8 +21,7 @@ module PhysicallyBased =
           Metallic : single
           AmbientOcclusion : single
           Emission : single
-          Height : single
-          InvertRoughness : bool }
+          Height : single }
 
     /// Describes a physically-based material.
     type [<Struct>] PhysicallyBasedMaterial =
@@ -52,7 +51,6 @@ module PhysicallyBased =
           AlbedoBuffer : uint
           MaterialBuffer : uint
           HeightBuffer : uint
-          InvertRoughnessBuffer : uint
           IndexBuffer : uint
           PhysicallyBasedVao : uint }
 
@@ -376,7 +374,6 @@ module PhysicallyBased =
         let heightTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Height")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Height")           elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Height")            else ""
 
         // attempt to load roughness info
-        let invertRoughness = has_bc || has_d // NOTE: assume texture from Unity export if it has this weird naming.
         let roughness = Constants.Render.RoughnessDefault
         let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
@@ -534,8 +531,7 @@ module PhysicallyBased =
               Metallic = metallic
               AmbientOcclusion = ambientOcclusion
               Emission = emission
-              Height = height
-              InvertRoughness = invertRoughness }
+              Height = height }
 
         // fin
         { MaterialProperties = properties
@@ -831,7 +827,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedStaticGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -922,17 +918,6 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (10u, 1u)
                 Hl.Assert ()
 
-                // create invert roughness buffer
-                let invertRoughnessBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
-                let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally invertRoughnessDataPtr.Free ()
-                Gl.EnableVertexAttribArray 11u
-                Gl.VertexAttribIPointer (11u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
-                Gl.VertexAttribDivisor (11u, 1u)
-                Hl.Assert ()
-
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -947,7 +932,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // fin
-                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -964,7 +949,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -979,7 +964,6 @@ module PhysicallyBased =
               AlbedoBuffer = albedoBuffer
               MaterialBuffer = materialBuffer
               HeightBuffer = heightBuffer
-              InvertRoughnessBuffer = invertRoughnessBuffer
               IndexBuffer = indexBuffer
               PhysicallyBasedVao = vao }
 
@@ -996,7 +980,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedAnimatedGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -1093,17 +1077,6 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (12u, 1u)
                 Hl.Assert ()
 
-                // create invert roughness buffer
-                let invertRoughnessBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
-                let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally invertRoughnessDataPtr.Free ()
-                Gl.EnableVertexAttribArray 13u
-                Gl.VertexAttribIPointer (13u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
-                Gl.VertexAttribDivisor (13u, 1u)
-                Hl.Assert ()
-
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -1118,7 +1091,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // fin
-                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -1135,7 +1108,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1150,7 +1123,6 @@ module PhysicallyBased =
               AlbedoBuffer = albedoBuffer
               MaterialBuffer = materialBuffer
               HeightBuffer = heightBuffer
-              InvertRoughnessBuffer = invertRoughnessBuffer
               IndexBuffer = indexBuffer
               PhysicallyBasedVao = vao }
 
@@ -1167,7 +1139,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedTerrainGeometry (renderable, primitiveType, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
-        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao) =
+        let (vertices, indices, vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, indexBuffer, vao) =
 
             // make renderable
             if renderable then
@@ -1267,17 +1239,6 @@ module PhysicallyBased =
                 Gl.VertexAttribDivisor (13u, 1u)
                 Hl.Assert ()
 
-                // create invert roughness buffer
-                let invertRoughnessBuffer = Gl.GenBuffer ()
-                Gl.BindBuffer (BufferTarget.ArrayBuffer, invertRoughnessBuffer)
-                let invertRoughnessDataPtr = GCHandle.Alloc ([|0|], GCHandleType.Pinned)
-                try Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<int>), invertRoughnessDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-                finally invertRoughnessDataPtr.Free ()
-                Gl.EnableVertexAttribArray 14u
-                Gl.VertexAttribIPointer (14u, 1, VertexAttribIType.Int, sizeof<int>, nativeint 0)
-                Gl.VertexAttribDivisor (14u, 1u)
-                Hl.Assert ()
-
                 // create index buffer
                 let indexBuffer = Gl.GenBuffer ()
                 Gl.BindBuffer (BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -1292,7 +1253,7 @@ module PhysicallyBased =
                 Hl.Assert ()
 
                 // fin
-                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, invertRoughnessBuffer, indexBuffer, vao)
+                ([||], [||], vertexBuffer, modelBuffer, texCoordsOffsetBuffer, albedoBuffer, materialBuffer, heightBuffer, indexBuffer, vao)
 
             // fake buffers
             else
@@ -1309,7 +1270,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
+                (vertices, indices, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u)
 
         // make physically-based geometry
         let geometry =
@@ -1324,7 +1285,6 @@ module PhysicallyBased =
               AlbedoBuffer = albedoBuffer
               MaterialBuffer = materialBuffer
               HeightBuffer = heightBuffer
-              InvertRoughnessBuffer = invertRoughnessBuffer
               IndexBuffer = indexBuffer
               PhysicallyBasedVao = vao }
 
@@ -1967,8 +1927,7 @@ module PhysicallyBased =
          albedosFields : single array,
          materialsFields : single array,
          heightsFields : single array,
-         invertRoughnessesFields : int array,
-         blending,
+         blending : bool,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
          brdfTexture : uint,
@@ -2137,14 +2096,6 @@ module PhysicallyBased =
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
-        // update invert roughnesses buffer
-        let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<int>), invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally invertRoughnessesFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
         // setup geometry
         Gl.BindVertexArray geometry.PhysicallyBasedVao
         Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
@@ -2224,7 +2175,6 @@ module PhysicallyBased =
          albedosFields : single array,
          materialsFields : single array,
          heightsFields : single array,
-         invertRoughnessesFields : int array,
          elementsCount : int,
          materials : PhysicallyBasedMaterial array,
          geometry : PhysicallyBasedGeometry,
@@ -2324,14 +2274,6 @@ module PhysicallyBased =
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<single>, heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally heightsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update invert roughnesses buffer
-        let invertRoughnessesFieldsPtr = GCHandle.Alloc (invertRoughnessesFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InvertRoughnessBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<int>, invertRoughnessesFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally invertRoughnessesFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
@@ -2833,7 +2775,6 @@ module PhysicallyBased =
         Gl.DeleteBuffers [|geometry.AlbedoBuffer|]
         Gl.DeleteBuffers [|geometry.MaterialBuffer|]
         Gl.DeleteBuffers [|geometry.HeightBuffer|]
-        Gl.DeleteBuffers [|geometry.InvertRoughnessBuffer|]
         Gl.DeleteBuffers [|geometry.IndexBuffer|]
         Gl.BindVertexArray 0u
         Gl.DeleteVertexArrays [|geometry.PhysicallyBasedVao|]
