@@ -586,7 +586,7 @@ and [<ReferenceEquality>] SortableLight =
 
     /// Sort shadow indices.
     static member sortShadowIndices (shadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) (lightDesireShadows : int array) lightsCount =
-        [|for i in 0 .. dec lightsCount do
+        [|for i in 0 .. dec (min lightsCount Constants.Render.ShadowsMax) do
             if lightDesireShadows.[i] <> 0 then
                 match shadowIndices.TryGetValue lightIds.[i] with
                 | (true, index) -> index
