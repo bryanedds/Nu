@@ -1157,7 +1157,10 @@ module WorldModule2 =
             let lightsWithShadows =
                 lights |>
                 Seq.filter (fun (light : Entity) -> light.GetDesireShadows world) |>
-                Seq.map (fun (light : Entity) -> (Vector3.DistanceSquared (eyeCenter, light.GetPosition world)), light) |>
+                Seq.map (fun (light : Entity) ->
+                    let directionality = match light.GetLightType world with DirectionalLight -> 0 | _ -> 1
+                    let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
+                    struct (directionality, distanceSquared), light) |>
                 Array.ofSeq |>
                 Array.sortBy fst |>
                 Array.tryTake Constants.Render.ShadowsMax |>
