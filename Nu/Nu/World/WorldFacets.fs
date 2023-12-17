@@ -2654,8 +2654,7 @@ module StaticModelFacetModule =
                         let geometry = surface.PhysicallyBasedGeometry
                         let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
                         let raySurface = rayEntity.Transform inverse
-                        let mutable bounds = geometry.Bounds
-                        let boundsIntersectionOpt = raySurface.Intersects bounds
+                        let boundsIntersectionOpt = raySurface.Intersects geometry.Bounds
                         if boundsIntersectionOpt.HasValue then
                             raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                             Seq.map snd' |>
@@ -2721,8 +2720,7 @@ module StaticModelSurfaceFacetModule =
                 if surfaceIndex < staticModelMetadata.Surfaces.Length then
                     let surface = staticModelMetadata.Surfaces.[surfaceIndex]
                     let geometry = surface.PhysicallyBasedGeometry
-                    let mutable bounds = geometry.Bounds
-                    let boundsIntersectionOpt = rayEntity.Intersects bounds
+                    let boundsIntersectionOpt = rayEntity.Intersects geometry.Bounds
                     if boundsIntersectionOpt.HasValue then
                         let intersections = rayEntity.Intersects (geometry.Indices, geometry.Vertices)
                         intersections |> Seq.map snd' |> Seq.toArray
@@ -2784,8 +2782,7 @@ module AnimatedModelFacetModule =
                         let geometry = surface.PhysicallyBasedGeometry
                         let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
                         let raySurface = rayEntity.Transform inverse
-                        let mutable bounds = geometry.Bounds
-                        let boundsIntersectionOpt = raySurface.Intersects bounds
+                        let boundsIntersectionOpt = raySurface.Intersects geometry.Bounds
                         if boundsIntersectionOpt.HasValue then
                             raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                             Seq.map snd' |>
