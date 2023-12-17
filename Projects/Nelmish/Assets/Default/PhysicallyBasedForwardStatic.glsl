@@ -216,24 +216,6 @@ void main()
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
     {
-        // compute shadow scalar
-        int shadowIndex = lightShadowIndices[i];
-        float shadowScalar = 1.0;
-        if (shadowIndex >= 0)
-        {
-            vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
-            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
-            {
-                float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-                float biasFloor = lightDirectionals[i] == 0 ? 0.0002 : 0.002;
-                float bias = max(biasFloor * (1.0 - dot(normal, l)), biasFloor);
-                shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
-            }
-        }
-
         // per-light radiance
         vec3 l, h, radiance;
         if (lightDirectionals[i] == 0)
@@ -260,6 +242,24 @@ void main()
             l = -lightDirections[i];
             h = normalize(v + l);
             radiance = lightColors[i] * lightBrightnesses[i];
+        }
+
+        // shadow scalar
+        int shadowIndex = lightShadowIndices[i];
+        float shadowScalar = 1.0;
+        if (shadowIndex >= 0)
+        {
+            vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
+            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+            {
+                float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
+                float biasFloor = lightDirectionals[i] == 0 ? 0.0002 : 0.002;
+                float bias = max(biasFloor * (1.0 - dot(normal, l)), biasFloor);
+                shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
+            }
         }
 
         // cook-torrance brdf
