@@ -75,10 +75,10 @@ namespace Nu
         /// Transform this <see cref="Ray3"/> by a matrix.
         /// </summary>
         public Ray3 Transform(Matrix4x4 m)
-		{
-            var a = Vector3.Transform(Origin, m);
-            var b = Vector3.Transform(Origin + Direction, m);
-            return new Ray3(a, Vector3.Normalize(b - a));
+        {
+            Vector3 origin = Vector3.Transform(Origin, m);
+            Vector3 direction = Vector3.TransformNormal(Direction, m);
+            return new Ray3(origin, direction);
 		}
 
         /// <summary>
