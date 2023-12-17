@@ -255,7 +255,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Bounds3d =
         let bounds =
-            let position = this.Position_ + this.Offset
+            let position = this.Position_ + this.Offset * this.Scale_
             let size = this.Size_ * this.Scale_ * this.Overflow_
             Box3 (position - size * 0.5f, size)
         let rotation = this.Rotation_
