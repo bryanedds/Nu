@@ -1303,7 +1303,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let lightMatrix = light.LightMatrix * modelMatrix
                     let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
                     let lightDirection = lightMatrix.Rotation.Down
-                    if skipCulling || Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false true lightBounds presence then
+                    if skipCulling || Presence.intersects3d (Some frustumEnclosed) frustumExposed frustumImposter (Some lightBox) false true lightBounds presence then
                         let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
                         let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
                         let light =
@@ -1332,9 +1332,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | None -> renderType
                     let unculled =
                         match renderPass with // OPTIMIZATION: in normal pass, we cull surfaces based on view.
-                        | NormalPass -> Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox false false surfaceBounds presence
-                        | ShadowPass (_, shadowFrustum) -> Presence.intersects3d shadowFrustum shadowFrustum shadowFrustum box3Zero false false surfaceBounds presence
-                        | ReflectionPass (_, reflFrustum) -> Presence.intersects3d reflFrustum reflFrustum reflFrustum box3Zero false false surfaceBounds presence
+                        | NormalPass -> Presence.intersects3d (Some frustumEnclosed) frustumExposed frustumImposter (Some lightBox) false false surfaceBounds presence
+                        | ShadowPass (_, shadowDirectional, shadowFrustum) -> Presence.intersects3d (if shadowDirectional then None else Some shadowFrustum) shadowFrustum shadowFrustum None false false surfaceBounds presence
+                        | ReflectionPass (_, reflFrustum) -> Presence.intersects3d None reflFrustum reflFrustum None false false surfaceBounds presence
                     if skipCulling || unculled then
                         GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, surface, renderType, renderPass, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
@@ -2489,7 +2489,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
             if shadowBufferIndex < Constants.Render.ShadowsMax then
                 match renderPass with
-                | ShadowPass (lightId, _) ->
+                | ShadowPass (lightId, _, _) ->
                     match renderer.LightsDesiringShadows.TryGetValue lightId with
                     | (true, light) ->
                         let (shadowOrigin, shadowView, shadowProjection) =

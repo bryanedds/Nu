@@ -816,15 +816,15 @@ module WorldModule2 =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
             World.getElements3dBy (Octree.getElementsInPlay playBox playFrustum set) world
 
+        static member private getElements3dInViewFrustum enclosed exposed frustum set world =
+            World.getElements3dBy (Octree.getElementsInViewFrustum enclosed exposed frustum set) world
+
         static member private getElements3dInView set world =
             let frustumEnclosed = World.getEye3dFrustumEnclosed world
             let frustumExposed = World.getEye3dFrustumExposed world
             let frustumImposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
             World.getElements3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
-
-        static member private getElements3dInViewFrustum frustum set world =
-            World.getElements3dBy (Octree.getElementsInView frustum frustum frustum box3Zero set) world
 
         static member private getElements3d set world =
             World.getElements3dBy (Octree.getElements set) world
@@ -1087,7 +1087,7 @@ module WorldModule2 =
             | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dCenter world) (World.getEye2dSize world) screen (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
-        static member private renderSimulantsInternal skipCulling frustumOpt renderPass world =
+        static member private renderSimulantsInternal skipCulling renderPass world =
 
             // gather simulants
             RenderGatherTimer.Start ()
@@ -1104,15 +1104,18 @@ module WorldModule2 =
                 if skipCulling then
                     World.getElements3d CachedHashSet3d world
                 else
-                    match frustumOpt with
-                    | Some frustum -> World.getElements3dInViewFrustum frustum CachedHashSet3d world
-                    | None -> World.getElements3dInView CachedHashSet3d world
+                    match renderPass with
+                    | NormalPass -> World.getElements3dInView CachedHashSet3d world
+                    | ShadowPass (_, shadowDirectional, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3d world
+                    | ReflectionPass _ -> (Seq.empty, world)
             let (elements2d, world) =
-                if frustumOpt.IsNone then
+                match renderPass with
+                | NormalPass ->
                     if skipCulling
                     then World.getElements2d CachedHashSet2d world
                     else World.getElements2dInView CachedHashSet2d world
-                else (Seq.empty, world)
+                | ShadowPass _ | ReflectionPass _ ->
+                    (Seq.empty, world)
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
@@ -1184,8 +1187,8 @@ module WorldModule2 =
                             let shadowCutoff = light.GetLightCutoff world
                             let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                             (shadowView, shadowProjection)
-                    (Frustum (shadowView * shadowProjection), light)) |>
-                Seq.filter (fun (shadowFrustum, light) ->
+                    (directional, Frustum (shadowView * shadowProjection), light)) |>
+                Seq.filter (fun (_, shadowFrustum, light) ->
                     if light.GetDesireShadows world then
                         let frustumEnclosed = World.getEye3dFrustumEnclosed world
                         let frustumExposed = World.getEye3dFrustumExposed world
@@ -1197,20 +1200,19 @@ module WorldModule2 =
                         | Imposter -> frustumImposter.Intersects shadowFrustum
                         | Omnipresent -> true
                     else false) |>
-                Seq.map (fun (shadowFrustum, light) ->
-                    let directionality = match light.GetLightType world with DirectionalLight -> 0 | _ -> 1
+                Seq.map (fun (directional, shadowFrustum, light) ->
+                    let directionalSort = if directional then 0 else 1
                     let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
-                    ((directionality, distanceSquared), shadowFrustum, light)) |>
+                    ((directionalSort, distanceSquared), shadowFrustum, light)) |>
                 Array.ofSeq |>
                 Array.sortBy a__ |>
                 Array.tryTake Constants.Render.ShadowsMax |>
-                Array.map _bc |>
-                Array.fold (fun world (shadowFrustum, light : Entity) ->
-                    World.renderSimulantsInternal false (Some shadowFrustum) (ShadowPass (light.GetId world, shadowFrustum)) world)
+                Array.fold (fun world ((directionalSort, _), shadowFrustum, light : Entity) ->
+                    World.renderSimulantsInternal false (ShadowPass (light.GetId world, isZero directionalSort, shadowFrustum)) world)
                     world
 
             // render simulants normally
-            World.renderSimulantsInternal skipCulling None NormalPass world
+            World.renderSimulantsInternal skipCulling NormalPass world
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
