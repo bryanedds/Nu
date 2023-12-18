@@ -554,7 +554,7 @@ module Octree =
     /// Get all of the light probe elements in the given box.
     let getLightProbesInBox box (set : _ HashSet) tree =
         Octnode.getLightProbesInLightBox box set tree.Node
-        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
+        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.LightProbe)
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
 
     /// Get all of the light elements in the given frustum.
