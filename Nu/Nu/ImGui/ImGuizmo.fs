@@ -65,8 +65,8 @@ module ImGuizmo =
             let mouseUp = not (ImGui.IsMouseDown ImGuiMouseButton.Left)
             let mouseClicked = ImGui.IsMouseClicked ImGuiMouseButton.Left
             let mouseDragging = ImGui.IsMouseDragging ImGuiMouseButton.Left
-            let hovering = canCapture && inView && mouseUp && mouseDistance < 32.0f
-            let dragging = canCapture && inView && (mouseClicked && mouseDistance < 32.0f || mouseDragging && mouseDistance < 64.0f) && not found
+            let hovering = canCapture && inView && mouseUp && mouseDistance < 40.0f
+            let dragging = canCapture && inView && (mouseClicked && mouseDistance < 40.0f || mouseDragging && mouseDistance < 80.0f) && not found
             let viewing = inView
             if hovering then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
