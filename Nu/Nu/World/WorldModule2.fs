@@ -1156,58 +1156,59 @@ module WorldModule2 =
 
         static member private renderSimulants skipCulling world =
 
-            // render shadows
+            // create shadow pass descriptors
             let tempHashSet = HashSet ()
             let lightBox = World.getLight3dBox world
             let (lights, world) = World.getLights3dInBox lightBox tempHashSet world // NOTE: this may not be the optimal way to query.
             let eyeCenter = World.getEye3dCenter world
-            let world =
-                lights |>
-                Seq.map (fun (light : Entity) ->
-                    let (directional, coneOuter) =
-                        match light.GetLightType world with
-                        | PointLight -> (false, MathF.TWO_PI)
-                        | SpotLight (_, coneOuter)-> (false, coneOuter)
-                        | DirectionalLight -> (true, 0.0f)
-                    let (shadowView, shadowProjection) =
-                        if not directional then
-                            let shadowRotation = light.GetRotation world
-                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                            shadowView.Translation <- light.GetPosition world
-                            shadowView <- shadowView.Inverted
-                            let shadowFov = min coneOuter Constants.Render.ShadowsFovMax
-                            let shadowCutoff = max (light.GetLightCutoff world) 0.1f
-                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, shadowCutoff)
-                            (shadowView, shadowProjection)
-                        else
-                            let shadowRotation = light.GetRotation world
-                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                            shadowView.Translation <- light.GetPosition world
-                            shadowView <- shadowView.Inverted
-                            let shadowCutoff = light.GetLightCutoff world
-                            let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
-                            (shadowView, shadowProjection)
-                    (directional, Frustum (shadowView * shadowProjection), light)) |>
-                Seq.filter (fun (_, shadowFrustum, light) ->
+            let sortableShadowPassDescriptors =
+                [|for light in lights do
                     if light.GetDesireShadows world then
-                        let frustumEnclosed = World.getEye3dFrustumEnclosed world
-                        let frustumExposed = World.getEye3dFrustumExposed world
-                        let frustumImposter = World.getEye3dFrustumImposter world
-                        let presence = light.GetPresence world
-                        match presence with
-                        | Enclosed -> frustumEnclosed.Intersects shadowFrustum
-                        | Exposed -> frustumExposed.Intersects shadowFrustum || frustumEnclosed.Intersects shadowFrustum
-                        | Imposter -> frustumImposter.Intersects shadowFrustum
-                        | Omnipresent -> true
-                    else false) |>
-                Seq.map (fun (directional, shadowFrustum, light) ->
-                    let directionalSort = if directional then 0 else 1
-                    let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
-                    ((directionalSort, distanceSquared), shadowFrustum, light)) |>
-                Array.ofSeq |>
-                Array.sortBy a__ |>
+                        let (directional, coneOuter) =
+                            match light.GetLightType world with
+                            | PointLight -> (false, MathF.TWO_PI)
+                            | SpotLight (_, coneOuter)-> (false, coneOuter)
+                            | DirectionalLight -> (true, 0.0f)
+                        let (shadowView, shadowProjection) =
+                            if not directional then
+                                let shadowRotation = light.GetRotation world
+                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                                shadowView.Translation <- light.GetPosition world
+                                shadowView <- shadowView.Inverted
+                                let shadowFov = min coneOuter Constants.Render.ShadowsFovMax
+                                let shadowCutoff = max (light.GetLightCutoff world) 0.1f
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, shadowCutoff)
+                                (shadowView, shadowProjection)
+                            else
+                                let shadowRotation = light.GetRotation world
+                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                                shadowView.Translation <- light.GetPosition world
+                                shadowView <- shadowView.Inverted
+                                let shadowCutoff = light.GetLightCutoff world
+                                let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                                (shadowView, shadowProjection)
+                        let shadowFrustum =
+                            Frustum (shadowView * shadowProjection)
+                        let shadowInView =
+                            let frustumEnclosed = World.getEye3dFrustumEnclosed world
+                            let frustumExposed = World.getEye3dFrustumExposed world
+                            let frustumImposter = World.getEye3dFrustumImposter world
+                            match light.GetPresence world with
+                            | Enclosed -> frustumEnclosed.Intersects shadowFrustum
+                            | Exposed -> frustumExposed.Intersects shadowFrustum || frustumEnclosed.Intersects shadowFrustum
+                            | Imposter -> frustumImposter.Intersects shadowFrustum
+                            | Omnipresent -> true
+                        if shadowInView then
+                            let directionalSort = if not directional then 1 else 0
+                            let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
+                            struct (struct (directionalSort, distanceSquared), struct (shadowFrustum, light))|]
+
+            // render simulant shadows in descriptor sort order
+            let world =
+                sortableShadowPassDescriptors |>
+                Array.sortBy fst' |>
                 Array.tryTake Constants.Render.ShadowsMax |>
-                Array.fold (fun world ((directionalSort, _), shadowFrustum, light : Entity) ->
+                Array.fold (fun world struct (struct (directionalSort, _), struct (shadowFrustum, light)) ->
                     World.renderSimulantsInternal false (ShadowPass (light.GetId world, isZero directionalSort, shadowFrustum)) world)
                     world
 
