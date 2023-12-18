@@ -63,8 +63,9 @@ module WorldModule2 =
     let private ScreenTransitionKeyboardKeyId = Gen.id
 
     (* Cached HashSets *)
-    let private CachedHashSet2d = HashSet (QuadelementEqualityComparer ())
-    let private CachedHashSet3d = HashSet (OctelementEqualityComparer ())
+    let private CachedHashSet2dNormal = HashSet (QuadelementEqualityComparer ())
+    let private CachedHashSet3dNormal = HashSet (OctelementEqualityComparer ())
+    let private CachedHashSet3dShadow = HashSet (OctelementEqualityComparer ())
 
     type World with
 
@@ -945,8 +946,8 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (elements3d, world) = World.getElements3dInPlay CachedHashSet3d world
-            let (elements2d, world) = World.getElements2dInPlay CachedHashSet2d world
+            let (elements3d, world) = World.getElements3dInPlay CachedHashSet3dNormal world
+            let (elements2d, world) = World.getElements2dInPlay CachedHashSet2dNormal world
             UpdateGatherTimer.Stop ()
 
             // update game
@@ -981,8 +982,8 @@ module WorldModule2 =
             UpdateEntitiesTimer.Stop ()
 
             // clear cached hash sets
-            CachedHashSet3d.Clear ()
-            CachedHashSet2d.Clear ()
+            CachedHashSet3dNormal.Clear ()
+            CachedHashSet2dNormal.Clear ()
 
             // fin
             world
@@ -1101,21 +1102,21 @@ module WorldModule2 =
                 then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                 else hashSetPlus HashIdentity.Structural []
             let (elements3d, world) =
-                if skipCulling then
-                    World.getElements3d CachedHashSet3d world
-                else
-                    match renderPass with
-                    | NormalPass -> World.getElements3dInView CachedHashSet3d world
-                    | ShadowPass (_, shadowDirectional, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3d world
-                    | ReflectionPass _ -> (Seq.empty, world)
+                match renderPass with
+                | NormalPass ->
+                    if skipCulling
+                    then World.getElements3d CachedHashSet3dNormal world
+                    else World.getElements3dInView CachedHashSet3dNormal world
+                | ShadowPass (_, shadowDirectional, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3dNormal world
+                | ReflectionPass _ -> (Seq.empty, world)
             let (elements2d, world) =
                 match renderPass with
                 | NormalPass ->
                     if skipCulling
-                    then World.getElements2d CachedHashSet2d world
-                    else World.getElements2dInView CachedHashSet2d world
-                | ShadowPass _ | ReflectionPass _ ->
-                    (Seq.empty, world)
+                    then World.getElements2d CachedHashSet2dNormal world
+                    else World.getElements2dInView CachedHashSet2dNormal world
+                | ShadowPass _ -> (Seq.empty, world)
+                | ReflectionPass _ -> (Seq.empty, world)
             RenderGatherTimer.Stop ()
 
             // render simulants breadth-first
@@ -1148,8 +1149,8 @@ module WorldModule2 =
             RenderEntitiesTimer.Stop ()
 
             // clear cached hash sets
-            CachedHashSet3d.Clear ()
-            CachedHashSet2d.Clear ()
+            CachedHashSet3dNormal.Clear ()
+            CachedHashSet2dNormal.Clear ()
 
             // fin
             world
@@ -1157,9 +1158,8 @@ module WorldModule2 =
         static member private renderSimulants skipCulling world =
 
             // create shadow pass descriptors
-            let tempHashSet = HashSet ()
             let lightBox = World.getLight3dBox world
-            let (lights, world) = World.getLights3dInBox lightBox tempHashSet world // NOTE: this may not be the optimal way to query.
+            let (lights, world) = World.getLights3dInBox lightBox CachedHashSet3dShadow world // NOTE: this may not be the optimal way to query.
             let eyeCenter = World.getEye3dCenter world
             let sortableShadowPassDescriptors =
                 [|for light in lights do
@@ -1212,8 +1212,11 @@ module WorldModule2 =
                     World.renderSimulantsInternal false (ShadowPass (light.GetId world, isZero directionalSort, shadowFrustum)) world)
                     world
 
-            // render simulants normally
-            World.renderSimulantsInternal skipCulling NormalPass world
+            // render simulants normally, remember to clear 3d shadow cache
+            let world = World.renderSimulantsInternal skipCulling NormalPass world
+            CachedHashSet3dShadow.Clear ()
+            world
+
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
