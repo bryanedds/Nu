@@ -2845,9 +2845,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 updateEntityDrag ()
                 updateHotkeys entityHierarchyFocused
                 if not eyeChangedElsewhere then
-                    world <- World.setEye2dCenter desiredEye2dCenter world
-                    world <- World.setEye3dCenter desiredEye3dCenter world
-                    world <- World.setEye3dRotation desiredEye3dRotation world
+                    world <-
+                        World.frame (fun world ->
+                            let world = World.setEye2dCenter desiredEye2dCenter world
+                            let world = World.setEye3dCenter desiredEye3dCenter world
+                            let world = World.setEye3dRotation desiredEye3dRotation world
+                            world)
+                            Game
+                            world
                 else
                     desiredEye2dCenter <- World.getEye2dCenter world
                     desiredEye3dCenter <- World.getEye3dCenter world
