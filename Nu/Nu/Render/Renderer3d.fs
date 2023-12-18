@@ -2498,7 +2498,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
                                 shadowView.Translation <- light.SortableLightOrigin
                                 shadowView <- shadowView.Inverted
-                                let shadowFov = min light.SortableLightConeOuter Constants.Render.ShadowsFovMax
+                                let shadowFov = min light.SortableLightConeOuter Constants.Render.ShadowFovMax
                                 let shadowCutoff = max light.SortableLightCutoff 0.1f
                                 let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)

@@ -52,6 +52,8 @@ module Override =
                 | nameof Render.NearPlaneDistanceImposter -> Render.NearPlaneDistanceImposter <- scvalue value
                 | nameof Render.FarPlaneDistanceImposter -> Render.FarPlaneDistanceImposter <- scvalue value
                 | nameof Render.SsaoResolutionDivisor -> Render.SsaoResolutionDivisor <- scvalue value
+                | nameof Render.ShadowFovMax -> Render.ShadowFovMax <- scvalue value
+                | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsShaderMax
                 | nameof OpenGL.HlAssert -> OpenGL.HlAssert <- scvalue value
                 | _ -> ()
         with
