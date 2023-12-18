@@ -43,8 +43,8 @@ module Hl =
         Marshal.Copy (message, messageBytes, 0, length)
         let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
         match severity with
-        | DebugSeverity.DebugSeverityLow -> Log.info messageStr
-        | DebugSeverity.DebugSeverityMedium -> Log.info messageStr
+        | DebugSeverity.DebugSeverityLow
+        | DebugSeverity.DebugSeverityMedium
         | DebugSeverity.DebugSeverityHigh -> Log.info messageStr
         | DebugSeverity.DebugSeverityNotification
         | DebugSeverity.DontCare
