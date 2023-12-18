@@ -426,17 +426,14 @@ module WorldModuleGame =
             let eyeFrustum = World.getGameEye3dFrustumEnclosed Game.Handle world
             struct (eyeBox, eyeFrustum)
 
-        /// Check that the given bounds is within the 3d eye's sight.
+        /// Check that the given bounds is within the 3d eye's sight (or a light probe / light in the light box that may be lighting something within it).
         static member boundsInView3d lightProbe light presence (bounds : Box3) world =
             Presence.intersects3d
-                (World.getGameEye3dFrustumEnclosed Game.Handle world)
+                (Some (World.getGameEye3dFrustumEnclosed Game.Handle world))
                 (World.getGameEye3dFrustumExposed Game.Handle world)
                 (World.getGameEye3dFrustumImposter Game.Handle world)
-                (World.getLight3dBox world)
-                lightProbe
-                light
-                bounds
-                presence
+                (Some (World.getLight3dBox world))
+                lightProbe light bounds presence
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         static member boundsInPlay3d (bounds : Box3) world =

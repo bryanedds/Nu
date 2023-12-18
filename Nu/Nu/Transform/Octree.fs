@@ -527,6 +527,14 @@ module Octree =
                 set.Add imposter |> ignore<bool>
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
+    /// Get all of the elements in a tree that satisfy the given query parameters.
+    let getElementsInViewFrustum enclosed exposed frustum (set : _ HashSet) tree =
+        Octnode.getElementsInViewFrustum enclosed exposed frustum set tree.Node
+        for imposter in tree.Imposter do
+            if frustum.Intersects imposter.Bounds then
+                set.Add imposter |> ignore<bool>
+        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+
     /// Get all of the elements in a tree that are in a node intersected by one of the given frustums or light box depending on its attributes.
     let getElementsInView frustumEnclosed frustumExposed (frustumImposter : Frustum) lightBox (set : _ HashSet) tree =
         Octnode.getElementsInView frustumEnclosed frustumExposed lightBox set tree.Node

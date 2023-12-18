@@ -61,7 +61,7 @@ type [<Struct>] RenderType =
 /// OPTIMIZATION: uses partial hashing for speed.
 type [<CustomEquality; NoComparison>] RenderPass =
     | NormalPass
-    | ShadowPass of LightId : uint64 * ShadowFrustum : Frustum
+    | ShadowPass of LightId : uint64 * ShadowDirectional : bool * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
 
     override this.Equals thatObj =
@@ -69,7 +69,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
         | :? RenderPass as that ->
             match (this, that) with
             | (NormalPass, NormalPass) -> true
-            | (ShadowPass (lightId, _), ShadowPass (lightId2, _)) -> lightId = lightId2
+            | (ShadowPass (lightId, _, _), ShadowPass (lightId2, _, _)) -> lightId = lightId2
             | (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
             | (_, _) -> false
         | _ -> false
@@ -77,7 +77,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
     override this.GetHashCode () =
         match this with
         | NormalPass -> 0
-        | ShadowPass (lightId, _) -> hash lightId
+        | ShadowPass (lightId, _, _) -> hash lightId
         | ReflectionPass (reflectorId, _) -> hash reflectorId
 
 /// An asset that is used for rendering.
