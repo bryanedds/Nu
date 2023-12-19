@@ -24,6 +24,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec4 texCoordsOffset;
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
@@ -31,19 +32,12 @@ layout (location = 2) in vec3 normal;
 layout (location = 3) in vec3 tint;
 layout (location = 4) in vec4 blends[2];
 layout (location = 6) in mat4 model;
-layout (location = 10) in vec4 texCoordsOffset;
-layout (location = 11) in vec4 albedo;
-layout (location = 12) in vec4 material;
-layout (location = 13) in float height;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 out vec4 blendsOut[2];
 out vec3 tintOut;
-flat out vec4 albedoOut;
-flat out vec4 materialOut;
-flat out float heightOut;
 
 void main()
 {
@@ -52,10 +46,7 @@ void main()
     vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
-    albedoOut = albedo;
-    materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
-    heightOut = height;
     blendsOut[0] = blends[0];
     blendsOut[1] = blends[1];
     tintOut = tint;
@@ -69,6 +60,9 @@ const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 8;
 
 uniform vec3 eyeCenter;
+uniform vec4 albedo;
+uniform vec4 material;
+uniform float height;
 uniform int layersCount;
 uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
 uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
@@ -81,13 +75,10 @@ in vec2 texCoordsOut;
 in vec3 normalOut;
 in vec4 blendsOut[2];
 in vec3 tintOut;
-flat in vec4 albedoOut;
-flat in vec4 materialOut;
-flat in float heightOut;
 
 layout (location = 0) out vec4 position;
-layout (location = 1) out vec3 albedo;
-layout (location = 2) out vec4 material;
+layout (location = 1) out vec3 albedo_;
+layout (location = 2) out vec4 material_;
 layout (location = 3) out vec4 normalAndHeight;
 
 void main()
@@ -109,10 +100,9 @@ void main()
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
-    // compute height blend and height
+    // compute height blend
     float heightBlend = 0.0;
     for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * blendsOut[i/4][i%4];
-    float height = heightBlend * heightOut;
 
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
@@ -140,8 +130,8 @@ void main()
     if (albedoBlend.a == 0.0f) discard;
 
     // populate albedo, material, and normalAndHeight
-    albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
-    material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
+    albedo_ = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedo.rgb;
+    material_ = vec4(roughnessBlend * material.g, 0.0, ambientOcclusionBlend * material.b, 0.0);
     normalAndHeight.xyz = normalize(toWorld * normalize(normalBlend));
-    normalAndHeight.a = height;
+    normalAndHeight.a = heightBlend * height;
 }

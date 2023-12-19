@@ -23,22 +23,16 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec4 texCoordsOffset;
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in mat4 model;
-layout (location = 7) in vec4 texCoordsOffset;
-layout (location = 8) in vec4 albedo;
-layout (location = 9) in vec4 material;
-layout (location = 10) in float height;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
-flat out vec4 albedoOut;
-flat out vec4 materialOut;
-flat out float heightOut;
 
 void main()
 {
@@ -47,10 +41,7 @@ void main()
     vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
-    albedoOut = albedo;
-    materialOut = material;
     normalOut = mat3(model) * normal;
-    heightOut = height;
     gl_Position = projection * view * positionOut;
 }
 
@@ -66,9 +57,12 @@ const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
-const int SHADOWS_MAX = 8;
+const int SHADOWS_MAX = 16;
 
 uniform vec3 eyeCenter;
+uniform vec4 albedo;
+uniform vec4 material;
+uniform float height;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform sampler2D albedoTexture;
@@ -105,9 +99,6 @@ uniform mat4 shadowMatrices[SHADOWS_MAX];
 in vec4 positionOut;
 in vec2 texCoordsOut;
 in vec3 normalOut;
-flat in vec4 albedoOut;
-flat in vec4 materialOut;
-flat in float heightOut;
 
 out vec4 frag;
 
@@ -191,28 +182,28 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * position;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).r;
-    vec2 parallax = toEyeTangent.xy * height * heightOut;
+    float height_ = texture(heightTexture, texCoordsOut).r;
+    vec2 parallax = toEyeTangent.xy * height_ * height;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo with alpha
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    vec4 albedo;
-    albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
-    albedo.a = albedoSample.a * albedoOut.a;
-    if (albedo.a == 0.0f) discard;
-    albedo.a = mix(albedo.a, 1.0, clamp((distance - OPAQUING_DISTANCE_BEGIN) / OPAQUING_DISTANCE_RANGE, 0.0, 1.0));
+    vec4 albedo_;
+    albedo_.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb;
+    albedo_.a = albedoSample.a * albedo.a;
+    if (albedo_.a == 0.0f) discard;
+    albedo_.a = mix(albedo_.a, 1.0, clamp((distance - OPAQUING_DISTANCE_BEGIN) / OPAQUING_DISTANCE_RANGE, 0.0, 1.0));
 
     // compute material properties
-    float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;
-    float metallic = texture(metallicTexture, texCoords).g * materialOut.g;
-    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
-    vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
+    float roughness = texture(roughnessTexture, texCoords).r * material.r;
+    float metallic = texture(metallicTexture, texCoords).g * material.g;
+    float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * material.b;
+    vec3 emission = vec3(texture(emissionTexture, texCoords).r * material.a);
 
     // compute lightAccum term
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - position);
-    vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
+    vec3 f0 = mix(vec3(0.04), albedo_.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
     {
@@ -281,7 +272,7 @@ void main()
         float nDotL = max(dot(n, l), 0.0);
 
         // add to outgoing lightAccum
-        lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL * shadowScalar;
+        lightAccum += (kD * albedo_.rgb / PI + specular) * radiance * nDotL * shadowScalar;
     }
 
     // determine light map indices, including their validity
@@ -337,7 +328,7 @@ void main()
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 diffuse = kD * irradiance * albedo.rgb * lightAmbientDiffuse;
+    vec3 diffuse = kD * irradiance * albedo_.rgb * lightAmbientDiffuse;
 
     // compute specular term
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
@@ -350,8 +341,8 @@ void main()
     vec3 color = lightAccum + ambient;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
-    color = color + emission * albedo.rgb;
+    color = color + emission * albedo_.rgb;
 
     // write
-    frag = vec4(color, albedo.a);
+    frag = vec4(color, albedo_.a);
 }
