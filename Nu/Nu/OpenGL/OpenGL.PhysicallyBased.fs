@@ -1837,7 +1837,6 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
-        Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Hl.Assert ()
 
         // setup textures
@@ -1917,13 +1916,6 @@ module PhysicallyBased =
         for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
-        Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
-        Gl.Uniform1 (shader.MetallicTextureUniform, 2)
-        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
-        Gl.Uniform1 (shader.EmissionTextureUniform, 4)
-        Gl.Uniform1 (shader.NormalTextureUniform, 5)
-        Gl.Uniform1 (shader.HeightTextureUniform, 6)
         Hl.Assert ()
 
         // setup textures
@@ -2066,22 +2058,6 @@ module PhysicallyBased =
         if lightAmbientColor.Length = 3 then
             Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
-        Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
-        Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
-        Gl.Uniform1 (shader.MetallicTextureUniform, 2)
-        Gl.Uniform1 (shader.AmbientOcclusionTextureUniform, 3)
-        Gl.Uniform1 (shader.EmissionTextureUniform, 4)
-        Gl.Uniform1 (shader.NormalTextureUniform, 5)
-        Gl.Uniform1 (shader.HeightTextureUniform, 6)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 7)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 8)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 9)
-        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-            Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 10)
-        for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward)
-        for i in 0 .. dec Constants.Render.ShadowsMax do
-            Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
@@ -2320,8 +2296,6 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredLightMappingShader
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
-        Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 1)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
@@ -2362,11 +2336,6 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredIrradianceShader
-        Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 0)
-        Gl.Uniform1 (shader.LightMappingTextureUniform, 1)
-        Gl.Uniform1 (shader.IrradianceMapUniform, 2)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 3)
         Hl.Assert ()
 
         // setup textures
@@ -2413,13 +2382,6 @@ module PhysicallyBased =
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredEnvironmentFilterShader
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
-        Gl.Uniform1 (shader.MaterialTextureUniform, 1)
-        Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 2)
-        Gl.Uniform1 (shader.LightMappingTextureUniform, 3)
-        Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 4)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 5 + Constants.Render.LightMapsMaxDeferred)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
@@ -2472,8 +2434,6 @@ module PhysicallyBased =
         Gl.UseProgram shader.PhysicallyBasedDeferredSsaoShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
-        Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 1)
         Gl.Uniform2 (shader.SsaoResolution, ssaoResolution)
         Gl.Uniform1 (shader.SsaoIntensity, ssaoIntensity)
         Gl.Uniform1 (shader.SsaoBias, ssaoBias)
@@ -2540,16 +2500,6 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
-        Gl.Uniform1 (shader.PositionTextureUniform, 0)
-        Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
-        Gl.Uniform1 (shader.MaterialTextureUniform, 2)
-        Gl.Uniform1 (shader.NormalAndHeightTextureUniform, 3)
-        Gl.Uniform1 (shader.BrdfTextureUniform, 4)
-        Gl.Uniform1 (shader.IrradianceTextureUniform, 5)
-        Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 6)
-        Gl.Uniform1 (shader.SsaoTextureUniform, 7)
-        for i in 0 .. dec Constants.Render.ShadowsMax do
-            Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 8)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -2605,7 +2555,6 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedBlurShader
-        Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 
         // setup textures
@@ -2638,7 +2587,6 @@ module PhysicallyBased =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedFxaaShader
-        Gl.Uniform1 (shader.InputTextureUniform, 0)
         Hl.Assert ()
 
         // setup textures

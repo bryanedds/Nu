@@ -191,7 +191,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 // setup shader
                 OpenGL.Gl.UseProgram shader
                 OpenGL.Gl.UniformMatrix4 (shaderProjectionMatrixUniform, false, projectionArray)
-                OpenGL.Gl.Uniform1 (shaderFontTextureUniform, 0)
+                OpenGL.Gl.Uniform1 (shaderFontTextureUniform, 0) // TODO: use bindless textures for imgui?
                 OpenGL.Hl.Assert ()
 
                 // draw command lists
