@@ -47,7 +47,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
     let mutable shaderFontTextureUniform = 0
     let mutable fontTextureWidth = 0
     let mutable fontTextureHeight = 0
-    let mutable fontTexture = 0u
+    let mutable fontTexture = OpenGL.Texture.Texture.empty
     do ignore windowWidth
 
     interface RendererImGui with
@@ -133,7 +133,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fontTexture <- OpenGL.Texture.CreateTexture (OpenGL.InternalFormat.Rgba8, fontTextureWidth, fontTextureHeight, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, pixels)
-            fonts.SetTexID (nativeint fontTexture)
+            fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 
         member this.Render (drawData : ImDrawDataPtr) =
@@ -244,7 +244,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             OpenGL.Hl.Assert ()
 
             // destroy font texture
-            OpenGL.Gl.DeleteTextures [|fontTexture|]
+            OpenGL.Texture.Texture.destroy fontTexture
 
 [<RequireQualifiedAccess>]
 module GlRendererImGui =

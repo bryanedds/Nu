@@ -2209,12 +2209,6 @@ module StaticBillboardFacetModule =
         member this.GetHeightImage world : Image AssetTag = this.Get (nameof this.HeightImage) world
         member this.SetHeightImage (value : Image AssetTag) world = this.Set (nameof this.HeightImage) value world
         member this.HeightImage = lens (nameof this.HeightImage) this this.GetHeightImage this.SetHeightImage
-        member this.GetTextureMinFilterOpt world : OpenGL.TextureMinFilter option = this.Get (nameof this.TextureMinFilterOpt) world
-        member this.SetTextureMinFilterOpt (value : OpenGL.TextureMinFilter option) world = this.Set (nameof this.TextureMinFilterOpt) value world
-        member this.TextureMinFilterOpt = lens (nameof this.TextureMinFilterOpt) this this.GetTextureMinFilterOpt this.SetTextureMinFilterOpt
-        member this.GetTextureMagFilterOpt world : OpenGL.TextureMagFilter option = this.Get (nameof this.TextureMagFilterOpt) world
-        member this.SetTextureMagFilterOpt (value : OpenGL.TextureMagFilter option) world = this.Set (nameof this.TextureMagFilterOpt) value world
-        member this.TextureMagFilterOpt = lens (nameof this.TextureMagFilterOpt) this this.GetTextureMagFilterOpt this.SetTextureMagFilterOpt
         member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
@@ -2233,8 +2227,6 @@ module StaticBillboardFacetModule =
              define Entity.EmissionImage Assets.Default.MaterialEmission
              define Entity.NormalImage Assets.Default.MaterialNormal
              define Entity.HeightImage Assets.Default.MaterialHeight
-             define Entity.TextureMinFilterOpt None
-             define Entity.TextureMagFilterOpt None
              define Entity.RenderStyle Deferred]
 
         override this.Render (renderPass, entity, world) =
@@ -2250,8 +2242,6 @@ module StaticBillboardFacetModule =
             let emissionImage = entity.GetEmissionImage world
             let normalImage = entity.GetNormalImage world
             let heightImage = entity.GetHeightImage world
-            let minFilterOpt = entity.GetTextureMinFilterOpt world
-            let magFilterOpt = entity.GetTextureMagFilterOpt world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
@@ -2260,7 +2250,7 @@ module StaticBillboardFacetModule =
                 (RenderBillboard
                     { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties
                       AlbedoImage = albedoImage; RoughnessImage = roughnessImage; MetallicImage = metallicImage; AmbientOcclusionImage = ambientOcclusionImage; EmissionImage = emissionImage; NormalImage = normalImage; HeightImage = heightImage
-                      MinFilterOpt = minFilterOpt; MagFilterOpt = magFilterOpt; RenderType = renderType; RenderPass = renderPass })
+                      RenderType = renderType; RenderPass = renderPass })
                 world
 
         override this.RayCast (ray, entity, world) =
