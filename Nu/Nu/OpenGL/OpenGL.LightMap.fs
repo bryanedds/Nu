@@ -101,7 +101,7 @@ module LightMap =
             Hl.Assert ()
 
             //// take a snapshot for testing
-            //Hl.SaveFramebufferRgbaToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Reflection." + string rasterCubeMap + "." + string i + ".bmp")
+            //Hl.SaveFramebufferRgbaToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Reflection." + string rasterCubeMapId + "." + string i + ".bmp")
             //Hl.Assert ()
 
         // teardown attachments
@@ -181,7 +181,7 @@ module LightMap =
             Hl.Assert ()
 
             //// take a snapshot for testing
-            //Hl.SaveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMap + "." + string i + ".bmp")
+            //Hl.SaveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
             //Hl.Assert ()
 
         // teardown attachments
@@ -339,7 +339,7 @@ module LightMap =
 
                 //// take a snapshot for testing
                 //if mip = 0 then
-                //    Hl.SaveFramebufferToBitmap resolution resolution ("EnvironmentFilter." + string cubeMap + "." + string mip + "." + string i + ".bmp")
+                //    Hl.SaveFramebufferRgbaToBitmap resolution resolution ("EnvironmentFilter." + string cubeMapId + "." + string mip + "." + string i + ".bmp")
                 //    Hl.Assert ()
 
         // teardown attachments
