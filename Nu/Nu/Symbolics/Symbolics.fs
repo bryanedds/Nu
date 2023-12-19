@@ -41,7 +41,7 @@ module Symbolics =
                 with exn ->
                     Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                     None
-        with _ ->
+        with exn ->
             Log.info ("Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to: " + scstring exn)
             None
 
