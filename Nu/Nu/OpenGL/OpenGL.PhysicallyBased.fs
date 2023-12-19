@@ -1919,6 +1919,7 @@ module PhysicallyBased =
         (view : single array,
          projection : single array,
          bones : single array array,
+         eyeCenter : Vector3,
          surfacesCount : int,
          modelsFields : single array,
          texCoordsOffsetsFields : single array,
@@ -1946,6 +1947,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
         Gl.Uniform1 (shader.MetallicTextureUniform, 2)

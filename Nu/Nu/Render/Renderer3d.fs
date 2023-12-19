@@ -1545,7 +1545,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
-        viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
+        viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
@@ -1607,7 +1607,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // draw deferred surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-                (viewArray, projectionArray, bonesArray, parameters.Length,
+                (viewArray, projectionArray, bonesArray, eyeCenter, parameters.Length,
                  renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, blending,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -2146,14 +2146,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         if topLevelRender then
             for entry in renderTasks.RenderSurfacesDeferredStaticAbsolute do
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    viewAbsoluteArray geometryProjectionArray [||] entry.Value false
+                    viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value false
                     entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render static surfaces w/ relative transforms
         for entry in renderTasks.RenderSurfacesDeferredStaticRelative do
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                viewRelativeArray geometryProjectionArray [||] entry.Value false
+                viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value false
                 entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2164,7 +2164,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let struct (bones, parameters) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    viewAbsoluteArray geometryProjectionArray bonesArray parameters false
+                    viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters false
                     surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -2174,7 +2174,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let struct (bones, parameters) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                viewRelativeArray geometryProjectionArray bonesArray parameters false
+                viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters false
                 surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
