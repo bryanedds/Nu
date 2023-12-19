@@ -168,7 +168,6 @@ module Sprite =
         Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
         Gl.Uniform4 (texCoords4Uniform, texCoords.Min.X, texCoords.Min.Y, texCoords.Size.X, texCoords.Size.Y)
         Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
-        Gl.Uniform1 (texUniform, 0)
         Hl.Assert ()
         
         // setup texture
