@@ -194,44 +194,44 @@ and [<ReferenceEquality>] RenderTasks =
       RenderLightProbes : Dictionary<uint64, struct (bool * Vector3 * Box3 * bool)>
       RenderLightMaps : SortableLightMap List
       RenderLights : SortableLight List
-      RenderSurfacesDeferredStaticAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
-      RenderSurfacesDeferredStaticRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
-      RenderSurfacesDeferredAnimatedAbsolute : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
-      RenderSurfacesDeferredAnimatedRelative : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
+      RenderDeferredStaticAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
+      RenderDeferredStaticRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
+      RenderDeferredAnimatedAbsolute : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
+      RenderDeferredAnimatedRelative : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
       RenderDeferredTerrainsAbsolute : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
       RenderDeferredTerrainsRelative : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
-      RenderSurfacesForwardStaticAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderSurfacesForwardStaticRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderSurfacesForwardStaticAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderSurfacesForwardStaticRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
+      RenderForwardStaticAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
 
     static member make () =
         { RenderSkyBoxes = List ()
           RenderLightProbes = Dictionary HashIdentity.Structural
           RenderLightMaps = List ()
           RenderLights = List ()
-          RenderSurfacesDeferredStaticAbsolute = dictPlus HashIdentity.Structural []
-          RenderSurfacesDeferredStaticRelative = dictPlus HashIdentity.Structural []
-          RenderSurfacesDeferredAnimatedAbsolute = dictPlus HashIdentity.Structural []
-          RenderSurfacesDeferredAnimatedRelative = dictPlus HashIdentity.Structural []
+          RenderDeferredStaticAbsolute = dictPlus HashIdentity.Structural []
+          RenderDeferredStaticRelative = dictPlus HashIdentity.Structural []
+          RenderDeferredAnimatedAbsolute = dictPlus HashIdentity.Structural []
+          RenderDeferredAnimatedRelative = dictPlus HashIdentity.Structural []
           RenderDeferredTerrainsAbsolute = SList.make ()
           RenderDeferredTerrainsRelative = SList.make ()
-          RenderSurfacesForwardStaticAbsolute = SList.make ()
-          RenderSurfacesForwardStaticRelative = SList.make ()
-          RenderSurfacesForwardStaticAbsoluteSorted = SList.make ()
-          RenderSurfacesForwardStaticRelativeSorted = SList.make () }
+          RenderForwardStaticAbsolute = SList.make ()
+          RenderForwardStaticRelative = SList.make ()
+          RenderForwardStaticAbsoluteSorted = SList.make ()
+          RenderForwardStaticRelativeSorted = SList.make () }
 
     static member clear renderTasks =
         renderTasks.RenderSkyBoxes.Clear ()
         renderTasks.RenderLightProbes.Clear ()
         renderTasks.RenderLightMaps.Clear ()
         renderTasks.RenderLights.Clear ()
-        renderTasks.RenderSurfacesDeferredStaticAbsolute.Clear ()
-        renderTasks.RenderSurfacesDeferredStaticRelative.Clear ()
-        renderTasks.RenderSurfacesDeferredAnimatedAbsolute.Clear ()
-        renderTasks.RenderSurfacesDeferredAnimatedRelative.Clear ()
-        renderTasks.RenderSurfacesForwardStaticAbsoluteSorted.Clear ()
-        renderTasks.RenderSurfacesForwardStaticRelativeSorted.Clear ()
+        renderTasks.RenderDeferredStaticAbsolute.Clear ()
+        renderTasks.RenderDeferredStaticRelative.Clear ()
+        renderTasks.RenderDeferredAnimatedAbsolute.Clear ()
+        renderTasks.RenderDeferredAnimatedRelative.Clear ()
+        renderTasks.RenderForwardStaticAbsoluteSorted.Clear ()
+        renderTasks.RenderForwardStaticRelativeSorted.Clear ()
         renderTasks.RenderDeferredTerrainsAbsolute.Clear ()
         renderTasks.RenderDeferredTerrainsRelative.Clear ()
 
@@ -1207,18 +1207,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         | DeferredRenderType ->
             if absolute then
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticAbsolute.TryGetValue (billboardSurface, &renderOps)
+                if renderTasks.RenderDeferredStaticAbsolute.TryGetValue (billboardSurface, &renderOps)
                 then renderOps.Add struct (billboardMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticAbsolute.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
+                else renderTasks.RenderDeferredStaticAbsolute.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
             else
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticRelative.TryGetValue (billboardSurface, &renderOps)
+                if renderTasks.RenderDeferredStaticRelative.TryGetValue (billboardSurface, &renderOps)
                 then renderOps.Add struct (billboardMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticRelative.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
+                else renderTasks.RenderDeferredStaticRelative.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if absolute
-            then renderTasks.RenderSurfacesForwardStaticAbsolute.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
-            else renderTasks.RenderSurfacesForwardStaticRelative.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
+            then renderTasks.RenderForwardStaticAbsolute.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
+            else renderTasks.RenderForwardStaticRelative.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
 
     static member private categorizeStaticModelSurface
         (modelAbsolute,
@@ -1246,18 +1246,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         | DeferredRenderType ->
             if modelAbsolute then
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticAbsolute.TryGetValue (surface, &renderOps)
+                if renderTasks.RenderDeferredStaticAbsolute.TryGetValue (surface, &renderOps)
                 then renderOps.Add struct (modelMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticAbsolute.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
+                else renderTasks.RenderDeferredStaticAbsolute.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
             else
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticRelative.TryGetValue (surface, &renderOps)
+                if renderTasks.RenderDeferredStaticRelative.TryGetValue (surface, &renderOps)
                 then renderOps.Add struct (modelMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticRelative.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
+                else renderTasks.RenderDeferredStaticRelative.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
         | ForwardRenderType (subsort, sort) ->
             if modelAbsolute
-            then renderTasks.RenderSurfacesForwardStaticAbsolute.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
-            else renderTasks.RenderSurfacesForwardStaticRelative.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
+            then renderTasks.RenderForwardStaticAbsolute.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
+            else renderTasks.RenderForwardStaticRelative.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
 
     static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
@@ -1386,14 +1386,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let bones = mesh.ComputeBoneTransforms (time, animations, scene)
                             if modelAbsolute then
                                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                if renderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderOps)
+                                if renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderOps)
                                 then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                else renderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                else renderTasks.RenderDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
                             else
                                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                if renderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderOps)
+                                if renderTasks.RenderDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderOps)
                                 then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                else renderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                else renderTasks.RenderDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
 
                     // unable to render
                     | None -> Log.infoOnce ("Cannot render animated model without an assimp scene for '" + scstring animatedModel + "'.")
@@ -1445,14 +1445,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // render animated surface
                                 if modelAbsolute then
                                     let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderOps)
+                                    if renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderOps)
                                     then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    else renderTasks.RenderDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
                                 else
                                     let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderOps)
+                                    if renderTasks.RenderDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderOps)
                                     then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    else renderTasks.RenderDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
 
                     // unable to render
                     | None -> Log.infoOnce ("Cannot render animated model without an assimp scene for '" + scstring animatedModel + "'.")
@@ -1858,14 +1858,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightProjectionArray = lightProjection.ToArray ()
 
         // sort absolute forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderSurfacesForwardStaticAbsolute
-        renderTasks.RenderSurfacesForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticAbsolute.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderForwardStaticAbsolute
+        renderTasks.RenderForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticAbsolute.Clear ()
 
         // sort relative forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderSurfacesForwardStaticRelative
-        renderTasks.RenderSurfacesForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticRelative.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderForwardStaticRelative
+        renderTasks.RenderForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup shadow buffer and viewport
         OpenGL.Gl.Viewport (0, 0, Constants.Render.ShadowResolutionX, Constants.Render.ShadowResolutionY)
@@ -1875,14 +1875,14 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredStaticAbsolute do
+            for entry in renderTasks.RenderDeferredStaticAbsolute do
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
                     lightAbsoluteArray lightProjectionArray [||] entry.Value
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render static surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredStaticRelative do
+        for entry in renderTasks.RenderDeferredStaticRelative do
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
                 lightRelativeArray lightProjectionArray [||] entry.Value
                 entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
@@ -1890,7 +1890,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredAnimatedAbsolute do
+            for entry in renderTasks.RenderDeferredAnimatedAbsolute do
                 let struct (_, _, surface) = entry.Key
                 let struct (bones, parameters) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
@@ -1900,7 +1900,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
         // deferred render animated surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredAnimatedRelative do
+        for entry in renderTasks.RenderDeferredAnimatedRelative do
             let struct (_, _, surface) = entry.Key
             let struct (bones, parameters) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
@@ -1920,14 +1920,14 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // forward render static surfaces w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
-            for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticAbsoluteSorted do
+            for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticAbsoluteSorted do
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
                     lightAbsoluteArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // forward render static surfaces w/ relative transforms to filter buffer
-        for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticRelativeSorted do
+        for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticRelativeSorted do
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
                 lightRelativeArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
                 surface renderer.PhysicallyBasedShadowStaticShader renderer
@@ -2124,14 +2124,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
 
         // sort absolute forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderSurfacesForwardStaticAbsolute
-        renderTasks.RenderSurfacesForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticAbsolute.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderForwardStaticAbsolute
+        renderTasks.RenderForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticAbsolute.Clear ()
 
         // sort relative forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderSurfacesForwardStaticRelative
-        renderTasks.RenderSurfacesForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticRelative.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderForwardStaticRelative
+        renderTasks.RenderForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup geometry buffer and viewport
         let (positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.GeometryBuffers
@@ -2144,14 +2144,14 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredStaticAbsolute do
+            for entry in renderTasks.RenderDeferredStaticAbsolute do
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                     viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value false
                     entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render static surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredStaticRelative do
+        for entry in renderTasks.RenderDeferredStaticRelative do
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value false
                 entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
@@ -2159,7 +2159,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredAnimatedAbsolute do
+            for entry in renderTasks.RenderDeferredAnimatedAbsolute do
                 let struct (_, _, surface) = entry.Key
                 let struct (bones, parameters) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
@@ -2169,7 +2169,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
         // deferred render animated surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredAnimatedRelative do
+        for entry in renderTasks.RenderDeferredAnimatedRelative do
             let struct (_, _, surface) = entry.Key
             let struct (bones, parameters) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
@@ -2331,7 +2331,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // forward render static surfaces w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
-            for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticAbsoluteSorted do
+            for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticAbsoluteSorted do
                 let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
                 let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
@@ -2346,7 +2346,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
 
         // forward render static surfaces w/ relative transforms to filter buffer
-        for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticRelativeSorted do
+        for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticRelativeSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
             let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
