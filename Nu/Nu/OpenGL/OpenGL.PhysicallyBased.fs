@@ -1916,7 +1916,8 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
-        (view : single array,
+        (blending : bool,
+         view : single array,
          projection : single array,
          bones : single array array,
          eyeCenter : Vector3,
@@ -1926,7 +1927,6 @@ module PhysicallyBased =
          albedosFields : single array,
          materialsFields : single array,
          heightsFields : single array,
-         blending : bool,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -2082,17 +2082,17 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
-        (view : single array,
+        (blending : bool,
+         view : single array,
          projection : single array,
          bones : single array array,
-         eyeCenter : Vector3,
          surfacesCount : int,
          modelsFields : single array,
          texCoordsOffsetsFields : single array,
          albedosFields : single array,
          materialsFields : single array,
          heightsFields : single array,
-         blending : bool,
+         eyeCenter : Vector3,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
          brdfTexture : uint,
