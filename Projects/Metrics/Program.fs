@@ -37,8 +37,8 @@ type MetricsEntityDispatcher () =
     inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, Assets.Default.StaticModel)
 
 #if !MMCC
-    //override this.Update (entity, world) =
-    //    entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
+    override this.Update (entity, world) =
+        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
 #endif
 
     override this.Render (renderPass, entity, world) =
