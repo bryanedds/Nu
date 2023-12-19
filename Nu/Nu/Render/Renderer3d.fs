@@ -86,12 +86,12 @@ type [<CustomEquality; NoComparison; SymbolicExpansion; Struct>] MaterialPropert
           HeightOpt = ValueSome Constants.Render.HeightDefault }
 
     static member equals left right =
-        voptEq left.AlbedoOpt right.AlbedoOpt &&
-        voptEq left.RoughnessOpt right.RoughnessOpt &&
-        voptEq left.MetallicOpt right.MetallicOpt &&
-        voptEq left.AmbientOcclusionOpt right.AmbientOcclusionOpt &&
-        voptEq left.EmissionOpt right.EmissionOpt &&
-        voptEq left.HeightOpt right.HeightOpt
+        (match left.AlbedoOpt with ValueSome a -> (match right.AlbedoOpt with ValueSome b -> colorEq a b | ValueNone -> false) | ValueNone -> ValueOption.isNone right.AlbedoOpt) &&
+        (match left.RoughnessOpt with ValueSome a -> (match right.RoughnessOpt with ValueSome b -> a = b | ValueNone -> false) | ValueNone -> ValueOption.isNone right.RoughnessOpt) &&
+        (match left.MetallicOpt with ValueSome a -> (match right.MetallicOpt with ValueSome b -> a = b | ValueNone -> false) | ValueNone -> ValueOption.isNone right.MetallicOpt) &&
+        (match left.AmbientOcclusionOpt with ValueSome a -> (match right.AmbientOcclusionOpt with ValueSome b -> a = b | ValueNone -> false) | ValueNone -> ValueOption.isNone right.AmbientOcclusionOpt) &&
+        (match left.EmissionOpt with ValueSome a -> (match right.EmissionOpt with ValueSome b -> a = b | ValueNone -> false) | ValueNone -> ValueOption.isNone right.EmissionOpt) &&
+        (match left.HeightOpt with ValueSome a -> (match right.HeightOpt with ValueSome b -> a = b | ValueNone -> false) | ValueNone -> ValueOption.isNone right.HeightOpt)
 
     static member hash properties =
         (match properties.AlbedoOpt with ValueSome a -> a.GetHashCode () | ValueNone -> 0) ^^^
@@ -224,9 +224,9 @@ and [<CustomEquality; NoComparison; Struct>] PhysicallyBasedDeferredStaticKey =
       PhysicallyBasedSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
 
     static member hash key =
-        hash key.TexCoordsOffset ^^^
-        hash key.MaterialProperties ^^^
-        hash key.PhysicallyBasedSurface
+        key.TexCoordsOffset.GetHashCode () ^^^
+        key.MaterialProperties.GetHashCode () ^^^
+        key.PhysicallyBasedSurface.GetHashCode ()
 
     static member equals left right =
         box2Eq left.TexCoordsOffset right.TexCoordsOffset &&
@@ -235,9 +235,9 @@ and [<CustomEquality; NoComparison; Struct>] PhysicallyBasedDeferredStaticKey =
 
     static member make (texCoordsOffset : Box2) (materialProperties : MaterialProperties) (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) =
         let hashCode =
-            hash texCoordsOffset ^^^
-            hash materialProperties ^^^
-            hash surface
+            texCoordsOffset.GetHashCode () ^^^
+            materialProperties.GetHashCode () ^^^
+            surface.GetHashCode ()
         { HashCode = hashCode
           TexCoordsOffset = texCoordsOffset
           MaterialProperties = materialProperties
