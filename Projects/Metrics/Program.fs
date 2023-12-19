@@ -37,8 +37,8 @@ type MetricsEntityDispatcher () =
     inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, Assets.Default.StaticModel)
 
 #if !MMCC
-    override this.Update (entity, world) =
-        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
+    //override this.Update (entity, world) =
+    //    entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
 #endif
 
     override this.Render (renderPass, entity, world) =
@@ -143,6 +143,7 @@ type MyGameDispatcher () =
         let world =
             Array.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
+                let world = entity.SetPresence Omnipresent world
                 let world = entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
                 let world = entity.SetScale (v3Dup 0.1f) world
                 world)
