@@ -977,7 +977,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     with _ ->
                         let assembly = Assembly.LoadFrom filePath
                         Right (Some (filePath, dirName, assembly.GetTypes ()))
-                with _ ->
+                with exn ->
                     Log.info ("Failed to load Nu game project from '" + filePath + "' due to: " + scstring exn)
                     Directory.SetCurrentDirectory gaiaDir
                     Left ()
@@ -2324,7 +2324,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
                                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                                 File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-                            with exn ->messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
                         ImGui.SameLine ()
                         if ImGui.Button "Load" then
                             match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
@@ -2332,7 +2332,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
                                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                                 assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                            | Left error ->messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
+                            | Left error -> messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
                         ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                         ImGui.End ()
 
@@ -2344,7 +2344,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             try let overlays = scvalue<Overlay list> overlayerStr
                                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
                                 File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-                            with exn ->messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
                         ImGui.SameLine ()
                         if ImGui.Button "Load" then
                             let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
@@ -2353,7 +2353,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
                                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
                                 overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-                            | Left error ->messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
+                            | Left error -> messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                         ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                         ImGui.End ()
 
