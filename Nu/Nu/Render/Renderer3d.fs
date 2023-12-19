@@ -218,7 +218,7 @@ type TerrainDescriptor =
           HeightMap = this.HeightMap
           Segments = this.Segments }
 
-and [<CustomEquality; NoComparison; Struct>] PhysicallyBasedDeferredStaticKey =
+and [<CustomEquality; NoComparison>] PhysicallyBasedDeferredStaticKey =
     { HashCode : int
       TexCoordsOffset : Box2
       MaterialProperties : MaterialProperties
