@@ -17,7 +17,29 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
-    /// A texture's metadata.
+    /// An OpenGL texture.
+    type [<Struct>] Texture =
+        { TextureId : uint
+          TextureHandle : uint64 }
+
+        /// Make a texture from OpenGL-provided values.
+        static member make textureId =
+            let textureHandle = Gl.GetTextureHandleARB textureId
+            Hl.Assert () // defensive assertion
+            if textureHandle = 0UL then failwith ("Failed to create handle for texture id '" + string textureId + "'. GL_ARB_bindless_texture may not be supported on this platform.")
+            Gl.MakeTextureHandleResidentARB textureHandle
+            { TextureId = textureId
+              TextureHandle = textureHandle }
+
+        static member destroy texture =
+            Gl.MakeTextureHandleNonResidentARB texture.TextureHandle
+            Gl.DeleteTextures [|texture.TextureId|]
+
+        /// The empty or invalid texture.
+        static member empty =
+            Unchecked.defaultof<Texture>
+
+    /// An OpenGL texture's metadata.
     type TextureMetadata =
         { TextureWidth : int
           TextureHeight : int
@@ -37,7 +59,7 @@ module Texture =
 
     /// Memoizes texture loads.
     type [<ReferenceEquality>] TextureMemo =
-        { Textures : Dictionary<string, TextureMetadata * uint> }
+        { Textures : Dictionary<string, TextureMetadata * Texture> }
 
         /// Make a texture memoizer.
         static member make () =
@@ -45,14 +67,15 @@ module Texture =
 
     /// Create a texture from existing texture data.
     let CreateTexture (internalFormat, width, height, pixelFormat, pixelType, minFilter : OpenGL.TextureMinFilter, magFilter : OpenGL.TextureMagFilter, generateMipmaps, textureData : nativeint) =
-        let texture = OpenGL.Gl.GenTexture ()
-        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, texture)
+        let textureId = OpenGL.Gl.GenTexture ()
+        OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textureId)
         OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, internalFormat, width, height, 0, pixelFormat, pixelType, textureData)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int minFilter)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int magFilter)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
         if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
+        let texture = Texture.make textureId
         texture
 
     /// Create a filtered texture from existing texture data.
@@ -67,8 +90,8 @@ module Texture =
     let CreateTextureFromData (internalFormat, minFilter, magFilter, generateMipmaps, metadata, textureData) =
 
         // update the texture data to gl, creating mip maps if desired
-        let texture = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, texture)
+        let textureId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, textureId)
         Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, textureData)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
@@ -77,6 +100,7 @@ module Texture =
         if generateMipmaps then
             Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
             Gl.GenerateMipmap TextureTarget.Texture2d
+        let texture = Texture.make textureId
         texture
 
     /// Create a filtered texture from existing texture data.
@@ -140,8 +164,8 @@ module Texture =
 
             // upload the texture data to gl
             use _ = disposer
-            let texture = Gl.GenTexture ()
-            Gl.BindTexture (TextureTarget.Texture2d, texture)
+            let textureId = Gl.GenTexture ()
+            Gl.BindTexture (TextureTarget.Texture2d, textureId)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, internalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, textureData)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
@@ -150,6 +174,7 @@ module Texture =
             if generateMipmaps then
                 Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
                 Gl.GenerateMipmap TextureTarget.Texture2d
+            let texture = { TextureId = textureId; TextureHandle = Gl.GetTextureHandleARB textureId }
             Right (metadata, texture)
 
         // error

@@ -27,15 +27,13 @@ module PhysicallyBased =
     type [<Struct>] PhysicallyBasedMaterial =
         { MaterialProperties : PhysicallyBasedMaterialProperties
           AlbedoMetadata : Texture.TextureMetadata
-          AlbedoTexture : uint
-          RoughnessTexture : uint
-          MetallicTexture : uint
-          AmbientOcclusionTexture : uint
-          EmissionTexture : uint
-          NormalTexture : uint
-          HeightTexture : uint
-          TextureMinFilterOpt : OpenGL.TextureMinFilter option
-          TextureMagFilterOpt : OpenGL.TextureMagFilter option
+          AlbedoTexture : Texture.Texture
+          RoughnessTexture : Texture.Texture
+          MetallicTexture : Texture.Texture
+          AmbientOcclusionTexture : Texture.Texture
+          EmissionTexture : Texture.Texture
+          NormalTexture : Texture.Texture
+          HeightTexture : Texture.Texture
           TwoSided : bool }
 
     /// Describes some physically-based geometry that's loaded into VRAM.
@@ -83,29 +81,25 @@ module PhysicallyBased =
                 | (false, _) -> None
 
         static member inline hash surface =
-            (int surface.SurfaceMaterial.AlbedoTexture) ^^^
-            (int surface.SurfaceMaterial.RoughnessTexture <<< 2) ^^^
-            (int surface.SurfaceMaterial.MetallicTexture <<< 4) ^^^
-            (int surface.SurfaceMaterial.AmbientOcclusionTexture <<< 6) ^^^
-            (int surface.SurfaceMaterial.EmissionTexture <<< 8) ^^^
-            (int surface.SurfaceMaterial.NormalTexture <<< 10) ^^^
-            (int surface.SurfaceMaterial.HeightTexture <<< 12) ^^^
-            (hash surface.SurfaceMaterial.TextureMinFilterOpt <<< 14) ^^^
-            (hash surface.SurfaceMaterial.TextureMagFilterOpt <<< 16) ^^^
-            (hash surface.SurfaceMaterial.TwoSided <<< 18) ^^^
-            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 20) ^^^
-            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 22)
+            (int surface.SurfaceMaterial.AlbedoTexture.TextureId) ^^^
+            (int surface.SurfaceMaterial.RoughnessTexture.TextureId <<< 2) ^^^
+            (int surface.SurfaceMaterial.MetallicTexture.TextureId <<< 4) ^^^
+            (int surface.SurfaceMaterial.AmbientOcclusionTexture.TextureId <<< 6) ^^^
+            (int surface.SurfaceMaterial.EmissionTexture.TextureId <<< 8) ^^^
+            (int surface.SurfaceMaterial.NormalTexture.TextureId <<< 10) ^^^
+            (int surface.SurfaceMaterial.HeightTexture.TextureId <<< 12) ^^^
+            (hash surface.SurfaceMaterial.TwoSided <<< 14) ^^^
+            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 16) ^^^
+            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 18)
 
         static member inline equals left right =
-            optEq left.SurfaceMaterial.TextureMinFilterOpt right.SurfaceMaterial.TextureMinFilterOpt &&
-            optEq left.SurfaceMaterial.TextureMagFilterOpt right.SurfaceMaterial.TextureMagFilterOpt &&
-            left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
-            left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
-            left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
-            left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
-            left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
-            left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
-            left.SurfaceMaterial.HeightTexture = right.SurfaceMaterial.HeightTexture &&
+            left.SurfaceMaterial.AlbedoTexture.TextureId = right.SurfaceMaterial.AlbedoTexture.TextureId &&
+            left.SurfaceMaterial.RoughnessTexture.TextureId = right.SurfaceMaterial.RoughnessTexture.TextureId &&
+            left.SurfaceMaterial.MetallicTexture.TextureId = right.SurfaceMaterial.MetallicTexture.TextureId &&
+            left.SurfaceMaterial.AmbientOcclusionTexture.TextureId = right.SurfaceMaterial.AmbientOcclusionTexture.TextureId &&
+            left.SurfaceMaterial.EmissionTexture.TextureId = right.SurfaceMaterial.EmissionTexture.TextureId &&
+            left.SurfaceMaterial.NormalTexture.TextureId = right.SurfaceMaterial.NormalTexture.TextureId &&
+            left.SurfaceMaterial.HeightTexture.TextureId = right.SurfaceMaterial.HeightTexture.TextureId &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
@@ -312,7 +306,7 @@ module PhysicallyBased =
     /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
     /// inverted to smoothness (such as when a model is imported from an fbx exported from a Unity scene).
     /// Thread-safe if renderable = false.
-    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, minFilterOpt, magFilterOpt, textureMemo, material : Assimp.Material) =
+    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -543,8 +537,6 @@ module PhysicallyBased =
           EmissionTexture = emissionTexture
           NormalTexture = normalTexture
           HeightTexture = heightTexture
-          TextureMinFilterOpt = minFilterOpt
-          TextureMagFilterOpt = magFilterOpt
           TwoSided = material.IsTwoSided }
 
     /// Attempt to create physically-based static mesh from an assimp mesh.
@@ -1317,7 +1309,7 @@ module PhysicallyBased =
         let materials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let material = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, None, None, textureMemo, scene.Materials.[i])
+                let material = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, scene.Materials.[i])
                 materials.[i] <- material
         match errorOpt with
         | Some error -> Left error
@@ -1849,18 +1841,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
-        Hl.Assert ()
-
-        // setup texture filters
-        Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0))
-        match material.TextureMinFilterOpt with
-        | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-        | None -> ()
-        match material.TextureMagFilterOpt with
-        | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-        | None -> ()
+        Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
         Hl.Assert ()
 
         // update models buffer
@@ -1893,18 +1874,6 @@ module PhysicallyBased =
         // teardown geometry
         Gl.BindVertexArray 0u
         Hl.Assert ()
-
-        // teardown texture filters
-        Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0))
-        if material.TextureMinFilterOpt.IsSome then
-            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
-        if material.TextureMagFilterOpt.IsSome then
-            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-        Hl.Assert ()
-
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
         // teardown shader
         Gl.UseProgram 0u
@@ -1958,32 +1927,14 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
-        Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture)
+        Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.RoughnessTextureUniform, material.RoughnessTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.MetallicTextureUniform, material.MetallicTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.AmbientOcclusionTextureUniform, material.AmbientOcclusionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.EmissionTextureUniform, material.EmissionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.NormalTextureUniform, material.NormalTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.HeightTextureUniform, material.HeightTexture.TextureHandle)
         Hl.Assert ()
-
-        // setup pbr texture filters
-        for i in 0 .. dec 5 do
-            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
-            match material.TextureMinFilterOpt with
-            | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-            | None -> ()
-            match material.TextureMagFilterOpt with
-            | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-            | None -> ()
-            Hl.Assert ()
 
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
@@ -2040,33 +1991,6 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown pbr texture filters
-        for i in 0 .. dec 5 do
-            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
-            if material.TextureMinFilterOpt.IsSome then
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
-            if material.TextureMagFilterOpt.IsSome then
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Hl.Assert ()
-
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
         Hl.Assert ()
@@ -2095,12 +2019,12 @@ module PhysicallyBased =
          eyeCenter : Vector3,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
-         brdfTexture : uint,
-         irradianceMap : uint,
-         environmentFilterMap : uint,
-         irradianceMaps : uint array,
-         environmentFilterMaps : uint array,
-         shadowTextures : uint array,
+         brdfTexture : Texture.Texture,
+         irradianceMap : Texture.Texture,
+         environmentFilterMap : Texture.Texture,
+         irradianceMaps : Texture.Texture array,
+         environmentFilterMaps : Texture.Texture array,
+         shadowTextures : Texture.Texture array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
@@ -2179,47 +2103,23 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, material.AlbedoTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, material.RoughnessTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, material.MetallicTexture)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, material.AmbientOcclusionTexture)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, material.EmissionTexture)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture)
-        Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture)
-        Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
-        Gl.ActiveTexture TextureUnit.Texture8
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
-        Gl.ActiveTexture TextureUnit.Texture9
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.RoughnessTextureUniform, material.RoughnessTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.MetallicTextureUniform, material.MetallicTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.AmbientOcclusionTextureUniform, material.AmbientOcclusionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.EmissionTextureUniform, material.EmissionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.NormalTextureUniform, material.NormalTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.HeightTextureUniform, material.HeightTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.BrdfTextureUniform, brdfTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.IrradianceMapUniform, irradianceMap.TextureHandle)
+        Gl.UniformHandleARB (shader.EnvironmentFilterMapUniform, environmentFilterMap.TextureHandle)
         for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i])
+            Gl.UniformHandleARB (shader.IrradianceMapsUniforms.[i], irradianceMaps.[i].TextureHandle)
         for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i])
+            Gl.UniformHandleARB (shader.EnvironmentFilterMapsUniforms.[i], environmentFilterMaps.[i].TextureHandle)
         for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i])
+            Gl.UniformHandleARB (shader.ShadowTexturesUniforms.[i], shadowTextures.[i].TextureHandle)
         Hl.Assert ()
-
-        // setup pbr texture filters
-        for i in 0 .. dec 5 do
-            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
-            match material.TextureMinFilterOpt with
-            | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-            | None -> ()
-            match material.TextureMagFilterOpt with
-            | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-            | None -> ()
-            Hl.Assert ()
 
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
@@ -2274,48 +2174,6 @@ module PhysicallyBased =
 
         // teardown geometry
         Gl.BindVertexArray 0u
-        Hl.Assert ()
-
-        // teardown pbr texture filters
-        for i in 0 .. dec 5 do
-            Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i))
-            if material.TextureMinFilterOpt.IsSome then
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
-            if material.TextureMagFilterOpt.IsSome then
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Hl.Assert ()
-
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Gl.ActiveTexture TextureUnit.Texture8
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Gl.ActiveTexture TextureUnit.Texture9
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // teardown shader
@@ -2374,33 +2232,16 @@ module PhysicallyBased =
 
         // setup textures
         for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture)
+            Gl.UniformHandleARB (shader.AlbedoTexturesUniforms.[i], materials.[i].AlbedoTexture.TextureHandle)
         for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture)
+            Gl.UniformHandleARB (shader.RoughnessTexturesUniforms.[i], materials.[i].RoughnessTexture.TextureHandle)
         for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture)
+            Gl.UniformHandleARB (shader.AmbientOcclusionTexturesUniforms.[i], materials.[i].AmbientOcclusionTexture.TextureHandle)
         for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture)
+            Gl.UniformHandleARB (shader.NormalTexturesUniforms.[i], materials.[i].NormalTexture.TextureHandle)
         for i in 0 .. dec layersCount do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture)
+            Gl.UniformHandleARB (shader.AmbientOcclusionTexturesUniforms.[i], materials.[i].AmbientOcclusionTexture.TextureHandle)
         Hl.Assert ()
-
-        // setup pbr texture filters
-        for i in 0 .. dec layersCount do
-            for j in 0 .. dec 5 do
-                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
-                match materials[i].TextureMinFilterOpt with
-                | Some minFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-                | None -> ()
-                match materials[i].TextureMagFilterOpt with
-                | Some magFilter -> Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-                | None -> ()
-                Hl.Assert ()
 
         // update models buffer
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
@@ -2456,23 +2297,6 @@ module PhysicallyBased =
         // teardown geometry
         Gl.BindVertexArray 0u
         Hl.Assert ()
-
-        // teardown pbr texture filters
-        for i in 0 .. dec layersCount do
-            for j in 0 .. dec 5 do
-                Gl.ActiveTexture (LanguagePrimitives.EnumOfValue (int TextureUnit.Texture0 + i * 5 + j))
-                if materials[i].TextureMinFilterOpt.IsSome then
-                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
-                if materials[i].TextureMagFilterOpt.IsSome then
-                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-                Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                Hl.Assert ()
-
-        // teardown textures
-        for i in 0 .. dec layersCount * 5 do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
         
         // teardown shader
         Gl.UseProgram 0u
@@ -2485,8 +2309,8 @@ module PhysicallyBased =
 
     /// Draw the light mapping pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightMappingSurface
-        (positionTexture : uint,
-         normalAndHeightTexture : uint,
+        (positionTexture : Texture.Texture,
+         normalAndHeightTexture : Texture.Texture,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
@@ -2505,10 +2329,8 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
+        Gl.UniformHandleARB (shader.PositionTextureUniform, positionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.NormalAndHeightTextureUniform, normalAndHeightTexture.TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2526,22 +2348,15 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
 
     /// Draw the irradiance pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredIrradianceSurface
-        (normalAndHeightTexture : uint,
-         lightMappingTexture : uint,
-         irradianceMap : uint,
-         irradianceMaps : uint array,
+        (normalAndHeightTexture : Texture.Texture,
+         lightMappingTexture : Texture.Texture,
+         irradianceMap : Texture.Texture,
+         irradianceMaps : Texture.Texture array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredIrradianceShader) =
 
@@ -2555,15 +2370,11 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, lightMappingTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap)
+        Gl.UniformHandleARB (shader.NormalAndHeightTextureUniform, normalAndHeightTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.LightMappingTextureUniform, lightMappingTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.IrradianceMapUniform, irradianceMap.TextureHandle)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 3 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i])
+            Gl.UniformHandleARB (shader.IrradianceMapsUniforms.[i], irradianceMaps.[i].TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2581,30 +2392,18 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 3 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
 
     /// Draw the environment filter pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredEnvironmentFilterSurface
         (eyeCenter : Vector3,
-         positionTexture : uint,
-         materialTexture : uint,
-         normalAndHeightTexture : uint,
-         lightMappingTexture : uint,
-         environmentFilterMap : uint,
-         environmentFilterMaps : uint array,
+         positionTexture : Texture.Texture,
+         materialTexture : Texture.Texture,
+         normalAndHeightTexture : Texture.Texture,
+         lightMappingTexture : Texture.Texture,
+         environmentFilterMap : Texture.Texture,
+         environmentFilterMaps : Texture.Texture array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
@@ -2627,19 +2426,13 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, lightMappingTexture)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap)
+        Gl.UniformHandleARB (shader.PositionTextureUniform, positionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.MaterialTextureUniform, materialTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.NormalAndHeightTextureUniform, normalAndHeightTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.LightMappingTextureUniform, lightMappingTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.EnvironmentFilterMapUniform, environmentFilterMap.TextureHandle)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 5 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i])
+            Gl.UniformHandleARB (shader.EnvironmentFilterMapsUniforms.[i], environmentFilterMaps.[i].TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2657,22 +2450,6 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 5 + i + Constants.Render.LightMapsMaxDeferred |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
 
@@ -2680,8 +2457,8 @@ module PhysicallyBased =
     let DrawPhysicallyBasedDeferredSsaoSurface
         (view : single array,
          projection : single array,
-         positionTexture : uint,
-         normalAndHeightTexture : uint,
+         positionTexture : Texture.Texture,
+         normalAndHeightTexture : Texture.Texture,
          ssaoResolution : int array,
          ssaoIntensity : single,
          ssaoBias : single,
@@ -2706,10 +2483,8 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
+        Gl.UniformHandleARB (shader.PositionTextureUniform, positionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.NormalAndHeightTextureUniform, normalAndHeightTexture.TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2727,13 +2502,6 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
 
@@ -2742,15 +2510,15 @@ module PhysicallyBased =
         (eyeCenter : Vector3,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
-         positionTexture : uint,
-         albedoTexture : uint,
-         materialTexture : uint,
-         normalAndHeightTexture : uint,
-         brdfTexture : uint,
-         irradianceTexture : uint,
-         environmentFilterTexture : uint,
-         ssaoTexture : uint,
-         shadowTextures : uint array,
+         positionTexture : Texture.Texture,
+         albedoTexture : Texture.Texture,
+         materialTexture : Texture.Texture,
+         normalAndHeightTexture : Texture.Texture,
+         brdfTexture : Texture.Texture,
+         irradianceTexture : Texture.Texture,
+         environmentFilterTexture : Texture.Texture,
+         ssaoTexture : Texture.Texture,
+         shadowTextures : Texture.Texture array,
          lightOrigins : single array,
          lightDirections : single array,
          lightColors : single array,
@@ -2799,25 +2567,16 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, positionTexture)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, albedoTexture)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, materialTexture)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightTexture)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, brdfTexture)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, irradianceTexture)
-        Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture)
-        Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture)
+        Gl.UniformHandleARB (shader.PositionTextureUniform, positionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.AlbedoTextureUniform, albedoTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.MaterialTextureUniform, materialTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.NormalAndHeightTextureUniform, normalAndHeightTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.BrdfTextureUniform, brdfTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.IrradianceTextureUniform, irradianceTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.EnvironmentFilterTextureUniform, environmentFilterTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.SsaoTextureUniform, ssaoTexture.TextureHandle)
         for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i])
+            Gl.UniformHandleARB (shader.ShadowTexturesUniforms[i], shadowTextures[i].TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2835,34 +2594,12 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture4
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture5
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture6
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture7
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
-            Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
 
     /// Draw the blur pass of a physically-based surface.
     let DrawPhysicallyBasedBlurSurface
-        (inputTexture : uint,
+        (inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedBlurShader) =
 
@@ -2872,8 +2609,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, inputTexture)
+        Gl.UniformHandleARB (shader.InputTextureUniform, inputTexture.TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2891,17 +2627,12 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
         // teardown shader
         Gl.UseProgram 0u
 
     /// Draw the fxaa pass of a physically-based surface.
     let DrawPhysicallyBasedFxaaSurface
-        (inputTexture : uint,
+        (inputTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedFxaaShader) =
 
@@ -2911,8 +2642,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, inputTexture)
+        Gl.UniformHandleARB (shader.InputTextureUniform, inputTexture.TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2928,11 +2658,6 @@ module PhysicallyBased =
 
         // teardown geometry
         Gl.BindVertexArray 0u
-        Hl.Assert ()
-
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // teardown shader

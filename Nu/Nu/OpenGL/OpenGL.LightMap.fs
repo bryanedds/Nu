@@ -26,16 +26,16 @@ module LightMap =
         Hl.Assert ()
 
         // create reflection cube map
-        let rasterCubeMap = Gl.GenTexture()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, rasterCubeMap)
-        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, rasterCubeMap, 0)
+        let rasterCubeMapId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, rasterCubeMapId)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, rasterCubeMapId, 0)
         Hl.Assert ()
 
         // setup reflection cube map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, rasterResolution, rasterResolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -71,7 +71,7 @@ module LightMap =
 
             // bind reflection cube map face for rendering
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMapId, 0)
             Hl.Assert ()
 
             // render to reflection cube map face
@@ -115,6 +115,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|rasterRenderbuffer|]
         Gl.DeleteFramebuffers [|rasterFramebuffer|]
+        let rasterCubeMap = Texture.Texture.make rasterCubeMapId
         rasterCubeMap
 
     let CreateIrradianceMap
@@ -134,16 +135,16 @@ module LightMap =
         Hl.Assert ()
 
         // create irradiance cube map
-        let cubeMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
-        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, cubeMap, 0)
+        let cubeMapId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMapId)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, cubeMapId, 0)
         Hl.Assert ()
 
         // setup irradiance cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -175,7 +176,7 @@ module LightMap =
 
             // render face
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
             CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
             Hl.Assert ()
 
@@ -194,6 +195,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
+        let cubeMap = Texture.Texture.make cubeMapId
         cubeMap
 
     /// Describes an environment filter shader that's loaded into GPU.
@@ -238,7 +240,7 @@ module LightMap =
          projection : single array,
          roughness : single,
          resolution : single,
-         cubeMap : uint,
+         cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
          shader : EnvironmentFilterShader) =
 
@@ -248,8 +250,7 @@ module LightMap =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.RoughnessUniform, roughness)
         Gl.Uniform1 (shader.ResolutionUniform, resolution)
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
+        Gl.UniformHandleARB (shader.CubeMapUniform, cubeMap.TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -268,8 +269,6 @@ module LightMap =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 
@@ -291,16 +290,16 @@ module LightMap =
         Hl.Assert ()
 
         // create environment filter cube map
-        let cubeMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
-        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, cubeMap, 0)
+        let cubeMapId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMapId)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, cubeMapId, 0)
         Hl.Assert ()
 
         // setup environment filter cube map for rendering to
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.LinearMipmapLinear)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
@@ -334,7 +333,7 @@ module LightMap =
 
                 // draw mip face
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMap, mip)
+                Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, mip)
                 DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
 
@@ -354,6 +353,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
+        let cubeMap = Texture.Texture.make cubeMapId
         cubeMap
 
     /// A collection of maps consisting a light map.
@@ -361,8 +361,8 @@ module LightMap =
         { Enabled : bool
           Origin : Vector3
           Bounds : Box3
-          IrradianceMap : uint
-          EnvironmentFilterMap : uint }
+          IrradianceMap : Texture.Texture
+          EnvironmentFilterMap : Texture.Texture }
 
     /// Create a light map.
     let CreateLightMap enabled origin bounds irradianceMap environmentFilterMap =
@@ -374,6 +374,5 @@ module LightMap =
 
     /// Destroy a light map.
     let DestroyLightMap lightMap =
-        Gl.DeleteTextures
-            [|lightMap.IrradianceMap
-              lightMap.EnvironmentFilterMap|]
+        Texture.Texture.destroy lightMap.IrradianceMap
+        Texture.Texture.destroy lightMap.EnvironmentFilterMap

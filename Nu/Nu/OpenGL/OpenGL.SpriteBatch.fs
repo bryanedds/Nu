@@ -15,20 +15,20 @@ module SpriteBatch =
           BlendingFactorSrc : BlendingFactor
           BlendingFactorDst : BlendingFactor
           BlendingEquation : BlendEquationMode
-          Texture : uint }
+          TextureOpt : Texture.Texture ValueOption }
 
         static member inline changed state state2 =
             state.Absolute <> state2.Absolute ||
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
             state.BlendingEquation <> state2.BlendingEquation ||
-            state.Texture <> state2.Texture
+            voptNeq state.TextureOpt state2.TextureOpt
 
         static member make absolute bfs bfd beq texture =
-            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; Texture = texture }
+            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; TextureOpt = ValueSome texture }
 
         static member defaultState =
-            SpriteBatchState.make false BlendingFactor.SrcAlpha BlendingFactor.OneMinusSrcAlpha BlendEquationMode.FuncAdd 0u
+            { Absolute = false; BlendingFactorSrc = BlendingFactor.SrcAlpha; BlendingFactorDst = BlendingFactor.OneMinusSrcAlpha; BlendingEquation = BlendEquationMode.FuncAdd; TextureOpt = ValueNone }
 
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
@@ -145,7 +145,8 @@ module SpriteBatch =
     let private EndSpriteBatch env =
 
         // ensure something to draw
-        if env.SpriteIndex > 0 then
+        match env.State.TextureOpt with
+        | ValueSome texture when env.SpriteIndex > 0 ->
 
             // setup state
             Gl.BlendEquation env.State.BlendingEquation
@@ -167,8 +168,10 @@ module SpriteBatch =
             Gl.Uniform4 (env.ColorsUniform, env.Colors)
             Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
             Gl.Uniform1 (env.TexUniform, 0)
-            Gl.ActiveTexture TextureUnit.Texture0
-            Gl.BindTexture (TextureTarget.Texture2d, env.State.Texture)
+            Hl.Assert ()
+
+            // setup texture
+            Gl.UniformHandleARB (env.TexUniform, texture.TextureHandle)
             Hl.Assert ()
 
             // draw geometry
@@ -193,6 +196,9 @@ module SpriteBatch =
 
             // next batch
             env.SpriteIndex <- 0
+
+        // not ready
+        | ValueSome _ | ValueNone -> ()
 
     let private RestartSpriteBatch state env =
         Hl.Assert (EndSpriteBatch env)
@@ -242,7 +248,7 @@ module SpriteBatch =
         env.Colors.[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute bfs bfd beq texture

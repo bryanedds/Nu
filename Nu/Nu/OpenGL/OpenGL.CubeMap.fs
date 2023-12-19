@@ -19,7 +19,7 @@ module CubeMap =
 
     /// Memoizes cube map loads.
     type [<ReferenceEquality>] CubeMapMemo =
-        { CubeMaps : Dictionary<CubeMapMemoKey, uint> }
+        { CubeMaps : Dictionary<CubeMapMemoKey, Texture.Texture> }
 
         /// Make a cube map memoizer.
         static member make () =
@@ -29,8 +29,8 @@ module CubeMap =
     let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
 
         // bind new cube map
-        let cubeMap = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
+        let cubeMapId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMapId)
         Hl.Assert ()
 
         // load faces into cube map
@@ -54,9 +54,10 @@ module CubeMap =
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+            let cubeMap = Texture.Texture.make cubeMapId
             Right cubeMap
         | Some error ->
-            Gl.DeleteTextures [|cubeMap|]
+            Gl.DeleteTextures [|cubeMapId|]
             Left error
 
     /// Attempt to create a cube map from 6 files.
@@ -89,7 +90,7 @@ module CubeMap =
 
     /// Describes a renderable cube map surface.
     type [<Struct>] CubeMapSurface =
-        { CubeMap : uint
+        { CubeMap : Texture.Texture
           CubeMapGeometry : CubeMapGeometry }
 
         static member make cubeMap geometry =
@@ -263,7 +264,7 @@ module CubeMap =
     let DrawCubeMap
         (view : single array,
          projection : single array,
-         cubeMap : uint,
+         cubeMap : Texture.Texture,
          geometry : CubeMapGeometry,
          shader : CubeMapShader) =
 
@@ -276,8 +277,7 @@ module CubeMap =
         Gl.UseProgram shader.CubeMapShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap)
+        Gl.UniformHandleARB (shader.CubeMapUniform, cubeMap.TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -296,8 +296,6 @@ module CubeMap =
         Hl.Assert ()
 
         // teardown shader
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 

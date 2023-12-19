@@ -297,8 +297,6 @@ and StaticModelSurfaceDescriptor =
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
       HeightImage : Image AssetTag
-      TextureMinFilterOpt : OpenGL.TextureMinFilter option
-      TextureMagFilterOpt : OpenGL.TextureMagFilter option
       TwoSided : bool }
 
 and [<ReferenceEquality>] CreateUserDefinedStaticModel =
@@ -351,8 +349,6 @@ and [<ReferenceEquality>] RenderBillboard =
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
       HeightImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter option
-      MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
       RenderPass : RenderPass }
 
@@ -367,8 +363,6 @@ and [<ReferenceEquality>] RenderBillboards =
       EmissionImage : Image AssetTag
       NormalImage : Image AssetTag
       HeightImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter option
-      MagFilterOpt : OpenGL.TextureMagFilter option
       RenderType : RenderType
       RenderPass : RenderPass }
 
@@ -482,8 +476,8 @@ and [<ReferenceEquality>] SortableLightMap =
     { SortableLightMapEnabled : bool
       SortableLightMapOrigin : Vector3
       SortableLightMapBounds : Box3
-      SortableLightMapIrradianceMap : uint
-      SortableLightMapEnvironmentFilterMap : uint
+      SortableLightMapIrradianceMap : OpenGL.Texture.Texture
+      SortableLightMapEnvironmentFilterMap : OpenGL.Texture.Texture
       mutable SortableLightMapDistanceSquared : single }
 
     /// TODO: maybe put this somewhere general?
@@ -499,8 +493,8 @@ and [<ReferenceEquality>] SortableLightMap =
         let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
-        let lightMapIrradianceMaps = Array.zeroCreate<uint> lightMapsMax
-        let lightMapEnvironmentFilterMaps = Array.zeroCreate<uint> lightMapsMax
+        let lightMapIrradianceMaps = Array.zeroCreate<OpenGL.Texture.Texture> lightMapsMax
+        let lightMapEnvironmentFilterMaps = Array.zeroCreate<OpenGL.Texture.Texture> lightMapsMax
         for lightMap in lightMaps do
             lightMap.SortableLightMapDistanceSquared <- SortableLightMap.distanceFromBounds position lightMap.SortableLightMapBounds
         let lightMapsSorted = lightMaps |> Array.sortBy (fun light -> light.SortableLightMapDistanceSquared)
@@ -646,14 +640,14 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedForwardStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedBlurShader : OpenGL.PhysicallyBased.PhysicallyBasedBlurShader
           PhysicallyBasedFxaaShader : OpenGL.PhysicallyBased.PhysicallyBasedFxaaShader
-          GeometryBuffers : uint * uint * uint * uint * uint * uint
-          LightMappingBuffers : uint * uint * uint
-          IrradianceBuffers : uint * uint * uint
-          EnvironmentFilterBuffers : uint * uint * uint
-          SsaoBuffers : uint * uint * uint
-          SsaoBlurBuffers : uint * uint * uint
-          FilterBuffers : uint * uint * uint
-          ShadowBuffers : (uint * uint) array
+          GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
+          IrradianceBuffers : OpenGL.Texture.Texture * uint * uint
+          EnvironmentFilterBuffers : OpenGL.Texture.Texture * uint * uint
+          SsaoBuffers : OpenGL.Texture.Texture * uint * uint
+          SsaoBlurBuffers : OpenGL.Texture.Texture * uint * uint
+          FilterBuffers : OpenGL.Texture.Texture * uint * uint
+          ShadowBuffers : (OpenGL.Texture.Texture * uint) array
           ShadowMatrices : Matrix4x4 array
           ShadowIndices : Dictionary<uint64, int>
           CubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
@@ -661,12 +655,12 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedTerrainGeometries : Dictionary<TerrainGeometryDescriptor, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>
           PhysicallyBasedTerrainGeometriesUtilized : TerrainGeometryDescriptor HashSet
-          CubeMap : uint
-          WhiteTexture : uint
-          BlackTexture : uint
-          BrdfTexture : uint
-          IrradianceMap : uint
-          EnvironmentFilterMap : uint
+          CubeMap : OpenGL.Texture.Texture
+          WhiteTexture : OpenGL.Texture.Texture
+          BlackTexture : OpenGL.Texture.Texture
+          BrdfTexture : OpenGL.Texture.Texture
+          IrradianceMap : OpenGL.Texture.Texture
+          EnvironmentFilterMap : OpenGL.Texture.Texture
           PhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
           mutable LightMappingConfig : LightMappingConfig
@@ -757,12 +751,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         | RawAsset _ ->
             () // nothing to do
         | TextureAsset (_, texture) ->
-            OpenGL.Gl.DeleteTextures texture
+            OpenGL.Texture.Texture.destroy texture
             OpenGL.Hl.Assert ()
         | FontAsset (_, font) ->
             SDL_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) ->
-            OpenGL.Gl.DeleteTextures cubeMap
+            OpenGL.Texture.Texture.destroy cubeMap
             OpenGL.Hl.Assert ()
         | StaticModelAsset (_, model) ->
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
@@ -950,8 +944,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                       EmissionTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.EmissionImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
                       NormalTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
                       HeightTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.HeightImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
-                      TextureMinFilterOpt = surfaceDescriptor.TextureMinFilterOpt
-                      TextureMagFilterOpt = surfaceDescriptor.TextureMagFilterOpt
                       TwoSided = surfaceDescriptor.TwoSided }
 
                 // create vertex data, truncating it when required
@@ -1791,7 +1783,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
-    static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage roughnessImage metallicImage ambientOcclusionImage emissionImage normalImage heightImage minFilterOpt magFilterOpt renderer =
+    static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage roughnessImage metallicImage ambientOcclusionImage emissionImage normalImage heightImage renderer =
         let (albedoMetadata, albedoTexture) =
             match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize albedoImage) renderer with
             | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
@@ -1837,8 +1829,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
               HeightTexture = heightTexture
-              TextureMinFilterOpt = minFilterOpt
-              TextureMagFilterOpt = magFilterOpt
               TwoSided = true }
         billboardMaterial
 
@@ -1977,7 +1967,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightMapFallback =
             if topLevelRender then
                 match skyBoxOpt with
-                | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : _ ref) ->
+                | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref) ->
 
                     // render fallback irradiance and env filter maps
                     if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
@@ -2009,7 +1999,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             else // get whatever's available
                 match skyBoxOpt with
-                | Some (_, _, _, irradianceAndEnvironmentMapsOptRef : _ ref) ->
+                | Some (_, _, _, irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref) ->
 
                     // attempt to use the cached irradiance and env filter map or the default maps
                     let (irradianceMap, environmentFilterMap) =
@@ -2067,7 +2057,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                              OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
 
                     // destroy reflection map
-                    OpenGL.Gl.DeleteTextures [|reflectionMap|]
+                    OpenGL.Texture.Texture.destroy reflectionMap
 
                     // create light map
                     let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds irradianceMap environmentFilterMap
@@ -2424,16 +2414,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if rl.DesireShadows then
                     renderer.LightsDesiringShadows.[rl.LightId] <- light
             | RenderBillboard rb ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.AlbedoImage rb.RoughnessImage rb.MetallicImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.HeightImage rb.MinFilterOpt rb.MagFilterOpt renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.AlbedoImage rb.RoughnessImage rb.MetallicImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.HeightImage renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardMaterial, renderer.BillboardGeometry)
                 GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.AlbedoImage rbs.RoughnessImage rbs.MetallicImage rbs.AmbientOcclusionImage rbs.EmissionImage rbs.NormalImage rbs.HeightImage rbs.MinFilterOpt rbs.MagFilterOpt renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.AlbedoImage rbs.RoughnessImage rbs.MetallicImage rbs.AmbientOcclusionImage rbs.EmissionImage rbs.NormalImage rbs.HeightImage renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.BillboardGeometry)
                 for (modelMatrix, insetOpt) in rbs.Billboards do
                     GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.AlbedoImage rbps.RoughnessImage rbps.MetallicImage rbps.AmbientOcclusionImage rbps.EmissionImage rbps.NormalImage rbps.HeightImage rbps.MinFilterOpt rbps.MagFilterOpt renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.AlbedoImage rbps.RoughnessImage rbps.MetallicImage rbps.AmbientOcclusionImage rbps.EmissionImage rbps.NormalImage rbps.HeightImage renderer
                 for particle in rbps.Particles do
                     let billboardMatrix =
                         Matrix4x4.CreateFromTrs
@@ -2742,8 +2732,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialEmission.tiff") |> Either.getRight |> snd
               NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.UncompressedTextureFormat, "Assets/Default/MaterialNormal.tiff") |> Either.getRight |> snd
               HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialHeight.tiff") |> Either.getRight |> snd
-              TextureMinFilterOpt = None
-              TextureMagFilterOpt = None
               TwoSided = false }
 
         // make light mapping config
@@ -2856,17 +2844,17 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteVertexArrays [|renderer.CubeMapGeometry.CubeMapVao|] // TODO: P1: also release vertex and index buffers?
             OpenGL.Gl.DeleteVertexArrays [|renderer.BillboardGeometry.PhysicallyBasedVao|] // TODO: P1: also release vertex and index buffers?
             OpenGL.Gl.DeleteVertexArrays [|renderer.PhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: P1: also release vertex and index buffers?
-            OpenGL.Gl.DeleteTextures [|renderer.CubeMap|]
-            OpenGL.Gl.DeleteTextures [|renderer.BrdfTexture|]
-            OpenGL.Gl.DeleteTextures [|renderer.IrradianceMap|]
-            OpenGL.Gl.DeleteTextures [|renderer.EnvironmentFilterMap|]
-            OpenGL.Gl.DeleteTextures [|renderer.PhysicallyBasedMaterial.AlbedoTexture|]
-            OpenGL.Gl.DeleteTextures [|renderer.PhysicallyBasedMaterial.RoughnessTexture|]
-            OpenGL.Gl.DeleteTextures [|renderer.PhysicallyBasedMaterial.MetallicTexture|]
-            OpenGL.Gl.DeleteTextures [|renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture|]
-            OpenGL.Gl.DeleteTextures [|renderer.PhysicallyBasedMaterial.EmissionTexture|]
-            OpenGL.Gl.DeleteTextures [|renderer.PhysicallyBasedMaterial.NormalTexture|]
-            OpenGL.Gl.DeleteTextures [|renderer.PhysicallyBasedMaterial.HeightTexture|]
+            OpenGL.Texture.Texture.destroy renderer.CubeMap
+            OpenGL.Texture.Texture.destroy renderer.BrdfTexture
+            OpenGL.Texture.Texture.destroy renderer.IrradianceMap
+            OpenGL.Texture.Texture.destroy renderer.EnvironmentFilterMap
+            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.AlbedoTexture
+            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.RoughnessTexture
+            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.MetallicTexture
+            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
+            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.EmissionTexture
+            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.NormalTexture
+            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.HeightTexture
             for lightMap in renderer.LightMaps.Values do OpenGL.LightMap.DestroyLightMap lightMap
             renderer.LightMaps.Clear ()
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)

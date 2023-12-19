@@ -58,8 +58,6 @@ module WorldView =
                       EmissionImage = billboard.EmissionImage
                       NormalImage = billboard.NormalImage
                       HeightImage = billboard.HeightImage
-                      MinFilterOpt = billboard.MinFilterOpt
-                      MagFilterOpt = billboard.MagFilterOpt
                       RenderType = billboard.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderBillboard renderBillboard) world

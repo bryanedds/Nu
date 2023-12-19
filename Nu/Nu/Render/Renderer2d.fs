@@ -167,7 +167,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset _ -> ()
-        | TextureAsset (_, texture) -> OpenGL.Gl.DeleteTextures [|texture|]
+        | TextureAsset (_, texture) -> OpenGL.Texture.Texture.destroy texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
@@ -338,7 +338,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         rotation
         (insetOpt : Box2 voption)
         (textureMetadata : OpenGL.Texture.TextureMetadata)
-        texture
+        (texture : OpenGL.Texture.Texture)
         (color : Color)
         blend
         (emission : Color)
@@ -631,13 +631,17 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
-                            // upload texture
-                            let textTexture = OpenGL.Gl.GenTexture ()
-                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTexture)
+                            // upload texture data
+                            let textTextureId = OpenGL.Gl.GenTexture ()
+                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTextureId)
                             OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                             OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+                            OpenGL.Hl.Assert ()
+
+                            // make texture drawable
+                            let textTexture = OpenGL.Texture.Texture.make textTextureId
                             OpenGL.Hl.Assert ()
 
                             // draw text sprite
@@ -649,7 +653,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                             // destroy texture
                             SDL.SDL_FreeSurface textSurfacePtr
-                            OpenGL.Gl.DeleteTextures textTexture
+                            OpenGL.Texture.Texture.destroy textTexture
                             OpenGL.Hl.Assert ()
 
                     // fin
