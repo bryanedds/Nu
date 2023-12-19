@@ -66,13 +66,17 @@ type [<SymbolicExpansion; Struct>] TerrainMaterialProperties =
 
 /// Material properties for surfaces.
 /// NOTE: this type has to go after TerrainMaterialProperties lest the latter's field names shadow this one's.
-type [<SymbolicExpansion; Struct>] MaterialProperties =
+type [<CustomEquality; NoComparison; SymbolicExpansion; Struct>] MaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
       MetallicOpt : single voption
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
       HeightOpt : single voption }
+
+    static member empty =
+        Unchecked.defaultof<MaterialProperties>
+
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
@@ -80,8 +84,33 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
           HeightOpt = ValueSome Constants.Render.HeightDefault }
-    static member empty =
-        Unchecked.defaultof<MaterialProperties>
+
+    static member equals left right =
+        voptEq left.AlbedoOpt right.AlbedoOpt &&
+        voptEq left.RoughnessOpt right.RoughnessOpt &&
+        voptEq left.MetallicOpt right.MetallicOpt &&
+        voptEq left.AmbientOcclusionOpt right.AmbientOcclusionOpt &&
+        voptEq left.EmissionOpt right.EmissionOpt &&
+        voptEq left.HeightOpt right.HeightOpt
+
+    static member hash properties =
+        (match properties.AlbedoOpt with ValueSome a -> a.GetHashCode () | ValueNone -> 0) ^^^
+        (match properties.RoughnessOpt with ValueSome a -> a.GetHashCode () | ValueNone -> 0) ^^^
+        (match properties.MetallicOpt with ValueSome a -> a.GetHashCode () | ValueNone -> 0) ^^^
+        (match properties.AmbientOcclusionOpt with ValueSome a -> a.GetHashCode () | ValueNone -> 0) ^^^
+        (match properties.EmissionOpt with ValueSome a -> a.GetHashCode () | ValueNone -> 0) ^^^
+        (match properties.HeightOpt with ValueSome a -> a.GetHashCode () | ValueNone -> 0)
+
+    member this.Equals that =
+        MaterialProperties.equals this that
+
+    override this.Equals (thatObj : obj) =
+        match thatObj with
+        | :? MaterialProperties as that -> MaterialProperties.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        MaterialProperties.hash this
 
 and [<Struct>] LightProbe3dValue =
     { mutable LightProbeId : uint64
@@ -188,50 +217,87 @@ type TerrainDescriptor =
           HeightMap = this.HeightMap
           Segments = this.Segments }
 
+and [<CustomEquality; NoComparison; Struct>] PhysicallyBasedDeferredStaticKey =
+    { HashCode : int
+      TexCoordsOffset : Box2
+      MaterialProperties : MaterialProperties
+      PhysicallyBasedSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
+
+    static member hash key =
+        hash key.TexCoordsOffset ^^^
+        hash key.MaterialProperties ^^^
+        hash key.PhysicallyBasedSurface
+
+    static member equals left right =
+        box2Eq left.TexCoordsOffset right.TexCoordsOffset &&
+        MaterialProperties.equals left.MaterialProperties right.MaterialProperties &&
+        left.PhysicallyBasedSurface = right.PhysicallyBasedSurface
+
+    static member make (texCoordsOffset : Box2) (materialProperties : MaterialProperties) (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) =
+        let hashCode =
+            hash texCoordsOffset ^^^
+            hash materialProperties ^^^
+            hash surface
+        { HashCode = hashCode
+          TexCoordsOffset = texCoordsOffset
+          MaterialProperties = materialProperties
+          PhysicallyBasedSurface = surface }
+
+    member this.Equals that =
+        PhysicallyBasedDeferredStaticKey.equals this that
+
+    override this.Equals (thatObj : obj) =
+        match thatObj with
+        | :? PhysicallyBasedDeferredStaticKey as that -> PhysicallyBasedDeferredStaticKey.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        this.HashCode
+
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
     { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) List
       RenderLightProbes : Dictionary<uint64, struct (bool * Vector3 * Box3 * bool)>
       RenderLightMaps : SortableLightMap List
       RenderLights : SortableLight List
-      RenderSurfacesDeferredStaticAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
-      RenderSurfacesDeferredStaticRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Box2 * MaterialProperties) SList>
-      RenderSurfacesDeferredAnimatedAbsolute : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
-      RenderSurfacesDeferredAnimatedRelative : Dictionary<struct (GameTime * Animation array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * struct (Matrix4x4 * Box2 * MaterialProperties) SList)>
+      RenderDeferredStaticAbsolute : Dictionary<PhysicallyBasedDeferredStaticKey, Matrix4x4 SList>
+      RenderDeferredStaticRelative : Dictionary<PhysicallyBasedDeferredStaticKey, Matrix4x4 SList>
+      RenderDeferredAnimatedAbsolute : Dictionary<struct (GameTime * Animation array * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * Matrix4x4 SList)>
+      RenderDeferredAnimatedRelative : Dictionary<struct (GameTime * Animation array * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 array * Matrix4x4 SList)>
       RenderDeferredTerrainsAbsolute : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
       RenderDeferredTerrainsRelative : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
-      RenderSurfacesForwardStaticAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderSurfacesForwardStaticRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderSurfacesForwardStaticAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderSurfacesForwardStaticRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
+      RenderForwardStaticAbsolute : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticRelative : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticAbsoluteSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticRelativeSorted : struct (Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
 
     static member make () =
         { RenderSkyBoxes = List ()
           RenderLightProbes = Dictionary HashIdentity.Structural
           RenderLightMaps = List ()
           RenderLights = List ()
-          RenderSurfacesDeferredStaticAbsolute = dictPlus HashIdentity.Structural []
-          RenderSurfacesDeferredStaticRelative = dictPlus HashIdentity.Structural []
-          RenderSurfacesDeferredAnimatedAbsolute = dictPlus HashIdentity.Structural []
-          RenderSurfacesDeferredAnimatedRelative = dictPlus HashIdentity.Structural []
+          RenderDeferredStaticAbsolute = dictPlus HashIdentity.Structural []
+          RenderDeferredStaticRelative = dictPlus HashIdentity.Structural []
+          RenderDeferredAnimatedAbsolute = dictPlus HashIdentity.Structural []
+          RenderDeferredAnimatedRelative = dictPlus HashIdentity.Structural []
           RenderDeferredTerrainsAbsolute = SList.make ()
           RenderDeferredTerrainsRelative = SList.make ()
-          RenderSurfacesForwardStaticAbsolute = SList.make ()
-          RenderSurfacesForwardStaticRelative = SList.make ()
-          RenderSurfacesForwardStaticAbsoluteSorted = SList.make ()
-          RenderSurfacesForwardStaticRelativeSorted = SList.make () }
+          RenderForwardStaticAbsolute = SList.make ()
+          RenderForwardStaticRelative = SList.make ()
+          RenderForwardStaticAbsoluteSorted = SList.make ()
+          RenderForwardStaticRelativeSorted = SList.make () }
 
     static member clear renderTasks =
         renderTasks.RenderSkyBoxes.Clear ()
         renderTasks.RenderLightProbes.Clear ()
         renderTasks.RenderLightMaps.Clear ()
         renderTasks.RenderLights.Clear ()
-        renderTasks.RenderSurfacesDeferredStaticAbsolute.Clear ()
-        renderTasks.RenderSurfacesDeferredStaticRelative.Clear ()
-        renderTasks.RenderSurfacesDeferredAnimatedAbsolute.Clear ()
-        renderTasks.RenderSurfacesDeferredAnimatedRelative.Clear ()
-        renderTasks.RenderSurfacesForwardStaticAbsoluteSorted.Clear ()
-        renderTasks.RenderSurfacesForwardStaticRelativeSorted.Clear ()
+        renderTasks.RenderDeferredStaticAbsolute.Clear ()
+        renderTasks.RenderDeferredStaticRelative.Clear ()
+        renderTasks.RenderDeferredAnimatedAbsolute.Clear ()
+        renderTasks.RenderDeferredAnimatedRelative.Clear ()
+        renderTasks.RenderForwardStaticAbsoluteSorted.Clear ()
+        renderTasks.RenderForwardStaticRelativeSorted.Clear ()
         renderTasks.RenderDeferredTerrainsAbsolute.Clear ()
         renderTasks.RenderDeferredTerrainsRelative.Clear ()
 
@@ -672,10 +738,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable LightMappingConfig : LightMappingConfig
           mutable SsaoConfig : SsaoConfig
           mutable ModelsFields : single array
-          mutable TexCoordsOffsetsFields : single array
-          mutable AlbedosFields : single array
-          mutable PhysicallyBasedMaterialsFields : single array
-          mutable PhysicallyBasedHeightsFields : single array
           mutable UserDefinedStaticModelFields : single array
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
           RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
@@ -1205,20 +1267,22 @@ type [<ReferenceEquality>] GlRenderer3d =
         let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
         match renderType with
         | DeferredRenderType ->
+            let key =
+                PhysicallyBasedDeferredStaticKey.make texCoordsOffset properties billboardSurface
             if absolute then
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticAbsolute.TryGetValue (billboardSurface, &renderOps)
-                then renderOps.Add struct (billboardMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticAbsolute.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
+                if renderTasks.RenderDeferredStaticAbsolute.TryGetValue (key, &renderOps)
+                then renderOps.Add billboardMatrix
+                else renderTasks.RenderDeferredStaticAbsolute.Add (key, SList.singleton billboardMatrix)
             else
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticRelative.TryGetValue (billboardSurface, &renderOps)
-                then renderOps.Add struct (billboardMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticRelative.Add (billboardSurface, SList.singleton (billboardMatrix, texCoordsOffset, properties))
+                if renderTasks.RenderDeferredStaticRelative.TryGetValue (key, &renderOps)
+                then renderOps.Add billboardMatrix
+                else renderTasks.RenderDeferredStaticRelative.Add (key, SList.singleton billboardMatrix)
         | ForwardRenderType (subsort, sort) ->
             if absolute
-            then renderTasks.RenderSurfacesForwardStaticAbsolute.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
-            else renderTasks.RenderSurfacesForwardStaticRelative.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
+            then renderTasks.RenderForwardStaticAbsolute.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
+            else renderTasks.RenderForwardStaticRelative.Add struct (subsort, sort, billboardMatrix, texCoordsOffset, properties, billboardSurface)
 
     static member private categorizeStaticModelSurface
         (modelAbsolute,
@@ -1244,20 +1308,22 @@ type [<ReferenceEquality>] GlRenderer3d =
         let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
         match renderType with
         | DeferredRenderType ->
+            let key =
+                PhysicallyBasedDeferredStaticKey.make texCoordsOffset properties surface
             if modelAbsolute then
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticAbsolute.TryGetValue (surface, &renderOps)
-                then renderOps.Add struct (modelMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticAbsolute.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
+                if renderTasks.RenderDeferredStaticAbsolute.TryGetValue (key, &renderOps)
+                then renderOps.Add modelMatrix
+                else renderTasks.RenderDeferredStaticAbsolute.Add (key, SList.singleton modelMatrix)
             else
                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                if renderTasks.RenderSurfacesDeferredStaticRelative.TryGetValue (surface, &renderOps)
-                then renderOps.Add struct (modelMatrix, texCoordsOffset, properties)
-                else renderTasks.RenderSurfacesDeferredStaticRelative.Add (surface, SList.singleton (modelMatrix, texCoordsOffset, properties))
+                if renderTasks.RenderDeferredStaticRelative.TryGetValue (key, &renderOps)
+                then renderOps.Add modelMatrix
+                else renderTasks.RenderDeferredStaticRelative.Add (key, SList.singleton modelMatrix)
         | ForwardRenderType (subsort, sort) ->
             if modelAbsolute
-            then renderTasks.RenderSurfacesForwardStaticAbsolute.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
-            else renderTasks.RenderSurfacesForwardStaticRelative.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
+            then renderTasks.RenderForwardStaticAbsolute.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
+            else renderTasks.RenderForwardStaticRelative.Add struct (subsort, sort, modelMatrix, texCoordsOffset, properties, surface)
 
     static member private categorizeStaticModelSurfaceByIndex
         (modelAbsolute,
@@ -1386,14 +1452,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let bones = mesh.ComputeBoneTransforms (time, animations, scene)
                             if modelAbsolute then
                                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                if renderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderOps)
-                                then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                else renderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                if renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, texCoordsOffset, properties, surface), &renderOps)
+                                then (snd' renderOps).Add modelMatrix
+                                else renderTasks.RenderDeferredAnimatedAbsolute.Add (struct (time, animations, texCoordsOffset, properties, surface), struct (bones, SList.singleton modelMatrix))
                             else
                                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                if renderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderOps)
-                                then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                else renderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                if renderTasks.RenderDeferredAnimatedRelative.TryGetValue (struct (time, animations, texCoordsOffset, properties, surface), &renderOps)
+                                then (snd' renderOps).Add modelMatrix
+                                else renderTasks.RenderDeferredAnimatedRelative.Add (struct (time, animations, texCoordsOffset, properties, surface), struct (bones, SList.singleton modelMatrix))
 
                     // unable to render
                     | None -> Log.infoOnce ("Cannot render animated model without an assimp scene for '" + scstring animatedModel + "'.")
@@ -1445,14 +1511,14 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // render animated surface
                                 if modelAbsolute then
                                     let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderTasks.RenderSurfacesDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderOps)
-                                    then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderTasks.RenderSurfacesDeferredAnimatedAbsolute.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    if renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, texCoordsOffset, properties, surface), &renderOps)
+                                    then (snd' renderOps).Add modelMatrix
+                                    else renderTasks.RenderDeferredAnimatedAbsolute.Add (struct (time, animations, texCoordsOffset, properties, surface), struct (bones, SList.singleton modelMatrix))
                                 else
                                     let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
-                                    if renderTasks.RenderSurfacesDeferredAnimatedRelative.TryGetValue (struct (time, animations, surface), &renderOps)
-                                    then (snd' renderOps).Add struct (modelMatrix, texCoordsOffset, properties)
-                                    else renderTasks.RenderSurfacesDeferredAnimatedRelative.Add (struct (time, animations, surface), struct (bones, SList.singleton struct (modelMatrix, texCoordsOffset, properties)))
+                                    if renderTasks.RenderDeferredAnimatedRelative.TryGetValue (struct (time, animations, texCoordsOffset, properties, surface), &renderOps)
+                                    then (snd' renderOps).Add modelMatrix
+                                    else renderTasks.RenderDeferredAnimatedRelative.Add (struct (time, animations, texCoordsOffset, properties, surface), struct (bones, SList.singleton modelMatrix))
 
                     // unable to render
                     | None -> Log.infoOnce ("Cannot render animated model without an assimp scene for '" + scstring animatedModel + "'.")
@@ -1510,177 +1576,74 @@ type [<ReferenceEquality>] GlRenderer3d =
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
     static member private renderPhysicallyBasedShadowSurfaces
-        viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
-        (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
+        viewArray projectionArray bonesArray albedoArray
+        (models : Matrix4x4 SList) (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
-        if parameters.Length > 0 then
+        if models.Length > 0 then
 
             // ensure we have a large enough models fields array
             let mutable length = renderer.ModelsFields.Length
-            while parameters.Length * 16 > length do length <- length * 2
+            while models.Length * 16 > length do length <- length * 2
             if renderer.ModelsFields.Length < length then
                 renderer.ModelsFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough abledos fields array
-            let mutable length = renderer.AlbedosFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.AlbedosFields.Length < length then
-                renderer.AlbedosFields <- Array.zeroCreate<single> length
-
-            // blit parameters to field arrays
-            for i in 0 .. dec parameters.Length do
-                let struct (model, _, properties) = parameters.[i]
-                model.ToArray (renderer.ModelsFields, i * 16)
-                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
-                renderer.AlbedosFields.[i * 4] <- albedo.R
-                renderer.AlbedosFields.[i * 4 + 1] <- albedo.G
-                renderer.AlbedosFields.[i * 4 + 2] <- albedo.B
-                renderer.AlbedosFields.[i * 4 + 3] <- albedo.A
+            // blit models to models fields array
+            for i in 0 .. dec models.Length do
+                models.[i].ToArray (renderer.ModelsFields, i * 16)
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedShadowSurfaces
-                (viewArray, projectionArray, bonesArray, parameters.Length,
-                 renderer.ModelsFields, renderer.AlbedosFields,
+                (viewArray, projectionArray, bonesArray, albedoArray, models.Length, renderer.ModelsFields,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
-        viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
-        (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
+        viewArray projectionArray bonesArray eyeCenter texCoordsOffsetArray albedoArray materialArray height blending
+        (models : Matrix4x4 SList) (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
-        if parameters.Length > 0 then
+        if models.Length > 0 then
 
             // ensure we have a large enough models fields array
             let mutable length = renderer.ModelsFields.Length
-            while parameters.Length * 16 > length do length <- length * 2
+            while models.Length * 16 > length do length <- length * 2
             if renderer.ModelsFields.Length < length then
                 renderer.ModelsFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough texCoordsOffsets fields array
-            let mutable length = renderer.TexCoordsOffsetsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.TexCoordsOffsetsFields.Length < length then
-                renderer.TexCoordsOffsetsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough abledos fields array
-            let mutable length = renderer.AlbedosFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.AlbedosFields.Length < length then
-                renderer.AlbedosFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough materials fields array
-            let mutable length = renderer.PhysicallyBasedMaterialsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.PhysicallyBasedMaterialsFields.Length < length then
-                renderer.PhysicallyBasedMaterialsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough heights fields array
-            let mutable length = renderer.PhysicallyBasedHeightsFields.Length
-            while parameters.Length > length do length <- length * 2
-            if renderer.PhysicallyBasedHeightsFields.Length < length then
-                renderer.PhysicallyBasedHeightsFields <- Array.zeroCreate<single> length
-
-            // blit parameters to field arrays
-            for i in 0 .. dec parameters.Length do
-                let struct (model, texCoordsOffset, properties) = parameters.[i]
-                model.ToArray (renderer.ModelsFields, i * 16)
-                renderer.TexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Min.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
-                renderer.TexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
-                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
-                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
-                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
-                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
-                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
-                renderer.AlbedosFields.[i * 4] <- albedo.R
-                renderer.AlbedosFields.[i * 4 + 1] <- albedo.G
-                renderer.AlbedosFields.[i * 4 + 2] <- albedo.B
-                renderer.AlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.PhysicallyBasedMaterialsFields.[i * 4] <- roughness
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- metallic
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
-                renderer.PhysicallyBasedHeightsFields.[i] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
+            // blit models to models fields array
+            for i in 0 .. dec models.Length do
+                models.[i].ToArray (renderer.ModelsFields, i * 16)
 
             // draw deferred surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-                (viewArray, projectionArray, bonesArray, parameters.Length,
-                 renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, blending,
-                 surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
+                (viewArray, projectionArray, bonesArray, eyeCenter, texCoordsOffsetArray, albedoArray, materialArray, height, blending,
+                 models.Length, renderer.ModelsFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedForwardSurfaces
-        viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList) blending
+        viewArray projectionArray bonesArray eyeCenter texCoordsOffsetArray albedoArray materialArray height
         lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
-        (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
+        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices blending
+        (models : Matrix4x4 SList) (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
-        if parameters.Length > 0 then
+        if models.Length > 0 then
 
             // ensure we have a large enough models fields array
             let mutable length = renderer.ModelsFields.Length
-            while parameters.Length * 16 > length do length <- length * 2
+            while models.Length * 16 > length do length <- length * 2
             if renderer.ModelsFields.Length < length then
                 renderer.ModelsFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough texCoordsOffsets fields array
-            let mutable length = renderer.TexCoordsOffsetsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.TexCoordsOffsetsFields.Length < length then
-                renderer.TexCoordsOffsetsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough abledos fields array
-            let mutable length = renderer.AlbedosFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.AlbedosFields.Length < length then
-                renderer.AlbedosFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough materials fields array
-            let mutable length = renderer.PhysicallyBasedMaterialsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.PhysicallyBasedMaterialsFields.Length < length then
-                renderer.PhysicallyBasedMaterialsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough heights fields array
-            let mutable length = renderer.PhysicallyBasedHeightsFields.Length
-            while parameters.Length > length do length <- length * 2
-            if renderer.PhysicallyBasedHeightsFields.Length < length then
-                renderer.PhysicallyBasedHeightsFields <- Array.zeroCreate<single> length
-
-            // blit parameters to field arrays
-            for i in 0 .. dec parameters.Length do
-                let struct (model, texCoordsOffset, properties) = parameters.[i]
-                model.ToArray (renderer.ModelsFields, i * 16)
-                renderer.TexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Min.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
-                renderer.TexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
-                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
-                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
-                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
-                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
-                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
-                renderer.AlbedosFields.[i * 4] <- albedo.R
-                renderer.AlbedosFields.[i * 4 + 1] <- albedo.G
-                renderer.AlbedosFields.[i * 4 + 2] <- albedo.B
-                renderer.AlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.PhysicallyBasedMaterialsFields.[i * 4] <- roughness
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 1] <- metallic
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 2] <- ambientOcclusion
-                renderer.PhysicallyBasedMaterialsFields.[i * 4 + 3] <- emission
-                renderer.PhysicallyBasedHeightsFields.[i] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
+            // blit models to models fields array
+            for i in 0 .. dec models.Length do
+                models.[i].ToArray (renderer.ModelsFields, i * 16)
 
             // draw forward surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
-                (viewArray, projectionArray, bonesArray, eyeCenter, parameters.Length,
-                 renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields, blending,
+                (viewArray, projectionArray, bonesArray, eyeCenter, texCoordsOffsetArray, albedoArray, materialArray, height,
                  lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
-                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
-                 surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
+                 lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices, blending,
+                 models.Length, renderer.ModelsFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedTerrain viewArray geometryProjectionArray eyeCenter terrainDescriptor geometry shader renderer =
         let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution terrainDescriptor.HeightMap renderer)
@@ -1783,12 +1746,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> box2 v2Zero v2Zero
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, geometryProjectionArray, eyeCenter,
-             m4Identity.ToArray (), // NOTE: transform is baked into vertices.
              [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|],
              [|materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A|],
              [|materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission|],
-             [|texelHeightAvg * materialProperties.Height|],
-             elementsCount, materials, geometry, shader)
+             texelHeightAvg * materialProperties.Height,
+             elementsCount,
+             m4Identity.ToArray (), materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
     static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage roughnessImage metallicImage ambientOcclusionImage emissionImage normalImage heightImage minFilterOpt magFilterOpt renderer =
@@ -1858,14 +1821,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightProjectionArray = lightProjection.ToArray ()
 
         // sort absolute forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderSurfacesForwardStaticAbsolute
-        renderTasks.RenderSurfacesForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticAbsolute.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderForwardStaticAbsolute
+        renderTasks.RenderForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticAbsolute.Clear ()
 
         // sort relative forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderSurfacesForwardStaticRelative
-        renderTasks.RenderSurfacesForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticRelative.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderForwardStaticRelative
+        renderTasks.RenderForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup shadow buffer and viewport
         OpenGL.Gl.Viewport (0, 0, Constants.Render.ShadowResolutionX, Constants.Render.ShadowResolutionY)
@@ -1875,37 +1838,49 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredStaticAbsolute do
+            for entry in renderTasks.RenderDeferredStaticAbsolute do
+                let properties = entry.Key.MaterialProperties
+                let surface = entry.Key.PhysicallyBasedSurface
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+                let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    lightAbsoluteArray lightProjectionArray [||] entry.Value
-                    entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
+                    lightAbsoluteArray lightProjectionArray [||] albedoArray entry.Value
+                    surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render static surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredStaticRelative do
+        for entry in renderTasks.RenderDeferredStaticRelative do
+            let properties = entry.Key.MaterialProperties
+            let surface = entry.Key.PhysicallyBasedSurface
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+            let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                lightRelativeArray lightProjectionArray [||] entry.Value
-                entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
+                lightRelativeArray lightProjectionArray [||] albedoArray entry.Value
+                surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
         // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredAnimatedAbsolute do
-                let struct (_, _, surface) = entry.Key
-                let struct (bones, parameters) = entry.Value
+            for entry in renderTasks.RenderDeferredAnimatedAbsolute do
+                let struct (_, _, _, properties, surface) = entry.Key
+                let struct (bones, models) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+                let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    lightAbsoluteArray lightProjectionArray bonesArray parameters
+                    lightAbsoluteArray lightProjectionArray bonesArray albedoArray models
                     surface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render animated surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredAnimatedRelative do
-            let struct (_, _, surface) = entry.Key
-            let struct (bones, parameters) = entry.Value
+        for entry in renderTasks.RenderDeferredAnimatedRelative do
+            let struct (_, _, _, properties, surface) = entry.Key
+            let struct (bones, models) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+            let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                lightRelativeArray lightProjectionArray bonesArray parameters
+                lightRelativeArray lightProjectionArray bonesArray albedoArray models
                 surface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
@@ -1920,16 +1895,20 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // forward render static surfaces w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
-            for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticAbsoluteSorted do
+            for (model, _, properties, surface) in renderTasks.RenderForwardStaticAbsoluteSorted do
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+                let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    lightAbsoluteArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
-                    surface renderer.PhysicallyBasedShadowStaticShader renderer
+                    lightAbsoluteArray lightProjectionArray [||] albedoArray
+                    (SList.singleton model) surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // forward render static surfaces w/ relative transforms to filter buffer
-        for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticRelativeSorted do
+        for (model, _, properties, surface) in renderTasks.RenderForwardStaticRelativeSorted do
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+            let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                lightRelativeArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
+                lightRelativeArray lightProjectionArray [||] albedoArray (SList.singleton model)
                 surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2124,14 +2103,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
 
         // sort absolute forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderSurfacesForwardStaticAbsolute
-        renderTasks.RenderSurfacesForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticAbsolute.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderForwardStaticAbsolute
+        renderTasks.RenderForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticAbsolute.Clear ()
 
         // sort relative forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderSurfacesForwardStaticRelative
-        renderTasks.RenderSurfacesForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
-        renderTasks.RenderSurfacesForwardStaticRelative.Clear ()
+        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderForwardStaticRelative
+        renderTasks.RenderForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
+        renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup geometry buffer and viewport
         let (positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.GeometryBuffers
@@ -2144,38 +2123,84 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredStaticAbsolute do
+            for entry in renderTasks.RenderDeferredStaticAbsolute do
+                let texCoordsOffset = entry.Key.TexCoordsOffset
+                let properties = entry.Key.MaterialProperties
+                let surface = entry.Key.PhysicallyBasedSurface
+                let texCoordsOffsetArray = [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|]
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+                let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
+                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
+                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
+                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
+                let materialArray = [|roughness; metallic; ambientOcclusion; emission|]
+                let heightUnscaled = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
+                let height = heightUnscaled * surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    viewAbsoluteArray geometryProjectionArray [||] entry.Value false
-                    entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
+                    viewAbsoluteArray geometryProjectionArray [||] eyeCenter texCoordsOffsetArray albedoArray materialArray height false
+                    entry.Value surface renderer.PhysicallyBasedDeferredStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render static surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredStaticRelative do
+        for entry in renderTasks.RenderDeferredStaticRelative do
+            let texCoordsOffset = entry.Key.TexCoordsOffset
+            let properties = entry.Key.MaterialProperties
+            let surface = entry.Key.PhysicallyBasedSurface
+            let texCoordsOffsetArray = [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|]
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+            let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
+            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
+            let materialArray = [|roughness; metallic; ambientOcclusion; emission|]
+            let heightUnscaled = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
+            let height = heightUnscaled * surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                viewRelativeArray geometryProjectionArray [||] entry.Value false
-                entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
+                viewRelativeArray geometryProjectionArray [||] eyeCenter texCoordsOffsetArray albedoArray materialArray height false
+                entry.Value surface renderer.PhysicallyBasedDeferredStaticShader renderer
             OpenGL.Hl.Assert ()
 
         // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderSurfacesDeferredAnimatedAbsolute do
-                let struct (_, _, surface) = entry.Key
-                let struct (bones, parameters) = entry.Value
+            for entry in renderTasks.RenderDeferredAnimatedAbsolute do
+                let struct (_, _, texCoordsOffset, properties, surface) = entry.Key
+                let struct (bones, models) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
+                let texCoordsOffsetArray = [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|]
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+                let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
+                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
+                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
+                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
+                let materialArray = [|roughness; metallic; ambientOcclusion; emission|]
+                let heightUnscaled = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
+                let height = heightUnscaled * surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    viewAbsoluteArray geometryProjectionArray bonesArray parameters false
-                    surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+                    viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter texCoordsOffsetArray albedoArray materialArray height false
+                    models surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render animated surfaces w/ relative transforms
-        for entry in renderTasks.RenderSurfacesDeferredAnimatedRelative do
-            let struct (_, _, surface) = entry.Key
-            let struct (bones, parameters) = entry.Value
+        for entry in renderTasks.RenderDeferredAnimatedRelative do
+            let struct (_, _, texCoordsOffset, properties, surface) = entry.Key
+            let struct (bones, models) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
+            let texCoordsOffsetArray = [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|]
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+            let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
+            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
+            let materialArray = [|roughness; metallic; ambientOcclusion; emission|]
+            let heightUnscaled = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
+            let height = heightUnscaled * surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                viewRelativeArray geometryProjectionArray bonesArray parameters false
-                surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+                viewRelativeArray geometryProjectionArray bonesArray eyeCenter texCoordsOffsetArray albedoArray materialArray height false
+                models surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrains w/ absolute transforms if in top level render
@@ -2331,33 +2356,53 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // forward render static surfaces w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
-            for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticAbsoluteSorted do
+            for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticAbsoluteSorted do
                 let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
                 let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
                     SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.RenderLights
                 let lightShadowIndices =
                     SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
+                let texCoordsOffsetArray = [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|]
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+                let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
+                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
+                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
+                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
+                let materialArray = [|roughness; metallic; ambientOcclusion; emission|]
+                let heightUnscaled = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
+                let height = heightUnscaled * surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight
                 GlRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    viewAbsoluteArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
+                    viewAbsoluteArray rasterProjectionArray [||] eyeCenter texCoordsOffsetArray albedoArray materialArray height
                     lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
-                    surface renderer.PhysicallyBasedForwardStaticShader renderer
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices true
+                    (SList.singleton model) surface renderer.PhysicallyBasedForwardStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // forward render static surfaces w/ relative transforms to filter buffer
-        for (model, texCoordsOffset, properties, surface) in renderTasks.RenderSurfacesForwardStaticRelativeSorted do
+        for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticRelativeSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation lightMaps
             let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
                 SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.RenderLights
             let lightShadowIndices =
                 SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
+            let texCoordsOffsetArray = [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|]
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
+            let albedoArray = [|albedo.R; albedo.G; albedo.B; albedo.A|]
+            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
+            let materialArray = [|roughness; metallic; ambientOcclusion; emission|]
+            let heightUnscaled = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
+            let height = heightUnscaled * surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
-                viewRelativeArray rasterProjectionArray [||] eyeCenter (SList.singleton (model, texCoordsOffset, properties)) true
+                viewRelativeArray rasterProjectionArray [||] eyeCenter texCoordsOffsetArray albedoArray materialArray height
                 lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
-                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
-                surface renderer.PhysicallyBasedForwardStaticShader renderer
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices true
+                (SList.singleton model) surface renderer.PhysicallyBasedForwardStaticShader renderer
             OpenGL.Hl.Assert ()
 
         // setup raster buffer and viewport
@@ -2809,10 +2854,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               LightMappingConfig = lightMappingConfig
               SsaoConfig = ssaoConfig
               ModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
-              TexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
-              AlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
-              PhysicallyBasedMaterialsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
-              PhysicallyBasedHeightsFields = Array.zeroCreate<single> Constants.Render.GeometryBatchPrealloc
               UserDefinedStaticModelFields = [||]
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               RenderTasksDictionary = renderTasksDictionary
