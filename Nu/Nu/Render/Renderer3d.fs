@@ -218,18 +218,18 @@ type TerrainDescriptor =
           HeightMap = this.HeightMap
           Segments = this.Segments }
 
-and [<CustomEquality; NoComparison>] PhysicallyBasedDeferredStaticKey =
+and [<CustomEquality; NoComparison; Struct>] PhysicallyBasedDeferredStaticKey =
     { HashCode : int
       TexCoordsOffset : Box2
       MaterialProperties : MaterialProperties
       PhysicallyBasedSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
 
-    static member hash key =
+    static member inline hash key =
         key.TexCoordsOffset.GetHashCode () ^^^
         key.MaterialProperties.GetHashCode () ^^^
         key.PhysicallyBasedSurface.GetHashCode ()
 
-    static member equals left right =
+    static member inline equals left right =
         box2Eq left.TexCoordsOffset right.TexCoordsOffset &&
         MaterialProperties.equals left.MaterialProperties right.MaterialProperties &&
         left.PhysicallyBasedSurface = right.PhysicallyBasedSurface
@@ -255,6 +255,11 @@ and [<CustomEquality; NoComparison>] PhysicallyBasedDeferredStaticKey =
     override this.GetHashCode () =
         this.HashCode
 
+    interface IEquatable<PhysicallyBasedDeferredStaticKey> with
+        member this.Equals that =
+            PhysicallyBasedDeferredStaticKey.equals this that
+        
+
 /// A collection of render tasks in a pass.
 and [<ReferenceEquality>] RenderTasks =
     { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) List
@@ -277,8 +282,8 @@ and [<ReferenceEquality>] RenderTasks =
           RenderLightProbes = Dictionary HashIdentity.Structural
           RenderLightMaps = List ()
           RenderLights = List ()
-          RenderDeferredStaticAbsolute = dictPlus HashIdentity.Structural []
-          RenderDeferredStaticRelative = dictPlus HashIdentity.Structural []
+          RenderDeferredStaticAbsolute = dictPlus (HashIdentity.FromFunctions PhysicallyBasedDeferredStaticKey.hash PhysicallyBasedDeferredStaticKey.equals) []
+          RenderDeferredStaticRelative = dictPlus (HashIdentity.FromFunctions PhysicallyBasedDeferredStaticKey.hash PhysicallyBasedDeferredStaticKey.equals) []
           RenderDeferredAnimatedAbsolute = dictPlus HashIdentity.Structural []
           RenderDeferredAnimatedRelative = dictPlus HashIdentity.Structural []
           RenderDeferredTerrainsAbsolute = SList.make ()
