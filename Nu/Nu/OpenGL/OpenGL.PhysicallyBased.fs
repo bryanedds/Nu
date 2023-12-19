@@ -82,7 +82,7 @@ module PhysicallyBased =
                     | _ -> None
                 | (false, _) -> None
 
-        static member inline hash surface =
+        static member hash surface =
             (int surface.SurfaceMaterial.AlbedoTexture) ^^^
             (int surface.SurfaceMaterial.RoughnessTexture <<< 2) ^^^
             (int surface.SurfaceMaterial.MetallicTexture <<< 4) ^^^
@@ -96,7 +96,7 @@ module PhysicallyBased =
             (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 20) ^^^
             (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 22)
 
-        static member inline equals left right =
+        static member equals left right =
             optEq left.SurfaceMaterial.TextureMinFilterOpt right.SurfaceMaterial.TextureMinFilterOpt &&
             optEq left.SurfaceMaterial.TextureMagFilterOpt right.SurfaceMaterial.TextureMagFilterOpt &&
             left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
@@ -110,7 +110,7 @@ module PhysicallyBased =
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member internal make names metadata (surfaceMatrix : Matrix4x4) bounds material geometry =
+        static member make names metadata (surfaceMatrix : Matrix4x4) bounds material geometry =
             let result =
                 { HashCode = 0
                   SurfaceNames = names
@@ -176,6 +176,10 @@ module PhysicallyBased =
           ProjectionUniform : int
           BonesUniforms : int array
           EyeCenterUniform : int
+          TexCoordsOffsetUniform : int
+          AlbedoUniform : int
+          MaterialUniform : int
+          HeightUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
           AlbedoTextureUniform : int
@@ -215,6 +219,10 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
+          TexCoordsOffsetUniform : int
+          AlbedoUniform : int
+          MaterialUniform : int
+          HeightUniform : int
           LayersCountUniform : int
           AlbedoTexturesUniforms : int array
           RoughnessTexturesUniforms : int array
@@ -1485,6 +1493,10 @@ module PhysicallyBased =
             Array.init Constants.Render.BonesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "bones[" + string i + "]")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let texCoordsOffsetUniform = Gl.GetUniformLocation (shader, "texCoordsOffset")
+        let albedoUniform = Gl.GetUniformLocation (shader, "albedo")
+        let materialUniform = Gl.GetUniformLocation (shader, "material")
+        let heightUniform = Gl.GetUniformLocation (shader, "height")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
@@ -1531,6 +1543,10 @@ module PhysicallyBased =
           ProjectionUniform = projectionUniform
           BonesUniforms = bonesUniforms
           EyeCenterUniform = eyeCenterUniform
+          TexCoordsOffsetUniform = texCoordsOffsetUniform
+          AlbedoUniform = albedoUniform
+          MaterialUniform = materialUniform
+          HeightUniform = heightUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           AlbedoTextureUniform = albedoTextureUniform
@@ -1575,6 +1591,10 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let texCoordsOffsetUniform = Gl.GetUniformLocation (shader, "texCoordsOffset")
+        let albedoUniform = Gl.GetUniformLocation (shader, "albedo")
+        let materialUniform = Gl.GetUniformLocation (shader, "material")
+        let heightUniform = Gl.GetUniformLocation (shader, "height")
         let layersCountUniform = Gl.GetUniformLocation (shader, "layersCount")
         let albedoTexturesUniforms =
             Array.init Constants.Render.TerrainLayersMax $ fun i ->
@@ -1596,6 +1616,10 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
+          TexCoordsOffsetUniform = texCoordsOffsetUniform
+          AlbedoUniform = albedoUniform
+          MaterialUniform = materialUniform
+          HeightUniform = heightUniform
           LayersCountUniform = layersCountUniform
           AlbedoTexturesUniforms = albedoTexturesUniforms
           RoughnessTexturesUniforms = roughnessTexturesUniforms
@@ -1827,9 +1851,9 @@ module PhysicallyBased =
         (view : single array,
          projection : single array,
          bones : single array array,
+         albedo : single array,
          surfacesCount : int,
          modelsFields : single array,
-         albedosFields : single array,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -1845,6 +1869,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+        Gl.Uniform4 (shader.AlbedoUniform, albedo)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Hl.Assert ()
 
@@ -1868,14 +1893,6 @@ module PhysicallyBased =
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
-        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
@@ -1919,13 +1936,14 @@ module PhysicallyBased =
         (view : single array,
          projection : single array,
          bones : single array array,
+         eyeCenter : Vector3,
+         texCoordsOffsetArray : single array,
+         albedoArray : single array,
+         materialArray : single array,
+         height : single,
+         blending : bool,
          surfacesCount : int,
          modelsFields : single array,
-         texCoordsOffsetsFields : single array,
-         albedosFields : single array,
-         materialsFields : single array,
-         heightsFields : single array,
-         blending : bool,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -1946,6 +1964,11 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform4 (shader.TexCoordsOffsetUniform, texCoordsOffsetArray)
+        Gl.Uniform4 (shader.AlbedoUniform, albedoArray)
+        Gl.Uniform4 (shader.MaterialUniform, materialArray)
+        Gl.Uniform1 (shader.HeightUniform, height)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
         Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
         Gl.Uniform1 (shader.MetallicTextureUniform, 2)
@@ -1988,38 +2011,6 @@ module PhysicallyBased =
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update texCoordsOffsets buffer
-        let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally texCoordsOffsetsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
-        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update materials buffer
-        let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally materialsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update heights buffer
-        let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally heightsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
@@ -2084,13 +2075,10 @@ module PhysicallyBased =
          projection : single array,
          bones : single array array,
          eyeCenter : Vector3,
-         surfacesCount : int,
-         modelsFields : single array,
-         texCoordsOffsetsFields : single array,
-         albedosFields : single array,
-         materialsFields : single array,
-         heightsFields : single array,
-         blending : bool,
+         texCoordsOffsetArray : single array,
+         albedoArray : single array,
+         materialArray : single array,
+         height : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
          brdfTexture : uint,
@@ -2116,6 +2104,9 @@ module PhysicallyBased =
          lightShadowIndices : int array,
          lightsCount : int,
          shadowMatrices : single array array,
+         blending : bool,
+         surfacesCount : int,
+         modelsFields : single array,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -2137,6 +2128,10 @@ module PhysicallyBased =
         for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform4 (shader.TexCoordsOffsetUniform, texCoordsOffsetArray)
+        Gl.Uniform4 (shader.AlbedoUniform, albedoArray)
+        Gl.Uniform4 (shader.MaterialUniform, materialArray)
+        Gl.Uniform1 (shader.HeightUniform, height)
         if lightAmbientColor.Length = 3 then
             Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
@@ -2227,38 +2222,6 @@ module PhysicallyBased =
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
-        // update texCoordsOffsets buffer
-        let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally texCoordsOffsetsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
-        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update materials buffer
-        let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally materialsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update heights buffer
-        let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally heightsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
         // setup geometry
         Gl.BindVertexArray geometry.PhysicallyBasedVao
         Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
@@ -2333,12 +2296,12 @@ module PhysicallyBased =
         (view : single array,
          projection : single array,
          eyeCenter : Vector3,
-         modelsFields : single array,
-         texCoordsOffsetsFields : single array,
-         albedosFields : single array,
-         materialsFields : single array,
-         heightsFields : single array,
+         texCoordsOffsetArray : single array,
+         albedoArray : single array,
+         materialArray : single array,
+         height : single,
          elementsCount : int,
+         modelsFields : single array,
          materials : PhysicallyBasedMaterial array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredTerrainShader) =
@@ -2357,6 +2320,10 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform4 (shader.TexCoordsOffsetUniform, texCoordsOffsetArray)
+        Gl.Uniform4 (shader.AlbedoUniform, albedoArray)
+        Gl.Uniform4 (shader.MaterialUniform, materialArray)
+        Gl.Uniform1 (shader.HeightUniform, height)
         Gl.Uniform1 (shader.LayersCountUniform, layersCount)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
             Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
@@ -2405,38 +2372,6 @@ module PhysicallyBased =
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
         finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update texCoordsOffsets buffer
-        let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally texCoordsOffsetsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
-        let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update materials buffer
-        let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally materialsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update heights buffer
-        let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<single>, heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally heightsFieldsPtr.Free ()
         Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
         Hl.Assert ()
 
