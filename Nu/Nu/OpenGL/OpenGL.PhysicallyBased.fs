@@ -82,7 +82,7 @@ module PhysicallyBased =
                     | _ -> None
                 | (false, _) -> None
 
-        static member hash surface =
+        static member inline hash surface =
             (int surface.SurfaceMaterial.AlbedoTexture) ^^^
             (int surface.SurfaceMaterial.RoughnessTexture <<< 2) ^^^
             (int surface.SurfaceMaterial.MetallicTexture <<< 4) ^^^
@@ -96,7 +96,7 @@ module PhysicallyBased =
             (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 20) ^^^
             (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 22)
 
-        static member equals left right =
+        static member inline equals left right =
             optEq left.SurfaceMaterial.TextureMinFilterOpt right.SurfaceMaterial.TextureMinFilterOpt &&
             optEq left.SurfaceMaterial.TextureMagFilterOpt right.SurfaceMaterial.TextureMagFilterOpt &&
             left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
