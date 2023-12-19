@@ -174,7 +174,7 @@ module Texture =
             if generateMipmaps then
                 Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
                 Gl.GenerateMipmap TextureTarget.Texture2d
-            let texture = { TextureId = textureId; TextureHandle = Gl.GetTextureHandleARB textureId }
+            let texture = Texture.make textureId
             Right (metadata, texture)
 
         // error
