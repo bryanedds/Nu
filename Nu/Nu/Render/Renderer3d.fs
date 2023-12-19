@@ -10,13 +10,14 @@ open System.Runtime.InteropServices
 open SDL2
 open Prime
 
-//////////////////////////////////////////////////////////////////////////////////////////
-// TODO: add TwoSidedOpt as render message parameter.                                   //
-// TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
-// TODO: account for Flip in billboards.                                                //
-// TODO: optimize billboard rendering with some sort of batch renderer.                 //
-// TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
-//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO: add TwoSidedOpt as render message parameter.                                                           //
+// TODO: account for Blend in billboards (at least alpha, overwrite, and additive)                              //
+// TODO: account for Flip in billboards.                                                                        //
+// TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!                           //
+// TODO: optimize billboard rendering with some sort of batch renderer.                                         //
+// TODO: once we have a billboard specific render pipeline, consider ripping tex coords offset out of non-bbs.  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// A layer from which a 3d terrain's material is composed.
 /// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
