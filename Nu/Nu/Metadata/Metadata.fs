@@ -64,7 +64,7 @@ module Metadata =
         try let tmxMap = TmxMap (asset.FilePath, true)
             let imageAssets = tmxMap.GetImageAssets asset.AssetTag.PackageName
             Some (TileMapMetadata (asset.FilePath, imageAssets, tmxMap))
-        with _ as exn ->
+        with exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
             Log.trace errorMessage
             None
