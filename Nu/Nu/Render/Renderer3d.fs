@@ -1502,7 +1502,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
 
     static member private renderPhysicallyBasedShadowSurfaces
-        viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
+        batchPhase viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
@@ -1532,12 +1532,12 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedShadowSurfaces
-                (viewArray, projectionArray, bonesArray, parameters.Length,
+                (batchPhase, viewArray, projectionArray, bonesArray, parameters.Length,
                  renderer.ModelsFields, renderer.AlbedosFields,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
-        blending viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
+        batchPhase blending viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
@@ -1599,7 +1599,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // draw deferred surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-                (blending, viewArray, projectionArray, bonesArray, eyeCenter,
+                (batchPhase, blending, viewArray, projectionArray, bonesArray, eyeCenter,
                  parameters.Length, renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.PhysicallyBasedMaterialsFields, renderer.PhysicallyBasedHeightsFields,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -1865,16 +1865,31 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderDeferredStaticAbsolute do
+            let mutable enr = renderTasks.RenderDeferredStaticAbsolute.GetEnumerator ()
+            let mutable i = 0
+            while enr.MoveNext () do
+                let entry = enr.Current
+                let batchPhase =
+                    match renderTasks.RenderDeferredStaticAbsolute.Count with
+                    | 1 -> SingletonPhase
+                    | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    lightAbsoluteArray lightProjectionArray [||] entry.Value
+                    batchPhase lightAbsoluteArray lightProjectionArray [||] entry.Value
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
+                i <- inc i
 
         // deferred render static surfaces w/ relative transforms
-        for entry in renderTasks.RenderDeferredStaticRelative do
+        let mutable enr = renderTasks.RenderDeferredStaticRelative.GetEnumerator ()
+        let mutable i = 0
+        while enr.MoveNext () do
+            let entry = enr.Current
+            let batchPhase =
+                match renderTasks.RenderDeferredStaticRelative.Count with
+                | 1 -> SingletonPhase
+                | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                lightRelativeArray lightProjectionArray [||] entry.Value
+                batchPhase lightRelativeArray lightProjectionArray [||] entry.Value
                 entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -1885,7 +1900,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let struct (bones, parameters) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    lightAbsoluteArray lightProjectionArray bonesArray parameters
+                    SingletonPhase lightAbsoluteArray lightProjectionArray bonesArray parameters
                     surface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -1895,7 +1910,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let struct (bones, parameters) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                lightRelativeArray lightProjectionArray bonesArray parameters
+                SingletonPhase lightRelativeArray lightProjectionArray bonesArray parameters
                 surface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
@@ -1912,14 +1927,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticAbsoluteSorted do
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    lightAbsoluteArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
+                    SingletonPhase lightAbsoluteArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // forward render static surfaces w/ relative transforms to filter buffer
         for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticRelativeSorted do
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                lightRelativeArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
+                SingletonPhase lightRelativeArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
                 surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2134,18 +2149,34 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render static surfaces w/ absolute transforms if in top level render
         if topLevelRender then
-            for entry in renderTasks.RenderDeferredStaticAbsolute do
+            let mutable enr = renderTasks.RenderDeferredStaticAbsolute.GetEnumerator ()
+            let mutable i = 0
+            while enr.MoveNext () do
+                let entry = enr.Current
+                let batchPhase =
+                    match renderTasks.RenderDeferredStaticAbsolute.Count with
+                    | 1 -> SingletonPhase
+                    | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    false viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value
+                    batchPhase false viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value
                     entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
                 OpenGL.Hl.Assert ()
+                i <- inc i
 
         // deferred render static surfaces w/ relative transforms
-        for entry in renderTasks.RenderDeferredStaticRelative do
+        let mutable enr = renderTasks.RenderDeferredStaticRelative.GetEnumerator ()
+        let mutable i = 0
+        while enr.MoveNext () do
+            let entry = enr.Current
+            let batchPhase =
+                match renderTasks.RenderDeferredStaticRelative.Count with
+                | 1 -> SingletonPhase
+                | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                false viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value
+                batchPhase false viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value
                 entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
             OpenGL.Hl.Assert ()
+            i <- inc i
 
         // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
@@ -2154,7 +2185,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let struct (bones, parameters) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    false viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters
+                    SingletonPhase false viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters
                     surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -2164,7 +2195,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let struct (bones, parameters) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                false viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters
+                SingletonPhase false viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters
                 surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
