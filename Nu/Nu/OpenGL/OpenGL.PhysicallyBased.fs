@@ -67,9 +67,10 @@ module PhysicallyBased =
             if  this.SurfaceMetadata.ContainsKey Constants.Render.DeferredName ||
                 this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.DeferredName then
                 Some Deferred
-            elif this.SurfaceMetadata.ContainsKey Constants.Render.ForwardName ||
-                 this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.ForwardName then
-                 Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
+            elif 
+                this.SurfaceMetadata.ContainsKey Constants.Render.ForwardName ||
+                this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.ForwardName then
+                Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
             else
                 match this.SurfaceMetadata.TryGetValue "RenderStyle" with
                 | (true, entry) ->
