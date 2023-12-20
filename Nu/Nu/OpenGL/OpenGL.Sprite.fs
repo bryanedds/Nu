@@ -48,7 +48,8 @@ module Sprite =
         // fragment shader code
         let fragmentShaderStr =
             [Constants.OpenGL.GlslVersionPragma
-             "uniform sampler2D tex;"
+             "#extension GL_ARB_bindless_texture : require"
+             "layout (bindless_sampler) uniform sampler2D tex;"
              "uniform vec4 color;"
              "in vec2 texCoords;"
              "out vec4 frag;"
