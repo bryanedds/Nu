@@ -42,3 +42,10 @@ module CoreOperators =
     /// OPTIMIZATION: always tests reference inequality first.
     let inline (=/=) (a : obj) (b : obj) =
         objNeq a b
+
+/// An value representation of a pair.
+/// TODO: move this into Prime and give it the same fns as Pair.
+type [<Struct>] PairValue<'a, 'b> =
+    { Fst : 'a; Snd : 'b }
+    static member make<'a, 'b> (fst : 'a) (snd : 'b) =
+        { Fst = fst; Snd = snd }
