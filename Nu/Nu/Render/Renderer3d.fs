@@ -665,11 +665,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
           mutable LightMappingConfig : LightMappingConfig
           mutable SsaoConfig : SsaoConfig
-          mutable ModelsFields : single array
-          mutable TexCoordsOffsetsFields : single array
-          mutable AlbedosFields : single array
-          mutable MaterialsFields : single array
-          mutable HeightsFields : single array
+          mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
           RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
@@ -1508,33 +1504,26 @@ type [<ReferenceEquality>] GlRenderer3d =
         // ensure there are surfaces to render
         if parameters.Length > 0 then
 
-            // ensure we have a large enough models fields array
-            let mutable length = renderer.ModelsFields.Length
-            while parameters.Length * 16 > length do length <- length * 2
-            if renderer.ModelsFields.Length < length then
-                renderer.ModelsFields <- Array.zeroCreate<single> length
+            // ensure we have a large enough instance fields array
+            let mutable length = renderer.InstanceFields.Length
+            while parameters.Length * 29 > length do length <- length * 2
+            if renderer.InstanceFields.Length < length then
+                renderer.InstanceFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough abledos fields array
-            let mutable length = renderer.AlbedosFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.AlbedosFields.Length < length then
-                renderer.AlbedosFields <- Array.zeroCreate<single> length
-
-            // blit parameters to field arrays
+            // blit parameters to instance fields
             for i in 0 .. dec parameters.Length do
                 let struct (model, _, properties) = parameters.[i]
-                model.ToArray (renderer.ModelsFields, i * 16)
+                model.ToArray (renderer.InstanceFields, i * 29)
                 let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
-                renderer.AlbedosFields.[i * 4] <- albedo.R
-                renderer.AlbedosFields.[i * 4 + 1] <- albedo.G
-                renderer.AlbedosFields.[i * 4 + 2] <- albedo.B
-                renderer.AlbedosFields.[i * 4 + 3] <- albedo.A
+                renderer.InstanceFields.[i * 29 + 20] <- albedo.R
+                renderer.InstanceFields.[i * 29 + 20 + 1] <- albedo.G
+                renderer.InstanceFields.[i * 29 + 20 + 2] <- albedo.B
+                renderer.InstanceFields.[i * 29 + 20 + 3] <- albedo.A
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedShadowSurfaces
                 (batchPhase, viewArray, projectionArray, bonesArray, parameters.Length,
-                 renderer.ModelsFields, renderer.AlbedosFields,
-                 surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
+                 renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
         batchPhase blending viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
@@ -1543,65 +1532,40 @@ type [<ReferenceEquality>] GlRenderer3d =
         // ensure there are surfaces to render
         if parameters.Length > 0 then
 
-            // ensure we have a large enough models fields array
-            let mutable length = renderer.ModelsFields.Length
-            while parameters.Length * 16 > length do length <- length * 2
-            if renderer.ModelsFields.Length < length then
-                renderer.ModelsFields <- Array.zeroCreate<single> length
+            // ensure we have a large enough instance fields array
+            let mutable length = renderer.InstanceFields.Length
+            while parameters.Length * 29 > length do length <- length * 2
+            if renderer.InstanceFields.Length < length then
+                renderer.InstanceFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough texCoordsOffsets fields array
-            let mutable length = renderer.TexCoordsOffsetsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.TexCoordsOffsetsFields.Length < length then
-                renderer.TexCoordsOffsetsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough abledos fields array
-            let mutable length = renderer.AlbedosFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.AlbedosFields.Length < length then
-                renderer.AlbedosFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough materials fields array
-            let mutable length = renderer.MaterialsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.MaterialsFields.Length < length then
-                renderer.MaterialsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough heights fields array
-            let mutable length = renderer.HeightsFields.Length
-            while parameters.Length > length do length <- length * 2
-            if renderer.HeightsFields.Length < length then
-                renderer.HeightsFields <- Array.zeroCreate<single> length
-
-            // blit parameters to field arrays
+            // blit parameters to instance fields
             for i in 0 .. dec parameters.Length do
                 let struct (model, texCoordsOffset, properties) = parameters.[i]
-                model.ToArray (renderer.ModelsFields, i * 16)
-                renderer.TexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Min.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
-                renderer.TexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+                model.ToArray (renderer.InstanceFields, i * 29)
+                renderer.InstanceFields.[i * 29 + 16] <- texCoordsOffset.Min.X
+                renderer.InstanceFields.[i * 29 + 16 + 1] <- texCoordsOffset.Min.Y
+                renderer.InstanceFields.[i * 29 + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+                renderer.InstanceFields.[i * 29 + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
                 let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
                 let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
                 let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
                 let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
                 let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
                 let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
-                renderer.AlbedosFields.[i * 4] <- albedo.R
-                renderer.AlbedosFields.[i * 4 + 1] <- albedo.G
-                renderer.AlbedosFields.[i * 4 + 2] <- albedo.B
-                renderer.AlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.MaterialsFields.[i * 4] <- roughness
-                renderer.MaterialsFields.[i * 4 + 1] <- metallic
-                renderer.MaterialsFields.[i * 4 + 2] <- ambientOcclusion
-                renderer.MaterialsFields.[i * 4 + 3] <- emission
-                renderer.HeightsFields.[i] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
+                renderer.InstanceFields.[i * 29 + 20] <- albedo.R
+                renderer.InstanceFields.[i * 29 + 20 + 1] <- albedo.G
+                renderer.InstanceFields.[i * 29 + 20 + 2] <- albedo.B
+                renderer.InstanceFields.[i * 29 + 20 + 3] <- albedo.A
+                renderer.InstanceFields.[i * 29 + 24] <- roughness
+                renderer.InstanceFields.[i * 29 + 24 + 1] <- metallic
+                renderer.InstanceFields.[i * 29 + 24 + 2] <- ambientOcclusion
+                renderer.InstanceFields.[i * 29 + 24 + 3] <- emission
+                renderer.InstanceFields.[i * 29 + 28] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
 
             // draw deferred surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
                 (batchPhase, blending, viewArray, projectionArray, bonesArray, eyeCenter,
-                 parameters.Length, renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.MaterialsFields, renderer.HeightsFields,
-                 surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
+                 parameters.Length, renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedForwardSurfaces
         blending viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
@@ -1612,64 +1576,40 @@ type [<ReferenceEquality>] GlRenderer3d =
         // ensure there are surfaces to render
         if parameters.Length > 0 then
 
-            // ensure we have a large enough models fields array
-            let mutable length = renderer.ModelsFields.Length
-            while parameters.Length * 16 > length do length <- length * 2
-            if renderer.ModelsFields.Length < length then
-                renderer.ModelsFields <- Array.zeroCreate<single> length
+            // ensure we have a large enough instance fields array
+            let mutable length = renderer.InstanceFields.Length
+            while parameters.Length * 29 > length do length <- length * 2
+            if renderer.InstanceFields.Length < length then
+                renderer.InstanceFields <- Array.zeroCreate<single> length
 
-            // ensure we have a large enough texCoordsOffsets fields array
-            let mutable length = renderer.TexCoordsOffsetsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.TexCoordsOffsetsFields.Length < length then
-                renderer.TexCoordsOffsetsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough abledos fields array
-            let mutable length = renderer.AlbedosFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.AlbedosFields.Length < length then
-                renderer.AlbedosFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough materials fields array
-            let mutable length = renderer.MaterialsFields.Length
-            while parameters.Length * 4 > length do length <- length * 2
-            if renderer.MaterialsFields.Length < length then
-                renderer.MaterialsFields <- Array.zeroCreate<single> length
-
-            // ensure we have a large enough heights fields array
-            let mutable length = renderer.HeightsFields.Length
-            while parameters.Length > length do length <- length * 2
-            if renderer.HeightsFields.Length < length then
-                renderer.HeightsFields <- Array.zeroCreate<single> length
-
-            // blit parameters to field arrays
+            // blit parameters to instance fields
             for i in 0 .. dec parameters.Length do
                 let struct (model, texCoordsOffset, properties) = parameters.[i]
-                model.ToArray (renderer.ModelsFields, i * 16)
-                renderer.TexCoordsOffsetsFields.[i * 4] <- texCoordsOffset.Min.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 1] <- texCoordsOffset.Min.Y
-                renderer.TexCoordsOffsetsFields.[i * 4 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
-                renderer.TexCoordsOffsetsFields.[i * 4 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+                model.ToArray (renderer.InstanceFields, i * 29)
+                renderer.InstanceFields.[i * 29 + 16] <- texCoordsOffset.Min.X
+                renderer.InstanceFields.[i * 29 + 16 + 1] <- texCoordsOffset.Min.Y
+                renderer.InstanceFields.[i * 29 + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+                renderer.InstanceFields.[i * 29 + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
                 let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Albedo
                 let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Roughness
                 let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Metallic
                 let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.AmbientOcclusion
                 let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Emission
                 let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterial.MaterialProperties.Height
-                renderer.AlbedosFields.[i * 4] <- albedo.R
-                renderer.AlbedosFields.[i * 4 + 1] <- albedo.G
-                renderer.AlbedosFields.[i * 4 + 2] <- albedo.B
-                renderer.AlbedosFields.[i * 4 + 3] <- albedo.A
-                renderer.MaterialsFields.[i * 4] <- roughness
-                renderer.MaterialsFields.[i * 4 + 1] <- metallic
-                renderer.MaterialsFields.[i * 4 + 2] <- ambientOcclusion
-                renderer.MaterialsFields.[i * 4 + 3] <- emission
-                renderer.HeightsFields.[i] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
+                renderer.InstanceFields.[i * 29 + 20] <- albedo.R
+                renderer.InstanceFields.[i * 29 + 20 + 1] <- albedo.G
+                renderer.InstanceFields.[i * 29 + 20 + 2] <- albedo.B
+                renderer.InstanceFields.[i * 29 + 20 + 3] <- albedo.A
+                renderer.InstanceFields.[i * 29 + 24] <- roughness
+                renderer.InstanceFields.[i * 29 + 24 + 1] <- metallic
+                renderer.InstanceFields.[i * 29 + 24 + 2] <- ambientOcclusion
+                renderer.InstanceFields.[i * 29 + 24 + 3] <- emission
+                renderer.InstanceFields.[i * 29 + 28] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
 
             // draw forward surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
                 (blending, viewArray, projectionArray, bonesArray,
-                 parameters.Length, renderer.ModelsFields, renderer.TexCoordsOffsetsFields, renderer.AlbedosFields, renderer.MaterialsFields, renderer.HeightsFields,
+                 parameters.Length, renderer.InstanceFields,
                  eyeCenter, lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                  lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
                  surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
@@ -1773,14 +1713,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | None -> box2 v2Zero v2Zero
+        let instanceFields =
+            Array.append
+                (m4Identity.ToArray ())
+                ([|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+                   materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A
+                   materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission
+                   texelHeightAvg * materialProperties.Height|])
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, geometryProjectionArray, eyeCenter,
-             m4Identity.ToArray (), // NOTE: transform is baked into vertices.
-             [|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y|],
-             [|materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A|],
-             [|materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission|],
-             [|texelHeightAvg * materialProperties.Height|],
-             elementsCount, materials, geometry, shader)
+             instanceFields, elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
     static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage roughnessImage metallicImage ambientOcclusionImage emissionImage normalImage heightImage renderer =
@@ -2827,11 +2769,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               LightMaps = dictPlus HashIdentity.Structural []
               LightMappingConfig = lightMappingConfig
               SsaoConfig = ssaoConfig
-              ModelsFields = Array.zeroCreate<single> (16 * Constants.Render.GeometryBatchPrealloc)
-              TexCoordsOffsetsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
-              AlbedosFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
-              MaterialsFields = Array.zeroCreate<single> (4 * Constants.Render.GeometryBatchPrealloc)
-              HeightsFields = Array.zeroCreate<single> Constants.Render.GeometryBatchPrealloc
+              InstanceFields = Array.zeroCreate<single> (29 * Constants.Render.InstanceBatchPrealloc)
               UserDefinedStaticModelFields = [||]
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               RenderTasksDictionary = renderTasksDictionary
