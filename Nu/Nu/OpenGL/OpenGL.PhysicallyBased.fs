@@ -1317,14 +1317,32 @@ module PhysicallyBased =
         | None -> Right materials
 
     /// Attempt to create physically-based static geometries from an assimp scene.
+    /// OPTIMIZATION: duplicate geometry is detected and de-duplicated here, which does have some run-time cost.
     let TryCreatePhysicallyBasedStaticGeometries (renderable, filePath, scene : Assimp.Scene) =
+        let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let mutable errorOpt = None
         let geometries = SList.make ()
         for mesh in scene.Meshes do
             if Option.isNone errorOpt then
-                match TryCreatePhysicallyBasedStaticGeometry (renderable, mesh) with
-                | Right geometry -> geometries.Add geometry
-                | Left error -> errorOpt <- Some ("Could not load static geometries for mesh in file name '" + filePath + "' due to: " + error)
+                let mutable found = false
+                let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
+                match meshAndGeometryListOpt with
+                | Some (meshAndGeometry : (Assimp.Mesh * PhysicallyBasedGeometry) List) ->
+                    let mutable enr = meshAndGeometry.GetEnumerator ()
+                    while not found && enr.MoveNext () do
+                        let (meshCached, geometryCached) = enr.Current
+                        if Linq.Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) then
+                            geometries.Add geometryCached
+                            found <- true
+                | None -> ()
+                if not found then
+                    match TryCreatePhysicallyBasedStaticGeometry (renderable, mesh) with
+                    | Right geometry ->
+                        match meshAndGeometryListOpt with
+                        | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
+                        | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
+                        geometries.Add geometry
+                    | Left error -> errorOpt <- Some ("Could not load static geometries for mesh in file name '" + filePath + "' due to: " + error)
         match errorOpt with
         | Some error -> Left error
         | None -> Right geometries
