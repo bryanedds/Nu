@@ -433,7 +433,7 @@ module WorldModuleGame =
                 (World.getGameEye3dFrustumExposed Game.Handle world)
                 (World.getGameEye3dFrustumImposter Game.Handle world)
                 (Some (World.getLight3dBox world))
-                lightProbe light bounds presence
+                lightProbe light presence bounds
 
         /// Check that the given bounds is within the 3d eye's play bounds.
         static member boundsInPlay3d (bounds : Box3) world =
