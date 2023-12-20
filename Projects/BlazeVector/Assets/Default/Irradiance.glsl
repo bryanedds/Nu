@@ -16,6 +16,7 @@ void main()
 
 #shader fragment
 #version 410 core
+#extension GL_ARB_bindless_texture : require
 
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
@@ -25,7 +26,7 @@ in vec3 positionOut;
 
 out vec4 frag;
 
-uniform samplerCube cubeMap;
+layout (bindless_sampler) uniform samplerCube cubeMap;
 
 void main()
 {

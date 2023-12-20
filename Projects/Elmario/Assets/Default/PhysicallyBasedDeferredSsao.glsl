@@ -14,6 +14,7 @@ void main()
 
 #shader fragment
 #version 410 core
+#extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;
 const int SSAO_SAMPLES_MAX = 128;
@@ -59,8 +60,8 @@ const vec3[SSAO_SAMPLES_MAX] SSAO_SAMPLING_DIRECTIONS = vec3[](
 
 uniform mat4 view;
 uniform mat4 projection;
-uniform sampler2D positionTexture;
-uniform sampler2D normalAndHeightTexture;
+layout (bindless_sampler) uniform sampler2D positionTexture;
+layout (bindless_sampler) uniform sampler2D normalAndHeightTexture;
 uniform ivec2 ssaoResolution;
 uniform float ssaoIntensity;
 uniform float ssaoBias;
