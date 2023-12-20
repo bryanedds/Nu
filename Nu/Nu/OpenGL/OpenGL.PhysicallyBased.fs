@@ -1331,7 +1331,9 @@ module PhysicallyBased =
                     let mutable enr = meshAndGeometry.GetEnumerator ()
                     while not found && enr.MoveNext () do
                         let (meshCached, geometryCached) = enr.Current
-                        if Linq.Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) then
+                        if  Linq.Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
+                            Linq.Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
+                            Linq.Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
                             geometries.Add geometryCached
                             found <- true
                 | None -> ()
