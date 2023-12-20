@@ -1868,21 +1868,27 @@ module PhysicallyBased =
         Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
         Hl.Assert ()
 
-        // update models buffer
+        // update buffers
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
         let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+        try 
+        
+            // update models buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update albedos buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
+            Hl.Assert ()
+
+        // finish updating buffers
+        finally
+
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+            modelsFieldsPtr.Free ()
+            albedosFieldsPtr.Free ()
 
         // setup geometry
         Gl.BindVertexArray geometry.PhysicallyBasedVao
@@ -1960,45 +1966,48 @@ module PhysicallyBased =
         Gl.UniformHandleARB (shader.HeightTextureUniform, material.HeightTexture.TextureHandle)
         Hl.Assert ()
 
-        // update models buffer
+        // update buffers
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update texCoordsOffsets buffer
         let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally texCoordsOffsetsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
         let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update materials buffer
         let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally materialsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update heights buffer
         let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
+        try 
+        
+            // update models buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update texCoordsOffsets buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update albedos buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update materials buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update heights buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally heightsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
+            Hl.Assert ()
+
+        // finish updating buffers
+        finally
+
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+            modelsFieldsPtr.Free ()
+            texCoordsOffsetsFieldsPtr.Free ()
+            albedosFieldsPtr.Free ()
+            materialsFieldsPtr.Free ()
+            heightsFieldsPtr.Free ()
 
         // setup geometry
         Gl.BindVertexArray geometry.PhysicallyBasedVao
@@ -2132,45 +2141,48 @@ module PhysicallyBased =
             Gl.UniformHandleARB (shader.ShadowTexturesUniforms.[i], shadowTextures.[i].TextureHandle)
         Hl.Assert ()
 
-        // update models buffer
+        // update buffers
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update texCoordsOffsets buffer
         let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally texCoordsOffsetsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
         let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update materials buffer
         let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally materialsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update heights buffer
         let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
+        try 
+        
+            // update models buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update texCoordsOffsets buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update albedos buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update materials buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update heights buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
             Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally heightsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
+            Hl.Assert ()
+
+        // finish updating buffers
+        finally
+
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+            modelsFieldsPtr.Free ()
+            texCoordsOffsetsFieldsPtr.Free ()
+            albedosFieldsPtr.Free ()
+            materialsFieldsPtr.Free ()
+            heightsFieldsPtr.Free ()
 
         // setup geometry
         Gl.BindVertexArray geometry.PhysicallyBasedVao
@@ -2254,45 +2266,48 @@ module PhysicallyBased =
             Gl.UniformHandleARB (shader.AmbientOcclusionTexturesUniforms.[i], materials.[i].AmbientOcclusionTexture.TextureHandle)
         Hl.Assert ()
 
-        // update models buffer
+        // update buffers
         let modelsFieldsPtr = GCHandle.Alloc (modelsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally modelsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update texCoordsOffsets buffer
         let texCoordsOffsetsFieldsPtr = GCHandle.Alloc (texCoordsOffsetsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally texCoordsOffsetsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update albedos buffer
         let albedosFieldsPtr = GCHandle.Alloc (albedosFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally albedosFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update materials buffer
         let materialsFieldsPtr = GCHandle.Alloc (materialsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally materialsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
-
-        // update heights buffer
         let heightsFieldsPtr = GCHandle.Alloc (heightsFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint sizeof<single>, heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-        finally heightsFieldsPtr.Free ()
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
-        Hl.Assert ()
+        try 
+        
+            // update models buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.ModelBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (16 * sizeof<single>), modelsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update texCoordsOffsets buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.TexCoordsOffsetBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), texCoordsOffsetsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update albedos buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.AlbedoBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), albedosFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update materials buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.MaterialBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (4 * sizeof<single>), materialsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+            // update heights buffer
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.HeightBuffer)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (sizeof<single>), heightsFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Hl.Assert ()
+
+        // finish updating buffers
+        finally
+
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+            modelsFieldsPtr.Free ()
+            texCoordsOffsetsFieldsPtr.Free ()
+            albedosFieldsPtr.Free ()
+            materialsFieldsPtr.Free ()
+            heightsFieldsPtr.Free ()
 
         // setup geometry
         Gl.BindVertexArray geometry.PhysicallyBasedVao
