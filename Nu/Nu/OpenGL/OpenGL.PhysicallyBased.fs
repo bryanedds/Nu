@@ -1816,7 +1816,8 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based surfaces' shadows.
     let DrawPhysicallyBasedShadowSurfaces
-        (view : single array,
+        (batchPhase : BatchPhase,
+         view : single array,
          projection : single array,
          bones : single array array,
          surfacesCount : int,
@@ -1826,18 +1827,21 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
-        // setup state
-        Gl.DepthFunc DepthFunction.Lequal
-        Gl.Enable EnableCap.DepthTest
-        Hl.Assert ()
+        // start batch
+        if batchPhase.Starting then
 
-        // setup shader
-        Gl.UseProgram shader.PhysicallyBasedShader
-        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
-        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
-            Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
-        Hl.Assert ()
+            // setup state
+            Gl.DepthFunc DepthFunction.Lequal
+            Gl.Enable EnableCap.DepthTest
+            Hl.Assert ()
+
+            // setup shader
+            Gl.UseProgram shader.PhysicallyBasedShader
+            Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+            Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+            for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
+                Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+            Hl.Assert ()
 
         // setup textures
         Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
@@ -1870,21 +1874,25 @@ module PhysicallyBased =
         Hl.RegisterDrawCall ()
         Hl.Assert ()
 
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
+        // stop batch
+        if batchPhase.Stopping then
 
-        // teardown shader
-        Gl.UseProgram 0u
-        Hl.Assert ()
+            // teardown geometry
+            Gl.BindVertexArray 0u
+            Hl.Assert ()
 
-        // teardown state
-        Gl.DepthFunc DepthFunction.Less
-        Gl.Disable EnableCap.DepthTest
+            // teardown shader
+            Gl.UseProgram 0u
+            Hl.Assert ()
+
+            // teardown state
+            Gl.DepthFunc DepthFunction.Less
+            Gl.Disable EnableCap.DepthTest
 
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
-        (blending : bool,
+        (batchPhase : BatchPhase,
+         blending : bool,
          view : single array,
          projection : single array,
          bones : single array array,
@@ -1899,24 +1907,27 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
-        // setup state
-        Gl.DepthFunc DepthFunction.Lequal
-        Gl.Enable EnableCap.DepthTest
-        if blending then
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-            Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
-            Gl.Enable EnableCap.Blend
-        if not material.TwoSided then Gl.Enable EnableCap.CullFace
-        Hl.Assert ()
+        // start batch
+        if batchPhase.Starting then
 
-        // setup shader
-        Gl.UseProgram shader.PhysicallyBasedShader
-        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
-        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
-            Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
-        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Hl.Assert ()
+            // setup state
+            Gl.DepthFunc DepthFunction.Lequal
+            Gl.Enable EnableCap.DepthTest
+            if blending then
+                Gl.BlendEquation BlendEquationMode.FuncAdd
+                Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+                Gl.Enable EnableCap.Blend
+            if not material.TwoSided then Gl.Enable EnableCap.CullFace
+            Hl.Assert ()
+
+            // setup shader
+            Gl.UseProgram shader.PhysicallyBasedShader
+            Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+            Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+            for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
+                Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+            Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+            Hl.Assert ()
 
         // setup textures
         Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
@@ -1979,22 +1990,25 @@ module PhysicallyBased =
         Hl.RegisterDrawCall ()
         Hl.Assert ()
 
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
+        // stop batch
+        if batchPhase.Stopping then
 
-        // teardown shader
-        Gl.UseProgram 0u
-        Hl.Assert ()
+            // teardown geometry
+            Gl.BindVertexArray 0u
+            Hl.Assert ()
 
-        // teardown state
-        Gl.DepthFunc DepthFunction.Less
-        Gl.Disable EnableCap.DepthTest
-        if blending then
-            Gl.Disable EnableCap.Blend
-            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-        if not material.TwoSided then Gl.Disable EnableCap.CullFace
+            // teardown shader
+            Gl.UseProgram 0u
+            Hl.Assert ()
+
+            // teardown state
+            Gl.DepthFunc DepthFunction.Less
+            Gl.Disable EnableCap.DepthTest
+            if blending then
+                Gl.Disable EnableCap.Blend
+                Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+                Gl.BlendEquation BlendEquationMode.FuncAdd
+            if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
