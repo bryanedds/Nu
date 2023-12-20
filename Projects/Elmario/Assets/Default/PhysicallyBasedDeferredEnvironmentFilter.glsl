@@ -14,18 +14,19 @@ void main()
 
 #shader fragment
 #version 410 core
+#extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const int LIGHT_MAPS_MAX = 27;
 
 uniform vec3 eyeCenter;
-uniform sampler2D positionTexture;
-uniform sampler2D materialTexture;
-uniform sampler2D normalAndHeightTexture;
-uniform sampler2D lightMappingTexture;
-uniform samplerCube environmentFilterMap;
-uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
+layout (bindless_sampler) uniform sampler2D positionTexture;
+layout (bindless_sampler) uniform sampler2D materialTexture;
+layout (bindless_sampler) uniform sampler2D normalAndHeightTexture;
+layout (bindless_sampler) uniform sampler2D lightMappingTexture;
+layout (bindless_sampler) uniform samplerCube environmentFilterMap;
+layout (bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];

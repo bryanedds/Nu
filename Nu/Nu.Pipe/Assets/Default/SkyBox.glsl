@@ -1,5 +1,5 @@
 #shader vertex
-#version 410 core
+#version 410
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -15,7 +15,8 @@ void main()
 }
 
 #shader fragment
-#version 410 core
+#version 410
+#extension GL_ARB_bindless_texture : require
 
 in vec3 texCoordsOut;
 
@@ -23,7 +24,7 @@ out vec4 frag;
 
 uniform vec3 color;
 uniform float brightness;
-uniform samplerCube cubeMap;
+layout (bindless_sampler) uniform samplerCube cubeMap;
 
 void main()
 {

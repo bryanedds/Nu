@@ -14,14 +14,15 @@ void main()
 
 #shader fragment
 #version 410 core
+#extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;
 const int LIGHT_MAPS_MAX = 27;
 
-uniform sampler2D normalAndHeightTexture;
-uniform sampler2D lightMappingTexture;
-uniform samplerCube irradianceMap;
-uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
+layout (bindless_sampler) uniform sampler2D normalAndHeightTexture;
+layout (bindless_sampler) uniform sampler2D lightMappingTexture;
+layout (bindless_sampler) uniform samplerCube irradianceMap;
+layout (bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 
 in vec2 texCoordsOut;
 

@@ -14,12 +14,13 @@ void main()
 
 #shader fragment
 #version 410 core
+#extension GL_ARB_bindless_texture : require
 
 in vec2 texCoordsOut;
 
 out float frag;
 
-uniform sampler2D inputTexture;
+layout (bindless_sampler) uniform sampler2D inputTexture;
 
 void main()
 {
