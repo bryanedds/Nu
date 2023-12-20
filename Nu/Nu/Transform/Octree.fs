@@ -46,7 +46,7 @@ module Octelement =
         override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
 
     let intersects frustumEnclosed frustumExposed frustumImposter lightBox (element : _ Octelement) =
-        Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox element.LightProbe element.Light element.Bounds_ element.Presence_
+        Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox element.LightProbe element.Light element.Presence_ element.Bounds_
 
     let make visible static_ lightProbe light presence bounds (entry : 'e) =
         let hashCode = entry.GetHashCode ()
