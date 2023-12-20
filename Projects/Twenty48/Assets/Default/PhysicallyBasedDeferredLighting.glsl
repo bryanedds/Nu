@@ -190,6 +190,8 @@ void main()
     }
 
     // compute light ambient terms
+    // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
+    // TODO: use a better means of computing specular occlusion as this one isn't very effective.
     vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
     vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
 
