@@ -113,7 +113,8 @@ module SpriteBatch =
         // fragment shader code
         let samplerFragmentShaderStr =
             [Constants.OpenGL.GlslVersionPragma
-             "uniform sampler2D tex;"
+             "#extension GL_ARB_bindless_texture : require"
+             "layout (bindless_sampler) uniform sampler2D tex;"
              "in vec2 texCoords;"
              "in vec4 color;"
              "out vec4 frag;"
