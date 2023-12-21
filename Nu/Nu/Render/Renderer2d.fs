@@ -94,7 +94,7 @@ type [<ReferenceEquality>] RenderOperation2d =
 and [<ReferenceEquality>] LayeredOperation2d =
     { mutable Elevation : single
       mutable Horizon : single
-      mutable AssetTag : obj AssetTag
+      mutable AssetTag : AssetTag
       mutable RenderOperation2d : RenderOperation2d }
 
 /// A message to a 2d rendering subsystem.
@@ -156,7 +156,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, GlPackageState2d>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, GlPackageState2d> // OPTIMIZATION: nullable for speed.
-          mutable RenderAssetCachedOpt : obj AssetTag * RenderAsset
+          mutable RenderAssetCachedOpt : AssetTag * RenderAsset
           LayeredOperations : LayeredOperation2d List }
 
     static member private invalidateCaches renderer =
@@ -173,7 +173,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | StaticModelAsset _ -> ()
         | AnimatedModelAsset _ -> ()
 
-    static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
+    static member private tryLoadRenderAsset packageState (asset : Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
@@ -248,7 +248,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | Left error ->
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
-    static member tryGetRenderAsset (assetTag : obj AssetTag) renderer =
+    static member tryGetRenderAsset (assetTag : AssetTag) renderer =
         if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
             assetEq assetTag (fst renderer.RenderAssetCachedOpt) then
             ValueSome (snd renderer.RenderAssetCachedOpt)
@@ -414,7 +414,6 @@ type [<ReferenceEquality>] GlRenderer2d =
         let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
         let pivot = transform.PerimeterPivot.V2 * Constants.Render.VirtualScalar2
         let rotation = -transform.Angles.Z
-        let image = AssetTag.generalize image
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
@@ -425,7 +424,6 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     /// Render sprite particles.
     static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
-        let image = AssetTag.generalize image
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
@@ -475,7 +473,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         let (allFound, tileSetTextures) =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
-                match GlRenderer2d.tryGetRenderAsset (AssetTag.generalize tileSetImage) renderer with
+                match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
                 | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
                 | ValueSome _ -> None
                 | ValueNone -> None) |>
@@ -568,7 +566,6 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let size = perimeter.Size.V2 * Constants.Render.VirtualScalar2
                 let viewport = Constants.Render.Viewport
                 let viewProjection = viewport.ViewProjection2d (absolute, eyeCenter, eyeSize)
-                let font = AssetTag.generalize font
                 match GlRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with

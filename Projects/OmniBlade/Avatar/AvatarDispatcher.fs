@@ -46,7 +46,7 @@ module AvatarDispatcher =
                 World.enqueueLayeredOperation2d
                     { Elevation = transform.Elevation
                       Horizon = transform.Horizon
-                      AssetTag = AssetTag.generalize avatar.AnimationSheet
+                      AssetTag = avatar.AnimationSheet
                       RenderOperation2d =
                         RenderSprite
                             { Transform = transform

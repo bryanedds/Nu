@@ -31,7 +31,7 @@ type RendererProcess =
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
-        abstract RenderLayeredSpriteFast : single * single * obj AssetTag * Transform inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
+        abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
         /// Clear enqueued render messages.
         abstract ClearMessages : unit -> unit
         /// Submit enqueued render messages for processing.

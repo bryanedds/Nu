@@ -414,7 +414,7 @@ module EffectSystem =
         | SymbolicCompressionB (SymbolicCompressionB content) ->
             { DefinitionParams = [||]; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
 
-    let rec private evalResource resource effectSystem : obj AssetTag =
+    let rec private evalResource resource effectSystem : AssetTag =
         match resource with
         | Resource (packageName, assetName) -> AssetTag.make<obj> packageName assetName
         | Resource.Expand (definitionName, _) ->
@@ -626,7 +626,7 @@ module EffectSystem =
                       Blend = slice.Blend
                       Emission = slice.Emission
                       Flip = slice.Flip }
-                let spriteView = SpriteView (transform.Elevation, transform.Horizon, AssetTag.generalize image, sprite)
+                let spriteView = SpriteView (transform.Elevation, transform.Horizon, image, sprite)
                 addView spriteView effectSystem
             else effectSystem
 
@@ -663,7 +663,7 @@ module EffectSystem =
                           Blend = slice.Blend
                           Emission = slice.Emission
                           Flip = slice.Flip }
-                    let spriteView = SpriteView (transform.Elevation, transform.Horizon, AssetTag.generalize image, sprite)
+                    let spriteView = SpriteView (transform.Elevation, transform.Horizon, image, sprite)
                     addView spriteView effectSystem
                 else effectSystem
 

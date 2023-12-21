@@ -22,7 +22,7 @@ module Symbolics =
         private
             { SymbolPackages : Packages<SymbolLoadMetadata * Symbol, unit> }
 
-    let private tryLoadSymbol3 metadata packageName (asset : Symbol Asset) =
+    let private tryLoadSymbol3 metadata packageName (asset : Asset) =
         try let text = File.ReadAllText asset.FilePath
             match PathF.GetExtensionLower asset.FilePath with
             | ".csv" ->
@@ -59,7 +59,7 @@ module Symbolics =
                         symbolics.SymbolPackages.[packageName] <- symbolPackage
                         symbolPackage
                 for asset in assets do
-                    match tryLoadSymbol3 metadata packageName (Asset.convert asset) with
+                    match tryLoadSymbol3 metadata packageName asset with
                     | Some symbol -> symbolPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, symbol)
                     | None -> ()
             | Left error ->

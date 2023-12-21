@@ -31,7 +31,7 @@ module TeammateDispatcher =
             World.enqueueLayeredOperation2d
                 { Elevation = borderTransform.Elevation
                   Horizon = horizon
-                  AssetTag = AssetTag.generalize borderImage
+                  AssetTag = borderImage
                   RenderOperation2d =
                     RenderSprite
                         { Transform = borderTransform
@@ -59,7 +59,7 @@ module TeammateDispatcher =
             World.enqueueLayeredOperation2d
                 { Elevation = fillTransform.Elevation
                   Horizon = horizon
-                  AssetTag = AssetTag.generalize fillImage
+                  AssetTag = fillImage
                   RenderOperation2d =
                     RenderSprite
                         { Transform = fillTransform

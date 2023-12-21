@@ -26,7 +26,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BroadPhaseInterface : BroadphaseInterface
           ConstraintSolverPool : ConstraintSolverPoolMultiThreaded
           ConstraintSolver : ConstraintSolver
-          TryGetAssetFilePath : obj AssetTag -> string option
+          TryGetAssetFilePath : AssetTag -> string option
           TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
           PhysicsMessages : PhysicsMessage List
           IntegrationMessages : IntegrationMessage List }
