@@ -258,7 +258,7 @@ and Term =
     | Intra of string * Type
     | Extra of string * Type * obj AlwaysEqual // only creates component when at top-level.
     | Terms of Term list
-    static member equals (this : Term) (that : Term) = this.Equals that
+    static member equals (left : Term) (right : Term) = left.Equals right
     static member equalsMany (lefts : Map<string, Term>) (rights : Map<string, Term>) =
         if lefts.Count = rights.Count then
             let mutable result = true

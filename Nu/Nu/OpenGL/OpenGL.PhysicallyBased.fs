@@ -78,18 +78,9 @@ module PhysicallyBased =
                 | (false, _) -> None
 
         static member inline hash surface =
-            (int surface.SurfaceMaterial.AlbedoTexture.TextureId) ^^^
-            (int surface.SurfaceMaterial.RoughnessTexture.TextureId <<< 2) ^^^
-            (int surface.SurfaceMaterial.MetallicTexture.TextureId <<< 4) ^^^
-            (int surface.SurfaceMaterial.AmbientOcclusionTexture.TextureId <<< 6) ^^^
-            (int surface.SurfaceMaterial.EmissionTexture.TextureId <<< 8) ^^^
-            (int surface.SurfaceMaterial.NormalTexture.TextureId <<< 10) ^^^
-            (int surface.SurfaceMaterial.HeightTexture.TextureId <<< 12) ^^^
-            (hash surface.SurfaceMaterial.TwoSided <<< 14) ^^^
-            (int surface.PhysicallyBasedGeometry.PrimitiveType <<< 16) ^^^
-            (int surface.PhysicallyBasedGeometry.PhysicallyBasedVao <<< 18)
+            surface.HashCode
 
-        static member inline equals left right =
+        static member equals left right =
             left.SurfaceMaterial.AlbedoTexture.TextureId = right.SurfaceMaterial.AlbedoTexture.TextureId &&
             left.SurfaceMaterial.RoughnessTexture.TextureId = right.SurfaceMaterial.RoughnessTexture.TextureId &&
             left.SurfaceMaterial.MetallicTexture.TextureId = right.SurfaceMaterial.MetallicTexture.TextureId &&
@@ -101,17 +92,26 @@ module PhysicallyBased =
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member internal make names metadata (surfaceMatrix : Matrix4x4) bounds material geometry =
-            let result =
-                { HashCode = 0
-                  SurfaceNames = names
-                  SurfaceMetadata = metadata
-                  SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
-                  SurfaceMatrix = surfaceMatrix
-                  SurfaceBounds = bounds
-                  SurfaceMaterial = material
-                  PhysicallyBasedGeometry = geometry }
-            { result with HashCode = PhysicallyBasedSurface.hash result }
+        static member make names metadata (surfaceMatrix : Matrix4x4) bounds material geometry =
+            let hashCode =
+                (int material.AlbedoTexture.TextureId) ^^^
+                (int material.RoughnessTexture.TextureId <<< 2) ^^^
+                (int material.MetallicTexture.TextureId <<< 4) ^^^
+                (int material.AmbientOcclusionTexture.TextureId <<< 6) ^^^
+                (int material.EmissionTexture.TextureId <<< 8) ^^^
+                (int material.NormalTexture.TextureId <<< 10) ^^^
+                (int material.HeightTexture.TextureId <<< 12) ^^^
+                (hash material.TwoSided <<< 14) ^^^
+                (int geometry.PrimitiveType <<< 16) ^^^
+                (int geometry.PhysicallyBasedVao <<< 18)
+            { HashCode = hashCode
+              SurfaceNames = names
+              SurfaceMetadata = metadata
+              SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
+              SurfaceMatrix = surfaceMatrix
+              SurfaceBounds = bounds
+              SurfaceMaterial = material
+              PhysicallyBasedGeometry = geometry }
 
         member this.Equals that =
             PhysicallyBasedSurface.equals this that
@@ -123,6 +123,11 @@ module PhysicallyBased =
 
         override this.GetHashCode () =
             this.HashCode
+
+    module internal PhysicallyBasedSurfaceFns =
+        let hash = PhysicallyBasedSurface.hash
+        let equals = PhysicallyBasedSurface.equals
+        let comparer = HashIdentity.FromFunctions hash equals
 
     /// A light probe inside a physically-based static model.
     type PhysicallyBasedLightProbe =

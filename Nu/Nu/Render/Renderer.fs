@@ -64,21 +64,29 @@ type [<CustomEquality; NoComparison>] RenderPass =
     | ShadowPass of LightId : uint64 * ShadowDirectional : bool * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
 
-    override this.Equals thatObj =
-        match thatObj with
-        | :? RenderPass as that ->
-            match (this, that) with
-            | (NormalPass, NormalPass) -> true
-            | (ShadowPass (lightId, _, _), ShadowPass (lightId2, _, _)) -> lightId = lightId2
-            | (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
-            | (_, _) -> false
-        | _ -> false
-
-    override this.GetHashCode () =
-        match this with
+    static member hash renderPass =
+        match renderPass with
         | NormalPass -> 0
         | ShadowPass (lightId, _, _) -> hash lightId
         | ReflectionPass (reflectorId, _) -> hash reflectorId
+
+    static member equals left right =
+        match (left, right) with
+        | (NormalPass, NormalPass) -> true
+        | (ShadowPass (lightId, _, _), ShadowPass (lightId2, _, _)) -> lightId = lightId2
+        | (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
+        | (_, _) -> false
+
+    static member comparer =
+        HashIdentity.FromFunctions RenderPass.hash RenderPass.equals
+
+    override this.Equals thatObj =
+        match thatObj with
+        | :? RenderPass as that -> RenderPass.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        RenderPass.hash this
 
 /// An asset that is used for rendering.
 type RenderAsset =

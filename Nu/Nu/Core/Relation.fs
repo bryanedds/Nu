@@ -103,7 +103,7 @@ module Relation =
             Relation.makeFromArray<'a> names
 
         /// Hash a Relation.
-        static member inline hash (relation : 'a Relation) =
+        static member hash (relation : 'a Relation) =
             Array.hash relation.Tokens
 
         /// Equate Relations.
