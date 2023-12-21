@@ -210,8 +210,8 @@ and [<ReferenceEquality>] RenderTasks =
           RenderLightProbes = Dictionary HashIdentity.Structural
           RenderLightMaps = List ()
           RenderLights = List ()
-          RenderDeferredStaticAbsolute = dictPlus HashIdentity.Structural []
-          RenderDeferredStaticRelative = dictPlus HashIdentity.Structural []
+          RenderDeferredStaticAbsolute = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
+          RenderDeferredStaticRelative = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
           RenderDeferredAnimatedAbsolute = dictPlus HashIdentity.Structural []
           RenderDeferredAnimatedRelative = dictPlus HashIdentity.Structural []
           RenderDeferredTerrainsAbsolute = SList.make ()
@@ -1216,6 +1216,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface,
          renderType : RenderType,
          renderPass : RenderPass,
+         renderTasksOpt : RenderTasks option,
          renderer) =
         let texCoordsOffset =
             match insetOpt with
@@ -1229,7 +1230,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | ValueNone -> box2 v2Zero v2Zero
-        let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
+        let renderTasks =
+            match renderTasksOpt with
+            | Some renderTasks -> renderTasks
+            | None -> GlRenderer3d.getRenderTasks renderPass renderer
         match renderType with
         | DeferredRenderType ->
             if modelAbsolute then
@@ -1263,7 +1267,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | StaticModelAsset (_, modelAsset) ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces[surfaceIndex]
-                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &insetOpt, &properties, surface, renderType, renderPass, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &insetOpt, &properties, surface, renderType, renderPass, None, renderer)
             | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
         | _ -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
@@ -1324,7 +1328,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | ShadowPass (_, shadowDirectional, shadowFrustum) -> Presence.intersects3d (if shadowDirectional then None else Some shadowFrustum) shadowFrustum shadowFrustum None false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d None reflFrustum reflFrustum None false false presence surfaceBounds
                     if skipCulling || unculled then
-                        GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, surface, renderType, renderPass, renderer)
+                        GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &surfaceMatrix, &insetOpt, &properties, surface, renderType, renderPass, Some renderTasks, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
         | _ -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
@@ -2722,7 +2726,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasksDictionary =
-            dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
+            dictPlus RenderPass.comparer [(NormalPass, RenderTasks.make ())]
 
         // make renderer
         let renderer =
