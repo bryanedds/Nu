@@ -28,13 +28,13 @@ module Metadata =
         UMap<string, UMap<string, string * Metadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
 
     /// Thread-safe.
-    let private tryGenerateRawMetadata asset =
+    let private tryGenerateRawMetadata (asset : Asset) =
         if File.Exists asset.FilePath
         then Some RawMetadata
         else None
 
     /// Thread-safe.
-    let private tryGenerateTextureMetadata asset =
+    let private tryGenerateTextureMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
             let platform = Environment.OSVersion.Platform
             let fileExtension = PathF.GetExtensionLower asset.FilePath
@@ -60,7 +60,7 @@ module Metadata =
             None
 
     /// Thread-safe.
-    let private tryGenerateTileMapMetadata asset =
+    let private tryGenerateTileMapMetadata (asset : Asset) =
         try let tmxMap = TmxMap (asset.FilePath, true)
             let imageAssets = tmxMap.GetImageAssets asset.AssetTag.PackageName
             Some (TileMapMetadata (asset.FilePath, imageAssets, tmxMap))
@@ -70,7 +70,7 @@ module Metadata =
             None
 
     /// Thread-safe.
-    let private tryGenerateModelMetadata asset =
+    let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
             let textureMemo = OpenGL.Texture.TextureMemo.make () // unused
             let assimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () // unused
@@ -89,7 +89,7 @@ module Metadata =
             None
 
     /// Thread-safe.
-    let private tryGenerateAssetMetadata asset =
+    let private tryGenerateAssetMetadata (asset : Asset) =
         let extension = PathF.GetExtensionLower asset.FilePath
         let metadataOpt =
             match extension with
@@ -147,7 +147,7 @@ module Metadata =
                 packageNames
 
     /// Attempt to get the file path of the given asset.
-    let tryGetFilePath (assetTag : obj AssetTag) =
+    let tryGetFilePath (assetTag : AssetTag) =
         match UMap.tryFind assetTag.PackageName MetadataPackages with
         | Some package ->
             match UMap.tryFind assetTag.AssetName package with
@@ -156,7 +156,7 @@ module Metadata =
         | None -> None
 
     /// Attempt to get the metadata of the given asset.
-    let tryGetMetadata (assetTag : obj AssetTag) =
+    let tryGetMetadata (assetTag : AssetTag) =
         match UMap.tryFind assetTag.PackageName MetadataPackages with
         | Some package ->
             match UMap.tryFind assetTag.AssetName package with
@@ -166,7 +166,7 @@ module Metadata =
 
     /// Attempt to get the texture metadata of the given asset.
     let tryGetTextureSize (assetTag : Image AssetTag) =
-        match tryGetMetadata (AssetTag.generalize assetTag) with
+        match tryGetMetadata assetTag with
         | Some (TextureMetadata size) -> Some size
         | None -> None
         | _ -> None
@@ -187,7 +187,7 @@ module Metadata =
 
     /// Attempt to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata (assetTag : TileMap AssetTag) =
-        match tryGetMetadata (AssetTag.generalize assetTag) with
+        match tryGetMetadata assetTag with
         | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)
         | None -> None
         | _ -> None
@@ -198,7 +198,7 @@ module Metadata =
 
     /// Attempt to get the static model metadata of the given asset.
     let tryGetStaticModelMetadata (assetTag : StaticModel AssetTag) =
-        match tryGetMetadata (AssetTag.generalize assetTag) with
+        match tryGetMetadata assetTag with
         | Some (StaticModelMetadata model) -> Some model
         | None -> None
         | _ -> None
@@ -209,7 +209,7 @@ module Metadata =
 
     /// Attempt to get the animated model metadata of the given asset.
     let tryGetAnimatedModelMetadata (assetTag : AnimatedModel AssetTag) =
-        match tryGetMetadata (AssetTag.generalize assetTag) with
+        match tryGetMetadata assetTag with
         | Some (AnimatedModelMetadata model) -> Some model
         | None -> None
         | _ -> None

@@ -32,14 +32,34 @@ type Refinement =
 /// The use of a message system for the subsystem should enable streamed loading, optionally with
 /// smooth fading-in of late-loaded assets (IE - render assets that are already in the view frustum
 /// but are still being loaded).
+type Asset =
+    abstract AssetTag : AssetTag
+    abstract FilePath : string
+    abstract Refinements : Refinement list
+    abstract Associations : string Set
+
+/// Describes a strongly-typed game asset, such as a texture, sound, or model in detail.
 ///
-/// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
-/// avoid unnecessary Large Object Heap fragmentation.
+/// All assets must belong to an asset Package, which is a unit of asset loading.
+///
+/// In order for the renderer to render a single texture, that texture, along with all the other
+/// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
+/// assets is to send an AssetPackageUnload message to the relevent subsystem, which unloads them all.
+/// There is an AssetPackageLoad message to load a package when convenient.
+///
+/// The use of a message system for the subsystem should enable streamed loading, optionally with
+/// smooth fading-in of late-loaded assets (IE - render assets that are already in the view frustum
+/// but are still being loaded).
 type [<ReferenceEquality>] 'a Asset =
     { AssetTag : 'a AssetTag
       FilePath : string
       Refinements : Refinement list
       Associations : string Set }
+    interface Asset with
+        member this.AssetTag = this.AssetTag
+        member this.FilePath = this.FilePath
+        member this.Refinements = this.Refinements
+        member this.Associations = this.Associations
 
 [<RequireQualifiedAccess>]
 module Asset =
@@ -50,18 +70,6 @@ module Asset =
           FilePath = filePath
           Refinements = refinements
           Associations = associations }
-
-    /// Convert an asset from one type to another.
-    let convert<'a, 'b> (asset : 'a Asset) : 'b Asset =
-        make<'b> (AssetTag.convert<'a, 'b> asset.AssetTag) asset.FilePath asset.Refinements asset.Associations
-
-    /// Convert an asset with a specific type to one of obj type.
-    let generalize (asset : 'a Asset) : obj Asset =
-        convert<'a, obj> asset
-
-    /// Convert an asset with an obj type to one of a specific type.
-    let specialize<'a> (asset : obj Asset) : 'a Asset =
-        convert<obj, 'a> asset
 
 /// Tracks assets as well as their originating file paths.
 type [<ReferenceEquality>] Package<'a, 's> =
@@ -154,7 +162,7 @@ module AssetGraph =
             refinements
 
     /// Build all the assets.
-    let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets =
+    let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild (assets : Asset list) =
 
         // build assets
         for asset in assets do
@@ -187,7 +195,7 @@ module AssetGraph =
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
     /// Collect the associated assets from package descriptor assets value.
-    let private collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements =
+    let private collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements : Asset list =
         [if Directory.Exists directory then
             let filePaths =
                 [for extension in extensions do
@@ -204,7 +212,7 @@ module AssetGraph =
          else Log.info ("Invalid directory '" + directory + "'. when looking for assets.")]
 
     /// Collect the associated assets from a package descriptor.
-    let private collectAssetsFromPackageDescriptor (associationOpt : string option) packageName packageDescriptor =
+    let private collectAssetsFromPackageDescriptor (associationOpt : string option) packageName packageDescriptor : Asset list =
         [for assetDescriptor in packageDescriptor do
             match assetDescriptor with
             | Asset (assetName, filePath, associations, refinements) ->

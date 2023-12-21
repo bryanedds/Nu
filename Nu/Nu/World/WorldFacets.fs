@@ -68,7 +68,7 @@ module StaticSpriteFacetModule =
             let blend = entity.GetBlend world
             let emission = entity.GetEmission world
             let flip = entity.GetFlip world
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, AssetTag.generalize staticImage, &transform, &insetOpt, staticImage, &color, blend, &emission, flip, world)
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, staticImage, &color, blend, &emission, flip, world)
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -142,7 +142,7 @@ module AnimatedSpriteFacetModule =
             let blend = entity.GetBlend world
             let emission = entity.GetEmission world
             let flip = entity.GetFlip world
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, AssetTag.generalize animationSheet, &transform, &insetOpt, animationSheet, &color, blend, &emission, flip, world)
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, animationSheet, &color, blend, &emission, flip, world)
 
         override this.GetAttributesInferred (entity, world) =
             AttributesInferred.make (entity.GetCelSize world).V3 v3Zero
@@ -386,7 +386,7 @@ module BasicStaticSpriteEmitterFacetModule =
                         Some
                             { Elevation = descriptor.Elevation
                               Horizon = descriptor.Horizon
-                              AssetTag = AssetTag.generalize descriptor.Image
+                              AssetTag = descriptor.Image
                               RenderOperation2d = RenderSpriteParticles descriptor }
                     | _ -> None) |>
                 List.definitize
@@ -453,7 +453,7 @@ module TextFacetModule =
                 World.enqueueLayeredOperation2d
                     { Elevation = textTransform.Elevation
                       Horizon = horizon
-                      AssetTag = AssetTag.generalize font
+                      AssetTag = font
                       RenderOperation2d =
                         RenderText
                             { Transform = textTransform
@@ -493,7 +493,7 @@ module BackdroppableFacetModule =
                 World.enqueueLayeredOperation2d
                     { Elevation = spriteTransform.Elevation
                       Horizon = spriteTransform.Horizon
-                      AssetTag = AssetTag.generalize spriteImage
+                      AssetTag = spriteImage
                       RenderOperation2d =
                         RenderSprite
                             { Transform = spriteTransform
@@ -537,7 +537,7 @@ module LabelFacetModule =
             World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
-                  AssetTag = AssetTag.generalize spriteImage
+                  AssetTag = spriteImage
                   RenderOperation2d =
                     RenderSprite
                         { Transform = spriteTransform
@@ -646,7 +646,7 @@ module ButtonFacetModule =
             World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
-                  AssetTag = AssetTag.generalize spriteImage
+                  AssetTag = spriteImage
                   RenderOperation2d =
                     RenderSprite
                         { Transform = spriteTransform
@@ -773,7 +773,7 @@ module ToggleButtonFacetModule =
             World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
-                  AssetTag = AssetTag.generalize spriteImage
+                  AssetTag = spriteImage
                   RenderOperation2d =
                     RenderSprite
                         { Transform = spriteTransform
@@ -895,7 +895,7 @@ module RadioButtonFacetModule =
             World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
-                  AssetTag = AssetTag.generalize spriteImage
+                  AssetTag = spriteImage
                   RenderOperation2d =
                     RenderSprite
                         { Transform = spriteTransform
@@ -966,7 +966,7 @@ module FillBarFacetModule =
             World.enqueueLayeredOperation2d
                 { Elevation = borderTransform.Elevation
                   Horizon = horizon
-                  AssetTag = AssetTag.generalize borderImage
+                  AssetTag = borderImage
                   RenderOperation2d =
                     RenderSprite
                         { Transform = borderTransform
@@ -996,7 +996,7 @@ module FillBarFacetModule =
             World.enqueueLayeredOperation2d
                 { Elevation = fillTransform.Elevation
                   Horizon = horizon
-                  AssetTag = AssetTag.generalize fillImage
+                  AssetTag = fillImage
                   RenderOperation2d =
                       RenderSprite
                           { Transform = fillTransform
@@ -1287,7 +1287,7 @@ module EffectFacetModule =
                     let message =
                         { Elevation = descriptor.Elevation
                           Horizon = descriptor.Horizon
-                          AssetTag = AssetTag.generalize descriptor.Image
+                          AssetTag = descriptor.Image
                           RenderOperation2d = RenderSpriteParticles descriptor }
                     World.enqueueLayeredOperation2d message world
                 | BillboardParticlesDescriptor descriptor ->

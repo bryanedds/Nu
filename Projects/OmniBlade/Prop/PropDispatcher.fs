@@ -278,7 +278,7 @@ module PropDispatcher =
                 World.enqueueLayeredOperation2d
                     { Elevation = elevation
                       Horizon = transform.Horizon
-                      AssetTag = AssetTag.generalize image
+                      AssetTag = image
                       RenderOperation2d =
                         RenderSprite
                             { Transform = transform

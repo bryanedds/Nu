@@ -43,7 +43,7 @@ type HeightMap =
     | RawHeightMap of RawHeightMap
 
     static member private tryGetTextureData tryGetAssetFilePath (assetTag : Image AssetTag) =
-        match tryGetAssetFilePath (AssetTag.generalize assetTag) with
+        match tryGetAssetFilePath assetTag with
         | Some filePath ->
             match OpenGL.Texture.TryCreateTextureData (Constants.OpenGL.UncompressedTextureFormat, false, filePath) with
             | Some (metadata, textureDataPtr, disposer) ->
@@ -55,7 +55,7 @@ type HeightMap =
         | None -> None
 
     static member private tryGetRawAssetData tryGetAssetFilePath (assetTag : Raw AssetTag) =
-        match tryGetAssetFilePath (AssetTag.generalize assetTag) with
+        match tryGetAssetFilePath assetTag with
         | Some filePath ->
             try let bytes = File.ReadAllBytes filePath
                 Some bytes
@@ -167,7 +167,7 @@ type HeightMap =
     /// produced here is slightly different, with the border slightly clipped, and the terrain and quad size, slightly
     /// larger. i.e if the original map is 32m^2 and the original quad 1m^2 and the heightmap is 32x32, the quad axes
     /// below will be > 1.0.
-    static member tryGetMetadata tryGetAssetFilePath bounds tiles heightMap =
+    static member tryGetMetadata (tryGetAssetFilePath : AssetTag -> string option) bounds tiles heightMap =
         match heightMap with
         | ImageHeightMap image -> HeightMap.tryGetImageHeightMapMetadata tryGetAssetFilePath bounds tiles image
         | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetAssetFilePath bounds tiles map

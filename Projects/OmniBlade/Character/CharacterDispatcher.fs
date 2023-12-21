@@ -75,7 +75,7 @@ module CharacterDispatcher =
                 World.enqueueLayeredOperation2d
                     { Elevation = transform.Elevation
                       Horizon = transform.Horizon
-                      AssetTag = AssetTag.generalize character.AnimationSheet
+                      AssetTag = character.AnimationSheet
                       RenderOperation2d =
                         RenderSprite
                             { Transform = transform
@@ -104,7 +104,7 @@ module CharacterDispatcher =
                     World.enqueueLayeredOperation2d
                         { Elevation = afflictionTransform.Elevation
                           Horizon = afflictionTransform.Horizon
-                          AssetTag = AssetTag.generalize afflictionImage
+                          AssetTag = afflictionImage
                           RenderOperation2d =
                             RenderSprite
                                 { Transform = afflictionTransform
@@ -134,7 +134,7 @@ module CharacterDispatcher =
                     World.enqueueLayeredOperation2d
                         { Elevation = chargeOrbTransform.Elevation
                           Horizon = chargeOrbTransform.Horizon
-                          AssetTag = AssetTag.generalize chargeOrbImage
+                          AssetTag = chargeOrbImage
                           RenderOperation2d =
                             RenderSprite
                                 { Transform = chargeOrbTransform

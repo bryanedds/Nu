@@ -1069,7 +1069,7 @@ module WorldModule2 =
                 World.enqueueLayeredOperation2d
                     { Elevation = transform.Elevation
                       Horizon = transform.Horizon
-                      AssetTag = AssetTag.generalize dissolveImage
+                      AssetTag = dissolveImage
                       RenderOperation2d =
                         RenderSprite
                             { Transform = transform

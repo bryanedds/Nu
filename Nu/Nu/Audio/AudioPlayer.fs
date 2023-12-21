@@ -114,7 +114,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         for i in [0 .. channelCount - 1] do
             SDL_mixer.Mix_HaltChannel i |> ignore
 
-    static member private tryLoadAudioAsset (asset : obj Asset) =
+    static member private tryLoadAudioAsset (asset : Asset) =
         match PathF.GetExtensionLower asset.FilePath with
         | ".wav" ->
             let wavOpt = SDL_mixer.Mix_LoadWAV asset.FilePath
@@ -170,7 +170,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         | Left error ->
             Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
 
-    static member private tryGetAudioAsset (assetTag : obj AssetTag) audioPlayer =
+    static member private tryGetAudioAsset (assetTag : AssetTag) audioPlayer =
         match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
         | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map snd
         | None ->
@@ -182,7 +182,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
-        match SdlAudioPlayer.tryGetAudioAsset (AssetTag.generalize song) audioPlayer with
+        match SdlAudioPlayer.tryGetAudioAsset song audioPlayer with
         | Some audioAsset ->
             match audioAsset with
             | WavAsset _ ->
@@ -223,7 +223,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private handlePlaySound playSoundMessage audioPlayer =
         let sound = playSoundMessage.Sound
-        match SdlAudioPlayer.tryGetAudioAsset (AssetTag.generalize sound) audioPlayer with
+        match SdlAudioPlayer.tryGetAudioAsset sound audioPlayer with
         | Some audioAsset ->
             match audioAsset with
             | WavAsset wavAsset ->

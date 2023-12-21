@@ -62,7 +62,7 @@ module SpiritOrbDispatcher =
                     World.enqueueLayeredOperation2d
                         { Elevation = transform.Elevation
                           Horizon = transform.Horizon
-                          AssetTag = AssetTag.generalize image
+                          AssetTag = image
                           RenderOperation2d = RenderSprite descriptor }
                         world
 
@@ -73,7 +73,7 @@ module SpiritOrbDispatcher =
             World.enqueueLayeredOperation2d
                 { Elevation = orbTransform.Elevation
                   Horizon = orbTransform.Horizon
-                  AssetTag = AssetTag.generalize orbImage
+                  AssetTag = orbImage
                   RenderOperation2d = RenderSprite orbDescriptor }
                 world
             let mutable avatarTransform = Transform.makeDefault false
@@ -86,7 +86,7 @@ module SpiritOrbDispatcher =
             World.enqueueLayeredOperation2d
                 { Elevation = avatarTransform.Elevation
                   Horizon = avatarTransform.Horizon
-                  AssetTag = AssetTag.generalize avatarImage
+                  AssetTag = avatarImage
                   RenderOperation2d = RenderSprite avatarDescriptor }
                 world
             let chests = Array.filter (fun (chest : Chest) -> spiritOrb.ShowUnopenedChests || chest.Opened) spiritOrb.Chests

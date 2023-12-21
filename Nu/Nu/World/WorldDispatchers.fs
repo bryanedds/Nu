@@ -365,7 +365,7 @@ module Character2dDispatcherModule =
             World.enqueueLayeredOperation2d
                 { Elevation = transform.Elevation
                   Horizon = transform.Horizon
-                  AssetTag = AssetTag.generalize image
+                  AssetTag = image
                   RenderOperation2d =
                     RenderSprite
                         { Transform = transform

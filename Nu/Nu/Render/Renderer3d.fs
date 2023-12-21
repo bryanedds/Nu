@@ -619,6 +619,16 @@ type [<ReferenceEquality>] private GlPackageState3d =
       CubeMapMemo : OpenGL.CubeMap.CubeMapMemo
       AssimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo }
 
+/// The internally used cached asset package.
+type [<NoEquality; NoComparison>] private RenderPackageCached =
+    { CachedPackageName : string
+      CachedPackageAssets : Dictionary<string, string * RenderAsset> }
+
+/// The internally used cached asset descriptor.
+type [<NoEquality; NoComparison>] private RenderAssetCached =
+    { mutable CachedAssetTag : AssetTag
+      CachedRenderAsset : RenderAsset }
+
 /// The OpenGL implementation of Renderer3d.
 type [<ReferenceEquality>] GlRenderer3d =
     private
@@ -670,15 +680,15 @@ type [<ReferenceEquality>] GlRenderer3d =
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
           RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
-          mutable RenderPackageCachedOpt : string * Dictionary<string, string * RenderAsset> // OPTIMIZATION: nullable for speed
-          mutable RenderAssetCachedOpt : obj AssetTag * RenderAsset
+          mutable RenderPackageCachedOpt : RenderPackageCached
+          mutable RenderAssetCachedOpt : RenderAssetCached
           RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
 
-    static member private tryLoadTextureAsset packageState (asset : obj Asset) renderer =
+    static member private tryLoadTextureAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         let internalFormat = AssetTag.inferInternalFormatFromAssetName asset.AssetTag
         match OpenGL.Texture.TryCreateTextureFilteredMemoized (internalFormat, asset.FilePath, packageState.TextureMemo) with
@@ -688,7 +698,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             Log.info ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
             None
 
-    static member private tryLoadCubeMapAsset packageState (asset : obj Asset) renderer =
+    static member private tryLoadCubeMapAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match File.ReadAllLines asset.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
         | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
@@ -705,19 +715,19 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Left error -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
         | _ -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
 
-    static member private tryLoadModelAsset packageState (asset : obj Asset) renderer =
+    static member private tryLoadModelAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (true, asset.FilePath, renderer.PhysicallyBasedMaterial, packageState.TextureMemo, packageState.AssimpSceneMemo) with
         | Right model -> Some model
         | Left error -> Log.info ("Could not load model '" + asset.FilePath + "' due to: " + error); None
 
-    static member private tryLoadRawAsset (asset : obj Asset) renderer =
+    static member private tryLoadRawAsset (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         if File.Exists asset.FilePath
         then Some ()
         else None
 
-    static member private tryLoadRenderAsset packageState (asset : obj Asset) renderer =
+    static member private tryLoadRenderAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ".raw" ->
@@ -809,7 +819,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | Left error ->
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
-    static member private tryGetFilePath (assetTag : obj AssetTag) renderer =
+    static member private tryGetFilePath (assetTag : AssetTag) renderer =
         match GlRenderer3d.tryGetRenderAsset assetTag renderer with
         | ValueSome _ ->
             match renderer.RenderPackages.TryGetValue assetTag.PackageName with
@@ -820,26 +830,27 @@ type [<ReferenceEquality>] GlRenderer3d =
             | (false, _) -> None
         | ValueNone -> None
 
-    static member private tryGetRenderAsset (assetTag : obj AssetTag) renderer =
+    static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
         if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
-            assetEq assetTag (fst renderer.RenderAssetCachedOpt) then
-            ValueSome (snd renderer.RenderAssetCachedOpt)
+            assetEq assetTag renderer.RenderAssetCachedOpt.CachedAssetTag then
+            renderer.RenderAssetCachedOpt.CachedAssetTag <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
+            ValueSome renderer.RenderAssetCachedOpt.CachedRenderAsset
         elif
             renderer.RenderPackageCachedOpt :> obj |> notNull &&
-            fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
-            let assets = snd renderer.RenderPackageCachedOpt
+            renderer.RenderPackageCachedOpt.CachedPackageName = assetTag.PackageName then
+            let assets = renderer.RenderPackageCachedOpt.CachedPackageAssets
             match assets.TryGetValue assetTag.AssetName with
             | (true, (_, asset)) ->
-                renderer.RenderAssetCachedOpt <- (assetTag, asset)
+                renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
                 ValueSome asset
             | (false, _) -> ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
-                renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package.Assets)
+                renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
                 match package.Assets.TryGetValue assetTag.AssetName with
                 | (true, (_, asset)) ->
-                    renderer.RenderAssetCachedOpt <- (assetTag, asset)
+                    renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
                     ValueSome asset
                 | (false, _) -> ValueNone
             | None ->
@@ -847,16 +858,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, package) ->
-                    renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package.Assets)
+                    renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
                     match package.Assets.TryGetValue assetTag.AssetName with
                     | (true, (_, asset)) ->
-                        renderer.RenderAssetCachedOpt <- (assetTag, asset)
+                        renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
                         ValueSome asset
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
 
     static member private tryGetTextureData (assetTag : Image AssetTag) renderer =
-        match GlRenderer3d.tryGetFilePath (AssetTag.generalize assetTag) renderer with
+        match GlRenderer3d.tryGetFilePath assetTag renderer with
         | Some filePath ->
             match OpenGL.Texture.TryCreateTextureData (Constants.OpenGL.UncompressedTextureFormat, false, filePath) with
             | Some (metadata, textureDataPtr, disposer) ->
@@ -870,7 +881,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private tryGetHeightMapResolution heightMap renderer =
         match heightMap with
         | ImageHeightMap image ->
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize image) renderer with
+            match GlRenderer3d.tryGetRenderAsset image renderer with
             | ValueSome renderAsset ->
                 match renderAsset with
                 | TextureAsset (metadata, _) -> Some (metadata.TextureWidth, metadata.TextureHeight)
@@ -916,7 +927,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // get albedo metadata and texture
                 let (albedoMetadata, albedoTexture) =
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.AlbedoImage) renderer with
+                    match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.AlbedoImage renderer with
                     | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
                     | _ -> (renderer.PhysicallyBasedMaterial.AlbedoMetadata, renderer.PhysicallyBasedMaterial.AlbedoTexture)
 
@@ -934,12 +945,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                     { MaterialProperties = properties
                       AlbedoMetadata = albedoMetadata
                       AlbedoTexture = albedoTexture
-                      RoughnessTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.RoughnessImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
-                      MetallicTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.MetallicImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
-                      AmbientOcclusionTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.AmbientOcclusionImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
-                      EmissionTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.EmissionImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
-                      NormalTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.NormalImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
-                      HeightTexture = match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize surfaceDescriptor.HeightImage) renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
+                      RoughnessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.RoughnessImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
+                      MetallicTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.MetallicImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
+                      AmbientOcclusionTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.AmbientOcclusionImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
+                      EmissionTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.EmissionImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
+                      NormalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.NormalImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
+                      HeightTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.HeightImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
                       TwoSided = surfaceDescriptor.TwoSided }
 
                 // create vertex data, truncating it when required
@@ -1261,7 +1272,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderType : RenderType,
          renderPass : RenderPass,
          renderer) =
-        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize staticModel) renderer with
+        match GlRenderer3d.tryGetRenderAsset staticModel renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset (_, modelAsset) ->
@@ -1286,7 +1297,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderType : RenderType,
          renderPass : RenderPass,
          renderer) =
-        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize staticModel) renderer with
+        match GlRenderer3d.tryGetRenderAsset staticModel renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | StaticModelAsset (_, modelAsset) ->
@@ -1344,7 +1355,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderer) =
 
         // ensure we have the required animated model
-        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize animatedModel) renderer with
+        match GlRenderer3d.tryGetRenderAsset animatedModel renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | AnimatedModelAsset modelAsset ->
@@ -1402,7 +1413,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderer) =
 
         // ensure we have the required animated model
-        match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize animatedModel) renderer with
+        match GlRenderer3d.tryGetRenderAsset animatedModel renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | AnimatedModelAsset modelAsset ->
@@ -1480,7 +1491,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
         match Seq.tryLast renderTasks.RenderSkyBoxes with
         | Some (lightAmbientColor, lightAmbientBrightness, cubeMapColor, cubeMapBrightness, cubeMapAsset) ->
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize cubeMapAsset) renderer with
+            match GlRenderer3d.tryGetRenderAsset cubeMapAsset renderer with
             | ValueSome asset ->
                 match asset with
                 | CubeMapAsset (_, cubeMap, cubeMapIrradianceAndEnvironmentMapOptRef) ->
@@ -1641,23 +1652,23 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let defaultMaterial =
                             renderer.PhysicallyBasedMaterial
                         let (albedoMetadata, albedoTexture) =
-                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AlbedoImage) renderer with
+                            match GlRenderer3d.tryGetRenderAsset layer.AlbedoImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset (metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
                             | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
                         let roughnessTexture =
-                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.RoughnessImage) renderer with
+                            match GlRenderer3d.tryGetRenderAsset layer.RoughnessImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
                             | ValueNone -> defaultMaterial.RoughnessTexture
                         let ambientOcclusionTexture =
-                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.AmbientOcclusionImage) renderer with
+                            match GlRenderer3d.tryGetRenderAsset layer.AmbientOcclusionImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
                             | ValueNone -> defaultMaterial.AmbientOcclusionTexture
                         let normalTexture =
-                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.NormalImage) renderer with
+                            match GlRenderer3d.tryGetRenderAsset layer.NormalImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.NormalTexture
                             | ValueNone -> defaultMaterial.NormalTexture
                         let heightTexture =
-                            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize layer.HeightImage) renderer with
+                            match GlRenderer3d.tryGetRenderAsset layer.HeightImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.HeightTexture
                             | ValueNone -> defaultMaterial.HeightTexture
                         texelWidthAvg <- texelWidthAvg + albedoMetadata.TextureTexelWidth
@@ -1677,23 +1688,23 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let defaultMaterial =
                     renderer.PhysicallyBasedMaterial
                 let (albedoMetadata, albedoTexture) =
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AlbedoImage) renderer with
+                    match GlRenderer3d.tryGetRenderAsset flatMaterial.AlbedoImage renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset (metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
                     | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
                 let roughnessTexture =
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.RoughnessImage) renderer with
+                    match GlRenderer3d.tryGetRenderAsset flatMaterial.RoughnessImage renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
                     | ValueNone -> defaultMaterial.RoughnessTexture
                 let ambientOcclusionTexture =
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.AmbientOcclusionImage) renderer with
+                    match GlRenderer3d.tryGetRenderAsset flatMaterial.AmbientOcclusionImage renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
                     | ValueNone -> defaultMaterial.AmbientOcclusionTexture
                 let normalTexture =
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.NormalImage) renderer with
+                    match GlRenderer3d.tryGetRenderAsset flatMaterial.NormalImage renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.NormalTexture
                     | ValueNone -> defaultMaterial.NormalTexture
                 let heightTexture =
-                    match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize flatMaterial.HeightImage) renderer with
+                    match GlRenderer3d.tryGetRenderAsset flatMaterial.HeightImage renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.HeightTexture
                     | ValueNone -> defaultMaterial.HeightTexture
                 let material =
@@ -1731,31 +1742,31 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage roughnessImage metallicImage ambientOcclusionImage emissionImage normalImage heightImage renderer =
         let (albedoMetadata, albedoTexture) =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize albedoImage) renderer with
+            match GlRenderer3d.tryGetRenderAsset albedoImage renderer with
             | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
             | _ -> (OpenGL.Texture.TextureMetadata.empty, renderer.PhysicallyBasedMaterial.AlbedoTexture)
         let roughnessTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize roughnessImage) renderer with
+            match GlRenderer3d.tryGetRenderAsset roughnessImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
         let metallicTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize metallicImage) renderer with
+            match GlRenderer3d.tryGetRenderAsset metallicImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
         let ambientOcclusionTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize ambientOcclusionImage) renderer with
+            match GlRenderer3d.tryGetRenderAsset ambientOcclusionImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
         let emissionTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize emissionImage) renderer with
+            match GlRenderer3d.tryGetRenderAsset emissionImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
         let normalTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize normalImage) renderer with
+            match GlRenderer3d.tryGetRenderAsset normalImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
         let heightTexture =
-            match GlRenderer3d.tryGetRenderAsset (AssetTag.generalize heightImage) renderer with
+            match GlRenderer3d.tryGetRenderAsset heightImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
         let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =

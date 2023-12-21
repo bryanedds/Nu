@@ -621,7 +621,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     (LayeredOperation2d
                         { Elevation = elevation
                           Horizon = bounds.Bottom.Y
-                          AssetTag = AssetTag.generalize image
+                          AssetTag = image
                           RenderOperation2d =
                             RenderSprite
                                 { Transform = transform
