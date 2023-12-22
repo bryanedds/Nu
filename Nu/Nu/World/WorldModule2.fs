@@ -1088,7 +1088,7 @@ module WorldModule2 =
             | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dCenter world) (World.getEye2dSize world) screen (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
-        static member private renderSimulantsInternal skipCulling renderPass world =
+        static member private renderSimulantsInternal renderPass world =
 
             // gather simulants
             RenderGatherTimer.Start ()
@@ -1103,7 +1103,7 @@ module WorldModule2 =
                 else hashSetPlus HashIdentity.Structural []
             let (elements3d, world) =
                 match renderPass with
-                | NormalPass ->
+                | NormalPass skipCulling ->
                     if skipCulling
                     then World.getElements3d CachedHashSet3dNormal world
                     else World.getElements3dInView CachedHashSet3dNormal world
@@ -1111,7 +1111,7 @@ module WorldModule2 =
                 | ReflectionPass _ -> (Seq.empty, world)
             let (elements2d, world) =
                 match renderPass with
-                | NormalPass ->
+                | NormalPass skipCulling ->
                     if skipCulling
                     then World.getElements2d CachedHashSet2dNormal world
                     else World.getElements2dInView CachedHashSet2dNormal world
@@ -1209,11 +1209,11 @@ module WorldModule2 =
                 Array.sortBy fst' |>
                 Array.tryTake Constants.Render.ShadowsMax |>
                 Array.fold (fun world struct (struct (directionalSort, _), struct (shadowFrustum, light)) ->
-                    World.renderSimulantsInternal false (ShadowPass (light.GetId world, isZero directionalSort, shadowFrustum)) world)
+                    World.renderSimulantsInternal (ShadowPass (light.GetId world, isZero directionalSort, shadowFrustum)) world)
                     world
 
             // render simulants normally, remember to clear 3d shadow cache
-            let world = World.renderSimulantsInternal skipCulling NormalPass world
+            let world = World.renderSimulantsInternal (NormalPass skipCulling) world
             CachedHashSet3dShadow.Clear ()
             world
 
