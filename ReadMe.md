@@ -43,11 +43,8 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e52a031c-cbad-4828-bf3f-ab15af9c7787)
 Local light probes allow for efficient localized reflection and image-based lighting.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/f9945d52-9ab4-4263-ae08-195c31a45c30)
-Animated 3D model rendering from Mixamo.
-
 ![image](https://github.com/bryanedds/Nu/assets/1625560/bb8532b6-e749-4892-80dd-579e254a7189)
-A scene we're still working on importing (please pardon the missing textures!)
+Animated 3D model rendering from Mixamo.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/1bb0bf9a-e3b4-44a6-a256-f94ecc432d87)
 Scalable rendering thanks to instancing-by-default render technique.
