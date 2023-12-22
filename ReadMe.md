@@ -49,6 +49,12 @@ Animated 3D model rendering from Mixamo.
 ![image](https://github.com/bryanedds/Nu/assets/1625560/bb8532b6-e749-4892-80dd-579e254a7189)
 A scene we're still working on importing (please pardon the missing textures!)
 
+![image](https://github.com/bryanedds/Nu/assets/1625560/1bb0bf9a-e3b4-44a6-a256-f94ecc432d87)
+Scalable rendering thanks to instancing-by-default render technique.
+
+![image](https://github.com/bryanedds/Nu/assets/1625560/0a2100e9-929e-44eb-880d-052512609186)
+Up to 16 shadow-casting lights at a time (user-configurable).
+
 **Public Sponsors We Wish to Thank**
 ====================================
 
