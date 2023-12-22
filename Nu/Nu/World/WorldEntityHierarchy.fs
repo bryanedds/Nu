@@ -259,7 +259,7 @@ module FreezeFacetModule =
                 let lightBoxOpt = Some (World.getLight3dBox world)
                 fun probe light presence bounds ->
                     match renderPass with
-                    | NormalPass -> Presence.intersects3d enclosedOpt exposed imposter lightBoxOpt probe light presence bounds
+                    | NormalPass skipCulling -> skipCulling || Presence.intersects3d enclosedOpt exposed imposter lightBoxOpt probe light presence bounds
                     | ShadowPass (_, _, frustum) -> not probe && not light && frustum.Intersects bounds
                     | ReflectionPass _ -> false
 

@@ -1335,7 +1335,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | None -> renderType
                     let unculled =
                         match renderPass with // OPTIMIZATION: in normal pass, we cull surfaces based on view.
-                        | NormalPass -> Presence.intersects3d (Some frustumEnclosed) frustumExposed frustumImposter (Some lightBox) false false presence surfaceBounds
+                        | NormalPass skipCulling -> skipCulling || Presence.intersects3d (Some frustumEnclosed) frustumExposed frustumImposter (Some lightBox) false false presence surfaceBounds
                         | ShadowPass (_, shadowDirectional, shadowFrustum) -> Presence.intersects3d (if shadowDirectional then None else Some shadowFrustum) shadowFrustum shadowFrustum None false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d None reflFrustum reflFrustum None false false presence surfaceBounds
                     if skipCulling || unculled then
@@ -2507,7 +2507,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
 
         // top-level geometry pass
-        let renderPass = NormalPass
+        let renderPass = NormalPass skipCulling
         let normalTasks = GlRenderer3d.getRenderTasks renderPass renderer
         GlRenderer3d.renderGeometry renderPass normalTasks renderer true eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport viewportOffset projection renderbuffer framebuffer
 
@@ -2737,7 +2737,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasksDictionary =
-            dictPlus RenderPass.comparer [(NormalPass, RenderTasks.make ())]
+            dictPlus RenderPass.comparer [(NormalPass false, RenderTasks.make ())]
 
         // make renderer
         let renderer =
