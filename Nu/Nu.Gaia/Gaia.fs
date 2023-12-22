@@ -1199,10 +1199,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 desiredEye3dCenter <- position + Vector3.Transform (v3Right, rotation) * moveSpeed
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Up) < 0.999f then desiredEye3dRotation <- rotation'
+                if Vector3.Dot (rotation'.Forward, v3Up) < 0.998f then desiredEye3dRotation <- rotation'
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlReleased () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Down) < 0.999f then desiredEye3dRotation <- rotation'
+                if Vector3.Dot (rotation'.Forward, v3Down) < 0.998f then desiredEye3dRotation <- rotation'
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltReleased () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Up, rotation) * moveSpeed
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltReleased () then
@@ -2076,6 +2076,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "Eye:"
                         ImGui.SameLine ()
                         if ImGui.Button "Reset" then resetEye ()
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            let mutable eye2dCenter = World.getEye2dCenter world
+                            let mutable eye3dCenter = World.getEye3dCenter world
+                            let mutable eye3dDegrees = Math.RadiansToDegrees3d (World.getEye3dRotation world).RollPitchYaw
+                            ImGui.InputFloat2 ("Eye 2d Center", &eye2dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
+                            ImGui.InputFloat3 ("Eye 3d Center", &eye3dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
+                            ImGui.InputFloat3 ("Eye 3d Degrees", &eye3dDegrees, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
+                            ImGui.EndTooltip ()
                         ImGui.SameLine ()
                         ImGui.Text "|"
                         ImGui.SameLine ()
