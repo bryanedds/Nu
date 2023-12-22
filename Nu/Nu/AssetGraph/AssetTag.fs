@@ -24,8 +24,9 @@ type AssetTagConverter (pointType : Type) =
         if destType = typeof<Symbol> then
             let assetTag = source :?> AssetTag
             Symbols
-                ([Text (assetTag.PackageName, ValueNone)
-                  Text (assetTag.AssetName, ValueNone)], ValueNone) :> obj
+                ([if Symbol.shouldBeExplicit assetTag.PackageName then Text (assetTag.PackageName, ValueNone) else Atom (assetTag.PackageName, ValueNone)
+                  if Symbol.shouldBeExplicit assetTag.AssetName then Text (assetTag.AssetName, ValueNone) else Atom (assetTag.AssetName, ValueNone)],
+                 ValueNone) :> obj
         elif destType = typedefof<_ AssetTag> then source
         else failconv "Invalid AssetTagConverter conversion to source." None
 
@@ -37,10 +38,9 @@ type AssetTagConverter (pointType : Type) =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Text (packageName, _); Text (assetName, _)], _)
-            | Symbols ([Atom (packageName, _); Text (assetName, _)], _)
-            | Symbols ([Atom (packageName, _); Atom (assetName, _)], _)
-            | Symbols ([Text (packageName, _); Atom (assetName, _)], _) ->
+            | Symbols ([packageNameSymbol; assetNameSymbol], _) ->
+                let packageName = match packageNameSymbol with Atom (str, _) | Text (str, _) -> str | _ -> failconv "Expected Atom or Text for package name." (Some packageNameSymbol)
+                let assetName = match assetNameSymbol with Atom (str, _) | Text (str, _) -> str | _ -> failconv "Expected Atom or Text for asset name." (Some assetNameSymbol)
                 FSharpValue.MakeRecord (pointType, [|String.Intern packageName :> obj; String.Intern assetName|])
             | _ -> failconv "Invalid AssetTagConverter conversion from source." (Some symbol)
         | :? AssetTag -> source
