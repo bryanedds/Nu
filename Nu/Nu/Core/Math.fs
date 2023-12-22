@@ -909,10 +909,9 @@ module Matrix4x4 =
 
     /// Create a matrix from translation, rotation, and scale.
     let CreateFromTrs (translation, rotation, scale : Vector3) =
-        let mutable trs = Matrix4x4.CreateFromQuaternion rotation
-        trs.M11 <- trs.M11 * scale.X
-        trs.M22 <- trs.M22 * scale.Y
-        trs.M33 <- trs.M33 * scale.Z
+        let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+        let scaleMatrix = Matrix4x4.CreateScale scale
+        let mutable trs = scaleMatrix * rotationMatrix
         trs.Translation <- translation
         trs
 
