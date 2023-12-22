@@ -161,7 +161,7 @@ void main()
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
                 float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-                float biasFloor = lightDirectionals[i] == 0 ? 0.0005 : 0.002;
+                float biasFloor = lightDirectionals[i] == 0 ? 0.0001 : 0.001;
                 float bias = max(biasFloor * (1.0 - dot(normal, l)), biasFloor);
                 shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
             }
