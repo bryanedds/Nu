@@ -36,8 +36,8 @@ module Octelement =
         member this.Static = this.Flags_ &&& StaticMask <> 0u
         member this.LightProbe = this.Flags_ &&& LightProbeMask <> 0u
         member this.Light = this.Flags_ &&& LightMask <> 0u
-        member this.Enclosed = this.Presence_.EnclosedType
-        member this.Exposed = this.Presence_.ExposedType
+        member this.Interior = this.Presence_.InteriorType
+        member this.Exterior = this.Presence_.ExteriorType
         member this.Imposter = this.Presence_.ImposterType
         member this.Presence = this.Presence_
         member this.Bounds = this.Bounds_
@@ -45,8 +45,8 @@ module Octelement =
         override this.GetHashCode () = this.HashCode_
         override this.Equals that = match that with :? Octelement<'e> as that -> this.Entry_.Equals that.Entry_ | _ -> false
 
-    let intersects frustumEnclosed frustumExposed frustumImposter lightBox (element : _ Octelement) =
-        Presence.intersects3d frustumEnclosed frustumExposed frustumImposter lightBox element.LightProbe element.Light element.Presence_ element.Bounds_
+    let intersects frustumInterior frustumExterior frustumImposter lightBox (element : _ Octelement) =
+        Presence.intersects3d frustumInterior frustumExterior frustumImposter lightBox element.LightProbe element.Light element.Presence_ element.Bounds_
 
     let make visible static_ lightProbe light presence bounds (entry : 'e) =
         let hashCode = entry.GetHashCode ()
@@ -287,35 +287,35 @@ module internal Octnode =
                     if frustum.Intersects bounds then
                         set.Add element |> ignore
 
-    let rec internal getElementsInViewFrustum enclosed exposed frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
+    let rec internal getElementsInViewFrustum interior exterior frustum (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = nodes.[i]
                 if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
-                    getElementsInViewFrustum enclosed exposed frustum set node
+                    getElementsInViewFrustum interior exterior frustum set node
         | ValueRight elements ->
             for element in elements do
-                if enclosed then
-                    if element.Enclosed || element.Exposed then
+                if interior then
+                    if element.Interior || element.Exterior then
                         if element.Visible && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
-                elif exposed then
-                    if element.Exposed then
+                elif exterior then
+                    if element.Exterior then
                         if element.Visible && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
 
-    let rec internal getElementsInView frustumEnclosed frustumExposed lightBox (set : 'e Octelement HashSet) (node : 'e Octnode) =
+    let rec internal getElementsInView frustumInterior frustumExterior lightBox (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
         | ValueLeft nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = nodes.[i]
                 if node.ElementsCount_ > 0 then
-                    let intersectingEnclosed = isIntersectingFrustum frustumEnclosed node
-                    let intersectingExposed = isIntersectingFrustum frustumExposed node
-                    if intersectingEnclosed || intersectingExposed then
-                        if intersectingEnclosed then getElementsInViewFrustum true false frustumEnclosed set node
-                        if intersectingExposed then getElementsInViewFrustum false true frustumExposed set node
+                    let intersectingInterior = isIntersectingFrustum frustumInterior node
+                    let intersectingExterior = isIntersectingFrustum frustumExterior node
+                    if intersectingInterior || intersectingExterior then
+                        if intersectingInterior then getElementsInViewFrustum true false frustumInterior set node
+                        if intersectingExterior then getElementsInViewFrustum false true frustumExterior set node
                     if isIntersectingBox lightBox node then
                         getLightsInViewBox lightBox set node
         | ValueRight _ -> ()
@@ -528,16 +528,16 @@ module Octree =
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     /// Get all of the elements in a tree that satisfy the given query parameters.
-    let getElementsInViewFrustum enclosed exposed frustum (set : _ HashSet) tree =
-        Octnode.getElementsInViewFrustum enclosed exposed frustum set tree.Node
+    let getElementsInViewFrustum interior exterior frustum (set : _ HashSet) tree =
+        Octnode.getElementsInViewFrustum interior exterior frustum set tree.Node
         for imposter in tree.Imposter do
             if frustum.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
         new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
 
     /// Get all of the elements in a tree that are in a node intersected by one of the given frustums or light box depending on its attributes.
-    let getElementsInView frustumEnclosed frustumExposed (frustumImposter : Frustum) lightBox (set : _ HashSet) tree =
-        Octnode.getElementsInView frustumEnclosed frustumExposed lightBox set tree.Node
+    let getElementsInView frustumInterior frustumExterior (frustumImposter : Frustum) lightBox (set : _ HashSet) tree =
+        Octnode.getElementsInView frustumInterior frustumExterior lightBox set tree.Node
         for imposter in tree.Imposter do
             if frustumImposter.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>

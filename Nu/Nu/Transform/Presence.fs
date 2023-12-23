@@ -7,37 +7,37 @@ open Prime
 
 /// Describes the form of an element's presence.
 [<Syntax
-    ("Enclosed Exposed Imposter Omnipresent", "", "", "", "",
+    ("Interior Exterior Imposter Omnipresent", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<Struct>] Presence =
-    /// Inside an enclosed structure so you have to be close to see them.
-    | Enclosed
-    /// Outside an enclosed structure so visible near and from a distance.
-    | Exposed
-    /// Always visible except when as close as Exposed or Enclosed.
+    /// An interior element so you have to be closer to see them.
+    | Interior
+    /// An exterior element so you can see them from a distance.
+    | Exterior
+    /// Always visible except when as close as Exterior or Interior.
     | Imposter
     /// Always visible.
     | Omnipresent
 
-    member this.EnclosedType with get () = match this with Enclosed -> true | _ -> false
-    member this.ExposedType with get () = match this with Exposed -> true | _ -> false
+    member this.InteriorType with get () = match this with Interior -> true | _ -> false
+    member this.ExteriorType with get () = match this with Exterior -> true | _ -> false
     member this.ImposterType with get () = match this with Imposter -> true | _ -> false
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
-    static member intersects3d (frustumEnclosedOpt : Frustum option) (frustumExposed : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 option) (lightProbe : bool) (light : bool) presence (bounds : Box3) =
+    static member intersects3d (frustumInteriorOpt : Frustum option) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 option) (lightProbe : bool) (light : bool) presence (bounds : Box3) =
         if lightProbe then
             true
         elif not light then
             match presence with
-            | Enclosed -> match frustumEnclosedOpt with Some frustumEnclosed -> frustumEnclosed.Intersects bounds | None -> false
-            | Exposed -> frustumExposed.Intersects bounds || (match frustumEnclosedOpt with Some frustumEnclosed -> frustumEnclosed.Intersects bounds | None -> false)
+            | Interior -> match frustumInteriorOpt with Some frustumInterior -> frustumInterior.Intersects bounds | None -> false
+            | Exterior -> frustumExterior.Intersects bounds || (match frustumInteriorOpt with Some frustumInterior -> frustumInterior.Intersects bounds | None -> false)
             | Imposter -> frustumImposter.Intersects bounds
             | Omnipresent -> true
         else
             match presence with
-            | Enclosed | Exposed | Imposter -> match lightBoxOpt with Some lightBox -> lightBox.Intersects bounds | None -> false
+            | Interior | Exterior | Imposter -> match lightBoxOpt with Some lightBox -> lightBox.Intersects bounds | None -> false
             | Omnipresent -> true
 
 [<AutoOpen>]
@@ -46,8 +46,8 @@ module PresenceOperators =
     /// Test two presence values for equality without allocating.
     let presenceEq left right =
         match (left, right) with
-        | (Enclosed, Enclosed)
-        | (Exposed, Exposed)
+        | (Interior, Interior)
+        | (Exterior, Exterior)
         | (Imposter, Imposter)
         | (Omnipresent, Omnipresent) -> true
         | (_, _) -> false

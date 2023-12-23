@@ -817,15 +817,15 @@ module WorldModule2 =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
             World.getElements3dBy (Octree.getElementsInPlay playBox playFrustum set) world
 
-        static member private getElements3dInViewFrustum enclosed exposed frustum set world =
-            World.getElements3dBy (Octree.getElementsInViewFrustum enclosed exposed frustum set) world
+        static member private getElements3dInViewFrustum interior exterior frustum set world =
+            World.getElements3dBy (Octree.getElementsInViewFrustum interior exterior frustum set) world
 
         static member private getElements3dInView set world =
-            let frustumEnclosed = World.getEye3dFrustumEnclosed world
-            let frustumExposed = World.getEye3dFrustumExposed world
+            let frustumInterior = World.getEye3dFrustumInterior world
+            let frustumExterior = World.getEye3dFrustumExterior world
             let frustumImposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
-            World.getElements3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
+            World.getElements3dBy (Octree.getElementsInView frustumInterior frustumExterior frustumImposter lightBox set) world
 
         static member private getElements3d set world =
             World.getElements3dBy (Octree.getElements set) world
@@ -853,11 +853,11 @@ module WorldModule2 =
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set world =
-            let frustumEnclosed = World.getEye3dFrustumEnclosed world
-            let frustumExposed = World.getEye3dFrustumExposed world
+            let frustumInterior = World.getEye3dFrustumInterior world
+            let frustumExterior = World.getEye3dFrustumExterior world
             let frustumImposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
-            World.getEntities3dBy (Octree.getElementsInView frustumEnclosed frustumExposed frustumImposter lightBox set) world
+            World.getEntities3dBy (Octree.getElementsInView frustumInterior frustumExterior frustumImposter lightBox set) world
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
         static member getLightProbes3dInFrustum frustum set world =
@@ -1177,7 +1177,7 @@ module WorldModule2 =
                                 shadowView <- shadowView.Inverted
                                 let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
                                 let shadowCutoff = max (light.GetLightCutoff world) 0.1f
-                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, shadowCutoff)
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                 (shadowView, shadowProjection)
                             else
                                 let shadowRotation = light.GetRotation world
@@ -1190,12 +1190,12 @@ module WorldModule2 =
                         let shadowFrustum =
                             Frustum (shadowView * shadowProjection)
                         let shadowInView =
-                            let frustumEnclosed = World.getEye3dFrustumEnclosed world
-                            let frustumExposed = World.getEye3dFrustumExposed world
+                            let frustumInterior = World.getEye3dFrustumInterior world
+                            let frustumExterior = World.getEye3dFrustumExterior world
                             let frustumImposter = World.getEye3dFrustumImposter world
                             match light.GetPresence world with
-                            | Enclosed -> frustumEnclosed.Intersects shadowFrustum
-                            | Exposed -> frustumExposed.Intersects shadowFrustum || frustumEnclosed.Intersects shadowFrustum
+                            | Interior -> frustumInterior.Intersects shadowFrustum
+                            | Exterior -> frustumExterior.Intersects shadowFrustum || frustumInterior.Intersects shadowFrustum
                             | Imposter -> frustumImposter.Intersects shadowFrustum
                             | Omnipresent -> true
                         if shadowInView then
@@ -1393,8 +1393,8 @@ module WorldModule2 =
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
                                                                     skipCulling
-                                                                    (World.getEye3dFrustumEnclosed world)
-                                                                    (World.getEye3dFrustumExposed world)
+                                                                    (World.getEye3dFrustumInterior world)
+                                                                    (World.getEye3dFrustumExterior world)
                                                                     (World.getEye3dFrustumImposter world)
                                                                     (World.getLight3dBox world)
                                                                     (World.getEye3dCenter world)

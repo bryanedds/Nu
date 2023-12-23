@@ -241,7 +241,7 @@ module FreezeFacetModule =
              nonPersistent Entity.FrozenRenderLights3d [||]
              nonPersistent Entity.FrozenRenderStaticModelSurfaces [||]
              define Entity.Frozen false
-             define Entity.PresenceConferred Exposed]
+             define Entity.PresenceConferred Exterior]
 
         override this.Register (entity, world) =
             let world = entity.SetOffset v3Zero world
@@ -253,13 +253,13 @@ module FreezeFacetModule =
 
             // compute intersection function based on render pass
             let intersects =
-                let enclosedOpt = Some (World.getGameEye3dFrustumEnclosed Game world)
-                let exposed = World.getGameEye3dFrustumExposed Game world
+                let interiorOpt = Some (World.getGameEye3dFrustumInterior Game world)
+                let exterior = World.getGameEye3dFrustumExterior Game world
                 let imposter = World.getGameEye3dFrustumImposter Game world
                 let lightBoxOpt = Some (World.getLight3dBox world)
                 fun probe light presence bounds ->
                     match renderPass with
-                    | NormalPass skipCulling -> skipCulling || Presence.intersects3d enclosedOpt exposed imposter lightBoxOpt probe light presence bounds
+                    | NormalPass skipCulling -> skipCulling || Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
                     | ShadowPass (_, _, frustum) -> not probe && not light && frustum.Intersects bounds
                     | ReflectionPass _ -> false
 

@@ -1357,7 +1357,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if entity.Has<FreezerFacet> world then
             ImGui.SameLine ()
             let frozen = entity.GetFrozen world
-            if ImGui.Button (if frozen then "Thw" else "Frz") then
+            if ImGui.Button (if frozen then "Thaw" else "Freeze") then
                 world <- entity.SetFrozen (not frozen) world
         expanded
 
@@ -1835,7 +1835,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // guizmo manipulation
                     let viewport = Constants.Render.Viewport
-                    let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceEnclosed Constants.Render.FarPlaneDistanceOmnipresent
+                    let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceOmnipresent
                     let projection = projectionMatrix.ToArray ()
                     ImGuizmo.SetOrthographic false
                     ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
