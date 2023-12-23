@@ -542,7 +542,7 @@ module PhysicallyBased =
           TwoSided = material.IsTwoSided }
 
     /// Attempt to create physically-based static mesh from an assimp mesh.
-    let TryCreatePhysicallyBasedStaticMesh (mesh : Assimp.Mesh) =
+    let TryCreatePhysicallyBasedStaticMesh (indexData, mesh : Assimp.Mesh) =
 
         // ensure required data is available
         if  mesh.HasVertices &&
@@ -577,16 +577,6 @@ module PhysicallyBased =
                     positionMax.Z <- max positionMax.Z position.Z
                 let bounds = box3 positionMin (positionMax - positionMin)
 
-                // populate triangle index data
-                let indexList = SList.make ()
-                for face in mesh.Faces do
-                    let indices = face.Indices
-                    if indices.Count = 3 then
-                        indexList.Add indices.[0]
-                        indexList.Add indices.[1]
-                        indexList.Add indices.[2]
-                let indexData = Seq.toArray indexList
-
                 // fin
                 Right (vertexData, indexData, bounds)
                     
@@ -597,7 +587,7 @@ module PhysicallyBased =
         else Left "Mesh is missing vertices, normals, or texCoords."
 
     /// Attempt to create physically-based animated mesh from an assimp mesh.
-    let TryCreatePhysicallyBasedAnimatedMesh (mesh : Assimp.Mesh) =
+    let TryCreatePhysicallyBasedAnimatedMesh (indexData, mesh : Assimp.Mesh) =
 
         // ensure required data is available
         if  mesh.HasVertices &&
@@ -659,16 +649,6 @@ module PhysicallyBased =
                                     vertexData.[v+12+i] <- weight
                                     found <- true
                                 else i <- inc i
-
-                // populate triangle index data
-                let indexList = SList.make ()
-                for face in mesh.Faces do
-                    let indices = face.Indices
-                    if indices.Count = 3 then
-                        indexList.Add indices.[0]
-                        indexList.Add indices.[1]
-                        indexList.Add indices.[2]
-                let indexData = Seq.toArray indexList
 
                 // fin
                 Right (vertexData, indexData, bounds)
@@ -930,8 +910,8 @@ module PhysicallyBased =
         geometry
 
     /// Attempt to create physically-based static geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedStaticGeometry (renderable, mesh : Assimp.Mesh) =
-        match TryCreatePhysicallyBasedStaticMesh mesh with
+    let TryCreatePhysicallyBasedStaticGeometry (renderable, indexData, mesh : Assimp.Mesh) =
+        match TryCreatePhysicallyBasedStaticMesh (indexData, mesh) with
         | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
         | Left error -> Left error
 
@@ -1054,8 +1034,8 @@ module PhysicallyBased =
         geometry
 
     /// Attempt to create physically-based animated geometry from an assimp mesh.
-    let TryCreatePhysicallyBasedAnimatedGeometry (renderable, mesh : Assimp.Mesh) =
-        match TryCreatePhysicallyBasedAnimatedMesh mesh with
+    let TryCreatePhysicallyBasedAnimatedGeometry (renderable, indexData, mesh : Assimp.Mesh) =
+        match TryCreatePhysicallyBasedAnimatedMesh (indexData, mesh) with
         | Right (vertexData, indexData, bounds) -> Right (CreatePhysicallyBasedAnimatedGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds))
         | Left error -> Left error
 
@@ -1218,7 +1198,10 @@ module PhysicallyBased =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let mutable errorOpt = None
         let geometries = SList.make ()
-        for mesh in scene.Meshes do
+        for i in 0 .. dec scene.Meshes.Count do
+            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexData = indexDataEntry.Data :?> int array
+            let mesh = scene.Meshes.[i]
             if Option.isNone errorOpt then
                 let mutable found = false
                 let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
@@ -1234,7 +1217,7 @@ module PhysicallyBased =
                             found <- true
                 | None -> ()
                 if not found then
-                    match TryCreatePhysicallyBasedStaticGeometry (renderable, mesh) with
+                    match TryCreatePhysicallyBasedStaticGeometry (renderable, indexData, mesh) with
                     | Right geometry ->
                         match meshAndGeometryListOpt with
                         | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
@@ -1249,9 +1232,12 @@ module PhysicallyBased =
     let TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let geometries = SList.make ()
-        for mesh in scene.Meshes do
+        for i in 0 .. dec scene.Meshes.Count do
+            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexData = indexDataEntry.Data :?> int array
+            let mesh = scene.Meshes.[i]
             if Option.isNone errorOpt then
-                match TryCreatePhysicallyBasedAnimatedGeometry (renderable, mesh) with
+                match TryCreatePhysicallyBasedAnimatedGeometry (renderable, indexData, mesh) with
                 | Right geometry -> geometries.Add geometry
                 | Left error -> errorOpt <- Some ("Could not load animated geometries for mesh in file name '" + filePath + "' due to: " + error)
         match errorOpt with
@@ -1270,6 +1256,7 @@ module PhysicallyBased =
                 // attempt to create scene
                 use assimp = new Assimp.AssimpContext ()
                 try let scene = assimp.ImportFile (filePath, Constants.Assimp.PostProcessSteps)
+                    scene.IndexDatasToMetadata () // avoid polluting memory with face data
                     assimpSceneMemo.AssimpScenes.[filePath] <- scene
                     Right scene
                 with exn ->

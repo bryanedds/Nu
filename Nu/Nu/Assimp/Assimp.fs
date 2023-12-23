@@ -347,3 +347,13 @@ module AssimpExtensions =
                 let child = child.Map<'a> (worldNames, worldTransform, mapper)
                 node.Add child
             node
+
+    type Assimp.Scene with
+
+        member this.IndexDatasToMetadata () =
+            for i in 0 .. dec this.Meshes.Count do
+                let mesh = this.Meshes.[i]
+                let indices = mesh.GetIndices ()
+                this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
+                mesh.Faces.Clear ()
+                mesh.Faces.Capacity <- 0
