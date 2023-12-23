@@ -510,7 +510,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         else false
 
-    let private markLightProbesStale () =
+    let private freezeFreezables () =
+        let groups = World.getGroups selectedScreen world
+        let lightProbes =
+            groups |>
+            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
+            Seq.concat |>
+            Seq.filter (fun entity -> entity.Has<FreezerFacet> world)
+        for lightProbe in lightProbes do
+            world <- lightProbe.SetFrozen true world
+
+    let private rerenderLightMaps () =
         let groups = World.getGroups selectedScreen world
         let lightProbes =
             groups |>
@@ -692,7 +702,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             entityTransform.Size <- attributes.SizeInferred
             entityTransform.Offset <- attributes.OffsetInferred
             entityTransform.Elevation <- newEntityElevation
-            if snaps2dSelected && ImGui.IsCtrlReleased ()
+            if snaps2dSelected && ImGui.IsCtrlUp ()
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
         else
@@ -709,7 +719,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             entityTransform.Position <- entityPosition
             entityTransform.Size <- attributes.SizeInferred
             entityTransform.Offset <- attributes.OffsetInferred
-            if not snaps2dSelected && ImGui.IsCtrlReleased ()
+            if not snaps2dSelected && ImGui.IsCtrlUp ()
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
         if surnames.Length > 1 then
@@ -1111,7 +1121,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                     let entityPositionSnapped =
-                        if snaps2dSelected && ImGui.IsCtrlReleased ()
+                        if snaps2dSelected && ImGui.IsCtrlUp ()
                         then Math.SnapF3d (Triple.fst (getSnaps ())) entityPosition.V3
                         else entityPosition.V3
                     let entityPosition = entity.GetPosition world
@@ -1133,7 +1143,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                     let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                     let entityDegreeSnapped =
-                        if snaps2dSelected && ImGui.IsCtrlReleased ()
+                        if snaps2dSelected && ImGui.IsCtrlUp ()
                         then Math.SnapF (Triple.snd (getSnaps ())) entityDegree
                         else entityDegree
                     let entityDegree = (entity.GetDegreesLocal world).Z
@@ -1189,27 +1199,27 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let turnSpeed =
                 if ImGui.IsShiftDown () && not (ImGui.IsKeyDown ImGuiKey.Enter) then 0.025f
                 else 0.05f
-            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Forward, rotation) * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Back, rotation) * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Left, rotation) * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Right, rotation) * moveSpeed
-            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Up) < 0.998f then desiredEye3dRotation <- rotation'
-            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
                 if Vector3.Dot (rotation'.Forward, v3Down) < 0.998f then desiredEye3dRotation <- rotation'
-            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Up, rotation) * moveSpeed
-            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltReleased () then
+            if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Down, rotation) * moveSpeed
-            if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltReleased () then
+            if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
                 desiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
-            if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltReleased () then
+            if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltUp () then
                 desiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Down, turnSpeed) * rotation
 
     let private updateHotkeys entityHierarchyFocused =
@@ -1227,7 +1237,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () then tryAutoBoundsSelectedEntity () |> ignore<bool>
-            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () then reloadAllRequested <- 1
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then reloadAllRequested <- 1
+            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then freezeFreezables ()
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then rerenderLightMaps ()
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
             elif not (ImGui.GetIO ()).WantCaptureKeyboardPlus || entityHierarchyFocused then
@@ -1830,7 +1842,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
                         let (p, r, s) =
-                            if not snaps2dSelected && ImGui.IsCtrlReleased ()
+                            if not snaps2dSelected && ImGui.IsCtrlUp ()
                             then snaps3d
                             else (0.0f, 0.0f, 0.0f)
                         let mutable copying = false
@@ -1953,7 +1965,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                  World.getEye3dRotation world,
                                  World.getEye3dFrustumView world,
                                  entity.GetAbsolute world,
-                                 (if not snaps2dSelected && ImGui.IsCtrlReleased () then Triple.fst snaps3d else 0.0f),
+                                 (if not snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst snaps3d else 0.0f),
                                  &lightProbeBounds)
                         match manipulationResult with
                         | ImGuiEditActive started ->
@@ -2024,7 +2036,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
                                 if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Mark Light Probes Stale") then markLightProbesStale ()
+                                if ImGui.MenuItem ("Freeze All", "Ctrl+Shift+F") then freezeFreezables ()
+                                if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
                                 if editWhileAdvancing
@@ -2111,9 +2124,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     snapshot () // snapshot before after change
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
-                        if ImGui.Button "Relight" then markLightProbesStale ()
+                        if ImGui.Button "Freeze" then freezeFreezables ()
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Re-render all light maps."
+                            ImGui.Text "Freeze all freezable entities. (Ctrl+Shift+F)"
+                            ImGui.EndTooltip ()
+                        ImGui.SameLine ()
+                        if ImGui.Button "Relight" then rerenderLightMaps ()
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Re-render all light maps. (Ctrl+Shift+R)"
                             ImGui.EndTooltip ()
                         ImGui.SameLine ()
                         ImGui.Text "|"
