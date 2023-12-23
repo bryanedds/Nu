@@ -157,6 +157,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           RenderPackages : Packages<RenderAsset, GlPackageState2d>
           mutable RenderPackageCachedOpt : string * Package<RenderAsset, GlPackageState2d> // OPTIMIZATION: nullable for speed.
           mutable RenderAssetCachedOpt : AssetTag * RenderAsset
+          mutable ReloadAssetsRequested : bool
           LayeredOperations : LayeredOperation2d List }
 
     static member private invalidateCaches renderer =
@@ -305,7 +306,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         | LayeredOperation2d operation -> renderer.LayeredOperations.Add operation
         | LoadRenderPackage2d hintPackageUse -> GlRenderer2d.handleLoadRenderPackage false hintPackageUse renderer
         | UnloadRenderPackage2d hintPackageDisuse -> GlRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
-        | ReloadRenderAssets2d -> GlRenderer2d.handleReloadRenderAssets renderer
+        | ReloadRenderAssets2d -> renderer.ReloadAssetsRequested <- true
 
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
@@ -718,6 +719,12 @@ type [<ReferenceEquality>] GlRenderer2d =
         OpenGL.SpriteBatch.EndSpriteBatchFrame renderer.SpriteBatchEnv
         OpenGL.Hl.Assert ()
 
+        // reload render assets upon request
+        if renderer.ReloadAssetsRequested then
+            GlRenderer2d.handleReloadRenderAssets renderer
+            OpenGL.Hl.Assert ()
+            renderer.ReloadAssetsRequested <- false
+
     /// Make a GlRenderer2d.
     static member make window =
 
@@ -741,6 +748,7 @@ type [<ReferenceEquality>] GlRenderer2d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
+              ReloadAssetsRequested = false
               LayeredOperations = List () }
 
         // fin
