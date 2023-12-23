@@ -682,6 +682,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCachedOpt : RenderAssetCached
+          mutable ReloadAssetsRequested : bool
           RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
@@ -2460,7 +2461,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | UnloadRenderPackage3d packageName ->
                 GlRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
-                GlRenderer3d.handleReloadRenderAssets renderer
+                renderer.ReloadAssetsRequested <- true
 
         // pre-passes
         let mutable shadowBufferIndex = 0
@@ -2528,6 +2529,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         // destroy user-defined static models
         for staticModel in userDefinedStaticModelsToDestroy do
             GlRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
+
+        // reload render assets upon request
+        if renderer.ReloadAssetsRequested then
+            GlRenderer3d.handleReloadRenderAssets renderer
+            OpenGL.Hl.Assert ()
+            renderer.ReloadAssetsRequested <- false
 
     /// Make a GlRenderer3d.
     static member make window =
@@ -2791,6 +2798,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
+              ReloadAssetsRequested = false
               RenderMessages = List () }
 
         // fin
