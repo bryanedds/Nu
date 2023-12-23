@@ -45,10 +45,10 @@ module Override =
                 | nameof Engine.EventTracing -> Engine.EventTracing <- scvalue value
                 | nameof Engine.EventFilter -> Engine.EventFilter <- scvalue value
                 | nameof Render.Vsync -> Render.Vsync <- scvalue value
-                | nameof Render.NearPlaneDistanceEnclosed -> Render.NearPlaneDistanceEnclosed <- scvalue value
-                | nameof Render.FarPlaneDistanceEnclosed -> Render.FarPlaneDistanceEnclosed <- scvalue value
-                | nameof Render.NearPlaneDistanceExposed -> Render.NearPlaneDistanceExposed <- scvalue value
-                | nameof Render.FarPlaneDistanceExposed -> Render.FarPlaneDistanceExposed <- scvalue value
+                | nameof Render.NearPlaneDistanceInterior -> Render.NearPlaneDistanceInterior <- scvalue value
+                | nameof Render.FarPlaneDistanceInterior -> Render.FarPlaneDistanceInterior <- scvalue value
+                | nameof Render.NearPlaneDistanceExterior -> Render.NearPlaneDistanceExterior <- scvalue value
+                | nameof Render.FarPlaneDistanceExterior -> Render.FarPlaneDistanceExterior <- scvalue value
                 | nameof Render.NearPlaneDistanceImposter -> Render.NearPlaneDistanceImposter <- scvalue value
                 | nameof Render.FarPlaneDistanceImposter -> Render.FarPlaneDistanceImposter <- scvalue value
                 | nameof Render.SsaoResolutionDivisor -> Render.SsaoResolutionDivisor <- scvalue value

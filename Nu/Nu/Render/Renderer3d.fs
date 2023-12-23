@@ -1285,8 +1285,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private categorizeStaticModel
         (skipCulling : bool,
-         frustumEnclosed : Frustum,
-         frustumExposed : Frustum,
+         frustumInterior : Frustum,
+         frustumExterior : Frustum,
          frustumImposter : Frustum,
          lightBox : Box3,
          modelAbsolute : bool,
@@ -1307,7 +1307,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let lightMatrix = light.LightMatrix * modelMatrix
                     let lightBounds = Box3 (lightMatrix.Translation - v3Dup light.LightCutoff, v3Dup light.LightCutoff * 2.0f)
                     let lightDirection = lightMatrix.Rotation.Down
-                    if skipCulling || Presence.intersects3d (Some frustumEnclosed) frustumExposed frustumImposter (Some lightBox) false true presence lightBounds then
+                    if skipCulling || Presence.intersects3d (Some frustumInterior) frustumExterior frustumImposter (Some lightBox) false true presence lightBounds then
                         let coneOuter = match light.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.PI_MINUS_EPSILON | _ -> MathF.TWO_PI
                         let coneInner = match light.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
                         let light =
@@ -1336,7 +1336,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | None -> renderType
                     let unculled =
                         match renderPass with // OPTIMIZATION: in normal pass, we cull surfaces based on view.
-                        | NormalPass skipCulling -> skipCulling || Presence.intersects3d (Some frustumEnclosed) frustumExposed frustumImposter (Some lightBox) false false presence surfaceBounds
+                        | NormalPass skipCulling -> skipCulling || Presence.intersects3d (Some frustumInterior) frustumExterior frustumImposter (Some lightBox) false false presence surfaceBounds
                         | ShadowPass (_, shadowDirectional, shadowFrustum) -> Presence.intersects3d (if shadowDirectional then None else Some shadowFrustum) shadowFrustum shadowFrustum None false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d None reflFrustum reflFrustum None false false presence surfaceBounds
                     if skipCulling || unculled then
@@ -1925,7 +1925,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (framebuffer : uint) =
 
         // compute geometry frustum
-        let geometryFrustum = geometryViewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceExposed, eyeCenter, eyeRotation)
+        let geometryFrustum = geometryViewport.Frustum (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceExterior, eyeCenter, eyeRotation)
 
         // compute matrix arrays
         let viewAbsoluteArray = viewAbsolute.ToArray ()
@@ -2357,7 +2357,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
     /// Render 3d surfaces.
-    static member render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
+    static member render skipCulling frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
         // reset draw call count
         OpenGL.Hl.ResetDrawCalls ()
@@ -2428,20 +2428,20 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, &insetOpt, &rsms.MaterialProperties, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, rsms.RenderPass, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.RenderType, rsm.RenderPass, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumInterior, frustumExterior, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.RenderType, rsm.RenderPass, renderer)
             | RenderStaticModels rsms ->
                 for (modelMatrix, presence, insetOpt, properties) in rsms.StaticModels do
                     let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, &insetOpt, &properties, rsms.StaticModel, rsms.RenderType, rsms.RenderPass, renderer)
+                    GlRenderer3d.categorizeStaticModel (skipCulling, frustumInterior, frustumExterior, frustumImposter, lightBox, rsms.Absolute, &modelMatrix, presence, &insetOpt, &properties, rsms.StaticModel, rsms.RenderType, rsms.RenderPass, renderer)
             | RenderCachedStaticModel csmm ->
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumInterior, frustumExterior, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
             | RenderCachedStaticModelSurface csmsm ->
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (csmsm.CachedStaticModelSurfaceAbsolute, &csmsm.CachedStaticModelSurfaceMatrix, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (skipCulling, frustumEnclosed, frustumExposed, frustumImposter, lightBox, rudsm.Absolute, &rudsm.ModelMatrix, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.RenderType, rudsm.RenderPass, renderer)
+                GlRenderer3d.categorizeStaticModel (skipCulling, frustumInterior, frustumExterior, frustumImposter, lightBox, rudsm.Absolute, &rudsm.ModelMatrix, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.RenderType, rudsm.RenderPass, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
@@ -2479,7 +2479,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 shadowView <- shadowView.Inverted
                                 let shadowFov = max (min light.SortableLightConeOuter Constants.Render.ShadowFovMax) 0.01f
                                 let shadowCutoff = max light.SortableLightCutoff 0.1f
-                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceEnclosed, shadowCutoff)
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
                             else
                                 let shadowOrigin = light.SortableLightOrigin
@@ -2809,9 +2809,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.PhysicallyBasedShader =
             renderer.PhysicallyBasedForwardStaticShader
 
-        member renderer.Render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter eyeRotation windowSize renderMessages =
+        member renderer.Render skipCulling frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize renderMessages =
             if renderMessages.Count > 0 then
-                GlRenderer3d.render skipCulling frustumEnclosed frustumExposed frustumImposter lightBox eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
+                GlRenderer3d.render skipCulling frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
 
         member renderer.Swap () =
             match renderer.Window with

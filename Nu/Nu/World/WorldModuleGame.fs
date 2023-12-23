@@ -343,8 +343,8 @@ module WorldModuleGame =
                 let gameState =
                     { gameState with
                         Eye3dCenter = value
-                        Eye3dFrustumEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, value, gameState.Eye3dRotation)
-                        Eye3dFrustumExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, value, gameState.Eye3dRotation)
+                        Eye3dFrustumInterior = viewport.Frustum (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, value, gameState.Eye3dRotation)
+                        Eye3dFrustumExterior = viewport.Frustum (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, value, gameState.Eye3dRotation)
                         Eye3dFrustumImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, value, gameState.Eye3dRotation) }
                 struct (true, world |> World.setGameState gameState game |> World.publishGameChange (nameof gameState.Eye3dCenter) previous value game)
             else struct (false, world)
@@ -368,8 +368,8 @@ module WorldModuleGame =
                 let gameState =
                     { gameState with
                         Eye3dRotation = value
-                        Eye3dFrustumEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, gameState.Eye3dCenter, value)
-                        Eye3dFrustumExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, gameState.Eye3dCenter, value)
+                        Eye3dFrustumInterior = viewport.Frustum (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, gameState.Eye3dCenter, value)
+                        Eye3dFrustumExterior = viewport.Frustum (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, gameState.Eye3dCenter, value)
                         Eye3dFrustumImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, gameState.Eye3dCenter, value) }
                 struct (true, world |> World.setGameState gameState game |> World.publishGameChange (nameof gameState.Eye3dRotation) previous value game)
             else struct (false, world)
@@ -382,29 +382,29 @@ module WorldModuleGame =
         static member setEye3dRotation value world =
             World.setGameEye3dRotation value Game.Handle world |> snd'
 
-        static member internal getGameEye3dFrustumEnclosed game world =
-            (World.getGameState game world).Eye3dFrustumEnclosed
+        static member internal getGameEye3dFrustumInterior game world =
+            (World.getGameState game world).Eye3dFrustumInterior
 
-        static member internal getGameEye3dFrustumExposed game world =
-            (World.getGameState game world).Eye3dFrustumExposed
+        static member internal getGameEye3dFrustumExterior game world =
+            (World.getGameState game world).Eye3dFrustumExterior
 
         static member internal getGameEye3dFrustumImposter game world =
             (World.getGameState game world).Eye3dFrustumImposter
 
         static member internal getGameEye3dFrustumView game world =
             Constants.Render.Viewport.Frustum
-                (Constants.Render.NearPlaneDistanceEnclosed,
+                (Constants.Render.NearPlaneDistanceInterior,
                  Constants.Render.FarPlaneDistanceImposter,
                  World.getGameEye3dCenter game world,
                  World.getGameEye3dRotation game world)
 
-        /// Get the current enclosed 3d eye frustum.
-        static member getEye3dFrustumEnclosed world =
-            World.getGameEye3dFrustumEnclosed Game.Handle world
+        /// Get the current interior 3d eye frustum.
+        static member getEye3dFrustumInterior world =
+            World.getGameEye3dFrustumInterior Game.Handle world
 
-        /// Get the current unenclosed 3d eye frustum.
-        static member getEye3dFrustumExposed world =
-            World.getGameEye3dFrustumExposed Game.Handle world
+        /// Get the current exterior 3d eye frustum.
+        static member getEye3dFrustumExterior world =
+            World.getGameEye3dFrustumExterior Game.Handle world
 
         /// Get the current imposter 3d eye frustum.
         static member getEye3dFrustumImposter world =
@@ -423,14 +423,14 @@ module WorldModuleGame =
         static member getPlayBounds3d world =
             let eyeCenter = World.getGameEye3dCenter Game.Handle world
             let eyeBox = box3 (eyeCenter - Constants.Render.Play3dBoxSize * 0.5f) Constants.Render.Play3dBoxSize
-            let eyeFrustum = World.getGameEye3dFrustumEnclosed Game.Handle world
+            let eyeFrustum = World.getGameEye3dFrustumInterior Game.Handle world
             struct (eyeBox, eyeFrustum)
 
         /// Check that the given bounds is within the 3d eye's sight (or a light probe / light in the light box that may be lighting something within it).
         static member boundsInView3d lightProbe light presence (bounds : Box3) world =
             Presence.intersects3d
-                (Some (World.getGameEye3dFrustumEnclosed Game.Handle world))
-                (World.getGameEye3dFrustumExposed Game.Handle world)
+                (Some (World.getGameEye3dFrustumInterior Game.Handle world))
+                (World.getGameEye3dFrustumExterior Game.Handle world)
                 (World.getGameEye3dFrustumImposter Game.Handle world)
                 (Some (World.getLight3dBox world))
                 lightProbe light presence bounds

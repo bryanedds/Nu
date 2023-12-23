@@ -479,7 +479,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
          Define? Elevation 0.0f
          Define? ElevationLocal 0.0f
          Define? Overflow 1.0f
-         Define? Presence Exposed
+         Define? Presence Exterior
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
          Define? MountOpt Option<Entity Relation>.None
@@ -792,8 +792,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Eye2dSize : Vector2
       Eye3dCenter : Vector3
       Eye3dRotation : Quaternion
-      Eye3dFrustumEnclosed : Frustum // OPTIMIZATION: cached value
-      Eye3dFrustumExposed : Frustum // OPTIMIZATION: cached value
+      Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value
+      Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value
       Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value
       Order : int64
       Id : Guid }
@@ -815,8 +815,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Eye2dSize = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
           Eye3dCenter = eye3dCenter
           Eye3dRotation = eye3dRotation
-          Eye3dFrustumEnclosed = viewport.Frustum (Constants.Render.NearPlaneDistanceEnclosed, Constants.Render.FarPlaneDistanceEnclosed, eye3dCenter, eye3dRotation)
-          Eye3dFrustumExposed = viewport.Frustum (Constants.Render.NearPlaneDistanceExposed, Constants.Render.FarPlaneDistanceExposed, eye3dCenter, eye3dRotation)
+          Eye3dFrustumInterior = viewport.Frustum (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, eye3dCenter, eye3dRotation)
+          Eye3dFrustumExterior = viewport.Frustum (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, eye3dCenter, eye3dRotation)
           Eye3dFrustumImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eye3dCenter, eye3dRotation)
           Order = Core.getTimeStampUnique ()
           Id = Gen.id }
