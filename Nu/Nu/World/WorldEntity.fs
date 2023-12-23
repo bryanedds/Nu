@@ -533,11 +533,17 @@ module WorldEntityModule =
             | Some mount -> mount.Exists world
             | None -> false
 
+        /// Check than an entity has any other entitiese mounted on it.
+        member this.HasMounters world = World.getEntityHasMounters this world
+
         /// Get an entity's mounters.
         member this.GetMounters world = World.getEntityMounters this world
 
         /// Traverse an entity's mounters.
         member this.TraverseMounters effect world = World.traverseEntityMounters effect this world
+
+        /// Check that an entity has children.
+        member this.HasChildren world = World.getEntityHasChildren this world
 
         /// Get an entity's children.
         member this.GetChildren world = World.getEntityChildren this world

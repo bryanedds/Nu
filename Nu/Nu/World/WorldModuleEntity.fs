@@ -567,6 +567,16 @@ module WorldModuleEntity =
             transform.CleanRotationMatrix () // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
             transform
 
+        /// Check that an entity has any children.
+        static member getEntityHasChildren (entity : Entity) world =
+            let simulants = World.getSimulants world
+            match simulants.TryGetValue (entity :> Simulant) with
+            | (true, entitiesOpt) ->
+                match entitiesOpt with
+                | Some entities -> Seq.notEmpty entities 
+                | None -> false
+            | (false, _) -> false
+
         /// Get all of the entities directly parented by an entity.
         static member getEntityChildren (entity : Entity) world =
             let simulants = World.getSimulants world
@@ -581,6 +591,12 @@ module WorldModuleEntity =
         static member traverseEntityChildren effect (entity : Entity) (world : World) =
             let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
+
+        /// Check than an entity has any other entitiese mounted on it.
+        static member getEntityHasMounters entity world =
+            match world.EntityMounts.TryGetValue entity with
+            | (true, mounters) -> Seq.exists (flip World.getEntityExists world) mounters
+            | (false, _) -> false
 
         /// Get all of the entities directly mounted on an entity.
         static member getEntityMounters entity world =
