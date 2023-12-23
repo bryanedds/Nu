@@ -1258,7 +1258,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
             (if not branch || searchActive then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             (if newEntityParentOpt = Some entity && DateTimeOffset.UtcNow.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
-            ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+            ImGuiTreeNodeFlags.OpenOnArrow
         if not searchActive then
             if expandEntityHierarchy then ImGui.SetNextItemOpen true
             if collapseEntityHierarchy then ImGui.SetNextItemOpen false
@@ -1354,6 +1354,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                     else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
+        if entity.Has<FreezerFacet> world then
+            ImGui.SameLine ()
+            let frozen = entity.GetFrozen world
+            if ImGui.Button (if frozen then "Thw" else "Frz") then
+                world <- entity.SetFrozen (not frozen) world
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
