@@ -1357,22 +1357,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
-        let children =
-            entity.GetChildren world |>
-            Array.ofSeq |>
-            Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
-            Array.sortBy fst |>
-            Array.map snd
         let searchActive =
             not (String.IsNullOrWhiteSpace entityHierarchySearchStr)
         let visible =
             not searchActive || entity.Name.ToLowerInvariant().Contains (entityHierarchySearchStr.ToLowerInvariant ())
         let expanded =
             if visible then
-                let branch = Array.notEmpty children
+                let branch = entity.HasChildren world
                 imGuiEntity branch searchActive entity
             else false
         if expanded || searchActive then
+            let children =
+                entity.GetChildren world |>
+                Array.ofSeq |>
+                Array.map (fun entity -> ((entity.Surnames.Length, entity.GetOrder world), entity)) |>
+                Array.sortBy fst |>
+                Array.map snd
             for child in children do imGuiEntityHierarchy child
             if visible then
                 ImGui.TreePop ()
