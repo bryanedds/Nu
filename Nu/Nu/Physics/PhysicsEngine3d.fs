@@ -9,6 +9,41 @@ open System.Runtime.InteropServices
 open BulletSharp
 open Prime
 
+type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
+    { HashCode : int
+      Vertices : Vector3 array }
+
+    static member hash chs =
+        chs.HashCode
+
+    static member equals left right =
+        left.HashCode = right.HashCode &&
+        Linq.Enumerable.SequenceEqual (left.Vertices, right.Vertices)
+
+    static member comparer =
+        HashIdentity.FromFunctions UnscaledPointsKey.hash UnscaledPointsKey.equals
+
+    static member make (vertices : Vector3 array) =
+        let hashCode =
+            hash vertices.Length ^^^
+            (if vertices.Length > 0 then vertices.[0].GetHashCode () else 0) ^^^
+            (if vertices.Length > 0 then vertices.[vertices.Length / 2].GetHashCode () else 0) ^^^
+            (if vertices.Length > 0 then vertices.[vertices.Length - 1].GetHashCode () else 0)
+        { HashCode = hashCode
+          Vertices = vertices }
+
+    interface UnscaledPointsKey IEquatable with
+        member this.Equals that =
+            UnscaledPointsKey.equals this that
+
+    override this.Equals that =
+        match that with
+        | :? UnscaledPointsKey as that -> UnscaledPointsKey.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        this.HashCode
+
 /// The 3d implementation of PhysicsEngine in terms of Bullet Physics.
 /// TODO: only record the collisions for bodies that have event subscriptions associated with them?
 type [<ReferenceEquality>] PhysicsEngine3d =
@@ -19,8 +54,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           Bodies : OrderedDictionary<BodyId, RigidBody>
           Ghosts : OrderedDictionary<BodyId, GhostObject>
           Objects : OrderedDictionary<BodyId, CollisionObject>
-          CollisionsFiltered : SDictionary<BodyId * BodyId, Vector3>
-          CollisionsGround : SDictionary<BodyId, Vector3 List>
+          CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
+          CollisionsGround : Dictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
           CollisionDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
@@ -28,6 +63,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           ConstraintSolver : ConstraintSolver
           TryGetAssetFilePath : AssetTag -> string option
           TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
+          UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
           PhysicsMessages : PhysicsMessage List
           IntegrationMessages : IntegrationMessage List }
 
@@ -151,10 +187,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         PhysicsEngine3d.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
 
-    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        let hull = new ConvexHullShape (bodyConvexHull.Vertices)
+    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
+        let unscaledPointsKey = UnscaledPointsKey.make bodyConvexHull.Vertices
+        let (optimized, vertices) =
+            match physicsEngine.UnscaledPointsCached.TryGetValue unscaledPointsKey with
+            | (true, unscaledVertices) -> (true, unscaledVertices)
+            | (false, _) -> (false, bodyConvexHull.Vertices)
+        let hull = new ConvexHullShape (vertices)
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
-        hull.OptimizeConvexHull () // TODO: instead of always optimizing hull, instead consider caching hull.UnscaledPoints after optimizing the first time and reusing that.
+        if not optimized then
+            hull.OptimizeConvexHull ()
+            let unscaledPoints = Array.ofSeq hull.UnscaledPoints
+            physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -211,7 +255,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 bodyStaticModelSurface.SurfaceIndex < staticModel.Surfaces.Length then
                 let geometry = staticModel.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
                 let bodyConvexHull = { Vertices = geometry.Vertices; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
-                PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes
+                PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes physicsEngine
             else centerMassInertiaDisposes
         | None -> centerMassInertiaDisposes
 
@@ -258,7 +302,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | BodySphere bodySphere -> PhysicsEngine3d.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertiaDisposes
         | BodyCapsule bodyCapsule -> PhysicsEngine3d.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertiaDisposes
         | BodyBoxRounded bodyBoxRounded -> PhysicsEngine3d.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertiaDisposes
-        | BodyConvexHull bodyConvexHull -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes
+        | BodyConvexHull bodyConvexHull -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes physicsEngine
         | BodyStaticModel bodyStaticModel -> PhysicsEngine3d.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertiaDisposes physicsEngine
         | BodyStaticModelSurface bodyStaticModelSurface -> PhysicsEngine3d.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine
         | BodyTerrain bodyTerrain -> PhysicsEngine3d.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertiaDisposes
@@ -651,8 +695,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               Bodies = OrderedDictionary HashIdentity.Structural
               Ghosts = OrderedDictionary HashIdentity.Structural
               Objects = OrderedDictionary HashIdentity.Structural
-              CollisionsFiltered = SDictionary.make HashIdentity.Structural
-              CollisionsGround = SDictionary.make HashIdentity.Structural
+              CollisionsFiltered = dictPlus HashIdentity.Structural []
+              CollisionsGround = dictPlus HashIdentity.Structural []
               CollisionConfiguration = collisionConfiguration
               CollisionDispatcher = collisionDispatcher
               BroadPhaseInterface = broadPhaseInterface
@@ -660,6 +704,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               ConstraintSolver = constraintSolver
               TryGetAssetFilePath = tryGetAssetFilePath
               TryGetStaticModelMetadata = tryGetStaticModelMetadata
+              UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
               PhysicsMessages = List ()
               IntegrationMessages = List () }
         physicsEngine
