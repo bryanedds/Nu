@@ -28,14 +28,14 @@ module AssetMemo =
         // instantiate texture data loading ops
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
-                vsync
-                    { let internalFormat =
+                vsync {
+                    let internalFormat =
                         if is2d
                         then Constants.OpenGL.UncompressedTextureFormat
                         else AssetTag.inferInternalFormatFromAssetName textureAsset.AssetTag
-                      match OpenGL.Texture.TryCreateTextureData (internalFormat, true, textureAsset.FilePath) with
-                      | Some (metadata, textureData, disposable) -> return Right (textureAsset.FilePath, metadata, textureData, disposable)
-                      | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
+                    match OpenGL.Texture.TryCreateTextureData (internalFormat, true, textureAsset.FilePath) with
+                    | Some (metadata, textureData, disposable) -> return Right (textureAsset.FilePath, metadata, textureData, disposable)
+                    | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
         // run texture data loading ops
         let textureDataArray = textureDataLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously
@@ -43,12 +43,13 @@ module AssetMemo =
         // instantiate assimp scene loading ops
         let assimpSceneLoadOps =
             [for assimpSceneAsset in assimpSceneAssets do
-                vsync
-                    { use assimp = new Assimp.AssimpContext ()
-                      try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
-                          return Right (assimpSceneAsset.FilePath, scene)
-                      with exn ->
-                          return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
+                vsync {
+                    use assimp = new Assimp.AssimpContext ()
+                    try let scene = assimp.ImportFile (assimpSceneAsset.FilePath, Constants.Assimp.PostProcessSteps)
+                        scene.IndexDatasToMetadata () // avoid polluting memory with face data
+                        return Right (assimpSceneAsset.FilePath, scene)
+                    with exn ->
+                        return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
 
         // run texture data loading ops
         for textureData in textureDataArray do
