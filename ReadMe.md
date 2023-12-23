@@ -46,8 +46,11 @@ Local light probes allow for efficient localized reflection and image-based ligh
 ![image](https://github.com/bryanedds/Nu/assets/1625560/bb8532b6-e749-4892-80dd-579e254a7189)
 Animated 3D model rendering from Mixamo.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/b9cb1513-2f8a-4406-993c-05a30aa5c261)
+![image](https://github.com/bryanedds/Nu/assets/1625560/2dc896e2-c182-4641-ba50-dd32acc4ea31)
 Scalable rendering thanks to instancing-by-default render technique.
+
+![image](https://github.com/bryanedds/Nu/assets/1625560/b9cb1513-2f8a-4406-993c-05a30aa5c261)
+Another shot. Ya, we need to implement VSM to soften these shadows :)
 
 **Public Sponsors We Wish to Thank**
 ====================================
