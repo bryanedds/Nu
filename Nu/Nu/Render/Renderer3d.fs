@@ -20,7 +20,6 @@ open Prime
 //////////////////////////////////////////////////////////////////////////////////////////
 
 /// A layer from which a 3d terrain's material is composed.
-/// NOTE: doesn't use metalness for now in order to increase number of total materials per terrain.
 type TerrainLayer =
     { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
@@ -1082,11 +1081,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
             match geometryDescriptor.Material with
             | BlendMaterial blendMaterial ->
-                if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMaxSafe then
+                if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
                     Log.infoOnce
                         ("Terrain has more than " +
-                         string Constants.Render.TerrainLayersMaxSafe +
-                         " which references more than the guaranteed number of supported fragment shader textures.")
+                         string Constants.Render.TerrainLayersMax +
+                         " layers which references more than the number of supported fragment shader textures.")
                 match blendMaterial.BlendMap with
                 | RgbaMap rgbaMap ->
                     match GlRenderer3d.tryGetTextureData rgbaMap renderer with

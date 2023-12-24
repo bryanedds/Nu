@@ -110,7 +110,6 @@ module Render =
     let [<Literal>] AnimatedModelRateScalar = 30.0f // some arbitrary scale that mixamo fbx exported from blender seems to like...
     let [<Literal>] AnimatedModelMessagesPrealloc = 128
     let [<Literal>] InstanceBatchPrealloc = 1024
-    let [<Literal>] TerrainLayersMaxSafe = 6
     let [<Literal>] TerrainLayersMax = 8
     let [<Literal>] LightMapsMaxDeferred = 27
     let [<Literal>] LightMapsMaxForward = 2
