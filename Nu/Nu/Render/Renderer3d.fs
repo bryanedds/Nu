@@ -12,9 +12,10 @@ open Prime
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // TODO: add TwoSidedOpt as render message parameter.                                   //
+// TODO: add FallbackLightMapOnly (or however to call it) as render message parameter.  //
+// TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //
-// TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 //////////////////////////////////////////////////////////////////////////////////////////
 
