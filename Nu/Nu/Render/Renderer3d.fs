@@ -1741,7 +1741,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              instanceFields, elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
-    static member inline private makeBillboardPropertiesAndMaterial (properties : MaterialProperties) (material : Material) renderer =
+    static member inline private makeBillboardMaterial (properties : MaterialProperties) (material : Material) renderer =
         let (albedoMetadata, albedoTexture) =
             match GlRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
             | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
@@ -2402,16 +2402,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if rl.DesireShadows then
                     renderer.LightsDesiringShadows.[rl.LightId] <- light
             | RenderBillboard rb ->
-                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardPropertiesAndMaterial rb.MaterialProperties rb.Material renderer
+                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.Material renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, renderer.BillboardGeometry)
                 GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
-                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardPropertiesAndMaterial rbs.MaterialProperties rbs.Material renderer
+                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.Material renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, renderer.BillboardGeometry)
                 for (modelMatrix, insetOpt) in rbs.Billboards do
                     GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
-                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardPropertiesAndMaterial rbps.MaterialProperties rbps.Material renderer
+                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.Material renderer
                 for particle in rbps.Particles do
                     let billboardMatrix =
                         Matrix4x4.CreateFromTrs

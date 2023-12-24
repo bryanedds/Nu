@@ -1274,7 +1274,7 @@ module PhysicallyBased =
         | Right scene ->
             let dirPath = PathF.GetDirectoryName filePath
             match TryCreatePhysicallyBasedMaterials (renderable, dirPath, defaultMaterial, textureMemo, scene) with
-            | Right propertiesAndMaterials ->
+            | Right materials ->
                 let animated = scene.Animations.Count <> 0
                 let geometriesEir =
                     if animated
@@ -1349,7 +1349,7 @@ module PhysicallyBased =
                                 let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
                                 let meshIndex = node.MeshIndices.[i]
                                 let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                                let (properties, material) = propertiesAndMaterials.[materialIndex]
+                                let (properties, material) = materials.[materialIndex]
                                 let geometry = geometries.[meshIndex]
                                 let surface = PhysicallyBasedSurface.make names node.Metadata transform geometry.Bounds properties material geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
