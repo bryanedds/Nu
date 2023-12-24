@@ -493,13 +493,7 @@ module StaticBillboardDispatcherModule =
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.defaultProperties
-             define Entity.AlbedoImage Assets.Default.MaterialAlbedo
-             define Entity.RoughnessImage Assets.Default.MaterialRoughness
-             define Entity.MetallicImage Assets.Default.MaterialMetallic
-             define Entity.AmbientOcclusionImage Assets.Default.MaterialAmbientOcclusion
-             define Entity.EmissionImage Assets.Default.MaterialEmission
-             define Entity.NormalImage Assets.Default.MaterialNormal
-             define Entity.HeightImage Assets.Default.MaterialHeight
+             define Entity.Material Material.defaultMaterial
              define Entity.RenderStyle Deferred]
 
 // TODO: AnimatedBillboardDispatcher.

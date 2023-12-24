@@ -11,8 +11,8 @@ open SDL2
 open Prime
 
 //////////////////////////////////////////////////////////////////////////////////////////
+// TODO: add IgnoreLocalLightMaps (or however to call it) as render message parameter.  //
 // TODO: add TwoSidedOpt as render message parameter.                                   //
-// TODO: add FallbackLightMapOnly (or however to call it) as render message parameter.  //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //
@@ -73,6 +73,14 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
       HeightOpt : single voption }
+
+    member this.AlbedoImage = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
+    member this.RoughnessImage = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
+    member this.MetallicImage = ValueOption.defaultValue Constants.Render.MetallicDefault this.MetallicOpt
+    member this.AmbientOcclusionImage = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
+    member this.EmissionImage = ValueOption.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
+    member this.HeightImage = ValueOption.defaultValue Constants.Render.HeightDefault this.HeightOpt
+
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
@@ -80,8 +88,39 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
           HeightOpt = ValueSome Constants.Render.HeightDefault }
+
     static member empty =
         Unchecked.defaultof<MaterialProperties>
+
+/// Material description for surfaces.
+type [<SymbolicExpansion; Struct>] Material =
+    { AlbedoImageOpt : Image AssetTag voption
+      RoughnessImageOpt : Image AssetTag voption
+      MetallicImageOpt : Image AssetTag voption
+      AmbientOcclusionImageOpt : Image AssetTag voption
+      EmissionImageOpt : Image AssetTag voption
+      NormalImageOpt : Image AssetTag voption
+      HeightImageOpt : Image AssetTag voption }
+
+    member this.AlbedoImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName) this.AlbedoImageOpt
+    member this.RoughnessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName) this.RoughnessImageOpt
+    member this.MetallicImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName) this.MetallicImageOpt
+    member this.AmbientOcclusionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName) this.AmbientOcclusionImageOpt
+    member this.EmissionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName) this.EmissionImageOpt
+    member this.NormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialNormalName) this.NormalImageOpt
+    member this.HeightImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
+
+    static member defaultMaterial =
+        { AlbedoImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName)
+          RoughnessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName)
+          MetallicImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName)
+          AmbientOcclusionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName)
+          EmissionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName)
+          NormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialNormalName)
+          HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) }
+
+    static member empty =
+        Unchecked.defaultof<Material>
 
 and [<Struct>] LightProbe3dValue =
     { mutable LightProbeId : uint64
@@ -110,15 +149,7 @@ type [<Struct>] BillboardValue =
       mutable ModelMatrix : Matrix4x4
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
-      mutable AlbedoImage : Image AssetTag
-      mutable RoughnessImage : Image AssetTag
-      mutable MetallicImage : Image AssetTag
-      mutable AmbientOcclusionImage : Image AssetTag
-      mutable EmissionImage : Image AssetTag
-      mutable NormalImage : Image AssetTag
-      mutable HeightImage : Image AssetTag
-      mutable MinFilterOpt : OpenGL.TextureMinFilter option
-      mutable MagFilterOpt : OpenGL.TextureMagFilter option
+      mutable Material : Material
       mutable RenderType : RenderType }
 
 /// A mutable static model value.
@@ -145,15 +176,7 @@ type [<Struct>] StaticModelSurfaceValue =
 type BillboardParticlesDescriptor =
     { Absolute : bool
       MaterialProperties : MaterialProperties
-      AlbedoImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter option
-      MagFilterOpt : OpenGL.TextureMagFilter option
+      Material : Material
       Particles : Particle SArray
       RenderType : RenderType }
 
@@ -342,13 +365,7 @@ and [<ReferenceEquality>] RenderBillboard =
       ModelMatrix : Matrix4x4
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
-      AlbedoImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
+      Material : Material
       RenderType : RenderType
       RenderPass : RenderPass }
 
@@ -356,28 +373,14 @@ and [<ReferenceEquality>] RenderBillboards =
     { Absolute : bool
       Billboards : (Matrix4x4 * Box2 option) SList
       MaterialProperties : MaterialProperties
-      AlbedoImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
+      Material : Material
       RenderType : RenderType
       RenderPass : RenderPass }
 
 and [<ReferenceEquality>] RenderBillboardParticles =
     { Absolute : bool
       MaterialProperties : MaterialProperties
-      AlbedoImage : Image AssetTag
-      RoughnessImage : Image AssetTag
-      MetallicImage : Image AssetTag
-      AmbientOcclusionImage : Image AssetTag
-      EmissionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
-      MinFilterOpt : OpenGL.TextureMinFilter option
-      MagFilterOpt : OpenGL.TextureMagFilter option
+      Material : Material
       Particles : Particle SArray
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -1741,33 +1744,33 @@ type [<ReferenceEquality>] GlRenderer3d =
              instanceFields, elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
-    static member inline private makeBillboardMaterial (properties : MaterialProperties) albedoImage roughnessImage metallicImage ambientOcclusionImage emissionImage normalImage heightImage renderer =
+    static member inline private makeBillboardMaterial (properties : MaterialProperties) (material : Material) renderer =
         let (albedoMetadata, albedoTexture) =
-            match GlRenderer3d.tryGetRenderAsset albedoImage renderer with
+            match GlRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
             | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
             | _ -> (OpenGL.Texture.TextureMetadata.empty, renderer.PhysicallyBasedMaterial.AlbedoTexture)
         let roughnessTexture =
-            match GlRenderer3d.tryGetRenderAsset roughnessImage renderer with
+            match GlRenderer3d.tryGetRenderAsset material.RoughnessImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
         let metallicTexture =
-            match GlRenderer3d.tryGetRenderAsset metallicImage renderer with
+            match GlRenderer3d.tryGetRenderAsset material.MetallicImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
         let ambientOcclusionTexture =
-            match GlRenderer3d.tryGetRenderAsset ambientOcclusionImage renderer with
+            match GlRenderer3d.tryGetRenderAsset material.AmbientOcclusionImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
         let emissionTexture =
-            match GlRenderer3d.tryGetRenderAsset emissionImage renderer with
+            match GlRenderer3d.tryGetRenderAsset material.EmissionImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
         let normalTexture =
-            match GlRenderer3d.tryGetRenderAsset normalImage renderer with
+            match GlRenderer3d.tryGetRenderAsset material.NormalImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
         let heightTexture =
-            match GlRenderer3d.tryGetRenderAsset heightImage renderer with
+            match GlRenderer3d.tryGetRenderAsset material.HeightImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
         let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
@@ -2403,16 +2406,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if rl.DesireShadows then
                     renderer.LightsDesiringShadows.[rl.LightId] <- light
             | RenderBillboard rb ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.AlbedoImage rb.RoughnessImage rb.MetallicImage rb.AmbientOcclusionImage rb.EmissionImage rb.NormalImage rb.HeightImage renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.Material renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardMaterial, renderer.BillboardGeometry)
                 GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.AlbedoImage rbs.RoughnessImage rbs.MetallicImage rbs.AmbientOcclusionImage rbs.EmissionImage rbs.NormalImage rbs.HeightImage renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.Material renderer
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, Assimp.MetadataEmpty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardMaterial, renderer.BillboardGeometry)
                 for (modelMatrix, insetOpt) in rbs.Billboards do
                     GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
-                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.AlbedoImage rbps.RoughnessImage rbps.MetallicImage rbps.AmbientOcclusionImage rbps.EmissionImage rbps.NormalImage rbps.HeightImage renderer
+                let billboardMaterial = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.Material renderer
                 for particle in rbps.Particles do
                     let billboardMatrix =
                         Matrix4x4.CreateFromTrs
