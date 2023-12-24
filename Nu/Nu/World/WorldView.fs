@@ -51,13 +51,7 @@ module WorldView =
                       ModelMatrix = billboard.ModelMatrix
                       InsetOpt = billboard.InsetOpt
                       MaterialProperties = billboard.MaterialProperties
-                      AlbedoImage = billboard.AlbedoImage
-                      RoughnessImage = billboard.RoughnessImage
-                      MetallicImage = billboard.MetallicImage
-                      AmbientOcclusionImage = billboard.AmbientOcclusionImage
-                      EmissionImage = billboard.EmissionImage
-                      NormalImage = billboard.NormalImage
-                      HeightImage = billboard.HeightImage
+                      Material = billboard.Material
                       RenderType = billboard.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderBillboard renderBillboard) world

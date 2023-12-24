@@ -153,13 +153,7 @@ module Effect =
                             let emitter =
                                 { emitter with
                                     Body = descriptor.Body
-                                    AlbedoImage = descriptor.AlbedoImage
-                                    RoughnessImage = descriptor.RoughnessImage
-                                    MetallicImage = descriptor.MetallicImage
-                                    AmbientOcclusionImage = descriptor.AmbientOcclusionImage
-                                    EmissionImage = descriptor.EmissionImage
-                                    NormalImage = descriptor.NormalImage
-                                    HeightImage = descriptor.HeightImage
+                                    Material = descriptor.Material
                                     RenderType = emitter.RenderType
                                     ParticleSeed = descriptor.ParticleSeed
                                     Constraint = descriptor.Constraint }
