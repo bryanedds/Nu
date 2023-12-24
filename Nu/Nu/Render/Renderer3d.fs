@@ -2541,6 +2541,17 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Enable OpenGL.EnableCap.TextureCubeMapSeamless
         OpenGL.Hl.Assert ()
 
+        // query extensions
+        let mutable extensionsCount = 0
+        let mutable extensions = hashSetPlus StringComparer.Ordinal []
+        OpenGL.Gl.GetInteger (OpenGL.GetPName.NumExtensions, &extensionsCount)
+        for i in 0 .. dec extensionsCount do
+            extensions.Add (OpenGL.Gl.GetString (OpenGL.StringName.Extensions, uint i)) |> ignore<bool>
+
+        // assert that GL_ARB_bindless_texture is available
+        if not (extensions.Contains "GL_ARB_bindless_texture") then
+            Log.trace "Bindless textures required to run Nu."
+
         // create sky box shader
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
         OpenGL.Hl.Assert ()
