@@ -26,6 +26,7 @@ module Assets =
         let [<Literal>] BorderName = "Border"
         let [<Literal>] BlockName = "Block"
         let [<Literal>] BoxName = "Box"
+        let [<Literal>] AnimatedSpriteName = "AnimatedSprite"
         let [<Literal>] NuSlideName = "NuSlide"
         let [<Literal>] Character2dIdleImageName = "Character2dIdle"
         let [<Literal>] Character2dJumpImageName = "Character2dJump"
