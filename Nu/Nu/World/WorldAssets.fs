@@ -28,6 +28,7 @@ module Assets =
         let [<Uniform>] Border = asset<Image> PackageName Assets.Default.BorderName
         let [<Uniform>] Block = asset<Image> PackageName Assets.Default.BlockName
         let [<Uniform>] Box = asset<Image> PackageName Assets.Default.BoxName
+        let [<Uniform>] AnimatedSprite = asset<Image> PackageName Assets.Default.AnimatedSpriteName
         let [<Uniform>] NuSlide = asset<Image> PackageName Assets.Default.NuSlideName
         let [<Uniform>] Character2dIdleImage = asset<Image> PackageName Assets.Default.Character2dIdleImageName
         let [<Uniform>] Character2dJumpImage = asset<Image> PackageName Assets.Default.Character2dJumpImageName

@@ -123,12 +123,12 @@ module AnimatedSpriteFacetModule =
 
         static member Properties =
             [define Entity.StartTime GameTime.zero
-             define Entity.CelSize (Vector2 (12.0f, 12.0f))
+             define Entity.CelSize (Vector2 (48.0f, 48.0f))
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AnimationStride 1
-             define Entity.AnimationSheet Assets.Default.Block
+             define Entity.AnimationSheet Assets.Default.AnimatedSprite
              define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Emission Color.Zero
