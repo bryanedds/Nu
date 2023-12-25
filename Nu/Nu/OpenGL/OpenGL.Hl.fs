@@ -24,9 +24,9 @@ module Hl =
     let mutable private DrawCalls = 0
 
     /// Initialize OpenGL assertion mechanism.
-    let Init assertEnabled =
+    let InitAssert enabled =
         if not Initialized then
-            AssertEnabled <- assertEnabled
+            AssertEnabled <- enabled
             Initialized <- true
 
     /// Assert a lack of Gl error. Has an generic parameter to enable value pass-through.
@@ -50,7 +50,7 @@ module Hl =
         | DebugSeverity.DontCare
         | _ -> ()
 
-    let DebugMessageProc =
+    let private DebugMessageProc =
         Gl.DebugProc DebugMessageListener
 
     /// Listen to the OpenGL error stream.
@@ -73,6 +73,28 @@ module Hl =
         Log.info ("Initialized OpenGL " + version + ".")
         Assert ()
         glContext
+
+    /// Initialize OpenGL context once created.
+    let InitContext () =
+
+        // listen to debug messages
+        AttachDebugMessageCallback ()
+        Assert ()
+        
+        // globally configure opengl for physically-based rendering
+        OpenGL.Gl.Enable OpenGL.EnableCap.TextureCubeMapSeamless
+        Assert ()
+
+        // query extensions
+        let mutable extensionsCount = 0
+        let extensions = hashSetPlus StringComparer.Ordinal []
+        OpenGL.Gl.GetInteger (OpenGL.GetPName.NumExtensions, &extensionsCount)
+        for i in 0 .. dec extensionsCount do
+            extensions.Add (OpenGL.Gl.GetString (OpenGL.StringName.Extensions, uint i)) |> ignore<bool>
+
+        // assert that GL_ARB_bindless_texture is available
+        if not (extensions.Contains "GL_ARB_bindless_texture") then
+            Log.trace "Bindless textures required to run Nu."
 
     /// Begin an OpenGL frame.
     let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =

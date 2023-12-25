@@ -40,7 +40,7 @@ void main()
 #version 410 core
 #extension GL_ARB_bindless_texture : require
 
-layout(bindless_sampler) uniform sampler2D albedoTexture;
+layout (bindless_sampler) uniform sampler2D albedoTexture;
 
 in vec2 texCoordsOut;
 flat in vec4 albedoOut;

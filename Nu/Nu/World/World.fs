@@ -36,7 +36,7 @@ module Nu =
             Vsync.Init nuConfig.RunSynchronously
 
             // init OpenGL assert mechanism
-            OpenGL.Hl.Init
+            OpenGL.Hl.InitAssert
 #if DEBUG
                 Constants.OpenGL.HlAssert
 #else

@@ -82,8 +82,8 @@ type RendererInline () =
                         window.CreateWfglContext ()
                         OpenGL.Hl.Assert ()
 
-                    // listen to debug messages
-                    OpenGL.Hl.AttachDebugMessageCallback ()
+                    // initialize gl context
+                    OpenGL.Hl.InitContext ()
                     OpenGL.Hl.Assert ()
 
                     // create 3d renderer
@@ -333,8 +333,8 @@ type RendererThread () =
                     window.CreateWfglContext ()
                     OpenGL.Hl.Assert ()
 
-                // listen to debug messages
-                OpenGL.Hl.AttachDebugMessageCallback ()
+                // initialize gl context
+                OpenGL.Hl.InitContext ()
                 OpenGL.Hl.Assert ()
 
                 // create 3d renderer
