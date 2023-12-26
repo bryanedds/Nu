@@ -1279,6 +1279,7 @@ module EffectFacetModule =
             World.renderView renderPass view world
 
             // render particles
+            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
             let particleSystem = entity.GetParticleSystem world
             let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
             for descriptor in descriptors do
@@ -1295,6 +1296,7 @@ module EffectFacetModule =
                         RenderBillboardParticles
                             { Absolute = descriptor.Absolute
                               MaterialProperties = descriptor.MaterialProperties
+                              IgnoreLightMaps = ignoreLightMaps
                               Material = descriptor.Material
                               Particles = descriptor.Particles
                               RenderType = descriptor.RenderType
@@ -2204,13 +2206,15 @@ module StaticBillboardFacetModule =
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
+            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; Material = material
+                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt
+                      MaterialProperties = properties; IgnoreLightMaps = ignoreLightMaps; Material = material
                       RenderType = renderType; RenderPass = renderPass })
                 world
 
@@ -2427,6 +2431,7 @@ module BasicStaticBillboardEmitterFacetModule =
 
         override this.Render (renderPass, entity, world) =
             let time = world.GameTime
+            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem |>
@@ -2455,6 +2460,7 @@ module BasicStaticBillboardEmitterFacetModule =
                             (RenderBillboardParticles
                                 { Absolute = descriptor.Absolute
                                   MaterialProperties = properties
+                                  IgnoreLightMaps = ignoreLightMaps
                                   Material = material
                                   Particles = descriptor.Particles
                                   RenderType = descriptor.RenderType
@@ -2561,12 +2567,13 @@ module StaticModelSurfaceFacetModule =
                 let affineMatrix = transform.AffineMatrix
                 let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
+                let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
                 let staticModel = entity.GetStaticModel world
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, staticModel, surfaceIndex, renderType, renderPass, world)
+                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, ignoreLightMaps, staticModel, surfaceIndex, renderType, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -2625,9 +2632,10 @@ module AnimatedModelFacetModule =
             let localTime = world.GameTime - startTime
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
+            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, animations, animatedModel, renderPass, world)
+            World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, ignoreLightMaps, animations, animatedModel, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             let animatedModel = entity.GetAnimatedModel world

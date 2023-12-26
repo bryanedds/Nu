@@ -8,7 +8,7 @@ module Assets =
 
     [<RequireQualifiedAccess>]
     module Global =
-        
+
         let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
         let [<Literal>] OverlayerFilePath = "Overlayer.nuol"
 

@@ -72,12 +72,12 @@ module WorldRender =
             (World.getRendererProcess world).RenderStaticModelFast (absolute, &modelMatrix, presence, insetOpt, &materialProperties, staticModel, renderType, renderPass)
 
         /// Send a message to the render system to render a static model surface using a fast path.
-        static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, staticModel, surfaceIndex, renderType, renderPass, world) =
-            (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, insetOpt, &materialProperties, staticModel, surfaceIndex, renderType, renderPass)
+        static member renderStaticModelSurfaceFast (absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, ignoreLightMaps, staticModel, surfaceIndex, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelSurfaceFast (absolute, &modelMatrix, insetOpt, &materialProperties, ignoreLightMaps, staticModel, surfaceIndex, renderType, renderPass)
 
         /// Send a message to the render system to render an animated model using a fast path.
-        static member renderAnimatedModelFast (time, absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, animations, animatedModel, renderPass, world) =
-            (World.getRendererProcess world).RenderAnimatedModelFast (time, absolute, &modelMatrix, insetOpt, &materialProperties, animations, animatedModel, renderPass)
+        static member renderAnimatedModelFast (time, absolute, modelMatrix : Matrix4x4 inref, insetOpt, materialProperties : MaterialProperties inref, ignoreLightMaps, animations, animatedModel, renderPass, world) =
+            (World.getRendererProcess world).RenderAnimatedModelFast (time, absolute, &modelMatrix, insetOpt, &materialProperties, ignoreLightMaps, animations, animatedModel, renderPass)
 
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)

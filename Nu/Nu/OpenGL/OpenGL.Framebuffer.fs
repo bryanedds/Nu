@@ -161,15 +161,15 @@ module Framebuffer =
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, materialId, 0)
         Hl.Assert ()
 
-        // create normal and height buffer
-        let normalAndHeightId = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, normalAndHeightId)
+        // create normal plus buffer
+        let normalPlusId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, normalPlusId)
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.ResolutionX, Constants.Render.ResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, normalAndHeightId, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, normalPlusId, 0)
         Hl.Assert ()
 
         // associate draw buffers
@@ -191,18 +191,18 @@ module Framebuffer =
             let position = Texture.Texture.make positionId
             let albedo = Texture.Texture.make albedoId
             let material = Texture.Texture.make materialId
-            let normalAndHeight = Texture.Texture.make normalAndHeightId
-            Right (position, albedo, material, normalAndHeight, renderbuffer, framebuffer)
+            let normalPlus = Texture.Texture.make normalPlusId
+            Right (position, albedo, material, normalPlus, renderbuffer, framebuffer)
         else Left "Could not create complete geometry framebuffer."
 
     /// Destroy geometry buffers.
-    let DestroyGeometryBuffers (position : Texture.Texture, albedo : Texture.Texture, material : Texture.Texture, normalAndHeight : Texture.Texture, renderbuffer, framebuffer) =
+    let DestroyGeometryBuffers (position : Texture.Texture, albedo : Texture.Texture, material : Texture.Texture, normalPlus : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         Texture.Texture.destroy position
         Texture.Texture.destroy albedo
         Texture.Texture.destroy material
-        Texture.Texture.destroy normalAndHeight
+        Texture.Texture.destroy normalPlus
 
     /// Create light mapping buffers.
     let TryCreateLightMappingBuffers () =

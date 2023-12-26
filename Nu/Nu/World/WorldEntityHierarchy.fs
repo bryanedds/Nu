@@ -111,7 +111,7 @@ module WorldEntityHierarchy =
             
         /// Attempt to freeze an entity hierarchy where certain types of children's rendering functionality are baked
         /// into a manually renderable array.
-        static member freezeEntityHierarchy (parent : Entity) wtemp =
+        static member freezeEntityHierarchy (presenceConferred : Presence) (parent : Entity) wtemp =
             let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
             let rec getFrozenArtifacts (entity : Entity) =
                 [|if entity <> parent then
@@ -149,10 +149,11 @@ module WorldEntityHierarchy =
                         let entityBounds = transform.Bounds3d
                         let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
                         let properties = entity.GetMaterialProperties world
+                        let ignoreLightMaps = presenceConferred.IgnoreLightMaps
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
                         let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                        let surface = { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
+                        let surface = { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; IgnoreLightMaps = ignoreLightMaps; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
                         Choice3Of3 (PairValue.make entityBounds surface)
                         boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                         world <- entity.SetVisibleLocal false world
@@ -214,7 +215,8 @@ module FreezeFacetModule =
         member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
         member this.UpdateFrozenHierarchy world =
             if this.GetFrozen world then
-                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeEntityHierarchy this world
+                let presenceConferred = this.GetPresenceConferred world
+                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeEntityHierarchy presenceConferred this world
                 let world = this.SetFrozenRenderLightProbes3d frozenProbes world
                 let world = this.SetFrozenRenderLights3d frozenLights world
                 let world = this.SetFrozenRenderStaticModelSurfaces frozenSurfaces world
@@ -287,7 +289,7 @@ module FreezeFacetModule =
                     let bounds = &boundsAndSurface.Fst
                     let surface = &boundsAndSurface.Snd
                     if intersects false false presenceConferred bounds then
-                        World.renderStaticModelSurfaceFast (surface.Absolute, &surface.ModelMatrix, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
+                        World.renderStaticModelSurfaceFast (surface.Absolute, &surface.ModelMatrix, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, surface.IgnoreLightMaps, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =
