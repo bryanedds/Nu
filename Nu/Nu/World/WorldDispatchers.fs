@@ -510,7 +510,7 @@ module StaticModelDispatcherModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -526,7 +526,7 @@ module AnimatedModelDispatcherModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
 [<AutoOpen>]
@@ -553,7 +553,7 @@ module RigidModelDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModel { StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
 
@@ -574,7 +574,7 @@ module StaticModelSurfaceDispatcherModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -605,7 +605,7 @@ module RigidModelSurfaceDispatcherModule =
             [define Entity.InsetOpt None
              define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyStaticModelSurface { SurfaceIndex = 0; StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred]
@@ -681,7 +681,7 @@ module Character3dDispatcherModule =
              typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.MaterialProperties MaterialProperties.defaultProperties
+            [define Entity.MaterialProperties MaterialProperties.empty
              define Entity.AnimatedModel Assets.Default.AnimatedModel
              define Entity.BodyType Dynamic
              define Entity.Friction 1.0f

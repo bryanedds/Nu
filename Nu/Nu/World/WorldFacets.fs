@@ -1279,7 +1279,8 @@ module EffectFacetModule =
             World.renderView renderPass view world
 
             // render particles
-            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
+            let presence = entity.GetPresence world
+            let ignoreLightMaps = presence.IgnoreLightMaps
             let particleSystem = entity.GetParticleSystem world
             let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
             for descriptor in descriptors do
@@ -2203,10 +2204,11 @@ module StaticBillboardFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
+            let ignoreLightMaps = presence.IgnoreLightMaps
             let material = entity.GetMaterial world
-            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
@@ -2431,7 +2433,8 @@ module BasicStaticBillboardEmitterFacetModule =
 
         override this.Render (renderPass, entity, world) =
             let time = world.GameTime
-            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
+            let presence = entity.GetPresence world
+            let ignoreLightMaps = presence.IgnoreLightMaps
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem |>
@@ -2489,7 +2492,7 @@ module StaticModelFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel]
 
@@ -2553,7 +2556,7 @@ module StaticModelSurfaceFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.SurfaceIndex 0]
@@ -2565,9 +2568,10 @@ module StaticModelSurfaceFacetModule =
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
+                let presence = transform.Presence
                 let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
-                let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
+                let ignoreLightMaps = presence.IgnoreLightMaps
                 let staticModel = entity.GetStaticModel world
                 let renderType =
                     match entity.GetRenderStyle world with
@@ -2620,7 +2624,7 @@ module AnimatedModelFacetModule =
         static member Properties =
             [define Entity.StartTime GameTime.zero
              define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
+             define Entity.MaterialProperties MaterialProperties.empty
              define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
@@ -2628,11 +2632,12 @@ module AnimatedModelFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
             let startTime = entity.GetStartTime world
             let localTime = world.GameTime - startTime
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
-            let ignoreLightMaps = (entity.GetPresence world).IgnoreLightMaps
+            let ignoreLightMaps = presence.IgnoreLightMaps
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
             World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, ignoreLightMaps, animations, animatedModel, renderPass, world)
