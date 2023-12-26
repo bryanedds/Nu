@@ -767,6 +767,7 @@ module EffectSystem =
                           ModelMatrix = affineMatrix
                           InsetOpt = insetOpt
                           MaterialProperties = properties
+                          IgnoreLightMaps = effectSystem.EffectPresence.IgnoreLightMaps
                           Material = material
                           RenderType = effectSystem.EffectRenderType }
                 addView modelView effectSystem

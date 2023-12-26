@@ -31,14 +31,14 @@ layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
-layout (location = 10) in float height;
+layout (location = 10) in vec2 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
-flat out float heightOut;
+flat out vec2 heightPlusOut;
 
 void main()
 {
@@ -50,7 +50,7 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
-    heightOut = height;
+    heightPlusOut = heightPlus;
     gl_Position = projection * view * positionOut;
 }
 
@@ -74,12 +74,12 @@ in vec2 texCoordsOut;
 in vec3 normalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
-flat in float heightOut;
+flat in vec2 heightPlusOut;
 
 layout (location = 0) out vec4 position;
 layout (location = 1) out vec3 albedo;
 layout (location = 2) out vec4 material;
-layout (location = 3) out vec4 normalAndHeight;
+layout (location = 3) out vec4 normalPlus;
 
 void main()
 {
@@ -101,7 +101,7 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).r * heightOut;
+    float height = texture(heightTexture, texCoordsOut).x * heightPlusOut.x;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
@@ -117,7 +117,7 @@ void main()
     float emission = texture(emissionTexture, texCoords).r * materialOut.a;
     material = vec4(roughness, metallic, ambientOcclusion, emission);
 
-    // compute normal and height
-    normalAndHeight.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
-    normalAndHeight.a = height;
+    // compute normal and ignore local height maps
+    normalPlus.xyz = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
+    normalPlus.w = heightPlusOut.y;
 }

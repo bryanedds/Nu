@@ -214,6 +214,7 @@ module LightMap =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
 
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
@@ -223,6 +224,7 @@ module LightMap =
         let colorUniform = Gl.GetUniformLocation (shader, "color")
         let brightnessUniform = Gl.GetUniformLocation (shader, "brightness")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
+        Hl.Assert ()
 
         // make shader record
         { ViewUniform = viewUniform

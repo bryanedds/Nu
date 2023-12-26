@@ -248,6 +248,7 @@ module CubeMap =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
 
         // retrieve uniforms
         let viewUniform = Gl.GetUniformLocation (shader, "view")
