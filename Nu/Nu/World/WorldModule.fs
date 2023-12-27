@@ -99,10 +99,6 @@ module WorldModule =
 
     type World with // Caching
 
-        /// Get the optional cached entity.
-        static member internal getEntityCachedOpt world =
-            world.EntityCachedOpt
-
         /// Get the simulants.
         static member internal getSimulants world =
             world.Simulants
