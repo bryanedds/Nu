@@ -51,31 +51,21 @@ module PhysicallyBased =
     type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         { HashCode : int
           SurfaceNames : string array
-          SurfaceMetadata : IReadOnlyDictionary<string, Assimp.Metadata.Entry>
           SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
           SurfaceMatrix : Matrix4x4
           SurfaceBounds : Box3
           SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
           SurfaceMaterial : PhysicallyBasedMaterial
+          SurfaceNode : Assimp.Node
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
         member this.RenderStyleOpt =
-            if  this.SurfaceMetadata.ContainsKey Constants.Render.DeferredName ||
-                this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.DeferredName then
-                Some Deferred
-            elif 
-                this.SurfaceMetadata.ContainsKey Constants.Render.ForwardName ||
-                this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.ForwardName then
-                Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
-            else
-                match this.SurfaceMetadata.TryGetValue "RenderStyle" with
-                | (true, entry) ->
-                    match entry.DataType with
-                    | Assimp.MetaDataType.String ->
-                        try entry.Data :?> string |> scvalueMemo |> Some
-                        with _ -> None
-                    | _ -> None
-                | (false, _) -> None
+            if   this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.DeferredName then Some Deferred
+            elif this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.ForwardName then Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
+            else this.SurfaceNode.RenderStyleOpt
+
+        member this.PresenceOpt =
+            this.SurfaceNode.PresenceOpt
 
         static member inline hash surface =
             surface.HashCode
@@ -92,7 +82,7 @@ module PhysicallyBased =
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member make names metadata (surfaceMatrix : Matrix4x4) bounds properties material geometry =
+        static member make names (surfaceMatrix : Matrix4x4) bounds properties material surfaceNode geometry =
             let hashCode =
                 (int material.AlbedoTexture.TextureId) ^^^
                 (int material.RoughnessTexture.TextureId <<< 2) ^^^
@@ -106,12 +96,12 @@ module PhysicallyBased =
                 (int geometry.PhysicallyBasedVao <<< 18)
             { HashCode = hashCode
               SurfaceNames = names
-              SurfaceMetadata = metadata
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
               SurfaceMatrix = surfaceMatrix
               SurfaceBounds = bounds
               SurfaceMaterialProperties = properties
               SurfaceMaterial = material
+              SurfaceNode = surfaceNode
               PhysicallyBasedGeometry = geometry }
 
         member this.Equals that =
@@ -1351,7 +1341,7 @@ module PhysicallyBased =
                                 let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                 let (properties, material) = materials.[materialIndex]
                                 let geometry = geometries.[meshIndex]
-                                let surface = PhysicallyBasedSurface.make names node.Metadata transform geometry.Bounds properties material geometry
+                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material node geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                 surfaces.Add surface
                                 yield PhysicallyBasedSurface surface|] |>

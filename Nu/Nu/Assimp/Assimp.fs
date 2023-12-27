@@ -42,10 +42,6 @@ type BatchPhase =
 [<RequireQualifiedAccess>]
 module Assimp =
 
-    /// The empty metadata dictionary.
-    let MetadataEmpty =
-        readOnlyDict<string, Assimp.Metadata.Entry> Seq.empty
-
     /// Convert a matrix from an Assimp representation to Nu's.
     let ExportMatrix (m : Assimp.Matrix4x4) =
         Matrix4x4
@@ -145,7 +141,11 @@ module Assimp =
 [<AutoOpen>]
 module AssimpExtensions =
 
-    let private AnimationChannelsDict = dictPlus HashIdentity.Reference []
+    let private AnimationChannelsDict =
+        dictPlus HashIdentity.Reference []
+
+    let private NodeEmpty =
+        Assimp.Node ()
 
     type [<Struct>] private BoneInfo =
         { BoneTransformOffset : Assimp.Matrix4x4
@@ -313,6 +313,10 @@ module AssimpExtensions =
     /// Node extensions.
     type Assimp.Node with
 
+        /// The empty assimp node.
+        /// NOTE: Do NOT modify this as it is a globally shared stand-in for unavailble assimp nodes!
+        static member Empty = NodeEmpty
+
         /// Get the world transform of the node.
         member this.TransformWorld =
             let mutable parentOpt = this.Parent
@@ -347,6 +351,34 @@ module AssimpExtensions =
                 let child = child.Map<'a> (worldNames, worldTransform, mapper)
                 node.Add child
             node
+
+        member this.RenderStyleOpt =
+            if   this.Metadata.ContainsKey Constants.Render.DeferredName then Some Deferred
+            elif this.Metadata.ContainsKey Constants.Render.ForwardName then Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
+            else
+                match this.Metadata.TryGetValue "RenderStyle" with
+                | (true, entry) ->
+                    match entry.DataType with
+                    | Assimp.MetaDataType.String ->
+                        try entry.Data :?> string |> scvalueMemo |> Some
+                        with _ -> None
+                    | _ -> None
+                | (false, _) -> None
+
+        member this.PresenceOpt =
+            if   this.Metadata.ContainsKey (nameof Interior) then Some Interior
+            elif this.Metadata.ContainsKey (nameof Exterior) then Some Exterior
+            elif this.Metadata.ContainsKey (nameof Imposter) then Some Imposter
+            elif this.Metadata.ContainsKey (nameof Omnipresent) then Some Omnipresent
+            else
+                match this.Metadata.TryGetValue "Presence" with
+                | (true, entry) ->
+                    match entry.DataType with
+                    | Assimp.MetaDataType.String ->
+                        try entry.Data :?> string |> scvalueMemo |> Some
+                        with _ -> None
+                    | _ -> None
+                | (false, _) -> None
 
     type Assimp.Scene with
 
