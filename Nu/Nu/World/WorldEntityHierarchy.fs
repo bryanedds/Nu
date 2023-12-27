@@ -85,11 +85,12 @@ module WorldEntityHierarchy =
                                 if Matrix4x4.Decompose (transform, &scale, &rotation, &position)
                                 then (position, rotation, scale, world)
                                 else (transform.Translation, quatIdentity, transform.Scale, world) // use translation and scale, even from invalid transform
+                            let presence = Option.defaultValue presenceConferred surface.PresenceOpt
                             let renderStyle = match surface.RenderStyleOpt with Some rs -> rs | None -> Deferred
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
-                            let world = child.SetPresence presenceConferred world
+                            let world = child.SetPresence presence world
                             let world = child.SetStatic true world
                             let world = if mountToParent then child.SetMountOpt (Some (Relation.makeParent ())) world else world
                             let world = child.SetSurfaceIndex i world
