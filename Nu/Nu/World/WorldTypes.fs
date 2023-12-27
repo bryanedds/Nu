@@ -1562,13 +1562,12 @@ and [<ReferenceEquality>] World =
     internal
         { // cache line 1 (assuming 16 byte header)
           EventGraph : EventGraph
-          EntityCachedOpt : KeyedCache<KeyValuePair<Entity, SUMap<Entity, EntityState>>, EntityState>
           EntityStates : SUMap<Entity, EntityState>
           GroupStates : UMap<Group, GroupState>
           ScreenStates : UMap<Screen, ScreenState>
           GameState : GameState
-          // cache line 2
           EntityMounts : UMap<Entity, Entity USet>
+          // cache line 2
           mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
           mutable Octree : Entity Octree MutantCache // mutated when Imperative
           mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative

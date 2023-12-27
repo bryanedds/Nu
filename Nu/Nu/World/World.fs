@@ -449,7 +449,6 @@ module WorldModule3 =
             let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin }
             let world =
                 { EventGraph = eventGraph
-                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityStates = entityStates
                   GroupStates = groupStates
                   ScreenStates = screenStates
