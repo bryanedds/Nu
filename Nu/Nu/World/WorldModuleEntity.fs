@@ -2200,7 +2200,7 @@ module WorldModuleEntity =
                                 MutantCache.mutateMutant
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
                                     (fun quadtree ->
-                                        let entityState = World.getEntityState entity worldOld
+                                        let entityState = World.getEntityState entity world
                                         let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                                         Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
                                         quadtree)
@@ -2211,7 +2211,7 @@ module WorldModuleEntity =
                                 MutantCache.mutateMutant
                                     (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
                                     (fun octree ->
-                                        let entityState = World.getEntityState entity worldOld
+                                        let entityState = World.getEntityState entity world
                                         let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                                         Octree.removeElement entityState.Presence entityState.Bounds element octree
                                         octree)
