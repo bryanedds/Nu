@@ -52,4 +52,4 @@ module TemplateFacet =
 
         override this.Render (renderPass, entity, world) =
             // TODO: optionally implement rendering code for the faceted entity.
-            world
+            ()
