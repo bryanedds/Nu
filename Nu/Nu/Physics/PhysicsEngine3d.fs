@@ -49,11 +49,11 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
 type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : DynamicsWorld
-          Constraints : OrderedDictionary<JointId, TypedConstraint>
-          NonStaticBodies : OrderedDictionary<BodyId, Vector3 option * RigidBody>
-          Bodies : OrderedDictionary<BodyId, RigidBody>
-          Ghosts : OrderedDictionary<BodyId, GhostObject>
-          Objects : OrderedDictionary<BodyId, CollisionObject>
+          Constraints : Dictionary<JointId, TypedConstraint>
+          NonStaticBodies : Dictionary<BodyId, Vector3 option * RigidBody>
+          Bodies : Dictionary<BodyId, RigidBody>
+          Ghosts : Dictionary<BodyId, GhostObject>
+          Objects : Dictionary<BodyId, CollisionObject>
           CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
           CollisionsGround : Dictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
@@ -690,11 +690,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         world.Gravity <- gravity
         let physicsEngine =
             { PhysicsContext = world
-              Constraints = OrderedDictionary HashIdentity.Structural
-              NonStaticBodies = OrderedDictionary HashIdentity.Structural
-              Bodies = OrderedDictionary HashIdentity.Structural
-              Ghosts = OrderedDictionary HashIdentity.Structural
-              Objects = OrderedDictionary HashIdentity.Structural
+              Constraints = Dictionary HashIdentity.Structural
+              NonStaticBodies = Dictionary HashIdentity.Structural
+              Bodies = Dictionary HashIdentity.Structural
+              Ghosts = Dictionary HashIdentity.Structural
+              Objects = Dictionary HashIdentity.Structural
               CollisionsFiltered = dictPlus HashIdentity.Structural []
               CollisionsGround = dictPlus HashIdentity.Structural []
               CollisionConfiguration = collisionConfiguration

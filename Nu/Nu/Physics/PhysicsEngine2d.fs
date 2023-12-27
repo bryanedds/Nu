@@ -17,8 +17,8 @@ open Prime
 type [<ReferenceEquality>] PhysicsEngine2d =
     private
         { PhysicsContext : Dynamics.World
-          Bodies : OrderedDictionary<BodyId, Vector3 option * Dynamics.Body>
-          Joints : OrderedDictionary<JointId, Dynamics.Joints.Joint>
+          Bodies : Dictionary<BodyId, Vector3 option * Dynamics.Body>
+          Joints : Dictionary<JointId, Dynamics.Joints.Joint>
           PhysicsMessages : PhysicsMessage List
           IntegrationMessages : IntegrationMessage List
           CollisionHandler : OnCollisionEventHandler
@@ -470,8 +470,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages
         let physicsEngine =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
-              Bodies = OrderedDictionary<BodyId, Vector3 option * Dynamics.Body> (HashIdentity.FromFunctions BodyId.hash BodyId.equals)
-              Joints = OrderedDictionary<JointId, Dynamics.Joints.Joint> HashIdentity.Structural
+              Bodies = Dictionary<BodyId, Vector3 option * Dynamics.Body> (HashIdentity.FromFunctions BodyId.hash BodyId.equals)
+              Joints = Dictionary<JointId, Dynamics.Joints.Joint> HashIdentity.Structural
               PhysicsMessages = List ()
               IntegrationMessages = integrationMessages
               CollisionHandler = collisionHandler
