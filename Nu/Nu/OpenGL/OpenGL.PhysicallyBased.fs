@@ -56,6 +56,7 @@ module PhysicallyBased =
           SurfaceBounds : Box3
           SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
           SurfaceMaterial : PhysicallyBasedMaterial
+          SurfaceMaterialIndex : int
           SurfaceNode : Assimp.Node
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
@@ -82,7 +83,7 @@ module PhysicallyBased =
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
-        static member make names (surfaceMatrix : Matrix4x4) bounds properties material surfaceNode geometry =
+        static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
             let hashCode =
                 (int material.AlbedoTexture.TextureId) ^^^
                 (int material.RoughnessTexture.TextureId <<< 2) ^^^
@@ -101,6 +102,7 @@ module PhysicallyBased =
               SurfaceBounds = bounds
               SurfaceMaterialProperties = properties
               SurfaceMaterial = material
+              SurfaceMaterialIndex = materialIndex
               SurfaceNode = surfaceNode
               PhysicallyBasedGeometry = geometry }
 
@@ -1170,8 +1172,8 @@ module PhysicallyBased =
         CreatePhysicallyBasedStaticGeometry (renderable, PrimitiveType.Triangles, vertexData.AsMemory (), indexData.AsMemory (), bounds)
 
     /// Create a physically-based surface.
-    let CreatePhysicallyBasedSurface (surfaceNames, surfaceMetadata, surfaceMatrix, surfaceBounds, properties, material, geometry) =
-        PhysicallyBasedSurface.make surfaceNames surfaceMetadata surfaceMatrix surfaceBounds properties material geometry
+    let CreatePhysicallyBasedSurface (surfaceNames, surfaceMetadata, surfaceMatrix, surfaceBounds, properties, material, materialIndex, geometry) =
+        PhysicallyBasedSurface.make surfaceNames surfaceMetadata surfaceMatrix surfaceBounds properties material materialIndex geometry
 
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if renderable = false.
@@ -1223,6 +1225,7 @@ module PhysicallyBased =
         | None -> Right geometries
 
     /// Attempt to create physically-based animated geometries from an assimp scene.
+    /// TODO: consider deduplicating geometry like in TryCreatePhysicallyBasedStaticGeometries?
     let TryCreatePhysicallyBasedAnimatedGeometries (renderable, filePath, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let geometries = SList.make ()
@@ -1257,7 +1260,7 @@ module PhysicallyBased =
                     Left ("Could not load assimp scene from '" + filePath + "' due to: " + scstring exn)
 
             // already exists
-            | (true, texture) -> Right texture
+            | (true, scene) -> Right scene
 
         // attempt to import from assimp scene
         match sceneEir with
@@ -1341,7 +1344,7 @@ module PhysicallyBased =
                                 let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                 let (properties, material) = materials.[materialIndex]
                                 let geometry = geometries.[meshIndex]
-                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material node geometry
+                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                 surfaces.Add surface
                                 yield PhysicallyBasedSurface surface|] |>

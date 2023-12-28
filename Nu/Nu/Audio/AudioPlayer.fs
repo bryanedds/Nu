@@ -132,11 +132,13 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 None
         | _ -> None
 
-    static member private tryLoadAudioPackage reloading packageName audioPlayer =
+    static member private tryLoadAudioPackage packageName audioPlayer =
+
+        // attempt to make new asset graph and load its assets
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Audio) packageName assetGraph with
-            | Right assets ->
+            | Right assetsCollected ->
 
                 // find or create audio package
                 let audioPackage =
@@ -147,37 +149,64 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                         audioPlayer.AudioPackages.[packageName] <- audioPackage
                         audioPackage
 
-                // reload assets if specified
-                if reloading then
-                    for asset in assets do
-                        if  match audioPackage.Assets.TryGetValue asset.AssetTag.AssetName with
-                            | (true, (_, audioAsset)) -> SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer
-                            | (false, _) -> true
-                        then
-                            match SdlAudioPlayer.tryLoadAudioAsset asset with
-                            | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, audioAsset)
-                            | None -> ()
+                // categorize existing assets based on the required action
+                let assetsExisting = audioPackage.Assets
+                let assetsToFree = Dictionary ()
+                let assetsToKeep = Dictionary ()
+                for assetEntry in assetsExisting do
+                    let assetName = assetEntry.Key
+                    let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
+                    let lastWriteTime' =
+                        try File.GetLastWriteTime filePath
+                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                    if lastWriteTime < lastWriteTime'
+                    then assetsToFree.Add (filePath, audioAsset)
+                    else assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
 
-                // otherwise create assets
-                else
-                    for asset in assets do
-                        match SdlAudioPlayer.tryLoadAudioAsset asset with
-                        | Some audioAsset -> audioPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, audioAsset)
-                        | None -> ()
+                // attempt to free assets
+                for assetEntry in assetsToFree do
+                    let filePath = assetEntry.Key
+                    let audioAsset = assetEntry.Value
+                    if not (SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer) then
+                        assetsToKeep.Add (filePath, (DateTime (), filePath, audioAsset))
 
-            | Left error ->
-                Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
+                // categorize assets to load
+                let assetsToLoad = HashSet ()
+                for asset in assetsCollected do
+                    if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
+                        assetsToLoad.Add asset |> ignore<bool>
+
+                // load assets
+                let assetsLoaded = Dictionary ()
+                for asset in assetsToLoad do
+                    match SdlAudioPlayer.tryLoadAudioAsset asset with
+                    | Some audioAsset ->
+                        let lastWriteTime =
+                            try File.GetLastWriteTime asset.FilePath
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
+                    | None -> ()
+
+                // insert assets into package
+                for assetEntry in Seq.append assetsToKeep assetsLoaded do
+                    let assetName = assetEntry.Key
+                    let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
+                    audioPackage.Assets.[assetName] <- (lastWriteTime, filePath, audioAsset)
+
+            // handle error cases
+            | Left failedAssetNames ->
+                Log.info ("Audio package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->
             Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
 
     static member private tryGetAudioAsset (assetTag : AssetTag) audioPlayer =
         match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
-        | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map snd
+        | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
         | None ->
             Log.info ("Loading Audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-            SdlAudioPlayer.tryLoadAudioPackage false assetTag.PackageName audioPlayer
+            SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
             match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
-            | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map snd
+            | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
             | None -> None
 
     static member private playSong playSongMessage audioPlayer =
@@ -206,7 +235,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
 
     static member private handleLoadAudioPackage packageName audioPlayer =
-        SdlAudioPlayer.tryLoadAudioPackage false packageName audioPlayer
+        SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
 
     static member private handleUnloadAudioPackage packageName audioPlayer =
         match Dictionary.tryFind packageName  audioPlayer.AudioPackages with
@@ -215,7 +244,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             // (which is very bad according to the API docs).
             SdlAudioPlayer.haltSound ()
             for asset in package.Assets do
-                match snd asset.Value with
+                match __c asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
             audioPlayer.AudioPackages.Remove packageName |> ignore
@@ -251,7 +280,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     static member private handleReloadAudioAssets audioPlayer =
         let packageNames = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
-            SdlAudioPlayer.tryLoadAudioPackage true packageName audioPlayer
+            SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
 
     static member private handleAudioMessage audioMessage audioPlayer =
         match audioMessage with

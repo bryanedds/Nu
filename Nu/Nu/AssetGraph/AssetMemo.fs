@@ -12,7 +12,7 @@ open Nu
 module AssetMemo =
 
     /// Memoize assets in parallel.
-    let memoizeParallel is2d (assets : Asset list) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo) =
+    let memoizeParallel is2d (assets : Asset seq) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo) =
 
         // collect memoizable assets
         let textureAssets = List ()

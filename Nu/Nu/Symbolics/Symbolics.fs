@@ -60,7 +60,11 @@ module Symbolics =
                         symbolPackage
                 for asset in assets do
                     match tryLoadSymbol3 metadata packageName asset with
-                    | Some symbol -> symbolPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, symbol)
+                    | Some symbol ->
+                        let lastWriteTime =
+                            try File.GetLastWriteTime asset.FilePath
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                        symbolPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, symbol)
                     | None -> ()
             | Left error ->
                 Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
@@ -70,12 +74,12 @@ module Symbolics =
     /// Attempt to load a symbol with the given asset tag.
     let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolics =
         match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
-        | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map snd
+        | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
         | None ->
             Log.info ("Loading Symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
             tryLoadSymbolPackage assetTag.PackageName metadata symbolics
             match Dictionary.tryFind assetTag.PackageName symbolics.SymbolPackages with
-            | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map snd
+            | Some package -> package.Assets |> Dictionary.tryFind assetTag.AssetName |> Option.map __c
             | None -> None
 
     /// Unload a symbol package with the given name.
@@ -103,7 +107,7 @@ module Symbolics =
             let packageName = packageEntry.Key
             let packageValue = packageEntry.Value
             for entry in packageValue.Assets do
-                let metadata = fst (snd entry.Value)
+                let metadata = fst (__c entry.Value)
                 tryLoadSymbolPackage packageName metadata symbolics
 
     /// Empty symbolics.
