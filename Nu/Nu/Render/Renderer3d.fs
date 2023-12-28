@@ -634,7 +634,7 @@ type [<ReferenceEquality>] private GlPackageState3d =
 /// The internally used cached asset package.
 type [<NoEquality; NoComparison>] private RenderPackageCached =
     { CachedPackageName : string
-      CachedPackageAssets : Dictionary<string, string * RenderAsset> }
+      CachedPackageAssets : Dictionary<string, DateTime * string * RenderAsset> }
 
 /// The internally used cached asset descriptor.
 type [<NoEquality; NoComparison>] private RenderAssetCached =
@@ -784,11 +784,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
             OpenGL.Hl.Assert ()
 
-    static member private tryLoadRenderPackage reloading packageName renderer =
+    static member private tryLoadRenderPackage packageName renderer =
+
+        // attempt to make new asset graph and load its assets
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
-            | Right assets ->
+            | Right assetsCollected ->
 
                 // find or create render package
                 let renderPackage =
@@ -800,33 +802,92 @@ type [<ReferenceEquality>] GlRenderer3d =
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
 
-                // free assets if specified
-                if reloading then
+                // categorize existing assets based on the required action
+                let assetsExisting = renderPackage.Assets
+                let assetsToFree = Dictionary ()
+                let assetsToKeep = Dictionary ()
+                for assetEntry in assetsExisting do
+                    let assetName = assetEntry.Key
+                    let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
+                    let lastWriteTime' =
+                        try File.GetLastWriteTime filePath
+                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                    if lastWriteTime < lastWriteTime'
+                    then assetsToFree.Add (filePath, renderAsset)
+                    else assetsToKeep.Add (assetName, (lastWriteTime, filePath, renderAsset))
 
-                    // clear package
-                    renderPackage.Assets.Clear ()
+                // free assets, including memo entries
+                for assetEntry in assetsToFree do
+                    let filePath = assetEntry.Key
+                    let renderAsset = assetEntry.Value
+                    match renderAsset with
+                    | RawAsset -> ()
+                    | TextureAsset _ -> renderPackage.PackageState.TextureMemo.Textures.Remove filePath |> ignore<bool>
+                    | FontAsset _ -> ()
+                    | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapMemo.CubeMaps.Remove cubeMapKey |> ignore<bool>
+                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.AssimpSceneMemo.AssimpScenes.Remove filePath |> ignore<bool>
+                    GlRenderer3d.freeRenderAsset renderAsset renderer
 
-                    // clear memos
-                    renderPackage.PackageState.TextureMemo.Textures.Clear ()
-                    renderPackage.PackageState.CubeMapMemo.CubeMaps.Clear ()
-                    renderPackage.PackageState.AssimpSceneMemo.AssimpScenes.Clear ()
-
-                    // free assets
-                    for asset in assets do
-                        match renderPackage.Assets.TryGetValue asset.AssetTag.AssetName with
-                        | (true, (_, renderAsset)) -> GlRenderer3d.freeRenderAsset renderAsset renderer
-                        | (false, _) -> ()
+                // categorize assets to load
+                let assetsToLoad = HashSet ()
+                for asset in assetsCollected do
+                    if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
+                        assetsToLoad.Add asset |> ignore<bool>
 
                 // memoize assets in parallel
                 AssetMemo.memoizeParallel
-                    false assets renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
+                    false assetsToLoad renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
 
                 // load assets
-                for asset in assets do
+                let assetsLoaded = Dictionary ()
+                for asset in assetsToLoad do
                     match GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
-                    | Some renderAsset -> renderPackage.Assets.[asset.AssetTag.AssetName] <- (asset.FilePath, renderAsset)
+                    | Some renderAsset ->
+                        let lastWriteTime =
+                            try File.GetLastWriteTime asset.FilePath
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, renderAsset)
                     | None -> ()
 
+                // update assets to keep
+                let assetsUpdated =
+                    [|for assetEntry in assetsToKeep do
+                        let assetName = assetEntry.Key
+                        let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
+                        let dirPath = PathF.GetDirectoryName filePath
+                        let renderAsset =
+                            match renderAsset with
+                            | RawAsset | TextureAsset _ | FontAsset _ | CubeMapAsset _ ->
+                                renderAsset
+                            | StaticModelAsset (userDefined, staticModel) ->
+                                match staticModel.SceneOpt with
+                                | Some scene when not userDefined ->
+                                    let surfaces =
+                                        [|for surface in staticModel.Surfaces do
+                                            let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureMemo, material)
+                                            { surface with SurfaceMaterial = material }|]
+                                    StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
+                                | Some _ | None -> renderAsset
+                            | AnimatedModelAsset animatedModel ->
+                                match animatedModel.SceneOpt with
+                                | Some scene ->
+                                    let surfaces =
+                                        [|for surface in animatedModel.Surfaces do
+                                            let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureMemo, material)
+                                            { surface with SurfaceMaterial = material }|]
+                                    AnimatedModelAsset { animatedModel with Surfaces = surfaces }
+                                | None -> renderAsset
+                        KeyValuePair (assetName, (lastWriteTime, filePath, renderAsset))|]
+
+                // insert assets into package
+                for assetEntry in Seq.append assetsUpdated assetsLoaded do
+                    let assetName = assetEntry.Key
+                    let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
+                    renderPackage.Assets.[assetName] <- (lastWriteTime, filePath, renderAsset)
+
+            // handle error cases
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->
@@ -838,7 +899,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             match renderer.RenderPackages.TryGetValue assetTag.PackageName with
             | (true, package) ->
                 match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, (filePath, _)) -> Some filePath
+                | (true, (_, filePath, _)) -> Some filePath
                 | (false, _) -> None
             | (false, _) -> None
         | ValueNone -> None
@@ -853,7 +914,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.RenderPackageCachedOpt.CachedPackageName = assetTag.PackageName then
             let assets = renderer.RenderPackageCachedOpt.CachedPackageAssets
             match assets.TryGetValue assetTag.AssetName with
-            | (true, (_, asset)) ->
+            | (true, (_, _, asset)) ->
                 renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
                 ValueSome asset
             | (false, _) -> ValueNone
@@ -862,18 +923,18 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Some package ->
                 renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
                 match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, (_, asset)) ->
+                | (true, (_, _, asset)) ->
                     renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
                     ValueSome asset
                 | (false, _) -> ValueNone
             | None ->
                 Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
+                GlRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, package) ->
                     renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
                     match package.Assets.TryGetValue assetTag.AssetName with
-                    | (true, (_, asset)) ->
+                    | (true, (_, _, asset)) ->
                         renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
                         ValueSome asset
                     | (false, _) -> ValueNone
@@ -906,13 +967,13 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // ensure target package is loaded if possible
         if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
-            GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
+            GlRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
 
         // free any existing user-created static model, also determining if target asset can be user-created
         match renderer.RenderPackages.TryGetValue assetTag.PackageName with
         | (true, package) ->
             match package.Assets.TryGetValue assetTag.AssetName with
-            | (true, (_, asset)) ->
+            | (true, (_, _, asset)) ->
                 match asset with
                 | StaticModelAsset (userDefined, _) when userDefined -> GlRenderer3d.freeRenderAsset asset renderer
                 | _ -> ()
@@ -923,7 +984,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // ensure target package is loaded if possible
         if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
-            GlRenderer3d.tryLoadRenderPackage false assetTag.PackageName renderer
+            GlRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
 
         // determine if target asset can be created
         let canCreateUserDefinedStaticModel =
@@ -995,7 +1056,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedStaticGeometry (true, OpenGL.PrimitiveType.Triangles, vertexData, indexData, surfaceDescriptor.Bounds) // TODO: consider letting user specify primitive drawing type.
 
                 // create surface
-                let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, surfaceDescriptor.ModelMatrix, surfaceDescriptor.Bounds, properties, material, Assimp.Node.Empty, geometry)
+                let surface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, surfaceDescriptor.ModelMatrix, surfaceDescriptor.Bounds, properties, material, -1, Assimp.Node.Empty, geometry)
                 surfaces.Add surface
 
             // create user-defined static model
@@ -1013,10 +1074,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             // assign model as appropriate render package asset
             match renderer.RenderPackages.TryGetValue assetTag.PackageName with
             | (true, package) ->
-                package.Assets.[assetTag.AssetName] <- ("", StaticModelAsset (true, model))
+                package.Assets.[assetTag.AssetName] <- (DateTime (), "", StaticModelAsset (true, model))
             | (false, _) ->
                 let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
-                let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName ("", StaticModelAsset (true, model)); PackageState = packageState }
+                let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (DateTime (), "", StaticModelAsset (true, model)); PackageState = packageState }
                 renderer.RenderPackages.[assetTag.PackageName] <- package
 
         // attempted to replace a loaded asset
@@ -1156,13 +1217,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         | None -> None
 
     static member private handleLoadRenderPackage hintPackageName renderer =
-        GlRenderer3d.tryLoadRenderPackage false hintPackageName renderer
+        GlRenderer3d.tryLoadRenderPackage hintPackageName renderer
 
     static member private handleUnloadRenderPackage hintPackageName renderer =
         GlRenderer3d.invalidateCaches renderer
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
-            for (_, asset) in package.Assets.Values do GlRenderer3d.freeRenderAsset asset renderer
+            for (_, _, asset) in package.Assets.Values do GlRenderer3d.freeRenderAsset asset renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
@@ -1170,7 +1231,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         GlRenderer3d.invalidateCaches renderer
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
-            GlRenderer3d.tryLoadRenderPackage true packageName renderer
+            GlRenderer3d.tryLoadRenderPackage packageName renderer
 
     static member private getRenderTasks renderPass renderer =
         match renderer.RenderTasksDictionary.TryGetValue renderPass with
@@ -2420,11 +2481,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.LightsDesiringShadows.[rl.LightId] <- light
             | RenderBillboard rb ->
                 let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.Material renderer
-                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, Assimp.Node.Empty, renderer.BillboardGeometry)
+                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                 GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, rb.IgnoreLightMaps, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
                 let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.Material renderer
-                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, Assimp.Node.Empty, renderer.BillboardGeometry)
+                let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                 for (modelMatrix, insetOpt) in rbs.Billboards do
                     GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, rbs.IgnoreLightMaps, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
@@ -2436,7 +2497,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                              particle.Transform.Rotation,
                              particle.Transform.Size * particle.Transform.Scale)
                     let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
-                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, Assimp.Node.Empty, renderer.BillboardGeometry)
+                    let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                     GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, false, rbps.MaterialProperties, rbps.IgnoreLightMaps, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
@@ -2852,7 +2913,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.LightMaps.Clear ()
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
-            for (_, asset) in renderAssets do GlRenderer3d.freeRenderAsset asset renderer
+            for (_, _, asset) in renderAssets do GlRenderer3d.freeRenderAsset asset renderer
             renderer.RenderPackages.Clear ()
             OpenGL.Framebuffer.DestroyGeometryBuffers renderer.GeometryBuffers
             OpenGL.Framebuffer.DestroyLightMappingBuffers renderer.LightMappingBuffers
