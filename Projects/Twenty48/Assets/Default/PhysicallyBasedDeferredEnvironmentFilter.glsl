@@ -23,7 +23,7 @@ const int LIGHT_MAPS_MAX = 27;
 uniform vec3 eyeCenter;
 layout (bindless_sampler) uniform sampler2D positionTexture;
 layout (bindless_sampler) uniform sampler2D materialTexture;
-layout (bindless_sampler) uniform sampler2D normalAndHeightTexture;
+layout (bindless_sampler) uniform sampler2D normalPlusTexture;
 layout (bindless_sampler) uniform sampler2D lightMappingTexture;
 layout (bindless_sampler) uniform samplerCube environmentFilterMap;
 layout (bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
@@ -50,7 +50,7 @@ vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapM
 void main()
 {
     // retrieve normal and height values first, allowing for early-out
-    vec3 normal = texture(normalAndHeightTexture, texCoordsOut).rgb;
+    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
     if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
 
     // retrieve remaining data from geometry buffers

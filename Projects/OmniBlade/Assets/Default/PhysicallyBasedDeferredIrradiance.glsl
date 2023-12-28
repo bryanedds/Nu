@@ -19,7 +19,7 @@ void main()
 const float PI = 3.141592654;
 const int LIGHT_MAPS_MAX = 27;
 
-layout (bindless_sampler) uniform sampler2D normalAndHeightTexture;
+layout (bindless_sampler) uniform sampler2D normalPlusTexture;
 layout (bindless_sampler) uniform sampler2D lightMappingTexture;
 layout (bindless_sampler) uniform samplerCube irradianceMap;
 layout (bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
@@ -31,7 +31,7 @@ out vec4 frag;
 void main()
 {
     // retrieve normal and height values first, allowing for early-out
-    vec3 normal = texture(normalAndHeightTexture, texCoordsOut).rgb;
+    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
     if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
 
     // retrieve light mapping data

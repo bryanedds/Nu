@@ -31,14 +31,14 @@ layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
-layout (location = 10) in float height;
+layout (location = 10) in vec2 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
-flat out float heightOut;
+flat out vec2 heightPlusOut;
 
 void main()
 {
@@ -50,7 +50,7 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = mat3(model) * normal;
-    heightOut = height;
+    heightPlusOut = heightPlus;
     gl_Position = projection * view * positionOut;
 }
 
@@ -108,7 +108,7 @@ in vec2 texCoordsOut;
 in vec3 normalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
-flat in float heightOut;
+flat in vec2 heightPlusOut;
 
 out vec4 frag;
 
@@ -192,8 +192,8 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * position;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(heightTexture, texCoordsOut).r;
-    vec2 parallax = toEyeTangent.xy * height * heightOut;
+    float height = texture(heightTexture, texCoordsOut).x * heightPlusOut.x;
+    vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo with alpha
@@ -209,6 +209,9 @@ void main()
     float metallic = texture(metallicTexture, texCoords).g * materialOut.g;
     float ambientOcclusion = texture(ambientOcclusionTexture, texCoords).b * materialOut.b;
     vec3 emission = vec3(texture(emissionTexture, texCoords).r * materialOut.a);
+
+    // compute ignore light maps
+    bool ignoreLightMaps = heightPlusOut.y != 0.0;
 
     // compute lightAccum term
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
@@ -286,8 +289,8 @@ void main()
     }
 
     // determine light map indices, including their validity
-    int lm1 = lightMapsCount > 0 ? 0 : -1;
-    int lm2 = lightMapsCount > 1 ? 1 : -1;
+    int lm1 = lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
+    int lm2 = lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
     if (lm1 != -1 && !inBounds(position, lightMapMins[lm1], lightMapSizes[lm1])) { lm1 = lm2; lm2 = -1; }
     if (lm2 != -1 && !inBounds(position, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
 
@@ -297,7 +300,7 @@ void main()
     if (lm1 == -1 && lm2 == -1)
     {
         irradiance = texture(irradianceMap, n).rgb;
-        vec3 r = reflect(-v, n);
+        vec3 r = reflect(-v, n);    
         environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
     }
     else if (lm2 == -1)
