@@ -380,6 +380,19 @@ module AssimpExtensions =
                     | _ -> None
                 | (false, _) -> None
 
+        member this.TwoSidedOpt : bool option =
+            match this.Metadata.TryGetValue Constants.Render.TwoSidedName with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    let dataStr = entry.Data :?> string
+                    if not (String.IsNullOrEmpty dataStr) then
+                        try entry.Data :?> string |> scvalueMemo |> Some
+                        with _ -> Some true
+                    else Some true
+                | _ -> Some true
+            | (false, _) -> None
+
     type Assimp.Scene with
 
         member this.IndexDatasToMetadata () =

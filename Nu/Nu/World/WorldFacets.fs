@@ -2458,7 +2458,8 @@ module BasicStaticBillboardEmitterFacetModule =
                               AmbientOcclusionImageOpt = match emitterMaterial.AmbientOcclusionImageOpt with ValueSome ambientOcclusionImage -> ValueSome ambientOcclusionImage | ValueNone -> descriptor.Material.AmbientOcclusionImageOpt
                               EmissionImageOpt = match emitterMaterial.EmissionImageOpt with ValueSome emissionImage -> ValueSome emissionImage | ValueNone -> descriptor.Material.EmissionImageOpt
                               NormalImageOpt = match emitterMaterial.NormalImageOpt with ValueSome normalImage -> ValueSome normalImage | ValueNone -> descriptor.Material.NormalImageOpt
-                              HeightImageOpt = match emitterMaterial.HeightImageOpt with ValueSome heightImage -> ValueSome heightImage | ValueNone -> descriptor.Material.HeightImageOpt }
+                              HeightImageOpt = match emitterMaterial.HeightImageOpt with ValueSome heightImage -> ValueSome heightImage | ValueNone -> descriptor.Material.HeightImageOpt
+                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt }
                         Some
                             (RenderBillboardParticles
                                 { Absolute = descriptor.Absolute

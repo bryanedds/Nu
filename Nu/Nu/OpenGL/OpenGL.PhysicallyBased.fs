@@ -68,6 +68,9 @@ module PhysicallyBased =
         member this.PresenceOpt =
             this.SurfaceNode.PresenceOpt
 
+        member this.TwoSidedOpt =
+            this.SurfaceNode.TwoSidedOpt
+
         static member inline hash surface =
             surface.HashCode
 
@@ -301,7 +304,7 @@ module PhysicallyBased =
     /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
     /// inverted to smoothness (such as when a model is imported from an fbx exported from a Unity scene).
     /// Thread-safe if renderable = false.
-    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, material : Assimp.Material) =
+    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, twoSidedOpt, textureMemo, material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -513,6 +516,11 @@ module PhysicallyBased =
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture
 
+        let twoSided =
+            match twoSidedOpt with
+            | Some twoSided -> twoSided
+            | None -> material.IsTwoSided
+
         // make properties
         let properties =
             { Albedo = color albedo.R albedo.G albedo.B albedo.A
@@ -532,7 +540,7 @@ module PhysicallyBased =
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
               HeightTexture = heightTexture
-              TwoSided = material.IsTwoSided }
+              TwoSided = twoSided }
 
         // fin
         (properties, material)
@@ -1182,7 +1190,7 @@ module PhysicallyBased =
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, scene.Materials.[i])
+                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, None, textureMemo, scene.Materials.[i])
                 propertiesAndMaterials.[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
@@ -1343,6 +1351,7 @@ module PhysicallyBased =
                                 let meshIndex = node.MeshIndices.[i]
                                 let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                 let (properties, material) = materials.[materialIndex]
+                                let material = { material with TwoSided = match node.TwoSidedOpt with Some twoSided -> twoSided | None -> material.TwoSided }
                                 let geometry = geometries.[meshIndex]
                                 let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)

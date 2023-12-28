@@ -99,7 +99,8 @@ type [<SymbolicExpansion; Struct>] Material =
       AmbientOcclusionImageOpt : Image AssetTag voption
       EmissionImageOpt : Image AssetTag voption
       NormalImageOpt : Image AssetTag voption
-      HeightImageOpt : Image AssetTag voption }
+      HeightImageOpt : Image AssetTag voption
+      TwoSidedOpt : bool voption }
 
     member this.AlbedoImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName) this.AlbedoImageOpt
     member this.RoughnessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName) this.RoughnessImageOpt
@@ -108,6 +109,7 @@ type [<SymbolicExpansion; Struct>] Material =
     member this.EmissionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName) this.EmissionImageOpt
     member this.NormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialNormalName) this.NormalImageOpt
     member this.HeightImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
+    member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
 
     static member defaultMaterial =
         { AlbedoImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName)
@@ -116,7 +118,8 @@ type [<SymbolicExpansion; Struct>] Material =
           AmbientOcclusionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName)
           EmissionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName)
           NormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialNormalName)
-          HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) }
+          HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName)
+          TwoSidedOpt = ValueSome false }
 
     static member empty =
         Unchecked.defaultof<Material>
@@ -865,7 +868,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let surfaces =
                                         [|for surface in staticModel.Surfaces do
                                             let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureMemo, material)
+                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, surface.TwoSidedOpt, renderPackage.PackageState.TextureMemo, material)
                                             { surface with SurfaceMaterial = material }|]
                                     StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
                                 | Some _ | None -> renderAsset
@@ -875,7 +878,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let surfaces =
                                         [|for surface in animatedModel.Surfaces do
                                             let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureMemo, material)
+                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, surface.TwoSidedOpt, renderPackage.PackageState.TextureMemo, material)
                                             { surface with SurfaceMaterial = material }|]
                                     AnimatedModelAsset { animatedModel with Surfaces = surfaces }
                                 | None -> renderAsset
