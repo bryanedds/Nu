@@ -34,7 +34,7 @@ layout (location = 6) in mat4 model;
 layout (location = 10) in vec4 texCoordsOffset;
 layout (location = 11) in vec4 albedo;
 layout (location = 12) in vec4 material;
-layout (location = 13) in float height;
+layout (location = 13) in vec2 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -43,7 +43,7 @@ out vec4 blendsOut[2];
 out vec3 tintOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
-flat out float heightOut;
+flat out vec2 heightPlusOut;
 
 void main()
 {
@@ -55,7 +55,7 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
-    heightOut = height;
+    heightPlusOut = heightPlus;
     blendsOut[0] = blends[0];
     blendsOut[1] = blends[1];
     tintOut = tint;
@@ -84,12 +84,12 @@ in vec4 blendsOut[2];
 in vec3 tintOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
-flat in float heightOut;
+flat in vec2 heightPlusOut;
 
 layout (location = 0) out vec4 position;
 layout (location = 1) out vec3 albedo;
 layout (location = 2) out vec4 material;
-layout (location = 3) out vec4 normalAndHeight;
+layout (location = 3) out vec4 normalPlus;
 
 void main()
 {
@@ -110,10 +110,10 @@ void main()
     mat3 toWorld = mat3(tangent, binormal, normal);
     mat3 toTangent = transpose(toWorld);
 
-    // compute height blend and height
+    // compute height blend, height, and ignore local light maps
     float heightBlend = 0.0;
     for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * blendsOut[i/4][i%4];
-    float height = heightBlend * heightOut;
+    float height = heightBlend * heightPlusOut.x;
 
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
@@ -140,9 +140,9 @@ void main()
     // discard on zero alpha
     if (albedoBlend.a == 0.0f) discard;
 
-    // populate albedo, material, and normalAndHeight
+    // populate albedo, material, and normalPlus
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
-    normalAndHeight.xyz = normalize(toWorld * normalize(normalBlend));
-    normalAndHeight.a = height;
+    normalPlus.xyz = normalize(toWorld * normalize(normalBlend));
+    normalPlus.w = heightPlusOut.y;
 }
