@@ -469,7 +469,6 @@ module WorldModule2 =
             let world = World.reloadRenderAssets3d world
             let world = World.reloadAudioAssets world
             let world = World.reloadSymbols world
-            Metadata.regenerateMetadata ()
             world
 
         /// Attempt to reload the asset graph.
@@ -487,9 +486,9 @@ module WorldModule2 =
                 match AssetGraph.tryMakeFromFile (outputDirectory + "/" + Assets.Global.AssetGraphFilePath) with
                 | Right assetGraph ->
 
-                    // build and reload assets
+                    // rebuild and reload assets
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    Metadata.generateMetadata (World.getImperative world) assetGraph
+                    Metadata.regenerateMetadata ()
                     let world = World.reloadExistingAssets world
                     let world = World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
                     (Right assetGraph, world)
