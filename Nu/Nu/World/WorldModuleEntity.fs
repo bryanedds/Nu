@@ -2124,7 +2124,7 @@ module WorldModuleEntity =
             let isNew = not (World.getEntityExists entity world)
             if isNew || mayReplace then
 
-                // get old world for entity tree rebuild and change events
+                // get old world for entity tree rebuild
                 let worldOld = world
                 
                 // add entity to world
@@ -2198,7 +2198,7 @@ module WorldModuleEntity =
                         if World.getEntityIs2d entity world then
                             let quadtree =
                                 MutantCache.mutateMutant
-                                    (fun () -> world.WorldExtension.Dispatchers.RebuildQuadtree world)
+                                    (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
                                     (fun quadtree ->
                                         let entityState = World.getEntityState entity world
                                         let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
@@ -2209,7 +2209,7 @@ module WorldModuleEntity =
                         else
                             let octree =
                                 MutantCache.mutateMutant
-                                    (fun () -> world.WorldExtension.Dispatchers.RebuildOctree world)
+                                    (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
                                     (fun octree ->
                                         let entityState = World.getEntityState entity world
                                         let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
