@@ -5,7 +5,6 @@ namespace OpenGL
 open System
 open System.Collections.Generic
 open System.Numerics
-open System.IO
 open FSharp.NativeInterop
 open Prime
 open Nu

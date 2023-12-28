@@ -3,10 +3,8 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Numerics
 open ImGuiNET
-open ImGuizmoNET
 open Prime
 
 [<RequireQualifiedAccess>]

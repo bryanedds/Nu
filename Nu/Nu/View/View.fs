@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Numerics
 open Prime
 
 /// A tag interface for describing an emitter.
