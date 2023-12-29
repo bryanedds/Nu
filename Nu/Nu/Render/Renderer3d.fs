@@ -10,12 +10,6 @@ open System.Runtime.InteropServices
 open SDL2
 open Prime
 
-//////////////////////////////////////////////////////////////////////////////////////////
-// TODO: optimize billboard rendering with some sort of batch renderer.                 //
-// TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
-// TODO: account for Flip in billboards.                                                //
-//////////////////////////////////////////////////////////////////////////////////////////
-
 /// A layer from which a 3d terrain's material is composed.
 type TerrainLayer =
     { AlbedoImage : Image AssetTag
