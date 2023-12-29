@@ -1613,7 +1613,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                  renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
-        batchPhase blending viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties * bool) SList)
+        batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties * bool) SList)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure there are surfaces to render
@@ -1652,7 +1652,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // draw deferred surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-                (batchPhase, blending, viewArray, projectionArray, bonesArray, eyeCenter,
+                (batchPhase, viewArray, projectionArray, bonesArray, eyeCenter,
                  parameters.Length, renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedForwardSurfaces
@@ -2186,7 +2186,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | 1 -> SingletonPhase
                     | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    batchPhase false viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value
+                    batchPhase viewAbsoluteArray geometryProjectionArray [||] eyeCenter entry.Value
                     entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
                 OpenGL.Hl.Assert ()
                 i <- inc i
@@ -2201,7 +2201,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                batchPhase false viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value
+                batchPhase viewRelativeArray geometryProjectionArray [||] eyeCenter entry.Value
                 entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
             OpenGL.Hl.Assert ()
             i <- inc i
@@ -2213,7 +2213,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let struct (bones, parameters) = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                    SingletonPhase false viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters
+                    SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters
                     surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -2223,7 +2223,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let struct (bones, parameters) = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) bones
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                SingletonPhase false viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters
+                SingletonPhase viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters
                 surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
