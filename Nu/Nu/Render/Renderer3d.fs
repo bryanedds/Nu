@@ -11,7 +11,6 @@ open SDL2
 open Prime
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
 // TODO: account for Flip in billboards.                                                //
@@ -772,12 +771,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         | RawAsset _ ->
             () // nothing to do
         | TextureAsset (_, texture) ->
-            OpenGL.Texture.Texture.destroy texture
+            OpenGL.Texture.DestroyTexture texture
             OpenGL.Hl.Assert ()
         | FontAsset (_, font) ->
             SDL_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, _) ->
-            OpenGL.Texture.Texture.destroy cubeMap
+            OpenGL.Texture.DestroyTexture cubeMap
             OpenGL.Hl.Assert ()
         | StaticModelAsset (_, model) ->
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
@@ -2109,7 +2108,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                              OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
 
                     // destroy reflection map
-                    OpenGL.Texture.Texture.destroy reflectionMap
+                    OpenGL.Texture.DestroyTexture reflectionMap
 
                     // create light map
                     let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds irradianceMap environmentFilterMap
@@ -2897,20 +2896,20 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedForwardStaticShader.PhysicallyBasedShader
             OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedBlurShader.PhysicallyBasedBlurShader
             OpenGL.Gl.DeleteProgram renderer.PhysicallyBasedFxaaShader.PhysicallyBasedFxaaShader
-            OpenGL.Gl.DeleteVertexArrays [|renderer.CubeMapGeometry.CubeMapVao|] // TODO: P1: also release vertex and index buffers?
-            OpenGL.Gl.DeleteVertexArrays [|renderer.BillboardGeometry.PhysicallyBasedVao|] // TODO: P1: also release vertex and index buffers?
-            OpenGL.Gl.DeleteVertexArrays [|renderer.PhysicallyBasedQuad.PhysicallyBasedVao|] // TODO: P1: also release vertex and index buffers?
-            OpenGL.Texture.Texture.destroy renderer.CubeMap
-            OpenGL.Texture.Texture.destroy renderer.BrdfTexture
-            OpenGL.Texture.Texture.destroy renderer.IrradianceMap
-            OpenGL.Texture.Texture.destroy renderer.EnvironmentFilterMap
-            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.AlbedoTexture
-            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.RoughnessTexture
-            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.MetallicTexture
-            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
-            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.EmissionTexture
-            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.NormalTexture
-            OpenGL.Texture.Texture.destroy renderer.PhysicallyBasedMaterial.HeightTexture
+            OpenGL.CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry
+            OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.BillboardGeometry
+            OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.PhysicallyBasedQuad
+            OpenGL.Texture.DestroyTexture renderer.CubeMap
+            OpenGL.Texture.DestroyTexture renderer.BrdfTexture
+            OpenGL.Texture.DestroyTexture renderer.IrradianceMap
+            OpenGL.Texture.DestroyTexture renderer.EnvironmentFilterMap
+            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.AlbedoTexture
+            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.RoughnessTexture
+            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.MetallicTexture
+            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
+            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.EmissionTexture
+            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.NormalTexture
+            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.HeightTexture
             for lightMap in renderer.LightMaps.Values do OpenGL.LightMap.DestroyLightMap lightMap
             renderer.LightMaps.Clear ()
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)

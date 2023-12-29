@@ -169,7 +169,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset _ -> ()
-        | TextureAsset (_, texture) -> OpenGL.Texture.Texture.destroy texture
+        | TextureAsset (_, texture) -> OpenGL.Texture.DestroyTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
@@ -666,7 +666,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             OpenGL.Hl.Assert ()
 
                             // make texture drawable
-                            let textTexture = OpenGL.Texture.Texture.make textTextureId
+                            let textTexture = OpenGL.Texture.CreateTextureFromId textTextureId
                             OpenGL.Hl.Assert ()
 
                             // draw text sprite
@@ -678,7 +678,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                             // destroy texture
                             SDL.SDL_FreeSurface textSurfacePtr
-                            OpenGL.Texture.Texture.destroy textTexture
+                            OpenGL.Texture.DestroyTexture textTexture
                             OpenGL.Hl.Assert ()
 
                     // fin

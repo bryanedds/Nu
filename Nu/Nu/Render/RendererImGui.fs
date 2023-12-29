@@ -6,7 +6,7 @@ open ImGuiNET
 open Prime
 
 /// Renders an imgui view.
-/// NOTE: API is object-oriented / mutation-based because it's ported from a port of a port.
+/// NOTE: API is object-oriented / mutation-based because it's ported from a port.
 type RendererImGui =
     abstract Initialize : ImFontAtlasPtr -> unit
     abstract Render : ImDrawDataPtr -> unit
@@ -47,7 +47,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
     let mutable shaderFontTextureUniform = 0
     let mutable fontTextureWidth = 0
     let mutable fontTextureHeight = 0
-    let mutable fontTexture = OpenGL.Texture.Texture.empty
+    let mutable fontTexture = Unchecked.defaultof<OpenGL.Texture.Texture>
     do ignore windowWidth
 
     interface RendererImGui with
@@ -244,7 +244,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             OpenGL.Hl.Assert ()
 
             // destroy font texture
-            OpenGL.Texture.Texture.destroy fontTexture
+            OpenGL.Texture.DestroyTexture fontTexture
 
 [<RequireQualifiedAccess>]
 module GlRendererImGui =
