@@ -9,7 +9,7 @@ open Nu
 [<AutoOpen>]
 module ImGuiIOPtr =
 
-    // HACK: allows manual tracking of mouse and keyboard event swallowing since Dead ImGui doesn't seem to yet have
+    // HACK: allows manual tracking of mouse and keyboard event swallowing since Dear ImGui doesn't seem to yet have
     // it worked out - https://github.com/ocornut/imgui/issues/3370
     let mutable internal wantCaptureMousePlus = false
     let mutable internal wantCaptureKeyboardPlus = false
