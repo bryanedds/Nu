@@ -112,7 +112,7 @@ module WorldEntityHierarchy =
             
         /// Attempt to freeze an entity hierarchy where certain types of children's rendering functionality are baked
         /// into a manually renderable array.
-        static member freezeEntityHierarchy (presenceConferred : Presence) (parent : Entity) wtemp =
+        static member freezeEntityHierarchy (parent : Entity) wtemp =
             let mutable (world, boundsOpt) = (wtemp, Option<Box3>.None) // using mutation because I was in a big hurry when I wrote this
             let rec getFrozenArtifacts (entity : Entity) =
                 [|if entity <> parent then
@@ -150,7 +150,8 @@ module WorldEntityHierarchy =
                         let entityBounds = transform.Bounds3d
                         let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
                         let properties = entity.GetMaterialProperties world
-                        let ignoreLightMaps = presenceConferred.IgnoreLightMaps
+                        let presence = entity.GetPresence world
+                        let ignoreLightMaps = presence.IgnoreLightMaps
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
                         let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
@@ -216,8 +217,7 @@ module FreezeFacetModule =
         member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
         member this.UpdateFrozenHierarchy world =
             if this.GetFrozen world then
-                let presenceConferred = this.GetPresenceConferred world
-                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeEntityHierarchy presenceConferred this world
+                let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeEntityHierarchy this world
                 let world = this.SetFrozenRenderLightProbes3d frozenProbes world
                 let world = this.SetFrozenRenderLights3d frozenLights world
                 let world = this.SetFrozenRenderStaticModelSurfaces frozenSurfaces world
