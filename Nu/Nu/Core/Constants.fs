@@ -202,6 +202,11 @@ module Associations =
     let [<Literal>] Audio = "Audio"
 
 [<RequireQualifiedAccess>]
+module Gui =
+
+    let [<Uniform>] DisabledColor = Color (0.75f, 0.75f, 0.75f, 0.75f)
+
+[<RequireQualifiedAccess>]
 module TileMap =
 
     let [<Literal>] AnimationPropertyName = "A"

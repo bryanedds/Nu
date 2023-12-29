@@ -2587,7 +2587,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
 
         // clear render tasks
-        // TODO: P1: find some way to purge unused render tasks.
+        // TODO: P1: find some way to purge unused render tasks (ForgetfulDictionary?)
         for renderTasks in renderer.RenderTasksDictionary.Values do
             RenderTasks.clear renderTasks
 
