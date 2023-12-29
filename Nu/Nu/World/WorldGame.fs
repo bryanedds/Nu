@@ -69,6 +69,7 @@ module WorldGameModule =
         member this.MouseX2ChangeEvent = Events.MouseX2ChangeEvent --> Game.Handle
         member this.MouseX2DownEvent = Events.MouseX2DownEvent --> Game.Handle
         member this.MouseX2UpEvent = Events.MouseX2UpEvent --> Game.Handle
+        member this.MouseWheelEvent = Events.MouseWheelEvent --> Game.Handle
         member this.KeyboardKeyChangeEvent = Events.KeyboardKeyChangeEvent --> Game.Handle
         member this.KeyboardKeyDownEvent = Events.KeyboardKeyDownEvent --> Game.Handle
         member this.KeyboardKeyUpEvent = Events.KeyboardKeyUpEvent --> Game.Handle

@@ -16,6 +16,10 @@ type MouseButtonData =
       Button : MouseButton
       Down : bool }
 
+/// The data for a mouse wheel event.
+type MouseWheelData =
+    { Travel : single }
+
 /// The data for a keyboard key event.
 type KeyboardKeyData =
     { KeyboardKey : KeyboardKey
@@ -138,6 +142,7 @@ module Events =
     let MouseX2ChangeEvent = stoa<MouseButtonData> "Mouse/X2/Change/Event"
     let MouseX2DownEvent = stoa<MouseButtonData> "Mouse/X2/Down/Event"
     let MouseX2UpEvent = stoa<MouseButtonData> "Mouse/X2/Up/Event"
+    let MouseWheelEvent = stoa<MouseWheelData> "Mouse/Wheel/Event"
     let KeyboardKeyChangeEvent = stoa<KeyboardKeyData> "KeyboardKey/Change/Event"
     let KeyboardKeyDownEvent = stoa<KeyboardKeyData> "KeyboardKey/Down/Event"
     let KeyboardKeyUpEvent = stoa<KeyboardKeyData> "KeyboardKey/Up/Event"
