@@ -11,7 +11,6 @@ open SDL2
 open Prime
 
 //////////////////////////////////////////////////////////////////////////////////////////
-// TODO: add TwoSidedOpt as render message parameter.                                   //
 // TODO: make sure we're destroying ALL rendering resources at end, incl. light maps!   //
 // TODO: optimize billboard rendering with some sort of batch renderer.                 //
 // TODO: account for Blend in billboards (at least alpha, overwrite, and additive)      //
