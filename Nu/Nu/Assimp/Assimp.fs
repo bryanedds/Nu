@@ -28,7 +28,7 @@ type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 
-// TODO: P1: figure out where this goes. It sure don't belong here!
+// TODO: figure out where this goes. It sure don't belong here!
 type BatchPhase =
     | StartingPhase
     | ResumingPhase

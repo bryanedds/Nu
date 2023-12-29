@@ -1612,7 +1612,7 @@ module EntityDispatcherModule2 =
              define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+             define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
              define Entity.LayoutOrder 0

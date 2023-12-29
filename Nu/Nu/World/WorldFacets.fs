@@ -482,7 +482,7 @@ module BackdroppableFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f)) // TODO: P1: make this a constant.
+            [define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.BackdropImageOpt None]
 
         override this.Render (_, entity, world) =
@@ -527,7 +527,7 @@ module LabelFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+            [define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.LabelImage Assets.Default.Label]
 
         override this.Render (_, entity, world) =
@@ -626,7 +626,7 @@ module ButtonFacetModule =
             else (Cascade, world)
 
         static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+            [define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Down false
              define Entity.DownOffset v2Zero
              define Entity.UpImage Assets.Default.ButtonUp
@@ -740,7 +740,7 @@ module ToggleButtonFacetModule =
             else (Cascade, world)
 
         static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+            [define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Toggled false
              define Entity.ToggledOffset v2Zero
              define Entity.Pressed false
@@ -862,7 +862,7 @@ module RadioButtonFacetModule =
             else (Cascade, world)
 
         static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+            [define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Dialed false
              define Entity.DialedOffset v2Zero
              define Entity.Pressed false
@@ -940,7 +940,7 @@ module FillBarFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.DisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
+            [define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
              define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
