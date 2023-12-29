@@ -294,7 +294,6 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             | _ -> failwithumf ()
 
 /// Generalized interface tag for late-bound objects.
-/// TODO: P1: consider renaming this to LateBound.
 and LateBindings = interface end
 
 /// Generalized interface tag for dispatchers.
