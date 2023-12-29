@@ -1833,17 +1833,20 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
+        // setup dynamic state
+        if blending then
+            Gl.BlendEquation BlendEquationMode.FuncAdd
+            Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+            Gl.Enable EnableCap.Blend
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
+        Hl.Assert ()
+
         // start batch
         if batchPhase.Starting then
 
-            // setup state
+            // setup static state
             Gl.DepthFunc DepthFunction.Lequal
             Gl.Enable EnableCap.DepthTest
-            if blending then
-                Gl.BlendEquation BlendEquationMode.FuncAdd
-                Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
-                Gl.Enable EnableCap.Blend
-            if material.TwoSided then Gl.Disable EnableCap.CullFace
             Hl.Assert ()
 
             // setup shader
@@ -1887,7 +1890,7 @@ module PhysicallyBased =
         // stop batch
         if batchPhase.Stopping then
 
-            // teardown geometry
+            // teardown geometry in general
             Gl.BindVertexArray 0u
             Hl.Assert ()
 
@@ -1895,14 +1898,17 @@ module PhysicallyBased =
             Gl.UseProgram 0u
             Hl.Assert ()
 
-            // teardown state
+            // teardown static state
             Gl.DepthFunc DepthFunction.Less
             Gl.Disable EnableCap.DepthTest
-            if blending then
-                Gl.Disable EnableCap.Blend
-                Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-                Gl.BlendEquation BlendEquationMode.FuncAdd
-            if material.TwoSided then Gl.Disable EnableCap.CullFace
+            Hl.Assert ()
+
+        // teardown dynamic state
+        if blending then
+            Gl.Disable EnableCap.Blend
+            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+            Gl.BlendEquation BlendEquationMode.FuncAdd
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
@@ -1949,7 +1955,7 @@ module PhysicallyBased =
             Gl.BlendEquation BlendEquationMode.FuncAdd
             Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
             Gl.Enable EnableCap.Blend
-        if material.TwoSided then Gl.Disable EnableCap.CullFace
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // setup shader
@@ -2035,7 +2041,7 @@ module PhysicallyBased =
             Gl.Disable EnableCap.Blend
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.BlendEquation BlendEquationMode.FuncAdd
-        if material.TwoSided then Gl.Enable EnableCap.CullFace
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     let DrawPhysicallyBasedTerrain
         (view : single array,
