@@ -15,7 +15,7 @@ type ImGuiEditResult =
     | ImGuiEditInactive
 
 /// Wraps ImGui context, state, and calls. Also extends the ImGui interface with static methods.
-/// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port of a port.
+/// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port.
 type ImGui (windowWidth : int, windowHeight : int) =
 
     static let mutable mouseDraggingStarted =

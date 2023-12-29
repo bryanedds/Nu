@@ -22,24 +22,6 @@ module Texture =
         { TextureId : uint
           TextureHandle : uint64 }
 
-        /// Make a texture from OpenGL-provided values.
-        static member make textureId =
-            let textureHandle = Gl.GetTextureHandleARB textureId
-            Hl.Assert () // defensive assertion
-            if textureHandle = 0UL then failwith ("Failed to create handle for texture id '" + string textureId + "'. GL_ARB_bindless_texture may not be supported on this platform.")
-            Gl.MakeTextureHandleResidentARB textureHandle
-            { TextureId = textureId
-              TextureHandle = textureHandle }
-
-        /// Destroy OpenGL representation of a texture.
-        static member destroy texture =
-            Gl.MakeTextureHandleNonResidentARB texture.TextureHandle
-            Gl.DeleteTextures [|texture.TextureId|]
-
-        /// The empty or invalid texture.
-        static member empty =
-            Unchecked.defaultof<Texture>
-
     /// An OpenGL texture's metadata.
     type TextureMetadata =
         { TextureWidth : int
@@ -66,6 +48,15 @@ module Texture =
         static member make () =
             { Textures = Dictionary HashIdentity.Structural }
 
+    /// Create OpenGL representation of a texture from an already generated OpenGL texture id.
+    let CreateTextureFromId textureId =
+        let textureHandle = Gl.GetTextureHandleARB textureId
+        Hl.Assert () // defensive assertion
+        if textureHandle = 0UL then failwith ("Failed to create handle for texture id '" + string textureId + "'. GL_ARB_bindless_texture may not be supported on this platform.")
+        Gl.MakeTextureHandleResidentARB textureHandle
+        { TextureId = textureId
+          TextureHandle = textureHandle }
+
     /// Create a texture from existing texture data.
     let CreateTexture (internalFormat, width, height, pixelFormat, pixelType, minFilter : OpenGL.TextureMinFilter, magFilter : OpenGL.TextureMagFilter, generateMipmaps, textureData : nativeint) =
         let textureId = OpenGL.Gl.GenTexture ()
@@ -76,8 +67,7 @@ module Texture =
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
         OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
         if generateMipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
-        let texture = Texture.make textureId
-        texture
+        CreateTextureFromId textureId
 
     /// Create a filtered texture from existing texture data.
     let CreateTextureFiltered (internalFormat, width, height, pixelFormat, pixelType, textureData) =
@@ -101,7 +91,7 @@ module Texture =
         if generateMipmaps then
             Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
             Gl.GenerateMipmap TextureTarget.Texture2d
-        let texture = Texture.make textureId
+        let texture = CreateTextureFromId textureId
         texture
 
     /// Create a filtered texture from existing texture data.
@@ -175,7 +165,7 @@ module Texture =
             if generateMipmaps then
                 Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax) // NOTE: tho an extension, this one's considered ubiquitous.
                 Gl.GenerateMipmap TextureTarget.Texture2d
-            let texture = Texture.make textureId
+            let texture = CreateTextureFromId textureId
             Right (metadata, texture)
 
         // error
@@ -213,3 +203,8 @@ module Texture =
     /// Attempt to create an unfiltered memoized texture from a file.
     let TryCreateTextureUnfilteredMemoized (internalFormat, filePath, textureMemo) =
         TryCreateTextureMemoized (internalFormat, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, filePath, textureMemo)
+
+    /// Destroy OpenGL representation of a texture.
+    let DestroyTexture texture =
+        Gl.MakeTextureHandleNonResidentARB texture.TextureHandle
+        Gl.DeleteTextures [|texture.TextureId|]

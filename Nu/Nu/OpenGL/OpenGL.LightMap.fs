@@ -115,7 +115,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|rasterRenderbuffer|]
         Gl.DeleteFramebuffers [|rasterFramebuffer|]
-        let rasterCubeMap = Texture.Texture.make rasterCubeMapId
+        let rasterCubeMap = Texture.CreateTextureFromId rasterCubeMapId
         rasterCubeMap
 
     let CreateIrradianceMap
@@ -195,7 +195,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        let cubeMap = Texture.Texture.make cubeMapId
+        let cubeMap = Texture.CreateTextureFromId cubeMapId
         cubeMap
 
     /// Describes an environment filter shader that's loaded into GPU.
@@ -355,7 +355,7 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        let cubeMap = Texture.Texture.make cubeMapId
+        let cubeMap = Texture.CreateTextureFromId cubeMapId
         cubeMap
 
     /// A collection of maps consisting a light map.
@@ -376,5 +376,5 @@ module LightMap =
 
     /// Destroy a light map.
     let DestroyLightMap lightMap =
-        Texture.Texture.destroy lightMap.IrradianceMap
-        Texture.Texture.destroy lightMap.EnvironmentFilterMap
+        Texture.DestroyTexture lightMap.IrradianceMap
+        Texture.DestroyTexture lightMap.EnvironmentFilterMap
