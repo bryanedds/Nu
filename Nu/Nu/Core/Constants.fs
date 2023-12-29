@@ -158,6 +158,7 @@ module OpenGL =
 module Assimp =
 
     let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
+    let [<Literal>] RawPropertyPrefix = "$raw."
 
 [<RequireQualifiedAccess>]
 module Audio =

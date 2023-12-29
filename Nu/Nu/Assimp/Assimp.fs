@@ -28,7 +28,7 @@ type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 
-// TODO: figure out where this goes. It sure don't belong here!
+/// The batch phasing such involved in persisting OpenGL state.
 type BatchPhase =
     | StartingPhase
     | ResumingPhase
@@ -196,6 +196,36 @@ module AssimpExtensions =
               Scaling = scaling
               Weight = weight }
 
+    type Assimp.Material with
+
+        member this.RenderStyleOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof RenderStyle) with
+            | null -> None
+            | property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<RenderStyle> |> Some
+                    with _ -> None
+                else None
+
+        member this.PresenceOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Presence) with
+            | null -> None
+            | property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<Presence> |> Some
+                    with _ -> None
+                else None
+
+        member this.TwoSidedOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.TwoSidedName) with
+            | null -> None
+            | property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<bool> |> Some
+                    with _ -> None
+                else Some true
+        
+
     /// Mesh extensions.
     type Assimp.Mesh with
 
@@ -353,44 +383,23 @@ module AssimpExtensions =
             node
 
         member this.RenderStyleOpt =
-            if   this.Metadata.ContainsKey Constants.Render.DeferredName then Some Deferred
-            elif this.Metadata.ContainsKey Constants.Render.ForwardName then Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
-            else
-                match this.Metadata.TryGetValue "RenderStyle" with
-                | (true, entry) ->
-                    match entry.DataType with
-                    | Assimp.MetaDataType.String ->
-                        try entry.Data :?> string |> scvalueMemo |> Some
-                        with _ -> None
-                    | _ -> None
-                | (false, _) -> None
-
-        member this.PresenceOpt =
-            if   this.Metadata.ContainsKey (nameof Interior) then Some Interior
-            elif this.Metadata.ContainsKey (nameof Exterior) then Some Exterior
-            elif this.Metadata.ContainsKey (nameof Imposter) then Some Imposter
-            elif this.Metadata.ContainsKey (nameof Omnipresent) then Some Omnipresent
-            else
-                match this.Metadata.TryGetValue "Presence" with
-                | (true, entry) ->
-                    match entry.DataType with
-                    | Assimp.MetaDataType.String ->
-                        try entry.Data :?> string |> scvalueMemo |> Some
-                        with _ -> None
-                    | _ -> None
-                | (false, _) -> None
-
-        member this.TwoSidedOpt : bool option =
-            match this.Metadata.TryGetValue Constants.Render.TwoSidedName with
+            match this.Metadata.TryGetValue "RenderStyle" with
             | (true, entry) ->
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    let dataStr = entry.Data :?> string
-                    if not (String.IsNullOrEmpty dataStr) then
-                        try entry.Data :?> string |> scvalueMemo |> Some
-                        with _ -> Some true
-                    else Some true
-                | _ -> Some true
+                    try entry.Data :?> string |> scvalueMemo<RenderStyle> |> Some
+                    with _ -> None
+                | _ -> None
+            | (false, _) -> None
+
+        member this.PresenceOpt =
+            match this.Metadata.TryGetValue "Presence" with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<Presence> |> Some
+                    with _ -> None
+                | _ -> None
             | (false, _) -> None
 
     type Assimp.Scene with
