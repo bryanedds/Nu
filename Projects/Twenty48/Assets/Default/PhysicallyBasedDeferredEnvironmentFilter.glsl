@@ -54,7 +54,7 @@ void main()
     if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
 
     // retrieve remaining data from geometry buffers
-    vec3 position = texture(positionTexture, texCoordsOut).rgb;
+    vec3 position = texture(positionTexture, texCoordsOut).xyz;
     float roughness = texture(materialTexture, texCoordsOut).r;
 
     // retrieve light mapping data

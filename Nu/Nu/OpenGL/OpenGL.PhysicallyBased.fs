@@ -1822,7 +1822,6 @@ module PhysicallyBased =
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
         (batchPhase : BatchPhase,
-         blending : bool,
          view : single array,
          projection : single array,
          bones : single array array,
@@ -1834,11 +1833,8 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup dynamic state
-        if blending then
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-            Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
-            Gl.Enable EnableCap.Blend
-        if not material.TwoSided then Gl.Enable EnableCap.CullFace
+        if not material.TwoSided then
+            Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // start batch
@@ -1904,11 +1900,8 @@ module PhysicallyBased =
             Hl.Assert ()
 
         // teardown dynamic state
-        if blending then
-            Gl.Disable EnableCap.Blend
-            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-        if not material.TwoSided then Gl.Disable EnableCap.CullFace
+        if not material.TwoSided then
+            Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
