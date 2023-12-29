@@ -860,7 +860,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let surfaces =
                                         [|for surface in staticModel.Surfaces do
                                             let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, surface.TwoSidedOpt, renderPackage.PackageState.TextureMemo, material)
+                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureMemo, material)
                                             { surface with SurfaceMaterial = material }|]
                                     StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
                                 | Some _ | None -> renderAsset
@@ -870,7 +870,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let surfaces =
                                         [|for surface in animatedModel.Surfaces do
                                             let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, surface.TwoSidedOpt, renderPackage.PackageState.TextureMemo, material)
+                                            let (_, material) = OpenGL.PhysicallyBased.CreatePhysicallyBasedMaterial (true, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureMemo, material)
                                             { surface with SurfaceMaterial = material }|]
                                     AnimatedModelAsset { animatedModel with Surfaces = surfaces }
                                 | None -> renderAsset
@@ -1369,6 +1369,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          renderType : RenderType,
          renderPass : RenderPass,
          renderer) =
+        let renderStyle = match renderType with DeferredRenderType -> Deferred | ForwardRenderType (subsort, sort) -> Forward (subsort, sort)
         match GlRenderer3d.tryGetRenderAsset staticModel renderer with
         | ValueSome renderAsset ->
             match renderAsset with
@@ -1400,12 +1401,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for surface in modelAsset.Surfaces do
                     let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then modelMatrix else surface.SurfaceMatrix * modelMatrix
                     let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
-                    let surfacePresence = Option.defaultValue presence surface.PresenceOpt
-                    let surfaceRenderType =
-                        match surface.RenderStyleOpt with
-                        | Some Deferred -> DeferredRenderType
-                        | Some (Forward (subsort, sort)) -> ForwardRenderType (subsort, sort)
-                        | None -> renderType
+                    let surfacePresence = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence presence modelAsset.SceneOpt surface
+                    let surfaceRenderStyle = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle renderStyle modelAsset.SceneOpt surface
+                    let surfaceRenderType = match surfaceRenderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                     let unculled =
                         match renderPass with // OPTIMIZATION: in normal pass, we cull surfaces based on view.
                         | NormalPass skipCulling -> skipCulling || Presence.intersects3d (Some frustumInterior) frustumExterior frustumImposter (Some lightBox) false false surfacePresence surfaceBounds

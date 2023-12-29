@@ -85,8 +85,8 @@ module WorldEntityHierarchy =
                                 if Matrix4x4.Decompose (transform, &scale, &rotation, &position)
                                 then (position, rotation, scale, world)
                                 else (transform.Translation, quatIdentity, transform.Scale, world) // use translation and scale, even from invalid transform
-                            let presence = Option.defaultValue presenceConferred surface.PresenceOpt
-                            let renderStyle = match surface.RenderStyleOpt with Some rs -> rs | None -> Deferred
+                            let presence = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence presenceConferred staticModelMetadata.SceneOpt surface
+                            let renderStyle = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world

@@ -60,16 +60,25 @@ module PhysicallyBased =
           SurfaceNode : Assimp.Node
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
 
-        member this.RenderStyleOpt =
-            if   this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.DeferredName then Some Deferred
-            elif this.SurfaceNames.Length > 0 && (Array.last this.SurfaceNames).EndsWith Constants.Render.ForwardName then Some (Forward (0.0f, 0.0f)) // TODO: consider also parsing out the sorting parameters as well?
-            else this.SurfaceNode.RenderStyleOpt
+        static member extractPresence presenceDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.PresenceOpt with
+            | None ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    Option.defaultValue presenceDefault material.PresenceOpt
+                | Some _ | None -> presenceDefault
+            | Some presence -> presence
 
-        member this.PresenceOpt =
-            this.SurfaceNode.PresenceOpt
-
-        member this.TwoSidedOpt =
-            this.SurfaceNode.TwoSidedOpt
+        static member extractRenderStyle renderStyleDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.RenderStyleOpt with
+            | None ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    Option.defaultValue renderStyleDefault material.RenderStyleOpt
+                | Some _ | None -> renderStyleDefault
+            | Some renderStyle -> renderStyle
 
         static member inline hash surface =
             surface.HashCode
@@ -121,6 +130,8 @@ module PhysicallyBased =
             this.HashCode
 
     module internal PhysicallyBasedSurfaceFns =
+        let extractPresence = PhysicallyBasedSurface.extractPresence
+        let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
         let comparer = HashIdentity.FromFunctions hash equals
@@ -304,7 +315,7 @@ module PhysicallyBased =
     /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
     /// inverted to smoothness (such as when a model is imported from an fbx exported from a Unity scene).
     /// Thread-safe if renderable = false.
-    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, twoSidedOpt, textureMemo, material : Assimp.Material) =
+    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -518,7 +529,7 @@ module PhysicallyBased =
 
         // compute two-sidedness
         let twoSided =
-            match twoSidedOpt with
+            match material.TwoSidedOpt with
             | Some twoSided -> twoSided
             | None -> material.IsTwoSided
 
@@ -1191,7 +1202,7 @@ module PhysicallyBased =
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, None, textureMemo, scene.Materials.[i])
+                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, scene.Materials.[i])
                 propertiesAndMaterials.[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
@@ -1352,7 +1363,6 @@ module PhysicallyBased =
                                 let meshIndex = node.MeshIndices.[i]
                                 let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
                                 let (properties, material) = materials.[materialIndex]
-                                let material = { material with TwoSided = match node.TwoSidedOpt with Some twoSided -> twoSided | None -> material.TwoSided }
                                 let geometry = geometries.[meshIndex]
                                 let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
@@ -1833,7 +1843,7 @@ module PhysicallyBased =
                 Gl.BlendEquation BlendEquationMode.FuncAdd
                 Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
                 Gl.Enable EnableCap.Blend
-            if not material.TwoSided then Gl.Enable EnableCap.CullFace
+            if material.TwoSided then Gl.Disable EnableCap.CullFace
             Hl.Assert ()
 
             // setup shader
@@ -1892,7 +1902,7 @@ module PhysicallyBased =
                 Gl.Disable EnableCap.Blend
                 Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
                 Gl.BlendEquation BlendEquationMode.FuncAdd
-            if not material.TwoSided then Gl.Disable EnableCap.CullFace
+            if material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
@@ -1939,7 +1949,7 @@ module PhysicallyBased =
             Gl.BlendEquation BlendEquationMode.FuncAdd
             Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
             Gl.Enable EnableCap.Blend
-        if not material.TwoSided then Gl.Enable EnableCap.CullFace
+        if material.TwoSided then Gl.Disable EnableCap.CullFace
         Hl.Assert ()
 
         // setup shader
@@ -2025,7 +2035,7 @@ module PhysicallyBased =
             Gl.Disable EnableCap.Blend
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.BlendEquation BlendEquationMode.FuncAdd
-        if not material.TwoSided then Gl.Disable EnableCap.CullFace
+        if material.TwoSided then Gl.Enable EnableCap.CullFace
 
     let DrawPhysicallyBasedTerrain
         (view : single array,
