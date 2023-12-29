@@ -516,6 +516,7 @@ module PhysicallyBased =
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture
 
+        // compute two-sidedness
         let twoSided =
             match twoSidedOpt with
             | Some twoSided -> twoSided

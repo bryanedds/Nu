@@ -31,6 +31,7 @@ module Texture =
             { TextureId = textureId
               TextureHandle = textureHandle }
 
+        /// Destroy OpenGL representation of a texture.
         static member destroy texture =
             Gl.MakeTextureHandleNonResidentARB texture.TextureHandle
             Gl.DeleteTextures [|texture.TextureId|]
