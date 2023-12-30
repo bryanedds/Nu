@@ -1,7 +1,7 @@
 # Blender MTL File: 'None'
 # Material Count: 2
 
-newmtl Mat
+newmtl Material
 map_Kd LightbulbModelAlbedo.tiff
 map_Pm MaterialMetallic.tiff
 map_Pr MaterialRoughness.tiff
@@ -9,7 +9,7 @@ map_Ka MaterialAmbientOcclusion.tiff
 map_Ke MaterialEmission.tiff
 norm MaterialNormal.tiff
 
-newmtl Mat2
+newmtl Material2
 map_Kd LightbulbModelAlbedo.tiff
 map_Pm MaterialMetallic.tiff
 map_Pr MaterialRoughness.tiff
