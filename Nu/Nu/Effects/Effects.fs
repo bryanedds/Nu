@@ -723,6 +723,7 @@ module EffectSystem =
                           Origin = slice.Position
                           Rotation = rotation
                           Direction = direction
+                          Presence = effectSystem.EffectPresence
                           Color = slice.Color
                           Brightness = slice.Brightness
                           AttenuationLinear = slice.AttenuationLinear
@@ -776,6 +777,7 @@ module EffectSystem =
                     BillboardView
                         { Absolute = effectSystem.EffectAbsolute
                           ModelMatrix = affineMatrix
+                          Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties
                           Material = material

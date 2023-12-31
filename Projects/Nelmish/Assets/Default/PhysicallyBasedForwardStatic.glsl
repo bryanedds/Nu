@@ -61,8 +61,8 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
-const float OPAQUING_DISTANCE_BEGIN = 12.0;
-const float OPAQUING_DISTANCE_END = 16.0;
+const float OPAQUING_DISTANCE_BEGIN = 11.0;
+const float OPAQUING_DISTANCE_END = 12.0;
 const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_BEGIN;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
