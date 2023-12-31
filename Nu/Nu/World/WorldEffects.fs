@@ -39,8 +39,8 @@ module Effect =
     /// An effect.
     and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
-            { PerimeterCentered_ : bool
-              StartTime_ : GameTime
+            { StartTime_ : GameTime
+              PerimeterCentered_ : bool
               Offset_ : Vector3
               Transform_ : Transform
               RenderType_ : RenderType
@@ -107,6 +107,7 @@ module Effect =
                   Blend = Transparent
                   Emission = Color.Zero
                   Height = Constants.Render.HeightDefault
+                  IgnoreLightMaps = false
                   Flip = FlipNone
                   Brightness = Constants.Render.BrightnessDefault
                   AttenuationLinear = Constants.Render.AttenuationLinearDefault

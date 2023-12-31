@@ -53,6 +53,7 @@ type Slice =
       Blend : Blend
       Emission : Color
       Height : single
+      IgnoreLightMaps : bool
       Flip : Flip
       Brightness : single
       AttenuationLinear : single
@@ -170,6 +171,7 @@ and Aspect =
     | Blend of Blend
     | Emission of Color
     | Height of single
+    | IgnoreLightMaps of bool
     | Flip of Flip
     | Brightness of single
     | AttenuationLinear of single
@@ -189,6 +191,7 @@ and Aspect =
     | Colors of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
     | Emissions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
     | Heights of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | IgnoreLightMapses of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
     | Volumes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Expand of Name : string * Args : Argument array
     | Aspects of Aspects : Aspect array
@@ -234,8 +237,8 @@ type Definitions =
      "Rate " +
      "Shift " +
      "Resource Expand " +
-     "Enabled Position PositionLocal PositionAbsolute Scale Offset Angles Degrees Size Elevation Inset Color Emission Height Volume " +
-     "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights Volumes Aspects " +
+     "Enabled Position PositionLocal PositionAbsolute Scale Offset Angles Degrees Size Elevation Inset Color Emission Height IgnoreLightMaps Volume " +
+     "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights IgnoreLightMapses Volumes Aspects " +
      "Expand " +
      "StaticSprite AnimatedSprite TextSprite Light3d Billboard StaticModel Mount Repeat Emit Delay Segment Composite Tag Nil " +
      "View",
@@ -444,7 +447,6 @@ module EffectSystem =
 
     and private evalAspect aspect (slice : Slice) effectSystem =
         match aspect with
-        | Enabled enabled -> { slice with Enabled = enabled }
         | Position position -> { slice with Position = slice.Position + position }
         | PositionLocal positionLocal ->
             let oriented = Vector3.Transform (positionLocal, slice.Angles.RollPitchYaw)
@@ -462,18 +464,14 @@ module EffectSystem =
         | Blend blend -> { slice with Blend = blend }
         | Emission emission -> { slice with Emission = emission }
         | Height height -> { slice with Height = height }
+        | IgnoreLightMaps ignoreLightMaps -> { slice with IgnoreLightMaps = ignoreLightMaps }
         | Flip flip -> { slice with Flip = flip }
         | Brightness brightness -> { slice with Brightness = brightness }
         | AttenuationLinear attenuationLinear -> { slice with AttenuationLinear = attenuationLinear }
         | AttenuationQuadratic attenuationQuadratic -> { slice with AttenuationQuadratic = attenuationQuadratic }
         | LightCutoff lightCutoff -> { slice with LightCutoff = lightCutoff }
         | Volume volume -> { slice with Volume = volume }
-        | Enableds (applicator, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
-                { slice with Enabled = applied }
-            else slice
+        | Enabled enabled -> { slice with Enabled = enabled }
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -570,6 +568,12 @@ module EffectSystem =
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Elevation tweened applicator
                 { slice with Height = applied }
             else slice
+        | IgnoreLightMapses (applicator, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
+                { slice with IgnoreLightMaps = applied }
+            else slice
         | Volumes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -577,6 +581,12 @@ module EffectSystem =
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Volume tweened applicator
                 { slice with Volume = applied }
+            else slice
+        | Enableds (applicator, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
+                { slice with Enabled = applied }
             else slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
@@ -751,7 +761,8 @@ module EffectSystem =
                       MetallicOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height }
+                      HeightOpt = ValueSome slice.Height
+                      IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps }
                 let material =
                     { AlbedoImageOpt = ValueSome (AssetTag.specialize<Image> imageAlbedo)
                       RoughnessImageOpt = ValueSome (AssetTag.specialize<Image> imageRoughness)
@@ -767,7 +778,6 @@ module EffectSystem =
                           ModelMatrix = affineMatrix
                           InsetOpt = insetOpt
                           MaterialProperties = properties
-                          IgnoreLightMaps = effectSystem.EffectPresence.IgnoreLightMaps
                           Material = material
                           RenderType = effectSystem.EffectRenderType }
                 addView modelView effectSystem
@@ -796,7 +806,8 @@ module EffectSystem =
                       MetallicOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height }
+                      HeightOpt = ValueSome slice.Height
+                      IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps }
                 let modelView =
                     StaticModelView
                         { Absolute = effectSystem.EffectAbsolute

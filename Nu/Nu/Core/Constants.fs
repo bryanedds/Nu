@@ -57,8 +57,7 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Literal>] DeferredName = "Deferred"
-    let [<Literal>] ForwardName = "Forward"
+    let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] TwoSidedName = "TwoSided"
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | vsync -> scvalue<bool> vsync
     let [<Literal>] VirtualResolutionX = 960

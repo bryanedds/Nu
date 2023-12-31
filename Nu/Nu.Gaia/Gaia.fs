@@ -1480,6 +1480,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
+        // edit ignore light maps
+        let mutable isSome = ValueOption.isSome mp.IgnoreLightMapsOpt
+        if ImGui.Checkbox ((if isSome then "##mpIgnoreLightMapsIsSome" else "IgnoreLightMapsOpt"), &isSome) then
+            if isSome
+            then setPropertyValue { mp with IgnoreLightMapsOpt = ValueSome false } propertyDescriptor simulant
+            else setPropertyValue { mp with IgnoreLightMapsOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.IgnoreLightMapsOpt with
+            | ValueSome ignoreLightMaps ->
+                let mutable ignoreLightMaps = ignoreLightMaps
+                ImGui.SameLine ()
+                if ImGui.Checkbox ("IgnoreLightMapsOpt", &ignoreLightMaps) then setPropertyValue { mp with IgnoreLightMapsOpt = ValueSome ignoreLightMaps } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+
     let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (focusProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
         let ty = propertyDescriptor.PropertyType
         let name = propertyDescriptor.PropertyName

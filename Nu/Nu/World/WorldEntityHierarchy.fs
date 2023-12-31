@@ -101,7 +101,8 @@ module WorldEntityHierarchy =
                                   MetallicOpt = ValueSome surface.SurfaceMaterialProperties.Metallic
                                   AmbientOcclusionOpt = ValueSome surface.SurfaceMaterialProperties.AmbientOcclusion
                                   EmissionOpt = ValueSome surface.SurfaceMaterialProperties.Emission
-                                  HeightOpt = ValueSome surface.SurfaceMaterialProperties.Height }
+                                  HeightOpt = ValueSome surface.SurfaceMaterialProperties.Height
+                                  IgnoreLightMapsOpt = ValueSome surface.SurfaceMaterialProperties.IgnoreLightMaps }
                             let world = child.SetMaterialProperties properties world
                             let world = child.SetRenderStyle renderStyle world
                             let world = child.AutoBounds world
@@ -150,12 +151,10 @@ module WorldEntityHierarchy =
                         let entityBounds = transform.Bounds3d
                         let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
                         let properties = entity.GetMaterialProperties world
-                        let presence = entity.GetPresence world
-                        let ignoreLightMaps = presence.IgnoreLightMaps
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
                         let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                        let surface = { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; IgnoreLightMaps = ignoreLightMaps; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
+                        let surface = { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt; MaterialProperties = properties; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
                         Choice3Of3 (PairValue.make entityBounds surface)
                         boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                         world <- entity.SetVisibleLocal false world
@@ -290,7 +289,7 @@ module FreezeFacetModule =
                     let bounds = &boundsAndSurface.Fst
                     let surface = &boundsAndSurface.Snd
                     if intersects false false presenceConferred bounds then
-                        World.renderStaticModelSurfaceFast (surface.Absolute, &surface.ModelMatrix, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, surface.IgnoreLightMaps, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
+                        World.renderStaticModelSurfaceFast (surface.Absolute, &surface.ModelMatrix, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =
