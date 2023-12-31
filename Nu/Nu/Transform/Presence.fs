@@ -24,7 +24,6 @@ type [<Struct>] Presence =
     member this.ExteriorType with get () = match this with Exterior -> true | _ -> false
     member this.ImposterType with get () = match this with Imposter -> true | _ -> false
     member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
-    member this.IgnoreLightMaps with get () = match this with Imposter | Exterior -> true | Omnipresent | Interior -> false
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
     static member intersects3d (frustumInteriorOpt : Frustum option) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 option) (lightProbe : bool) (light : bool) presence (bounds : Box3) =

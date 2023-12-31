@@ -21,7 +21,8 @@ module PhysicallyBased =
           Metallic : single
           AmbientOcclusion : single
           Emission : single
-          Height : single }
+          Height : single
+          IgnoreLightMaps : bool }
 
     /// Describes a physically-based material.
     type [<Struct>] PhysicallyBasedMaterial =
@@ -528,6 +529,12 @@ module PhysicallyBased =
             else defaultMaterial.HeightTexture
 
         // compute two-sidedness
+        let ignoreLightMaps =
+            match material.IgnoreLightMapsOpt with
+            | Some ignoreLightMaps -> ignoreLightMaps
+            | None -> false
+
+        // compute two-sidedness
         let twoSided =
             match material.TwoSidedOpt with
             | Some twoSided -> twoSided
@@ -540,7 +547,8 @@ module PhysicallyBased =
               Metallic = metallic
               AmbientOcclusion = ambientOcclusion
               Emission = emission
-              Height = height }
+              Height = height
+              IgnoreLightMaps = ignoreLightMaps }
 
         // make material
         let material =

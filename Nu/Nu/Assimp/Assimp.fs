@@ -216,6 +216,15 @@ module AssimpExtensions =
                     with _ -> None
                 else None
 
+        member this.IgnoreLightMapsOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Constants.Render.IgnoreLightMapsName) with
+            | null -> None
+            | property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<bool> |> Some
+                    with _ -> None
+                else None
+
         member this.TwoSidedOpt =
             match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.TwoSidedName) with
             | null -> None
@@ -224,7 +233,6 @@ module AssimpExtensions =
                     try property.GetStringValue () |> scvalueMemo<bool> |> Some
                     with _ -> None
                 else Some true
-        
 
     /// Mesh extensions.
     type Assimp.Mesh with
