@@ -134,6 +134,7 @@ type [<Struct>] Light3dValue =
       mutable Origin : Vector3
       mutable Rotation : Quaternion
       mutable Direction : Vector3
+      mutable Presence : Presence
       mutable Color : Color
       mutable Brightness : single
       mutable AttenuationLinear : single
@@ -146,10 +147,11 @@ type [<Struct>] Light3dValue =
 type [<Struct>] BillboardValue =
     { mutable Absolute : bool
       mutable ModelMatrix : Matrix4x4
+      mutable RenderType : RenderType
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
       mutable Material : Material
-      mutable RenderType : RenderType }
+      mutable Presence : Presence }
 
 /// A mutable static model value.
 type [<Struct>] StaticModelValue =
@@ -165,6 +167,7 @@ type [<Struct>] StaticModelValue =
 type [<Struct>] StaticModelSurfaceValue =
     { mutable Absolute : bool
       mutable ModelMatrix : Matrix4x4
+      mutable Presence : Presence
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
       mutable StaticModel : StaticModel AssetTag
