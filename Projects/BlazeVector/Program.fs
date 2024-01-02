@@ -7,6 +7,12 @@ module Program =
     // this the entry point for the BlazeVector application
     let [<EntryPoint; STAThread>] main _ =
 
+        // initialize Nu
+        Nu.init ()
+
+        // point current working directory at program's base directory
+        Directory.SetCurrentDirectory AppContext.BaseDirectory
+
         // this specifies the window configuration used to display the game
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "BlazeVector" }
         
@@ -15,12 +21,6 @@ module Program =
 
         // this specifies the world config using the above SDL config
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
-
-        // point current working directory at program's base directory
-        Directory.SetCurrentDirectory AppContext.BaseDirectory
-
-        // initialize Nu
-        Nu.init worldConfig.NuConfig
         
         // run the engine with the given config and plugin
         World.run worldConfig (BlazeVectorPlugin ())

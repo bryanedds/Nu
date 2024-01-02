@@ -9,7 +9,6 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
-        let nuConfig = { NuConfig.defaultConfig with Accompanied = true }
+        Nu.init ()
         Directory.SetCurrentDirectory AppContext.BaseDirectory
-        Nu.init nuConfig
-        Gaia.run nuConfig (GaiaPlugin ())
+        Gaia.run (GaiaPlugin ())

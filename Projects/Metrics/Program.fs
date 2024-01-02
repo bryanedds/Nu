@@ -202,6 +202,8 @@ type MetricsPlugin () =
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
+        Nu.init ()
+        Directory.SetCurrentDirectory AppContext.BaseDirectory
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 #if FUNCTIONAL
@@ -209,6 +211,4 @@ module Program =
 #else
         let worldConfig = { WorldConfig.defaultConfig with Imperative = true; SdlConfig = sdlConfig }
 #endif
-        Directory.SetCurrentDirectory AppContext.BaseDirectory
-        Nu.init worldConfig.NuConfig
         World.run worldConfig (MetricsPlugin ())

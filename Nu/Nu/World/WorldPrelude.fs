@@ -145,41 +145,25 @@ type [<ReferenceEquality>] 'w Tasklet =
     { ScheduledTime : GameTime
       ScheduledOp : 'w -> 'w }
 
-/// Configuration parameters for Nu.
-type NuConfig =
-    { RunSynchronously : bool
-      Accompanied : bool }
+/// Configuration parameters for the world.
+type [<ReferenceEquality>] WorldConfig =
+    { Imperative : bool
+      Accompanied : bool
+      Advancing : bool
+      ModeOpt : string option
+      SdlConfig : SdlConfig }
 
     /// That Nu is to run unaccompanied.
     member this.Unaccompanied =
         not this.Accompanied
 
-    /// The default configuration for Nu.
-    static member defaultConfig =
-        let runSynchronously =
-#if SYNCHRONOUS
-            true
-#else
-            false
-#endif
-        { RunSynchronously = runSynchronously
-          Accompanied = false }
-
-/// Configuration parameters for the world.
-type [<ReferenceEquality>] WorldConfig =
-    { Imperative : bool
-      Advancing : bool
-      ModeOpt : string option
-      SdlConfig : SdlConfig
-      NuConfig : NuConfig }
-
     /// The default configuration of the world.
     static member defaultConfig =
         { Imperative = true
+          Accompanied = false
           Advancing = true
           ModeOpt = None
-          SdlConfig = SdlConfig.defaultConfig
-          NuConfig = NuConfig.defaultConfig }
+          SdlConfig = SdlConfig.defaultConfig }
 
 [<AutoOpen>]
 module AmbientState =
