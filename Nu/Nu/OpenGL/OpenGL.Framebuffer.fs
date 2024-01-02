@@ -105,15 +105,10 @@ module Framebuffer =
         Hl.Assert ()
 
         // ensure framebuffer is complete
-        let result =
-            if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-                let shadowTexture = Texture.CreateTextureFromId shadowTextureId
-                Right (shadowTexture, framebuffer)
-            else Left "Could not create complete shadow mapping framebuffer."
-
-        // unbind buffer after checking completeness
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
-        result
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
+            let shadowTexture = Texture.CreateTextureFromId shadowTextureId
+            Right (shadowTexture, framebuffer)
+        else Left "Could not create complete shadow mapping framebuffer."
 
     /// Destroy shadow buffers.
     let DestroyShadowBuffers (shadowTexture : Texture.Texture, framebuffer) =
