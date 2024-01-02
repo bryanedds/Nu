@@ -3021,7 +3021,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     (* Public API *)
 
     /// Run Gaia.
-    let run nuConfig gaiaPlugin =
+    let run gaiaPlugin =
 
         // discover the desired nu plugin for editing
         let (gaiaState, targetDir, plugin) = selectNuPlugin gaiaPlugin
@@ -3039,9 +3039,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // attempt to create the world
             let worldConfig =
                 { Imperative = gaiaState.ProjectImperativeExecution
+                  Accompanied = true
                   Advancing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
-                  NuConfig = nuConfig
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
             | Right (screen, world) ->

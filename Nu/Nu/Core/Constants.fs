@@ -14,6 +14,7 @@ module Engine =
 
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
+    let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | size -> scvalue<bool> size
     let [<Literal>] Meter2d = 48.0f
     let [<Literal>] Meter3d = 1.0f
     let [<Literal>] GameSortPriority = Single.MaxValue

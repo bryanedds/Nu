@@ -9,6 +9,8 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
+        Nu.init ()
+        Directory.SetCurrentDirectory AppContext.BaseDirectory
         let sdlWindowConfig =
             { SdlWindowConfig.defaultConfig with
                 WindowTitle = "OmniBlade"
@@ -19,6 +21,4 @@ module Program =
 #endif
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
-        Directory.SetCurrentDirectory AppContext.BaseDirectory
-        Nu.init worldConfig.NuConfig
         World.run worldConfig (OmniBladePlugin ())

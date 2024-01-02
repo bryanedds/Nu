@@ -14,7 +14,7 @@ module Nu =
     let mutable private Initialized = false
 
     /// Initialize the Nu game engine.
-    let init (nuConfig : NuConfig) =
+    let init () =
 
         // init only if needed
         if not Initialized then
@@ -32,7 +32,7 @@ module Nu =
             Math.Init ()
 
             // init vsync
-            Vsync.Init nuConfig.RunSynchronously
+            Vsync.Init Constants.Engine.RunSynchronously
 
             // init OpenGL assert mechanism
             OpenGL.Hl.InitAssert
@@ -436,8 +436,8 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make config plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
-            Nu.init config.NuConfig // ensure game engine is initialized
+        static member make plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+            Nu.init () // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
@@ -501,7 +501,7 @@ module WorldModule3 =
             let ambientState =
                 let overlayRouter = OverlayRouter.empty
                 let symbolics = Symbolics.makeEmpty ()
-                AmbientState.make config.Imperative config.NuConfig.Accompanied true symbolics Overlayer.empty overlayRouter None
+                AmbientState.make config.Imperative config.Accompanied true symbolics Overlayer.empty overlayRouter None
 
             // make the world's quadtree
             let quadtree = World.makeQuadtree ()
@@ -510,7 +510,7 @@ module WorldModule3 =
             let octree = World.makeOctree ()
 
             // make the world
-            let world = World.make config plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame Game world
@@ -568,7 +568,10 @@ module WorldModule3 =
                 let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
                 let physicsEngine2d = PhysicsEngine2d.make Constants.Physics.Gravity2dDefault
                 let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.Gravity3dDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
-                let rendererProcess = RendererThread () :> RendererProcess
+                let rendererProcess =
+                    if Constants.Engine.RunSynchronously
+                    then RendererInline () :> RendererProcess
+                    else RendererThread () :> RendererProcess
                 rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps)
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
                 let audioPlayer =
@@ -591,7 +594,7 @@ module WorldModule3 =
                             List.concat
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolics = Symbolics.makeEmpty ()
-                        AmbientState.make config.Imperative config.NuConfig.Accompanied config.Advancing symbolics overlayer overlayRouter (Some sdlDeps)
+                        AmbientState.make config.Imperative config.Accompanied config.Advancing symbolics overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = World.makeQuadtree ()
@@ -600,7 +603,7 @@ module WorldModule3 =
                     let octree = World.makeOctree ()
 
                     // make the world
-                    let world = World.make config plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make plugin eventGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
