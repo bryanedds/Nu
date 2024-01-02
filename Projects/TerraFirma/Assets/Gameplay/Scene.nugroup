@@ -5,7 +5,7 @@
   [Visible True]]
  [[Light3dDispatcher
    [[Brightness 3]
-    [Cutoff 1000000]
+    [LightCutoff 16]
     [LightType DirectionalLight]
     [Name Sun]
     [Position [0 12 2]]
