@@ -7,13 +7,11 @@
    [[AmbientBrightness 0.5] [Name SkyBox]]
    []]
   [Light3dDispatcher
-   [[Brightness 3]
-    [Cutoff 100000]
+   [[LightCutoff 16]
     [LightType DirectionalLight]
     [Name Light3d]
     [Position [0 2.5 0]]
-    [Presence Omnipresent]
-    [Rotation [0.4733702 0.26802042 -0.15380688 0.8248813]]]
+    [Presence Omnipresent]]
    []]
   [StaticModelDispatcher
    [[Name StaticModel]]
