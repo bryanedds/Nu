@@ -51,7 +51,7 @@ module AssetMemo =
                     with exn ->
                         return Left ("Could not load assimp scene from '" + assimpSceneAsset.FilePath + "' due to: " + scstring exn) }]
 
-        // run texture data loading ops
+        // upload loaded texture data sequentially
         for textureData in textureDataArray do
             match textureData with
             | Right (filePath, metadata, textureData, _) ->

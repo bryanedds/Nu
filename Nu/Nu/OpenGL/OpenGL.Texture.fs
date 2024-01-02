@@ -148,7 +148,7 @@ module Texture =
 
     /// Attempt to create a texture from a file.
     let TryCreateTexture (internalFormat, minFilter, magFilter, generateMipmaps, filePath) =
-    
+
         // ensure we can create texture data
         match TryCreateTextureData (internalFormat, generateMipmaps, filePath) with
         | Some (metadata, textureData, disposer) ->
