@@ -230,7 +230,7 @@ void main()
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoff = lightCutoffs[i];
-            float cutoffScalar = 1.0f - smoothstep(cutoff * 0.75, cutoff, distance);
+            float cutoffScalar = 1.0f - smoothstep(cutoff * 0.667, cutoff, distance);
             float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(l, -lightDirections[i]));
             float halfConeInner = lightConeInners[i] * 0.5f;
@@ -260,7 +260,7 @@ void main()
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
                 float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-                float biasFloor = lightDirectionals[i] == 0 ? 0.0001 : 0.001;
+                float biasFloor = lightDirectionals[i] == 0 ? 0.00025 : 0.001;
                 float bias = max(biasFloor * (1.0 - dot(normal, l)), biasFloor);
                 shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
             }
