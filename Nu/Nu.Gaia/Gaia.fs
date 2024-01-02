@@ -955,7 +955,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         Log.info "Code updated."
                     with _ ->
                         let error = string errorStream
-                        Log.trace ("Failed to compile code due to (see full output in the console):\n" + error)
+                        Log.info ("Failed to compile code due to (see full output in the console):\n" + error)
                         world <- World.choose worldOld
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
