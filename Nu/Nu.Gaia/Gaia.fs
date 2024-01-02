@@ -901,6 +901,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         fsprojFileLines |>
                         Array.map (fun line -> line.Trim ()) |>
                         Array.filter (fun line -> line.Contains "PackageReference") |>
+                        Array.filter (fun line -> not (line.Contains "PackageReference Update=")) |>
                         Array.map (fun line -> line.Replace ("<PackageReference Include=", "nuget: ")) |>
                         Array.map (fun line -> line.Replace (" Version=", ", ")) |>
                         Array.map (fun line -> line.Replace ("/>", "")) |>
