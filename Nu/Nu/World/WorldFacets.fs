@@ -2030,7 +2030,8 @@ module LightProbe3dFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.AlwaysUpdate true
+            [define Entity.Size (v3Dup 0.25f)
+             define Entity.AlwaysUpdate true
              define Entity.LightProbe true
              define Entity.Presence Omnipresent
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
@@ -2114,7 +2115,8 @@ module Light3dFacetModule =
         inherit Facet (false)
 
         static member Properties =
-            [define Entity.Light true
+            [define Entity.Size (v3Dup 0.25f)
+             define Entity.Light true
              define Entity.Color Color.White
              define Entity.Brightness Constants.Render.BrightnessDefault
              define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
