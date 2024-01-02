@@ -449,7 +449,8 @@ module LightProbe3dDispatcherModule =
             [typeof<LightProbe3dFacet>]
 
         static member Properties =
-            [define Entity.AlwaysUpdate true
+            [define Entity.Size (v3Dup 0.25f)
+             define Entity.AlwaysUpdate true
              define Entity.LightProbe true
              define Entity.Presence Omnipresent
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
@@ -469,7 +470,8 @@ module Light3dDispatcherModule =
             [typeof<Light3dFacet>]
 
         static member Properties =
-            [define Entity.Light true
+            [define Entity.Size (v3Dup 0.25f)
+             define Entity.Light true
              define Entity.Color Color.White
              define Entity.Brightness Constants.Render.BrightnessDefault
              define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
