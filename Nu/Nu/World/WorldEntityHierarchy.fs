@@ -87,6 +87,7 @@ module WorldEntityHierarchy =
                                 else (transform.Translation, quatIdentity, transform.Scale, world) // use translation and scale, even from invalid transform
                             let presence = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence presenceConferred staticModelMetadata.SceneOpt surface
                             let renderStyle = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
+                            let ignoreLightMaps = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps false staticModelMetadata.SceneOpt surface
                             let world = child.SetPositionLocal position world
                             let world = child.SetRotationLocal rotation world
                             let world = child.SetScaleLocal scale world
@@ -102,7 +103,7 @@ module WorldEntityHierarchy =
                                   AmbientOcclusionOpt = ValueSome surface.SurfaceMaterialProperties.AmbientOcclusion
                                   EmissionOpt = ValueSome surface.SurfaceMaterialProperties.Emission
                                   HeightOpt = ValueSome surface.SurfaceMaterialProperties.Height
-                                  IgnoreLightMapsOpt = ValueSome surface.SurfaceMaterialProperties.IgnoreLightMaps }
+                                  IgnoreLightMapsOpt = ValueSome ignoreLightMaps }
                             let world = child.SetMaterialProperties properties world
                             let world = child.SetRenderStyle renderStyle world
                             let world = child.AutoBounds world

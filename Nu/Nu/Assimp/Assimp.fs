@@ -391,7 +391,7 @@ module AssimpExtensions =
             node
 
         member this.RenderStyleOpt =
-            match this.Metadata.TryGetValue "RenderStyle" with
+            match this.Metadata.TryGetValue (nameof RenderStyle) with
             | (true, entry) ->
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
@@ -401,11 +401,21 @@ module AssimpExtensions =
             | (false, _) -> None
 
         member this.PresenceOpt =
-            match this.Metadata.TryGetValue "Presence" with
+            match this.Metadata.TryGetValue (nameof Presence) with
             | (true, entry) ->
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<Presence> |> Some
+                    with _ -> None
+                | _ -> None
+            | (false, _) -> None
+
+        member this.IgnoreLightMapsOpt =
+            match this.Metadata.TryGetValue Constants.Render.IgnoreLightMapsName with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<bool> |> Some
                     with _ -> None
                 | _ -> None
             | (false, _) -> None

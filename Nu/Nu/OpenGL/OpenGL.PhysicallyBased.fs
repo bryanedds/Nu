@@ -81,6 +81,16 @@ module PhysicallyBased =
                 | Some _ | None -> renderStyleDefault
             | Some renderStyle -> renderStyle
 
+        static member extractIgnoreLightMaps ignoreLightMapsDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.IgnoreLightMapsOpt with
+            | None ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    Option.defaultValue ignoreLightMapsDefault material.IgnoreLightMapsOpt
+                | Some _ | None -> ignoreLightMapsDefault
+            | Some ignoreLightMaps -> ignoreLightMaps
+
         static member inline hash surface =
             surface.HashCode
 
@@ -133,6 +143,7 @@ module PhysicallyBased =
     module internal PhysicallyBasedSurfaceFns =
         let extractPresence = PhysicallyBasedSurface.extractPresence
         let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
+        let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
         let comparer = HashIdentity.FromFunctions hash equals
