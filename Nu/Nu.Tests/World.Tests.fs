@@ -14,7 +14,7 @@ module WorldTests =
 
     let [<Test>] runOneEmptyFrameThenCleanUp () =
         let world = World.makeEmpty { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
-        let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id Live true world
+        let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id id Live true world
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
 
     let [<Test; Category "Integration">] runOneIntegrationFrameThenCleanUp () =
@@ -24,7 +24,7 @@ module WorldTests =
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
             match World.tryMake sdlDeps worldConfig (TestPlugin ()) with
             | Right world ->
-                let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id Live true world
+                let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id id Live true world
                 Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
             | Left _ -> Assert.Fail ()
         | Left _ -> Assert.Fail ()
