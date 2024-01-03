@@ -77,6 +77,7 @@ module Gaia =
     let mutable private desiredEye2dCenter = v2Zero
     let mutable private desiredEye3dCenter = v3Zero
     let mutable private desiredEye3dRotation = quatIdentity
+    let mutable private eyeChangedElsewhere = false
 
     (* Configuration States *)
 
@@ -1821,14 +1822,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // transfer to world mutation mode
         world <- worldOld
 
-        // see if sync eyes to editor is desirable
-        let eye2dCenter = World.getEye2dCenter world
-        let eye3dCenter = World.getEye3dCenter world
-        let eye3dRotation = World.getEye3dRotation world
-        let eyeChangedElsewhere =
-            eye2dCenter <> desiredEye2dCenter ||
-            eye3dCenter <> desiredEye3dCenter ||
-            eye3dRotation <> desiredEye3dRotation
+        // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
+        if  World.getEye2dCenter world <> desiredEye2dCenter ||
+            World.getEye3dCenter world <> desiredEye3dCenter ||
+            World.getEye3dRotation world <> desiredEye3dRotation then
+            eyeChangedElsewhere <- true
 
         // enable global docking
         ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
@@ -2892,19 +2890,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 updateEntityContext ()
                 updateEntityDrag ()
                 updateHotkeys entityHierarchyFocused
-                if not eyeChangedElsewhere then
+
+                // override local desired eye changes if eye was changed elsewhere
+                if eyeChangedElsewhere then
                     world <-
                         World.frame (fun world ->
-                            let world = World.setEye2dCenter desiredEye2dCenter world
-                            let world = World.setEye3dCenter desiredEye3dCenter world
-                            let world = World.setEye3dRotation desiredEye3dRotation world
+                            desiredEye2dCenter <- World.getEye2dCenter world
+                            desiredEye3dCenter <- World.getEye3dCenter world
+                            desiredEye3dRotation <- World.getEye3dRotation world
+                            eyeChangedElsewhere <- false
                             world)
-                            Game
-                            world
+                            Game world
                 else
-                    desiredEye2dCenter <- World.getEye2dCenter world
-                    desiredEye3dCenter <- World.getEye3dCenter world
-                    desiredEye3dRotation <- World.getEye3dRotation world
+                    world <- World.setEye2dCenter desiredEye2dCenter world
+                    world <- World.setEye3dCenter desiredEye3dCenter world
+                    world <- World.setEye3dRotation desiredEye3dRotation world
 
                 // reloading assets dialog
                 if reloadAssetsRequested > 0 then
