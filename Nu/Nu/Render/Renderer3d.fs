@@ -1228,6 +1228,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         for packageName in packageNames do
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
+    static member private getShadowBufferResolution shadowBufferIndex =
+        let scalar = if shadowBufferIndex = 0 then 4 else 1 // higher resolution for global directional light
+        v2i Constants.Render.ShadowResolutionX Constants.Render.ShadowResolutionY * scalar
+    
     static member private getRenderTasks renderPass renderer =
         match renderer.RenderTasksDictionary.TryGetValue renderPass with
         | (true, renderTasks) -> renderTasks
@@ -1871,6 +1875,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (lightViewAbsolute : Matrix4x4)
         (lightViewRelative : Matrix4x4)
         (lightProjection : Matrix4x4)
+        (shadowResolution : Vector2i)
         (framebuffer : uint) =
 
         // compute matrix arrays
@@ -1889,7 +1894,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup shadow buffer and viewport
-        OpenGL.Gl.Viewport (0, 0, Constants.Render.ShadowResolutionX, Constants.Render.ShadowResolutionY)
+        OpenGL.Gl.Viewport (0, 0, shadowResolution.X, shadowResolution.Y)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Gl.Clear OpenGL.ClearBufferMask.DepthBufferBit
         OpenGL.Hl.Assert ()
@@ -1968,10 +1973,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 SingletonPhase lightRelativeArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
                 surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
-
-        //// take a snapshot for testing
-        //OpenGL.Hl.SaveFramebufferDepthToBitmap Constants.Render.ShadowResolutionX Constants.Render.ShadowResolutionY "ShadowTexture.bmp"
-        //OpenGL.Hl.Assert ()
 
         // unbind shadow mapping frame buffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, 0u)
@@ -2561,7 +2562,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowCutoff = light.SortableLightCutoff
                                 let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
-                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection (snd renderer.ShadowBuffers.[shadowBufferIndex])
+                        let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
+                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowResolution (snd renderer.ShadowBuffers.[shadowBufferIndex])
                         renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
                         renderer.ShadowIndices.[light.SortableLightId] <- shadowBufferIndex
                         shadowBufferIndex <- inc shadowBufferIndex
@@ -2707,8 +2709,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create shadow buffers
         let shadowBuffers =
-            [|for _ in 0 .. dec Constants.Render.ShadowsMax do
-                match OpenGL.Framebuffer.TryCreateShadowBuffers () with
+            [|for shadowBufferIndex in 0 .. dec Constants.Render.ShadowsMax do
+                let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
+                match OpenGL.Framebuffer.TryCreateShadowBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowBuffers -> shadowBuffers
                 | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
 
