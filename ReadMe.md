@@ -40,17 +40,14 @@ A critical battle with evil itself!
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/e52a031c-cbad-4828-bf3f-ab15af9c7787)
-Local light probes allow for efficient localized reflection and image-based lighting.
-
-![image](https://github.com/bryanedds/Nu/assets/1625560/bb8532b6-e749-4892-80dd-579e254a7189)
-Animated 3D model rendering from Mixamo.
-
-![image](https://github.com/bryanedds/Nu/assets/1625560/2dc896e2-c182-4641-ba50-dd32acc4ea31)
+![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
 Scalable rendering thanks to instancing-by-default render technique.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/b9cb1513-2f8a-4406-993c-05a30aa5c261)
-Another shot. Ya, we need to implement VSM to soften these shadows :)
+![image](https://github.com/bryanedds/Nu/assets/1625560/18f46f3c-55ea-47d1-84fa-f699ccafec34)
+Animated 3D model rendering from Mixamo.
+
+![image](https://github.com/bryanedds/Nu/assets/1625560/e52a031c-cbad-4828-bf3f-ab15af9c7787)
+Local light probes allow for efficient localized reflection and image-based lighting.
 
 **Public Sponsors We Wish to Thank**
 ====================================
