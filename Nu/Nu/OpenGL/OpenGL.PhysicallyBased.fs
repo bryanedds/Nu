@@ -1769,7 +1769,6 @@ module PhysicallyBased =
          bones : single array array,
          surfacesCount : int,
          instanceFields : single array,
-         material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
@@ -1788,10 +1787,6 @@ module PhysicallyBased =
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Hl.Assert ()
-
-        // setup textures
-        Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
-        Hl.Assert ()
 
         // update instance buffer
         let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
