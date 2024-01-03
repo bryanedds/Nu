@@ -1447,13 +1447,20 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 Box2 (px, py, sx, sy)
                             | ValueNone -> box2 v2Zero v2Zero
 
-                        // render animated meshes
+                        // render animated meshes, computing bone animations only once
+                        let mutable bonesOpt = None
                         for mesh in scene.Meshes do
 
                             // render animated surface
                             // TODO: instead of computing bone transforms and adding to render tasks immediately,
                             // consider batching up the operations so they can be run in parallel.
-                            let bones = mesh.ComputeBoneTransforms (time, animations, scene)
+                            let bones =
+                                match bonesOpt with
+                                | None ->
+                                    let bones = mesh.ComputeBoneTransforms (time, animations, scene)
+                                    bonesOpt <- Some bones
+                                    bones
+                                | Some bones -> bones
                             if modelAbsolute then
                                 let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
                                 if renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue (struct (time, animations, surface), &renderOps)
