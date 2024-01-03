@@ -2891,21 +2891,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 updateEntityDrag ()
                 updateHotkeys entityHierarchyFocused
 
-                // override local desired eye changes if eye was changed elsewhere
-                if eyeChangedElsewhere then
-                    world <-
-                        World.frame (fun world ->
-                            desiredEye2dCenter <- World.getEye2dCenter world
-                            desiredEye3dCenter <- World.getEye3dCenter world
-                            desiredEye3dRotation <- World.getEye3dRotation world
-                            eyeChangedElsewhere <- false
-                            world)
-                            Game world
-                else
-                    world <- World.setEye2dCenter desiredEye2dCenter world
-                    world <- World.setEye3dCenter desiredEye3dCenter world
-                    world <- World.setEye3dRotation desiredEye3dRotation world
-
                 // reloading assets dialog
                 if reloadAssetsRequested > 0 then
                     let title = "Reloading assets..."
@@ -2968,6 +2953,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // fin
         world
 
+    let private imGuiPostProcess wtemp =
+
+        // override local desired eye changes if eye was changed elsewhere
+        let mutable world = wtemp
+        if eyeChangedElsewhere then
+            desiredEye2dCenter <- World.getEye2dCenter world
+            desiredEye3dCenter <- World.getEye3dCenter world
+            desiredEye3dRotation <- World.getEye3dRotation world
+            eyeChangedElsewhere <- false
+        else
+            world <- World.setEye2dCenter desiredEye2dCenter world
+            world <- World.setEye3dCenter desiredEye3dCenter world
+            world <- World.setEye3dRotation desiredEye3dRotation world
+        world
+
     let rec private runWithCleanUp gaiaState targetDir_ screen wtemp =
         world <- wtemp
         openProjectFilePath <- gaiaState.ProjectDllPath
@@ -3015,7 +3015,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                 ""
-        let result = World.runWithCleanUp tautology id id imGuiRender imGuiProcess Live true world
+        let result = World.runWithCleanUp tautology imGuiPostProcess id imGuiRender imGuiProcess imGuiPostProcess Live true world
         world <- Unchecked.defaultof<_>
         result
 

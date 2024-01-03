@@ -1264,7 +1264,7 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world =
 
             // run loop if user-defined run-while predicate passes
             TotalTimer.Start ()
@@ -1408,11 +1408,15 @@ module WorldModule2 =
                                                                     (World.getWindowSize world)
                                                                     drawData
 
+                                                                // post-process imgui frame
+                                                                let world = World.imGuiPostProcess world
+                                                                let world = imGuiPostProcess world
+
                                                                 // update time and recur
                                                                 TotalTimer.Stop ()
                                                                 let world = World.updateTime world
                                                                 WorldModule.TaskletProcessingStarted <- false
-                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness false world
+                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
 
                                                             // fin
                                                             | Dead -> world
@@ -1430,8 +1434,8 @@ module WorldModule2 =
             else world
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world =
-            try let world = World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess liveness firstFrame world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world =
+            try let world = World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->
