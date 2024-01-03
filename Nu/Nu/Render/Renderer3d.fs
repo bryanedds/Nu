@@ -1594,18 +1594,13 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // blit parameters to instance fields
             for i in 0 .. dec parameters.Length do
-                let struct (model, _, properties) = parameters.[i]
+                let struct (model, _, _) = parameters.[i]
                 model.ToArray (renderer.InstanceFields, i * 30)
-                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
-                renderer.InstanceFields.[i * 30 + 20] <- albedo.R
-                renderer.InstanceFields.[i * 30 + 20 + 1] <- albedo.G
-                renderer.InstanceFields.[i * 30 + 20 + 2] <- albedo.B
-                renderer.InstanceFields.[i * 30 + 20 + 3] <- albedo.A
 
             // draw surfaces
             OpenGL.PhysicallyBased.DrawPhysicallyBasedShadowSurfaces
                 (batchPhase, viewArray, projectionArray, bonesArray, parameters.Length,
-                 renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
+                 renderer.InstanceFields, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
         batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
