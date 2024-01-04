@@ -1230,7 +1230,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private getShadowBufferResolution shadowBufferIndex =
         let scalar = if shadowBufferIndex = 0 then 4 else 1 // higher resolution for global directional light
-        v2i Constants.Render.ShadowResolutionX Constants.Render.ShadowResolutionY * scalar
+        Constants.Render.ShadowResolution * scalar
     
     static member private getRenderTasks renderPass renderer =
         match renderer.RenderTasksDictionary.TryGetValue renderPass with
