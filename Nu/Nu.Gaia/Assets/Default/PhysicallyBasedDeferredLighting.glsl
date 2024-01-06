@@ -53,6 +53,21 @@ in vec2 texCoordsOut;
 
 out vec4 frag;
 
+float linstep(float low, float high, float v)
+{
+    return clamp((v - low) / (high - low), 0.0, 1.0);
+}
+
+float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shadowZ, float varianceMin, float lightBleedReductionAmount)
+{
+    vec2 moments = texture(shadowMap, shadowTexCoords).xy;
+    float p = step(shadowZ, moments.x);
+    float variance = max(moments.y - moments.x * moments.x, varianceMin);
+    float delta = shadowZ - moments.x;
+    float pMax = linstep(lightBleedReductionAmount, 1.0, variance / (variance + delta * delta));
+    return min(max(p, pMax), 1.0);
+}
+
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
@@ -160,10 +175,7 @@ void main()
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
-                float depth = texture(shadowTextures[shadowIndex], shadowTexCoords).r;
-                float biasFloor = 0.00025;
-                float bias = max(biasFloor * (1.0 - dot(normal, l)), biasFloor);
-                shadowScalar = depth + bias < shadowZ ? 0.0 : 1.0;
+                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.00001, 0.1);
             }
         }
 

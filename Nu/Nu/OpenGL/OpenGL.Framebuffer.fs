@@ -90,28 +90,34 @@ module Framebuffer =
         // create shadow texture
         let shadowTextureId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, shadowTextureId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.DepthComponent32f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.DepthComponent, PixelType.Float, nativeint 0)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
+        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rg32f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, shadowTextureId, 0)
         Hl.Assert ()
 
-        // associate shadow texture with frame buffer
-        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2d, shadowTextureId, 0)
-        Gl.DrawBuffer DrawBufferMode.None
-        Gl.ReadBuffer ReadBufferMode.None
+        // associate draw buffers
+        Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
+
+        // create render buffer with depth and stencil
+        let renderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, renderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, shadowResolutionX, shadowResolutionY)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, renderbuffer)
         Hl.Assert ()
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
             let shadowTexture = Texture.CreateTextureFromId shadowTextureId
-            Right (shadowTexture, framebuffer)
-        else Left "Could not create complete shadow mapping framebuffer."
+            Right (shadowTexture, renderbuffer, framebuffer)
+        else Left "Could not create complete shadow texture framebuffer."
 
     /// Destroy shadow buffers.
-    let DestroyShadowBuffers (shadowTexture : Texture.Texture, framebuffer) =
+    let DestroyShadowBuffers (shadowTexture : Texture.Texture, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         Texture.DestroyTexture shadowTexture
 
@@ -173,6 +179,7 @@ module Framebuffer =
               int FramebufferAttachment.ColorAttachment1
               int FramebufferAttachment.ColorAttachment2
               int FramebufferAttachment.ColorAttachment3|]
+        Hl.Assert ()
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()
@@ -220,6 +227,7 @@ module Framebuffer =
 
         // associate draw buffers
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()
@@ -261,6 +269,7 @@ module Framebuffer =
 
         // associate draw buffers
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()
@@ -302,6 +311,7 @@ module Framebuffer =
 
         // associate draw buffers
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()
@@ -343,6 +353,7 @@ module Framebuffer =
 
         // associate draw buffers
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()
@@ -384,6 +395,7 @@ module Framebuffer =
 
         // associate draw buffers
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()
@@ -425,6 +437,7 @@ module Framebuffer =
 
         // associate draw buffers
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]
+        Hl.Assert ()
 
         // create render buffer with depth and stencil
         let renderbuffer = Gl.GenRenderbuffer ()
