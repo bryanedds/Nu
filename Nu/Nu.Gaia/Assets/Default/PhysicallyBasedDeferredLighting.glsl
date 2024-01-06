@@ -58,13 +58,13 @@ float linstep(float low, float high, float v)
     return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
-float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shadowZ, float varianceMin, float lightBleedReductionAmount)
+float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shadowZ, float varianceMin, float lightBleedFilter)
 {
     vec2 moments = texture(shadowMap, shadowTexCoords).xy;
     float p = step(shadowZ, moments.x);
     float variance = max(moments.y - moments.x * moments.x, varianceMin);
     float delta = shadowZ - moments.x;
-    float pMax = linstep(lightBleedReductionAmount, 1.0, variance / (variance + delta * delta));
+    float pMax = linstep(lightBleedFilter, 1.0, variance / (variance + delta * delta));
     return max(p, pMax);
 }
 
@@ -175,7 +175,7 @@ void main()
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
-                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.000001, 0.01);
+                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.000001, 0.25);
             }
         }
 
