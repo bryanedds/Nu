@@ -663,7 +663,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           SsaoBuffers : OpenGL.Texture.Texture * uint * uint
           SsaoBlurBuffers : OpenGL.Texture.Texture * uint * uint
           FilterBuffers : OpenGL.Texture.Texture * uint * uint
-          ShadowBuffers : (OpenGL.Texture.Texture * uint) array
+          ShadowBuffers : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMatrices : Matrix4x4 array
           ShadowIndices : Dictionary<uint64, int>
           CubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
@@ -1876,6 +1876,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (lightViewRelative : Matrix4x4)
         (lightProjection : Matrix4x4)
         (shadowResolution : Vector2i)
+        (renderbuffer : uint)
         (framebuffer : uint) =
 
         // compute matrix arrays
@@ -1895,6 +1896,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // setup shadow buffer and viewport
         OpenGL.Gl.Viewport (0, 0, shadowResolution.X, shadowResolution.Y)
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, renderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, framebuffer)
         OpenGL.Gl.Clear OpenGL.ClearBufferMask.DepthBufferBit
         OpenGL.Hl.Assert ()
@@ -2155,7 +2157,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightShadowIndices = SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
 
         // grab shadow textures
-        let shadowTextures = Array.map fst renderer.ShadowBuffers
+        let shadowTextures = Array.map a__ renderer.ShadowBuffers
 
         // grab shadow matrices
         let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
@@ -2564,7 +2566,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
                         let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
-                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowResolution (snd renderer.ShadowBuffers.[shadowBufferIndex])
+                        let (_, renderbuffer, framebuffer) = renderer.ShadowBuffers.[shadowBufferIndex]
+                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowResolution renderbuffer framebuffer
                         renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
                         renderer.ShadowIndices.[light.SortableLightId] <- shadowBufferIndex
                         shadowBufferIndex <- inc shadowBufferIndex
