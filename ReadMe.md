@@ -49,8 +49,8 @@ Animated 3D model rendering.
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e52a031c-cbad-4828-bf3f-ab15af9c7787)
 Local light probes allow for efficient localized reflection and image-based lighting.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/34479fd5-9ea2-496e-bbe8-dbcacb3cc20e)
-Scary monsters...!
+![image](https://github.com/bryanedds/Nu/assets/1625560/142106e6-c2b4-43f9-93be-b0526755c807)
+Real-time WYSIWYG editing with hot asset and code reloading, and the ability to undo and redo gameplay (in functional execution mode).
 
 **Public Sponsors We Wish to Thank**
 ====================================
