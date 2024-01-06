@@ -2277,8 +2277,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render irradiance quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredIrradianceSurface
-            (normalAndHeightTexture, lightMappingTexture,
+            (positionTexture, normalAndHeightTexture, lightMappingTexture,
              lightMapFallback.IrradianceMap, lightMapIrradianceMaps,
+             lightMapOrigins, lightMapMins, lightMapSizes,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredIrradianceShader)
         OpenGL.Hl.Assert ()
 

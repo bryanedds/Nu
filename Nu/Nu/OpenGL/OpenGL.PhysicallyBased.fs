@@ -250,10 +250,14 @@ module PhysicallyBased =
 
     /// Describes an irradiance pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredIrradianceShader =
-        { NormalPlusTextureUniform : int
+        { PositionTextureUniform : int
+          NormalPlusTextureUniform : int
           LightMappingTextureUniform : int
           IrradianceMapUniform : int
           IrradianceMapsUniforms : int array
+          LightMapOriginsUniform : int
+          LightMapMinsUniform : int
+          LightMapSizesUniform : int
           PhysicallyBasedDeferredIrradianceShader : uint }
 
     /// Describes an environment filter pass of a deferred physically-based shader that's loaded into GPU.
@@ -1570,18 +1574,26 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
+        let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let normalPlusTextureUniform = Gl.GetUniformLocation (shader, "normalPlusTexture")
         let lightMappingTextureUniform = Gl.GetUniformLocation (shader, "lightMappingTexture")
         let irradianceMapUniform = Gl.GetUniformLocation (shader, "irradianceMap")
         let irradianceMapsUniforms =
             Array.init Constants.Render.LightMapsMaxDeferred $ fun i ->
                 Gl.GetUniformLocation (shader, "irradianceMaps[" + string i + "]")
+        let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
+        let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
+        let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
 
         // make shader record
-        { NormalPlusTextureUniform = normalPlusTextureUniform
+        { PositionTextureUniform = positionTextureUniform
+          NormalPlusTextureUniform = normalPlusTextureUniform
           LightMappingTextureUniform = lightMappingTextureUniform
           IrradianceMapUniform = irradianceMapUniform
           IrradianceMapsUniforms = irradianceMapsUniforms
+          LightMapOriginsUniform = lightMapOriginsUniform
+          LightMapMinsUniform = lightMapMinsUniform
+          LightMapSizesUniform = lightMapSizesUniform
           PhysicallyBasedDeferredIrradianceShader = shader }
 
     /// Create a physically-based shader for the environment filter pass of deferred rendering.
@@ -2176,18 +2188,26 @@ module PhysicallyBased =
 
     /// Draw the irradiance pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredIrradianceSurface
-        (normalPlusTexture : Texture.Texture,
+        (positionTexture : Texture.Texture,
+         normalPlusTexture : Texture.Texture,
          lightMappingTexture : Texture.Texture,
          irradianceMap : Texture.Texture,
          irradianceMaps : Texture.Texture array,
+         lightMapOrigins : single array,
+         lightMapMins : single array,
+         lightMapSizes : single array,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredIrradianceShader) =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredIrradianceShader
+        Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
+        Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
+        Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
         Hl.Assert ()
 
         // setup textures
+        Gl.UniformHandleARB (shader.PositionTextureUniform, positionTexture.TextureHandle)
         Gl.UniformHandleARB (shader.NormalPlusTextureUniform, normalPlusTexture.TextureHandle)
         Gl.UniformHandleARB (shader.LightMappingTextureUniform, lightMappingTexture.TextureHandle)
         Gl.UniformHandleARB (shader.IrradianceMapUniform, irradianceMap.TextureHandle)
