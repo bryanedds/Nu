@@ -48,7 +48,7 @@ vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, ve
     return tEnter < tExit ? vec2(tEnter, tExit) : vec2(0.0);
 }
 
-float computeDepthRatio(vec3 position, vec3 normal, vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB)
+float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 position, vec3 normal)
 {
     vec3 centerA = minA + sizeA * 0.5;
     vec3 centerB = minB + sizeB * 0.5;
@@ -104,7 +104,7 @@ void main()
     else
     {
         // compute blended environment filter
-        float ratio = computeDepthRatio(position, normal, lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2]);
+        float ratio = computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position, normal);
         vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, normal);
         vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position, normal);
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
