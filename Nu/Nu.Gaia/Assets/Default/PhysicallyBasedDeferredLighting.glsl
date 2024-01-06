@@ -65,7 +65,7 @@ float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shado
     float variance = max(moments.y - moments.x * moments.x, varianceMin);
     float delta = shadowZ - moments.x;
     float pMax = linstep(lightBleedReductionAmount, 1.0, variance / (variance + delta * delta));
-    return min(max(p, pMax), 1.0);
+    return max(p, pMax);
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
