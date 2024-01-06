@@ -119,6 +119,30 @@ bool inBounds(vec3 point, vec3 min, vec3 size)
         all(lessThanEqual(point, min + size));
 }
 
+vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, vec3 boxSize)
+{
+    vec3 rayDirectionInv = vec3(1.0) / rayDirection;
+    vec3 boxMax = boxMin + boxSize;
+    vec3 t1 = (boxMin - rayOrigin) * rayDirectionInv;
+    vec3 t2 = (boxMax - rayOrigin) * rayDirectionInv;
+    vec3 tMin = min(t1, t2);
+    vec3 tMax = max(t1, t2);
+    float tEnter = max(max(tMin.x / boxSize.x, tMin.y / boxSize.y), tMin.z / boxSize.z);
+    float tExit = min(min(tMax.x / boxSize.x, tMax.y / boxSize.y), tMax.z / boxSize.z);
+    return tEnter < tExit ? vec2(tEnter, tExit) : vec2(0.0);
+}
+
+float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 position, vec3 normal)
+{
+    vec3 centerA = minA + sizeA * 0.5;
+    vec3 centerB = minB + sizeB * 0.5;
+    vec3 direction = normalize(cross(cross(centerB - centerA, normal), normal));
+    vec3 intersectionMin = max(minA, minB);
+    vec3 intersectionSize = min(minA + sizeA, minB + sizeB) - intersectionMin;
+    vec2 intersectionRatios = rayBoxIntersectionRatios(position, direction, intersectionMin, intersectionSize);
+    return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
+}
+
 vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
 {
     vec3 directionWorld = positionWorld - eyeCenter;
@@ -311,25 +335,20 @@ void main()
     }
     else
     {
+        // compute blending
+        float ratio = computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position, n);
+
         // compute blended irradiance
-        vec3 delta1 = lightMapOrigins[lm1] - position;
-        vec3 delta2 = lightMapOrigins[lm2] - position;
-        float distance1 = sqrt(dot(delta1, delta1));
-        float distance2 = sqrt(dot(delta2, delta2));
-        float distanceTotal = distance1 + distance2;
-        float distanceTotalInverse = 1.0 / distanceTotal;
-        float scalar1 = (distanceTotal - distance1) * distanceTotalInverse;
-        float scalar2 = (distanceTotal - distance2) * distanceTotalInverse;
         vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
         vec3 irradiance2 = texture(irradianceMaps[lm2], n).rgb;
-        irradiance = irradiance1 * scalar1 + irradiance2 * scalar2;
+        irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
         vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, n);
         vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position, n);
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
-        environmentFilter = environmentFilter1 * scalar1 + environmentFilter2 * scalar2;
+        environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
     }
 
     // compute light ambient terms
