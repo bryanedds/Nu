@@ -245,7 +245,7 @@ module WorldGroupModule =
             let groupStateOpt = World.getGroupStateOpt source world
             match groupStateOpt with
             | Some groupState ->
-                let groupState = { groupState with Id = Gen.id64; Name = destination.Name }
+                let groupState = { groupState with Id = Gen.id64; Name = destination.Name; Content = GroupContent.empty }
                 let children = World.getEntitiesSovereign source world
                 let world = World.addGroup false groupState destination world
                 let world =
