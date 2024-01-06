@@ -47,7 +47,7 @@ Animated 3D model rendering.
 Scalable rendering thanks to instancing-by-default render technique.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/9c616281-6675-4c99-9f51-6684662580db)
-Real-time WYSIWYG editing with hot asset and code reloading, and the ability to undo and redo gameplay (in functional execution mode).
+Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
 **Public Sponsors We Wish to Thank**
 ====================================
