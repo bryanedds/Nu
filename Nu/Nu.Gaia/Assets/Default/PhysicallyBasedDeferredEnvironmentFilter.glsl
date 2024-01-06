@@ -45,8 +45,7 @@ vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, ve
     vec3 tMax = max(t1, t2);
     float tEnter = max(max(tMin.x / boxSize.x, tMin.y / boxSize.y), tMin.z / boxSize.z);
     float tExit = min(min(tMax.x / boxSize.x, tMax.y / boxSize.y), tMax.z / boxSize.z);
-    if (tEnter >= tExit) return vec2(0.0);
-    return vec2(tEnter, tExit);
+    return tEnter < tExit ? vec2(tEnter, tExit) : vec2(0.0);
 }
 
 float computeDepthRatio(vec3 position, vec3 normal, vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB)
@@ -57,9 +56,7 @@ float computeDepthRatio(vec3 position, vec3 normal, vec3 minA, vec3 sizeA, vec3 
     vec3 intersectionMin = max(minA, minB);
     vec3 intersectionSize = min(minA + sizeA, minB + sizeB) - intersectionMin;
     vec2 intersectionRatios = rayBoxIntersectionRatios(position, direction, intersectionMin, intersectionSize);
-    if (intersectionRatios == vec2(0.0)) return 0.5;
-    float distance = intersectionRatios.y - intersectionRatios.x;
-    return intersectionRatios.y / distance;
+    return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
 }
 
 vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
