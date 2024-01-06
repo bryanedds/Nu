@@ -175,7 +175,7 @@ void main()
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
-                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.000001, 0.25);
+                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.0000001, 0.333);
             }
         }
 
