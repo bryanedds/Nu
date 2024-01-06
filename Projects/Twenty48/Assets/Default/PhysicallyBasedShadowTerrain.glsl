@@ -16,7 +16,13 @@ void main()
 #shader fragment
 #version 410 core
 
+layout (location = 0) out vec2 moments;
+
 void main()
 {
-    gl_FragDepth = gl_FragCoord.z;
+	float depth = gl_FragCoord.z;
+	moments.x = depth;
+	float dx = dFdx(depth);
+	float dy = dFdy(depth);
+	moments.y = depth * depth + 0.25 * (dx * dx + dy * dy);
 }
