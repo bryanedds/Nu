@@ -49,6 +49,9 @@ Animated 3D model rendering.
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e52a031c-cbad-4828-bf3f-ab15af9c7787)
 Local light probes allow for efficient localized reflection and image-based lighting.
 
+![image](https://github.com/bryanedds/Nu/assets/1625560/34479fd5-9ea2-496e-bbe8-dbcacb3cc20e)
+Scary monsters...!
+
 **Public Sponsors We Wish to Thank**
 ====================================
 
