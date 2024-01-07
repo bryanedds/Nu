@@ -1612,7 +1612,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // draw surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedShadowSurfaces
             (batchPhase, viewArray, projectionArray, bonesArray, parameters.Length,
-                renderer.InstanceFields, surface.PhysicallyBasedGeometry, shader)
+             renderer.InstanceFields, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
         batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
