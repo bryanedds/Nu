@@ -1231,7 +1231,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
     static member private getShadowBufferResolution shadowBufferIndex =
-        let scalar = if shadowBufferIndex = 0 then 4 else 1 // higher resolution for global directional light
+        let scalar = if shadowBufferIndex = 0 then 2 else 1 // higher resolution for global directional light
         Constants.Render.ShadowResolution * scalar
     
     static member private getRenderTasks renderPass renderer =
@@ -2585,11 +2585,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                         OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
                         OpenGL.Hl.Assert ()
 
+                        // next shadow
+                        shadowBufferIndex <- inc shadowBufferIndex
                     | (false, _) -> ()
                 | _ -> ()
                 
-                // next shadow
-                shadowBufferIndex <- inc shadowBufferIndex
 
         // compute the viewports for the given window size
         let viewport = Constants.Render.Viewport
