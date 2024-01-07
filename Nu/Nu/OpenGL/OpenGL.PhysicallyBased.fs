@@ -317,16 +317,6 @@ module PhysicallyBased =
           ShadowMatricesUniforms : int array
           PhysicallyBasedDeferredLightingShader : uint }
 
-    /// Describes a blur pass of a physically-based shader that's loaded into GPU.
-    type PhysicallyBasedBlurShader =
-        { InputTextureUniform : int
-          PhysicallyBasedBlurShader : uint }
-
-    /// Describes an fxaa pass of a physically-based shader that's loaded into GPU.
-    type PhysicallyBasedFxaaShader =
-        { InputTextureUniform : int
-          PhysicallyBasedFxaaShader : uint }
-
     /// Create physically-based material from an assimp mesh. falling back on default in case of missing textures.
     /// Uses file name-based inferences to look for non-albedo files as well as determining if roughness should be
     /// inverted to smoothness (such as when a model is imported from an fbx exported from a Unity scene).
@@ -1728,34 +1718,6 @@ module PhysicallyBased =
           ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedDeferredLightingShader = shader }
 
-    /// Create a physically-based shader for the blur pass of rendering.
-    let CreatePhysicallyBasedBlurShader (shaderFilePath : string) =
-
-        // create shader
-        let shader = Shader.CreateShaderFromFilePath shaderFilePath
-        Hl.Assert ()
-
-        // retrieve uniforms
-        let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
-
-        // make shader record
-        { InputTextureUniform = inputTextureUniform
-          PhysicallyBasedBlurShader = shader }
-
-    /// Create a physically-based shader for the fxaa pass of rendering.
-    let CreatePhysicallyBasedFxaaShader (shaderFilePath : string) =
-
-        // create shader
-        let shader = Shader.CreateShaderFromFilePath shaderFilePath
-        Hl.Assert ()
-
-        // retrieve uniforms
-        let inputTextureUniform = Gl.GetUniformLocation (shader, "inputTexture")
-
-        // make shader record
-        { InputTextureUniform = inputTextureUniform
-          PhysicallyBasedFxaaShader = shader }
-
     /// Create the shaders for physically-based shadow rendering.
     let CreatePhysicallyBasedShadowShaders (shaderStaticShadowFilePath, shaderAnimatedShadowFilePath, shaderTerrainShadowFilePath) =
         let shaderStaticShadow = CreatePhysicallyBasedShader shaderStaticShadowFilePath
@@ -1783,6 +1745,104 @@ module PhysicallyBased =
         Hl.Assert ()
         let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
         (shaderStatic, shaderAnimated, shaderTerrain, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
+
+    /// Draw the filter box pass using a physically-based surface.
+    let DrawFilterBoxSurface
+        (inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBoxShader) =
+
+        // setup shader
+        Gl.UseProgram shader.FilterBoxShader
+        Hl.Assert ()
+
+        // setup textures
+        Gl.UniformHandleARB (shader.InputTextureUniform, inputTexture.TextureHandle)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.RegisterDrawCall ()
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+
+    /// Draw the filter gaussian pass using a physically-based surface.
+    let DrawFilterGaussianSurface
+        (scale : Vector2,
+         inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterGaussianShader) =
+
+        // setup shader
+        Gl.UseProgram shader.FilterGaussianShader
+        Gl.Uniform2 (shader.ScaleUniform, scale.X, scale.Y)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.UniformHandleARB (shader.InputTextureUniform, inputTexture.TextureHandle)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.RegisterDrawCall ()
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+
+    /// Draw the filter fxaa pass using a physically-based surface.
+    let DrawFilterFxaaSurface
+        (inputTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterFxaaShader) =
+
+        // setup shader
+        Gl.UseProgram shader.FilterFxaaShader
+        Hl.Assert ()
+
+        // setup textures
+        Gl.UniformHandleARB (shader.InputTextureUniform, inputTexture.TextureHandle)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.RegisterDrawCall ()
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
 
     /// Draw a batch of physically-based surfaces' shadows.
     let DrawPhysicallyBasedShadowSurfaces
@@ -2396,70 +2456,6 @@ module PhysicallyBased =
         Gl.UniformHandleARB (shader.SsaoTextureUniform, ssaoTexture.TextureHandle)
         for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
             Gl.UniformHandleARB (shader.ShadowTexturesUniforms[i], shadowTextures[i].TextureHandle)
-        Hl.Assert ()
-
-        // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        Hl.Assert ()
-
-        // draw geometry
-        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
-        Hl.RegisterDrawCall ()
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
-
-        // teardown shader
-        Gl.UseProgram 0u
-
-    /// Draw the blur pass of a physically-based surface.
-    let DrawPhysicallyBasedBlurSurface
-        (inputTexture : Texture.Texture,
-         geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedBlurShader) =
-
-        // setup shader
-        Gl.UseProgram shader.PhysicallyBasedBlurShader
-        Hl.Assert ()
-
-        // setup textures
-        Gl.UniformHandleARB (shader.InputTextureUniform, inputTexture.TextureHandle)
-        Hl.Assert ()
-
-        // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        Hl.Assert ()
-
-        // draw geometry
-        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
-        Hl.RegisterDrawCall ()
-        Hl.Assert ()
-
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
-
-        // teardown shader
-        Gl.UseProgram 0u
-
-    /// Draw the fxaa pass of a physically-based surface.
-    let DrawPhysicallyBasedFxaaSurface
-        (inputTexture : Texture.Texture,
-         geometry : PhysicallyBasedGeometry,
-         shader : PhysicallyBasedFxaaShader) =
-
-        // setup shader
-        Gl.UseProgram shader.PhysicallyBasedFxaaShader
-        Hl.Assert ()
-
-        // setup textures
-        Gl.UniformHandleARB (shader.InputTextureUniform, inputTexture.TextureHandle)
         Hl.Assert ()
 
         // setup geometry

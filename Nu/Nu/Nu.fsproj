@@ -54,6 +54,7 @@
 		<Compile Include="OpenGL\OpenGL.LightMap.fs" />
 		<Compile Include="OpenGL\OpenGL.Framebuffer.fs" />
 		<Compile Include="OpenGL\OpenGL.Sprite.fs" />
+		<Compile Include="OpenGL\OpenGL.Filter.fs" />
 		<Compile Include="OpenGL\OpenGL.SkyBox.fs" />
 		<Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
 		<Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
