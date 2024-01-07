@@ -657,6 +657,10 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
           PhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
           PhysicallyBasedForwardStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          ShadowBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
+          ShadowBuffersArray2 : (OpenGL.Texture.Texture * uint * uint) array
+          ShadowMatrices : Matrix4x4 array
+          ShadowIndices : Dictionary<uint64, int>
           GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
           IrradianceBuffers : OpenGL.Texture.Texture * uint * uint
@@ -664,10 +668,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           SsaoBuffersUnfiltered : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersFiltered : OpenGL.Texture.Texture * uint * uint
           FilterBuffers : OpenGL.Texture.Texture * uint * uint
-          ShadowBuffers : (OpenGL.Texture.Texture * uint * uint) array
-          ShadowBuffersTemp : (OpenGL.Texture.Texture * uint * uint) array
-          ShadowMatrices : Matrix4x4 array
-          ShadowIndices : Dictionary<uint64, int>
           CubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           BillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -1231,7 +1231,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
     static member private getShadowBufferResolution shadowBufferIndex =
-        let scalar = if shadowBufferIndex = 0 then 4 else 1 // higher resolution for global directional light
+        let scalar = if shadowBufferIndex = 0 then 2 else 1 // higher resolution for global directional light
         Constants.Render.ShadowResolution * scalar
     
     static member private getRenderTasks renderPass renderer =
@@ -1933,7 +1933,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
             i <- inc i
-            
+
         // deferred render animated surface shadows w/ absolute transforms if in top level render
         if topLevelRender then
             for entry in renderTasks.RenderDeferredAnimatedAbsolute do
@@ -2157,7 +2157,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightShadowIndices = SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
 
         // grab shadow textures
-        let shadowTextures = Array.map a__ renderer.ShadowBuffers
+        let shadowTextures = Array.map a__ renderer.ShadowBuffersArray
 
         // grab shadow matrices
         let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
@@ -2568,34 +2568,29 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 (shadowOrigin, shadowView, shadowProjection)
                         let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
-                        let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowBuffers.[shadowBufferIndex]
+                        let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowBuffersArray.[shadowBufferIndex]
                         GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowResolution shadowRenderbuffer shadowFramebuffer
                         renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
                         renderer.ShadowIndices.[light.SortableLightId] <- shadowBufferIndex
 
-                        // filter shadows on the x
-                        let (filterTexture, filterRenderbuffer, filterFramebuffer) = renderer.ShadowBuffersTemp.[shadowBufferIndex]
-                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filterRenderbuffer)
-                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filterFramebuffer)
-                        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-                        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                        OpenGL.Gl.Viewport (0, 0, shadowResolution.X, shadowResolution.Y)
+                        // filter shadows on the x (presuming that viewport already configured correctly)
+                        let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.ShadowBuffersArray2.[shadowBufferIndex]
+                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
+                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
                         OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
                         OpenGL.Hl.Assert ()
 
-                        // filter shadows on the y
+                        // filter shadows on the y (presuming that viewport already configured correctly)
                         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
                         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
-                        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-                        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                        OpenGL.Gl.Viewport (0, 0, shadowResolution.X, shadowResolution.Y)
-                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), filterTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
+                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
                         OpenGL.Hl.Assert ()
 
                         // next shadow
+                        shadowBufferIndex <- inc shadowBufferIndex
                     | (false, _) -> ()
                 | _ -> ()
-                shadowBufferIndex <- inc shadowBufferIndex
+                
 
         // compute the viewports for the given window size
         let viewport = Constants.Render.Viewport
@@ -2652,6 +2647,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         let environmentFilterShader = OpenGL.LightMap.CreateEnvironmentFilterShader Constants.Paths.EnvironmentFilterShaderFilePath
         OpenGL.Hl.Assert ()
 
+        // create filter box 1d shader
+        let filterBox1dShader = OpenGL.Filter.CreateFilterBoxShader Constants.Paths.FilterBox1dShaderFilePath
+        OpenGL.Hl.Assert ()
+
+        // create filter gaussian 2d shader
+        let filterGaussian2dShader = OpenGL.Filter.CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
+        OpenGL.Hl.Assert ()
+
+        // create filter fxaa shader
+        let filterFxaaShader = OpenGL.Filter.CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
+        OpenGL.Hl.Assert ()
+
         // create shadow shaders
         let (shadowStaticShader, shadowAnimatedShader, shadowTerrainShader) =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedShadowShaders
@@ -2677,17 +2684,27 @@ type [<ReferenceEquality>] GlRenderer3d =
         let forwardStaticShader = OpenGL.PhysicallyBased.CreatePhysicallyBasedShader Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath
         OpenGL.Hl.Assert ()
 
-        // create filter box 1d shader
-        let filterBox1dShader = OpenGL.Filter.CreateFilterBoxShader Constants.Paths.FilterBox1dShaderFilePath
-        OpenGL.Hl.Assert ()
+        // create shadow buffers array
+        let shadowBuffersArray =
+            [|for shadowBufferIndex in 0 .. dec Constants.Render.ShadowsMax do
+                let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
+                match OpenGL.Framebuffer.TryCreateShadowBuffers (shadowResolution.X, shadowResolution.Y) with
+                | Right shadowBuffers -> shadowBuffers
+                | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
 
-        // create filter gaussian 2d shader
-        let filterGaussian2dShader = OpenGL.Filter.CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
-        OpenGL.Hl.Assert ()
+        // create second array of shadow buffers
+        let shadowBuffersArray2 =
+            [|for shadowBufferIndex in 0 .. dec Constants.Render.ShadowsMax do
+                let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
+                match OpenGL.Framebuffer.TryCreateShadowBuffers (shadowResolution.X, shadowResolution.Y) with
+                | Right shadowBuffers -> shadowBuffers
+                | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
 
-        // create filter fxaa shader
-        let filterFxaaShader = OpenGL.Filter.CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
-        OpenGL.Hl.Assert ()
+        // create shadow matrices array
+        let shadowMatrices = Array.zeroCreate<Matrix4x4> Constants.Render.ShadowsMax
+
+        // create shadow indices
+        let shadowIndices = dictPlus HashIdentity.Structural []
 
         // create geometry buffers
         let geometryBuffers =
@@ -2737,28 +2754,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Right filterBuffers -> filterBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
-
-        // create unfiltered shadow buffers
-        let shadowBuffersUnfiltered =
-            [|for shadowBufferIndex in 0 .. dec Constants.Render.ShadowsMax do
-                let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
-                match OpenGL.Framebuffer.TryCreateShadowBuffers (shadowResolution.X, shadowResolution.Y) with
-                | Right shadowBuffers -> shadowBuffers
-                | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
-
-        // create filtered shadow buffers
-        let shadowBuffersFiltered =
-            [|for shadowBufferIndex in 0 .. dec Constants.Render.ShadowsMax do
-                let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
-                match OpenGL.Framebuffer.TryCreateShadowBuffers (shadowResolution.X, shadowResolution.Y) with
-                | Right shadowBuffers -> shadowBuffers
-                | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
-
-        // create shadow matrices array
-        let shadowMatrices = Array.zeroCreate<Matrix4x4> Constants.Render.ShadowsMax
-
-        // create shadow indices
-        let shadowIndices = dictPlus HashIdentity.Structural []
 
         // create white cube map
         let cubeMap =
@@ -2867,6 +2862,10 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedDeferredSsaoShader = deferredSsaoShader
               PhysicallyBasedDeferredLightingShader = deferredLightingShader
               PhysicallyBasedForwardStaticShader = forwardStaticShader
+              ShadowBuffersArray = shadowBuffersArray
+              ShadowBuffersArray2 = shadowBuffersArray2
+              ShadowMatrices = shadowMatrices
+              ShadowIndices = shadowIndices
               GeometryBuffers = geometryBuffers
               LightMappingBuffers = lightMappingBuffers
               IrradianceBuffers = irradianceBuffers
@@ -2874,10 +2873,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               SsaoBuffersUnfiltered = ssaoBuffersUnfiltered
               SsaoBuffersFiltered = ssaoBuffersFiltered
               FilterBuffers = filterBuffers
-              ShadowBuffersUnfiltered = shadowBuffersUnfiltered
-              ShadowBuffersFiltered = shadowBuffersFiltered
-              ShadowMatrices = shadowMatrices
-              ShadowIndices = shadowIndices
               CubeMapGeometry = cubeMapGeometry
               BillboardGeometry = billboardGeometry
               PhysicallyBasedQuad = physicallyBasedQuad
@@ -2963,5 +2958,5 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.SsaoBuffersUnfiltered
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.SsaoBuffersFiltered
             OpenGL.Framebuffer.DestroyFilterBuffers renderer.FilterBuffers
-            for shadowBufferUnfiltered in renderer.ShadowBuffersUnfiltered do OpenGL.Framebuffer.DestroyShadowBuffers shadowBufferUnfiltered
-            for shadowBufferFiltered in renderer.ShadowBuffersFiltered do OpenGL.Framebuffer.DestroyShadowBuffers shadowBufferFiltered
+            for shadowBuffers in renderer.ShadowBuffersArray do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers
+            for shadowBuffers2 in renderer.ShadowBuffersArray2 do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers2
