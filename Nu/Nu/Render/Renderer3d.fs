@@ -1231,7 +1231,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
     static member private getShadowBufferResolution shadowBufferIndex =
-        let scalar = if shadowBufferIndex = 0 then 2 else 1 // higher resolution for global directional light
+        let scalar = if shadowBufferIndex = 0 then 3 else 1 // higher resolution for global directional light
         Constants.Render.ShadowResolution * scalar
     
     static member private getRenderTasks renderPass renderer =
