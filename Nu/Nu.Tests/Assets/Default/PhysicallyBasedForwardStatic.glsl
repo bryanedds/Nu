@@ -133,8 +133,8 @@ float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
     vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
     float fadeScalar =
         max(
-            smoothstep(0.9, 1.0, normalized.x),
-            smoothstep(0.9, 1.0, normalized.y));
+            smoothstep(0.85, 1.0, normalized.x),
+            smoothstep(0.85, 1.0, normalized.y));
     return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
 }
 
