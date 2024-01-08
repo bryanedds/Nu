@@ -68,6 +68,16 @@ float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shado
     return max(p, pMax);
 }
 
+float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
+{
+    vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
+    float fadeScalar =
+        max(
+            smoothstep(0.9, 1.0, normalized.x),
+            smoothstep(0.9, 1.0, normalized.y));
+    return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
+}
+
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {
     float a = roughness * roughness;
@@ -176,6 +186,7 @@ void main()
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
                 shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.0000001, 0.333);
+                if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
             }
         }
 

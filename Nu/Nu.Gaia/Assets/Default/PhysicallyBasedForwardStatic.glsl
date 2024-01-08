@@ -67,6 +67,7 @@ const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
+const float SHADOW_FOV_MAX = 2.1;
 const int SHADOWS_MAX = 16;
 
 uniform vec3 eyeCenter;
@@ -125,6 +126,16 @@ float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shado
     float delta = shadowZ - moments.x;
     float pMax = linstep(lightBleedFilter, 1.0, variance / (variance + delta * delta));
     return max(p, pMax);
+}
+
+float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
+{
+    vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
+    float fadeScalar =
+        max(
+            smoothstep(0.9, 1.0, normalized.x),
+            smoothstep(0.9, 1.0, normalized.y));
+    return 1.0 - (1.0 - shadowScalar) * (1.0 - fadeScalar);
 }
 
 bool inBounds(vec3 point, vec3 min, vec3 size)
@@ -299,6 +310,7 @@ void main()
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
                 shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.0000001, 0.333);
+                if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
             }
         }
 
