@@ -70,11 +70,11 @@ type [<CLIMutable>] EventInfo =
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
 type EventFilter =
-    | Empty
     | All of EventFilter list
     | Any of EventFilter list
     | NotAny of EventFilter list
     | Pattern of Rexpr * Rexpr list
+    | Pass
 
     /// Filter events.
     static member filter (addressStr : string) (traceRev : EventInfo list) eventFilter =
@@ -91,4 +91,4 @@ type EventFilter =
                         passes <- enr.Current.IsMatch (scstring eventInfo)
                 passes
             else false
-        | Empty -> true
+        | Pass -> true
