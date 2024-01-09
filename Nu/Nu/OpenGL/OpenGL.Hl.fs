@@ -20,8 +20,9 @@ module Hl =
 
     let mutable private Initialized = false
     let mutable private AssertEnabled = false
-    let mutable private DrawCallsLock = obj ()
-    let mutable private DrawCalls = 0
+    let mutable private DrawReportLock = obj ()
+    let mutable private DrawCallCount = 0
+    let mutable private DrawInstanceCount = 0
 
     /// Initialize OpenGL assertion mechanism.
     let InitAssert enabled =
@@ -169,14 +170,22 @@ module Hl =
             with exn -> Log.info (scstring exn)
         finally handle.Free ()
 
-    /// Register the fact that a draw call has just been made.
-    let RegisterDrawCall () =
-        lock DrawCallsLock (fun () -> DrawCalls <- inc DrawCalls)
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let ReportDrawCall drawInstances =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- inc DrawCallCount
+            DrawInstanceCount <- DrawInstanceCount + drawInstances)
 
     /// Reset the running number of draw calls.
     let ResetDrawCalls () =
-        lock DrawCallsLock (fun () -> DrawCalls <- 0)
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- 0
+            DrawInstanceCount <- 0)
 
     /// Get the running number of draw calls.
-    let GetDrawCalls () =
-        lock DrawCallsLock (fun () -> DrawCalls)
+    let GetDrawCallCount () =
+        lock DrawReportLock (fun () -> DrawCallCount)
+
+    /// Get the running number of draw calls.
+    let GetDrawInstanceCount () =
+        lock DrawReportLock (fun () -> DrawInstanceCount)

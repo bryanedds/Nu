@@ -176,7 +176,7 @@ module SpriteBatch =
 
             // draw geometry
             Gl.DrawArrays (PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
-            Hl.RegisterDrawCall ()
+            Hl.ReportDrawCall env.SpriteIndex
             Hl.Assert ()
 
             // teardown shader
