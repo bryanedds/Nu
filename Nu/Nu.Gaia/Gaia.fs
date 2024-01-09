@@ -78,6 +78,8 @@ module Gaia =
     let mutable private desiredEye3dCenter = v3Zero
     let mutable private desiredEye3dRotation = quatIdentity
     let mutable private eyeChangedElsewhere = false
+    let mutable private fpsStartDateTime = DateTimeOffset.UtcNow
+    let mutable private fpsStartUpdateTime = 0L
 
     (* Configuration States *)
 
@@ -2357,9 +2359,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // matrics window
                     if ImGui.Begin ("Metrics", ImGuiWindowFlags.NoNav) then
-                        ImGui.Text "Draw Calls:"
+                        ImGui.Text "Fps:"
                         ImGui.SameLine ()
-                        ImGui.Text (string (OpenGL.Hl.GetDrawCalls ()))
+                        let currentDateTime = DateTimeOffset.UtcNow
+                        let elapsedDateTime = currentDateTime - fpsStartDateTime
+                        if elapsedDateTime.TotalSeconds >= 5.0 then
+                            fpsStartUpdateTime <- world.UpdateTime
+                            fpsStartDateTime <- currentDateTime
+                        let elapsedDateTime = currentDateTime - fpsStartDateTime
+                        let time = double (world.UpdateTime - fpsStartUpdateTime)
+                        let frames = time / elapsedDateTime.TotalSeconds
+                        ImGui.Text (if not (Double.IsNaN frames) then String.Format ("{0:f2}", frames) else "0.00")
+                        ImGui.Text "Draw Call Count:"
+                        ImGui.SameLine ()
+                        ImGui.Text (string (OpenGL.Hl.GetDrawCallCount ()))
+                        ImGui.Text "Draw Instance Count:"
+                        ImGui.SameLine ()
+                        ImGui.Text (string (OpenGL.Hl.GetDrawInstanceCount ()))
                         ImGui.End ()
 
                     // asset graph window
