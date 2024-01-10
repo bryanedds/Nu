@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open ImageMagick
+open ImageMagick.Formats
 open Prime
 
 /// A refinement that can be applied to an asset during the build process.
@@ -114,33 +115,6 @@ module AssetGraph =
         then List.fold getAssetExtension2 rawAssetExtension refinements
         else rawAssetExtension
 
-    let private writeMagickImageAsDds (assetName : string) (filePath : string) (image : MagickImage) =
-        ignore assetName // TODO: utilize dxt5 compression where desirable.
-        use stream = File.OpenWrite filePath
-        let defines = DdsWriteDefines ()
-        defines.FastMipmaps <-
-#if DEBUG
-            true
-#else
-            false
-#endif
-        defines.Compression <- Defines.DdsCompression.None
-        image.Write (stream, defines)
-
-    let private writeMagickImageAsPng psdHack (filePath : string) (image : MagickImage) =
-        match PathF.GetExtensionLower filePath with
-        | ".png" ->
-            use stream = File.OpenWrite filePath
-            if psdHack then
-                // HACK: this is a hack that deals with a more recent image magick bug that causes the transparent
-                // pixels of an image to be turned pure white or black. The side-effect of this hack is that your
-                // psd images cannot contain full white or black as a color.
-                image.ColorFuzz <- Percentage 0.0
-                image.Opaque (MagickColor.FromRgba (byte 255, byte 255, byte 255, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
-                image.Opaque (MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
-            image.Write (stream, MagickFormat.Png32)
-        | _ -> Log.info ("Invalid image file format for psd refinement; must be of *.png format.")
-
     /// Apply a single refinement to an asset.
     let private refineAssetOnce assetName (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
 
@@ -158,13 +132,28 @@ module AssetGraph =
         match refinement with
         | PsdToPng ->
             if intermediateFileExtension = ".psd" then
-                use image = new MagickImage (intermediateFilePath)
-                writeMagickImageAsPng false refinementFilePath image
+                use imageCollection = new MagickImageCollection (intermediateFilePath)
+                use image0 = imageCollection.[0] // NOTE: we clear out image0 to fix conversion to png somehow.
+                image0.ColorFuzz <- Percentage 100.0
+                image0.FloodFill (MagickColors.Transparent, 0, 0)
+                use image = imageCollection.Flatten MagickColors.Transparent
+                use stream = File.OpenWrite refinementFilePath
+                image.Write (stream, MagickFormat.Png32)
             elif not (File.Exists refinementFilePath) then
                 File.Copy (intermediateFilePath, refinementFilePath)
         | ConvertToDds ->
             use image = new MagickImage (intermediateFilePath)
-            writeMagickImageAsDds assetName refinementFilePath image
+            ignore assetName // TODO: utilize dxt5 compression where desirable.
+            use stream = File.OpenWrite refinementFilePath
+            let defines = DdsWriteDefines ()
+            defines.FastMipmaps <-
+#if DEBUG
+                true
+#else
+                false
+#endif
+            defines.Compression <- DdsCompression.None
+            image.Write (stream, defines)
 
         // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)
