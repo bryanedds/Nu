@@ -132,7 +132,14 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
-            fontTexture <- OpenGL.Texture.CreateTexture (OpenGL.InternalFormat.Rgba8, fontTextureWidth, fontTextureHeight, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, pixels)
+            let fontTextureId = OpenGL.Gl.GenTexture ()
+            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, fontTextureId)
+            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, fontTextureWidth, fontTextureHeight, 0, OpenGL.PixelFormat.Rgba, OpenGL.PixelType.UnsignedByte, pixels)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int OpenGL.TextureWrapMode.Repeat)
+            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int OpenGL.TextureWrapMode.Repeat)
+            fontTexture <- OpenGL.Texture.CreateTextureFromId fontTextureId
             fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 

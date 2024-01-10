@@ -11,13 +11,13 @@ open Prime
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =
     | PsdToPng
-    | Retro
-    
+    | ConvertToDds
+
     /// Convert a string to a refinement value.
     static member ofString str =
         match str with
-        | "PsdToPng" -> PsdToPng
-        | "Retro" -> Retro
+        | nameof PsdToPng -> PsdToPng
+        | nameof ConvertToDds -> ConvertToDds
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a game asset, such as a texture, sound, or model in detail.
@@ -93,8 +93,8 @@ module AssetGraph =
     /// A graph of all the assets used in a game.
     [<Syntax
         ("Asset Assets",
-         "nueffect nuscript nugroup psd png bmp ttf tmx wav ogg csv " +
-         "PsdToPng Retro " +
+         "ttf psd bmp png jpg jpeg tga tif tiff dds cbm fbx dae obj mtl glsl raw wav ogg nueffect nuscript csv nugroup tsx tmx " +
+         "PsdToPng ConvertToDds " +
          "Render Audio Symbol",
          "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
@@ -106,12 +106,26 @@ module AssetGraph =
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
-        | PsdToPng -> "png"
-        | Retro -> rawAssetExtension
+        | PsdToPng -> if rawAssetExtension = ".psd" then ".png" else rawAssetExtension
+        | ConvertToDds -> ".dds"
 
     let private getAssetExtension usingRawAssets rawAssetExtension refinements =
-        if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
+        if usingRawAssets
+        then List.fold getAssetExtension2 rawAssetExtension refinements
         else rawAssetExtension
+
+    let private writeMagickImageAsDds (assetName : string) (filePath : string) (image : MagickImage) =
+        ignore assetName // TODO: utilize dxt5 compression where desirable.
+        use stream = File.OpenWrite filePath
+        let defines = DdsWriteDefines ()
+        defines.FastMipmaps <-
+#if DEBUG
+            true
+#else
+            false
+#endif
+        defines.Compression <- Defines.DdsCompression.None
+        image.Write (stream, defines)
 
     let private writeMagickImageAsPng psdHack (filePath : string) (image : MagickImage) =
         match PathF.GetExtensionLower filePath with
@@ -125,10 +139,10 @@ module AssetGraph =
                 image.Opaque (MagickColor.FromRgba (byte 255, byte 255, byte 255, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
                 image.Opaque (MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
             image.Write (stream, MagickFormat.Png32)
-        | _ -> Log.info ("Invalid image file format for scaling refinement; must be of *.png format.")
+        | _ -> Log.info ("Invalid image file format for psd refinement; must be of *.png format.")
 
     /// Apply a single refinement to an asset.
-    let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
+    let private refineAssetOnce assetName (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
         let intermediateFileExtension = PathF.GetExtensionMixed intermediateFileSubpath
@@ -143,21 +157,22 @@ module AssetGraph =
         Directory.CreateDirectory (PathF.GetDirectoryName refinementFilePath) |> ignore
         match refinement with
         | PsdToPng ->
+            if intermediateFileExtension = ".psd" then
+                use image = new MagickImage (intermediateFilePath)
+                writeMagickImageAsPng false refinementFilePath image
+            else File.Copy (intermediateFilePath, refinementFilePath)
+        | ConvertToDds ->
             use image = new MagickImage (intermediateFilePath)
-            writeMagickImageAsPng false refinementFilePath image
-        | Retro ->
-            use image = new MagickImage (intermediateFilePath)
-            image.Scale (Percentage 300)
-            writeMagickImageAsPng false refinementFilePath image
+            writeMagickImageAsDds assetName refinementFilePath image
 
         // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)
 
     /// Apply all refinements to an asset.
-    let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
+    let private refineAsset assetName inputFileSubpath inputDirectory refinementDirectory refinements =
         List.fold
             (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
-                refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
+                refineAssetOnce assetName intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
             (inputFileSubpath, inputDirectory)
             refinements
 
@@ -185,7 +200,7 @@ module AssetGraph =
                 // refine the asset
                 let (intermediateFileSubpath, intermediateDirectory) =
                     if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
-                    else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
+                    else refineAsset asset.AssetTag.AssetName inputFileSubpath inputDirectory refinementDirectory asset.Refinements
 
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath

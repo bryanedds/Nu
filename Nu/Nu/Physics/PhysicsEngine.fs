@@ -45,11 +45,11 @@ type HeightMap =
     static member private tryGetTextureData tryGetAssetFilePath (assetTag : Image AssetTag) =
         match tryGetAssetFilePath assetTag with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateTextureData (Constants.OpenGL.UncompressedTextureFormat, false, filePath) with
-            | Some (metadata, textureDataPtr, disposer) ->
-                use _ = disposer
-                let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
-                Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
+            match OpenGL.Texture.TryCreateTextureData filePath with
+            | Some textureData ->
+                let metadata = textureData.Metadata
+                let bytes = textureData.Bytes
+                textureData.Dispose ()
                 Some (metadata, bytes)
             | None -> None
         | None -> None

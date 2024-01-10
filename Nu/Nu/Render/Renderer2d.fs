@@ -178,8 +178,8 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private tryLoadRenderAsset packageState (asset : Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
-        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
-            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (Constants.OpenGL.UncompressedTextureFormat, asset.FilePath, packageState.TextureMemo) with
+        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff"| ".dds" ->
+            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (asset.FilePath, packageState.TextureMemo) with
             | Right (textureMetadata, texture) ->
                 Some (TextureAsset (textureMetadata, texture))
             | Left error ->

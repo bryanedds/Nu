@@ -35,7 +35,7 @@ module Gameplay =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ Score = 0; State = Quit })
 
-        static let [<Literal>] SectionCount = 16
+        static let [<Literal>] SectionCount = 12
 
         override this.Initialize (_, _) =
             [Screen.SelectEvent => CreateSections

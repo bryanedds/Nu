@@ -36,6 +36,7 @@ module Override =
                 let value = settings.[key].Value
                 match key with
                 | nameof GameTime.DesiredFrameRate -> GameTime.DesiredFrameRate <- scvalue value
+                | nameof OpenGL.HlAssert -> OpenGL.HlAssert <- scvalue value
                 | nameof Engine.EntityPerimeterCentered2dDefault -> Engine.EntityPerimeterCentered2dDefault <- scvalue value
                 | nameof Engine.EntityPerimeterCenteredGuiDefault -> Engine.EntityPerimeterCenteredGuiDefault <- scvalue value
                 | nameof Engine.QuadnodeSize -> Engine.QuadnodeSize <- scvalue value
@@ -55,7 +56,6 @@ module Override =
                 | nameof Render.ShadowDetailedCount -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowDetailedResolutionScalar -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsMaxShader
-                | nameof OpenGL.HlAssert -> OpenGL.HlAssert <- scvalue value
                 | _ -> ()
         with
         | :? ConfigurationErrorsException ->

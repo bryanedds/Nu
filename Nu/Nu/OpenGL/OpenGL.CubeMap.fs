@@ -4,7 +4,9 @@
 namespace OpenGL
 open System
 open System.Collections.Generic
+open System.IO
 open System.Numerics
+open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open Prime
 open Nu
@@ -25,6 +27,8 @@ module CubeMap =
             { CubeMaps = Dictionary HashIdentity.Structural }
 
     /// Attempt to create a cube map from 6 files.
+    /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the included
+    /// files can't be located.
     let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) =
 
         // bind new cube map
@@ -38,11 +42,20 @@ module CubeMap =
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
                 let faceFilePath = faceFilePaths.[i]
-                match Texture.TryCreateTextureData (Constants.OpenGL.UncompressedTextureFormat, false, faceFilePath) with
-                | Some (metadata, textureData, disposer) ->
-                    use _ = disposer
-                    Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, textureData)
-                    Hl.Assert ()
+                let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath
+                let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".dds") else faceFilePath
+                match Texture.TryCreateTextureData faceFilePath with
+                | Some textureData ->
+                    match textureData with
+                    | OpenGL.Texture.TextureData.TextureDataDotNet (metadata, bytes) | OpenGL.Texture.TextureData.TextureDataMipmap (metadata, bytes, _) ->
+                        let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
+                        try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                        finally bytesPtr.Free ()
+                        Hl.Assert ()
+                    | OpenGL.Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
+                        use _ = disposer
+                        Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
+                        Hl.Assert ()
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
         // attempt to finalize cube map
