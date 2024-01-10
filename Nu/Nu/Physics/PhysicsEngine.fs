@@ -48,9 +48,9 @@ type HeightMap =
             match OpenGL.Texture.TryCreateTextureData filePath with
             | Some textureData ->
                 let metadata = textureData.Metadata
-                let bytes = textureData.Bytes
+                let (blockCompressed, bytes) = textureData.Bytes
                 textureData.Dispose ()
-                Some (metadata, bytes)
+                Some (metadata, blockCompressed, bytes)
             | None -> None
         | None -> None
 
@@ -65,38 +65,46 @@ type HeightMap =
         | None -> None
 
     static member private tryGetImageHeightMapMetadata tryGetAssetFilePath (bounds : Box3) tiles image =
+
+        // attempt to load texture data
         match HeightMap.tryGetTextureData tryGetAssetFilePath image with
-        | Some (metadata, bytes) ->
+        | Some (metadata, blockCompressed, bytes) ->
 
-            // compute normalize heights
-            let resolutionX = metadata.TextureWidth
-            let resolutionY = metadata.TextureHeight
-            let scalar = 1.0f / single Byte.MaxValue
-            let heightsNormalized =
-                [|for y in 0 .. dec resolutionY do
-                    for x in 0 .. dec resolutionX do
-                        let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
-                        single bytes[index] * scalar|]
+            // currently only supporting height data from block-compressed files
+            if not blockCompressed then
 
-            // compute positions and tex coordses
-            let quadSizeX = bounds.Size.X / single (dec resolutionX)
-            let quadSizeY = bounds.Size.Z / single (dec resolutionY)
-            let terrainHeight = bounds.Size.Y
-            let terrainPositionX = bounds.Min.X
-            let terrainPositionY = bounds.Min.Y
-            let terrainPositionZ = bounds.Min.Z
-            let texelWidth = 1.0f / single resolutionX
-            let texelHeight = 1.0f / single resolutionY
-            let positionsAndTexCoordses =
-                [|for y in 0 .. dec resolutionY do
-                    for x in 0 .. dec resolutionX do
-                        let normalized = heightsNormalized.[y * resolutionX + x]
-                        let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                        let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
-                        struct (position, texCoords)|]
+                // compute normalize heights
+                let resolutionX = metadata.TextureWidth
+                let resolutionY = metadata.TextureHeight
+                let scalar = 1.0f / single Byte.MaxValue
+                let heightsNormalized =
+                    [|for y in 0 .. dec resolutionY do
+                        for x in 0 .. dec resolutionX do
+                            let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
+                            single bytes[index] * scalar|]
 
-            // fin
-            Some { Resolution = v2i resolutionX resolutionY; HeightsNormalized = heightsNormalized; PositionsAndTexCoordses = positionsAndTexCoordses }
+                // compute positions and tex coordses
+                let quadSizeX = bounds.Size.X / single (dec resolutionX)
+                let quadSizeY = bounds.Size.Z / single (dec resolutionY)
+                let terrainHeight = bounds.Size.Y
+                let terrainPositionX = bounds.Min.X
+                let terrainPositionY = bounds.Min.Y
+                let terrainPositionZ = bounds.Min.Z
+                let texelWidth = 1.0f / single resolutionX
+                let texelHeight = 1.0f / single resolutionY
+                let positionsAndTexCoordses =
+                    [|for y in 0 .. dec resolutionY do
+                        for x in 0 .. dec resolutionX do
+                            let normalized = heightsNormalized.[y * resolutionX + x]
+                            let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
+                            let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
+                            struct (position, texCoords)|]
+
+                // fin
+                Some { Resolution = v2i resolutionX resolutionY; HeightsNormalized = heightsNormalized; PositionsAndTexCoordses = positionsAndTexCoordses }
+
+            // handle errors
+            else Log.info "Block-compressed image files are unsupported for use as height maps."; None
         | None -> None
 
     static member private tryGetRawHeightMapMetadata tryGetAssetFilePath (bounds : Box3) tiles map =
