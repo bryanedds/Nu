@@ -2774,21 +2774,21 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create white texture
         let whiteTexture =
-            match OpenGL.Texture.TryCreateTextureFiltered Constants.Paths.WhiteTextureFilePath with
+            match OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/White.bmp" with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load white texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create black texture
         let blackTexture =
-            match OpenGL.Texture.TryCreateTextureFiltered Constants.Paths.BlackTextureFilePath with
+            match OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/Black.bmp" with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered Constants.Paths.BrdfTextureFilePath with
+            match OpenGL.Texture.TryCreateTextureUnfiltered "Assets/Default/Brdf.tiff" with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -2802,19 +2802,19 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAlbedo.dds" |> Either.getRight
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAlbedo.tiff" |> Either.getRight
         OpenGL.Hl.Assert ()
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialRoughness.dds" |> Either.getRight |> snd
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialMetallic.dds" |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAmbientOcclusion.dds" |> Either.getRight |> snd
-              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialEmission.dds" |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialNormal.dds" |> Either.getRight |> snd
-              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialHeight.dds" |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialRoughness.tiff" |> Either.getRight |> snd
+              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialMetallic.tiff" |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAmbientOcclusion.tiff" |> Either.getRight |> snd
+              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialEmission.tiff" |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialNormal.tiff" |> Either.getRight |> snd
+              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialHeight.tiff" |> Either.getRight |> snd
               TwoSided = false }
 
         // make light mapping config

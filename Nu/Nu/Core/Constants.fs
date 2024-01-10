@@ -258,6 +258,3 @@ module Paths =
     let [<Literal>] PhysicallyBasedDeferredSsaoShaderFilePath = "Assets/Default/PhysicallyBasedDeferredSsao.glsl"
     let [<Literal>] PhysicallyBasedDeferredLightingShaderFilePath = "Assets/Default/PhysicallyBasedDeferredLighting.glsl"
     let [<Literal>] PhysicallyBasedForwardStaticShaderFilePath = "Assets/Default/PhysicallyBasedForwardStatic.glsl"
-    let [<Literal>] WhiteTextureFilePath = "Assets/Default/White.bmp"
-    let [<Literal>] BlackTextureFilePath = "Assets/Default/Black.bmp"
-    let [<Literal>] BrdfTextureFilePath = "Assets/Default/Brdf.dds"
