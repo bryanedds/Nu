@@ -79,14 +79,6 @@ module AssetTag =
     let specialize<'a> (assetTag : AssetTag) : 'a AssetTag =
         make<'a> assetTag.PackageName assetTag.AssetName
 
-    /// Check that an asset can utilize dxt5 compression (IE, it's not a normal map or specified as uncompressed)
-    /// TODO: move this somewhere more general.
-    let dxt5Capable (assetName : string) =
-        not (assetName.EndsWith "_n") &&
-        not (assetName.EndsWith "_u") &&
-        not (assetName.EndsWith "Normal") &&
-        not (assetName.EndsWith "Uncompressed")
-
 [<AutoOpen>]
 module AssetTagOperators =
 

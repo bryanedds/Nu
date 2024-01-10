@@ -47,9 +47,16 @@ module CubeMap =
                 match Texture.TryCreateTextureData faceFilePath with
                 | Some textureData ->
                     match textureData with
-                    | OpenGL.Texture.TextureData.TextureDataDotNet (metadata, bytes) | OpenGL.Texture.TextureData.TextureDataMipmap (metadata, bytes, _) ->
+                    | OpenGL.Texture.TextureData.TextureDataDotNet (metadata, bytes) ->
                         let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                         try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                        finally bytesPtr.Free ()
+                        Hl.Assert ()
+                    | OpenGL.Texture.TextureData.TextureDataMipmap (metadata, blockCompressed, bytes, _) ->
+                        let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
+                        try if blockCompressed
+                            then Gl.CompressedTexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGL.BlockCompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, bytes.Length, bytesPtr.AddrOfPinnedObject ())
+                            else Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                         finally bytesPtr.Free ()
                         Hl.Assert ()
                     | OpenGL.Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->

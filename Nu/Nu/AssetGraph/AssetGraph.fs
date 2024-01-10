@@ -143,7 +143,6 @@ module AssetGraph =
                 File.Copy (intermediateFilePath, refinementFilePath)
         | ConvertToDds ->
             use image = new MagickImage (intermediateFilePath)
-            ignore assetName // TODO: utilize dxt5 compression where desirable.
             use stream = File.OpenWrite refinementFilePath
             let defines = DdsWriteDefines ()
             defines.FastMipmaps <-
@@ -152,7 +151,9 @@ module AssetGraph =
 #else
                 false
 #endif
-            defines.Compression <- DdsCompression.None
+            if OpenGL.Texture.BlockCompressable assetName
+            then image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
+            else defines.Compression <- DdsCompression.None
             image.Write (stream, defines)
 
         // return the latest refinement localities

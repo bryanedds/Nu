@@ -28,7 +28,7 @@
         [[Gameplay TerraLayer3Albedo] [Gameplay TerraLayer3Roughness] [Gameplay TerraLayer3AmbientOcclusion] [Gameplay TerraLayer3Normal] [Gameplay TerraLayer3Height]]
         [[Gameplay TerraLayer4Albedo] [Gameplay TerraLayer4Roughness] [Gameplay TerraLayer4AmbientOcclusion] [Gameplay TerraLayer4Normal] [Gameplay TerraLayer4Height]]]
        [RedsMap
-        [[Gameplay TerraLayerBlend] [Gameplay TerraLayer2Blend] [Gameplay TerraLayer3Blend] [Gameplay TerraLayer4]]]]]]
+        [[Gameplay TerraLayerBlend] [Gameplay TerraLayer2Blend] [Gameplay TerraLayer3Blend] [Gameplay TerraLayer4Blend]]]]]]
     [TerrainMaterialProperties
      [[AlbedoOpt
        [ValueSome [1 1 1 1]]]

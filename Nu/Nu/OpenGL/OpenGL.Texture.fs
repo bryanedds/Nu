@@ -28,39 +28,37 @@ module Texture =
         { TextureWidth : int
           TextureHeight : int
           TextureTexelWidth : single
-          TextureTexelHeight : single
-          TextureInternalFormat : InternalFormat }
+          TextureTexelHeight : single }
 
         /// Unpopulated texture data.
         static member empty =
             { TextureWidth = 0
               TextureHeight = 0
               TextureTexelWidth = 0.0f
-              TextureTexelHeight = 0.0f
-              TextureInternalFormat = Unchecked.defaultof<InternalFormat> }
+              TextureTexelHeight = 0.0f }
 
     /// Describes data loaded from a texture.
     type TextureData =
         | TextureDataDotNet of TextureMetadata * byte array
-        | TextureDataMipmap of TextureMetadata * byte array * (Vector2i * byte array) array
+        | TextureDataMipmap of TextureMetadata * bool * byte array * (Vector2i * byte array) array
         | TextureDataNative of TextureMetadata * nativeint * IDisposable
         member this.Metadata =
             match this with
             | TextureDataDotNet (metadata, _) -> metadata
-            | TextureDataMipmap (metadata, _, _) -> metadata
+            | TextureDataMipmap (metadata, _, _, _) -> metadata
             | TextureDataNative (metadata, _, _) -> metadata
         member this.Bytes =
             match this with
-            | TextureDataDotNet (_, bytes) -> bytes
-            | TextureDataMipmap (_, bytes, _) -> bytes
+            | TextureDataDotNet (_, bytes) -> (false, bytes)
+            | TextureDataMipmap (_, blockCompressed, bytes, _) -> (blockCompressed, bytes)
             | TextureDataNative (metadata, textureDataPtr, _) ->
                 let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
                 Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
-                bytes
+                (false, bytes)
         member this.Dispose () =
             match this with
             | TextureDataDotNet (_, _) -> ()
-            | TextureDataMipmap (_, _, _) -> ()
+            | TextureDataMipmap (_, _, _, _) -> ()
             | TextureDataNative (_, _, disposer) -> disposer.Dispose ()
 
     /// Memoizes texture loads.
@@ -71,7 +69,17 @@ module Texture =
         static member make () =
             { Textures = Dictionary HashIdentity.Structural }
 
-    let private TryFormatPfimageData (image : IImage) =
+    /// Check that an asset can utilize block compression (IE, it's not a normal map, blend map, or specified as uncompressed).
+    /// TODO: move this somewhere more general?
+    let BlockCompressable (assetName : string) =
+        not (assetName.EndsWith "_n") &&
+        not (assetName.EndsWith "_u") &&
+        not (assetName.EndsWith "_b") &&
+        not (assetName.EndsWith "Normal") &&
+        not (assetName.EndsWith "Uncompressed") &&
+        not (assetName.EndsWith "Blend")
+
+    let private TryFormatUncompressedPfimageData (image : IImage) =
         let data = image.Data
         let bytesOpt =
             match image.Format with
@@ -153,7 +161,7 @@ module Texture =
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try let textureId = Gl.GenTexture ()
                 Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                Gl.TexImage2D (TextureTarget.Texture2d, 0, metadata.TextureInternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
@@ -165,28 +173,37 @@ module Texture =
                 (metadata, texture)
             finally bytesPtr.Free ()
 
-        | TextureDataMipmap (metadata, bytes, mipmapDataArray) ->
+        | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
             // upload the texture data to gl
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try let textureId = Gl.GenTexture ()
                 Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                Gl.TexImage2D (TextureTarget.Texture2d, 0, metadata.TextureInternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                if blockCompressed
+                then Gl.CompressedTexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.BlockCompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, bytes.Length, bytesPtr.AddrOfPinnedObject ())
+                else Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                Hl.Assert () // defensive assert
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-                if mipmaps || mipmapDataArray.Length > 0 then
+                if mipmaps || mipmapBytesArray.Length > 0 then
                     Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)
-                if mipmaps && mipmapDataArray.Length = 0 then
-                    Gl.GenerateMipmap TextureTarget.Texture2d
-                let mutable mipmapIndex = 0
-                while mipmapIndex < mipmapDataArray.Length do
-                    let (mipmapResolution, mipmapBytes) = mipmapDataArray.[mipmapIndex]
-                    let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
-                    try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, metadata.TextureInternalFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
-                    finally mipmapBytesPtr.Free ()
-                    mipmapIndex <- inc mipmapIndex
+                
+                //if mipmaps && mipmapBytesArray.Length = 0 then
+                //    Gl.GenerateMipmap TextureTarget.Texture2d
+                //let mutable mipmapIndex = 0
+                //while mipmapIndex < mipmapBytesArray.Length do
+                //    let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                //    let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
+                //    try if compressed
+                //        then Gl.CompressedTexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Constants.OpenGL.CompressedColorTextureFormat, mipmapResolution.X, mipmapResolution.Y, 0, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
+                //        else Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Constants.OpenGL.UncompressedTextureFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
+                //        Hl.Assert () // defensive assert
+                //    finally mipmapBytesPtr.Free ()
+                //    mipmapIndex <- inc mipmapIndex
+                Gl.GenerateMipmap TextureTarget.Texture2d
+
                 let texture = CreateTextureFromId textureId
                 (metadata, texture)
             finally bytesPtr.Free ()
@@ -197,7 +214,7 @@ module Texture =
             use _ = disposer
             let textureId = Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, textureId)
-            Gl.TexImage2D (TextureTarget.Texture2d, 0, metadata.TextureInternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
+            Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
@@ -226,31 +243,41 @@ module Texture =
             let fileExtension = PathF.GetExtensionLower filePath
             if fileExtension = ".tga" then
                 try let image = Pfimage.FromFile filePath
-                    image.Decompress ()
-                    match TryFormatPfimageData image with
+                    match TryFormatUncompressedPfimageData image with
                     | Some (bytes, _) ->
                         let metadata =
                             { TextureWidth = image.Width
                               TextureHeight = image.Height
                               TextureTexelWidth = 1.0f / single image.Width
-                              TextureTexelHeight = 1.0f / single image.Height
-                              TextureInternalFormat = Constants.OpenGL.UncompressedTextureFormat }
+                              TextureTexelHeight = 1.0f / single image.Height }
                         Some (TextureDataDotNet (metadata, bytes))
                     | None -> None
                 with _ -> None
             elif fileExtension = ".dds" then
-                try let image = Pfimage.FromFile filePath
-                    image.Decompress () // TODO: utilize dxt5 compression where desirable.
-                    match TryFormatPfimageData image with
-                    | Some (bytes, mipmapDataArray) ->
-                        let metadata =
-                            { TextureWidth = image.Width
-                              TextureHeight = image.Height
-                              TextureTexelWidth = 1.0f / single image.Width
-                              TextureTexelHeight = 1.0f / single image.Height
-                              TextureInternalFormat = Constants.OpenGL.UncompressedTextureFormat }
-                        Some (TextureDataMipmap (metadata, bytes, mipmapDataArray))
-                    | None -> None
+                try let config = PfimConfig (decompress = false)
+                    use fileStream = File.OpenRead filePath
+                    use dds = Dds.Create (fileStream, config)
+                    let metadata =
+                        { TextureWidth = dds.Width
+                          TextureHeight = dds.Height
+                          TextureTexelWidth = 1.0f / single dds.Width
+                          TextureTexelHeight = 1.0f / single dds.Height }
+                    if dds.Compressed then
+                        let mutable dims = v2i dds.Width dds.Height
+                        let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
+                        let mutable index = 0
+                        let bytes = dds.Data.AsSpan(index, size).ToArray()
+                        let mipmapBytesArray =
+                            [|for _ in 1u .. dec dds.Header.MipMapCount do
+                                dims <- dims / 2
+                                index <- index + size
+                                size <- size / 4
+                                if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|]
+                        Some (TextureDataMipmap (metadata, true, bytes, mipmapBytesArray))
+                    else
+                        match TryFormatUncompressedPfimageData dds with
+                        | Some (bytes, mipmapBytesArray) -> Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
+                        | None -> None
                 with _ -> None
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
                 try let bitmap = new Drawing.Bitmap (filePath)
@@ -259,8 +286,7 @@ module Texture =
                         { TextureWidth = bitmap.Width
                           TextureHeight = bitmap.Height
                           TextureTexelWidth = 1.0f / single bitmap.Width
-                          TextureTexelHeight = 1.0f / single bitmap.Height
-                          TextureInternalFormat = Constants.OpenGL.UncompressedTextureFormat }
+                          TextureTexelHeight = 1.0f / single bitmap.Height }
                     let scan0 = data.Scan0
                     Some (TextureDataNative (metadata, scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () })) // NOTE: calling UnlockBits explicitly since I can't figure out if Dispose does.
                 with _ -> None
@@ -274,8 +300,7 @@ module Texture =
                         { TextureWidth = unconverted.w
                           TextureHeight = unconverted.h
                           TextureTexelWidth = 1.0f / single unconverted.w
-                          TextureTexelHeight = 1.0f / single unconverted.h
-                          TextureInternalFormat = Constants.OpenGL.UncompressedTextureFormat }
+                          TextureTexelHeight = 1.0f / single unconverted.h }
                     let unconvertedFormat = Marshal.PtrToStructure<SDL.SDL_PixelFormat> unconverted.format
                     if unconvertedFormat.format <> format then
                         let convertedPtr = SDL.SDL_ConvertSurfaceFormat (unconvertedPtr, format, 0u)

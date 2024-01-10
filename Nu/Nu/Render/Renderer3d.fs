@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
 open SDL2
 open Prime
 
@@ -941,9 +940,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             match OpenGL.Texture.TryCreateTextureData filePath with
             | Some textureData ->
                 let metadata = textureData.Metadata
-                let bytes = textureData.Bytes
+                let (blockCompressed, bytes) = textureData.Bytes
                 textureData.Dispose ()
-                Some (metadata, bytes)
+                Some (metadata, blockCompressed, bytes)
             | None -> None
         | None -> None
 
@@ -1118,32 +1117,38 @@ type [<ReferenceEquality>] GlRenderer3d =
             // compute normals
             let resolution = heightMapMetadata.Resolution
             let positionsAndTexCoordses = heightMapMetadata.PositionsAndTexCoordses
-            let normals =
+            let normalsOpt =
                 match geometryDescriptor.NormalImageOpt with
                 | Some normalImage ->
                     match GlRenderer3d.tryGetTextureData normalImage renderer with
-                    | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                    | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                        if not blockCompressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            bytes |>
+                            Array.map (fun b -> single b * scalar) |>
+                            Array.chunkBySize 4 |>
+                            Array.map (fun b ->
+                                let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
+                                let normal = v3 tangent.X tangent.Z -tangent.Y
+                                normal) |>
+                            Some
+                        else Log.info "Block-compressed images not supported for terrain normal images."; None
+                    | _ -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
+                | None -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
+
+            // compute tint
+            let tintOpt =
+                match GlRenderer3d.tryGetTextureData geometryDescriptor.TintImage renderer with
+                | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                    if not blockCompressed then
                         let scalar = 1.0f / single Byte.MaxValue
                         bytes |>
                         Array.map (fun b -> single b * scalar) |>
                         Array.chunkBySize 4 |>
-                        Array.map (fun b ->
-                            let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
-                            let normal = v3 tangent.X tangent.Z -tangent.Y
-                            normal)
-                    | _ -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses
-                | None -> GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses
-
-            // compute tint
-            let tint =
-                match GlRenderer3d.tryGetTextureData geometryDescriptor.TintImage renderer with
-                | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                    let scalar = 1.0f / single Byte.MaxValue
-                    bytes |>
-                    Array.map (fun b -> single b * scalar) |>
-                    Array.chunkBySize 4 |>
-                    Array.map (fun b -> v3 b.[2] b.[1] b.[0])
-                | _ -> Array.init positionsAndTexCoordses.Length (fun _ -> v3One)
+                        Array.map (fun b -> v3 b.[2] b.[1] b.[0]) |>
+                        Some
+                    else Log.info "Block-compressed images not supported for terrain tint images."; None
+                | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
 
             // compute blendses, logging if more than the safe number of terrain layers is utilized
             let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
@@ -1157,57 +1162,68 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match blendMaterial.BlendMap with
                 | RgbaMap rgbaMap ->
                     match GlRenderer3d.tryGetTextureData rgbaMap renderer with
-                    | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                        let scalar = 1.0f / single Byte.MaxValue
-                        for i in 0 .. dec positionsAndTexCoordses.Length do
-                            // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                            // TODO: confirm it is the same for SDL (linux).
-                            blendses.[i, 0] <- single bytes.[i * 4 + 2] * scalar
-                            blendses.[i, 1] <- single bytes.[i * 4 + 1] * scalar
-                            blendses.[i, 2] <- single bytes.[i * 4 + 0] * scalar
-                            blendses.[i, 3] <- single bytes.[i * 4 + 3] * scalar
-                    | _ -> Log.info ("Could not locate texture data for blend map '" + scstring rgbaMap + "'.")
+                    | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                        if not blockCompressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            for i in 0 .. dec positionsAndTexCoordses.Length do
+                                // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                                // TODO: confirm it is the same for SDL (linux).
+                                blendses.[i, 0] <- single bytes.[i * 4 + 2] * scalar
+                                blendses.[i, 1] <- single bytes.[i * 4 + 1] * scalar
+                                blendses.[i, 2] <- single bytes.[i * 4 + 0] * scalar
+                                blendses.[i, 3] <- single bytes.[i * 4 + 3] * scalar
+                        else Log.info "Block-compressed images not supported for terrain blend iamges."
+                    | _ -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
                     let scalar = 1.0f / single Byte.MaxValue
                     for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
                         let red = reds.[i]
                         match GlRenderer3d.tryGetTextureData red renderer with
-                        | Some (metadata, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                            for j in 0 .. dec positionsAndTexCoordses.Length do
-                                blendses.[j, i] <- single bytes.[j * 4 + 2] * scalar
-                        | _ -> Log.info ("Could not locate texture data for blend map '" + scstring red + "'.")
+                        | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                            if not blockCompressed then
+                                for j in 0 .. dec positionsAndTexCoordses.Length do
+                                    blendses.[j, i] <- single bytes.[j * 4 + 2] * scalar
+                            else Log.info "Block-compressed images not supported for terrain blend images."
+                        | _ -> Log.info ("Could not locate texture data for blend image '" + scstring red + "'.")
             | FlatMaterial _ ->
                 for i in 0 .. dec positionsAndTexCoordses.Length do
                     blendses.[i,0] <- 1.0f
 
-            // compute vertices
-            let vertices =
-                [|for i in 0 .. dec positionsAndTexCoordses.Length do
-                    let struct (p, tc) = positionsAndTexCoordses.[i]
-                    let n = normals.[i]
-                    let s = blendses
-                    let t = tint.[i]
-                    yield!
-                        [|p.X; p.Y; p.Z
-                          tc.X; tc.Y
-                          n.X; n.Y; n.Z
-                          t.X; t.Y; t.Z
-                          s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
+            // ensure we've got usable input data
+            match (normalsOpt, tintOpt) with
+            | (Some normals, Some tint) ->
 
-            // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
-            let indices = 
-                [|for y in 0 .. dec resolution.Y - 1 do
-                    for x in 0 .. dec resolution.X - 1 do
-                        yield resolution.X * y + x
-                        yield resolution.X * inc y + x
-                        yield resolution.X * y + inc x
-                        yield resolution.X * inc y + x
-                        yield resolution.X * inc y + inc x
-                        yield resolution.X * y + inc x|]
+                // compute vertices
+                let vertices =
+                    [|for i in 0 .. dec positionsAndTexCoordses.Length do
+                        let struct (p, tc) = positionsAndTexCoordses.[i]
+                        let n = normals.[i]
+                        let s = blendses
+                        let t = tint.[i]
+                        yield!
+                            [|p.X; p.Y; p.Z
+                              tc.X; tc.Y
+                              n.X; n.Y; n.Z
+                              t.X; t.Y; t.Z
+                              s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
 
-            // create the actual geometry
-            let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), geometryDescriptor.Bounds)
-            Some geometry
+                // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
+                let indices = 
+                    [|for y in 0 .. dec resolution.Y - 1 do
+                        for x in 0 .. dec resolution.X - 1 do
+                            yield resolution.X * y + x
+                            yield resolution.X * inc y + x
+                            yield resolution.X * y + inc x
+                            yield resolution.X * inc y + x
+                            yield resolution.X * inc y + inc x
+                            yield resolution.X * y + inc x|]
+
+                // create the actual geometry
+                let geometry = OpenGL.PhysicallyBased.CreatePhysicallyBasedTerrainGeometry (true, OpenGL.PrimitiveType.Triangles, vertices.AsMemory (), indices.AsMemory (), geometryDescriptor.Bounds)
+                Some geometry
+
+            // error
+            | (_, _) -> None
 
         // error
         | None -> None
@@ -2788,7 +2804,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered "Assets/Default/Brdf.tiff" with
+            match OpenGL.Texture.TryCreateTextureUnfiltered "Assets/Default/Brdf.bmp" with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -2802,19 +2818,19 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAlbedo.tiff" |> Either.getRight
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAlbedo.dds" |> Either.getRight
         OpenGL.Hl.Assert ()
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialRoughness.tiff" |> Either.getRight |> snd
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialMetallic.tiff" |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAmbientOcclusion.tiff" |> Either.getRight |> snd
-              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialEmission.tiff" |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialNormal.tiff" |> Either.getRight |> snd
-              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialHeight.tiff" |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialRoughness.dds" |> Either.getRight |> snd
+              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialMetallic.dds" |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAmbientOcclusion.dds" |> Either.getRight |> snd
+              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialEmission.dds" |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialNormal.dds" |> Either.getRight |> snd
+              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialHeight.dds" |> Either.getRight |> snd
               TwoSided = false }
 
         // make light mapping config
