@@ -153,68 +153,91 @@ module Texture =
     /// NOTE: this function will dispose textureData.
     let CreateTextureFromData (minFilter, magFilter, mipmaps, textureData) =
 
-        //
+        // upload data to opengl as appropriate
         match textureData with
         | TextureDataDotNet (metadata, bytes) ->
 
-            // upload the texture data to gl
+            // upload dotnet texture data
             let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
             try let textureId = Gl.GenTexture ()
                 Gl.BindTexture (TextureTarget.Texture2d, textureId)
                 Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                if mipmaps then
+                    Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)
+                    Gl.GenerateMipmap TextureTarget.Texture2d
+                Hl.Assert ()
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-                if mipmaps then
-                    Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)
-                    Gl.GenerateMipmap TextureTarget.Texture2d
+                Hl.Assert ()
                 let texture = CreateTextureFromId textureId
                 (metadata, texture)
             finally bytesPtr.Free ()
 
         | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
-            // upload the texture data to gl
-            let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
-            try let textureId = Gl.GenTexture ()
-                Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                if blockCompressed
-                then Gl.CompressedTexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.BlockCompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, bytes.Length, bytesPtr.AddrOfPinnedObject ())
-                else Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
-                Hl.Assert () // defensive assert
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
-                Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
-                if mipmaps || mipmapBytesArray.Length > 0 then
-                    Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)
-                
-                //if mipmaps && mipmapBytesArray.Length = 0 then
-                //    Gl.GenerateMipmap TextureTarget.Texture2d
-                //let mutable mipmapIndex = 0
-                //while mipmapIndex < mipmapBytesArray.Length do
-                //    let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
-                //    let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
-                //    try if compressed
-                //        then Gl.CompressedTexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Constants.OpenGL.CompressedColorTextureFormat, mipmapResolution.X, mipmapResolution.Y, 0, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
-                //        else Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Constants.OpenGL.UncompressedTextureFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
-                //        Hl.Assert () // defensive assert
-                //    finally mipmapBytesPtr.Free ()
-                //    mipmapIndex <- inc mipmapIndex
-                Gl.GenerateMipmap TextureTarget.Texture2d
+            // upload block-compressed dotnet texture data
+            if blockCompressed then
+                let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
+                try let textureId = Gl.GenTexture ()
+                    Gl.BindTexture (TextureTarget.Texture2d, textureId)
+                    Gl.TexStorage2D (TextureTarget.Texture2d, inc mipmapBytesArray.Length, Branchless.reinterpret Constants.OpenGL.BlockCompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight)
+                    Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, 0, 0, 0, metadata.TextureWidth, metadata.TextureHeight, Constants.OpenGL.BlockCompressedTextureFormat, bytes.Length, bytesPtr.AddrOfPinnedObject ())
+                    Hl.Assert ()
+                    if mipmaps && mipmapBytesArray.Length = 0 then Gl.GenerateMipmap TextureTarget.Texture2d
+                    let mutable mipmapIndex = 0
+                    while mipmapIndex < mipmapBytesArray.Length do
+                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                        let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
+                        try Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, inc mipmapIndex, 0, 0, mipmapResolution.X, mipmapResolution.Y, Constants.OpenGL.BlockCompressedTextureFormat, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
+                        finally mipmapBytesPtr.Free ()
+                        mipmapIndex <- inc mipmapIndex
+                        Hl.Assert ()
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
+                    if mipmaps || mipmapBytesArray.Length > 0 then Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)
+                    Hl.Assert ()
+                    let texture = CreateTextureFromId textureId
+                    (metadata, texture)
+                finally bytesPtr.Free ()
 
-                let texture = CreateTextureFromId textureId
-                (metadata, texture)
-            finally bytesPtr.Free ()
+            // upload uncompressed dotnet texture data
+            else
+                let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
+                try let textureId = Gl.GenTexture ()
+                    Gl.BindTexture (TextureTarget.Texture2d, textureId)
+                    Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                    Hl.Assert ()
+                    if mipmaps && mipmapBytesArray.Length = 0 then Gl.GenerateMipmap TextureTarget.Texture2d
+                    let mutable mipmapIndex = 0
+                    while mipmapIndex < mipmapBytesArray.Length do
+                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                        let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
+                        try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Constants.OpenGL.UncompressedTextureFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
+                        finally mipmapBytesPtr.Free ()
+                        mipmapIndex <- inc mipmapIndex
+                        Hl.Assert ()
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
+                    Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
+                    if mipmaps || mipmapBytesArray.Length > 0 then Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)                
+                    Hl.Assert ()
+                    let texture = CreateTextureFromId textureId
+                    (metadata, texture)
+                finally bytesPtr.Free ()
 
         | TextureDataNative (metadata, bytesPtr, disposer) ->
 
-            // upload the texture data to gl
+            // upload native texture data
             use _ = disposer
             let textureId = Gl.GenTexture ()
             Gl.BindTexture (TextureTarget.Texture2d, textureId)
             Gl.TexImage2D (TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
+            Hl.Assert ()
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
