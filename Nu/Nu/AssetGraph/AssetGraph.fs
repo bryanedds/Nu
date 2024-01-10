@@ -160,7 +160,8 @@ module AssetGraph =
             if intermediateFileExtension = ".psd" then
                 use image = new MagickImage (intermediateFilePath)
                 writeMagickImageAsPng false refinementFilePath image
-            else File.Copy (intermediateFilePath, refinementFilePath, true)
+            elif not (File.Exists refinementFilePath) then
+                File.Copy (intermediateFilePath, refinementFilePath)
         | ConvertToDds ->
             use image = new MagickImage (intermediateFilePath)
             writeMagickImageAsDds assetName refinementFilePath image
