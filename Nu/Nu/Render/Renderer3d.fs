@@ -699,8 +699,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        let internalFormat = AssetTag.inferInternalFormatFromAssetName asset.AssetTag
-        match OpenGL.Texture.TryCreateTextureFilteredMemoized (internalFormat, asset.FilePath, packageState.TextureMemo) with
+        match OpenGL.Texture.TryCreateTextureFilteredMemoized (asset.FilePath, packageState.TextureMemo) with
         | Right (textureMetadata, texture) ->
             Some (textureMetadata, texture)
         | Left error ->
@@ -743,7 +742,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             match GlRenderer3d.tryLoadRawAsset asset renderer with
             | Some () -> Some RawAsset
             | None -> None
-        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" ->
+        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" ->
             match GlRenderer3d.tryLoadTextureAsset packageState asset renderer with
             | Some (metadata, texture) -> Some (TextureAsset (metadata, texture))
             | None -> None
@@ -939,11 +938,11 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private tryGetTextureData (assetTag : Image AssetTag) renderer =
         match GlRenderer3d.tryGetFilePath assetTag renderer with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateTextureData (Constants.OpenGL.UncompressedTextureFormat, false, filePath) with
-            | Some (metadata, textureDataPtr, disposer) ->
-                use _ = disposer
-                let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
-                Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
+            match OpenGL.Texture.TryCreateTextureData filePath with
+            | Some textureData ->
+                let metadata = textureData.Metadata
+                let bytes = textureData.Bytes
+                textureData.Dispose ()
                 Some (metadata, bytes)
             | None -> None
         | None -> None
@@ -2775,21 +2774,21 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create white texture
         let whiteTexture =
-            match OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.UncompressedTextureFormat, Constants.Paths.WhiteTextureFilePath) with
+            match OpenGL.Texture.TryCreateTextureFiltered Constants.Paths.WhiteTextureFilePath with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load white texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create black texture
         let blackTexture =
-            match OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.UncompressedTextureFormat, Constants.Paths.BlackTextureFilePath) with
+            match OpenGL.Texture.TryCreateTextureFiltered Constants.Paths.BlackTextureFilePath with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered (Constants.OpenGL.UncompressedTextureFormat, Constants.Paths.BrdfTextureFilePath) with
+            match OpenGL.Texture.TryCreateTextureUnfiltered Constants.Paths.BrdfTextureFilePath with
             | Right (_, texture) -> texture
             | Left error -> failwith ("Could not load BRDF texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -2803,19 +2802,19 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialAlbedo.tiff") |> Either.getRight
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAlbedo.dds" |> Either.getRight
         OpenGL.Hl.Assert ()
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialRoughness.tiff") |> Either.getRight |> snd
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialMetallic.tiff") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialAmbientOcclusion.tiff") |> Either.getRight |> snd
-              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialEmission.tiff") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.UncompressedTextureFormat, "Assets/Default/MaterialNormal.tiff") |> Either.getRight |> snd
-              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (Constants.OpenGL.CompressedColorTextureFormat, "Assets/Default/MaterialHeight.tiff") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialRoughness.dds" |> Either.getRight |> snd
+              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialMetallic.dds" |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialAmbientOcclusion.dds" |> Either.getRight |> snd
+              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialEmission.dds" |> Either.getRight |> snd
+              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialNormal.dds" |> Either.getRight |> snd
+              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered "Assets/Default/MaterialHeight.dds" |> Either.getRight |> snd
               TwoSided = false }
 
         // make light mapping config

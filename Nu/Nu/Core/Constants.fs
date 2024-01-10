@@ -9,6 +9,22 @@ open System.Configuration
 open Prime
 open Nu
 
+module OpenGL =
+
+    let [<Literal>] VersionMajor = 4
+    let [<Literal>] VersionMinor = 1
+    let [<Literal>] CoreProfile = true
+    let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0 " + if CoreProfile then "core" else ""
+    let [<Literal>] CompressedColorTextureFormat = OpenGL.InternalFormat.Rgba8 // same as uncompressed since compression takes too long; will reintroduce after https://github.com/bryanedds/Nu/issues/708
+    let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
+    let [<Uniform>] mutable HlAssert = match ConfigurationManager.AppSettings.["HlAssert"] with null -> false | hlAssert -> scvalue hlAssert
+
+[<RequireQualifiedAccess>]
+module Assimp =
+
+    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
+    let [<Literal>] RawPropertyPrefix = "$raw."
+
 [<RequireQualifiedAccess>]
 module Engine =
 
@@ -146,22 +162,6 @@ module Render =
     let [<Literal>] EmissionDefault = 1.0f
     let [<Literal>] HeightDefault = 1.0f
 
-module OpenGL =
-
-    let [<Literal>] VersionMajor = 4
-    let [<Literal>] VersionMinor = 1
-    let [<Literal>] CoreProfile = true
-    let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0 " + if CoreProfile then "core" else ""
-    let [<Literal>] CompressedColorTextureFormat = OpenGL.InternalFormat.Rgba8 // same as uncompressed since compression takes too long; will reintroduce after https://github.com/bryanedds/Nu/issues/708
-    let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
-    let [<Uniform>] mutable HlAssert = match ConfigurationManager.AppSettings.["HlAssert"] with null -> false | hlAssert -> scvalue hlAssert
-
-[<RequireQualifiedAccess>]
-module Assimp =
-
-    let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
-    let [<Literal>] RawPropertyPrefix = "$raw."
-
 [<RequireQualifiedAccess>]
 module Audio =
 
@@ -260,4 +260,4 @@ module Paths =
     let [<Literal>] PhysicallyBasedForwardStaticShaderFilePath = "Assets/Default/PhysicallyBasedForwardStatic.glsl"
     let [<Literal>] WhiteTextureFilePath = "Assets/Default/White.bmp"
     let [<Literal>] BlackTextureFilePath = "Assets/Default/Black.bmp"
-    let [<Literal>] BrdfTextureFilePath = "Assets/Default/Brdf.tiff"
+    let [<Literal>] BrdfTextureFilePath = "Assets/Default/Brdf.dds"
