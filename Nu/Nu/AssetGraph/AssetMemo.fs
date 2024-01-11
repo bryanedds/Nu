@@ -54,7 +54,7 @@ module AssetMemo =
                 let (metadata, texture) =
                     if is2d
                     then OpenGL.Texture.CreateTextureFromDataUnfiltered textureData
-                    else OpenGL.Texture.CreateTextureFromDataFiltered textureData
+                    else OpenGL.Texture.CreateTextureFromDataFiltered (OpenGL.Texture.BlockCompressable filePath, textureData)
                 textureMemo.Textures.[filePath] <- (metadata, texture)
             | Left error -> Log.info error
 
