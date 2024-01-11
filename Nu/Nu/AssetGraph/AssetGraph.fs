@@ -116,7 +116,7 @@ module AssetGraph =
         else rawAssetExtension
 
     /// Apply a single refinement to an asset.
-    let private refineAssetOnce assetName (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
+    let private refineAssetOnce (intermediateFileSubpath : string) intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
         let intermediateFileExtension = PathF.GetExtensionMixed intermediateFileSubpath
@@ -151,7 +151,7 @@ module AssetGraph =
 #else
                 false
 #endif
-            if OpenGL.Texture.BlockCompressable assetName
+            if OpenGL.Texture.BlockCompressable refinementFilePath
             then image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
             else defines.Compression <- DdsCompression.None
             image.Write (stream, defines)
@@ -160,10 +160,10 @@ module AssetGraph =
         (refinementFileSubpath, refinementDirectory)
 
     /// Apply all refinements to an asset.
-    let private refineAsset assetName inputFileSubpath inputDirectory refinementDirectory refinements =
+    let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
         List.fold
             (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
-                refineAssetOnce assetName intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
+                refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
             (inputFileSubpath, inputDirectory)
             refinements
 
@@ -191,7 +191,7 @@ module AssetGraph =
                 // refine the asset
                 let (intermediateFileSubpath, intermediateDirectory) =
                     if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
-                    else refineAsset asset.AssetTag.AssetName inputFileSubpath inputDirectory refinementDirectory asset.Refinements
+                    else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
 
                 // attempt to copy the intermediate asset if output file is out of date
                 let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
