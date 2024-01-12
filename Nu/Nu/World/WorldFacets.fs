@@ -2630,6 +2630,7 @@ module AnimatedModelFacetModule =
 
         override this.Render (renderPass, entity, world) =
             let time = world.GameTime
+            let delta = world.GameDelta
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
@@ -2644,7 +2645,7 @@ module AnimatedModelFacetModule =
             let boneTransformsOpt =
                 match World.tryAwaitJob TimeSpan.Zero jobId world with
                 | Some (JobCompletion (_, bonesObj)) -> bonesObj :?> Matrix4x4 array option
-                | _ -> tryAnimateBones (time - world.GameDelta) animations sceneOpt
+                | _ -> tryAnimateBones (time - delta) animations sceneOpt
             match boneTransformsOpt with
             | Some boneTransforms -> World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
             | None -> ()

@@ -1,6 +1,7 @@
 ﻿namespace Nu
 open System
 open System.Collections.Concurrent
+open System.Threading
 open Prime
 open Nu
 
@@ -73,7 +74,7 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                             | (true, jobResult) when jobResult.CompletionTime <> entry.Value.CompletionTime ->
                                 jobResults.[entry.Key] <- jobResult // add back if not the one we intended to remove
                             | (_, _) -> ()
-                    1 |> Async.Sleep |> Async.RunSynchronously } |>
+                    Async.Sleep 1 |> Async.RunSynchronously } |>
             Async.StartAsTask
 
     interface JobSystem with
@@ -84,11 +85,16 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
 
         /// Await the completion of a job with the given timeout.
         member this.TryAwait (timeOut, jobId) =
-            let timeOver = DateTimeOffset.Now + timeOut
+            let mutable now = DateTimeOffset.Now
+            let timeOver = now + timeOut
             let mutable jobResultOpt = None
             let mutable timeOutExceeded = false
             while jobResultOpt.IsNone && not timeOutExceeded do
                 match jobResults.TryRemove jobId with
                 | (true, jobResult) -> jobResultOpt <- Some jobResult
-                | (false, _) -> if DateTimeOffset.Now > timeOver then timeOutExceeded <- true
+                | (false, _) ->
+                    if now > timeOver
+                    then timeOutExceeded <- true
+                    else Thread.Yield () |> ignore<bool>
+                now <- DateTimeOffset.Now
             jobResultOpt
