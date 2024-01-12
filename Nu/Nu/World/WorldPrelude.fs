@@ -191,8 +191,8 @@ module AmbientState =
               TickWatch : Stopwatch
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
-              Symbolics : Symbolics
               // cache line 3
+              Symbolics : Symbolics
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
               UnculledRenderRequested : bool }
