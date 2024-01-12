@@ -67,4 +67,8 @@ module JobSystem =
         then JobTimeout
         else jobResultOpt.Value
 
+    let terminate jobSystem =
+        jobSystem.ExecutingRef.Value <- false
+        jobSystem.JobProcessor.Result
+
 type JobSystem = JobSystem.JobSystem
