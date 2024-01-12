@@ -146,7 +146,7 @@ module WorldModuleEntity =
             let entityAddress = entity.EntityAddress
 
             // apply publish changes state
-            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+            match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
             | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
             | (false, _) -> ()
             

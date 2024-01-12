@@ -185,7 +185,7 @@ module AmbientState =
               UpdateTime : int64
               TickDelta : int64
               // cache line 2
-              KeyValueStore : SUMap<Guid, obj>
+              KeyValueStore : SUMap<obj, obj>
               TickTime : int64
               TickTimeShavings : int64
               TickWatch : Stopwatch
