@@ -67,7 +67,7 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                             let result =
                                 try JobCompletion (job.IssueTime, job.Work ())
                                 with exn -> JobException (job.IssueTime, exn)
-                            jobResults.AddOrUpdate (job.JobId, result, fun _ result' -> if result.IssueTime > result'.IssueTime then result else result') |> ignore<JobResult> }
+                            jobResults.AddOrUpdate (job.JobId, result, fun _ existing -> if result.IssueTime > existing.IssueTime then result else existing) |> ignore<JobResult> }
                     Async.Start work
                 else
                     let now = DateTimeOffset.Now
