@@ -125,7 +125,7 @@ module Nu =
                                 if eventNamesLength >= 6 then
                                     let entityAddress = rtoa (Array.skip 3 eventNames)
                                     let entity = Nu.Entity entityAddress
-                                    match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+                                    match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
                                     | (true, entityChangeCounts) ->
                                         match entityChangeCounts.TryGetValue entityAddress with
                                         | (true, entityChangeCount) ->
