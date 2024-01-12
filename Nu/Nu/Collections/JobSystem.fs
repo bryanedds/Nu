@@ -68,8 +68,7 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                     Async.Start work
                 else
                     for entry in jobResults.ToArray () do
-                        let expirationTime = DateTimeOffset.Now + resultExpirationTime
-                        if entry.Value.CompletionTime > expirationTime then
+                        if DateTimeOffset.Now > entry.Value.CompletionTime + resultExpirationTime then
                             match jobResults.TryRemove entry.Key with
                             | (true, jobResult) when jobResult.CompletionTime <> entry.Value.CompletionTime ->
                                 jobResults.[entry.Key] <- jobResult // add back if not the one we intended to remove
