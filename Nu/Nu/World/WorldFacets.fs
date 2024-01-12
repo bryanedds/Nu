@@ -2642,9 +2642,9 @@ module AnimatedModelFacetModule =
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
             let jobId = (entity, nameof AnimatedModelFacet)
             let boneTransformsOpt =
-                match World.awaitJob TimeSpan.Zero jobId world with
-                | JobCompletion (_, bonesObj) -> bonesObj :?> Matrix4x4 array option
-                | JobException _ | JobTimeout _ -> tryAnimateBones (time - world.GameDelta) animations sceneOpt
+                match World.tryAwaitJob TimeSpan.Zero jobId world with
+                | Some (JobCompletion (_, bonesObj)) -> bonesObj :?> Matrix4x4 array option
+                | _ -> tryAnimateBones (time - world.GameDelta) animations sceneOpt
             match boneTransformsOpt with
             | Some boneTransforms -> World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
             | None -> ()

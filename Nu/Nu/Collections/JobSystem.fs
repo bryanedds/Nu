@@ -8,12 +8,10 @@ open Nu
 type JobResult =
     | JobCompletion of DateTimeOffset * obj
     | JobException of DateTimeOffset * Exception
-    | JobTimeout of DateTimeOffset
     member this.CompletionTime =
         match this with
         | JobCompletion (completionTime, _) -> completionTime
         | JobException (completionTime, _) -> completionTime
-        | JobTimeout completionTime -> completionTime
 
 /// A job for threaded processing.
 type Job =
@@ -27,7 +25,7 @@ type JobSystem =
     abstract Enqueue : single * Job -> unit
 
     /// Await the completion of a job with the given timeout.
-    abstract Await : TimeSpan * obj -> JobResult
+    abstract TryAwait : TimeSpan * obj -> JobResult option
 
 /// Processes jobs based on priority inline.
 type JobSystemInline () =
@@ -44,10 +42,10 @@ type JobSystemInline () =
             jobResults.[job.JobId] <- result
 
         /// Await the completion of a job with the given timeout.
-        member this.Await (_, jobId) =
+        member this.TryAwait (_, jobId) =
             match jobResults.TryRemove jobId with
-            | (true, jobResult) -> jobResult
-            | (false, _) -> JobTimeout DateTimeOffset.Now
+            | (true, jobResult) -> Some jobResult
+            | (false, _) -> None
 
 /// Processes jobs based on priority in parallel.
 type JobSystemParallel (resultExpirationTime : TimeSpan) =
@@ -85,7 +83,7 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
             jobQueue.Enqueue (priority, job)
 
         /// Await the completion of a job with the given timeout.
-        member this.Await (timeOut, jobId) =
+        member this.TryAwait (timeOut, jobId) =
             let timeOver = DateTimeOffset.Now + timeOut
             let mutable jobResultOpt = None
             let mutable timeOutExceeded = false
@@ -93,7 +91,4 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                 match jobResults.TryRemove jobId with
                 | (true, jobResult) -> jobResultOpt <- Some jobResult
                 | (false, _) -> if DateTimeOffset.Now > timeOver then timeOutExceeded <- true
-            match jobResultOpt with
-            | Some jobResult -> jobResult
-            | None when timeOutExceeded -> JobTimeout DateTimeOffset.Now
-            | None -> failwithumf ()
+            jobResultOpt
