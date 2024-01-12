@@ -225,8 +225,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let assetName = assetEntry.Key
                     let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
                     let lastWriteTime' =
-                        try File.GetLastWriteTime filePath
-                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                        try DateTimeOffset (File.GetLastWriteTime filePath)
+                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                     if lastWriteTime < lastWriteTime'
                     then assetsToFree.Add (filePath, renderAsset)
                     else assetsToKeep.Add (assetName, (lastWriteTime, filePath, renderAsset))
@@ -259,8 +259,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                     match GlRenderer2d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
                     | Some renderAsset ->
                         let lastWriteTime =
-                            try File.GetLastWriteTime asset.FilePath
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                            try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                         assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, renderAsset)
                     | None -> ()
 

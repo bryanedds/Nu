@@ -78,7 +78,7 @@ module Gaia =
     let mutable private desiredEye3dCenter = v3Zero
     let mutable private desiredEye3dRotation = quatIdentity
     let mutable private eyeChangedElsewhere = false
-    let mutable private fpsStartDateTime = DateTimeOffset.UtcNow
+    let mutable private fpsStartDateTime = DateTimeOffset.Now
     let mutable private fpsStartUpdateTime = 0L
 
     (* Configuration States *)
@@ -1261,7 +1261,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
             (if not branch || searchActive then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
-            (if newEntityParentOpt = Some entity && DateTimeOffset.UtcNow.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
+            (if newEntityParentOpt = Some entity && DateTimeOffset.Now.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.OpenOnArrow
         if not searchActive then
             if expandEntityHierarchy then ImGui.SetNextItemOpen true
@@ -2361,7 +2361,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.Begin ("Metrics", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Fps:"
                         ImGui.SameLine ()
-                        let currentDateTime = DateTimeOffset.UtcNow
+                        let currentDateTime = DateTimeOffset.Now
                         let elapsedDateTime = currentDateTime - fpsStartDateTime
                         if elapsedDateTime.TotalSeconds >= 5.0 then
                             fpsStartUpdateTime <- world.UpdateTime

@@ -627,7 +627,7 @@ type [<ReferenceEquality>] private GlPackageState3d =
 /// The internally used cached asset package.
 type [<NoEquality; NoComparison>] private RenderPackageCached =
     { CachedPackageName : string
-      CachedPackageAssets : Dictionary<string, DateTime * string * RenderAsset> }
+      CachedPackageAssets : Dictionary<string, DateTimeOffset * string * RenderAsset> }
 
 /// The internally used cached asset descriptor.
 type [<NoEquality; NoComparison>] private RenderAssetCached =
@@ -804,8 +804,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let assetName = assetEntry.Key
                     let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
                     let lastWriteTime' =
-                        try File.GetLastWriteTime filePath
-                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                        try DateTimeOffset (File.GetLastWriteTime filePath)
+                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                     if lastWriteTime < lastWriteTime'
                     then assetsToFree.Add (filePath, renderAsset)
                     else assetsToKeep.Add (assetName, (lastWriteTime, filePath, renderAsset))
@@ -838,8 +838,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match GlRenderer3d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
                     | Some renderAsset ->
                         let lastWriteTime =
-                            try File.GetLastWriteTime asset.FilePath
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                            try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                         assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, renderAsset)
                     | None -> ()
 
@@ -1069,10 +1069,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             // assign model as appropriate render package asset
             match renderer.RenderPackages.TryGetValue assetTag.PackageName with
             | (true, package) ->
-                package.Assets.[assetTag.AssetName] <- (DateTime (), "", StaticModelAsset (true, model))
+                package.Assets.[assetTag.AssetName] <- (DateTimeOffset.MinValue.DateTime, "", StaticModelAsset (true, model))
             | (false, _) ->
                 let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
-                let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (DateTime (), "", StaticModelAsset (true, model)); PackageState = packageState }
+                let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (DateTimeOffset.MinValue.DateTime, "", StaticModelAsset (true, model)); PackageState = packageState }
                 renderer.RenderPackages.[assetTag.PackageName] <- package
 
         // attempted to replace a loaded asset

@@ -204,7 +204,7 @@ module FpsDispatcherModule =
 
         static let resetIntermittent (entity : Entity) world =
             let startDateTime = entity.GetStartDateTime world
-            let currentDateTime = DateTimeOffset.UtcNow
+            let currentDateTime = DateTimeOffset.Now
             let elapsedDateTime = currentDateTime - startDateTime
             if elapsedDateTime.TotalSeconds >= 5.0 then
                 let world = entity.SetStartUpdateTime world.UpdateTime world
@@ -213,13 +213,13 @@ module FpsDispatcherModule =
 
         static member Properties =
             [nonPersistent Entity.StartUpdateTime 0L
-             nonPersistent Entity.StartDateTime DateTimeOffset.UtcNow]
+             nonPersistent Entity.StartDateTime DateTimeOffset.Now]
 
         override this.Update (entity, world) =
             if entity.GetEnabled world then
                 let world = resetIntermittent entity world
                 let startDateTime = entity.GetStartDateTime world
-                let currentDateTime = DateTimeOffset.UtcNow
+                let currentDateTime = DateTimeOffset.Now
                 let elapsedDateTime = currentDateTime - startDateTime
                 let time = double (world.UpdateTime - entity.GetStartUpdateTime world)
                 let frames = time / elapsedDateTime.TotalSeconds

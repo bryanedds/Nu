@@ -157,8 +157,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     let assetName = assetEntry.Key
                     let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
                     let lastWriteTime' =
-                        try File.GetLastWriteTime filePath
-                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                        try DateTimeOffset (File.GetLastWriteTime filePath)
+                        with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                     if lastWriteTime < lastWriteTime'
                     then assetsToFree.Add (filePath, audioAsset)
                     else assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
@@ -168,7 +168,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     let filePath = assetEntry.Key
                     let audioAsset = assetEntry.Value
                     if not (SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer) then
-                        assetsToKeep.Add (filePath, (DateTime (), filePath, audioAsset))
+                        assetsToKeep.Add (filePath, (DateTimeOffset.MinValue.DateTime, filePath, audioAsset))
 
                 // categorize assets to load
                 let assetsToLoad = HashSet ()
@@ -182,8 +182,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     match SdlAudioPlayer.tryLoadAudioAsset asset with
                     | Some audioAsset ->
                         let lastWriteTime =
-                            try File.GetLastWriteTime asset.FilePath
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                            try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                         assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
                     | None -> ()
 
