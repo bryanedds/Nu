@@ -110,6 +110,7 @@ module WorldModule =
             world.WorldExtension.JobSystem.Enqueue (priority, job)
 
         /// Await a job from threaded execution.
+        /// Order of jobs with the same key is not guaranteed.
         static member tryAwaitJob timeOut (jobId : obj) world =
             world.WorldExtension.JobSystem.TryAwait (timeOut, jobId)
 

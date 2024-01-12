@@ -26,7 +26,7 @@ type RendererProcess =
         /// Potential fast-path for rendering static model surfaces.
         abstract RenderStaticModelSurfaceFast : bool * Matrix4x4 inref * Box2 voption * MaterialProperties inref * StaticModel AssetTag * int * RenderType * RenderPass -> unit
         /// Potential fast-path for rendering animated models.
-        abstract RenderAnimatedModelFast : GameTime * bool * Matrix4x4 inref * Box2 voption * MaterialProperties inref * Matrix4x4 array * AnimatedModel AssetTag * RenderPass -> unit
+        abstract RenderAnimatedModelFast : bool * Matrix4x4 inref * Box2 voption * MaterialProperties inref * Matrix4x4 array * AnimatedModel AssetTag * RenderPass -> unit
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
@@ -129,9 +129,9 @@ type RendererInline () =
             | Some _ -> messages3d.Add (RenderStaticModelSurface { Absolute = absolute; ModelMatrix = modelMatrix; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; StaticModel = staticModel; SurfaceIndex = surfaceIndex; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderAnimatedModelFast (time, absolute, modelMatrix, insetOpt, materialProperties, boneTransforms, animatedModel, renderPass) =
+        member this.RenderAnimatedModelFast (absolute, modelMatrix, insetOpt, materialProperties, boneTransforms, animatedModel, renderPass) =
             match renderersOpt with
-            | Some _ -> messages3d.Add (RenderAnimatedModel { Time = time; Absolute = absolute; ModelMatrix = modelMatrix; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; RenderPass = renderPass })
+            | Some _ -> messages3d.Add (RenderAnimatedModel { Absolute = absolute; ModelMatrix = modelMatrix; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.EnqueueMessage2d message =
@@ -274,8 +274,7 @@ type RendererThread () =
             if cachedAnimatedModelMessages.Count = 0 then
                 for _ in 0 .. dec cachedAnimatedModelMessagesCapacity do
                     let animatedModelDescriptor =
-                        { CachedAnimatedModelTime = Unchecked.defaultof<_>
-                          CachedAnimatedModelAbsolute = Unchecked.defaultof<_>
+                        { CachedAnimatedModelAbsolute = Unchecked.defaultof<_>
                           CachedAnimatedModelMatrix = Unchecked.defaultof<_>
                           CachedAnimatedModelInsetOpt = Unchecked.defaultof<_>
                           CachedAnimatedModelMaterialProperties = Unchecked.defaultof<_>
@@ -474,7 +473,6 @@ type RendererThread () =
                 let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
                 match cachedAnimatedModelMessage with
                 | RenderCachedAnimatedModel cachedMessage ->
-                    cachedMessage.CachedAnimatedModelTime <- ram.Time
                     cachedMessage.CachedAnimatedModelAbsolute <- ram.Absolute
                     cachedMessage.CachedAnimatedModelMatrix <- ram.ModelMatrix
                     cachedMessage.CachedAnimatedModelInsetOpt <- ValueOption.ofOption ram.InsetOpt
@@ -518,12 +516,11 @@ type RendererThread () =
                 messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
-        member this.RenderAnimatedModelFast (time, absolute, modelMatrix, insetOpt, materialProperties, boneTransforms, animatedModel, renderPass) =
+        member this.RenderAnimatedModelFast (absolute, modelMatrix, insetOpt, materialProperties, boneTransforms, animatedModel, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
             match cachedAnimatedModelMessage with
             | RenderCachedAnimatedModel cachedMessage ->
-                cachedMessage.CachedAnimatedModelTime <- time
                 cachedMessage.CachedAnimatedModelAbsolute <- absolute
                 cachedMessage.CachedAnimatedModelMatrix <- modelMatrix
                 cachedMessage.CachedAnimatedModelInsetOpt <- insetOpt

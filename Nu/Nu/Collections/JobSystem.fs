@@ -29,6 +29,7 @@ type JobSystem =
     abstract Enqueue : single * Job -> unit
 
     /// Await the completion of a job with the given timeout.
+    /// Order of jobs with the same key is not guaranteed.
     abstract TryAwait : TimeSpan * obj -> JobResult option
 
 /// Processes jobs based on priority inline.
@@ -46,6 +47,7 @@ type JobSystemInline () =
             jobResults.AddOrUpdate (job.JobId, result, fun _ result' -> if result.IssueTime >= result'.IssueTime then result else result') |> ignore<JobResult>
 
         /// Await the completion of a job with the given timeout.
+        /// Order of jobs with the same key is guaranteed.
         member this.TryAwait (_, jobId) =
             match jobResults.TryRemove jobId with
             | (true, jobResult) -> Some jobResult
@@ -87,6 +89,7 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
             jobQueue.Enqueue (priority, job)
 
         /// Await the completion of a job with the given timeout.
+        /// Order of jobs with the same key is not guaranteed.
         member this.TryAwait (timeOut, jobId) =
             let mutable now = DateTimeOffset.Now
             let timeOver = now + timeOut
