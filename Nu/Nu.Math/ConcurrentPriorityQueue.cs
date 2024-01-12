@@ -11,16 +11,7 @@ namespace Nu
     public class ConcurrentPriorityQueue<P, V> : IPriorityQueue<P, V>
     {
         /// <summary>
-        /// Check that the queue is empty.
-        /// Thread-safe.
-        /// </summary>
-        public bool IsEmpty
-        {
-            get { lock (locker) return queue.IsEmpty; }
-        }
-
-        /// <summary>
-        /// Dequeue the current item, throwing if none exists.
+        /// Enqueue an element.
         /// Thread-safe.
         /// </summary>
         public void Enqueue(P priority, V value)
@@ -29,16 +20,15 @@ namespace Nu
         }
 
         /// <summary>
-        /// Enqueue an item.
+        /// Attempt to dequeue any current element.
         /// Thread-safe.
         /// </summary>
-        public V Dequeue()
+        public bool TryDequeue(ref V value)
         {
-            lock (locker) return queue.Dequeue();
+            lock (locker) return queue.TryDequeue(ref value);
         }
 
         private readonly object locker = new object();
         private readonly PriorityQueue<P, V> queue = new PriorityQueue<P, V>();
-        private readonly SortedDictionary<P, Queue<V>> list = new SortedDictionary<P, Queue<V>>();
     }
 }

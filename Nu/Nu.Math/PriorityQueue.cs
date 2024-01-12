@@ -12,40 +12,34 @@ namespace Nu
     public class PriorityQueue<P, V> : IPriorityQueue<P, V>
     {
         /// <summary>
-        /// Check that the queue is empty.
-        /// </summary>
-        public bool IsEmpty
-        {
-            get { return !list.Any(); }
-        }
-
-        /// <summary>
-        /// Enqueue an item.
+        /// Enqueue an element with the given priority.
         /// </summary>
         public void Enqueue(P priority, V value)
         {
             Queue<V> q;
-            if (!list.TryGetValue(priority, out q))
+            if (!elements.TryGetValue(priority, out q))
             {
                 q = new Queue<V>();
-                list.Add(priority, q);
+                elements.Add(priority, q);
             }
             q.Enqueue(value);
         }
 
         /// <summary>
-        /// Dequeue the current item, throwing if none exists.
+        /// Attempt to dequeue any current element.
         /// </summary>
-        public V Dequeue()
+        public bool TryDequeue(ref V value)
         {
-            // will throw if there isn’t any first item!
-            var pair = list.First();
-            var v = pair.Value.Dequeue();
-            if (pair.Value.Count == 0) // nothing left of the top priority.
-                list.Remove(pair.Key);
-            return v;
+            if (elements.Count > 0)
+            {
+                var pair = elements.First();
+                value = pair.Value.Dequeue();
+                if (pair.Value.Count == 0) elements.Remove(pair.Key);
+                return true;
+            }
+            return false;
         }
 
-        private readonly SortedDictionary<P, Queue<V>> list = new SortedDictionary<P, Queue<V>>();
+        private readonly SortedDictionary<P, Queue<V>> elements = new SortedDictionary<P, Queue<V>>();
     }
 }

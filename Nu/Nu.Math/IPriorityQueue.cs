@@ -8,18 +8,13 @@
     public interface IPriorityQueue<P, V>
     {
         /// <summary>
-        /// Check that the queue is empty.
-        /// </summary>
-        bool IsEmpty { get; }
-
-        /// <summary>
-        /// Dequeue the current item, throwing if none exists.
-        /// </summary>
-        V Dequeue();
-
-        /// <summary>
-        /// Enqueue an item.
+        /// Enqueue an element with the given priority.
         /// </summary>
         void Enqueue(P priority, V value);
+
+        /// <summary>
+        /// Attempt to dequeue any current element.
+        /// </summary>
+        bool TryDequeue(ref V value);
     }
 }
