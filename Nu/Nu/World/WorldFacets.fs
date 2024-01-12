@@ -2653,14 +2653,14 @@ module AnimatedModelFacetModule =
                 | Some model -> model.SceneOpt
                 | None -> None
             let boneTransformsOpt =
-                match World.tryAwaitJob (TimeSpan.FromSeconds 0.1) (time - delta, entity, nameof AnimatedModelFacet) world with
+                match World.tryAwaitJob (TimeSpan.FromSeconds 0.1) (entity, nameof AnimatedModelFacet) world with
                 | Some (JobCompletion (_, (:? (Matrix4x4 array option) as boneTransformsOpt))) -> boneTransformsOpt                    
-                | _ -> tryAnimateBones time animations sceneOpt
+                | _ -> tryAnimateBones (time - delta) animations sceneOpt
             let world =
                 if boneTransformsOpt.IsSome
                 then entity.SetBoneTransformsOpt boneTransformsOpt world
                 else world
-            let job = Job.make (time, entity, nameof AnimatedModelFacet) (fun () -> tryAnimateBones time animations sceneOpt)
+            let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryAnimateBones time animations sceneOpt)
             World.enqueueJob 1.0f job world
             world
 
