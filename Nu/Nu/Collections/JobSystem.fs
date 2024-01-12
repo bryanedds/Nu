@@ -11,7 +11,7 @@ type JobResult =
     | JobException of Exception
     | JobTimeout
 
-/// A threaded job.
+/// A job for threaded processing.
 type Job =
     { JobId : obj
       Work : unit -> JobResult }
@@ -22,10 +22,10 @@ module JobSystem =
     /// Processes jobs based on priority on the available threads.
     type JobSystem =
         private
-            { JobQueue : ConcurrentPriorityQueue<single, Job>
+            { ExecutingRef : bool ref
+              JobQueue : ConcurrentPriorityQueue<single, Job>
               JobResults : ConcurrentDictionary<obj, JobResult>
-              JobsProcessor : unit Task
-              ExecutingRef : bool ref }
+              JobsProcessor : unit Task }
 
     /// Add a job for processing with the given priority (low number is higher priority).
     let enqueue jobPriority job jobSystem =
@@ -33,9 +33,9 @@ module JobSystem =
 
     /// Make (and start) a job processing system.
     let make () =
+        let executingRef = ref true
         let jobQueue = ConcurrentPriorityQueue<single, Job> ()
         let jobResults = ConcurrentDictionary<obj, JobResult> ()
-        let executingRef = ref true
         let jobsProcessor =
             async {
                 while lock executingRef (fun () -> executingRef.Value) do
@@ -51,10 +51,10 @@ module JobSystem =
                         Async.Start work
                     else 1 |> Async.Sleep |> Async.RunSynchronously }
         let jobSystem =
-            { JobQueue = jobQueue
+            { ExecutingRef = executingRef
+              JobQueue = jobQueue
               JobResults = jobResults
-              JobsProcessor = Async.StartAsTask jobsProcessor
-              ExecutingRef = executingRef }
+              JobsProcessor = Async.StartAsTask jobsProcessor }
         jobSystem
 
     /// Await the completion of a job with the given timeout.
