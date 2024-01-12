@@ -16,13 +16,13 @@ module Log =
 #endif
     let mutable private TraceOnceMessages = hashSetPlus StringComparer.Ordinal []
 
-    let private getUtcNowStr () =
-        let now = DateTime.UtcNow
-        now.ToString "yyyy-MM-dd HH\:mm\:ss.ffff"
+    let private getDateTimeNowStr () =
+        let now = DateTimeOffset.Now
+        now.ToString "yyyy-MM-dd HH\:mm\:ss.fff zzz"
 
     /// Log a remark with a custom header with Trace.WriteLine.
     let remark header message =
-        Trace.WriteLine (getUtcNowStr () + "|" + header + "|" + message)
+        Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)
 
     /// Log a purely informational message with Trace.WriteLine.
     let info message =
@@ -39,7 +39,7 @@ module Log =
     /// Log a debug message with Debug.Fail and call to info.
     let debug (message : string) =
 #if DEBUG
-        Debug.Fail (getUtcNowStr () + "|Debug|" + message)
+        Debug.Fail (getDateTimeNowStr () + "|Debug|" + message)
 #else
         ignore message
 #endif
@@ -62,7 +62,7 @@ module Log =
 
     /// Log a trace message using Trace.Fail and call to info.
     let trace message =
-        Trace.Fail (getUtcNowStr () + "|Trace|" + message)
+        Trace.Fail (getDateTimeNowStr () + "|Trace|" + message)
 
     /// Log a trace message once with Trace.Fail and call to info.
     let traceOnce (message : string) =

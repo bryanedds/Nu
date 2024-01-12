@@ -74,7 +74,7 @@ module Asset =
 
 /// Tracks assets as well as their originating file paths.
 type [<ReferenceEquality>] Package<'a, 's> =
-    { Assets : Dictionary<string, DateTime * string * 'a>
+    { Assets : Dictionary<string, DateTimeOffset * string * 'a>
       PackageState : 's }
 
 /// A dictionary of asset packages.
@@ -186,7 +186,7 @@ module AssetGraph =
             // build the asset if fully building or if it's out of date
             if  fullBuild ||
                 not (File.Exists outputFilePath) ||
-                File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
+                File.GetLastWriteTime inputFilePath > File.GetLastWriteTime outputFilePath then
 
                 // refine the asset
                 let (intermediateFileSubpath, intermediateDirectory) =
@@ -276,7 +276,7 @@ module AssetGraph =
         let fullBuild =
             fullBuild ||
             match (assetGraph.FilePathOpt, outputFilePathOpt) with
-            | (Some filePath, Some outputFilePath) -> File.GetLastWriteTimeUtc filePath > File.GetLastWriteTimeUtc outputFilePath
+            | (Some filePath, Some outputFilePath) -> File.GetLastWriteTime filePath > File.GetLastWriteTime outputFilePath
             | (None, None) -> false
             | (_, _) -> failwithumf ()
 

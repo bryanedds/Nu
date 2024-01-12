@@ -62,8 +62,8 @@ module Symbolics =
                     match tryLoadSymbol3 metadata packageName asset with
                     | Some symbol ->
                         let lastWriteTime =
-                            try File.GetLastWriteTime asset.FilePath
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                            try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                         symbolPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, symbol)
                     | None -> ()
             | Left error ->

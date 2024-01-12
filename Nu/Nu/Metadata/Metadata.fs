@@ -27,7 +27,7 @@ type Metadata =
 module Metadata =
 
     let mutable private MetadataPackages :
-        UMap<string, UMap<string, DateTime * string * Metadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
+        UMap<string, UMap<string, DateTimeOffset * string * Metadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
 
     /// Thread-safe.
     let private tryGenerateRawMetadata (asset : Asset) =
@@ -126,8 +126,8 @@ module Metadata =
                         match tryGenerateAssetMetadata asset with
                         | Some metadata ->
                             let lastWriteTime =
-                                try File.GetLastWriteTime asset.FilePath
-                                with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                                try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                                with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                             return Some (asset.AssetTag.AssetName, (lastWriteTime, asset.FilePath, metadata))
                         | None -> return None }) |>
                 Vsync.Parallel |>
@@ -176,8 +176,8 @@ module Metadata =
                     for assetEntry in assetsExisting do
                         let (assetName, (lastWriteTime, filePath, audioAsset)) = assetEntry
                         let lastWriteTime' =
-                            try File.GetLastWriteTime filePath
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                            try DateTimeOffset (File.GetLastWriteTime filePath)
+                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                         if lastWriteTime >= lastWriteTime' then
                             assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
 
@@ -193,8 +193,8 @@ module Metadata =
                         match tryGenerateAssetMetadata asset with
                         | Some audioAsset ->
                             let lastWriteTime =
-                                try File.GetLastWriteTime asset.FilePath
-                                with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTime ()
+                                try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                                with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                             assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
                         | None -> ()
 

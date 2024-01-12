@@ -53,7 +53,7 @@ module JobSystem =
         jobSystem
 
     let await timeOutOpt jobId jobSystem =
-        let timeOverOpt = Option.map (fun timeOut -> DateTimeOffset.UtcNow + timeOut) timeOutOpt
+        let timeOverOpt = Option.map (fun timeOut -> DateTimeOffset.Now + timeOut) timeOutOpt
         let mutable jobResultOpt = None
         let mutable timeOut = false
         while jobResultOpt.IsNone && not timeOut do
@@ -61,7 +61,7 @@ module JobSystem =
             | (true, jobResult) -> jobResultOpt <- Some jobResult
             | (false, _) ->
                 match timeOverOpt with
-                | Some timeOver -> if timeOver > DateTimeOffset.UtcNow then timeOut <- true
+                | Some timeOver -> if timeOver > DateTimeOffset.Now then timeOut <- true
                 | None -> ()
         if timeOut
         then JobTimeout
