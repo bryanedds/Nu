@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open Prime
@@ -142,7 +143,7 @@ module Assimp =
 module AssimpExtensions =
 
     let private AnimationChannelsDict =
-        dictPlus HashIdentity.Reference []
+        ConcurrentDictionary<_, _> HashIdentity.Reference
 
     let private NodeEmpty =
         Assimp.Node ()
@@ -234,8 +235,88 @@ module AssimpExtensions =
                     with _ -> None
                 else Some true
 
+    /// Node extensions.
+    type Assimp.Node with
+
+        /// The empty assimp node.
+        /// NOTE: Do NOT modify this as it is a globally shared stand-in for unavailble assimp nodes!
+        static member Empty = NodeEmpty
+
+        /// Get the world transform of the node.
+        member this.TransformWorld =
+            let mutable parentOpt = this.Parent
+            let mutable transform = this.Transform
+            while notNull parentOpt do
+                transform <- transform * parentOpt.Transform
+                parentOpt <- parentOpt.Parent
+            transform
+
+        /// Collect all the child nodes of a node, including the node itself.
+        member this.CollectNodes () =
+            [|this
+              for child in this.Children do
+                yield! child.CollectNodes ()|]
+
+        /// Collect all the child nodes and transforms of a node, including the node itself.
+        member this.CollectNodesAndTransforms (unitType, parentTransform : Matrix4x4) =
+            [|let localTransform = Assimp.ExportMatrix this.Transform
+              let worldTransform = localTransform * parentTransform
+              yield (this, worldTransform)
+              for child in this.Children do
+                yield! child.CollectNodesAndTransforms (unitType, worldTransform)|]
+
+        /// Map to a TreeNode.
+        member this.Map<'a> (parentNames : string array, parentTransform : Matrix4x4, mapper : Assimp.Node -> string array -> Matrix4x4 -> 'a array TreeNode) : 'a array TreeNode =
+            let localName = this.Name
+            let localTransform = Assimp.ExportMatrix this.Transform
+            let worldNames = Array.append parentNames [|localName|]
+            let worldTransform = localTransform * parentTransform
+            let node = mapper this worldNames worldTransform
+            for child in this.Children do
+                let child = child.Map<'a> (worldNames, worldTransform, mapper)
+                node.Add child
+            node
+
+        member this.RenderStyleOpt =
+            match this.Metadata.TryGetValue (nameof RenderStyle) with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<RenderStyle> |> Some
+                    with _ -> None
+                | _ -> None
+            | (false, _) -> None
+
+        member this.PresenceOpt =
+            match this.Metadata.TryGetValue (nameof Presence) with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<Presence> |> Some
+                    with _ -> None
+                | _ -> None
+            | (false, _) -> None
+
+        member this.IgnoreLightMapsOpt =
+            match this.Metadata.TryGetValue Constants.Render.IgnoreLightMapsName with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<bool> |> Some
+                    with _ -> None
+                | _ -> None
+            | (false, _) -> None
+
     /// Mesh extensions.
-    type Assimp.Mesh with
+    type Assimp.Scene with
+
+        member this.IndexDatasToMetadata () =
+            for i in 0 .. dec this.Meshes.Count do
+                let mesh = this.Meshes.[i]
+                let indices = mesh.GetIndices ()
+                this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
+                mesh.Faces.Clear ()
+                mesh.Faces.Capacity <- 0
 
         static member private UpdateBoneTransforms
             (time : single,
@@ -310,9 +391,11 @@ module AssimpExtensions =
             if boneWrites.Value < boneInfos.Length then
                 for i in 0 .. dec node.Children.Count do
                     let child = node.Children.[i]
-                    Assimp.Mesh.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
+                    Assimp.Scene.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
 
-        member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, scene : Assimp.Scene) =
+        /// Compute the animated transforms of the meshes bones in the given scene.
+        /// Thread-safe.
+        member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, mesh : Assimp.Mesh, scene : Assimp.Scene) =
 
             // pre-compute animation channels
             let animationChannels =
@@ -330,102 +413,20 @@ module AssimpExtensions =
                 | (true, animationChannels) -> animationChannels
 
             // log if there are more bones than we currently support
-            if this.Bones.Count >= Constants.Render.BonesMax then
+            if mesh.Bones.Count >= Constants.Render.BonesMax then
                 Log.info ("Assimp mesh bone count exceeded currently supported number of bones for mesh '" + this.Name + "' in scene '" + scene.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []
-            let boneInfos = Array.zeroCreate<BoneInfo> this.Bones.Count
-            for boneId in 0 .. dec this.Bones.Count do
-                let bone = this.Bones.[boneId]
+            let boneInfos = Array.zeroCreate<BoneInfo> mesh.Bones.Count
+            for boneId in 0 .. dec mesh.Bones.Count do
+                let bone = mesh.Bones.[boneId]
                 let boneName = bone.Name
                 boneIds.[boneName] <- boneId
                 boneInfos.[boneId] <- BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
-            Assimp.Mesh.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
+            Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
 
             // convert bone info transforms to Nu's m4 representation
             Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
-
-    /// Node extensions.
-    type Assimp.Node with
-
-        /// The empty assimp node.
-        /// NOTE: Do NOT modify this as it is a globally shared stand-in for unavailble assimp nodes!
-        static member Empty = NodeEmpty
-
-        /// Get the world transform of the node.
-        member this.TransformWorld =
-            let mutable parentOpt = this.Parent
-            let mutable transform = this.Transform
-            while notNull parentOpt do
-                transform <- transform * parentOpt.Transform
-                parentOpt <- parentOpt.Parent
-            transform
-
-        /// Collect all the child nodes of a node, including the node itself.
-        member this.CollectNodes () =
-            [|this
-              for child in this.Children do
-                yield! child.CollectNodes ()|]
-
-        /// Collect all the child nodes and transforms of a node, including the node itself.
-        member this.CollectNodesAndTransforms (unitType, parentTransform : Matrix4x4) =
-            [|let localTransform = Assimp.ExportMatrix this.Transform
-              let worldTransform = localTransform * parentTransform
-              yield (this, worldTransform)
-              for child in this.Children do
-                yield! child.CollectNodesAndTransforms (unitType, worldTransform)|]
-
-        /// Map to a TreeNode.
-        member this.Map<'a> (parentNames : string array, parentTransform : Matrix4x4, mapper : Assimp.Node -> string array -> Matrix4x4 -> 'a array TreeNode) : 'a array TreeNode =
-            let localName = this.Name
-            let localTransform = Assimp.ExportMatrix this.Transform
-            let worldNames = Array.append parentNames [|localName|]
-            let worldTransform = localTransform * parentTransform
-            let node = mapper this worldNames worldTransform
-            for child in this.Children do
-                let child = child.Map<'a> (worldNames, worldTransform, mapper)
-                node.Add child
-            node
-
-        member this.RenderStyleOpt =
-            match this.Metadata.TryGetValue (nameof RenderStyle) with
-            | (true, entry) ->
-                match entry.DataType with
-                | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<RenderStyle> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
-
-        member this.PresenceOpt =
-            match this.Metadata.TryGetValue (nameof Presence) with
-            | (true, entry) ->
-                match entry.DataType with
-                | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<Presence> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
-
-        member this.IgnoreLightMapsOpt =
-            match this.Metadata.TryGetValue Constants.Render.IgnoreLightMapsName with
-            | (true, entry) ->
-                match entry.DataType with
-                | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<bool> |> Some
-                    with _ -> None
-                | _ -> None
-            | (false, _) -> None
-
-    type Assimp.Scene with
-
-        member this.IndexDatasToMetadata () =
-            for i in 0 .. dec this.Meshes.Count do
-                let mesh = this.Meshes.[i]
-                let indices = mesh.GetIndices ()
-                this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
-                mesh.Faces.Clear ()
-                mesh.Faces.Capacity <- 0

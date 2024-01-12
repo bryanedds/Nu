@@ -103,7 +103,17 @@ module WorldModule =
         static member internal getSimulants world =
             world.Simulants
 
-    type World with // Dispatchers
+    type World with // JobSystem
+
+        /// Enqueue a job for threaded execution.
+        static member enqueueJob priority job world =
+            world.WorldExtension.JobSystem.Enqueue (priority, job)
+
+        /// Await a job from threaded execution.
+        static member awaitJob timeOut (jobId : obj) world =
+            world.WorldExtension.JobSystem.Await (timeOut, jobId)
+
+    type World with // Destruction
 
         static member internal getDestructionListRev world =
             world.WorldExtension.DestructionListRev
@@ -119,6 +129,8 @@ module WorldModule =
                 WorldExtension =
                     { world.WorldExtension with
                         DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }}
+
+    type World with // Dispatchers
 
         /// Get the facets of the world.
         static member getFacets world =

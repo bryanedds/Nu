@@ -2614,6 +2614,13 @@ module AnimatedModelFacetModule =
     type AnimatedModelFacet () =
         inherit Facet (false)
 
+        static let tryAnimateBones time animations (sceneOpt : Assimp.Scene option) =
+            match sceneOpt with
+            | Some scene when scene.Meshes.Count > 0 ->
+                let boneTransforms = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0], scene)
+                Some boneTransforms
+            | Some _ | None -> None
+
         static member Properties =
             [define Entity.StartTime GameTime.zero
              define Entity.InsetOpt None
@@ -2622,6 +2629,7 @@ module AnimatedModelFacetModule =
              define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
         override this.Render (renderPass, entity, world) =
+            let time = world.GameTime
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
@@ -2631,7 +2639,17 @@ module AnimatedModelFacetModule =
             let properties = entity.GetMaterialProperties world
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
-            World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, animations, animatedModel, renderPass, world)
+            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
+            let jobId = (entity, nameof AnimatedModelFacet)
+            let boneTransformsOpt =
+                match World.awaitJob TimeSpan.Zero jobId world with
+                | JobCompletion (_, bonesObj) -> bonesObj :?> Matrix4x4 array option
+                | JobException _ | JobTimeout _ -> tryAnimateBones (time - world.GameDelta) animations sceneOpt
+            match boneTransformsOpt with
+            | Some boneTransforms -> World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
+            | None -> ()
+            let job = { JobId = jobId; Work = fun () -> tryAnimateBones time animations sceneOpt }
+            World.enqueueJob 1.0f job world
 
         override this.GetAttributesInferred (entity, world) =
             let animatedModel = entity.GetAnimatedModel world
