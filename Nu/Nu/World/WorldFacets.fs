@@ -2649,7 +2649,7 @@ module AnimatedModelFacetModule =
             match boneTransformsOpt with
             | Some boneTransforms -> World.renderAnimatedModelFast (localTime, absolute, &affineMatrix, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
             | None -> ()
-            let job = { JobId = jobId; Work = fun () -> tryAnimateBones time animations sceneOpt }
+            let job = Job.make jobId (fun () -> tryAnimateBones time animations sceneOpt)
             World.enqueueJob 1.0f job world
 
         override this.GetAttributesInferred (entity, world) =
