@@ -34,8 +34,8 @@ module JobSystem =
         let processor =
             async {
                 while executingRef.Value do
-                    if not jobQueue.IsEmpty then
-                        let job = jobQueue.Dequeue ()
+                    let mutable job = Unchecked.defaultof<_>
+                    if jobQueue.TryDequeue &job then
                         let work =
                             async {
                                 let result =

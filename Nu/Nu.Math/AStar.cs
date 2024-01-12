@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Nu
 {
@@ -34,7 +33,9 @@ namespace Nu
         public IEnumerator<Node> GetEnumerator()
         {
             for (Path<Node> p = this; p != null; p = p.PreviousSteps)
+            {
                 yield return p.LastStep;
+            }
         }
         IEnumerator IEnumerable.GetEnumerator()
         {
@@ -59,13 +60,11 @@ namespace Nu
             var closed = new HashSet<Node>();
             var queue = new PriorityQueue<float, Path<Node>>();
             queue.Enqueue(0, new Path<Node>(start));
-            while (!queue.IsEmpty)
+            Path<Node> path = null;
+            while (queue.TryDequeue(ref path))
             {
-                var path = queue.Dequeue();
-                if (closed.Contains(path.LastStep))
-                    continue;
-                if (path.LastStep.Equals(destination))
-                    return path;
+                if (closed.Contains(path.LastStep)) continue;
+                if (path.LastStep.Equals(destination)) return path;
                 closed.Add(path.LastStep);
                 foreach (Node n in path.LastStep.Neighbors)
                 {
