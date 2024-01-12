@@ -14,13 +14,13 @@ type JobResult =
     | JobSuccess of DateTimeOffset * obj
     | JobFailure of DateTimeOffset * Exception
 
-type Job =
+type JobDescription =
     { JobId : JobId
       Issuance : DateTimeOffset
       Work : unit -> JobResult }
 
 type JobQueue =
-    ConcurrentPriorityQueue<JobPriority, Job>
+    ConcurrentPriorityQueue<JobPriority, JobDescription>
 
 type JobResults =
     ConcurrentDictionary<JobId, JobResult>
@@ -30,4 +30,4 @@ type JobQueryResult =
     | JobTimeout
 
 type JobQuery =
-    TimeSpan -> JobId -> JobQueryResult
+    DateTimeOffset -> JobId -> JobQueryResult
