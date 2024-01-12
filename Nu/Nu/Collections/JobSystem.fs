@@ -1,83 +1,99 @@
 ﻿namespace Nu
 open System
 open System.Collections.Concurrent
-open System.Threading.Tasks
 open Prime
 open Nu
 
 /// The result of running a job.
 type JobResult =
-    | JobCompletion of obj
-    | JobException of Exception
-    | JobTimeout
+    | JobCompletion of DateTimeOffset * obj
+    | JobException of DateTimeOffset * Exception
+    | JobTimeout of DateTimeOffset
+    member this.CompletionTime =
+        match this with
+        | JobCompletion (completionTime, _) -> completionTime
+        | JobException (completionTime, _) -> completionTime
+        | JobTimeout completionTime -> completionTime
 
 /// A job for threaded processing.
 type Job =
     { JobId : obj
-      Work : unit -> JobResult }
+      Work : unit -> obj }
 
-[<RequireQualifiedAccess>]
-module JobSystem =
-
-    /// Processes jobs based on priority on the available threads.
-    type JobSystem =
-        private
-            { ExecutingRef : bool ref
-              JobQueue : ConcurrentPriorityQueue<single, Job>
-              JobResults : ConcurrentDictionary<obj, JobResult>
-              JobsProcessor : unit Task }
-
+/// Processes jobs based on priority.
+type JobSystem =
+    
     /// Add a job for processing with the given priority (low number is higher priority).
-    let enqueue jobPriority job jobSystem =
-        jobSystem.JobQueue.Enqueue (jobPriority, job)
-
-    /// Make (and start) a job processing system.
-    let make () =
-        let executingRef = ref true
-        let jobQueue = ConcurrentPriorityQueue<single, Job> ()
-        let jobResults = ConcurrentDictionary<obj, JobResult> ()
-        let jobsProcessor =
-            async {
-                while lock executingRef (fun () -> executingRef.Value) do
-                    let mutable job = Unchecked.defaultof<_>
-                    if jobQueue.TryDequeue &job then
-                        let work =
-                            async {
-                                let result =
-                                    try JobCompletion (job.Work ())
-                                    with exn -> JobException exn
-                                if not (jobResults.TryAdd (job.JobId, result)) then
-                                    Log.info ("Failed to add job result for job '" + scstring job.JobId + "' due to an already existing result.") }
-                        Async.Start work
-                    else 1 |> Async.Sleep |> Async.RunSynchronously }
-        let jobSystem =
-            { ExecutingRef = executingRef
-              JobQueue = jobQueue
-              JobResults = jobResults
-              JobsProcessor = Async.StartAsTask jobsProcessor }
-        jobSystem
+    abstract Enqueue : single * Job -> unit
 
     /// Await the completion of a job with the given timeout.
-    let await timeOutOpt jobId jobSystem =
-        let timeOverOpt = Option.map (fun timeOut -> DateTimeOffset.Now + timeOut) timeOutOpt
-        let mutable jobResultOpt = None
-        let mutable timeOut = false
-        while jobResultOpt.IsNone && not timeOut do
-            match jobSystem.JobResults.TryGetValue jobId with
-            | (true, jobResult) -> jobResultOpt <- Some jobResult
-            | (false, _) ->
-                match timeOverOpt with
-                | Some timeOver -> if timeOver > DateTimeOffset.Now then timeOut <- true
-                | None -> ()
-        match jobResultOpt with
-        | Some jobResult -> jobResult
-        | None when timeOut -> JobTimeout
-        | None -> failwithumf ()
+    abstract Await : TimeSpan * obj -> JobResult
 
-    /// Halt processing any jobs not yet in-flight.
-    let cease jobSystem =
-        lock jobSystem.ExecutingRef (fun () -> jobSystem.ExecutingRef.Value <- false)
-        jobSystem.JobsProcessor.Result
+/// Processes jobs based on priority inline.
+type JobSystemInline () =
 
-/// Processes jobs based on priority on the available threads.
-type JobSystem = JobSystem.JobSystem
+    let jobResults = ConcurrentDictionary<obj, JobResult> ()
+
+    interface JobSystem with
+
+        /// Add a job for processing with the given priority (low number is higher priority).
+        member this.Enqueue (_, job) =
+            let result =
+                try JobCompletion (DateTimeOffset.Now, job.Work ())
+                with exn -> JobException (DateTimeOffset.Now, exn)
+            jobResults.[job.JobId] <- result
+
+        /// Await the completion of a job with the given timeout.
+        member this.Await (_, jobId) =
+            match jobResults.TryRemove jobId with
+            | (true, jobResult) -> jobResult
+            | (false, _) -> JobTimeout DateTimeOffset.Now
+
+/// Processes jobs based on priority in parallel.
+type JobSystemParallel (resultExpirationTime : TimeSpan) =
+
+    let executingRef = ref true
+    let jobQueue = ConcurrentPriorityQueue<single, Job> ()
+    let jobResults = ConcurrentDictionary<obj, JobResult> ()
+    let _ =
+        async {
+            while lock executingRef (fun () -> executingRef.Value) do
+                let mutable job = Unchecked.defaultof<_>
+                if jobQueue.TryDequeue &job then
+                    let work =
+                        async {
+                            let result =
+                                try JobCompletion (DateTimeOffset.Now, job.Work ())
+                                with exn -> JobException (DateTimeOffset.Now, exn)
+                            jobResults.[job.JobId] <- result }
+                    Async.Start work
+                else
+                    for entry in jobResults.ToArray () do
+                        let expirationTime = DateTimeOffset.Now + resultExpirationTime
+                        if entry.Value.CompletionTime > expirationTime then
+                            match jobResults.TryRemove entry.Key with
+                            | (true, jobResult) when jobResult.CompletionTime <> entry.Value.CompletionTime ->
+                                jobResults.[entry.Key] <- jobResult // add back if not the one we intended to remove
+                            | (_, _) -> ()
+                    1 |> Async.Sleep |> Async.RunSynchronously } |>
+            Async.StartAsTask
+
+    interface JobSystem with
+
+        /// Add a job for processing with the given priority (low number is higher priority).
+        member this.Enqueue (priority, job) =
+            jobQueue.Enqueue (priority, job)
+
+        /// Await the completion of a job with the given timeout.
+        member this.Await (timeOut, jobId) =
+            let timeOver = DateTimeOffset.Now + timeOut
+            let mutable jobResultOpt = None
+            let mutable timeOutExceeded = false
+            while jobResultOpt.IsNone && not timeOutExceeded do
+                match jobResults.TryRemove jobId with
+                | (true, jobResult) -> jobResultOpt <- Some jobResult
+                | (false, _) -> if DateTimeOffset.Now > timeOver then timeOutExceeded <- true
+            match jobResultOpt with
+            | Some jobResult -> jobResult
+            | None when timeOutExceeded -> JobTimeout DateTimeOffset.Now
+            | None -> failwithumf ()

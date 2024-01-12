@@ -1550,7 +1550,8 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { DestructionListRev : Simulant list
+    { JobSystem : JobSystem // might be nice if there were room for this in the World type...
+      DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin }
 
