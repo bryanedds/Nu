@@ -36,9 +36,9 @@
 		<Compile Include="Core\Constants.fs" />
 		<Compile Include="Collections\ListTree.fs" />
 		<Compile Include="Collections\KeyedArray.fs" />
-		<Compile Include="Collections\JobSystem.fs" />
 		<Compile Include="Collections\ForgetfulDictionary.fs" />
 		<Compile Include="Collections\OrderedDictionary.fs" />
+		<Compile Include="JobSystem\JobSystem.fs" />
 		<Compile Include="Ecs\EcsPrelude.fs" />
 		<Compile Include="Ecs\Ecs.fs" />
 		<Compile Include="Transform\Presence.fs" />

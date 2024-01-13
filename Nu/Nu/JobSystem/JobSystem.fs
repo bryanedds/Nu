@@ -5,6 +5,14 @@ open System.Threading
 open Prime
 open Nu
 
+/// A job for threaded processing.
+type Job =
+    { JobId : obj
+      IssueTime : DateTimeOffset
+      Work : unit -> obj }
+    static member make jobId work =
+        { JobId = jobId; IssueTime = DateTimeOffset.Now; Work = work }
+
 /// The result of running a job.
 type JobResult =
     | JobCompletion of DateTimeOffset * obj
@@ -14,17 +22,9 @@ type JobResult =
         | JobCompletion (issueTime, _) -> issueTime
         | JobException (issueTime, _) -> issueTime
 
-/// A job for threaded processing.
-type Job =
-    { JobId : obj
-      IssueTime : DateTimeOffset
-      Work : unit -> obj }
-    static member make jobId work =
-        { JobId = jobId; IssueTime = DateTimeOffset.Now; Work = work }
-
 /// Processes jobs based on priority.
 type JobSystem =
-    
+
     /// Add a job for processing with the given priority (low number is higher priority).
     abstract Enqueue : single * Job -> unit
 
@@ -75,9 +75,9 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                     let now = DateTimeOffset.Now
                     for entry in jobResults.ToArray () do
                         if now > entry.Value.IssueTime + resultExpirationTime then
-                            match jobResults.TryRemove entry.Key with
+                            match jobResults.TryRemove entry.Key with // we add it back if not the one we intended to remove
                             | (true, jobResult) when now <= jobResult.IssueTime + resultExpirationTime ->
-                                jobResults.[entry.Key] <- jobResult // add back if not the one we intended to remove
+                                jobResults.AddOrUpdate (job.JobId, jobResult, fun _ existing -> if jobResult.IssueTime >= existing.IssueTime then jobResult else existing) |> ignore<JobResult>
                             | (_, _) -> ()
                     Async.Sleep 1 |> Async.RunSynchronously } |>
             Async.StartAsTask
