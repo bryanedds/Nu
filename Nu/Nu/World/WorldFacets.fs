@@ -2651,7 +2651,6 @@ module AnimatedModelFacetModule =
 
         override this.Update (entity, world) =
             let time = world.GameTime
-            let delta = world.GameDelta
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
             let sceneOpt =
@@ -2660,8 +2659,8 @@ module AnimatedModelFacetModule =
                 | None -> None
             let boneTransformsOpt =
                 match World.tryAwaitJob (TimeSpan.FromSeconds 0.1) (entity, nameof AnimatedModelFacet) world with
-                | Some (JobCompletion (_, (:? (Matrix4x4 array option) as boneTransformsOpt))) -> boneTransformsOpt                    
-                | _ -> tryAnimateBones (time - delta) animations sceneOpt
+                | Some (JobCompletion (_, (:? (Matrix4x4 array option) as boneTransformsOpt))) -> boneTransformsOpt
+                | _ -> None
             let world =
                 if boneTransformsOpt.IsSome
                 then entity.SetBoneTransformsOpt boneTransformsOpt world
