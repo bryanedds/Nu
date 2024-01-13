@@ -30,7 +30,7 @@ type JobSystem =
 
     /// Await the completion of a job with the given timeout.
     /// Order of jobs with the same key is not guaranteed.
-    abstract TryAwait : TimeSpan * obj -> JobResult option
+    abstract TryAwait : DateTimeOffset * TimeSpan * obj -> JobResult option
 
 /// Processes jobs based on priority inline.
 type JobSystemInline () =
@@ -48,7 +48,7 @@ type JobSystemInline () =
 
         /// Await the completion of a job with the given timeout.
         /// Order of jobs with the same key is guaranteed.
-        member this.TryAwait (_, jobId) =
+        member this.TryAwait (_, _, jobId) =
             match jobResults.TryRemove jobId with
             | (true, jobResult) -> Some jobResult
             | (false, _) -> None
@@ -90,17 +90,15 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
 
         /// Await the completion of a job with the given timeout.
         /// Order of jobs with the same key is not guaranteed.
-        member this.TryAwait (timeOut, jobId) =
-            let mutable now = DateTimeOffset.Now
-            let timeOver = now + timeOut
+        member this.TryAwait (time : DateTimeOffset, timeOut : TimeSpan, jobId : obj) =
+            let timeOver = time + timeOut
             let mutable jobResultOpt = None
             let mutable timeOutExceeded = false
             while jobResultOpt.IsNone && not timeOutExceeded do
                 match jobResults.TryRemove jobId with
                 | (true, jobResult) -> jobResultOpt <- Some jobResult
                 | (false, _) ->
-                    if now > timeOver
+                    if DateTimeOffset.Now > timeOver
                     then timeOutExceeded <- true
                     else Thread.Yield () |> ignore<bool>
-                now <- DateTimeOffset.Now
             jobResultOpt

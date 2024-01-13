@@ -2640,8 +2640,14 @@ module AnimatedModelFacetModule =
                 match Metadata.tryGetAnimatedModelMetadata animatedModel with
                 | Some model -> model.SceneOpt
                 | None -> None
-            let boneTransformsOpt = tryAnimateBones time animations sceneOpt
-            entity.SetBoneTransformsOpt boneTransformsOpt world
+            if world.Halted then
+                let boneTransformsOpt = tryAnimateBones time animations sceneOpt
+                let world = entity.SetBoneTransformsOpt boneTransformsOpt world
+                world
+            else
+                let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryAnimateBones time animations sceneOpt)
+                World.enqueueJob 1.0f job world
+                world
 
         override this.Update (entity, world) =
             let time = world.GameTime

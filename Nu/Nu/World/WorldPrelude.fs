@@ -189,9 +189,11 @@ module AmbientState =
               TickTime : int64
               TickTimeShavings : int64
               TickWatch : Stopwatch
+              DateTime : DateTimeOffset
+              // cache line 3
+              DateDelta : TimeSpan
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
-              // cache line 3
               Symbolics : Symbolics
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
@@ -268,6 +270,14 @@ module AmbientState =
         | StaticFrameRate _ -> UpdateTime (getUpdateTime state)
         | DynamicFrameRate _ -> ClockTime (getClockTime state)
 
+    /// Get the date delta as a TimeSpan.
+    let getDateDelta state =
+        state.DateDelta
+
+    /// Get the date time as a DateTimeOffset.
+    let getDateTime state =
+        state.DateTime
+
     /// Update the update and clock times.
     let updateTime state =
         let updateDelta = if state.Advancing then 1L else 0L
@@ -275,11 +285,14 @@ module AmbientState =
         let tickDelta = tickTimeShaved - state.TickTime
         let tickDeltaShaved = min (tickTimeShaved - state.TickTime) Constants.Engine.TickDeltaMax
         let tickDeltaShavings = max (tickDelta - tickDeltaShaved) 0L
+        let dateTime = DateTimeOffset.Now
         { state with
             UpdateTime = state.UpdateTime + updateDelta
             TickTime = tickTimeShaved - tickDeltaShavings
             TickTimeShavings = state.TickTimeShavings + tickDeltaShavings
-            TickDelta = tickDeltaShaved }
+            TickDelta = tickDeltaShaved
+            DateTime = dateTime
+            DateDelta = dateTime - state.DateTime }
 
     /// Shelve the ambient state.
     let shelve (state : _ AmbientState) =
@@ -436,6 +449,8 @@ module AmbientState =
           TickTime = 0L
           TickTimeShavings = 0L
           TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
+          DateTime = DateTime.Now
+          DateDelta = TimeSpan.Zero
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics
