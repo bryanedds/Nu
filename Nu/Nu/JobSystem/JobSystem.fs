@@ -90,14 +90,14 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
 
         /// Await the completion of a job with the given timeout.
         /// Order of jobs with the same key is not guaranteed.
-        member this.TryAwait (expiration : DateTimeOffset, jobId : obj) =
+        member this.TryAwait (deadline : DateTimeOffset, jobId : obj) =
             let mutable jobResultOpt = None
-            let mutable timeOutExceeded = false
-            while jobResultOpt.IsNone && not timeOutExceeded do
+            let mutable deadlinePassed = false
+            while jobResultOpt.IsNone && not deadlinePassed do
                 match jobResults.TryRemove jobId with
                 | (true, jobResult) -> jobResultOpt <- Some jobResult
                 | (false, _) ->
-                    if DateTimeOffset.Now > expiration
-                    then timeOutExceeded <- true
+                    if DateTimeOffset.Now > deadline
+                    then deadlinePassed <- true
                     else Thread.Yield () |> ignore<bool>
             jobResultOpt

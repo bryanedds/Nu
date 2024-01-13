@@ -111,8 +111,8 @@ module WorldModule =
 
         /// Await a job from threaded execution.
         /// Order of jobs with the same key is not guaranteed.
-        static member tryAwaitJob expiration (jobId : obj) world =
-            world.WorldExtension.JobSystem.TryAwait (expiration, jobId)
+        static member tryAwaitJob deadline (jobId : obj) world =
+            world.WorldExtension.JobSystem.TryAwait (deadline, jobId)
 
     type World with // Destruction
 
