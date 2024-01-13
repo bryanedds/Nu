@@ -2624,6 +2624,19 @@ module AnimatedModelFacetModule =
                 Some boneTransforms
             | Some _ | None -> None
 
+        static let handleAnimatedModelChange evt (world : World) =
+            let time = world.GameTime
+            let entity = evt.Subscriber : Entity
+            let animations = entity.GetAnimations world
+            let animatedModel = entity.GetAnimatedModel world
+            let sceneOpt =
+                match Metadata.tryGetAnimatedModelMetadata animatedModel with
+                | Some model -> model.SceneOpt
+                | None -> None
+            let boneTransformsOpt = tryAnimateBones time animations sceneOpt
+            let world = entity.SetBoneTransformsOpt boneTransformsOpt world
+            (Cascade, world)
+
         static member Properties =
             [define Entity.StartTime GameTime.zero
              define Entity.InsetOpt None
@@ -2640,14 +2653,17 @@ module AnimatedModelFacetModule =
                 match Metadata.tryGetAnimatedModelMetadata animatedModel with
                 | Some model -> model.SceneOpt
                 | None -> None
-            if world.Halted then
-                let boneTransformsOpt = tryAnimateBones time animations sceneOpt
-                let world = entity.SetBoneTransformsOpt boneTransformsOpt world
-                world
-            else
-                let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryAnimateBones time animations sceneOpt)
-                World.enqueueJob 1.0f job world
-                world
+            let world =
+                if world.Halted then
+                    let boneTransformsOpt = tryAnimateBones time animations sceneOpt
+                    let world = entity.SetBoneTransformsOpt boneTransformsOpt world
+                    world
+                else
+                    let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryAnimateBones time animations sceneOpt)
+                    World.enqueueJob 1.0f job world
+                    world
+            let world = World.sense handleAnimatedModelChange (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
+            world
 
         override this.Update (entity, world) =
             let time = world.GameTime
