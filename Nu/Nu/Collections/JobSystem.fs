@@ -90,8 +90,8 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
 
         /// Await the completion of a job with the given timeout.
         /// Order of jobs with the same key is not guaranteed.
-        member this.TryAwait (time : DateTimeOffset, timeOut : TimeSpan, jobId : obj) =
-            let timeOver = time + timeOut
+        member this.TryAwait (timeOrigin : DateTimeOffset, timeOut : TimeSpan, jobId : obj) =
+            let timeOver = timeOrigin + timeOut
             let mutable jobResultOpt = None
             let mutable timeOutExceeded = false
             while jobResultOpt.IsNone && not timeOutExceeded do
