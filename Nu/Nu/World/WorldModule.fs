@@ -112,7 +112,7 @@ module WorldModule =
         /// Await a job from threaded execution.
         /// Order of jobs with the same key is not guaranteed.
         static member tryAwaitJob timeOut (jobId : obj) world =
-            world.WorldExtension.JobSystem.TryAwait (timeOut, jobId)
+            world.WorldExtension.JobSystem.TryAwait (world.DateTime, timeOut, jobId)
 
     type World with // Destruction
 

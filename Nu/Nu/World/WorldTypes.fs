@@ -1632,6 +1632,14 @@ and [<ReferenceEquality>] World =
     member this.GameTime =
         AmbientState.getGameTime this.AmbientState
 
+    /// Get the amount of date time that has transpired between this and the previous frame.
+    member this.DateDelta =
+        AmbientState.getDateDelta this.AmbientState
+
+    /// Get the clock time as of when the current frame began.
+    member this.DateTime =
+        AmbientState.getDateTime this.AmbientState
+
     member
 #if !DEBUG
         inline
