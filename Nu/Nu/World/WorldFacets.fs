@@ -2655,7 +2655,7 @@ module AnimatedModelFacetModule =
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
             let boneTransformsOpt =
                 match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.1) (entity, nameof AnimatedModelFacet) world with
-                | Some (JobCompletion (_, (:? (Matrix4x4 array option) as boneTransformsOpt))) -> boneTransformsOpt
+                | Some (JobCompletion (_, _, (:? (Matrix4x4 array option) as boneTransformsOpt))) -> boneTransformsOpt
                 | _ -> None
             let world =
                 if boneTransformsOpt.IsSome
