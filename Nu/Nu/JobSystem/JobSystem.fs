@@ -15,12 +15,16 @@ type Job =
 
 /// The result of running a job.
 type JobResult =
-    | JobCompletion of DateTimeOffset * obj
-    | JobException of DateTimeOffset * Exception
+    | JobCompletion of DateTimeOffset * DateTimeOffset * obj
+    | JobException of DateTimeOffset * DateTimeOffset * Exception
     member this.IssueTime =
         match this with
-        | JobCompletion (issueTime, _) -> issueTime
-        | JobException (issueTime, _) -> issueTime
+        | JobCompletion (issueTime, _, _) -> issueTime
+        | JobException (issueTime, _, _) -> issueTime
+    member this.ResultTime =
+        match this with
+        | JobCompletion (_, resultTime, _) -> resultTime
+        | JobException (_, resultTime, _) -> resultTime
 
 /// Processes jobs based on priority.
 type JobSystem =
@@ -42,8 +46,8 @@ type JobSystemInline () =
         /// Add a job for processing with the given priority (low number is higher priority).
         member this.Enqueue (_, job) =
             let result =
-                try JobCompletion (job.IssueTime, job.Work ())
-                with exn -> JobException (job.IssueTime, exn)
+                try JobCompletion (job.IssueTime, DateTimeOffset.Now, job.Work ())
+                with exn -> JobException (job.IssueTime, DateTimeOffset.Now, exn)
             jobResults.AddOrUpdate (job.JobId, result, fun _ result' -> if result.IssueTime >= result'.IssueTime then result else result') |> ignore<JobResult>
 
         /// Await the completion of a job with the given timeout.
@@ -67,16 +71,16 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                     let work =
                         async {
                             let result =
-                                try JobCompletion (job.IssueTime, job.Work ())
-                                with exn -> JobException (job.IssueTime, exn)
+                                try JobCompletion (job.IssueTime, DateTimeOffset.Now, job.Work ())
+                                with exn -> JobException (job.IssueTime, DateTimeOffset.Now, exn)
                             jobResults.AddOrUpdate (job.JobId, result, fun _ existing -> if result.IssueTime >= existing.IssueTime then result else existing) |> ignore<JobResult> }
                     Async.Start work
                 else
                     let now = DateTimeOffset.Now
                     for entry in jobResults.ToArray () do
-                        if now > entry.Value.IssueTime + resultExpirationTime then
+                        if now > entry.Value.ResultTime + resultExpirationTime then
                             match jobResults.TryRemove entry.Key with // we add it back if not the one we intended to remove
-                            | (true, jobResult) when now <= jobResult.IssueTime + resultExpirationTime ->
+                            | (true, jobResult) when now <= jobResult.ResultTime + resultExpirationTime ->
                                 jobResults.AddOrUpdate (job.JobId, jobResult, fun _ existing -> if jobResult.IssueTime >= existing.IssueTime then jobResult else existing) |> ignore<JobResult>
                             | (_, _) -> ()
                     Async.Sleep 1 |> Async.RunSynchronously } |>
