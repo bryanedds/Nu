@@ -76,6 +76,7 @@ module WorldView =
                       ModelMatrix = staticModelSurface.ModelMatrix
                       InsetOpt = staticModelSurface.InsetOpt
                       MaterialProperties = staticModelSurface.MaterialProperties
+                      Material = staticModelSurface.Material
                       StaticModel = staticModelSurface.StaticModel
                       SurfaceIndex = staticModelSurface.SurfaceIndex
                       RenderType = staticModelSurface.RenderType

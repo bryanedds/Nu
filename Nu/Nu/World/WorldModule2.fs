@@ -1665,6 +1665,7 @@ module EntityPropertyDescriptor =
         elif propertyName = "FacetNames" then "Applied Facet Names"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Built-In Properties"
         elif propertyName = "MaterialProperties" then "Material Properties"
+        elif propertyName = "Material" then "Material"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Xtension Properties"
 
