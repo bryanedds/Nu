@@ -15,8 +15,8 @@ type Job =
 
 /// The result of running a job.
 type JobResult =
-    | JobCompletion of DateTimeOffset * DateTimeOffset * obj
-    | JobException of DateTimeOffset * DateTimeOffset * Exception
+    | JobCompletion of IssueTime : DateTimeOffset * ResultTime : DateTimeOffset * Result : obj
+    | JobException of IssueTime : DateTimeOffset * ResultTime : DateTimeOffset * Exception : Exception
     member this.IssueTime =
         match this with
         | JobCompletion (issueTime, _, _) -> issueTime
