@@ -341,7 +341,7 @@ module PhysicallyBased =
                 [|for i in dec individualPaths.Length .. -1 .. 0 do
                     let possibleFilePath = String.join "/" (Array.skip i individualPaths)
                     possibleFilePath
-                    if PathF.GetExtensionLower possibleFilePath = ".psd" then PathF.ChangeExtension (possibleFilePath, "png")
+                    if PathF.GetExtensionLower possibleFilePath = ".psd" then PathF.ChangeExtension (possibleFilePath, ".png")
                     PathF.ChangeExtension (possibleFilePath, ".dds")|]
             let mutable found = false
             let mutable i = 0
