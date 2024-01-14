@@ -2552,6 +2552,7 @@ module StaticModelSurfaceFacetModule =
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.MaterialProperties MaterialProperties.empty
+             define Entity.Material Material.empty
              define Entity.RenderStyle Deferred
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.SurfaceIndex 0]
@@ -2565,12 +2566,13 @@ module StaticModelSurfaceFacetModule =
                 let affineMatrix = transform.AffineMatrix
                 let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
+                let material = entity.GetMaterial world
                 let staticModel = entity.GetStaticModel world
                 let renderType =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, staticModel, surfaceIndex, renderType, renderPass, world)
+                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with

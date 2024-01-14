@@ -169,6 +169,7 @@ type [<Struct>] StaticModelSurfaceValue =
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
+      mutable Material : Material
       mutable StaticModel : StaticModel AssetTag
       mutable SurfaceIndex : int
       mutable RenderType : RenderType }
@@ -289,6 +290,7 @@ and CachedStaticModelSurfaceMessage =
       mutable CachedStaticModelSurfaceMatrix : Matrix4x4
       mutable CachedStaticModelSurfaceInsetOpt : Box2 voption
       mutable CachedStaticModelSurfaceMaterialProperties : MaterialProperties
+      mutable CachedStaticModelSurfaceMaterial : Material
       mutable CachedStaticModelSurfaceModel : StaticModel AssetTag
       mutable CachedStaticModelSurfaceIndex : int
       mutable CachedStaticModelSurfaceRenderType : RenderType
@@ -391,6 +393,7 @@ and [<ReferenceEquality>] RenderStaticModelSurface =
       ModelMatrix : Matrix4x4
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
+      Material : Material
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
       RenderType : RenderType
@@ -1356,6 +1359,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          modelMatrix : Matrix4x4 inref,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
+         material : Material inref,
          staticModel : StaticModel AssetTag,
          surfaceIndex : int,
          renderType : RenderType,
@@ -1367,6 +1371,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             | StaticModelAsset (_, modelAsset) ->
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces.[surfaceIndex]
+                    let surface = // OPTIMIZATION: apply surface material only if effective.
+                        if material <> Material.empty then
+                            let surfaceMaterial = GlRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
+                            { surface with SurfaceMaterial = surfaceMaterial }
+                        else surface
                     GlRenderer3d.categorizeStaticModelSurface (modelAbsolute, &modelMatrix, &insetOpt, &properties, surface, renderType, renderPass, None, renderer)
             | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
         | _ -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
@@ -1797,11 +1806,11 @@ type [<ReferenceEquality>] GlRenderer3d =
              instanceFields, elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
-    static member inline private makeBillboardMaterial (properties : MaterialProperties) (material : Material) renderer =
-        let (albedoMetadata, albedoTexture) =
+    static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
+        let struct (albedoMetadata, albedoTexture) =
             match GlRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
-            | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
-            | _ -> (OpenGL.Texture.TextureMetadata.empty, renderer.PhysicallyBasedMaterial.AlbedoTexture)
+            | ValueSome (TextureAsset (metadata, texture)) -> struct (metadata, texture)
+            | _ -> struct (OpenGL.Texture.TextureMetadata.empty, renderer.PhysicallyBasedMaterial.AlbedoTexture)
         let roughnessTexture =
             match GlRenderer3d.tryGetRenderAsset material.RoughnessImage renderer with
             | ValueSome (TextureAsset (_, texture)) -> texture
@@ -1844,7 +1853,73 @@ type [<ReferenceEquality>] GlRenderer3d =
               NormalTexture = normalTexture
               HeightTexture = heightTexture
               TwoSided = true }
-        (properties, material)
+        struct (properties, material)
+
+    static member private applySurfaceMaterial (material : Material inref, surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial inref, renderer) =
+        let struct (albedoMetadata, albedoTexture) =
+            match material.AlbedoImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset (metadata, texture)) -> struct (metadata, texture)
+                | _ -> struct (surfaceMaterial.AlbedoMetadata, surfaceMaterial.AlbedoTexture)
+            | ValueNone -> struct (surfaceMaterial.AlbedoMetadata, surfaceMaterial.AlbedoTexture)
+        let roughnessTexture =
+            match material.RoughnessImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset (_, texture)) -> texture
+                | _ -> surfaceMaterial.RoughnessTexture
+            | ValueNone -> surfaceMaterial.RoughnessTexture
+        let metallicTexture =
+            match material.MetallicImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset (_, texture)) -> texture
+                | _ -> surfaceMaterial.MetallicTexture
+            | ValueNone -> surfaceMaterial.MetallicTexture
+        let ambientOcclusionTexture =
+            match material.AmbientOcclusionImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset (_, texture)) -> texture
+                | _ -> surfaceMaterial.AmbientOcclusionTexture
+            | ValueNone -> surfaceMaterial.AmbientOcclusionTexture
+        let emissionTexture =
+            match material.EmissionImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset (_, texture)) -> texture
+                | _ -> surfaceMaterial.EmissionTexture
+            | ValueNone -> surfaceMaterial.EmissionTexture
+        let normalTexture =
+            match material.NormalImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset (_, texture)) -> texture
+                | _ -> surfaceMaterial.NormalTexture
+            | ValueNone -> surfaceMaterial.NormalTexture
+        let heightTexture =
+            match material.HeightImageOpt with
+            | ValueSome image ->
+                match GlRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset (_, texture)) -> texture
+                | _ -> surfaceMaterial.HeightTexture
+            | ValueNone -> surfaceMaterial.HeightTexture
+        let twoSided =
+            match material.TwoSidedOpt with
+            | ValueSome twoSided -> twoSided
+            | ValueNone -> surfaceMaterial.TwoSided
+        let surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
+            { AlbedoMetadata = albedoMetadata
+              AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
+              TwoSided = twoSided }
+        surfaceMaterial
 
     static member private renderShadowTexture
         renderTasks
@@ -2457,16 +2532,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if rl.DesireShadows then
                     renderer.LightsDesiringShadows.[rl.LightId] <- light
             | RenderBillboard rb ->
-                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rb.MaterialProperties rb.Material renderer
+                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                 GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
-                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rbs.MaterialProperties rbs.Material renderer
+                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                 for (modelMatrix, insetOpt) in rbs.Billboards do
                     GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, modelMatrix, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
-                let (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial rbps.MaterialProperties rbps.Material renderer
+                let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 for particle in rbps.Particles do
                     let billboardMatrix =
                         Matrix4x4.CreateFromTrs
@@ -2478,7 +2553,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, false, rbps.MaterialProperties, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, &insetOpt, &rsms.MaterialProperties, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, rsms.RenderPass, renderer)
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, rsms.RenderPass, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 GlRenderer3d.categorizeStaticModel (skipCulling, frustumInterior, frustumExterior, frustumImposter, lightBox, rsm.Absolute, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.RenderType, rsm.RenderPass, renderer)
@@ -2489,7 +2564,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderCachedStaticModel csmm ->
                 GlRenderer3d.categorizeStaticModel (skipCulling, frustumInterior, frustumExterior, frustumImposter, lightBox, csmm.CachedStaticModelAbsolute, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
             | RenderCachedStaticModelSurface csmsm ->
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (csmsm.CachedStaticModelSurfaceAbsolute, &csmsm.CachedStaticModelSurfaceMatrix, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (csmsm.CachedStaticModelSurfaceAbsolute, &csmsm.CachedStaticModelSurfaceMatrix, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
