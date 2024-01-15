@@ -2104,10 +2104,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
                     Array.sortBy (fun pd ->
                         match pd.PropertyName with
-                        | Constants.Engine.NamePropertyName -> "!" // put Name first
-                        | Constants.Engine.ModelPropertyName -> "!2" // put Model second
-                        | Constants.Engine.MountOptPropertyName -> "!3" // put MountOpt third
-                        | Constants.Engine.OverlayNameOptPropertyName -> "!4" // put OverlayNameOpt fourth
+                        | Constants.Engine.NamePropertyName -> "!00" // put Name first
+                        | Constants.Engine.ModelPropertyName -> "!01" // put Model second
+                        | Constants.Engine.MountOptPropertyName -> "!02" // put MountOpt third
+                        | Constants.Engine.OverlayNameOptPropertyName -> "!03" // and so on...
+                        | nameof Entity.Position -> "!04"
+                        | nameof Entity.PositionLocal -> "!05"
+                        | nameof Entity.Rotation -> "!06"
+                        | nameof Entity.RotationLocal -> "!07"
+                        | nameof Entity.Degrees -> "!08"
+                        | nameof Entity.DegreesLocal -> "!09"
+                        | nameof Entity.Scale -> "!10"
+                        | nameof Entity.ScaleLocal -> "!11"
+                        | nameof Entity.Size -> "!12"
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if containsProperty propertyDescriptor simulant then

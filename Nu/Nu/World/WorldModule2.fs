@@ -1662,12 +1662,21 @@ module EntityPropertyDescriptor =
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" then "Ambient Properties"
-        elif propertyName = "FacetNames" then "Applied Facet Names"
-        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Built-In Properties"
+        elif propertyName = "FacetNames" then "Applied Facets"
+        elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
+             propertyName = "Elevation" || propertyName = "ElevationLocal" ||
+             propertyName = "Offset" || propertyName = "Overflow" ||
+             propertyName = "Position" || propertyName = "PositionLocal" ||
+             propertyName = "Presence" ||
+             propertyName = "Rotation" || propertyName = "RotationLocal" ||
+             propertyName = "Scale" || propertyName = "ScaleLocal" ||
+             propertyName = "Size" then
+             "Basic Transform Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
         elif propertyName = "MaterialProperties" then "Material Properties"
         elif propertyName = "Material" then "Material"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
-        else "Xtension Properties"
+        else "Uncategorized Properties"
 
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
