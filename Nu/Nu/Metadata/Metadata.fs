@@ -525,7 +525,7 @@ module Metadata =
                 let material = scene.Materials.[materialIndex]
                 match material.IgnoreLightMapsOpt with
                 | Some ignoreLightMaps -> Some ignoreLightMaps
-                | None -> Some false
+                | None -> None
             | Some _ | None -> None
         | None -> None
 
