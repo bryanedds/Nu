@@ -1511,10 +1511,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else
             match m.AlbedoImageOpt with
             | ValueSome albedoImage ->
-                let name = propertyDescriptor.PropertyName
                 let mutable propertyValueStr = scstring albedoImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                if ImGui.InputText ("AlbedoImageOpt", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with AlbedoImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1546,10 +1545,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else
             match m.RoughnessImageOpt with
             | ValueSome roughnessImage ->
-                let name = propertyDescriptor.PropertyName
                 let mutable propertyValueStr = scstring roughnessImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                if ImGui.InputText ("RoughnessImageOpt", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with RoughnessImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1581,10 +1579,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else
             match m.MetallicImageOpt with
             | ValueSome metallicImage ->
-                let name = propertyDescriptor.PropertyName
                 let mutable propertyValueStr = scstring metallicImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                if ImGui.InputText ("MetallicImageOpt", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with MetallicImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1616,10 +1613,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else
             match m.AmbientOcclusionImageOpt with
             | ValueSome ambientOcclusionImage ->
-                let name = propertyDescriptor.PropertyName
                 let mutable propertyValueStr = scstring ambientOcclusionImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                if ImGui.InputText ("AmbientOcclusionImageOpt", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with AmbientOcclusionImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1651,10 +1647,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else
             match m.EmissionImageOpt with
             | ValueSome emissionImage ->
-                let name = propertyDescriptor.PropertyName
                 let mutable propertyValueStr = scstring emissionImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                if ImGui.InputText ("EmissionImageOpt", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with EmissionImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1686,10 +1681,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else
             match m.NormalImageOpt with
             | ValueSome normalImage ->
-                let name = propertyDescriptor.PropertyName
                 let mutable propertyValueStr = scstring normalImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                if ImGui.InputText ("NormalImageOpt", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with NormalImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1721,10 +1715,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else
             match m.HeightImageOpt with
             | ValueSome heightImage ->
-                let name = propertyDescriptor.PropertyName
                 let mutable propertyValueStr = scstring heightImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                if ImGui.InputText ("HeightImageOpt", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with HeightImageOpt = ValueSome propertyValue } propertyDescriptor simulant
