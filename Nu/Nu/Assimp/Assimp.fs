@@ -395,26 +395,26 @@ module AssimpExtensions =
 
         /// Compute the animated transforms of the meshes bones in the given scene.
         /// Thread-safe.
-        member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, mesh : Assimp.Mesh, scene : Assimp.Scene) =
+        member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, mesh : Assimp.Mesh) =
 
             // pre-compute animation channels
             let animationChannels =
-                match AnimationChannelsDict.TryGetValue scene with
+                match AnimationChannelsDict.TryGetValue this with
                 | (false, _) ->
                     let animationChannels = dictPlus HashIdentity.Structural []
-                    for animationId in 0 .. dec scene.Animations.Count do
-                        let animation = scene.Animations.[animationId]
+                    for animationId in 0 .. dec this.Animations.Count do
+                        let animation = this.Animations.[animationId]
                         for channelId in 0 .. dec animation.NodeAnimationChannels.Count do
                             let channel = animation.NodeAnimationChannels.[channelId]
                             let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
                             animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
-                    AnimationChannelsDict.[scene] <- animationChannels
+                    AnimationChannelsDict.[this] <- animationChannels
                     animationChannels
                 | (true, animationChannels) -> animationChannels
 
             // log if there are more bones than we currently support
             if mesh.Bones.Count >= Constants.Render.BonesMax then
-                Log.info ("Assimp mesh bone count exceeded currently supported number of bones for mesh '" + this.Name + "' in scene '" + scene.Name + "'.")
+                Log.info ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []
@@ -426,7 +426,7 @@ module AssimpExtensions =
                 boneInfos.[boneId] <- BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
-            Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, scene.RootNode, Assimp.Matrix4x4.Identity, scene)
+            Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
 
             // convert bone info transforms to Nu's m4 representation
             Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
