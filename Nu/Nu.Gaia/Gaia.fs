@@ -490,6 +490,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match selectedEntityOpt with
             | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
             | Some _ | None -> ()
+            world <- World.setEye2dCenter desiredEye2dCenter world
+            world <- World.setEye3dCenter desiredEye3dCenter world
+            world <- World.setEye3dRotation desiredEye3dRotation world
             true
         else false
 
@@ -513,6 +516,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match selectedEntityOpt with
             | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
             | Some _ | None -> ()
+            world <- World.setEye2dCenter desiredEye2dCenter world
+            world <- World.setEye3dCenter desiredEye3dCenter world
+            world <- World.setEye3dRotation desiredEye3dRotation world
             true
         else false
 
