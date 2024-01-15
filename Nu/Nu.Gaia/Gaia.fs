@@ -54,6 +54,7 @@ module Gaia =
     let mutable private rightClickPosition = v2Zero
     let mutable private focusedPropertyDescriptorOpt = Option<PropertyDescriptor * Simulant>.None
     let mutable private focusPropertyEditorRequested = false
+    let mutable private focusEntityHierarchySearchRequested = false
     let mutable private focusAssetViewSearchRequested = false
     let mutable private propertyValueStrPrevious = ""
     let mutable private dragDropPayloadOpt = None
@@ -572,11 +573,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 Some (intersection, entity)
             | None -> None
 
-    let private pickAsset () =
-        ImGui.SetWindowFocus "Asset Viewer"
-        focusAssetViewSearchRequested <- true
-
-    let private pickName names =
+    let private tryPickName names =
         let dispatcherNamesMatching =
             [|for key in int ImGuiKey.A .. int ImGuiKey.Z do
                 if ImGui.IsKeyReleased (Branchless.reinterpret key) then
@@ -587,6 +584,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         dispatcherNamesMatching |>
         Array.definitize |>
         Array.tryHead
+
+    let private searchAsset () =
+        ImGui.SetWindowFocus "Asset Viewer"
+        focusAssetViewSearchRequested <- true
+
+    let private searchEntity () =
+        ImGui.SetWindowFocus "Entity Hierarchy"
+        focusEntityHierarchySearchRequested <- true
 
     (* Nu Event Handlers *)
 
@@ -1260,12 +1265,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.F8 then reloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 then reloadCodeRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
-            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then showOpenProjectDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () then showNewGroupDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () then showOpenGroupDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () then tryAutoBoundsSelectedEntity () |> ignore<bool>
+            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then showNewGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then showOpenGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then showSaveGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then tryAutoBoundsSelectedEntity () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then reloadAllRequested <- 1
+            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then searchEntity ()
+            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then showOpenProjectDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then freezeEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then thawEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then rerenderLightMaps ()
@@ -1563,7 +1569,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpAlbedoImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1604,7 +1610,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpRoughnessImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1645,7 +1651,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpMetallicImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1686,7 +1692,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpAmbientOcclusionImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1727,7 +1733,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpEmissionImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1768,7 +1774,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpNormalImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1809,7 +1815,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpHeightImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -2057,7 +2063,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.EndDragDropTarget ()
                     ImGui.SameLine ()
                     ImGui.PushID ("##pickAsset" + name)
-                    if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
+                    if ImGui.Button ("V", v2Dup 19.0f) then searchAsset ()
                     focusProperty ()
                     ImGui.PopID ()
                     ImGui.SameLine ()
@@ -2416,7 +2422,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SetNextItemWidth 200.0f
                         if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
                             let dispatcherNames = (World.getEntityDispatchers world).Keys
-                            let dispatcherNamePicked = pickName dispatcherNames
+                            let dispatcherNamePicked = tryPickName dispatcherNames
                             for dispatcherName in dispatcherNames do
                                 if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
@@ -2428,7 +2434,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SetNextItemWidth 150.0f
                         let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays world |> Map.toKeyArray)
                         if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
-                            let overlayNamePicked = pickName overlayNames
+                            let overlayNamePicked = tryPickName overlayNames
                             for overlayName in overlayNames do
                                 if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.2f
                                 if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
@@ -2533,11 +2539,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.SetWindowFocus "Viewport"
 
                         // entity search
+                        if focusEntityHierarchySearchRequested then
+                            ImGui.SetKeyboardFocusHere ()
+                            focusEntityHierarchySearchRequested <- false
                         ImGui.SetNextItemWidth -1.0f
                         ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &entityHierarchySearchStr, 4096u) |> ignore<bool>
                         if ImGui.IsKeyReleased ImGuiKey.Escape then
                             entityHierarchySearchStr <- ""
-                        
+
                         // creation parent display
                         match newEntityParentOpt with
                         | Some newEntityParent when newEntityParent.Exists world ->
@@ -2644,7 +2653,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
                             if  isPropertyAssetTag then
                                 ImGui.SameLine ()
-                                if ImGui.Button "Pick" then pickAsset ()
+                                if ImGui.Button "Pick" then searchAsset ()
                             if  focusPropertyEditorRequested then
                                 ImGui.SetKeyboardFocusHere ()
                                 focusPropertyEditorRequested <- false
@@ -3067,7 +3076,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let newGroup = selectedScreen / newGroupName
                             if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
                                 let dispatcherNames = (World.getGroupDispatchers world).Keys
-                                let dispatcherNamePicked = pickName dispatcherNames
+                                let dispatcherNamePicked = tryPickName dispatcherNames
                                 for dispatcherName in dispatcherNames do
                                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
                                     if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
@@ -3203,7 +3212,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SetNextItemWidth -1.0f
                         if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
                             let dispatcherNames = (World.getEntityDispatchers world).Keys
-                            let dispatcherNamePicked = pickName dispatcherNames
+                            let dispatcherNamePicked = tryPickName dispatcherNames
                             for dispatcherName in dispatcherNames do
                                 if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
