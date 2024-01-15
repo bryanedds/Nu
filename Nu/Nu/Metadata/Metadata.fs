@@ -296,7 +296,7 @@ module Metadata =
     let getTileMapMetadata tileMap =
         Option.get (tryGetTileMapMetadata tileMap)
 
-    let private tryGetMetadataModel model =
+    let private tryGetModelMetadataModel model =
         match tryGetMetadata model with
         | Some (StaticModelMetadata model) -> Some model
         | Some (AnimatedModelMetadata model) -> Some model
@@ -304,7 +304,7 @@ module Metadata =
         | _ -> None
 
     let private tryGetModelAlbedoImage materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
@@ -323,7 +323,7 @@ module Metadata =
         | None -> None
 
     let private tryGetModelRoughnessImage materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
@@ -362,7 +362,7 @@ module Metadata =
         | None -> None
 
     let private tryGetModelMetallicImage materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
@@ -401,7 +401,7 @@ module Metadata =
         | None -> None
 
     let private tryGetModelAmbientOcclusionImage materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
@@ -441,7 +441,7 @@ module Metadata =
         | None -> None
 
     let private tryGetModelEmissionImage materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
@@ -470,7 +470,7 @@ module Metadata =
         | None -> None
 
     let private tryGetModelNormalImage materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
@@ -499,7 +499,7 @@ module Metadata =
         | None -> None
 
     let private tryGetModelHeightImage materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
@@ -528,7 +528,7 @@ module Metadata =
         | None -> None
 
     let private tryGetModelTwoSided materialIndex model =
-        match tryGetMetadataModel model with
+        match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when scene.Materials.Count > materialIndex ->
