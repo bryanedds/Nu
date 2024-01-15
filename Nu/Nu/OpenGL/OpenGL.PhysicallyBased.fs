@@ -331,12 +331,16 @@ module PhysicallyBased =
             if material.HasColorDiffuse
             then color material.ColorDiffuse.R material.ColorDiffuse.G material.ColorDiffuse.B material.ColorDiffuse.A
             else Constants.Render.AlbedoDefault
-        let mutable (_, albedoTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
-        if isNull albedoTextureSlot.FilePath
-        then albedoTextureSlot.FilePath <- "" // ensure not null
-        else
-            albedoTextureSlot.FilePath <- PathF.Normalize albedoTextureSlot.FilePath
-            let individualPaths = albedoTextureSlot.FilePath.Split "/"
+        let mutable (_, albedoTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.BaseColor, 0)
+        let mutable (_, albedoTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
+        let mutable albedoTextureSlotFilePath =
+            if isNull albedoTextureSlotA.FilePath then
+                if isNull albedoTextureSlotB.FilePath then ""
+                else albedoTextureSlotB.FilePath
+            else albedoTextureSlotA.FilePath
+        if albedoTextureSlotFilePath <> "" then
+            albedoTextureSlotFilePath <- PathF.Normalize albedoTextureSlotFilePath
+            let individualPaths = albedoTextureSlotFilePath.Split "/"
             let possibleFilePaths =
                 [|for i in dec individualPaths.Length .. -1 .. 0 do
                     let possibleFilePath = String.join "/" (Array.skip i individualPaths)
@@ -348,19 +352,19 @@ module PhysicallyBased =
             while not found && i < possibleFilePaths.Length do
                 let possibleFilePath = possibleFilePaths.[i]
                 if File.Exists (dirPrefix + possibleFilePath) then
-                    albedoTextureSlot.FilePath <- possibleFilePath
+                    albedoTextureSlotFilePath <- possibleFilePath
                     found <- true
                 else i <- inc i
         let (albedoMetadata, albedoTexture) =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, dirPrefix + albedoTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (true, dirPrefix + albedoTextureSlotFilePath, textureMemo) with
                 | Right (textureMetadata, texture) -> (textureMetadata, texture)
                 | Left _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
             else (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
 
         // infer possible substitute texture names
-        let albedoTextureDirName =              match albedoTextureSlot.FilePath with null -> "" | filePath -> PathF.GetDirectoryName filePath
-        let albedoTextureFileName =             PathF.GetFileName albedoTextureSlot.FilePath
+        let albedoTextureDirName =              match albedoTextureSlotFilePath with null -> "" | filePath -> PathF.GetDirectoryName filePath
+        let albedoTextureFileName =             PathF.GetFileName albedoTextureSlotFilePath
         let substitutionPrefix =                if albedoTextureDirName <> "" then albedoTextureDirName + "/" else ""
         let has_bc =                            albedoTextureFileName.Contains "_bc"
         let has_d =                             albedoTextureFileName.Contains "_d"
@@ -456,13 +460,16 @@ module PhysicallyBased =
 
         // attempt to load ambient occlusion info
         let ambientOcclusion = Constants.Render.AmbientOcclusionDefault
-        let mutable (_, ambientOcclusionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
-        if isNull ambientOcclusionTextureSlot.FilePath
-        then ambientOcclusionTextureSlot.FilePath <- "" // ensure not null
-        else ambientOcclusionTextureSlot.FilePath <- PathF.Normalize ambientOcclusionTextureSlot.FilePath
+        let mutable (_, ambientOcclusionTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
+        let mutable (_, ambientOcclusionTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.AmbientOcclusion, 0)
+        let ambientOcclusionTextureSlotFilePath =
+            if isNull ambientOcclusionTextureSlotA.FilePath then
+                if isNull ambientOcclusionTextureSlotB.FilePath then ""
+                else ambientOcclusionTextureSlotB.FilePath
+            else ambientOcclusionTextureSlotA.FilePath
         let ambientOcclusionTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, dirPrefix + ambientOcclusionTextureSlot.FilePath, textureMemo) with
+                match Texture.TryCreateTextureFilteredMemoized (true, dirPrefix + ambientOcclusionTextureSlotFilePath, textureMemo) with
                 | Right (_, texture) -> texture
                 | Left _ ->
                     match Texture.TryCreateTextureFilteredMemoized (true, dirPrefix + aoTextureFilePath, textureMemo) with
