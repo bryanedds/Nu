@@ -16,7 +16,7 @@ Metadata from another thread. *)
 /// full asset loaded into memory.
 type Metadata =
     | RawMetadata
-    | TextureMetadata of Vector2i
+    | TextureMetadata of OpenGL.Texture.TextureMetadata
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
@@ -26,8 +26,8 @@ type Metadata =
 [<RequireQualifiedAccess>]
 module Metadata =
 
-    let mutable private MetadataPackages :
-        UMap<string, UMap<string, DateTimeOffset * string * Metadata>> = UMap.makeEmpty StringComparer.Ordinal Imperative
+    let mutable private MetadataPackages : UMap<string, UMap<string, DateTimeOffset * string * Metadata>> =
+        UMap.makeEmpty StringComparer.Ordinal Imperative
 
     /// Thread-safe.
     let private tryGenerateRawMetadata (asset : Asset) =
@@ -46,18 +46,18 @@ module Metadata =
                 fileStream.ReadExactly ddsHeader
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (12, 4))
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (16, 4))
-                Some (TextureMetadata (v2i (int width) (int height)))
+                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make (int width) (int height)))
             elif fileExtension = ".tga" then
                 let ddsHeader = Array.zeroCreate<byte> 16
                 use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ddsHeader
                 let width = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (12, 2))
                 let height = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (14, 2))
-                Some (TextureMetadata (v2i (int width) (int height)))
+                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make (int width) (int height)))
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
                 use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Drawing.Image.FromStream (fileStream, false, false)
-                Some (TextureMetadata (v2i image.Width image.Height))
+                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make image.Width image.Height))
             else
                 // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow path here.
                 // TODO: P1: read as many image file type headers as possible to speed this up on non-windows platforms.
@@ -65,7 +65,7 @@ module Metadata =
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()
-                    Some (TextureMetadata (v2i metadata.TextureWidth metadata.TextureHeight))
+                    Some (TextureMetadata metadata)
                 | None ->
                     let errorMessage = "Failed to load texture metadata for '" + asset.FilePath + "."
                     Log.trace errorMessage
@@ -264,12 +264,22 @@ module Metadata =
             Map.map (fun _ metadata -> Map.toKeyList metadata)
         sources
 
-    /// Attempt to get the texture size of the given image.
-    let tryGetTextureSize (image : Image AssetTag) =
+    /// Attempt to get the texture metadata of the given image.
+    let tryGetTextureMetadata (image : Image AssetTag) =
         match tryGetMetadata image with
-        | Some (TextureMetadata size) -> Some size
+        | Some (TextureMetadata metadata) -> Some metadata
         | None -> None
         | _ -> None
+
+    /// Forcibly get the texture metadata of the given image (throwing on failure).
+    let getTextureMetadata image =
+        Option.get (tryGetTextureMetadata image)
+
+    /// Attempt to get the texture size of the given image.
+    let tryGetTextureSize (image : Image AssetTag) =
+        match tryGetTextureMetadata image with
+        | Some metadata -> Some (v2i metadata.TextureWidth metadata.TextureHeight)
+        | None -> None
 
     /// Forcibly get the texture size of the given image (throwing on failure).
     let getTextureSize image =
