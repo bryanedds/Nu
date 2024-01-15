@@ -168,57 +168,57 @@ DockId=0x00000002,0
 
 [Window][Property Editor]
 Pos=284,854
-Size=667,226
+Size=638,226
 Collapsed=0
 DockId=0x00000001,0
 
 [Window][Asset Viewer]
-Pos=0,56
-Size=282,1024
+Pos=924,854
+Size=698,226
 Collapsed=0
-DockId=0x0000000C,1
+DockId=0x00000009,0
 
 [Window][Metrics]
-Pos=953,854
-Size=669,226
+Pos=924,854
+Size=698,226
+Collapsed=0
+DockId=0x00000009,7
+
+[Window][Event Tracing]
+Pos=924,854
+Size=698,226
 Collapsed=0
 DockId=0x00000009,6
 
-[Window][Event Tracing]
-Pos=953,854
-Size=669,226
+[Window][Overlayer]
+Pos=924,854
+Size=698,226
 Collapsed=0
 DockId=0x00000009,5
 
-[Window][Overlayer]
-Pos=953,854
-Size=669,226
+[Window][Asset Graph]
+Pos=924,854
+Size=698,226
 Collapsed=0
 DockId=0x00000009,4
 
-[Window][Asset Graph]
-Pos=953,854
-Size=669,226
+[Window][Renderer]
+Pos=924,854
+Size=698,226
 Collapsed=0
 DockId=0x00000009,3
 
-[Window][Renderer]
-Pos=953,854
-Size=669,226
+[Window][Audio Player]
+Pos=924,854
+Size=698,226
 Collapsed=0
 DockId=0x00000009,2
 
-[Window][Audio Player]
-Pos=953,854
-Size=669,226
+[Window][Edit Params]
+Pos=924,854
+Size=698,226
 Collapsed=0
 DockId=0x00000009,1
-
-[Window][Edit Params]
-Pos=953,854
-Size=669,226
-Collapsed=0
-DockId=0x00000009,0
 
 [Window][Full Screen Enabled]
 Pos=20,23
@@ -363,8 +363,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
           DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,796 CentralNode=1
           DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,226 Split=X Selected=0xD4E24632
-            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=667,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=669,205 Selected=0x8411189D
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=638,205 Selected=0x61D81DE4
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=698,205 Selected=0x8411189D
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
@@ -2480,35 +2480,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.EndTooltip ()
                         ImGui.End ()
 
-                    // asset viewer window
-                    if ImGui.Begin "Asset Viewer" then
-                        if focusAssetViewSearchRequested then
-                            ImGui.SetKeyboardFocusHere ()
-                            focusAssetViewSearchRequested <- false
-                        ImGui.SetNextItemWidth -1.0f
-                        let searchActivePrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
-                        ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
-                        let searchActiveCurrent = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
-                        let searchDeactivated = searchActivePrevious && not searchActiveCurrent
-                        let assets = Metadata.getDiscoveredAssets ()
-                        for package in assets do
-                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
-                            if searchActiveCurrent then ImGui.SetNextItemOpen true
-                            if searchDeactivated then ImGui.SetNextItemOpen false
-                            if ImGui.TreeNodeEx (package.Key, flags) then
-                                for assetName in package.Value do
-                                    if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
-                                        ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
-                                        if ImGui.BeginDragDropSource () then
-                                            let assetTagStr = "[" + package.Key + " " + assetName + "]"
-                                            dragDropPayloadOpt <- Some assetTagStr
-                                            ImGui.Text assetTagStr
-                                            ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
-                                            ImGui.EndDragDropSource ()
-                                        ImGui.TreePop ()
-                                ImGui.TreePop ()
-                        ImGui.End ()
-
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
                         
@@ -2700,24 +2671,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text (string (OpenGL.Hl.GetDrawInstanceCount ()))
                         ImGui.End ()
 
-                    // asset graph window
-                    if ImGui.Begin ("Asset Graph", ImGuiWindowFlags.NoNav) then
-                        if ImGui.Button "Save" then
-                            let assetSourceDir = targetDir + "/../../.."
-                            let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
-                            try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                                File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
-                        ImGui.SameLine ()
-                        if ImGui.Button "Load" then
-                            match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
-                            | Right assetGraph ->
-                                let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                                assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                            | Left error -> messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
-                        ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                    // event tracing window
+                    if ImGui.Begin ("Event Tracing", ImGuiWindowFlags.NoNav) then
+                        let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
+                        if ImGui.Checkbox ("Trace Events", &traceEvents) then
+                            world <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) world
+                        let eventFilter = World.getEventFilter world
+                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
+                        let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
+                        if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
+                            try let eventFilter = scvalue<EventFilter> eventFilterStr
+                                world <- World.setEventFilter eventFilter world
+                            with _ -> ()
                         ImGui.End ()
 
                     // overlayer window
@@ -2741,18 +2706,24 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                         ImGui.End ()
 
-                    // event tracing window
-                    if ImGui.Begin ("Event Tracing", ImGuiWindowFlags.NoNav) then
-                        let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
-                        if ImGui.Checkbox ("Trace Events", &traceEvents) then
-                            world <- World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) world
-                        let eventFilter = World.getEventFilter world
-                        let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
-                        let mutable eventFilterStr = PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter
-                        if ImGui.InputTextMultiline ("##eventFilterStr", &eventFilterStr, 131072u, v2 -1.0f -1.0f) then
-                            try let eventFilter = scvalue<EventFilter> eventFilterStr
-                                world <- World.setEventFilter eventFilter world
-                            with _ -> ()
+                    // asset graph window
+                    if ImGui.Begin ("Asset Graph", ImGuiWindowFlags.NoNav) then
+                        if ImGui.Button "Save" then
+                            let assetSourceDir = targetDir + "/../../.."
+                            let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                            try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                                File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
+                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                        ImGui.SameLine ()
+                        if ImGui.Button "Load" then
+                            match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+                            | Right assetGraph ->
+                                let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                                assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+                            | Left error -> messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
+                        ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
                         ImGui.End ()
 
                     // renderer window
@@ -2837,6 +2808,35 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.DragFloat ("##newEntityDistance", &newEntityDistance, snapDrag, 0.5f, Single.MaxValue, "%2.2f") |> ignore<bool>
                         ImGui.Text "Input"
                         ImGui.Checkbox ("Alternative Eye Travel Input", &alternativeEyeTravelInput) |> ignore<bool>
+                        ImGui.End ()
+
+                    // asset viewer window
+                    if ImGui.Begin "Asset Viewer" then
+                        if focusAssetViewSearchRequested then
+                            ImGui.SetKeyboardFocusHere ()
+                            focusAssetViewSearchRequested <- false
+                        ImGui.SetNextItemWidth -1.0f
+                        let searchActivePrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
+                        ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
+                        let searchActiveCurrent = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
+                        let searchDeactivated = searchActivePrevious && not searchActiveCurrent
+                        let assets = Metadata.getDiscoveredAssets ()
+                        for package in assets do
+                            let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                            if searchActiveCurrent then ImGui.SetNextItemOpen true
+                            if searchDeactivated then ImGui.SetNextItemOpen false
+                            if ImGui.TreeNodeEx (package.Key, flags) then
+                                for assetName in package.Value do
+                                    if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
+                                        ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
+                                        if ImGui.BeginDragDropSource () then
+                                            let assetTagStr = "[" + package.Key + " " + assetName + "]"
+                                            dragDropPayloadOpt <- Some assetTagStr
+                                            ImGui.Text assetTagStr
+                                            ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
+                                            ImGui.EndDragDropSource ()
+                                        ImGui.TreePop ()
+                                ImGui.TreePop ()
                         ImGui.End ()
 
                 // in full-screen mode, just show full-screen short cut window
