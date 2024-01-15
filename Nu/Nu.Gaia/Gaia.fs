@@ -2428,10 +2428,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     // asset viewer window
                     if ImGui.Begin "Asset Viewer" then
                         ImGui.SetNextItemWidth -1.0f
+                        let searchActivePrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
                         ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
+                        let searchActiveCurrent = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
+                        let searchDeactivated = searchActivePrevious && not searchActiveCurrent
                         let assets = Metadata.getDiscoveredAssets ()
                         for package in assets do
                             let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                            if searchActiveCurrent then ImGui.SetNextItemOpen true
+                            if searchDeactivated then ImGui.SetNextItemOpen false
                             if ImGui.TreeNodeEx (package.Key, flags) then
                                 for assetName in package.Value do
                                     if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
@@ -2797,10 +2802,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal (title, &showAssetPickerDialog) then
                             ImGui.SetNextItemWidth -1.0f
+                            let searchActivePrevious = not (String.IsNullOrWhiteSpace assetPickerSearchStr)
                             ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
+                            let searchActiveCurrent = not (String.IsNullOrWhiteSpace assetPickerSearchStr)
+                            let searchDeactivated = searchActivePrevious && not searchActiveCurrent
                             let assets = Metadata.getDiscoveredAssets ()
                             for package in assets do
                                 let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
+                                if searchActiveCurrent then ImGui.SetNextItemOpen true
+                                if searchDeactivated then ImGui.SetNextItemOpen false
                                 if ImGui.TreeNodeEx (package.Key, flags) then
                                     for assetName in package.Value do
                                         if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
