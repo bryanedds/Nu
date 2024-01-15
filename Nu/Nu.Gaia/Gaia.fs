@@ -54,6 +54,7 @@ module Gaia =
     let mutable private rightClickPosition = v2Zero
     let mutable private focusedPropertyDescriptorOpt = Option<PropertyDescriptor * Simulant>.None
     let mutable private focusPropertyEditorRequested = false
+    let mutable private focusAssetViewSearchRequested = false
     let mutable private propertyValueStrPrevious = ""
     let mutable private dragDropPayloadOpt = None
     let mutable private dragEntityState = DragEntityInactive
@@ -92,7 +93,6 @@ module Gaia =
     let mutable private alternativeEyeTravelInput = false
     let mutable private entityHierarchySearchStr = ""
     let mutable private assetViewerSearchStr = ""
-    let mutable private assetPickerSearchStr = ""
     let mutable private lightMappingConfig = { LightMappingEnabled = true }
     let mutable private ssaoConfig =
         { SsaoEnabled = true
@@ -119,7 +119,6 @@ module Gaia =
     let mutable private messageBoxOpt = Option<string>.None
     let mutable private recoverableExceptionOpt = Option<Exception * World>.None
     let mutable private showEntityContextMenu = false
-    let mutable private showAssetPickerDialog = false
     let mutable private showNewProjectDialog = false
     let mutable private showOpenProjectDialog = false
     let mutable private showOpenProjectFileDialog = false
@@ -139,7 +138,6 @@ module Gaia =
         messageBoxOpt.IsSome ||
         recoverableExceptionOpt.IsSome ||
         showEntityContextMenu ||
-        showAssetPickerDialog ||
         showNewProjectDialog ||
         showOpenProjectDialog ||
         showOpenProjectFileDialog ||
@@ -563,6 +561,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 selectEntityOpt (Some entity)
                 Some (intersection, entity)
             | None -> None
+
+    let private pickAsset () =
+        ImGui.SetWindowFocus "Asset Viewer"
+        focusAssetViewSearchRequested <- true
 
     (* Nu Event Handlers *)
 
@@ -1538,12 +1540,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpAlbedoImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         ImGui.SameLine ()
         ImGui.Text "AlbedoImageOpt"
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit roughness image
         let mutable isSome = ValueOption.isSome m.RoughnessImageOpt
@@ -1579,12 +1581,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpRoughnessImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         ImGui.SameLine ()
         ImGui.Text "RoughnessImageOpt"
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit metallic image
         let mutable isSome = ValueOption.isSome m.MetallicImageOpt
@@ -1620,12 +1622,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpMetallicImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         ImGui.SameLine ()
         ImGui.Text "MetallicImageOpt"
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit ambient occlusion image
         let mutable isSome = ValueOption.isSome m.AmbientOcclusionImageOpt
@@ -1661,12 +1663,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpAmbientOcclusionImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         ImGui.SameLine ()
         ImGui.Text "AmbientOcclusionImageOpt"
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit emission image
         let mutable isSome = ValueOption.isSome m.EmissionImageOpt
@@ -1702,12 +1704,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpEmissionImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         ImGui.SameLine ()
         ImGui.Text "EmissionImageOpt"
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit normal image
         let mutable isSome = ValueOption.isSome m.NormalImageOpt
@@ -1743,12 +1745,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpNormalImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         ImGui.SameLine ()
         ImGui.Text "NormalImageOpt"
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit height image
         let mutable isSome = ValueOption.isSome m.HeightImageOpt
@@ -1784,12 +1786,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                 ImGui.SameLine ()
                 ImGui.PushID ("##mpHeightImagePick")
-                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                 ImGui.PopID ()
             | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         ImGui.SameLine ()
         ImGui.Text "HeightImageOpt"
-        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit two-sided
         let mutable isSome = ValueOption.isSome m.TwoSidedOpt
@@ -2032,7 +2034,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.EndDragDropTarget ()
                     ImGui.SameLine ()
                     ImGui.PushID ("##pickAsset" + name)
-                    if ImGui.Button ("V", v2Dup 19.0f) then showAssetPickerDialog <- true
+                    if ImGui.Button ("V", v2Dup 19.0f) then pickAsset ()
                     focusProperty ()
                     ImGui.PopID ()
                     ImGui.SameLine ()
@@ -2480,6 +2482,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // asset viewer window
                     if ImGui.Begin "Asset Viewer" then
+                        if focusAssetViewSearchRequested then
+                            ImGui.SetKeyboardFocusHere ()
+                            focusAssetViewSearchRequested <- false
                         ImGui.SetNextItemWidth -1.0f
                         let searchActivePrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
                         ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
@@ -2635,7 +2640,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
                             if  isPropertyAssetTag then
                                 ImGui.SameLine ()
-                                if ImGui.Button "Pick" then showAssetPickerDialog <- true
+                                if ImGui.Button "Pick" then pickAsset ()
                             if  focusPropertyEditorRequested then
                                 ImGui.SetKeyboardFocusHere ()
                                 focusPropertyEditorRequested <- false
@@ -2848,43 +2853,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // if message box not shown, may show another popup
                 match messageBoxOpt with
                 | None ->
-
-                    // asset picker dialog
-                    if showAssetPickerDialog then
-                        let title = "Choose an Asset..."
-                        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-                        if ImGui.BeginPopupModal (title, &showAssetPickerDialog) then
-                            ImGui.SetNextItemWidth -1.0f
-                            let searchActivePrevious = not (String.IsNullOrWhiteSpace assetPickerSearchStr)
-                            ImGui.InputTextWithHint ("##searchString", "[enter search text]", &assetPickerSearchStr, 4096u) |> ignore<bool>
-                            let searchActiveCurrent = not (String.IsNullOrWhiteSpace assetPickerSearchStr)
-                            let searchDeactivated = searchActivePrevious && not searchActiveCurrent
-                            let assets = Metadata.getDiscoveredAssets ()
-                            for package in assets do
-                                let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
-                                if searchActiveCurrent then ImGui.SetNextItemOpen true
-                                if searchDeactivated then ImGui.SetNextItemOpen false
-                                if ImGui.TreeNodeEx (package.Key, flags) then
-                                    for assetName in package.Value do
-                                        if (assetName.ToLowerInvariant ()).Contains (assetPickerSearchStr.ToLowerInvariant ()) then
-                                            if ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) then
-                                                if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left && ImGui.IsItemHovered () then
-                                                    match focusedPropertyDescriptorOpt with
-                                                    | Some (propertyDescriptor, simulant) when
-                                                        World.getExists simulant world &&
-                                                        propertyDescriptor.PropertyType <> typeof<ComputedProperty> ->
-                                                        let packageName = if Symbol.shouldBeExplicit package.Key then ("\"" + package.Key + "\"") else package.Key
-                                                        let assetName = if Symbol.shouldBeExplicit assetName then ("\"" + assetName + "\"") else assetName
-                                                        let assetTagStr = "[" + packageName + " " + assetName + "]"
-                                                        let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType)
-                                                        let assetTagObj = converter.ConvertFromString assetTagStr
-                                                        setPropertyValue assetTagObj propertyDescriptor simulant
-                                                    | Some _ | None -> ()
-                                                    showAssetPickerDialog <- false
-                                                ImGui.TreePop ()
-                                    ImGui.TreePop ()
-                            if ImGui.IsKeyReleased ImGuiKey.Escape then showAssetPickerDialog <- false
-                            ImGui.EndPopup ()
 
                     // new project dialog
                     if showNewProjectDialog then
