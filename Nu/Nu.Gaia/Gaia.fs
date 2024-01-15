@@ -2106,17 +2106,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         match pd.PropertyName with
                         | Constants.Engine.NamePropertyName -> "!00" // put Name first
                         | Constants.Engine.ModelPropertyName -> "!01" // put Model second
-                        | Constants.Engine.MountOptPropertyName -> "!02" // put MountOpt third
-                        | Constants.Engine.OverlayNameOptPropertyName -> "!03" // and so on...
+                        | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
+                        | Constants.Engine.OverlayNameOptPropertyName -> "!03"
                         | nameof Entity.Position -> "!04"
                         | nameof Entity.PositionLocal -> "!05"
-                        | nameof Entity.Rotation -> "!06"
-                        | nameof Entity.RotationLocal -> "!07"
-                        | nameof Entity.Degrees -> "!08"
-                        | nameof Entity.DegreesLocal -> "!09"
-                        | nameof Entity.Scale -> "!10"
-                        | nameof Entity.ScaleLocal -> "!11"
-                        | nameof Entity.Size -> "!12"
+                        | nameof Entity.Degrees -> "!06"
+                        | nameof Entity.DegreesLocal -> "!07"
+                        | nameof Entity.Scale -> "!08"
+                        | nameof Entity.ScaleLocal -> "!09"
+                        | nameof Entity.Size -> "!10"
+                        | nameof Entity.Offset -> "!11"
+                        | nameof Entity.Overflow -> "!12"
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if containsProperty propertyDescriptor simulant then
