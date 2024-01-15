@@ -466,6 +466,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // actually set the selection
         selectedEntityOpt <- entityOpt
 
+    let private deselectEntity () =
+        focusedPropertyDescriptorOpt <- None
+        selectEntityOpt None
+
     let private tryUndo () =
         if
             (if not (Nu.World.getImperative world) then
@@ -1285,7 +1289,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.Escape then focusedPropertyDescriptorOpt <- None; selectEntityOpt None
+                elif ImGui.IsKeyPressed ImGuiKey.Escape then
+                    if not (String.IsNullOrWhiteSpace entityHierarchySearchStr)
+                    then entityHierarchySearchStr <- ""
+                    else deselectEntity ()
 
     let private imGuiEntity branch searchActive (entity : Entity) =
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
@@ -2544,8 +2551,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             focusEntityHierarchySearchRequested <- false
                         ImGui.SetNextItemWidth -1.0f
                         ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &entityHierarchySearchStr, 4096u) |> ignore<bool>
-                        if ImGui.IsKeyReleased ImGuiKey.Escape then
-                            entityHierarchySearchStr <- ""
 
                         // creation parent display
                         match newEntityParentOpt with
