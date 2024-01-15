@@ -511,15 +511,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         else false
 
-    let private freezeFreezables () =
+    let private freezeEntities () =
         let groups = World.getGroups selectedScreen world
-        let lightProbes =
+        let freezers =
             groups |>
             Seq.map (fun group -> World.getEntitiesFlattened group world) |>
             Seq.concat |>
             Seq.filter (fun entity -> entity.Has<FreezerFacet> world)
-        for lightProbe in lightProbes do
-            world <- lightProbe.SetFrozen true world
+        for freezer in freezers do
+            world <- freezer.SetFrozen true world
+
+    let private thawEntities () =
+        let groups = World.getGroups selectedScreen world
+        let freezers =
+            groups |>
+            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
+            Seq.concat |>
+            Seq.filter (fun entity -> entity.Has<FreezerFacet> world)
+        for freezer in freezers do
+            world <- freezer.SetFrozen false world
 
     let private rerenderLightMaps () =
         let groups = World.getGroups selectedScreen world
@@ -1244,7 +1254,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () then showSaveGroupDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () then tryAutoBoundsSelectedEntity () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then reloadAllRequested <- 1
-            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then freezeFreezables ()
+            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then freezeEntities ()
+            elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then thawEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then rerenderLightMaps ()
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
@@ -2372,7 +2383,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
                                 if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Freeze All", "Ctrl+Shift+F") then freezeFreezables ()
+                                if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
+                                if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
                                 if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
@@ -2460,9 +2472,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     snapshot () // snapshot before after change
                             ImGui.EndCombo ()
                         ImGui.SameLine ()
-                        if ImGui.Button "Freeze" then freezeFreezables ()
+                        if ImGui.Button "Freeze" then freezeEntities ()
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Freeze all freezable entities. (Ctrl+Shift+F)"
+                            ImGui.Text "Freeze all thawed entities. (Ctrl+Shift+F)"
+                            ImGui.EndTooltip ()
+                        ImGui.SameLine ()
+                        if ImGui.Button "Thaw" then thawEntities ()
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Thaw all frozen entities. (Ctrl+Shift+T)"
                             ImGui.EndTooltip ()
                         ImGui.SameLine ()
                         if ImGui.Button "Relight" then rerenderLightMaps ()
