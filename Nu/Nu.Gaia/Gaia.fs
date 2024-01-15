@@ -387,7 +387,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private makeGaiaState projectDllPath editModeOpt freshlyLoaded : GaiaState =
         GaiaState.make
-            projectDllPath editModeOpt freshlyLoaded openProjectImperativeExecution
+            projectDllPath editModeOpt freshlyLoaded openProjectImperativeExecution editWhileAdvancing
             desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
             snaps2dSelected snaps2d snaps3d newEntityElevation newEntityDistance alternativeEyeTravelInput
 
@@ -3295,6 +3295,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         openProjectFilePath <- gaiaState.ProjectDllPath
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        editWhileAdvancing <- gaiaState.EditWhileAdvancing
         snaps2dSelected <- gaiaState.Snaps2dSelected
         snaps2d <- gaiaState.Snaps2d
         snaps3d <- gaiaState.Snaps3d
