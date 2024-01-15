@@ -576,6 +576,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ImGui.SetWindowFocus "Asset Viewer"
         focusAssetViewSearchRequested <- true
 
+    let private pickName names =
+        let dispatcherNamesMatching =
+            [|for key in int ImGuiKey.A .. int ImGuiKey.Z do
+                if ImGui.IsKeyReleased (Branchless.reinterpret key) then
+                    let chr = char (key - int ImGuiKey.A + 97)
+                    names |>
+                    Seq.filter (fun (dispatcherName : string) -> dispatcherName.Length > 0 && Char.ToLowerInvariant dispatcherName.[0] = chr) |>
+                    Seq.tryHead|]
+        dispatcherNamesMatching |>
+        Array.definitize |>
+        Array.tryHead
+
     (* Nu Event Handlers *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) wtemp =
@@ -1288,7 +1300,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some _ | None -> ()
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
         if showSelectedEntity && Some entity = selectedEntityOpt then
-            ImGui.SetScrollHereY ()
+            ImGui.SetScrollHereY 0.5f
             showSelectedEntity <- false
         if ImGui.IsKeyPressed ImGuiKey.Space && ImGui.IsItemFocused () && ImGui.IsWindowFocused () then
             selectEntityOpt (Some entity)
@@ -2403,7 +2415,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth 200.0f
                         if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
-                            for dispatcherName in (World.getEntityDispatchers world).Keys do
+                            let dispatcherNames = (World.getEntityDispatchers world).Keys
+                            let dispatcherNamePicked = pickName dispatcherNames
+                            for dispatcherName in dispatcherNames do
+                                if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
                                     newEntityDispatcherName <- dispatcherName
                             ImGui.EndCombo ()
@@ -2413,7 +2428,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SetNextItemWidth 150.0f
                         let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays world |> Map.toKeyArray)
                         if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
+                            let overlayNamePicked = pickName overlayNames
                             for overlayName in overlayNames do
+                                if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.2f
                                 if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
                                     newEntityOverlayName <- overlayName
                             ImGui.EndCombo ()
@@ -3049,7 +3066,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &newGroupName, 4096u) |> ignore<bool>
                             let newGroup = selectedScreen / newGroupName
                             if ImGui.BeginCombo ("##newGroupDispatcherName", newGroupDispatcherName) then
-                                for dispatcherName in (World.getGroupDispatchers world).Keys do
+                                let dispatcherNames = (World.getGroupDispatchers world).Keys
+                                let dispatcherNamePicked = pickName dispatcherNames
+                                for dispatcherName in dispatcherNames do
+                                    if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
                                     if ImGui.Selectable (dispatcherName, strEq dispatcherName newGroupDispatcherName) then
                                         newGroupDispatcherName <- dispatcherName
                                 ImGui.EndCombo ()
@@ -3182,7 +3202,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth -1.0f
                         if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
-                            for dispatcherName in (World.getEntityDispatchers world).Keys do
+                            let dispatcherNames = (World.getEntityDispatchers world).Keys
+                            let dispatcherNamePicked = pickName dispatcherNames
+                            for dispatcherName in dispatcherNames do
+                                if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
                                 if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
                                     newEntityDispatcherName <- dispatcherName
                                     createEntity true false
