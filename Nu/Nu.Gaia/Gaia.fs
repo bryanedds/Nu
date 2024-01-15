@@ -1504,7 +1504,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
         // edit albedo image
         let mutable isSome = ValueOption.isSome m.AlbedoImageOpt
-        if ImGui.Checkbox ((if isSome then "##mpAlbedoImageIsSome" else "AlbedoImageOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpAlbedoImageIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with AlbedoImageOpt = ValueSome Assets.Default.MaterialAlbedo } propertyDescriptor simulant
             else setPropertyValue { m with AlbedoImageOpt = ValueNone } propertyDescriptor simulant
@@ -1513,7 +1513,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome albedoImage ->
                 let mutable propertyValueStr = scstring albedoImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("AlbedoImageOpt", &propertyValueStr, 4096u) then
+                if ImGui.InputText ("##mpAlbedoImage", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with AlbedoImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1533,12 +1533,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 worldsPast <- worldsPast'
                         | None -> ()
                     ImGui.EndDragDropTarget ()
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                ImGui.SameLine ()
+                ImGui.PushID ("##mpAlbedoImagePick")
+                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                ImGui.PopID ()
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "AlbedoImageOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit roughness image
         let mutable isSome = ValueOption.isSome m.RoughnessImageOpt
-        if ImGui.Checkbox ((if isSome then "##mpRoughnessImageIsSome" else "RoughnessImageOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpRoughnessImageIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with RoughnessImageOpt = ValueSome Assets.Default.MaterialRoughness } propertyDescriptor simulant
             else setPropertyValue { m with RoughnessImageOpt = ValueNone } propertyDescriptor simulant
@@ -1547,7 +1554,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome roughnessImage ->
                 let mutable propertyValueStr = scstring roughnessImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("RoughnessImageOpt", &propertyValueStr, 4096u) then
+                if ImGui.InputText ("##mpRoughnessImage", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with RoughnessImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1567,12 +1574,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 worldsPast <- worldsPast'
                         | None -> ()
                     ImGui.EndDragDropTarget ()
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                ImGui.SameLine ()
+                ImGui.PushID ("##mpRoughnessImagePick")
+                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                ImGui.PopID ()
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "RoughnessImageOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit metallic image
         let mutable isSome = ValueOption.isSome m.MetallicImageOpt
-        if ImGui.Checkbox ((if isSome then "##mpMetallicImageIsSome" else "MetallicImageOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpMetallicImageIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with MetallicImageOpt = ValueSome Assets.Default.MaterialMetallic } propertyDescriptor simulant
             else setPropertyValue { m with MetallicImageOpt = ValueNone } propertyDescriptor simulant
@@ -1581,7 +1595,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome metallicImage ->
                 let mutable propertyValueStr = scstring metallicImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("MetallicImageOpt", &propertyValueStr, 4096u) then
+                if ImGui.InputText ("##mpMetallicImage", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with MetallicImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1601,12 +1615,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 worldsPast <- worldsPast'
                         | None -> ()
                     ImGui.EndDragDropTarget ()
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                ImGui.SameLine ()
+                ImGui.PushID ("##mpMetallicImagePick")
+                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                ImGui.PopID ()
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "MetallicImageOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit ambient occlusion image
         let mutable isSome = ValueOption.isSome m.AmbientOcclusionImageOpt
-        if ImGui.Checkbox ((if isSome then "##mpAmbientOcclusionImageIsSome" else "AmbientOcclusionImageOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpAmbientOcclusionImageIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with AmbientOcclusionImageOpt = ValueSome Assets.Default.MaterialAmbientOcclusion } propertyDescriptor simulant
             else setPropertyValue { m with AmbientOcclusionImageOpt = ValueNone } propertyDescriptor simulant
@@ -1615,7 +1636,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome ambientOcclusionImage ->
                 let mutable propertyValueStr = scstring ambientOcclusionImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("AmbientOcclusionImageOpt", &propertyValueStr, 4096u) then
+                if ImGui.InputText ("##mpAmbientOcclusionImage", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with AmbientOcclusionImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1635,12 +1656,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 worldsPast <- worldsPast'
                         | None -> ()
                     ImGui.EndDragDropTarget ()
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                ImGui.SameLine ()
+                ImGui.PushID ("##mpAmbientOcclusionImagePick")
+                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                ImGui.PopID ()
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "AmbientOcclusionImageOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit emission image
         let mutable isSome = ValueOption.isSome m.EmissionImageOpt
-        if ImGui.Checkbox ((if isSome then "##mpEmissionImageIsSome" else "EmissionImageOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpEmissionImageIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with EmissionImageOpt = ValueSome Assets.Default.MaterialEmission } propertyDescriptor simulant
             else setPropertyValue { m with EmissionImageOpt = ValueNone } propertyDescriptor simulant
@@ -1649,7 +1677,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome emissionImage ->
                 let mutable propertyValueStr = scstring emissionImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("EmissionImageOpt", &propertyValueStr, 4096u) then
+                if ImGui.InputText ("##mpEmissionImage", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with EmissionImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1669,12 +1697,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 worldsPast <- worldsPast'
                         | None -> ()
                     ImGui.EndDragDropTarget ()
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                ImGui.SameLine ()
+                ImGui.PushID ("##mpEmissionImagePick")
+                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                ImGui.PopID ()
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "EmissionImageOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit normal image
         let mutable isSome = ValueOption.isSome m.NormalImageOpt
-        if ImGui.Checkbox ((if isSome then "##mpNormalImageIsSome" else "NormalImageOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpNormalImageIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with NormalImageOpt = ValueSome Assets.Default.MaterialNormal } propertyDescriptor simulant
             else setPropertyValue { m with NormalImageOpt = ValueNone } propertyDescriptor simulant
@@ -1683,7 +1718,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome normalImage ->
                 let mutable propertyValueStr = scstring normalImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("NormalImageOpt", &propertyValueStr, 4096u) then
+                if ImGui.InputText ("##mpNormalImage", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with NormalImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1703,12 +1738,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 worldsPast <- worldsPast'
                         | None -> ()
                     ImGui.EndDragDropTarget ()
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                ImGui.SameLine ()
+                ImGui.PushID ("##mpNormalImagePick")
+                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                ImGui.PopID ()
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "NormalImageOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit height image
         let mutable isSome = ValueOption.isSome m.HeightImageOpt
-        if ImGui.Checkbox ((if isSome then "##mpHeightImageIsSome" else "HeightImageOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpHeightImageIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with HeightImageOpt = ValueSome Assets.Default.MaterialHeight } propertyDescriptor simulant
             else setPropertyValue { m with HeightImageOpt = ValueNone } propertyDescriptor simulant
@@ -1717,7 +1759,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome heightImage ->
                 let mutable propertyValueStr = scstring heightImage
                 ImGui.SameLine ()
-                if ImGui.InputText ("HeightImageOpt", &propertyValueStr, 4096u) then
+                if ImGui.InputText ("##mpHeightImage", &propertyValueStr, 4096u) then
                     let worldsPast' = worldsPast
                     try let propertyValue = scvalue propertyValueStr
                         setPropertyValue { m with HeightImageOpt = ValueSome propertyValue } propertyDescriptor simulant
@@ -1737,12 +1779,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 worldsPast <- worldsPast'
                         | None -> ()
                     ImGui.EndDragDropTarget ()
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                ImGui.SameLine ()
+                ImGui.PushID ("##mpHeightImagePick")
+                if ImGui.Button ("V", v2Dup 19.0f) then ImGui.SetWindowFocus "Asset Viewer"
+                ImGui.PopID ()
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "HeightImageOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
         // edit two-sided
         let mutable isSome = ValueOption.isSome m.TwoSidedOpt
-        if ImGui.Checkbox ((if isSome then "##mpTwoSidedIsSome" else "TwoSidedOpt"), &isSome) then
+        if ImGui.Checkbox ("##mpTwoSidedIsSome", &isSome) then
             if isSome
             then setPropertyValue { m with TwoSidedOpt = ValueSome false } propertyDescriptor simulant
             else setPropertyValue { m with TwoSidedOpt = ValueNone } propertyDescriptor simulant
@@ -1751,9 +1800,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome twoSided ->
                 let mutable twoSided = twoSided
                 ImGui.SameLine ()
-                if ImGui.Checkbox ("TwoSidedOpt", &twoSided) then setPropertyValue { m with TwoSidedOpt = ValueSome twoSided } propertyDescriptor simulant
+                if ImGui.Checkbox ("##mpTwoSided", &twoSided) then setPropertyValue { m with TwoSidedOpt = ValueSome twoSided } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
+        ImGui.SameLine ()
+        ImGui.Text "TwoSidedOpt"
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
 
     let rec private imGuiEditProperty (getProperty : PropertyDescriptor -> Simulant -> obj) (setProperty : obj -> PropertyDescriptor -> Simulant -> unit) (focusProperty : unit -> unit) (propertyLabelPrefix : string) (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) =
