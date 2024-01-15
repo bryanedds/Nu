@@ -2622,7 +2622,7 @@ module AnimatedModelFacetModule =
         static let tryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
-                let boneTransforms = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0], scene)
+                let boneTransforms = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
                 Some boneTransforms
             | Some _ | None -> None
 
