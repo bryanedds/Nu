@@ -2387,7 +2387,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
                                 if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Run/Pause", "F5") then toggleAdvancing ()
+                                if not world.Advancing
+                                then if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing ()
+                                else if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing ()
                                 if editWhileAdvancing
                                 then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
                                 else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
@@ -2423,12 +2425,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "|"
                         ImGui.SameLine ()
                         if world.Halted then
-                            if ImGui.Button "Advance (F5)" then
-                                snapshot ()
-                                world <- World.setAdvancing true world
+                            if ImGui.Button "Advance (F5)" then toggleAdvancing ()
                         else
-                            if ImGui.Button "Halt (F5)" then
-                                world <- World.setAdvancing false world
+                            if ImGui.Button "Halt (F5)" then toggleAdvancing ()
                             ImGui.SameLine ()
                             ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
                         ImGui.SameLine ()
