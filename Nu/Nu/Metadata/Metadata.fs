@@ -317,7 +317,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 let mutable (_, albedoTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.BaseColor, 0)
                 let mutable (_, albedoTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
@@ -336,7 +336,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
                 if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
@@ -375,7 +375,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
                 if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
@@ -414,7 +414,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 let mutable (_, ambientOcclusionTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
                 let mutable (_, ambientOcclusionTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.AmbientOcclusion, 0)
@@ -454,7 +454,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 let mutable (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
                 if isNull emissionTextureSlot.FilePath then emissionTextureSlot.FilePath <- "" // ensure not null
@@ -483,7 +483,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 let mutable (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
                 if isNull normalTextureSlot.FilePath then normalTextureSlot.FilePath <- "" // ensure not null
@@ -512,7 +512,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
                 if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
@@ -541,7 +541,7 @@ module Metadata =
         match tryGetModelMetadataModel model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
-            | Some scene when scene.Materials.Count > materialIndex ->
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
                 match material.IgnoreLightMapsOpt with
                 | Some ignoreLightMaps -> Some ignoreLightMaps
