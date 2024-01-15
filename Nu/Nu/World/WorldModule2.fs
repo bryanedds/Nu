@@ -1678,10 +1678,13 @@ module EntityPropertyDescriptor =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Uncategorized Properties"
 
+    // HACK: we show degrees instead of rotation in editor.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        propertyName = "Degrees" || propertyName = "DegreesLocal" || // HACK: we allow degrees specifically for the editor.
-        not (Reflection.isPropertyNonPersistentByName propertyName)
+        if propertyName = "Rotation" || propertyName = "RotationLocal" then false
+        else
+            propertyName = "Degrees" || propertyName = "DegreesLocal" ||
+            not (Reflection.isPropertyNonPersistentByName propertyName)
 
     let getValue propertyDescriptor (entity : Entity) world : obj =
         match PropertyDescriptor.tryGetValue propertyDescriptor entity world with
