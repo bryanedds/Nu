@@ -533,11 +533,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             physicsEngine.PhysicsMessages.Clear ()
 
         member physicsEngine.EnqueueMessage physicsMessage =
-#if HANDLE_PHYSICS_MESSAGES_DEFERRED
-            physicsEngine.PhysicsMessages.Add physicsMessage
-#else
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
-#endif
 
         member physicsEngine.Integrate stepTime physicsMessages =
             PhysicsEngine2d.handlePhysicsMessages physicsMessages physicsEngine
