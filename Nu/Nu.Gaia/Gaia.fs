@@ -1411,6 +1411,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
             ImGui.PushID ("##mpFrozen" + scstring entity)
             if ImGui.SmallButton text then
+                snapshot ()
                 world <- entity.SetFrozen (not frozen) world
             ImGui.PopID ()
             ImGui.PopStyleColor ()
