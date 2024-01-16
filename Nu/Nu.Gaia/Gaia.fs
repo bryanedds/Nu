@@ -2910,7 +2910,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if (assetName.ToLowerInvariant ()).Contains (assetViewerSearchStr.ToLowerInvariant ()) then
                                         ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
                                         if ImGui.BeginDragDropSource () then
-                                            let assetTagStr = "[" + package.Key + " " + assetName + "]"
+                                            let packageNameText = if Symbol.shouldBeExplicit package.Key then String.surround "\"" package.Key else package.Key
+                                            let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
+                                            let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
                                             dragDropPayloadOpt <- Some assetTagStr
                                             ImGui.Text assetTagStr
                                             ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
