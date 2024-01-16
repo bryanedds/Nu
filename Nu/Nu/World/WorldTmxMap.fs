@@ -116,6 +116,8 @@ module TmxMap =
             staticModelSurface
         | BodyStaticModel _ as staticModel ->
             staticModel
+        | BodyGeometry _ as geometry ->
+            geometry
         | BodyTerrain _ as terrain ->
             terrain
         | BodyShapes shapes ->

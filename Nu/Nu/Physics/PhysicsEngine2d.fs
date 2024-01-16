@@ -90,14 +90,12 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             bodyShape.CollisionCategories <- match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> enum<Category> cc | None -> enum<Category> bodyProperties.CollisionCategories
             bodyShape.CollidesWith <- match bodyShapeProperties.CollisionMaskOpt with Some cm -> enum<Category> cm | None -> enum<Category> bodyProperties.CollisionMask
             bodyShape.IsSensor <- match bodyShapeProperties.SensorOpt with Some sensor -> sensor | None -> bodyProperties.Sensor
-            bodyShape
         | None ->
             bodyShape.Friction <- bodyProperties.Friction
             bodyShape.Restitution <- bodyProperties.Restitution
             bodyShape.CollisionCategories <- enum<Category> bodyProperties.CollisionCategories
             bodyShape.CollidesWith <- enum<Category> bodyProperties.CollisionMask
             bodyShape.IsSensor <- bodyProperties.Sensor
-            bodyShape
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.SleepingAllowed <- bodyProperties.SleepingAllowed
@@ -132,6 +130,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
         PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt shape
+        shape
 
     static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodySphere.TransformOpt
@@ -146,6 +145,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
         PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt shape
+        shape
 
     static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyCapsule.TransformOpt
@@ -169,7 +169,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                   ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
     static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (body : Body) =
@@ -202,7 +202,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
                   ShapeIndex = match bodyBoxRounded.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape |> ignore
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
     static member private attachBodyConvexHull bodySource bodyProperties (bodyConvexHull : BodyConvexHull) (body : Body) =
@@ -221,6 +221,27 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
         PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt bodyShape
+        bodyShape
+
+    static member private attachBodyGeometry bodySource bodyProperties (bodyGeometry : BodyGeometry) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyGeometry.TransformOpt
+        let vertices = Array.zeroCreate bodyGeometry.Vertices.Length
+        for i in 0 .. dec bodyGeometry.Vertices.Length do
+            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (bodyGeometry.Vertices.[i], transform))
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass ->
+                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
+                mass / (box.Width * box.Height)
+        let triangles = vertices |> Array.chunkBySize 3 |> Array.map Common.Vertices |> List
+        let bodyShapes = body.CreateCompoundPolygon (triangles, density)
+        for bodyShape in bodyShapes do
+            bodyShape.Tag <-
+                { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+                  ShapeIndex = match bodyGeometry.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyGeometry.PropertiesOpt bodyShape
+        Array.ofSeq bodyShapes
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
         let list = List ()
@@ -239,6 +260,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | BodyConvexHull bodyConvexHull -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull body |> Array.singleton
         | BodyStaticModel _ -> [||]
         | BodyStaticModelSurface _ -> [||]
+        | BodyGeometry bodyGeometry -> PhysicsEngine2d.attachBodyGeometry bodySource bodyProperties bodyGeometry body |> Array.ofSeq
         | BodyTerrain _ -> [||]
         | BodyShapes bodyShapes -> PhysicsEngine2d.attachBodyShapes bodySource bodyProperties bodyShapes body
 
