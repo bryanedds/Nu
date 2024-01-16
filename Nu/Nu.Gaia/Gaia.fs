@@ -1403,10 +1403,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
         if entity.Has<FreezerFacet> world then
-            ImGui.SameLine ()
             let frozen = entity.GetFrozen world
-            if ImGui.Button (if frozen then "Thaw" else "Freeze") then
+            let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
+            ImGui.SameLine ()
+            ImGui.Separator ()
+            ImGui.SameLine ()
+            ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
+            ImGui.PushID ("##mpFrozen" + scstring entity)
+            if ImGui.SmallButton text then
                 world <- entity.SetFrozen (not frozen) world
+            ImGui.PopID ()
+            ImGui.PopStyleColor ()
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
