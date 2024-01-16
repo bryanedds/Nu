@@ -525,16 +525,12 @@ module WorldModule2 =
             let world = World.unshelveAmbientState world
 
             // rebuild spatial trees
-            let world = World.rebuildQuadtree world
             let world = World.rebuildOctree world
+            let world = World.rebuildQuadtree world
 
-            // clear existing 3d physics messages and rebuild
-            let world = World.clearPhysicsMessages3d world
-            let world = World.enqueuePhysicsMessage3d ClearPhysicsMessageInternal world
-
-            // clear existing 2d physics messages and rebuild
-            let world = World.clearPhysicsMessages2d world
-            let world = World.enqueuePhysicsMessage2d ClearPhysicsMessageInternal world
+            // clear existing physics
+            let world = World.handlePhysicsMessage3d ClearPhysicsMessageInternal world
+            let world = World.handlePhysicsMessage2d ClearPhysicsMessageInternal world
 
             // register the physics of entities in the current screen
             match World.getSelectedScreenOpt world with
@@ -750,21 +746,7 @@ module WorldModule2 =
                                     let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
                                     World.publishPlus transformData transformAddress eventTrace Nu.Game.Handle false false world
                                 else entity.ApplyPhysics center rotation linearVelocity angularVelocity world
-                            else
-                                let mutable destroying = false
-                                World.inspectMessages (fun message ->
-                                    match message with
-                                    | DestroyBodyMessage dbm -> if dbm.BodyId = bodyId then destroying <- true
-                                    | DestroyBodiesMessage dbm -> if List.contains bodyId dbm.BodyIds then destroying <- true
-                                    | CreateBodyMessage cbm -> if cbm.BodyId = bodyId then destroying <- false
-                                    | CreateBodiesMessage cbm -> if cbm.BodySource = entity then destroying <- false
-                                    | ClearPhysicsMessageInternal -> destroying <- true
-                                    | _ -> ())
-                                    false world
-                                if not destroying then
-                                    Log.info ("Entity physics out of range. Re-propagating physics for '" + scstring entity + "'.")
-                                    World.propagateEntityPhysics entity world
-                                else world
+                            else world
                         else world
                     | _ -> world
             | Dead -> world
@@ -1220,7 +1202,6 @@ module WorldModule2 =
             CachedHashSet3dShadow.Clear ()
             world
 
-
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
                 let mutable result = (World.getLiveness world, world)
@@ -1235,8 +1216,7 @@ module WorldModule2 =
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
-            let physicsMessages = physicsEngine.PopMessages ()
-            let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
+            let integrationMessages = physicsEngine.Integrate world.GameDelta
             let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
             let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
@@ -1244,8 +1224,7 @@ module WorldModule2 =
 
         static member private processPhysics3d world =
             let physicsEngine = World.getPhysicsEngine3d world
-            let physicsMessages = physicsEngine.PopMessages ()
-            let integrationMessages = physicsEngine.Integrate world.GameDelta physicsMessages
+            let integrationMessages = physicsEngine.Integrate world.GameDelta
             let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
             let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages

@@ -19,7 +19,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         { PhysicsContext : Dynamics.World
           Bodies : Dictionary<BodyId, Vector3 option * Dynamics.Body>
           Joints : Dictionary<JointId, Dynamics.Joints.Joint>
-          PhysicsMessages : PhysicsMessage List
           IntegrationMessages : IntegrationMessage List
           CollisionHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler }
@@ -431,10 +430,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             physicsEngine.Bodies.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
-    static member private handlePhysicsMessages physicsMessages physicsEngine =
-        for physicsMessage in physicsMessages do
-            PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
-
     static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
             let (_, body) = bodyEntry.Value
@@ -472,7 +467,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
               Bodies = Dictionary<BodyId, Vector3 option * Dynamics.Body> (HashIdentity.FromFunctions BodyId.hash BodyId.equals)
               Joints = Dictionary<JointId, Dynamics.Joints.Joint> HashIdentity.Structural
-              PhysicsMessages = List ()
               IntegrationMessages = integrationMessages
               CollisionHandler = collisionHandler
               SeparationHandler = separationHandler }
@@ -520,23 +514,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
 
-        member physicsEngine.InspectMessages inspect =
-            for message in physicsEngine.PhysicsMessages do
-                inspect message
-
-        member physicsEngine.PopMessages () =
-            let messages = List physicsEngine.PhysicsMessages
-            physicsEngine.PhysicsMessages.Clear ()
-            messages
-
-        member physicsEngine.ClearMessages () =
-            physicsEngine.PhysicsMessages.Clear ()
-
-        member physicsEngine.EnqueueMessage physicsMessage =
+        member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
 
-        member physicsEngine.Integrate stepTime physicsMessages =
-            PhysicsEngine2d.handlePhysicsMessages physicsMessages physicsEngine
+        member physicsEngine.Integrate stepTime =
             let physicsStepAmount =
                 match (Constants.GameTime.DesiredFrameRate, stepTime) with
                 | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
