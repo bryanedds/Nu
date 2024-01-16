@@ -167,59 +167,59 @@ Size=1920,54
 Collapsed=0
 DockId=0x00000002,0
 
-[Window][Property Editor]
+[Window][Edit Overlayer]
 Pos=284,854
-Size=638,226
+Size=677,226
+Collapsed=0
+DockId=0x00000001,2
+
+[Window][Edit Asset Graph]
+Pos=284,854
+Size=677,226
+Collapsed=0
+DockId=0x00000001,1
+
+[Window][Edit Property]
+Pos=284,854
+Size=677,226
 Collapsed=0
 DockId=0x00000001,0
 
-[Window][Asset Viewer]
-Pos=924,854
-Size=698,226
-Collapsed=0
-DockId=0x00000009,0
-
 [Window][Metrics]
-Pos=924,854
-Size=698,226
-Collapsed=0
-DockId=0x00000009,7
-
-[Window][Event Tracing]
-Pos=924,854
-Size=698,226
-Collapsed=0
-DockId=0x00000009,6
-
-[Window][Overlayer]
-Pos=924,854
-Size=698,226
+Pos=963,854
+Size=659,226
 Collapsed=0
 DockId=0x00000009,5
 
-[Window][Asset Graph]
-Pos=924,854
-Size=698,226
+[Window][Event Tracing]
+Pos=963,854
+Size=659,226
 Collapsed=0
 DockId=0x00000009,4
 
 [Window][Renderer]
-Pos=924,854
-Size=698,226
+Pos=963,854
+Size=659,226
 Collapsed=0
 DockId=0x00000009,3
 
 [Window][Audio Player]
-Pos=924,854
-Size=698,226
+Pos=963,854
+Size=659,226
 Collapsed=0
 DockId=0x00000009,2
 
-[Window][Edit Params]
-Pos=924,854
-Size=698,226
+[Window][Editor]
+Pos=963,854
+Size=659,226
 Collapsed=0
 DockId=0x00000009,1
+
+[Window][Asset Viewer]
+Pos=963,854
+Size=659,226
+Collapsed=0
+DockId=0x00000009,0
 
 [Window][Full Screen Enabled]
 Pos=20,23
@@ -352,6 +352,16 @@ Pos=60,60
 Size=400,400
 Collapsed=0
 
+[Window][Close project... *EDITOR RESTART REQUIRED!*]
+Pos=769,504
+Size=381,71
+Collapsed=0
+
+[Window][Editor restart required.]
+Pos=671,504
+Size=577,71
+Collapsed=0
+
 [Docking][Data]
 DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
   DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
@@ -364,8 +374,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
           DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,796 CentralNode=1
           DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,226 Split=X Selected=0xD4E24632
-            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=638,205 Selected=0x61D81DE4
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=698,205 Selected=0x8411189D
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=677,205 Selected=0x9CF3CB04
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=659,205 Selected=0xD92922EC
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
@@ -2644,9 +2654,50 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Some _ | None -> ()
                         ImGui.End ()
 
-                    // property editor window
+                    // edit overlayer window
+                    if ImGui.Begin ("Edit Overlayer", ImGuiWindowFlags.NoNav) then
+                        if ImGui.Button "Save" then
+                            let overlayerSourceDir = targetDir + "/../../.."
+                            let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                            try let overlays = scvalue<Overlay list> overlayerStr
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                                File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
+                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                        ImGui.SameLine ()
+                        if ImGui.Button "Load" then
+                            let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
+                            match Overlayer.tryMakeFromFile [] overlayerFilePath with
+                            | Right overlayer ->
+                                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
+                                overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
+                            | Left error -> messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
+                        ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                        ImGui.End ()
+
+                    // edit asset graph window
+                    if ImGui.Begin ("Edit Asset Graph", ImGuiWindowFlags.NoNav) then
+                        if ImGui.Button "Save" then
+                            let assetSourceDir = targetDir + "/../../.."
+                            let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
+                            try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                                File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
+                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
+                        ImGui.SameLine ()
+                        if ImGui.Button "Load" then
+                            match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
+                            | Right assetGraph ->
+                                let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
+                                assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
+                            | Left error -> messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
+                        ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
+                        ImGui.End ()
+
+                    // edit property window
                     if propertyEditorFocusRequested then ImGui.SetNextWindowFocus ()
-                    if ImGui.Begin ("Property Editor", ImGuiWindowFlags.NoNav) then
+                    if ImGui.Begin ("Edit Property", ImGuiWindowFlags.NoNav) then
                         match focusedPropertyDescriptorOpt with
                         | Some (propertyDescriptor, simulant) when
                             World.getExists simulant world &&
@@ -2745,47 +2796,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             with _ -> ()
                         ImGui.End ()
 
-                    // overlayer window
-                    if ImGui.Begin ("Overlayer", ImGuiWindowFlags.NoNav) then
-                        if ImGui.Button "Save" then
-                            let overlayerSourceDir = targetDir + "/../../.."
-                            let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
-                            try let overlays = scvalue<Overlay list> overlayerStr
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                                File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
-                        ImGui.SameLine ()
-                        if ImGui.Button "Load" then
-                            let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
-                            match Overlayer.tryMakeFromFile [] overlayerFilePath with
-                            | Right overlayer ->
-                                let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
-                                overlayerStr <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-                            | Left error -> messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
-                        ImGui.InputTextMultiline ("##overlayerStr", &overlayerStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
-                        ImGui.End ()
-
-                    // asset graph window
-                    if ImGui.Begin ("Asset Graph", ImGuiWindowFlags.NoNav) then
-                        if ImGui.Button "Save" then
-                            let assetSourceDir = targetDir + "/../../.."
-                            let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
-                            try let packageDescriptorsStr = assetGraphStr |> scvalue<Map<string, PackageDescriptor>> |> scstring
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                                File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-                            with exn -> messageBoxOpt <- Some ("Could not save asset graph due to: " + scstring exn)
-                        ImGui.SameLine ()
-                        if ImGui.Button "Load" then
-                            match AssetGraph.tryMakeFromFile (targetDir + "/" + Assets.Global.AssetGraphFilePath) with
-                            | Right assetGraph ->
-                                let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-                                let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
-                                assetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-                            | Left error -> messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
-                        ImGui.InputTextMultiline ("##assetGraphStr", &assetGraphStr, 131072u, v2 -1.0f -1.0f) |> ignore<bool>
-                        ImGui.End ()
-
                     // renderer window
                     if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Light-Mapping (local light mapping)"
@@ -2831,8 +2841,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text (string masterSongVolume)
                         ImGui.End ()
 
-                    // edit params window
-                    if ImGui.Begin ("Edit Params", ImGuiWindowFlags.NoNav) then
+                    // editor window
+                    if ImGui.Begin ("Editor", ImGuiWindowFlags.NoNav) then
                         ImGui.Text "Transform Snapping"
                         ImGui.SetNextItemWidth 50.0f
                         let mutable index = if snaps2dSelected then 0 else 1
