@@ -587,14 +587,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | None -> None
 
     let private tryPickName names =
-        let dispatcherNamesMatching =
+        let namesMatching =
             [|for key in int ImGuiKey.A .. int ImGuiKey.Z do
                 if ImGui.IsKeyReleased (Branchless.reinterpret key) then
                     let chr = char (key - int ImGuiKey.A + 97)
                     names |>
-                    Seq.filter (fun (dispatcherName : string) -> dispatcherName.Length > 0 && Char.ToLowerInvariant dispatcherName.[0] = chr) |>
+                    Seq.filter (fun (name : string) -> name.Length > 0 && Char.ToLowerInvariant name.[0] = chr) |>
                     Seq.tryHead|]
-        dispatcherNamesMatching |>
+        namesMatching |>
         Array.definitize |>
         Array.tryHead
 
