@@ -672,7 +672,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.Absolute
             if value <> previous then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -687,7 +686,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.Absolute <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.Absolute) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
@@ -696,7 +695,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.Static
             if value <> previous then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -711,7 +709,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.Static <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.Static) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
@@ -720,7 +718,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.AlwaysUpdate
             if value <> previous then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -735,7 +732,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.AlwaysUpdate <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.AlwaysUpdate) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
@@ -744,7 +741,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.AlwaysRender
             if value <> previous then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -759,7 +755,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.AlwaysRender <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.AlwaysRender) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
@@ -768,7 +764,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.LightProbe
             if value <> previous then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -783,7 +778,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.LightProbe <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.LightProbe) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
@@ -792,7 +787,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.Light
             if value <> previous then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -807,7 +801,7 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.Light <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.Light) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
@@ -816,7 +810,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.Presence
             if presenceNeq value previous && (value.OmnipresentType || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -831,14 +824,13 @@ module WorldModuleEntity =
                         let entityState = EntityState.diverge entityState
                         entityState.Presence <- value
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.Presence) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
         static member internal setEntityTransformByRefWithoutEvent (value : Transform inref, entityState : EntityState, entity : Entity, world) =
             if not (Transform.equalsByRef (&value, &entityState.Transform)) then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -852,14 +844,13 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Transform = value }
                         World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
             else world
 
         static member internal setEntityTransformByRef (value : Transform byref, entityState : EntityState, entity : Entity, world) =
             let mutable previous = entityState.Transform
             if not (Transform.equalsByRef (&value, &previous)) then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -873,7 +864,7 @@ module WorldModuleEntity =
                     else
                         let entityState = { entityState with Transform = value }
                         struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world else world
                 let world = World.publishTransformEvents (&previous, &value, entityState.Is2d, entityState.PublishChangeEvents, entity, world)
                 struct (true, world)
@@ -1398,7 +1389,6 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.Visible
             if value <> previous then
-                let worldOld = world
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityState.Static && not entityState.AlwaysUpdate
                 let lightProbeOld = entityState.LightProbe
@@ -1414,7 +1404,7 @@ module WorldModuleEntity =
                         entityState.Visible <- value
                         let world = World.setEntityState entityState entity world
                         struct (entityState, world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.Visible) previous value entityState.PublishChangeEvents entity world
                 let world = if World.getEntityMounted entity world then World.propagateEntityVisible entity world else world
                 struct (true, world)
@@ -1609,7 +1599,6 @@ module WorldModuleEntity =
                     entityState
                 match entityOpt with
                 | Some entity ->
-                    let worldOld = world
                     let entityStateOld = entityState
                     let visibleOld = entityState.Visible || entityState.AlwaysRender
                     let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
@@ -1618,7 +1607,7 @@ module WorldModuleEntity =
                     let presenceOld = entityStateOld.Presence
                     let boundsOld = entityState.Bounds
                     let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                    let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> Left ("Failure to remove facet '" + facetName + "' from entity.")
@@ -1638,7 +1627,6 @@ module WorldModuleEntity =
                     let entityState = Reflection.attachProperties EntityState.diverge facet entityState world
                     match entityOpt with
                     | Some entity ->
-                        let worldOld = world
                         let entityStateOld = entityState
                         let visibleOld = entityState.Visible || entityState.AlwaysRender
                         let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
@@ -1647,7 +1635,7 @@ module WorldModuleEntity =
                         let presenceOld = entityStateOld.Presence
                         let boundsOld = entityState.Bounds
                         let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                        let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                         let world = facet.Register (entity, world)
                         let world =
                             if WorldModule.getSelected entity world
@@ -1717,7 +1705,6 @@ module WorldModuleEntity =
                 let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge overlayName overlayName entityState overlayerOld overlayer
                 match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
                 | Right (entityState, world) ->
-                    let worldOld = world
                     let entityStateOld = entityState
                     let visibleOld = entityState.Visible || entityState.AlwaysRender
                     let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
@@ -1728,7 +1715,7 @@ module WorldModuleEntity =
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState overlayerOld overlayer
                     let world = World.setEntityState entityState entity world
-                    World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                    World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
@@ -2124,9 +2111,6 @@ module WorldModuleEntity =
             let isNew = not (World.getEntityExists entity world)
             if isNew || mayReplace then
 
-                // get old world for entity tree rebuild
-                let worldOld = world
-                
                 // add entity to world
                 let world = World.addEntityState entityState entity world
 
@@ -2135,31 +2119,17 @@ module WorldModuleEntity =
                 let world = World.addEntityToMounts mountOpt entity world
 
                 // mutate respective spatial tree if entity is selected
-                let world =
-                    if WorldModule.getSelected entity world then
-                        if World.getEntityIs2d entity world then
-                            let quadtree =
-                                MutantCache.mutateMutant
-                                    (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
-                                    (fun entityTree ->
-                                        let entityState = World.getEntityState entity world
-                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
-                                        Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element entityTree
-                                        entityTree)
-                                    (World.getQuadtree world)
-                            World.setQuadtree quadtree world
-                        else
-                            let octree =
-                                MutantCache.mutateMutant
-                                    (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
-                                    (fun entityTree ->
-                                        let entityState = World.getEntityState entity world
-                                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                                        Octree.addElement entityState.Presence entityState.Bounds element entityTree
-                                        entityTree)
-                                    (World.getOctree world)
-                            World.setOctree octree world
-                    else world
+                if WorldModule.getSelected entity world then
+                    if World.getEntityIs2d entity world then
+                        let quadtree = World.getQuadtree world
+                        let entityState = World.getEntityState entity world
+                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                        Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                    else
+                        let octree = World.getOctree world
+                        let entityState = World.getEntityState entity world
+                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                        Octree.addElement entityState.Presence entityState.Bounds element octree
 
                 // register entity if needed
                 if isNew
@@ -2177,9 +2147,6 @@ module WorldModuleEntity =
             // ensure entity exists in the world
             if World.getEntityExists entity world then
 
-                // get old world for entity tree rebuild
-                let worldOld = world
-
                 // cache entity children for later possible destruction
                 let children = World.getEntityChildren entity world
 
@@ -2193,31 +2160,17 @@ module WorldModuleEntity =
                 let world = World.removeTasklets entity world
 
                 // mutate entity tree if entity is selected
-                let world =
-                    if WorldModule.getSelected entity world then
-                        if World.getEntityIs2d entity world then
-                            let quadtree =
-                                MutantCache.mutateMutant
-                                    (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
-                                    (fun quadtree ->
-                                        let entityState = World.getEntityState entity world
-                                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
-                                        Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
-                                        quadtree)
-                                    (World.getQuadtree world)
-                            World.setQuadtree quadtree world
-                        else
-                            let octree =
-                                MutantCache.mutateMutant
-                                    (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
-                                    (fun octree ->
-                                        let entityState = World.getEntityState entity world
-                                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                                        Octree.removeElement entityState.Presence entityState.Bounds element octree
-                                        octree)
-                                    (World.getOctree world)
-                            World.setOctree octree world
-                    else world
+                if WorldModule.getSelected entity world then
+                    if World.getEntityIs2d entity world then
+                        let quadtree = World.getQuadtree world
+                        let entityState = World.getEntityState entity world
+                        let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                        Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                    else
+                        let octree = World.getOctree world
+                        let entityState = World.getEntityState entity world
+                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                        Octree.removeElement entityState.Presence entityState.Bounds element octree
 
                 // remove cached entity event addresses
                 EventGraph.cleanEventAddressCache entity.EntityAddress
@@ -2407,7 +2360,6 @@ module WorldModuleEntity =
                     | Left error -> Log.debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy overlayerNameOld overlayName facetNames entityState overlayer
-                let worldOld = world
                 let entityStateOld = entityState
                 let visibleOld = entityState.Visible || entityState.AlwaysRender
                 let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
@@ -2416,7 +2368,7 @@ module WorldModuleEntity =
                 let presenceOld = entityStateOld.Presence
                 let boundsOld = entityState.Bounds
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChanges entity world
                 (Right (), world)
             | (None, None) ->
@@ -2437,7 +2389,6 @@ module WorldModuleEntity =
             if facetNames <> facetNamesOld then
                 match World.trySetFacetNames facetNames entityState (Some entity) world with
                 | Right (entityState, world) ->
-                    let worldOld = world
                     let entityStateOld = entityState
                     let visibleOld = entityState.Visible || entityState.AlwaysRender
                     let staticOld = entityStateOld.Static && not entityState.AlwaysUpdate
@@ -2446,7 +2397,7 @@ module WorldModuleEntity =
                     let presenceOld = entityStateOld.Presence
                     let boundsOld = entityState.Bounds
                     let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity worldOld world
+                    let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                     let world = World.publishEntityChange Constants.Engine.FacetNamesPropertyName facetNamesOld entityState.FacetNames true entity world
                     let world = World.publishEntityChanges entity world
                     (Right (), world)
@@ -2459,7 +2410,7 @@ module WorldModuleEntity =
             | (Right _, world) -> world
             | (Left _, world) -> world
 
-        static member internal updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld (presenceOld : Presence) boundsOld (entity : Entity) worldOld world =
+        static member internal updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld (presenceOld : Presence) boundsOld (entity : Entity) world =
 
             // only do this when entity is selected
             if WorldModule.getSelected entity world then
@@ -2483,30 +2434,17 @@ module WorldModuleEntity =
 
                     // update entity in entity tree
                     if entityState.Is2d then
-                        let quadree =
-                            MutantCache.mutateMutant
-                                (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
-                                (fun quadree ->
-                                    let element = Quadelement.make visibleNew staticNew entity
-                                    Quadtree.updateElement presenceOld boundsOld.Box2 presenceNew boundsNew.Box2 element quadree
-                                    quadree)
-                                (World.getQuadtree world)
-                        World.setQuadtree quadree world
+                        let quadree = World.getQuadtree world
+                        let element = Quadelement.make visibleNew staticNew entity
+                        Quadtree.updateElement presenceOld boundsOld.Box2 presenceNew boundsNew.Box2 element quadree
                     else
-                        let octree =
-                            MutantCache.mutateMutant
-                                (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
-                                (fun octree ->
-                                    let element = Octelement.make visibleNew staticNew lightProbeNew lightNew presenceNew boundsNew entity
-                                    Octree.updateElement presenceOld boundsOld presenceNew boundsNew element octree
-                                    octree)
-                                (World.getOctree world)
-                        World.setOctree octree world
+                        let octree = World.getOctree world
+                        let element = Octelement.make visibleNew staticNew lightProbeNew lightNew presenceNew boundsNew entity
+                        Octree.updateElement presenceOld boundsOld presenceNew boundsNew element octree
 
-                // fin
+                    // fin
+                    world
                 else world
-
-            // fin
             else world
 
         static member internal viewEntityProperties entity world =

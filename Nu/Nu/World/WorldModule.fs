@@ -432,28 +432,10 @@ module WorldModule =
         static member internal getQuadtree world =
             world.Quadtree
 
-        static member internal setQuadtree quadtree world =
-            if World.getImperative world then
-                world.Quadtree <- quadtree
-                world
-            else World.choose { world with Quadtree = quadtree }
-
-        static member internal updateQuadtree updater world =
-            World.setQuadtree (updater (World.getQuadtree world))
-
     type World with // Octree
 
         static member internal getOctree world =
             world.Octree
-
-        static member internal setOctree octree world =
-            if World.getImperative world then
-                world.Octree <- octree
-                world
-            else World.choose { world with Octree = octree }
-
-        static member internal updateOctree updater world =
-            World.setOctree (updater (World.getOctree world))
 
     type World with // SelectedEcsOpt
 

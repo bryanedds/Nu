@@ -1535,10 +1535,7 @@ and [<ReferenceEquality>] Dispatchers =
       EntityDispatchers : Map<string, EntityDispatcher>
       GroupDispatchers : Map<string, GroupDispatcher>
       ScreenDispatchers : Map<string, ScreenDispatcher>
-      GameDispatchers : Map<string, GameDispatcher>
-      UpdateEntityInEntityTree : bool -> bool -> bool -> bool -> Presence -> Box3 -> Entity -> World -> World -> World
-      RebuildQuadtree : World -> Entity Quadtree
-      RebuildOctree : World -> Entity Octree }
+      GameDispatchers : Map<string, GameDispatcher> }
 
 /// The subsystems contained by the engine.
 and [<ReferenceEquality>] internal Subsystems =
@@ -1568,8 +1565,8 @@ and [<ReferenceEquality>] World =
           GameState : GameState
           EntityMounts : UMap<Entity, Entity USet>
           // cache line 2
-          mutable Quadtree : Entity Quadtree MutantCache // mutated when Imperative
-          mutable Octree : Entity Octree MutantCache // mutated when Imperative
+          Quadtree : Entity Quadtree
+          Octree : Entity Octree
           mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative
           AmbientState : World AmbientState
           Subsystems : Subsystems
