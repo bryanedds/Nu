@@ -594,6 +594,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         Array.definitize |>
         Array.tryHead
 
+    let private revertOpenProjectState () =
+        openProjectFilePath <- projectDllPath
+        openProjectEditMode <- projectEditMode
+        openProjectImperativeExecution <- world.Imperative
+
     (* Nu Event Handlers *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) wtemp =
@@ -3049,8 +3054,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                                     Directory.SetCurrentDirectory gaiaDirectory
                                     showRestartDialog <- true
-                                with _ -> Log.info "Could not save editor state and open project."
-                            if ImGui.IsKeyReleased ImGuiKey.Escape then showOpenProjectDialog <- false
+                                with _ ->
+                                    revertOpenProjectState ()
+                                    Log.info "Could not save editor state and open project."
+                            if ImGui.IsKeyReleased ImGuiKey.Escape then
+                                revertOpenProjectState ()
+                                showOpenProjectDialog <- false
                             ImGui.EndPopup ()
 
                     // open project file dialog
@@ -3201,9 +3210,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
                         if ImGui.BeginPopupModal title then
                             ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
-                            if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then world <- World.exit world
+                            if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then // HACK: checking key pressed event so that previous ui's key release won't bypass this.
+                                world <- World.exit world
                             ImGui.EndPopup ()
-                
+
                 // message box dialog
                 | Some messageBox ->
                     let title = "Message!"
@@ -3340,7 +3350,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         openProjectFilePath <- gaiaState.ProjectDllPath
         openProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
-        editWhileAdvancing <- gaiaState.EditWhileAdvancing
         snaps2dSelected <- gaiaState.Snaps2dSelected
         snaps2d <- gaiaState.Snaps2d
         snaps3d <- gaiaState.Snaps3d
@@ -3348,6 +3357,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         newEntityDistance <- gaiaState.CreationDistance
         alternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         if not gaiaState.ProjectFreshlyLoaded then
+            editWhileAdvancing <- gaiaState.EditWhileAdvancing
             desiredEye2dCenter <- gaiaState.DesiredEye2dCenter
             desiredEye3dCenter <- gaiaState.DesiredEye3dCenter
             desiredEye3dRotation <- gaiaState.DesiredEye3dRotation
