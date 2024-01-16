@@ -100,8 +100,6 @@ type HeightMap =
 
                 // fin
                 Some { Resolution = v2i resolutionX resolutionY; HeightsNormalized = heightsNormalized; PositionsAndTexCoordses = positionsAndTexCoordses }
-
-            // handle errors
             else Log.info "Block-compressed image files are unsupported for use as height maps."; None
         | None -> None
 
@@ -284,26 +282,32 @@ type BodyBoxRounded =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body convex hull.
+/// The shape of a triangulated physics body convex hull.
 type BodyConvexHull =
     { Vertices : Vector3 array
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body static model.
+/// The shape of a triangulated physics body static model.
 type BodyStaticModel =
     { StaticModel : StaticModel AssetTag
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body static model surface.
+/// The shape of a triangulated physics body static model surface.
 type BodyStaticModelSurface =
     { SurfaceIndex : int
       StaticModel : StaticModel AssetTag
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a physics body convex hull.
+/// The shape of a triangulated physics body geometry.
+type BodyGeometry =
+    { Vertices : Vector3 array
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+
+/// The shape of a triangulated physics body terrain.
 type BodyTerrain =
     { Resolution : Vector2i
       Bounds : Box3
@@ -325,6 +329,7 @@ type BodyShape =
     | BodyConvexHull of BodyConvexHull
     | BodyStaticModel of BodyStaticModel
     | BodyStaticModelSurface of BodyStaticModelSurface
+    | BodyGeometry of BodyGeometry
     | BodyTerrain of BodyTerrain
     | BodyShapes of BodyShape list
 
@@ -668,5 +673,6 @@ module Physics =
         | BodyConvexHull bodyConvexHull -> BodyConvexHull { bodyConvexHull with Vertices = Array.map (fun vertex -> size * vertex) bodyConvexHull.Vertices; TransformOpt = scaleTranslation size bodyConvexHull.TransformOpt }
         | BodyStaticModel _ as bodyStaticModel -> bodyStaticModel
         | BodyStaticModelSurface _ as bodyStaticModelSurface -> bodyStaticModelSurface
+        | BodyGeometry _ as bodyGeometry -> bodyGeometry
         | BodyTerrain _ as bodyTerrain -> bodyTerrain
         | BodyShapes bodyShapes -> BodyShapes (List.map (localizeBodyShape size) bodyShapes)
