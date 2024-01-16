@@ -107,7 +107,7 @@ module WorldPhysics =
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyContactNormals bodyId
             else
-                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_DEFERRED is enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
                 []
 
         /// Get the linear velocity of the body with the given physics id.
@@ -117,7 +117,7 @@ module WorldPhysics =
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyLinearVelocity bodyId
             else
-                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_DEFERRED is enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
                 v3Zero
 
         /// Get the angular velocity of the body with the given physics id.
@@ -127,7 +127,7 @@ module WorldPhysics =
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyAngularVelocity bodyId
             else
-                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_DEFERRED is enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
                 v3Zero
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
@@ -137,7 +137,7 @@ module WorldPhysics =
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals bodyId
             else
-                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_DEFERRED is enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
                 []
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
@@ -147,7 +147,7 @@ module WorldPhysics =
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormalOpt bodyId
             else
-                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_DEFERRED is enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
                 None
 
         /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
@@ -157,7 +157,7 @@ module WorldPhysics =
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactTangentOpt bodyId
             else
-                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_DEFERRED is enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
                 None
 
         /// Check that the body with the given physics id is on the ground.
@@ -167,7 +167,7 @@ module WorldPhysics =
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
                 world.Subsystems.PhysicsEngine2d.IsBodyOnGround bodyId
             else
-                Log.info ("Body for '" + scstring bodyId + "' not found. If HANDLE_PHYSICS_MESSAGES_DEFERRED is enabled, this could be due to an in-flight body creation physics message not being handled yet, in which case you can ignore this.")
+                Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
 
         /// Send a physics message to create a physics body.
