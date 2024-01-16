@@ -515,8 +515,8 @@ module WorldModule2 =
         /// exception where the try expression resulted in a transformed world that is to be discarded.
         static member switch (world : World) =
 
-            // choose world before performing any switching operations
-            let world = World.choose world
+            // manually choose world to override choose count check
+            WorldTypes.Chosen <- world
 
             // sync tick watch state to advancing
             let world = World.switchAmbientState world

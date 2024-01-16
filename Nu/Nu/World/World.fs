@@ -421,7 +421,8 @@ module WorldModule3 =
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let worldExtension = { JobSystem = jobSystem; DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin }
             let world =
-                { EventGraph = eventGraph
+                { ChooseCount = 0
+                  EventGraph = eventGraph
                   EntityStates = entityStates
                   GroupStates = groupStates
                   ScreenStates = screenStates
