@@ -64,7 +64,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           TryGetAssetFilePath : AssetTag -> string option
           TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
           UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
-          PhysicsMessages : PhysicsMessage List
           IntegrationMessages : IntegrationMessage List }
 
     static member private handleCollision physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
@@ -672,10 +671,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
-    static member private handlePhysicsMessages physicsMessages physicsEngine =
-        for physicsMessage in physicsMessages do
-            PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
-
     static member make gravity tryGetAssetFilePath tryGetStaticModelMetadata =
         let taskScheduler = Threads.GetSequentialTaskScheduler () // NOTE: we're just using the non-threaded schedular since none of the others are available (perhaps because I didn't enable them when I previously built bullet).
         taskScheduler.NumThreads <- taskScheduler.MaxNumThreads
@@ -705,7 +700,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               TryGetAssetFilePath = tryGetAssetFilePath
               TryGetStaticModelMetadata = tryGetStaticModelMetadata
               UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
-              PhysicsMessages = List ()
               IntegrationMessages = List () }
         physicsEngine
 
@@ -764,23 +758,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
 
-        member physicsEngine.InspectMessages inspect =
-            for message in physicsEngine.PhysicsMessages do
-                inspect message
-
-        member physicsEngine.PopMessages () =
-            let messages = List physicsEngine.PhysicsMessages
-            physicsEngine.PhysicsMessages.Clear ()
-            messages
-
-        member physicsEngine.ClearMessages () =
-            physicsEngine.PhysicsMessages.Clear ()
-
-        member physicsEngine.EnqueueMessage physicsMessage =
+        member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
 
-        member physicsEngine.Integrate stepTime physicsMessages =
-            PhysicsEngine3d.handlePhysicsMessages physicsMessages physicsEngine
+        member physicsEngine.Integrate stepTime =
             PhysicsEngine3d.integrate stepTime physicsEngine
             PhysicsEngine3d.createIntegrationMessages physicsEngine
             let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
