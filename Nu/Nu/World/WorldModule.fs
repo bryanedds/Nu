@@ -88,13 +88,12 @@ module WorldModule =
 
     type World with // Construction
 
-        /// Choose a world to be used as the active world. Call this whenever the most recently constructed world value
-        /// is to be discarded in favor of the given world value, such as in an exception handler.
-        static member choose (world : World) =
+        /// Choose a world to be used as the active world for debugging.
+        static member internal choose (world : World) =
             world.Choose ()
 
-        /// Assert that the current world is the chosen world (used for debugging).
-        static member assertChosen (world : World) =
+        /// Assert that the current world is the active world for debugging.
+        static member internal assertChosen (world : World) =
             world.AssertChosen ()
 
     type World with // Caching
@@ -223,17 +222,9 @@ module WorldModule =
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
-        /// Shelve the ambient state of a non-current world.
-        static member internal shelveAmbientStateNonCurrent world =
-            { world with AmbientState = AmbientState.shelve world.AmbientState }
-
-        /// Shelve the ambient state of the current world.
-        static member internal shelveAmbientStateCurrent world =
-            { world with AmbientState = AmbientState.shelve world.AmbientState }
-
         /// Unshelve the ambient state.
-        static member internal unshelveAmbientState world =
-            World.choose { world with AmbientState = AmbientState.unshelve world.AmbientState }
+        static member internal switchAmbientState world =
+            World.choose { world with AmbientState = AmbientState.switch world.AmbientState }
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         static member exit world =

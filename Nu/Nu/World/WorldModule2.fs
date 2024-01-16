@@ -464,7 +464,7 @@ module WorldModule2 =
 
                 // propagate errors
                 | Left error -> (Left error, world)
-            with exn -> (Left (scstring exn), World.choose world)
+            with exn -> (Left (scstring exn), World.switch world)
 
         /// Send a message to the subsystems to reload their existing assets.
         static member reloadExistingAssets world =
@@ -498,7 +498,7 @@ module WorldModule2 =
 
                 // propagate errors
                 | Left error -> (Left error, world)
-            with exn -> (Left (scstring exn), World.choose world)
+            with exn -> (Left (scstring exn), World.switch world)
 
         /// Reload asset graph, build assets, then reload built assets.
         /// Currently does not support reloading of song assets, and possibly others that are
@@ -510,19 +510,16 @@ module WorldModule2 =
             | (Right _, world) -> (true, world)
             | (Left _, world) -> (false, world)
 
-        /// Shelve a non-current world for background storage (such as for an undo / redo system).
-        static member shelveNonCurrent world =
-            World.shelveAmbientStateNonCurrent world
+        /// Switch simulation to this world, resynchronizing the imperative subsystems with its current state.
+        /// Needed when abandoning execution of the current world in favor of an old world, such as in the case of an
+        /// exception where the try expression resulted in a transformed world that is to be discarded.
+        static member switch (world : World) =
 
-        /// Shelve the current world for background storage (such as for an undo / redo system).
-        static member shelveCurrent world =
-            World.shelveAmbientStateCurrent world
-
-        /// Unshelve the world from background storage (such as for an undo / redo system).
-        static member unshelve (world : World) =
+            // choose world before performing any switching operations
+            let world = World.choose world
 
             // sync tick watch state to advancing
-            let world = World.unshelveAmbientState world
+            let world = World.switchAmbientState world
 
             // rebuild spatial trees
             let world = World.rebuildOctree world
@@ -1417,7 +1414,7 @@ module WorldModule2 =
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->
-                let world = World.choose world
+                let world = World.switch world
                 Log.trace (scstring exn)
                 World.cleanUp world
                 Constants.Engine.ExitCodeFailure
