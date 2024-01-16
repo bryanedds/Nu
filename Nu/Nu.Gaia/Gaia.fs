@@ -2098,20 +2098,27 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.SameLine ()
                     ImGui.Text name
                 elif name = Constants.Engine.FacetNamesPropertyName && ty = typeof<string Set> then
-                    let facetNamesAll = world |> World.getFacets |> Map.toKeyArray |> Array.append [|"(Empty)"|]
-                    let facetNames = scvalue<string Set> propertyValueStr
-                    let mutable facetNames' = Set.empty
+                    let facetNameEmpty = "(Empty)"
+                    let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
+                    let facetNameSelectablePicked = tryPickName facetNamesSelectable
+                    let facetNamesValue = scvalue<string Set> propertyValueStr
+                    let mutable facetNamesValue' = Set.empty
                     let mutable changed = false
                     ImGui.Indent ()
-                    for i in 0 .. facetNames.Count do
-                        let last = i = facetNames.Count
-                        let facetName = if not last then Seq.item i facetNames else "(Empty)"
-                        let mutable facetNameIndex = Seq.findIndex ((=) facetName) facetNamesAll
-                        changed <- ImGui.Combo ("##" + name + string i, &facetNameIndex, facetNamesAll, facetNamesAll.Length) || changed
+                    for i in 0 .. facetNamesValue.Count do
+                        let last = i = facetNamesValue.Count
+                        let mutable facetName = if not last then Seq.item i facetNamesValue else facetNameEmpty
+                        if ImGui.BeginCombo ("##" + name + string i, facetName) then
+                            for facetNameSelectable in facetNamesSelectable do
+                                if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.2f
+                                if ImGui.Selectable (facetNameSelectable, strEq facetName newEntityDispatcherName) then
+                                    facetName <- facetNameSelectable
+                                    changed <- true
+                            ImGui.EndCombo ()
                         if not last then focusProperty ()
-                        if facetNameIndex <> 0 then facetNames' <- Set.add (Seq.item facetNameIndex facetNamesAll) facetNames'
+                        if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
                     ImGui.Unindent ()
-                    if changed then setPropertyValueIgnoreError facetNames' propertyDescriptor simulant
+                    if changed then setPropertyValueIgnoreError facetNamesValue' propertyDescriptor simulant
                 else
                     let mutable propertyValueStr = propertyValueStr
                     if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> propertyValueStrPrevious then
