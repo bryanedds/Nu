@@ -67,6 +67,15 @@ namespace Nu
             ((uint)(A * 255.0f));
 
         /// <summary>
+        /// The packed value in BGRA order.
+        /// </summary>
+        public uint Bgra =>
+            ((uint)(B * 255.0f)) << 24 |
+            ((uint)(G * 255.0f)) << 16 |
+            ((uint)(R * 255.0f)) << 8 |
+            ((uint)(A * 255.0f));
+
+        /// <summary>
         /// The packed value in ARGB order.
         /// </summary>
         public uint Argb =>
@@ -74,6 +83,15 @@ namespace Nu
             ((uint)(R * 255.0f)) << 16 |
             ((uint)(G * 255.0f)) << 8 |
             ((uint)(B * 255.0f));
+
+        /// <summary>
+        /// The packed value in ABGR order.
+        /// </summary>
+        public uint Abgr =>
+            ((uint)(A * 255.0f)) << 24 |
+            ((uint)(B * 255.0f)) << 16 |
+            ((uint)(G * 255.0f)) << 8 |
+            ((uint)(R * 255.0f));
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Color"/> struct.
