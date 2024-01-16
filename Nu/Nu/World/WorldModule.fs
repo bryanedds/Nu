@@ -92,10 +92,6 @@ module WorldModule =
         static member internal choose (world : World) =
             world.Choose ()
 
-        /// Assert that the current world is the active world for debugging.
-        static member internal assertChosen (world : World) =
-            world.AssertChosen ()
-
     type World with // Caching
 
         /// Get the simulants.

@@ -1558,13 +1558,14 @@ and [<ReferenceEquality>] internal WorldExtension =
 and [<ReferenceEquality>] World =
     internal
         { // cache line 1 (assuming 16 byte header)
+          mutable ChooseCount : int // NOTE: this allows us to check the integrity of the world's imperative subsystems.
           EventGraph : EventGraph
           EntityStates : SUMap<Entity, EntityState>
           GroupStates : UMap<Group, GroupState>
           ScreenStates : UMap<Screen, ScreenState>
           GameState : GameState
-          EntityMounts : UMap<Entity, Entity USet>
           // cache line 2
+          EntityMounts : UMap<Entity, Entity USet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree
           mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative
@@ -1637,21 +1638,21 @@ and [<ReferenceEquality>] World =
     member this.DateTime =
         AmbientState.getDateTime this.AmbientState
 
-    member
-#if !DEBUG
-        inline
-#endif
-        internal this.Choose () =
-        WorldTypes.Chosen <- this :> obj
+#if DEBUG
+    member internal this.Choose () =
+        match WorldTypes.Chosen with
+        | :? World as this -> 
+            if this.ChooseCount <> this.ChooseCount then
+                Log.debug "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
+        | _ -> ()
+        this.ChooseCount <- inc this.ChooseCount // mutation is fine here since calling Choose implies we're doing so on a new reference in functional mode
+        WorldTypes.Chosen <- this
         this
-
-    member
-#if !DEBUG
-        inline
+#else
+    member inline internal this.Choose () =
+        WorldTypes.Chosen <- this
+        this
 #endif
-        internal this.AssertChosen () =
-        if refNeq (this :> obj) WorldTypes.Chosen then
-            Console.WriteLine "Fault"
 
     override this.ToString () =
         ""
