@@ -382,7 +382,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         not (io.WantCaptureKeyboardPlus) && (world.Halted || editWhileAdvancing)
 
     let private snapshot () =
-        world <- Nu.World.shelveCurrent world
         worldsPast <- world :: worldsPast
         worldsFuture <- []
 
@@ -475,8 +474,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (if not (Nu.World.getImperative world) then
                 match worldsPast with
                 | worldPast :: worldsPast' ->
-                    let worldFuture = Nu.World.shelveCurrent world
-                    world <- Nu.World.unshelve worldPast
+                    let worldFuture = world
+                    world <- Nu.World.switch worldPast
                     worldsPast <- worldsPast'
                     worldsFuture <- worldFuture :: worldsFuture
                     true
@@ -501,8 +500,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (if not (Nu.World.getImperative world) then
                 match worldsFuture with
                 | worldFuture :: worldsFuture' ->
-                    let worldPast = Nu.World.shelveCurrent world
-                    world <- Nu.World.unshelve worldFuture
+                    let worldPast = world
+                    world <- Nu.World.switch worldFuture
                     worldsPast <- worldPast :: worldsPast
                     worldsFuture <- worldsFuture'
                     true
@@ -811,7 +810,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     groupFileDialogState.FileName <- ""
                     true
                 with exn ->
-                    world <- World.choose worldOld
+                    world <- World.switch worldOld
                     messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
                     false
 
@@ -991,10 +990,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     with _ ->
                         let error = string errorStream
                         Log.info ("Failed to compile code due to (see full output in the console):\n" + error)
-                        world <- World.choose worldOld
+                        world <- World.switch worldOld
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
-                world <- World.choose worldOld
+                world <- World.switch worldOld
         else messageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
     let private tryReloadAll () =
@@ -3106,7 +3105,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     showNewGroupDialog <- false
                                     newGroupName <- ""
                                 with exn ->
-                                    world <- World.choose worldOld
+                                    world <- World.switch worldOld
                                     messageBoxOpt <- Some ("Could not create group due to: " + scstring exn)
                             if ImGui.IsKeyReleased ImGuiKey.Escape then showNewGroupDialog <- false
                             ImGui.EndPopup ()
@@ -3299,7 +3298,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // propagate exception to dialog
             with exn ->
-                let worldOld = World.shelveNonCurrent worldOld
                 recoverableExceptionOpt <- Some (exn, worldOld)
 
         // exception handling dialog
@@ -3311,7 +3309,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.TextWrapped (scstring exn)
                 ImGui.Text "How would you like to handle this exception?"
                 if ImGui.Button "Ignore exception and revert to old world." then
-                    world <- World.unshelve worldOld
+                    world <- World.switch worldOld
                     recoverableExceptionOpt <- None
                 if ImGui.Button "Ignore exception and proceed with current world." then
                     recoverableExceptionOpt <- None
