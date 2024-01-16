@@ -275,12 +275,6 @@ Size=296,1024
 Collapsed=0
 DockId=0x0000000E,0
 
-[Window][Console]
-Pos=998,874
-Size=624,206
-Collapsed=0
-DockId=0x00000009,6
-
 [Window][Entity Hierarchy]
 Pos=0,56
 Size=282,1024
