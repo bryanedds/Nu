@@ -11,7 +11,9 @@ type Job =
       IssueTime : DateTimeOffset
       Work : unit -> obj }
     static member make jobId work =
-        { JobId = jobId; IssueTime = DateTimeOffset.Now; Work = work }
+        { JobId = jobId
+          IssueTime = DateTimeOffset.Now
+          Work = work }
 
 /// The result of running a job.
 type JobResult =

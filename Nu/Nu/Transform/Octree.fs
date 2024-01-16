@@ -150,6 +150,16 @@ module internal Octnode =
         node.ElementsCount_ <- node.ElementsCount_ + delta
         delta
 
+    let rec internal clearElements node =
+        node.ElementsCount_ <- 0
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                clearElements node
+        | ValueRight children ->
+            children.Clear ()
+
     let rec internal getElementsAtPoint point (set : 'e Octelement HashSet) (node : 'e Octnode) =
         match node.Children_ with
         | ValueLeft nodes ->
@@ -502,6 +512,12 @@ module Octree =
             else
                 if presenceOld.ImposterType then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
                 if presenceNew.ImposterType then tree.Imposter.Add element |> ignore else tree.Omnipresent.Add element |> ignore
+
+    /// Clear the contents of the tree.
+    let clear tree =
+        tree.Imposter.Clear ()
+        tree.Omnipresent.Clear ()
+        Octnode.clearElements tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given point.
     let getElementsAtPoint point (set : _ HashSet) tree =

@@ -130,6 +130,16 @@ module internal Quadnode =
         node.ElementsCount_ <- node.ElementsCount_ + delta
         delta
 
+    let rec internal clearElements node =
+        node.ElementsCount_ <- 0
+        match node.Children_ with
+        | ValueLeft nodes ->
+            for i in 0 .. dec nodes.Length do
+                let node = &nodes.[i]
+                clearElements node
+        | ValueRight children ->
+            children.Clear ()
+
     let rec internal getElementsAtPoint point (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
         | ValueLeft nodes ->
@@ -336,6 +346,11 @@ module Quadtree =
             else
                 tree.Ubiquitous.Remove element |> ignore
                 tree.Ubiquitous.Add element |> ignore
+
+    /// Clear the contents of the tree.
+    let clear tree =
+        tree.Ubiquitous.Clear ()
+        Quadnode.clearElements tree.Node
 
     /// Get all of the elements in a tree that are in a node intersected by the given point.
     let getElementsAtPoint point set tree =

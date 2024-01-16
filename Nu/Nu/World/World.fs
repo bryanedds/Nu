@@ -190,58 +190,32 @@ module Nu =
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SList.ofSeq
                 let (entities2d, entities3d) = SList.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
-                let worldOld = world
-                let quadtree =
-                    MutantCache.mutateMutant
-                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
-                        (fun quadtree ->
-                            for entity in entities2d do
-                                let entityState = World.getEntityState entity world
-                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
-                                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
-                            quadtree)
-                        (World.getQuadtree world)
-                let world = World.setQuadtree quadtree world
-                let octree =
-                    MutantCache.mutateMutant
-                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
-                        (fun octree ->
-                            for entity in entities3d do
-                                let entityState = World.getEntityState entity world
-                                let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                                Octree.addElement entityState.Presence entityState.Bounds element octree
-                            octree)
-                        (World.getOctree world)
-                let world = World.setOctree octree world
+                let quadtree = World.getQuadtree world
+                for entity in entities2d do
+                    let entityState = World.getEntityState entity world
+                    let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                    Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                let octree = World.getOctree world
+                for entity in entities3d do
+                    let entityState = World.getEntityState entity world
+                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    Octree.addElement entityState.Presence entityState.Bounds element octree
                 world
                 
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
                 let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SArray.ofSeq
                 let (entities2d, entities3d) = SArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
-                let worldOld = world
-                let quadtree =
-                    MutantCache.mutateMutant
-                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildQuadtree worldOld)
-                        (fun quadtree ->
-                            for entity in entities2d do
-                                let entityState = World.getEntityState entity world
-                                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
-                                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
-                            quadtree)
-                        (World.getQuadtree world)
-                let world = World.setQuadtree quadtree world
-                let octree =
-                    MutantCache.mutateMutant
-                        (fun () -> worldOld.WorldExtension.Dispatchers.RebuildOctree worldOld)
-                        (fun octree ->
-                            for entity in entities3d do
-                                let entityState = World.getEntityState entity world
-                                let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                                Octree.removeElement entityState.Presence entityState.Bounds element octree
-                            octree)
-                        (World.getOctree world)
-                let world = World.setOctree octree world
+                let quadtree = World.getQuadtree world
+                for entity in entities2d do
+                    let entityState = World.getEntityState entity world
+                    let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                    Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                let octree = World.getOctree world
+                for entity in entities3d do
+                    let entityState = World.getEntityState entity world
+                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    Octree.removeElement entityState.Presence entityState.Bounds element octree
                 world
 
             // init registerScreenPhysics F# reach-around
@@ -453,8 +427,8 @@ module WorldModule3 =
                   ScreenStates = screenStates
                   GameState = gameState
                   EntityMounts = UMap.makeEmpty HashIdentity.Structural config
-                  Quadtree = MutantCache.make id quadtree
-                  Octree = MutantCache.make id octree
+                  Quadtree = quadtree
+                  Octree = octree
                   SelectedEcsOpt = None
                   AmbientState = ambientState
                   Subsystems = subsystems
@@ -487,10 +461,7 @@ module WorldModule3 =
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   GroupDispatchers = World.makeDefaultGroupDispatchers ()
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  GameDispatchers = Map.ofList [defaultGameDispatcher]
-                  UpdateEntityInEntityTree = World.updateEntityInEntityTree
-                  RebuildQuadtree = World.rebuildQuadtree
-                  RebuildOctree = World.rebuildOctree }
+                  GameDispatchers = Map.ofList [defaultGameDispatcher] }
 
             // make the world's subsystems
             let imGui = ImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
@@ -562,10 +533,7 @@ module WorldModule3 =
                       EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
                       GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
-                      GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher])
-                      UpdateEntityInEntityTree = World.updateEntityInEntityTree
-                      RebuildQuadtree = World.rebuildQuadtree
-                      RebuildOctree = World.rebuildOctree }
+                      GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher]) }
 
                 // get the first game dispatcher
                 let activeGameDispatcher =

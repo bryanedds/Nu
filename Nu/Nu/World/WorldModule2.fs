@@ -76,6 +76,8 @@ module WorldModule2 =
             Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
         static member internal rebuildQuadtree world =
+            let quadtree = World.getQuadtree world
+            Quadtree.clear quadtree
             let omniEntities =
                 match World.getOmniScreenOpt world with
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
@@ -85,7 +87,6 @@ module WorldModule2 =
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
                 | None -> Seq.empty
             let entities = Seq.append omniEntities selectedEntities
-            let quadtree = World.makeQuadtree ()
             for entity in entities do
                 let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world || entity.GetAlwaysRender world
@@ -94,9 +95,11 @@ module WorldModule2 =
                 if entity.GetIs2d world then
                     let element = Quadelement.make visible static_ entity
                     Quadtree.addElement presence bounds.Box2 element quadtree
-            quadtree
+            world
 
         static member internal rebuildOctree world =
+            let octree = World.getOctree world
+            Octree.clear octree
             let omniEntities =
                 match World.getOmniScreenOpt world with
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
@@ -105,8 +108,8 @@ module WorldModule2 =
                 match World.getSelectedScreenOpt world with
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
                 | None -> Seq.empty
-            let entities = Seq.append omniEntities selectedEntities
-            let octree = World.makeOctree ()
+            let entities =
+                Seq.append omniEntities selectedEntities
             for entity in entities do
                 let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world || entity.GetAlwaysRender world
@@ -117,7 +120,7 @@ module WorldModule2 =
                 if entity.GetIs3d world then
                     let element = Octelement.make visible static_ lightProbe light presence bounds entity
                     Octree.addElement presence bounds element octree
-            octree
+            world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
@@ -521,6 +524,10 @@ module WorldModule2 =
             // sync tick watch state to advancing
             let world = World.unshelveAmbientState world
 
+            // rebuild spatial trees
+            let world = World.rebuildQuadtree world
+            let world = World.rebuildOctree world
+
             // clear existing 3d physics messages and rebuild
             let world = World.clearPhysicsMessages3d world
             let world = World.enqueuePhysicsMessage3d ClearPhysicsMessageInternal world
@@ -764,8 +771,6 @@ module WorldModule2 =
 
         static member private getElements2dBy (getElementsFromQuadree : Entity Quadtree -> Entity Quadelement seq) world =
             let quadtree = World.getQuadtree world
-            let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
-            let world = World.setQuadtree quadtreeCache world
             let elements = getElementsFromQuadree quadtree
             (elements, world)
 
@@ -782,8 +787,6 @@ module WorldModule2 =
 
         static member private getEntities2dBy getElementsFromQuadtree world =
             let quadtree = World.getQuadtree world
-            let (quadtree, quadtreeCache) = MutantCache.getMutant (fun () -> World.rebuildQuadtree world) quadtree
-            let world = World.setQuadtree quadtreeCache world
             let elements = getElementsFromQuadtree quadtree
             let entities = Seq.map (fun (element : Entity Quadelement) -> element.Entry) elements
             (entities, world)
@@ -812,8 +815,6 @@ module WorldModule2 =
 
         static member private getElements3dBy (getElementsFromOctree : Entity Octree -> Entity Octelement seq) world =
             let octree = World.getOctree world
-            let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
-            let world = World.setOctree octreeCache world
             let elements = getElementsFromOctree octree
             (elements, world)
 
@@ -836,8 +837,6 @@ module WorldModule2 =
 
         static member private getEntities3dBy getElementsFromOctree world =
             let octree = World.getOctree world
-            let (octree, octreeCache) = MutantCache.getMutant (fun () -> World.rebuildOctree world) octree
-            let world = World.setOctree octreeCache world
             let elements = getElementsFromOctree octree
             let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) elements
             (entities, world)
