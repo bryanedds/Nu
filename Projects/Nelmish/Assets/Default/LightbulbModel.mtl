@@ -3,16 +3,6 @@
 
 newmtl Material
 map_Kd LightbulbModelAlbedo.tiff
-map_Pm MaterialMetallic.tiff
-map_Pr MaterialRoughness.tiff
-map_Ka MaterialAmbientOcclusion.tiff
-map_Ke MaterialEmission.tiff
-norm MaterialNormal.tiff
 
 newmtl Material2
 map_Kd LightbulbModelAlbedo.tiff
-map_Pm MaterialMetallic.tiff
-map_Pr MaterialRoughness.tiff
-map_Ka MaterialAmbientOcclusion.tiff
-map_Ke MaterialEmission.tiff
-norm MaterialNormal.tiff
