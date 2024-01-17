@@ -587,6 +587,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | None -> None
 
     let private tryPickName names =
+        let io = ImGui.GetIO ()
+        io.SwallowKeyboard ()
         let namesMatching =
             [|for key in int ImGuiKey.A .. int ImGuiKey.Z do
                 if ImGui.IsKeyReleased (Branchless.reinterpret key) then
@@ -2099,9 +2101,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.Text name
                 elif name = Constants.Engine.FacetNamesPropertyName && ty = typeof<string Set> then
                     let facetNameEmpty = "(Empty)"
-                    let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
-                    let facetNameSelectablePicked = tryPickName facetNamesSelectable
                     let facetNamesValue = scvalue<string Set> propertyValueStr
+                    let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
                     let mutable facetNamesValue' = Set.empty
                     let mutable changed = false
                     ImGui.Indent ()
@@ -2109,6 +2110,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let last = i = facetNamesValue.Count
                         let mutable facetName = if not last then Seq.item i facetNamesValue else facetNameEmpty
                         if ImGui.BeginCombo ("##" + name + string i, facetName) then
+                            let facetNameSelectablePicked = tryPickName facetNamesSelectable
                             for facetNameSelectable in facetNamesSelectable do
                                 if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.2f
                                 if ImGui.Selectable (facetNameSelectable, strEq facetName newEntityDispatcherName) then
