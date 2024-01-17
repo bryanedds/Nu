@@ -1648,8 +1648,7 @@ module EntityPropertyDescriptor =
              propertyName = "Size" then
              "Basic Transform Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
-        elif propertyName = "MaterialProperties" then "Material Properties"
-        elif propertyName = "Material" then "Material"
+        elif propertyName = "MaterialProperties" || propertyName = "Material" then "Material Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Uncategorized Properties"
 
