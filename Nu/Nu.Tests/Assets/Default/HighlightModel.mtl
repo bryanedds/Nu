@@ -6,9 +6,5 @@ Kd 1.000000 1.000000 1.000000
 Pm 1.000000 0.000000 0.000000
 Pr 1.000000
 Ka 1.000000 0.000000 0.000000
-map_Kd HighlightModelAlbedo.tiff
-map_Pm MaterialMetallic.tiff
-map_Pr MaterialRoughness.tiff
-map_Ka MaterialAmbientOcclusion.tiff
+map_Kd HighlightModelAlbedo.tiffs
 map_Ke HighlightModelEmission.tiff
-norm MaterialNormal.tiff
