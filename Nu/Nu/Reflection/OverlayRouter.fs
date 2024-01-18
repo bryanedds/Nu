@@ -5,7 +5,7 @@ namespace Nu
 open System
 open Prime
 
-// TODO: inline OverlayRouter into Overlayer,
+// TODO: inline OverlayRouter into Overlayer.
 [<RequireQualifiedAccess>]
 module OverlayRouter =
 
