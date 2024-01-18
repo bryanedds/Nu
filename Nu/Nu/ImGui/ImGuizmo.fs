@@ -63,7 +63,7 @@ module ImGuizmo =
             let mouseDown = ImGui.IsMouseDown ImGuiMouseButton.Left
             let mouseHeld = not mouseClicked && mouseDown
             let inView = eyeFrustum.Contains center <> ContainmentType.Disjoint
-            let inRange = mouseDistance < 10.0f
+            let inRange = mouseDistance < 10.0f // TODO: make constant.
             let dragging = not draggingFound && mouseAvailable && inView && mouseHeld && boxCenterSelectedOpt = Some i
             let selecting = not draggingFound && mouseAvailable && inView && mouseClicked && inRange
             let hovering = not draggingFound && not hoveringFound && mouseAvailable && inView && not mouseDown && inRange
@@ -82,12 +82,13 @@ module ImGuizmo =
                 draggingFound <- true
                 box <- Box3.Enclose centers
                 box.Size <- Vector3.Max (v3Dup (max 0.1f snap), box.Size)
-                result <- ImGuiEditActive mouseClicked
+                result <- ImGuiEditActive false
                 io.SwallowMouse ()
             elif selecting then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                 draggingFound <- true
                 boxCenterSelectedOpt <- Some i
+                result <- ImGuiEditActive true
             elif hovering then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
                 hoveringFound <- true
