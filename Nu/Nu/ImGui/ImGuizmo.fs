@@ -10,6 +10,8 @@ open Prime
 [<RequireQualifiedAccess>]
 module ImGuizmo =
 
+    let mutable private boxCenterSelectedOpt = Option<int>.None
+
     /// Manipulate a Box3 value via ImGuizmo.
     let ManipulateBox3 (eyeCenter, eyeRotation, eyeFrustum, absolute, snap, box : Box3 byref) =
 
@@ -47,28 +49,26 @@ module ImGuizmo =
             | None -> ()
 
         // manipulate centers
-        let centers =
-            Array.sortBy (fun center ->
-                Vector3.DistanceSquared (center, eyeCenter))
-                box.FaceCenters
-        let mutable found = false
+        let centers = box.FaceCenters
+        let mutable draggingFound = false
+        let mutable hoveringFound = false
         for i in 0 .. dec centers.Length do
             let center = centers.[i]
             let centerWindow = ImGui.PositionToWindow (viewProjection, center)
-            let canCapture = not io.WantCaptureMousePlus
-            let inView = eyeFrustum.Contains center <> ContainmentType.Disjoint
+            let mouseAvailable = not io.WantCaptureMousePlus
             let mouseWindow = ImGui.GetMousePos ()
             let mouseDelta = mouseWindow - centerWindow
             let mouseDistance = mouseDelta.Magnitude
-            let mouseUp = not (ImGui.IsMouseDown ImGuiMouseButton.Left)
             let mouseClicked = ImGui.IsMouseClicked ImGuiMouseButton.Left
-            let mouseDragging = ImGui.IsMouseDragging ImGuiMouseButton.Left
-            let hovering = canCapture && inView && mouseUp && mouseDistance < 40.0f
-            let dragging = canCapture && inView && (mouseClicked && mouseDistance < 40.0f || mouseDragging && mouseDistance < 80.0f) && not found
+            let mouseDown = ImGui.IsMouseDown ImGuiMouseButton.Left
+            let mouseHeld = not mouseClicked && mouseDown
+            let inView = eyeFrustum.Contains center <> ContainmentType.Disjoint
+            let inRange = mouseDistance < 10.0f
+            let dragging = not draggingFound && mouseAvailable && inView && mouseHeld && boxCenterSelectedOpt = Some i
+            let selecting = not draggingFound && mouseAvailable && inView && mouseClicked && inRange
+            let hovering = not draggingFound && not hoveringFound && mouseAvailable && inView && not mouseDown && inRange
             let viewing = inView
-            if hovering then
-                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
-            elif dragging then
+            if dragging then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                 let direction = (center - box.Center).Absolute.Normalized
                 let ray = viewport.MouseToWorld3d (absolute, mouseWindow, eyeCenter, eyeRotation)
@@ -79,12 +79,22 @@ module ImGuizmo =
                 let movement = delta * direction
                 let center = Math.SnapF3d snap (centers.[i] + movement)
                 centers.[i] <- center
+                draggingFound <- true
                 box <- Box3.Enclose centers
+                box.Size <- Vector3.Max (v3Dup (max 0.1f snap), box.Size)
                 result <- ImGuiEditActive mouseClicked
-                found <- true
                 io.SwallowMouse ()
+            elif selecting then
+                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
+                draggingFound <- true
+                boxCenterSelectedOpt <- Some i
+            elif hovering then
+                drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
+                hoveringFound <- true
             elif viewing then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CFCF)
-        
+        if not draggingFound then
+            boxCenterSelectedOpt <- None
+
         // fin
         result
