@@ -591,7 +591,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         io.SwallowKeyboard ()
         let namesMatching =
             [|for key in int ImGuiKey.A .. int ImGuiKey.Z do
-                if ImGui.IsKeyReleased (Branchless.reinterpret key) then
+                if ImGui.IsKeyReleased (enum key) then
                     let chr = char (key - int ImGuiKey.A + 97)
                     names |>
                     Seq.filter (fun (name : string) -> name.Length > 0 && Char.ToLowerInvariant name.[0] = chr) |>
