@@ -11,16 +11,18 @@ module ImGuiIOPtr =
 
     // HACK: allows manual tracking of mouse and keyboard event swallowing since Dear ImGui doesn't seem to yet have
     // it worked out - https://github.com/ocornut/imgui/issues/3370
-    let mutable internal wantCaptureMousePlus = false
-    let mutable internal wantCaptureKeyboardPlus = false
+    let mutable internal wantCaptureMouseLocal = false
+    let mutable internal wantCaptureKeyboardLocal = false
 
     let internal BeginFrame () =
-        wantCaptureMousePlus <- false
-        wantCaptureKeyboardPlus <- false
+        wantCaptureMouseLocal <- false
+        wantCaptureKeyboardLocal <- false
 
     type ImGuiIOPtr with
 
-        member this.WantCaptureMousePlus = wantCaptureMousePlus || this.WantCaptureMouse
-        member this.WantCaptureKeyboardPlus = wantCaptureKeyboardPlus || this.WantCaptureKeyboard
-        member this.SwallowMouse () = wantCaptureMousePlus <- true
-        member this.SwallowKeyboard () = wantCaptureKeyboardPlus <- true
+        member this.WantCaptureMouseLocal = wantCaptureMouseLocal
+        member this.WantCaptureKeyboardLocal = wantCaptureKeyboardLocal
+        member this.WantCaptureMouseGlobal = wantCaptureMouseLocal || this.WantCaptureMouse
+        member this.WantCaptureKeyboardGlobal = wantCaptureKeyboardLocal || this.WantCaptureKeyboard
+        member this.SwallowMouse () = wantCaptureMouseLocal <- true
+        member this.SwallowKeyboard () = wantCaptureKeyboardLocal <- true

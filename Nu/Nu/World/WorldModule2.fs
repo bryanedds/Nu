@@ -599,7 +599,7 @@ module WorldModule2 =
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseMoveEvent eventTrace Nu.Game.Handle true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureMousePlus) then
+                    if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
                         let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                         let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event/" + Constants.Engine.GameName)
@@ -612,7 +612,7 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureMousePlus) then
+                    if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
                         let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                         let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event/" + Constants.Engine.GameName)
@@ -638,14 +638,14 @@ module WorldModule2 =
                     let imGui = World.getImGui world
                     let textInput = char evt.text.text.FixedElementField
                     imGui.HandleKeyChar textInput
-                    if not (io.WantCaptureKeyboardPlus) then
+                    if not (io.WantCaptureKeyboardGlobal) then
                         let eventData = { TextInput = textInput }
                         let eventTrace = EventTrace.debug "World" "processInput" "TextInput" EventTrace.empty
                         World.publishPlus eventData Nu.Game.Handle.TextInputEvent eventTrace Nu.Game.Handle true true world
                     else world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureKeyboardPlus) then
+                    if not (io.WantCaptureKeyboardGlobal) then
                         let keyboard = evt.key
                         let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
@@ -656,7 +656,7 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let io = ImGui.GetIO ()
-                    if not (io.WantCaptureKeyboardPlus) then
+                    if not (io.WantCaptureKeyboardGlobal) then
                         let keyboard = evt.key
                         let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }

@@ -23,7 +23,7 @@ module WorldInputModule =
         static member isMouseButtonDown mouseButton world =
             ignore (world : World)
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureMousePlus)
+            if not (io.WantCaptureMouseGlobal)
             then MouseState.isButtonDown mouseButton
             else false
 
@@ -71,7 +71,7 @@ module WorldInputModule =
         static member isKeyboardKeyDown key world =
             ignore (world : World)
             let io = ImGui.GetIO ()
-            if not (io.WantCaptureKeyboardPlus)
+            if not (io.WantCaptureKeyboardGlobal)
             then KeyboardState.isKeyDown key
             else false
 
