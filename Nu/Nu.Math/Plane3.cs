@@ -361,13 +361,12 @@ namespace Nu
             return Normal.GetHashCode() ^ D.GetHashCode();
         }
 
-
         /// <summary>
-        /// Check if this <see cref="Plane3"/> intersects a <see cref="BoundingBox"/>.
+        /// Check if this <see cref="Plane3"/> intersects a <see cref="Box3"/>.
         /// </summary>
-        /// <param name="box">The <see cref="BoundingBox"/> to test for intersection.</param>
+        /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
         /// <returns>
-        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingBox"/>.
+        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="Box3"/>.
         /// </returns>
         public PlaneIntersectionType Intersects(Box3 box)
         {
@@ -375,11 +374,11 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Plane3"/> intersects a <see cref="BoundingBox"/>.
+        /// Check if this <see cref="Plane3"/> intersects a <see cref="Box3"/>.
         /// </summary>
-        /// <param name="box">The <see cref="BoundingBox"/> to test for intersection.</param>
+        /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
         /// <param name="result">
-        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="BoundingBox"/>.
+        /// The type of intersection of this <see cref="Plane3"/> with the specified <see cref="Box3"/>.
         /// </param>
         public void Intersects(in Box3 box, out PlaneIntersectionType result)
         {

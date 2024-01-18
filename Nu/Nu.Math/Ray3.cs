@@ -104,12 +104,12 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="BoundingBox"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Box3"/>.
         /// </summary>
-        /// <param name="box">The <see cref="BoundingBox"/> to test for intersection.</param>
+        /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
         /// <returns>
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray3"/> does not intersect the <see cref="BoundingBox"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Box3"/>.
         /// </returns>
         public float? Intersects(Box3 box)
         {
@@ -196,12 +196,12 @@ namespace Nu
         }
 
         /// <summary>
-        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="BoundingBox"/>.
+        /// Check if this <see cref="Ray3"/> intersects the specified <see cref="Box3"/>.
         /// </summary>
-        /// <param name="box">The <see cref="BoundingBox"/> to test for intersection.</param>
+        /// <param name="box">The <see cref="Box3"/> to test for intersection.</param>
         /// <param name="result">
         /// The distance along the ray of the intersection or <code>null</code> if this
-        /// <see cref="Ray3"/> does not intersect the <see cref="BoundingBox"/>.
+        /// <see cref="Ray3"/> does not intersect the <see cref="Box3"/>.
         /// </param>
         public void Intersects(in Box3 box, out float? result)
         {
