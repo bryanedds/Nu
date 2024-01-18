@@ -55,7 +55,7 @@ module ImGuizmo =
         for i in 0 .. dec centers.Length do
             let center = centers.[i]
             let centerWindow = ImGui.PositionToWindow (viewProjection, center)
-            let mouseAvailable = not io.WantCaptureMousePlus
+            let mouseAvailable = not io.WantCaptureMouseGlobal
             let mouseWindow = ImGui.GetMousePos ()
             let mouseDelta = mouseWindow - centerWindow
             let mouseDistance = mouseDelta.Magnitude
@@ -79,18 +79,20 @@ module ImGuizmo =
                 let movement = delta * direction
                 let center = Math.SnapF3d snap (centers.[i] + movement)
                 centers.[i] <- center
+                io.SwallowMouse ()
                 draggingFound <- true
                 box <- Box3.Enclose centers
                 box.Size <- Vector3.Max (v3Dup (max 0.1f snap), box.Size)
                 result <- ImGuiEditActive false
-                io.SwallowMouse ()
             elif selecting then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
+                io.SwallowMouse ()
                 draggingFound <- true
                 boxCenterSelectedOpt <- Some i
                 result <- ImGuiEditActive true
             elif hovering then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
+                io.SwallowMouse ()
                 hoveringFound <- true
             elif viewing then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CFCF)

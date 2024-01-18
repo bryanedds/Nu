@@ -379,11 +379,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private canEditWithMouse () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureMousePlus) && (world.Halted || editWhileAdvancing)
+        not (io.WantCaptureMouseGlobal) && (world.Halted || editWhileAdvancing)
 
     let private canEditWithKeyboard () =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureKeyboardPlus) && (world.Halted || editWhileAdvancing)
+        not (io.WantCaptureKeyboardGlobal) && (world.Halted || editWhileAdvancing)
 
     let private snapshot () =
         worldsPast <- world :: worldsPast
@@ -1297,7 +1297,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then rerenderLightMaps ()
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
-            elif not (ImGui.GetIO ()).WantCaptureKeyboardPlus || entityHierarchyFocused then
+            elif not (ImGui.GetIO ()).WantCaptureKeyboardGlobal || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
@@ -2254,15 +2254,48 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
 
-                    // guizmo manipulation
+                    // user-defined viewport manipulation
                     let viewport = Constants.Render.Viewport
                     let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceOmnipresent
                     let projection = projectionMatrix.ToArray ()
+                    match selectedEntityOpt with
+                    | Some entity when entity.Exists world && entity.GetIs3d world ->
+                        let viewMatrix =
+                            viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
+                        let operation =
+                            OverlayViewport
+                                { Snapshot = fun world -> snapshot (); world
+                                  ViewportView = viewMatrix
+                                  ViewportProjection = projectionMatrix
+                                  ViewportBounds = box2 v2Zero io.DisplaySize }
+                        world <- World.editEntity operation entity world
+                    | Some _ | None -> ()
+
+                    // light probe bounds manipulation
+                    match selectedEntityOpt with
+                    | Some entity when entity.Exists world && entity.Has<LightProbe3dFacet> world ->
+                        let mutable lightProbeBounds = entity.GetProbeBounds world
+                        let manipulationResult =
+                            ImGuizmo.ManipulateBox3
+                                (World.getEye3dCenter world,
+                                 World.getEye3dRotation world,
+                                 World.getEye3dFrustumView world,
+                                 entity.GetAbsolute world,
+                                 (if not snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst snaps3d else 0.0f),
+                                 &lightProbeBounds)
+                        match manipulationResult with
+                        | ImGuiEditActive started ->
+                            if started then snapshot ()
+                            world <- entity.SetProbeBounds lightProbeBounds world
+                        | ImGuiEditInactive -> ()
+                    | Some _ | None -> ()
+
+                    // guizmo manipulation
                     ImGuizmo.SetOrthographic false
                     ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
                     ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
                     match selectedEntityOpt with
-                    | Some entity when entity.Exists world && entity.GetIs3d world ->
+                    | Some entity when entity.Exists world && entity.GetIs3d world && not io.WantCaptureMouseLocal ->
                         let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
@@ -2371,48 +2404,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // view manipulation
                     // NOTE: this code is the current failed attempt to integrate ImGuizmo view manipulation as reported here - https://github.com/CedricGuillemet/ImGuizmo/issues/304
-                    //let eyeCenter = (World.getEye3dCenter world |> Matrix4x4.CreateTranslation).ToArray ()
-                    //let eyeRotation = (World.getEye3dRotation world |> Matrix4x4.CreateFromQuaternion).ToArray ()
-                    //let eyeScale = m4Identity.ToArray ()
-                    //let view = m4Identity.ToArray ()
-                    //ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
-                    //ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, uint 0x10101010)
-                    //ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
-                    //eye3dCenter <- (eyeCenter |> Matrix4x4.CreateFromArray).Translation
-                    //eye3dRotation <- (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix)
-
-                    // light probe bounds manipulation
-                    match selectedEntityOpt with
-                    | Some entity when entity.Exists world && entity.Has<LightProbe3dFacet> world ->
-                        let mutable lightProbeBounds = entity.GetProbeBounds world
-                        let manipulationResult =
-                            ImGuizmo.ManipulateBox3
-                                (World.getEye3dCenter world,
-                                 World.getEye3dRotation world,
-                                 World.getEye3dFrustumView world,
-                                 entity.GetAbsolute world,
-                                 (if not snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst snaps3d else 0.0f),
-                                 &lightProbeBounds)
-                        match manipulationResult with
-                        | ImGuiEditActive started ->
-                            if started then snapshot ()
-                            world <- entity.SetProbeBounds lightProbeBounds world
-                        | ImGuiEditInactive -> ()
-                    | Some _ | None -> ()
-
-                    // user-defined viewport manipulation
-                    match selectedEntityOpt with
-                    | Some entity when entity.Exists world && entity.GetIs3d world ->
-                        let viewMatrix =
-                            viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
-                        let operation =
-                            OverlayViewport
-                                { Snapshot = fun world -> snapshot (); world
-                                  ViewportView = viewMatrix
-                                  ViewportProjection = projectionMatrix
-                                  ViewportBounds = box2 v2Zero io.DisplaySize }
-                        world <- World.editEntity operation entity world
-                    | Some _ | None -> ()
+                    //if not io.WantCaptureMouseMinus then
+                    //    let eyeCenter = (World.getEye3dCenter world |> Matrix4x4.CreateTranslation).ToArray ()
+                    //    let eyeRotation = (World.getEye3dRotation world |> Matrix4x4.CreateFromQuaternion).ToArray ()
+                    //    let eyeScale = m4Identity.ToArray ()
+                    //    let view = m4Identity.ToArray ()
+                    //    ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
+                    //    ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, uint 0x10101010)
+                    //    ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
+                    //    desiredEye3dCenter <- (eyeCenter |> Matrix4x4.CreateFromArray).Translation
+                    //    desiredEye3dRotation <- (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix)
 
                     // fin
                     ImGui.End ()
