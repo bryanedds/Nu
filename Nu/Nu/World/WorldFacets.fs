@@ -2720,9 +2720,9 @@ module TerrainFacetModule =
         member this.GetTerrainMaterial world : TerrainMaterial = this.Get (nameof this.TerrainMaterial) world
         member this.SetTerrainMaterial (value : TerrainMaterial) world = this.Set (nameof this.TerrainMaterial) value world
         member this.TerrainMaterial = lens (nameof this.TerrainMaterial) this this.GetTerrainMaterial this.SetTerrainMaterial
-        member this.GetTintImage world : Image AssetTag = this.Get (nameof this.TintImage) world
-        member this.SetTintImage (value : Image AssetTag) world = this.Set (nameof this.TintImage) value world
-        member this.TintImage = lens (nameof this.TintImage) this this.GetTintImage this.SetTintImage
+        member this.GetTintImageOpt world : Image AssetTag option = this.Get (nameof this.TintImageOpt) world
+        member this.SetTintImageOpt (value : Image AssetTag option) world = this.Set (nameof this.TintImageOpt) value world
+        member this.TintImageOpt = lens (nameof this.TintImageOpt) this this.GetTintImageOpt this.SetTintImageOpt
         member this.GetNormalImageOpt world : Image AssetTag option = this.Get (nameof this.NormalImageOpt) world
         member this.SetNormalImageOpt (value : Image AssetTag option) world = this.Set (nameof this.NormalImageOpt) value world
         member this.NormalImageOpt = lens (nameof this.NormalImageOpt) this this.GetNormalImageOpt this.SetNormalImageOpt
@@ -2782,7 +2782,7 @@ module TerrainFacetModule =
                           RedsMap
                             [|Assets.Default.TerrainLayerBlend
                               Assets.Default.TerrainLayer2Blend|]})
-             define Entity.TintImage Assets.Default.TerrainTint
+             define Entity.TintImageOpt None
              define Entity.NormalImageOpt None
              define Entity.Tiles (v2 256.0f 256.0f)
              define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
@@ -2843,7 +2843,7 @@ module TerrainFacetModule =
                   InsetOpt = entity.GetInsetOpt world
                   MaterialProperties = entity.GetTerrainMaterialProperties world
                   Material = entity.GetTerrainMaterial world
-                  TintImage = entity.GetTintImage world
+                  TintImageOpt = entity.GetTintImageOpt world
                   NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world
                   HeightMap = entity.GetHeightMap world

@@ -57,7 +57,6 @@ module Assets =
         let [<Uniform>] TerrainLayer2Normal = asset<Image> PackageName Assets.Default.TerrainLayer2NormalName
         let [<Uniform>] TerrainLayer2Height = asset<Image> PackageName Assets.Default.TerrainLayer2HeightName
         let [<Uniform>] TerrainLayer2Blend = asset<Image> PackageName Assets.Default.TerrainLayer2BlendName
-        let [<Uniform>] TerrainTint = asset<Image> PackageName Assets.Default.TerrainTintName
         let [<Uniform>] SkyBoxMap = asset<CubeMap> PackageName Assets.Default.SkyBoxMapName
         let [<Uniform>] StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
         let [<Uniform>] HighlightModel = asset<StaticModel> PackageName Assets.Default.HighlightModelName
