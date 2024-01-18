@@ -9,7 +9,7 @@ open Prime
 type EmitterDescriptor = interface end
 
 /// IO artifacts passively produced and consumed by Nu.
-/// TODO: rename this directly to `Artifact` along with cases as needed?
+/// TODO: rename this to `Artifact` (or perhaps `Token`) along relevant cases as needed?
 type [<ReferenceEquality>] View =
     | SpriteView of single * single * AssetTag * SpriteValue
     | TextView of single * single * AssetTag * TextValue
