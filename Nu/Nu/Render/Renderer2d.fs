@@ -756,13 +756,13 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member make window =
 
         // create one-off sprite and text resources
-        let spriteShader = OpenGL.Sprite.CreateSpriteShader ()
+        let spriteShader = OpenGL.Sprite.CreateSpriteShader Constants.Paths.SpriteShaderFilePath
         let spriteQuad = OpenGL.Sprite.CreateSpriteQuad false
         let textQuad = OpenGL.Sprite.CreateSpriteQuad true
         OpenGL.Hl.Assert ()
 
         // create sprite batch env
-        let spriteBatchEnv = OpenGL.SpriteBatch.CreateSpriteBatchEnv ()
+        let spriteBatchEnv = OpenGL.SpriteBatch.CreateSpriteBatchEnv Constants.Paths.SpriteBatchShaderFilePath
         OpenGL.Hl.Assert ()
 
         // make renderer

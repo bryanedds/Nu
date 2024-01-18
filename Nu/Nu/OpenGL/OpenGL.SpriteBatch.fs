@@ -51,83 +51,15 @@ module SpriteBatch =
               Colors : single array
               Vao : uint
               mutable State : SpriteBatchState }
-
-    /// Create a batched sprite shader.
-    let private CreateSpriteBatchShader () =
-
-        // vertex shader code
-        // TODO: let's put this code into a .glsl file and load it from there.
-        let samplerVertexShaderStr =
-            [Constants.OpenGL.GlslVersionPragma
-             ""
-             "const int VERTS = 6;"
-             ""
-             "const vec4 FILTERS[VERTS] ="
-             "    vec4[VERTS]("
-             "        vec4(1.0, 1.0, 0.0, 0.0),"
-             "        vec4(1.0, 1.0, 1.0, 0.0),"
-             "        vec4(1.0, 1.0, 1.0, 1.0),"
-             "        vec4(1.0, 1.0, 1.0, 1.0),"
-             "        vec4(1.0, 1.0, 0.0, 1.0),"
-             "        vec4(1.0, 1.0, 0.0, 0.0));"
-             ""
-             "uniform vec4 perimeters[" + string Constants.Render.SpriteBatchSize + "];"
-             "uniform vec2 pivots[" + string Constants.Render.SpriteBatchSize + "];"
-             "uniform float rotations[" + string Constants.Render.SpriteBatchSize + "];"
-             "uniform vec4 texCoordses[" + string Constants.Render.SpriteBatchSize + "];"
-             "uniform vec4 colors[" + string Constants.Render.SpriteBatchSize + "];"
-             "uniform mat4 viewProjection;"
-             "out vec2 texCoords;"
-             "out vec4 color;"
-             ""
-             "vec2 rotate(vec2 v, float a)"
-             "{"
-             "    float s = sin(a);"
-             "    float c = cos(a);"
-             "    mat2 m = mat2(c, -s, s, c);"
-             "    return m * v;"
-             "}"
-             ""
-             "void main()"
-             "{"
-             "    // compute ids"
-             "    int spriteId = gl_VertexID / VERTS;"
-             "    int vertexId = gl_VertexID % VERTS;"
-             ""
-             "    // compute position"
-             "    vec4 filt = FILTERS[vertexId];"
-             "    vec4 perimeter = perimeters[spriteId] * filt;"
-             "    vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);"
-             "    vec2 pivot = pivots[spriteId];"
-             "    vec2 positionRotated = rotate(position + pivot, rotations[spriteId]) - pivot;"
-             "    gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);"
-             ""
-             "    // compute tex coords"
-             "    vec4 texCoords4 = texCoordses[spriteId] * filt;"
-             "    texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);"
-             ""
-             "    // compute color"
-             "    color = colors[spriteId];"
-             "}"] |> String.join "\n"
-
-        // fragment shader code
-        let samplerFragmentShaderStr =
-            [Constants.OpenGL.GlslVersionPragma
-             "#extension GL_ARB_bindless_texture : require"
-             "layout (bindless_sampler) uniform sampler2D tex;"
-             "in vec2 texCoords;"
-             "in vec4 color;"
-             "out vec4 frag;"
-             "void main()"
-             "{"
-             "    frag = color * texture(tex, texCoords);"
-             "}"] |> String.join "\n"
+              
+    /// Create a sprite batch shader.
+    let CreateSpriteBatchShader (shaderFilePath : string) =
 
         // create shader
-        let shader = Shader.CreateShaderFromStrs (samplerVertexShaderStr, samplerFragmentShaderStr)
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
         Hl.Assert ()
 
-        // grab uniform locations
+        // retrieve uniforms
         let perimetersUniform = Gl.GetUniformLocation (shader, "perimeters")
         let pivotsUniform = Gl.GetUniformLocation (shader, "pivots")
         let rotationsUniform = Gl.GetUniformLocation (shader, "rotations")
@@ -137,7 +69,7 @@ module SpriteBatch =
         let texUniform = Gl.GetUniformLocation (shader, "tex")
         Hl.Assert ()
 
-        // fin
+        // make sprite batch shader tuple
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader)
 
     let private BeginSpriteBatch state env =
@@ -264,14 +196,14 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv () =
+    let CreateSpriteBatchEnv shaderFilePath =
 
         // create vao
         let vao = Gl.GenVertexArray ()
         Hl.Assert ()
 
         // create shader
-        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader ()
+        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader shaderFilePath
         Hl.Assert ()
 
         // create env

@@ -117,7 +117,7 @@ module Render =
     let [<Uniform>] ViewportClearColor = Color.White // NOTE: do not change this color as the deferred lighting shader checks if normal color is equal to [1;1;1] to discard fragment.
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Literal>] TextureAnisotropyMax = 8.0f
-    let [<Literal>] SpriteBatchSize = 192
+    let [<Literal>] SpriteBatchSize = 192 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
     let [<Literal>] SpriteBorderTexelScalar = 0.005f
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
@@ -240,6 +240,8 @@ module Ecs =
 [<RequireQualifiedAccess>]
 module Paths =
 
+    let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite.glsl"
+    let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch.glsl"
     let [<Literal>] SkyBoxShaderFilePath = "Assets/Default/SkyBox.glsl"
     let [<Literal>] IrradianceShaderFilePath = "Assets/Default/Irradiance.glsl"
     let [<Literal>] EnvironmentFilterShaderFilePath = "Assets/Default/EnvironmentFilter.glsl"
