@@ -876,17 +876,12 @@ module Matrix4x4 =
 
         /// Convert a Matrix4x4 to an array.
         member this.ToArray () =
-            [|this.M11; this.M12; this.M13; this.M14
-              this.M21; this.M22; this.M23; this.M24
-              this.M31; this.M32; this.M33; this.M34
-              this.M41; this.M42; this.M43; this.M44|]
-
-        /// Convert a Matrix4x4 to an array.
-        member this.ToArray (value : Matrix4x4 byref) =
-            value.M11 <- this.M11; value.M12 <- this.M12; value.M13 <- this.M13; value.M14 <- this.M14
-            value.M21 <- this.M21; value.M22 <- this.M22; value.M23 <- this.M23; value.M24 <- this.M24
-            value.M31 <- this.M31; value.M32 <- this.M32; value.M33 <- this.M33; value.M34 <- this.M34
-            value.M41 <- this.M41; value.M42 <- this.M42; value.M43 <- this.M43; value.M44 <- this.M44
+            let value = Array.zeroCreate 16
+            value.[0] <- this.M11; value.[1] <- this.M12; value.[2] <- this.M13; value.[3] <- this.M14
+            value.[4] <- this.M21; value.[5] <- this.M22; value.[6] <- this.M23; value.[7] <- this.M24
+            value.[8] <- this.M31; value.[9] <- this.M32; value.[10] <- this.M33; value.[11] <- this.M34
+            value.[12] <- this.M41; value.[13] <- this.M42; value.[14] <- this.M43; value.[15] <- this.M44
+            value
 
         /// Convert a Matrix4x4 to an array.
         member this.ToArray (value : single array, offset) =
