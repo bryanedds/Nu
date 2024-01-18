@@ -322,7 +322,7 @@ module AssimpExtensions =
             (time : single,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
-             boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would otherwise be redundant.
+             boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
              node : Assimp.Node,
