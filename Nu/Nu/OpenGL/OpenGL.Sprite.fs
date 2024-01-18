@@ -10,60 +10,20 @@ open Nu
 [<RequireQualifiedAccess>]
 module Sprite =
 
-    /// Create a sprite shader with attributes:
-    ///     0: vec2 position
-    /// and uniforms:
-    ///     a: mat4 modelViewProjection
-    ///     b: vec2 texCoords4
-    ///     c: vec4 color
-    ///     d: sampler2D tex
-    let CreateSpriteShader () =
-
-        // vertex shader code
-        // TODO: let's put this code into a .glsl file and load it from there.
-        let vertexShaderStr =
-            [Constants.OpenGL.GlslVersionPragma
-             ""
-             "const int VERTS = 4;"
-             ""
-             "const vec4 FILTERS[VERTS] ="
-             "    vec4[VERTS]("
-             "        vec4(1.0, 1.0, 0.0, 0.0),"
-             "        vec4(1.0, 1.0, 1.0, 0.0),"
-             "        vec4(1.0, 1.0, 1.0, 1.0),"
-             "        vec4(1.0, 1.0, 0.0, 1.0));"
-             ""
-             "in vec2 position;"
-             "uniform mat4 modelViewProjection;"
-             "uniform vec4 texCoords4;"
-             "out vec2 texCoords;"
-             "void main()"
-             "{"
-             "    int vertexId = gl_VertexID % VERTS;"
-             "    vec4 filt = FILTERS[vertexId];"
-             "    gl_Position = modelViewProjection * vec4(position.x, position.y, 0, 1);"
-             "    texCoords = vec2(texCoords4.x * filt.x + texCoords4.z * filt.z, texCoords4.y * filt.y + texCoords4.w * filt.w);"
-             "}"] |> String.join "\n"
-
-        // fragment shader code
-        let fragmentShaderStr =
-            [Constants.OpenGL.GlslVersionPragma
-             "#extension GL_ARB_bindless_texture : require"
-             "layout (bindless_sampler) uniform sampler2D tex;"
-             "uniform vec4 color;"
-             "in vec2 texCoords;"
-             "out vec4 frag;"
-             "void main()"
-             "{"
-             "    frag = color * texture(tex, texCoords);"
-             "}"] |> String.join "\n"
+    /// Create a sprite shader.
+    let CreateSpriteShader (shaderFilePath : string) =
 
         // create shader
-        let shader = Shader.CreateShaderFromStrs (vertexShaderStr, fragmentShaderStr)
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
         let modelViewProjectionUniform = Gl.GetUniformLocation (shader, "modelViewProjection")
         let texCoords4Uniform = Gl.GetUniformLocation (shader, "texCoords4")
         let colorUniform = Gl.GetUniformLocation (shader, "color")
         let texUniform = Gl.GetUniformLocation (shader, "tex")
+
+        // make sprite shader tuple
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
 
     /// Create a sprite quad for rendering to a shader matching the one created with Hl.CreateSpriteShader.
