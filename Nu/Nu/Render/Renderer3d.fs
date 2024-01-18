@@ -186,7 +186,7 @@ type BillboardParticlesDescriptor =
 type TerrainGeometryDescriptor =
     { Bounds : Box3
       Material : TerrainMaterial
-      TintImage : Image AssetTag
+      TintImageOpt : Image AssetTag option
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
@@ -198,7 +198,7 @@ type TerrainDescriptor =
       InsetOpt : Box2 option
       MaterialProperties : TerrainMaterialProperties
       Material : TerrainMaterial
-      TintImage : Image AssetTag
+      TintImageOpt : Image AssetTag option
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
       HeightMap : HeightMap
@@ -207,7 +207,7 @@ type TerrainDescriptor =
     member this.TerrainGeometryDescriptor =
         { Bounds = this.Bounds
           Material = this.Material
-          TintImage = this.TintImage
+          TintImageOpt = this.TintImageOpt
           NormalImageOpt = this.NormalImageOpt
           Tiles = this.Tiles
           HeightMap = this.HeightMap
@@ -1138,16 +1138,19 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // compute tint
             let tintOpt =
-                match GlRenderer3d.tryGetTextureData geometryDescriptor.TintImage renderer with
-                | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                    if not blockCompressed then
-                        let scalar = 1.0f / single Byte.MaxValue
-                        bytes |>
-                        Array.map (fun b -> single b * scalar) |>
-                        Array.chunkBySize 4 |>
-                        Array.map (fun b -> v3 b.[2] b.[1] b.[0]) |>
-                        Some
-                    else Log.info "Block-compressed images not supported for terrain tint images."; None
+                match geometryDescriptor.TintImageOpt with
+                | Some tintImage ->
+                    match GlRenderer3d.tryGetTextureData tintImage renderer with
+                    | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
+                        if not blockCompressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            bytes |>
+                            Array.map (fun b -> single b * scalar) |>
+                            Array.chunkBySize 4 |>
+                            Array.map (fun b -> v3 b.[2] b.[1] b.[0]) |>
+                            Some
+                        else Log.info "Block-compressed images not supported for terrain tint images."; None
+                    | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
                 | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
 
             // compute blendses, logging if more than the safe number of terrain layers is utilized
