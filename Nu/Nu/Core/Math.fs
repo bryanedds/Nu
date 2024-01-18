@@ -877,17 +877,17 @@ module Matrix4x4 =
         /// Convert a Matrix4x4 to an array.
         member this.ToArray () =
             let value = Array.zeroCreate 16
-            value.[0] <- this.M11; value.[1] <- this.M12; value.[2] <- this.M13; value.[3] <- this.M14
-            value.[4] <- this.M21; value.[5] <- this.M22; value.[6] <- this.M23; value.[7] <- this.M24
-            value.[8] <- this.M31; value.[9] <- this.M32; value.[10] <- this.M33; value.[11] <- this.M34
+            value.[00] <- this.M11; value.[01] <- this.M12; value.[02] <- this.M13; value.[03] <- this.M14
+            value.[04] <- this.M21; value.[05] <- this.M22; value.[06] <- this.M23; value.[07] <- this.M24
+            value.[08] <- this.M31; value.[09] <- this.M32; value.[10] <- this.M33; value.[11] <- this.M34
             value.[12] <- this.M41; value.[13] <- this.M42; value.[14] <- this.M43; value.[15] <- this.M44
             value
 
         /// Convert a Matrix4x4 to an array.
         member this.ToArray (value : single array, offset) =
-            value.[offset] <- this.M11; value.[offset+1] <- this.M12; value.[offset+2] <- this.M13; value.[offset+3] <- this.M14
-            value.[offset+4] <- this.M21; value.[offset+5] <- this.M22; value.[offset+6] <- this.M23; value.[offset+7] <- this.M24
-            value.[offset+8] <- this.M31; value.[offset+9] <- this.M32; value.[offset+10] <- this.M33; value.[offset+11] <- this.M34
+            value.[offset+00] <- this.M11; value.[offset+01] <- this.M12; value.[offset+02] <- this.M13; value.[offset+03] <- this.M14
+            value.[offset+04] <- this.M21; value.[offset+05] <- this.M22; value.[offset+06] <- this.M23; value.[offset+07] <- this.M24
+            value.[offset+08] <- this.M31; value.[offset+09] <- this.M32; value.[offset+10] <- this.M33; value.[offset+11] <- this.M34
             value.[offset+12] <- this.M41; value.[offset+13] <- this.M42; value.[offset+14] <- this.M43; value.[offset+15] <- this.M44
 
     let inline m4 (r0 : Vector4) (r1 : Vector4) (r2 : Vector4) (r3 : Vector4) =
