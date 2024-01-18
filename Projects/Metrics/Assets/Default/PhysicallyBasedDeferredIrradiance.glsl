@@ -17,7 +17,7 @@ void main()
 #extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;
-const int LIGHT_MAPS_MAX = 27;
+const int LIGHT_MAPS_MAX = 32;
 
 layout (bindless_sampler) uniform sampler2D positionTexture;
 layout (bindless_sampler) uniform sampler2D normalPlusTexture;
