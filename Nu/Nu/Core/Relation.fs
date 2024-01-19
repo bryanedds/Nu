@@ -19,8 +19,8 @@ open System.ComponentModel
 open System.Reflection
 open Prime
 
-/// Represents a relational token.
-type Token =
+/// An aspect of a relation.
+type Link =
     | Current
     | Parent
     | Name of string
@@ -74,18 +74,18 @@ module Relation =
 
     /// A relation that can be resolved to an address via contextual resolution.
     type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
-        { Tokens : Token array }
+        { Links : Link array }
 
         /// Make a relation from an array of names.
         static member makeFromArray<'a> (names : string array) : 'a Relation =
-            let tokens =
+            let links =
                 Array.map (fun name ->
                     match name with
                     | Constants.Relation.CurrentStr -> Current
                     | Constants.Relation.ParentStr -> Parent
                     | _ -> Name name)
                     names
-            { Tokens = tokens }
+            { Links = links }
 
         /// Make a relation from a list of names.
         static member makeFromList<'a> (names : string list) : 'a Relation =
@@ -104,12 +104,12 @@ module Relation =
 
         /// Hash a Relation.
         static member hash (relation : 'a Relation) =
-            Array.hash relation.Tokens
+            Array.hash relation.Links
 
         /// Equate Relations.
         static member equals (relation : 'a Relation) (relation2 : 'a Relation) =
             refEq relation relation2 || // OPTIMIZATION: first check ref equality
-            seqEq relation.Tokens relation2.Tokens
+            seqEq relation.Links relation2.Links
 
         /// Resolve a relation from an address.
         static member resolve<'a, 'b> (address : 'a Address) (relation : 'b Relation) : 'b Address =
@@ -146,11 +146,11 @@ module Relation =
             let names3 = Array.trySkip namesMatching names2
             match names3 with
             | [||] ->
-                { Tokens = [|Current|] }
+                { Links = [|Current|] }
             | _ ->
                 let parents = Array.init (names.Length - namesMatching) (fun _ -> Parent)
-                let tokens = Array.map Name names3
-                { Tokens = Array.append parents tokens }
+                let links = Array.map Name names3
+                { Links = Array.append parents links }
 
         interface 'a Relation IEquatable with
             member this.Equals that =
@@ -166,24 +166,24 @@ module Relation =
 
         override this.ToString () =
             let names =
-                Array.map (fun token ->
-                    match token with
+                Array.map (fun link ->
+                    match link with
                     | Current -> Constants.Relation.CurrentStr
                     | Parent -> Constants.Relation.ParentStr
                     | Name name -> name)
-                    this.Tokens
+                    this.Links
             String.concat Constants.Address.SeparatorStr names
 
     [<RequireQualifiedAccess>]
     module Relation =
 
         /// Make a relation from a list of option names.
-        let makeFromArray<'a> tokens : 'a Relation =
-            { Tokens = tokens }
+        let makeFromArray<'a> links : 'a Relation =
+            { Links = links }
 
         /// Make a relation from a list of option names.
-        let makeFromList<'a> tokens : 'a Relation =
-            { Tokens = List.toArray tokens }
+        let makeFromList<'a> links : 'a Relation =
+            { Links = List.toArray links }
 
         /// Make a relation from a '/' delimited string.
         let makeFromString<'a> relationStr =
@@ -201,13 +201,13 @@ module Relation =
         let equals (left : 'a Relation) (right : 'a Relation) =
             Relation<'a>.equals left right
 
-        /// Get the tokens of a relation.
-        let getTokens relation =
-            relation.Tokens
+        /// Get the links of a relation.
+        let getLinks relation =
+            relation.Links
 
         /// Change the type of an address.
         let changeType<'a, 'b> (relation : 'a Relation) : 'a Relation =
-            { Tokens = relation.Tokens }
+            { Links = relation.Links }
 
 /// A relation that can be resolved to an address via projection.
 type 'a Relation = 'a Relation.Relation

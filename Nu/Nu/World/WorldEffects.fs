@@ -48,7 +48,7 @@ module Effect =
               HistoryMax_ : int
               History_ : Effects.Slice Deque
               Definitions_ : Definitions
-              Tags_ : Map<string, Slice>
+              TagTokens_ : Map<string, Slice>
               Descriptor_ : EffectDescriptor }
 
         member this.StartTime = this.StartTime_
@@ -58,7 +58,7 @@ module Effect =
         member this.HistoryMax = this.HistoryMax_
         member this.History = this.History_
         member this.Definitions = this.Definitions_
-        member this.Tags = this.Tags_
+        member this.TagTokens = this.TagTokens_
         member this.Descriptor = this.Descriptor_
 
     let rec private processParticleSystemOutput output effect world =
@@ -83,8 +83,8 @@ module Effect =
             else ParticleSystem.getLiveness time particleSystem
         | None -> Live
 
-    /// Run an effect, returning any side-effects as a view.
-    let run effect (world : World) : Liveness * Effect * View =
+    /// Run an effect, returning any resulting requests as a token.
+    let run effect (world : World) : Liveness * Effect * Token =
 
         // run if live
         match liveness effect world with
@@ -119,21 +119,21 @@ module Effect =
             let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.Presence effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
-            let (view, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
+            let (token, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
 
-            // convert view to array for storing tags and spawning emitters
-            let views = View.toSeq view
+            // convert token to sequence for storing tag tokens and spawning emitters
+            let tokens = Token.toSeq token
 
-            // extract tags
-            let tags =
-                views |>
-                Seq.choose (function Nu.Tag (name, value) -> Some (name, value :?> Slice) | _ -> None) |>
+            // extract tag tokens
+            let tagTokens =
+                tokens |>
+                Seq.choose (function TagToken (name, value) -> Some (name, value :?> Slice) | _ -> None) |>
                 Map.ofSeq
 
-            // spawn emitters
+            // request emitters via tokens
             let particleSystem =
-                views |>
-                Seq.choose (function SpawnEmitter (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
+                tokens |>
+                Seq.choose (function EmitterToken (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
                 Seq.choose (fun (name : string, descriptor : EmitterDescriptor) ->
                     match descriptor with
                     | :? BasicSpriteEmitterDescriptor as descriptor ->
@@ -170,8 +170,8 @@ module Effect =
             if  effect.History_.Count > effect.HistoryMax_ then
                 effect.History_.RemoveFromBack () |> ignore
 
-            // update tags
-            let effect = { effect with Tags_ = tags }
+            // update tag tokens
+            let effect = { effect with TagTokens_ = tagTokens }
 
             // run particles
             let (particleSystem, output) = ParticleSystem.run delta time particleSystem
@@ -179,10 +179,10 @@ module Effect =
             let effect = processParticleSystemOutput output effect world
 
             // fin
-            (Live, effect, view)
+            (Live, effect, token)
 
         // dead
-        | Dead -> (Dead, effect, View.empty)
+        | Dead -> (Dead, effect, Token.empty)
 
     /// Make an effect.
     let makePlus startTime perimeterCentered offset transform renderType particleSystem historyMax history definitions descriptor =
@@ -195,7 +195,7 @@ module Effect =
           HistoryMax_ = historyMax
           History_ = history
           Definitions_ = definitions
-          Tags_ = Map.empty
+          TagTokens_ = Map.empty
           Descriptor_ = descriptor }
 
     /// Make an effect.

@@ -10,7 +10,7 @@ open BattleInteractionSystem
 
 type BattleMessage =
     | Update
-    | UpdateRideTags of Map<string, Effects.Slice>
+    | UpdateRideTagTokens of Map<string, Effects.Slice>
     | InteractDialog
     | RegularItemSelect of CharacterIndex * string
     | RegularItemCancel of CharacterIndex
