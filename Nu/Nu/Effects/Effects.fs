@@ -58,8 +58,6 @@ type Slice =
       IgnoreLightMaps : bool
       Flip : Flip
       Brightness : single
-      AttenuationLinear : single
-      AttenuationQuadratic : single
       LightCutoff : single
       Volume : single
       Enabled : bool
@@ -176,8 +174,6 @@ and Aspect =
     | IgnoreLightMaps of bool
     | Flip of Flip
     | Brightness of single
-    | AttenuationLinear of single
-    | AttenuationQuadratic of single
     | LightCutoff of single
     | Volume of single
     | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
@@ -469,8 +465,6 @@ module EffectSystem =
         | IgnoreLightMaps ignoreLightMaps -> { slice with IgnoreLightMaps = ignoreLightMaps }
         | Flip flip -> { slice with Flip = flip }
         | Brightness brightness -> { slice with Brightness = brightness }
-        | AttenuationLinear attenuationLinear -> { slice with AttenuationLinear = attenuationLinear }
-        | AttenuationQuadratic attenuationQuadratic -> { slice with AttenuationQuadratic = attenuationQuadratic }
         | LightCutoff lightCutoff -> { slice with LightCutoff = lightCutoff }
         | Volume volume -> { slice with Volume = volume }
         | Enabled enabled -> { slice with Enabled = enabled }
@@ -728,8 +722,8 @@ module EffectSystem =
                           Presence = effectSystem.EffectPresence
                           Color = slice.Color
                           Brightness = slice.Brightness
-                          AttenuationLinear = slice.AttenuationLinear
-                          AttenuationQuadratic = slice.AttenuationQuadratic
+                          AttenuationLinear = 1.0f / (slice.Brightness * slice.LightCutoff)
+                          AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
                           DesireShadows = false }
