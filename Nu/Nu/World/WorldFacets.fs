@@ -1139,12 +1139,12 @@ module EffectFacetModule =
         member this.EffectHistoryMax = lens (nameof this.EffectHistoryMax) this this.GetEffectHistoryMax this.SetEffectHistoryMax
         member this.GetEffectHistory world : Effects.Slice Deque = this.Get (nameof this.EffectHistory) world
         member this.EffectHistory = lensReadOnly (nameof this.EffectHistory) this this.GetEffectHistory
-        member this.GetEffectTags world : Map<string, Effects.Slice> = this.Get (nameof this.EffectTags) world
-        member this.SetEffectTags (value : Map<string, Effects.Slice>) world = this.Set (nameof this.EffectTags) value world
-        member this.EffectTags = lens (nameof this.EffectTags) this this.GetEffectTags this.SetEffectTags
-        member this.GetEffectView world : View = this.Get (nameof this.EffectView) world
-        member this.SetEffectView (value : View) world = this.Set (nameof this.EffectView) value world
-        member this.EffectView = lens (nameof this.EffectView) this this.GetEffectView this.SetEffectView
+        member this.GetEffectTagTokens world : Map<string, Effects.Slice> = this.Get (nameof this.EffectTagTokens) world
+        member this.SetEffectTagTokens (value : Map<string, Effects.Slice>) world = this.Set (nameof this.EffectTagTokens) value world
+        member this.EffectTagTokens = lens (nameof this.EffectTagTokens) this this.GetEffectTagTokens this.SetEffectTagTokens
+        member this.GetEffectToken world : Token = this.Get (nameof this.EffectToken) world
+        member this.SetEffectToken (value : Token) world = this.Set (nameof this.EffectToken) value world
+        member this.EffectToken = lens (nameof this.EffectToken) this this.GetEffectToken this.SetEffectToken
 
     /// Augments an entity with an effect.
     type EffectFacet () =
@@ -1176,10 +1176,10 @@ module EffectFacetModule =
                     (entity.GetEffectDescriptor world)
 
             // run effect, optionally destroying upon exhaustion
-            let (liveness, effect, view) = Effect.run effect world
+            let (liveness, effect, token) = Effect.run effect world
             let world = entity.SetParticleSystem effect.ParticleSystem world
-            let world = entity.SetEffectTags effect.Tags world
-            let world = entity.SetEffectView view world
+            let world = entity.SetEffectTagTokens effect.TagTokens world
+            let world = entity.SetEffectToken token world
             if liveness = Dead && entity.GetSelfDestruct world
             then World.destroyEntity entity world
             else world
@@ -1241,8 +1241,8 @@ module EffectFacetModule =
              define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
-             nonPersistent Entity.EffectTags Map.empty
-             nonPersistent Entity.EffectView View.empty]
+             nonPersistent Entity.EffectTagTokens Map.empty
+             nonPersistent Entity.EffectToken Token.empty]
 
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue world.GameTime (entity.GetEffectStartTimeOpt world)
@@ -1273,10 +1273,10 @@ module EffectFacetModule =
 #endif
         override this.Render (renderPass, entity, world) =
 
-            // render effect view
+            // render effect token
             let time = world.GameTime
-            let view = entity.GetEffectView world
-            World.renderView renderPass view world
+            let token = entity.GetEffectToken world
+            World.renderToken renderPass token world
 
             // render particles
             let particleSystem = entity.GetParticleSystem world

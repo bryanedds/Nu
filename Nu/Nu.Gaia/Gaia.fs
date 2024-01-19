@@ -1323,8 +1323,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match selectedEntityOpt with
         | Some selectedEntity when showSelectedEntity ->
             let relation = relate entity selectedEntity
-            if  Array.notExists (fun t -> t = Token.Parent || t = Token.Current) relation.Tokens &&
-                relation.Tokens.Length > 0 then
+            if  Array.notExists (fun t -> t = Parent || t = Current) relation.Links &&
+                relation.Links.Length > 0 then
                 ImGui.SetNextItemOpen true
         | Some _ | None -> ()
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)

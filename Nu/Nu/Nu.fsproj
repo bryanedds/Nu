@@ -38,7 +38,6 @@
 		<Compile Include="Collections\KeyedArray.fs" />
 		<Compile Include="Collections\ForgetfulDictionary.fs" />
 		<Compile Include="Collections\OrderedDictionary.fs" />
-		<Compile Include="JobSystem\JobSystem.fs" />
 		<Compile Include="Ecs\EcsPrelude.fs" />
 		<Compile Include="Ecs\Ecs.fs" />
 		<Compile Include="Transform\Presence.fs" />
@@ -46,6 +45,9 @@
 		<Compile Include="Transform\Quadtree.fs" />
 		<Compile Include="Transform\Octree.fs" />
 		<Compile Include="Transform\Transform.fs" />
+		<Compile Include="Behaviors\Behavior.fs" />
+		<Compile Include="Behaviors\Modifier.fs" />
+		<Compile Include="JobSystem\JobSystem.fs" />
 		<Compile Include="Assimp\Assimp.fs" />
 		<Compile Include="OpenGL\OpenGL.Hl.fs" />
 		<Compile Include="OpenGL\OpenGL.Shader.fs" />
@@ -88,9 +90,7 @@
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
 		<Compile Include="Metadata\Metadata.fs" />
-		<Compile Include="View\View.fs" />
-		<Compile Include="Behaviors\Behavior.fs" />
-		<Compile Include="Behaviors\Modifier.fs" />
+		<Compile Include="Token\Token.fs" />
 		<Compile Include="Particles\Particles.fs" />
 		<Compile Include="Effects\Effects.fs" />
 		<Compile Include="World\WorldPrelude.fs" />
@@ -115,7 +115,7 @@
 		<Compile Include="World\WorldAudio.fs" />
 		<Compile Include="World\WorldImGui.fs" />
 		<Compile Include="World\WorldTmxMap.fs" />
-		<Compile Include="World\WorldView.fs" />
+		<Compile Include="World\WorldToken.fs" />
 		<Compile Include="World\WorldEffects.fs" />
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />

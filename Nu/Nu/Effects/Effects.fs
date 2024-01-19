@@ -241,7 +241,7 @@ type Definitions =
      "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights IgnoreLightMapses Volumes Aspects " +
      "Expand " +
      "StaticSprite AnimatedSprite TextSprite Light3d Billboard StaticModel Mount Repeat Emit Delay Segment Composite Tag Nil " +
-     "View",
+     "Token",
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
@@ -287,11 +287,11 @@ module EffectSystem =
               EffectAbsolute : bool
               EffectPresence : Presence
               EffectRenderType : RenderType
-              EffectViews : View SList
+              EffectTokens : Token SList
               EffectEnv : Definitions }
 
-    let rec private addView view effectSystem =
-        effectSystem.EffectViews.Add view
+    let rec private addToken token effectSystem =
+        effectSystem.EffectTokens.Add token
         effectSystem
 
     let rec private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
@@ -431,12 +431,12 @@ module EffectSystem =
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
                 asset Assets.Default.PackageName Assets.Default.ImageName
 
-    let rec private iterateViews incrementAspects content slice history effectSystem =
+    let rec private iterateTokens incrementAspects content slice history effectSystem =
         let effectSystem = { effectSystem with EffectProgressOffset = 0.0f }
         let slice = evalAspects incrementAspects slice effectSystem
         (slice, evalContent content slice history effectSystem)
 
-    and private cycleViews incrementAspects content slice history effectSystem =
+    and private cycleTokens incrementAspects content slice history effectSystem =
         let slice = evalAspects incrementAspects slice effectSystem
         evalContent content slice history effectSystem
 
@@ -623,7 +623,7 @@ module EffectSystem =
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
 
-        // build sprite views
+        // build sprite tokens
         let effectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
@@ -635,8 +635,8 @@ module EffectSystem =
                       Blend = slice.Blend
                       Emission = slice.Emission
                       Flip = slice.Flip }
-                let spriteView = SpriteView (transform.Elevation, transform.Horizon, image, sprite)
-                addView spriteView effectSystem
+                let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
+                addToken spriteToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -659,7 +659,7 @@ module EffectSystem =
             // eval inset
             let inset = evalInset celSize celCount celRun delay playback effectSystem
 
-            // build animated sprite views
+            // build animated sprite tokens
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
@@ -672,8 +672,8 @@ module EffectSystem =
                           Blend = slice.Blend
                           Emission = slice.Emission
                           Flip = slice.Flip }
-                    let spriteView = SpriteView (transform.Elevation, transform.Horizon, image, sprite)
-                    addView spriteView effectSystem
+                    let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
+                    addToken spriteToken effectSystem
                 else effectSystem
 
             // build implicitly mounted content
@@ -690,7 +690,7 @@ module EffectSystem =
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
 
-        // build text views
+        // build text tokens
         let effectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
@@ -700,8 +700,8 @@ module EffectSystem =
                       Font = AssetTag.specialize<Font> font
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle) }
-                let textView = TextView (transform.Elevation, transform.Horizon, font, text)
-                addView textView effectSystem
+                let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
+                addToken textToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -712,13 +712,13 @@ module EffectSystem =
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
 
-        // build model views
+        // build light tokens
         let effectSystem =
             if slice.Enabled then
                 let rotation = Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X)
                 let direction = rotation.Down
-                let modelView =
-                    Light3dView
+                let lightToken =
+                    Light3dToken
                         { LightId = 0UL
                           Origin = slice.Position
                           Rotation = rotation
@@ -731,7 +731,7 @@ module EffectSystem =
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
                           DesireShadows = false }
-                addView modelView effectSystem
+                addToken lightToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -751,7 +751,7 @@ module EffectSystem =
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
 
-        // build model views
+        // build billboard tokens
         let effectSystem =
             if slice.Enabled then
                 let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
@@ -773,8 +773,8 @@ module EffectSystem =
                       NormalImageOpt = ValueSome (AssetTag.specialize<Image> imageNormal)
                       HeightImageOpt = ValueSome (AssetTag.specialize<Image> imageHeight)
                       TwoSidedOpt = ValueSome twoSided }
-                let modelView =
-                    BillboardView
+                let billboardToken =
+                    BillboardToken
                         { Absolute = effectSystem.EffectAbsolute
                           ModelMatrix = affineMatrix
                           Presence = effectSystem.EffectPresence
@@ -782,7 +782,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           Material = material
                           RenderType = effectSystem.EffectRenderType }
-                addView modelView effectSystem
+                addToken billboardToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -796,7 +796,7 @@ module EffectSystem =
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
 
-        // build model views
+        // build static model tokens
         let effectSystem =
             if slice.Enabled then
                 let staticModel = AssetTag.specialize<StaticModel> staticModel
@@ -810,8 +810,8 @@ module EffectSystem =
                       EmissionOpt = ValueSome slice.Emission.R
                       HeightOpt = ValueSome slice.Height
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps }
-                let modelView =
-                    StaticModelView
+                let staticModelToken =
+                    StaticModelToken
                         { Absolute = effectSystem.EffectAbsolute
                           ModelMatrix = affineMatrix
                           Presence = effectSystem.EffectPresence
@@ -819,7 +819,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           StaticModel = staticModel
                           RenderType = effectSystem.EffectRenderType }
-                addView modelView effectSystem
+                addToken staticModelToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -840,7 +840,7 @@ module EffectSystem =
         | Iterate count ->
             Array.fold
                 (fun (slice, effectSystem) _ ->
-                    let (slice, effectSystem) = iterateViews incrementAspects content slice history effectSystem
+                    let (slice, effectSystem) = iterateTokens incrementAspects content slice history effectSystem
                     (slice, effectSystem))
                 (slice, effectSystem)
                 [|0 .. count - 1|] |>
@@ -851,7 +851,7 @@ module EffectSystem =
             Array.fold
                 (fun effectSystem i ->
                     let effectSystem = { effectSystem with EffectProgressOffset = 1.0f / single count * single i }
-                    cycleViews incrementAspects content slice history effectSystem)
+                    cycleTokens incrementAspects content slice history effectSystem)
                 effectSystem
                 [|0 .. count - 1|]
 
@@ -860,11 +860,11 @@ module EffectSystem =
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
 
-        // build tag view
+        // build tag token
         let effectSystem =
             if slice.Enabled then
-                let tagView = Nu.Tag (name, slice)
-                addView tagView effectSystem
+                let tagToken = Nu.TagToken (name, slice)
+                addToken tagToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -949,9 +949,9 @@ module EffectSystem =
             contents
 
     let private release effectSystem =
-        let views = Views (SArray.ofSeq effectSystem.EffectViews)
-        let effectSystem = { effectSystem with EffectViews = SList.make () }
-        (views, effectSystem)
+        let tokens = Tokens (SArray.ofSeq effectSystem.EffectTokens)
+        let effectSystem = { effectSystem with EffectTokens = SList.make () }
+        (tokens, effectSystem)
 
     /// Evaluates an EffectDescriptor, applying the effect if it is still alive, with the following parameters:
     ///   - descriptor: The EffectDescriptor to be evaluated.
@@ -991,7 +991,7 @@ module EffectSystem =
           EffectAbsolute = absolute
           EffectPresence = presence
           EffectRenderType = renderType
-          EffectViews = SList.make ()
+          EffectTokens = SList.make ()
           EffectEnv = globalEnv }
 
 /// Evaluates effect descriptors.

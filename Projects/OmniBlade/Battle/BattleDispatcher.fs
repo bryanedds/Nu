@@ -39,7 +39,7 @@ module BattleDispatcher =
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateEye
-             Simulants.BattleRide.EffectTags.ChangeEvent =|> fun evt -> UpdateRideTags (evt.Data.Value :?> Map<string, Effects.Slice>)]
+             Simulants.BattleRide.EffectTagTokens.ChangeEvent =|> fun evt -> UpdateRideTagTokens (evt.Data.Value :?> Map<string, Effects.Slice>)]
 
         override this.Message (battle, message, _, _) =
 
@@ -47,13 +47,13 @@ module BattleDispatcher =
             | Update ->
                 Battle.advance battle
 
-            | UpdateRideTags tags ->
-                match Map.tryFind "Tag" tags with
-                | Some tag ->
+            | UpdateRideTagTokens tagTokens ->
+                match Map.tryFind "Tag" tagTokens with
+                | Some tagToken ->
                     match battle.CurrentCommandOpt with
                     | Some command ->
                         let character = command.ActionCommand.SourceIndex
-                        let battle = Battle.updateCharacterBottom (constant tag.Position) character battle
+                        let battle = Battle.updateCharacterBottom (constant tagToken.Position) character battle
                         just battle
                     | None -> just battle
                 | None -> just battle
