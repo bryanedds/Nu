@@ -867,25 +867,47 @@ module EffectSystem =
         evalContent content slice history effectSystem
 
     and private evalEmit shift rate emitterAspects aspects content history effectSystem =
-        Seq.fold (fun effectSystem slice ->
-            let effectTimeOld = effectSystem.EffectTime
-            let effectTime = effectSystem.EffectTime - slice.SliceTime
-            let slice = { slice with Elevation = slice.Elevation + shift }
-            let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
-            let emitCountLastFrame = single (effectSystem.EffectTime - effectTime - slice.SliceDelta) * rate
-            let emitCountThisFrame = single (effectSystem.EffectTime - effectTime) * rate
-            let emitCount = int emitCountThisFrame - int emitCountLastFrame
-            let effectSystem =
-                Array.fold (fun effectSystem _ ->
-                    let slice = evalAspects aspects slice effectSystem
-                    if slice.Enabled
-                    then evalContent content slice history effectSystem
-                    else effectSystem)
-                    { effectSystem with EffectTime = effectTime }
-                    [|0 .. emitCount - 1|]
-            { effectSystem with EffectTime = effectTimeOld })
-            effectSystem
-            history
+        match Constants.GameTime.DesiredFrameRate with
+        | StaticFrameRate _ ->
+            Seq.foldi (fun i effectSystem (slice : Slice) ->
+                let effectTimeOld = effectSystem.EffectTime
+                let effectTime = effectSystem.EffectDelta * UpdateTime (int64 i)
+                let slice = { slice with Elevation = slice.Elevation + shift }
+                let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
+                let emitCountLastFrame = single (effectSystem.EffectTime - effectTime - effectSystem.EffectDelta) * rate
+                let emitCountThisFrame = single (effectSystem.EffectTime - effectTime) * rate
+                let emitCount = int emitCountThisFrame - int emitCountLastFrame
+                let effectSystem =
+                    Array.fold (fun effectSystem _ ->
+                        let slice = evalAspects aspects slice effectSystem
+                        if slice.Enabled
+                        then evalContent content slice history effectSystem
+                        else effectSystem)
+                        { effectSystem with EffectTime = effectTime }
+                        [|0 .. emitCount - 1|]
+                { effectSystem with EffectTime = effectTimeOld })
+                effectSystem
+                history
+        | DynamicFrameRate _ ->
+            Seq.fold (fun effectSystem slice ->
+                let effectTimeOld = effectSystem.EffectTime
+                let effectTime = effectSystem.EffectTime - slice.SliceTime
+                let slice = { slice with Elevation = slice.Elevation + shift }
+                let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
+                let emitCountLastFrame = single (effectSystem.EffectTime - effectTime - slice.SliceDelta) * rate
+                let emitCountThisFrame = single (effectSystem.EffectTime - effectTime) * rate
+                let emitCount = int emitCountThisFrame - int emitCountLastFrame
+                let effectSystem =
+                    Array.fold (fun effectSystem _ ->
+                        let slice = evalAspects aspects slice effectSystem
+                        if slice.Enabled
+                        then evalContent content slice history effectSystem
+                        else effectSystem)
+                        { effectSystem with EffectTime = effectTime }
+                        [|0 .. emitCount - 1|]
+                { effectSystem with EffectTime = effectTimeOld })
+                effectSystem
+                history
 
     and private evalSegment start stop content slice history effectSystem =
         if  effectSystem.EffectTime >= start &&
