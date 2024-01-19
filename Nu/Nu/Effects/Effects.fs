@@ -42,7 +42,9 @@ type TweenApplicator =
 
 /// A snapshot of an active piece of effect content.
 type Slice =
-    { Position : Vector3
+    { SliceTime : GameTime
+      SliceDelta : GameTime
+      Position : Vector3
       Scale : Vector3
       Offset : Vector3
       Size : Vector3
@@ -872,16 +874,16 @@ module EffectSystem =
 
     and private evalEmit shift rate emitterAspects aspects content history effectSystem =
         let effectSystem =
-            Seq.foldi
-                (fun i effectSystem (slice : Slice) ->
+            Seq.fold
+                (fun effectSystem (slice : Slice) ->
                     let effectTimeOld = effectSystem.EffectTime
-                    let timePassed = effectSystem.EffectDelta * GameTime.make (int64 i) (single i)
+                    let effectTime = effectSystem.EffectTime - slice.SliceTime
                     let slice = { slice with Elevation = slice.Elevation + shift }
-                    let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
-                    let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - effectSystem.EffectDelta) * rate
-                    let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
+                    let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
+                    let emitCountLastFrame = single (effectSystem.EffectTime - effectTime - slice.SliceDelta) * rate
+                    let emitCountThisFrame = single (effectSystem.EffectTime - effectTime) * rate
                     let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                    let effectSystem = { effectSystem with EffectTime = timePassed }
+                    let effectSystem = { effectSystem with EffectTime = effectTime }
                     let effectSystem =
                         Array.fold
                             (fun effectSystem _ ->
