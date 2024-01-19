@@ -685,6 +685,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
+          ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single)>
+          ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single) List
           RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -1585,12 +1587,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
 
-    static member private sortSurfaces eyeCenter (surfaces : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList) =
-        surfaces |>
-        Seq.map (fun struct (subsort, sort, model, texCoordsOffset, properties, surface) -> struct (subsort, sort, model, texCoordsOffset, properties, surface, (model.Translation - eyeCenter).MagnitudeSquared)) |>
-        Seq.toArray |> // TODO: P1: use a preallocated array to avoid allocating on the LOH.
-        Array.sortByDescending (fun struct (subsort, sort, _, _, _, _, distanceSquared) -> struct (sort, distanceSquared, subsort)) |>
-        Array.map (fun struct (_, _, model, texCoordsOffset, propertiesOpt, surface, _) -> struct (model, texCoordsOffset, propertiesOpt, surface))
+    static member private sortForwardSurfaces
+        eyeCenter
+        (surfaces : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList)
+        (forwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single)>)
+        (forwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single) List) =
+        for struct (subsort, sort, model, texCoordsOffset, properties, surface) in surfaces do
+            forwardSurfacesSortBuffer.Add struct (subsort, sort, model, texCoordsOffset, properties, surface, (model.Translation - eyeCenter).MagnitudeSquared)
+        forwardSurfacesSortBuffer.Sort forwardSurfacesComparer
+        forwardSurfacesSortBuffer
 
     static member private renderPhysicallyBasedShadowSurfaces
         batchPhase viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
@@ -1937,18 +1942,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         (framebuffer : uint) =
 
         // compute matrix arrays
-        let lightAbsoluteArray = lightViewAbsolute.ToArray ()
-        let lightRelativeArray = lightViewRelative.ToArray ()
+        let lightViewAbsoluteArray = lightViewAbsolute.ToArray ()
+        let lightViewRelativeArray = lightViewRelative.ToArray ()
         let lightProjectionArray = lightProjection.ToArray ()
 
-        // sort absolute forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderForwardStaticAbsolute
-        renderTasks.RenderForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
+        // send absolute forward surfaces directly to sorted buffer since no sorting is needed for shadows
+        for struct (_, _, model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticAbsolute do
+            renderTasks.RenderForwardStaticAbsoluteSorted.Add struct (model, texCoordsOffset, properties, surface)
         renderTasks.RenderForwardStaticAbsolute.Clear ()
 
-        // sort relative forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces lightOrigin renderTasks.RenderForwardStaticRelative
-        renderTasks.RenderForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
+        // send relative forward surfaces directly to sorted buffer since no sorting is needed for shadows
+        for struct (_, _, model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticRelative do
+            renderTasks.RenderForwardStaticRelativeSorted.Add struct (model, texCoordsOffset, properties, surface)
         renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup shadow buffer and viewport
@@ -1969,7 +1974,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | 1 -> SingletonPhase
                     | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    batchPhase lightAbsoluteArray lightProjectionArray [||] entry.Value
+                    batchPhase lightViewAbsoluteArray lightProjectionArray [||] entry.Value
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
                 i <- inc i
@@ -1984,7 +1989,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                batchPhase lightRelativeArray lightProjectionArray [||] entry.Value
+                batchPhase lightViewRelativeArray lightProjectionArray [||] entry.Value
                 entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
             i <- inc i
@@ -1996,7 +2001,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let parameters = entry.Value
                 let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) boneTransforms
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    SingletonPhase lightAbsoluteArray lightProjectionArray bonesArray parameters
+                    SingletonPhase lightViewAbsoluteArray lightProjectionArray bonesArray parameters
                     surface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
@@ -2006,31 +2011,31 @@ type [<ReferenceEquality>] GlRenderer3d =
             let parameters = entry.Value
             let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) boneTransforms
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                SingletonPhase lightRelativeArray lightProjectionArray bonesArray parameters
+                SingletonPhase lightViewRelativeArray lightProjectionArray bonesArray parameters
                 surface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows w/ absolute transforms if in top level render
         if topLevelRender then
             for (descriptor, geometry) in renderTasks.RenderDeferredTerrainsAbsolute do
-                GlRenderer3d.renderPhysicallyBasedTerrain lightAbsoluteArray lightProjectionArray lightOrigin descriptor geometry renderer.PhysicallyBasedShadowTerrainShader renderer
+                GlRenderer3d.renderPhysicallyBasedTerrain lightViewAbsoluteArray lightProjectionArray lightOrigin descriptor geometry renderer.PhysicallyBasedShadowTerrainShader renderer
 
         // attempt to deferred render terrains w/ relative transforms
         for (descriptor, geometry) in renderTasks.RenderDeferredTerrainsRelative do
-            GlRenderer3d.renderPhysicallyBasedTerrain lightRelativeArray lightProjectionArray lightOrigin descriptor geometry renderer.PhysicallyBasedShadowTerrainShader renderer
+            GlRenderer3d.renderPhysicallyBasedTerrain lightViewRelativeArray lightProjectionArray lightOrigin descriptor geometry renderer.PhysicallyBasedShadowTerrainShader renderer
 
         // forward render static surface shadows w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
             for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticAbsoluteSorted do
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                    SingletonPhase lightAbsoluteArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
+                    SingletonPhase lightViewAbsoluteArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // forward render static surface shadows w/ relative transforms to filter buffer
         for (model, texCoordsOffset, properties, surface) in renderTasks.RenderForwardStaticRelativeSorted do
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
-                SingletonPhase lightRelativeArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
+                SingletonPhase lightViewRelativeArray lightProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
                 surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2218,13 +2223,17 @@ type [<ReferenceEquality>] GlRenderer3d =
         let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
 
         // sort absolute forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderForwardStaticAbsolute
-        renderTasks.RenderForwardStaticAbsoluteSorted.AddRange forwardSurfacesSorted
+        let forwardSurfacesSortBuffer = GlRenderer3d.sortForwardSurfaces eyeCenter renderTasks.RenderForwardStaticAbsolute renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
+        for struct (_, _, model, texCoordsOffset, properties, surface, _) in forwardSurfacesSortBuffer do
+            renderTasks.RenderForwardStaticAbsoluteSorted.Add struct (model, texCoordsOffset, properties, surface)
+        forwardSurfacesSortBuffer.Clear ()
         renderTasks.RenderForwardStaticAbsolute.Clear ()
 
         // sort relative forward surfaces from far to near
-        let forwardSurfacesSorted = GlRenderer3d.sortSurfaces eyeCenter renderTasks.RenderForwardStaticRelative
-        renderTasks.RenderForwardStaticRelativeSorted.AddRange forwardSurfacesSorted
+        let forwardSurfacesSortBuffer = GlRenderer3d.sortForwardSurfaces eyeCenter renderTasks.RenderForwardStaticRelative renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
+        for struct (_, _, model, texCoordsOffset, properties, surface, _) in forwardSurfacesSortBuffer do
+            renderTasks.RenderForwardStaticRelativeSorted.Add struct (model, texCoordsOffset, properties, surface)
+        forwardSurfacesSortBuffer.Clear ()
         renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup geometry buffer and viewport
@@ -2892,6 +2901,17 @@ type [<ReferenceEquality>] GlRenderer3d =
               SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
               SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
+        // create forward surfaces comparer
+        let forwardSurfacesComparer =
+            { new IComparer<struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single)> with
+                member this.Compare ((subsort, sort, _, _, _, _, distanceSquared), (subsort2, sort2, _, _, _, _, distanceSquared2)) =
+                    let dsc = distanceSquared.CompareTo distanceSquared2
+                    if dsc <> 0 then -dsc // negated to draw furthest to nearest
+                    else
+                        let sc = sort.CompareTo sort2
+                        if sc <> 0 then sc
+                        else subsort.CompareTo subsort2 }
+
         // create render tasks
         let renderTasksDictionary =
             dictPlus RenderPass.comparer [(NormalPass false, RenderTasks.make ())]
@@ -2946,6 +2966,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               InstanceFields = Array.zeroCreate<single> (30 * Constants.Render.InstanceBatchPrealloc)
               UserDefinedStaticModelFields = [||]
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
+              ForwardSurfacesComparer = forwardSurfacesComparer
+              ForwardSurfacesSortBuffer = List ()
               RenderTasksDictionary = renderTasksDictionary
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>

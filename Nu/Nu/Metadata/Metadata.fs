@@ -60,7 +60,6 @@ module Metadata =
                 Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make image.Width image.Height))
             else
                 // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow path here.
-                // TODO: P1: read as many image file type headers as possible to speed this up on non-windows platforms.
                 match OpenGL.Texture.TryCreateTextureData asset.FilePath with
                 | Some textureData ->
                     let metadata = textureData.Metadata
