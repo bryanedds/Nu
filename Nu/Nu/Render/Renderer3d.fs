@@ -2905,12 +2905,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         let forwardSurfacesComparer =
             { new IComparer<struct (single * single * Matrix4x4 * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single)> with
                 member this.Compare ((subsort, sort, _, _, _, _, distanceSquared), (subsort2, sort2, _, _, _, _, distanceSquared2)) =
-                    let dsc = distanceSquared.CompareTo distanceSquared2
-                    if dsc <> 0 then -dsc // negated to draw furthest to nearest
+                    let sc = sort.CompareTo sort2
+                    if sc <> 0 then sc
                     else
-                        let sc = sort.CompareTo sort2
-                        if sc <> 0 then sc
-                        else subsort.CompareTo subsort2 }
+                        let dsc = distanceSquared.CompareTo distanceSquared2
+                        if dsc <> 0 then -dsc // negated to draw furthest to nearest
+                        else
+                            let ssc = subsort.CompareTo subsort2
+                            ssc }
 
         // create render tasks
         let renderTasksDictionary =
