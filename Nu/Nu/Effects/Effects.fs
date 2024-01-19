@@ -874,7 +874,7 @@ module EffectSystem =
                 let effectTime = effectSystem.EffectDelta * UpdateTime (int64 i)
                 let slice = { slice with Elevation = slice.Elevation + shift }
                 let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - effectTime }
-                let emitCountLastFrame = single (effectSystem.EffectTime - effectTime - effectSystem.EffectDelta) * rate
+                let emitCountLastFrame = single (effectSystem.EffectTime - effectTime - slice.SliceDelta) * rate
                 let emitCountThisFrame = single (effectSystem.EffectTime - effectTime) * rate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
                 let effectSystem =
