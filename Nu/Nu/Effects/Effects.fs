@@ -445,7 +445,6 @@ module EffectSystem =
         if progress > 1.0f then progress - 1.0f else progress
 
     and private evalAspect aspect slice effectSystem =
-        let slice = { slice with Elevation = slice.Elevation } // copy
         match aspect with
         | Position position -> slice.Position <- slice.Position + position; slice
         | PositionLocal positionLocal ->
