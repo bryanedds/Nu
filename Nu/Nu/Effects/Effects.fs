@@ -44,24 +44,24 @@ type TweenApplicator =
 type Slice =
     { SliceDelta : GameTime
       SliceTime : GameTime
-      Position : Vector3
-      Scale : Vector3
-      Offset : Vector3
-      Size : Vector3
-      Angles : Vector3
-      Elevation : single
-      Inset : Box2
-      Color : Color
-      Blend : Blend
-      Emission : Color
-      Height : single
-      IgnoreLightMaps : bool
-      Flip : Flip
-      Brightness : single
-      LightCutoff : single
-      Volume : single
-      Enabled : bool
-      PerimeterCentered : bool }
+      mutable Position : Vector3
+      mutable Scale : Vector3
+      mutable Offset : Vector3
+      mutable Size : Vector3
+      mutable Angles : Vector3
+      mutable Elevation : single
+      mutable Inset : Box2
+      mutable Color : Color
+      mutable Blend : Blend
+      mutable Emission : Color
+      mutable Height : single
+      mutable IgnoreLightMaps : bool
+      mutable Flip : Flip
+      mutable Brightness : single
+      mutable LightCutoff : single
+      mutable Volume : single
+      mutable Enabled : bool
+      mutable PerimeterCentered : bool }
 
 /// An effect key frame with abstract properties.
 type KeyFrame =
@@ -444,39 +444,41 @@ module EffectSystem =
         let progress = progress + effectSystem.EffectProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
-    and private evalAspect aspect (slice : Slice) effectSystem =
+    and private evalAspect aspect slice effectSystem =
+        let slice = { slice with Elevation = slice.Elevation } // copy
         match aspect with
-        | Position position -> { slice with Position = slice.Position + position }
+        | Position position -> slice.Position <- slice.Position + position; slice
         | PositionLocal positionLocal ->
             let oriented = Vector3.Transform (positionLocal, slice.Angles.RollPitchYaw)
             let translated = slice.Position + oriented
-            { slice with Position = translated }
-        | PositionAbsolute position -> { slice with Position = position }
-        | Scale scale -> { slice with Scale = scale }
-        | Offset offset -> { slice with Offset = offset }
-        | Angles angles -> { slice with Angles = angles }
-        | Degrees degrees -> { slice with Angles = Math.DegreesToRadians3d degrees }
-        | Size size -> { slice with Size = size }
-        | Elevation elevation -> { slice with Elevation = elevation }
-        | Inset inset -> { slice with Inset = inset }
-        | Color color -> { slice with Color = color }
-        | Blend blend -> { slice with Blend = blend }
-        | Emission emission -> { slice with Emission = emission }
-        | Height height -> { slice with Height = height }
-        | IgnoreLightMaps ignoreLightMaps -> { slice with IgnoreLightMaps = ignoreLightMaps }
-        | Flip flip -> { slice with Flip = flip }
-        | Brightness brightness -> { slice with Brightness = brightness }
-        | LightCutoff lightCutoff -> { slice with LightCutoff = lightCutoff }
-        | Volume volume -> { slice with Volume = volume }
-        | Enabled enabled -> { slice with Enabled = enabled }
+            slice.Position <- translated
+            slice
+        | PositionAbsolute position -> slice.Position <- position; slice
+        | Scale scale -> slice.Scale <- scale; slice
+        | Offset offset -> slice.Offset <- offset; slice
+        | Angles angles -> slice.Angles <- angles; slice
+        | Degrees degrees -> slice.Angles <- Math.DegreesToRadians3d degrees; slice
+        | Size size -> slice.Size <- size; slice
+        | Elevation elevation -> slice.Elevation <- elevation; slice
+        | Inset inset -> slice.Inset <- inset; slice
+        | Color color -> slice.Color <- color; slice
+        | Blend blend -> slice.Blend <- blend; slice
+        | Emission emission -> slice.Emission <- emission; slice
+        | Height height -> slice.Height <- height; slice
+        | IgnoreLightMaps ignoreLightMaps -> slice.IgnoreLightMaps <- ignoreLightMaps; slice
+        | Flip flip -> slice.Flip <- flip; slice
+        | Brightness brightness -> slice.Brightness <- brightness; slice
+        | LightCutoff lightCutoff -> slice.LightCutoff <- lightCutoff; slice
+        | Volume volume -> slice.Volume <- volume; slice
+        | Enabled enabled -> slice.Enabled <- enabled; slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (a, b) -> a * b) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Position tweened applicator
-                { slice with Position = applied }
-            else slice
+                slice.Position <- applied
+            slice
         | PositionLocals (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -484,107 +486,107 @@ module EffectSystem =
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let oriented = Vector3.Transform (tweened, slice.Angles.RollPitchYaw)
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Position oriented applicator
-                { slice with Position = applied }
-            else slice
+                slice.Position <- applied
+            slice
         | Scales (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Size tweened applicator
-                { slice with Scale = applied }
-            else slice
+                slice.Scale <- applied
+            slice
         | Offsets (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Position tweened applicator
-                { slice with Offset = applied }
-            else slice
+                slice.Offset <- applied
+            slice
         | Sizes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Size tweened applicator
-                { slice with Size = applied }
-            else slice
+                slice.Size <- applied
+            slice
         | Angleses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Angles tweened applicator
-                { slice with Angles = applied }
-            else slice
+                slice.Angles <- applied
+            slice
         | Degreeses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo (Math.RadiansToDegrees3d slice.Angles) tweened applicator
-                { slice with Angles = Math.DegreesToRadians3d applied }
-            else slice
+                slice.Angles <- Math.DegreesToRadians3d applied
+            slice
         | Elevations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Elevation tweened applicator
-                { slice with Elevation = applied }
-            else slice
+                slice.Elevation <- applied
+            slice
         | Insets (_, _, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let applied = if progress < 0.5f then keyFrame.TweenValue else keyFrame2.TweenValue
-                { slice with Inset = applied }
-            else slice
+                slice.Inset <- applied
+            slice
         | Colors (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.Vector4) (keyFrame2.TweenValue.Vector4) progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color (Nu.Color tweened) applicator
-                { slice with Color = applied }
-            else slice
+                slice.Color <- applied
+            slice
         | Emissions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color tweened applicator
-                { slice with Emission = applied }
-            else slice
+                slice.Emission <- applied
+            slice
         | Heights (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Elevation tweened applicator
-                { slice with Height = applied }
-            else slice
+                slice.Height <- applied
+            slice
         | IgnoreLightMapses (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
-                { slice with IgnoreLightMaps = applied }
-            else slice
+                slice.IgnoreLightMaps <- applied
+            slice
         | Volumes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Volume tweened applicator
-                { slice with Volume = applied }
-            else slice
+                slice.Volume <- applied
+            slice
         | Enableds (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
-                { slice with Enabled = applied }
-            else slice
+                slice.Enabled <- applied
+            slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
             | Some definition ->
@@ -595,7 +597,7 @@ module EffectSystem =
         | Aspects aspects ->
             Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
 
-    and private evalAspects aspects slice effectSystem =
+    and private evalAspects aspects (slice : Slice) effectSystem =
         Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
 
     and private evalExpand definitionName arguments slice history effectSystem =
@@ -878,6 +880,7 @@ module EffectSystem =
             let emitCount = int emitCountThisFrame - int emitCountLastFrame
             let effectSystem =
                 Array.fold (fun effectSystem _ ->
+                    let slice = { slice with Elevation = slice.Elevation } // explicit copy
                     let slice = evalAspects aspects slice effectSystem
                     if slice.Enabled
                     then evalContent content slice history effectSystem
