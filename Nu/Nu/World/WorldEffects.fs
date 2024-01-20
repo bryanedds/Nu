@@ -133,9 +133,9 @@ module Effect =
             // request emitters via tokens
             let particleSystem =
                 tokens |>
-                Seq.choose (function EmitterToken (name, descriptor) -> Some (name, descriptor) | _ -> None) |>
-                Seq.choose (fun (name : string, descriptor : EmitterDescriptor) ->
-                    match descriptor with
+                Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None) |>
+                Seq.choose (fun (name : string, descriptorObj : obj) ->
+                    match descriptorObj with
                     | :? BasicSpriteEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
                         | Some (:? BasicStaticSpriteEmitter as emitter) ->

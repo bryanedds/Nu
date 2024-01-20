@@ -969,7 +969,6 @@ type [<ReferenceEquality>] SpriteEmitterDescriptor<'a when 'a :> Particle and 'a
       ParticleSeed : 'a
       Constraint : Constraint
       Style : string }
-    interface EmitterDescriptor
 
 /// A map of basic sprite emitters.
 type SpriteEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
@@ -1224,7 +1223,6 @@ type [<ReferenceEquality>] BillboardEmitterDescriptor<'a when 'a :> Particle and
       ParticleSeed : 'a
       Constraint : Constraint
       Style : string }
-    interface EmitterDescriptor
 
 /// A map of basic billboard emitters.
 type BillboardEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =

@@ -22,7 +22,7 @@ type [<Struct>] SpriteValue =
       mutable Flip : Flip }
 
 /// A mutable text value.
-type TextValue =
+type [<Struct>] TextValue =
     { mutable Transform : Transform
       mutable Text : string
       mutable Font : Font AssetTag
