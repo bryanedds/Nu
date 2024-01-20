@@ -191,8 +191,11 @@ module PhysicallyBased =
           ProjectionUniform : int
           BonesUniforms : int array
           EyeCenterUniform : int
+          LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
+          LightShadowBiasAcneUniform : int
+          LightShadowBiasBleedUniform : int
           AlbedoTextureUniform : int
           RoughnessTextureUniform : int
           MetallicTextureUniform : int
@@ -291,8 +294,11 @@ module PhysicallyBased =
     /// Describes the lighting pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredLightingShader =
         { EyeCenterUniform : int
+          LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
+          LightShadowBiasAcneUniform : int
+          LightShadowBiasBleedUniform : int
           PositionTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -1424,8 +1430,11 @@ module PhysicallyBased =
             Array.init Constants.Render.BonesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "bones[" + string i + "]")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
+        let lightShadowBiasAcneUniform = Gl.GetUniformLocation (shader, "lightShadowBiasAcne")
+        let lightShadowBiasBleedUniform = Gl.GetUniformLocation (shader, "lightShadowBiasBleed")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
         let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
@@ -1470,8 +1479,11 @@ module PhysicallyBased =
           ProjectionUniform = projectionUniform
           BonesUniforms = bonesUniforms
           EyeCenterUniform = eyeCenterUniform
+          LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
+          LightShadowBiasAcneUniform = lightShadowBiasAcneUniform
+          LightShadowBiasBleedUniform = lightShadowBiasBleedUniform
           AlbedoTextureUniform = albedoTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
           MetallicTextureUniform = metallicTextureUniform
@@ -1673,8 +1685,11 @@ module PhysicallyBased =
 
         // retrieve uniforms
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
+        let lightShadowBiasAcneUniform = Gl.GetUniformLocation (shader, "lightShadowBiasAcne")
+        let lightShadowBiasBleedUniform = Gl.GetUniformLocation (shader, "lightShadowBiasBleed")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -1704,8 +1719,11 @@ module PhysicallyBased =
 
         // make shader record
         { EyeCenterUniform = eyeCenterUniform
+          LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
+          LightShadowBiasAcneUniform = lightShadowBiasAcneUniform
+          LightShadowBiasBleedUniform = lightShadowBiasBleedUniform
           PositionTextureUniform = positionTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -2010,8 +2028,11 @@ module PhysicallyBased =
          surfacesCount : int,
          instanceFields : single array,
          eyeCenter : Vector3,
+         lightCutoffMargin : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
+         lightShadowBiasAcne : single,
+         lightShadowBiasBleed : single,
          brdfTexture : Texture.Texture,
          irradianceMap : Texture.Texture,
          environmentFilterMap : Texture.Texture,
@@ -2056,9 +2077,12 @@ module PhysicallyBased =
         for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
             Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
         if lightAmbientColor.Length = 3 then
             Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
+        Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
+        Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
         Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
         Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
         Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
@@ -2409,8 +2433,11 @@ module PhysicallyBased =
     /// Draw the lighting pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightingSurface
         (eyeCenter : Vector3,
+         lightCutoffMargin : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
+         lightShadowBiasAcne : single,
+         lightShadowBiasBleed : single,
          positionTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -2439,8 +2466,11 @@ module PhysicallyBased =
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredLightingShader
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
+        Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
+        Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)

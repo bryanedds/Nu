@@ -94,9 +94,13 @@ module Gaia =
     let mutable private alternativeEyeTravelInput = false
     let mutable private entityHierarchySearchStr = ""
     let mutable private assetViewerSearchStr = ""
-    let mutable private lightMappingConfig = { LightMappingEnabled = true }
+    let mutable private lightingConfig =
+        { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
+          LightShadowBiasAcne = Constants.Render.LightShadowBiasAcneDefault
+          LightShadowBiasBleed = Constants.Render.LightShadowBiasBleedDefault
+          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault }
     let mutable private ssaoConfig =
-        { SsaoEnabled = true
+        { SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
@@ -2832,11 +2836,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // renderer window
                     if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
-                        ImGui.Text "Light-Mapping (local light mapping)"
-                        let mutable lightMappingEnabled = lightMappingConfig.LightMappingEnabled
-                        ImGui.Checkbox ("Light-Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
-                        lightMappingConfig <- { LightMappingEnabled = lightMappingEnabled }
-                        World.enqueueRenderMessage3d (ConfigureLightMapping lightMappingConfig) world
+                        ImGui.Text "Lighting"
+                        let mutable lightCutoffMargin = lightingConfig.LightCutoffMargin
+                        let mutable lightShadowBiasAcneStr = lightingConfig.LightShadowBiasAcne.ToString "0.00000000"
+                        let mutable lightShadowBiasBleed = lightingConfig.LightShadowBiasBleed
+                        let mutable lightMappingEnabled = lightingConfig.LightMappingEnabled
+                        ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) |> ignore<bool>
+                        ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) |> ignore<bool>
+                        ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) |> ignore<bool>
+                        ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
+                        lightingConfig <-
+                            { LightCutoffMargin = lightCutoffMargin
+                              LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
+                              LightShadowBiasBleed = lightShadowBiasBleed
+                              LightMappingEnabled = lightMappingEnabled }
+                        World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
                         ImGui.Text "Ssao (screen-space ambient occlusion)"
                         let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
                         let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
