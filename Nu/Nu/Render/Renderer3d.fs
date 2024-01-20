@@ -260,9 +260,12 @@ and [<ReferenceEquality>] RenderTasks =
         renderTasks.RenderDeferredTerrainsAbsolute.Clear ()
         renderTasks.RenderDeferredTerrainsRelative.Clear ()
 
-/// Configures light mapping.
-and [<ReferenceEquality>] LightMappingConfig =
-    { LightMappingEnabled : bool }
+/// Configures lighting.
+and [<ReferenceEquality>] LightingConfig =
+    { LightCutoffMargin : single
+      LightShadowBiasAcne : single
+      LightShadowBiasBleed : single
+      LightMappingEnabled : bool }
 
 /// Configures SSAO.
 and [<ReferenceEquality>] SsaoConfig =
@@ -469,7 +472,7 @@ and [<ReferenceEquality>] RenderMessage3d =
     | RenderAnimatedModels of RenderAnimatedModels
     | RenderCachedAnimatedModel of CachedAnimatedModelMessage
     | RenderTerrain of RenderTerrain
-    | ConfigureLightMapping of LightMappingConfig
+    | ConfigureLighting of LightingConfig
     | ConfigureSsao of SsaoConfig
     | LoadRenderPackage3d of string
     | UnloadRenderPackage3d of string
@@ -680,7 +683,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterMap : OpenGL.Texture.Texture
           PhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
-          mutable LightMappingConfig : LightMappingConfig
+          mutable LightingConfig : LightingConfig
           mutable SsaoConfig : SsaoConfig
           mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
@@ -1660,7 +1663,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedForwardSurfaces
         blending viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Box2 * MaterialProperties) SList)
-        eyeCenter lightAmbientColor lightAmbientBrightness brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+        eyeCenter lightCutoffMargin lightAmbientColor lightAmbientBrightness lightShadowBiasAcne lightShadowBiasBleed
+        brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
@@ -1698,9 +1702,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
-            (blending, viewArray, projectionArray, bonesArray,
-             parameters.Length, renderer.InstanceFields,
-             eyeCenter, lightAmbientColor, lightAmbientBrightness, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
+            (blending, viewArray, projectionArray, bonesArray, parameters.Length, renderer.InstanceFields,
+             eyeCenter, lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightShadowBiasAcne, lightShadowBiasBleed,
+             brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
@@ -2310,7 +2314,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightMappingTexture =
 
             // but only if needed
-            if renderer.LightMappingConfig.LightMappingEnabled then
+            if renderer.LightingConfig.LightMappingEnabled then
 
                 // setup light mapping buffer and viewport
                 let (lightMappingTexture, lightMappingRenderbuffer, lightMappingFramebuffer) = renderer.LightMappingBuffers
@@ -2435,7 +2439,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad to filter buffer
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
-            (eyeCenter, lightAmbientColor, lightAmbientBrightness,
+            (eyeCenter, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.LightShadowBiasAcne, renderer.LightingConfig.LightShadowBiasBleed,
              positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
@@ -2460,7 +2464,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
                 GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                     true viewAbsoluteArray rasterProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
-                    eyeCenter lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+                    eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightShadowBiasAcne renderer.LightingConfig.LightShadowBiasBleed
+                    renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                     surface renderer.PhysicallyBasedForwardStaticShader renderer
                 OpenGL.Hl.Assert ()
@@ -2475,7 +2480,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 true viewRelativeArray rasterProjectionArray [||] (SList.singleton (model, texCoordsOffset, properties))
-                eyeCenter lightAmbientColor lightAmbientBrightness renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
+                eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightShadowBiasAcne renderer.LightingConfig.LightShadowBiasBleed
+                renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                 surface renderer.PhysicallyBasedForwardStaticShader renderer
             OpenGL.Hl.Assert ()
@@ -2592,8 +2598,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeAnimatedModel (camm.CachedAnimatedModelAbsolute, &camm.CachedAnimatedModelMatrix, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelRenderPass, renderer)
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Absolute, rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
-            | ConfigureLightMapping lmc ->
-                renderer.LightMappingConfig <- lmc
+            | ConfigureLighting lc ->
+                renderer.LightingConfig <- lc
             | ConfigureSsao sc ->
                 renderer.SsaoConfig <- sc
             | LoadRenderPackage3d packageName ->
@@ -2889,8 +2895,11 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = false }
 
         // make light mapping config
-        let lightMappingConfig =
-            { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault }
+        let lightingConfig =
+            { LightCutoffMargin = Constants.Render.LightCutoffDefault
+              LightShadowBiasAcne = Constants.Render.LightShadowBiasAcneDefault
+              LightShadowBiasBleed = Constants.Render.LightShadowBiasBleedDefault
+              LightMappingEnabled = Constants.Render.LightMappingEnabledDefault }
 
         // make ssao config
         let ssaoConfig =
@@ -2963,7 +2972,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterMap = environmentFilterMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
               LightMaps = dictPlus HashIdentity.Structural []
-              LightMappingConfig = lightMappingConfig
+              LightingConfig = lightingConfig
               SsaoConfig = ssaoConfig
               InstanceFields = Array.zeroCreate<single> (30 * Constants.Render.InstanceBatchPrealloc)
               UserDefinedStaticModelFields = [||]

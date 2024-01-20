@@ -25,8 +25,11 @@ const float SHADOW_FOV_MAX = 2.1;
 const int SHADOWS_MAX = 16;
 
 uniform vec3 eyeCenter;
+uniform float lightCutoffMargin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
+uniform float lightShadowBiasAcne;
+uniform float lightShadowBiasBleed;
 layout (bindless_sampler) uniform sampler2D positionTexture;
 layout (bindless_sampler) uniform sampler2D albedoTexture;
 layout (bindless_sampler) uniform sampler2D materialTexture;
@@ -157,14 +160,14 @@ void main()
             float distanceSquared = dot(d, d);
             float distance = sqrt(distanceSquared);
             float cutoff = lightCutoffs[i];
-            float cutoffScalar = 1.0f - smoothstep(cutoff * 0.667, cutoff, distance);
-            float attenuation = 1.0f / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
+            float cutoffScalar = 1.0 - smoothstep(cutoff * (1.0 - lightCutoffMargin), cutoff, distance);
+            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
             float angle = acos(dot(l, -lightDirections[i]));
-            float halfConeInner = lightConeInners[i] * 0.5f;
-            float halfConeOuter = lightConeOuters[i] * 0.5f;
+            float halfConeInner = lightConeInners[i] * 0.5;
+            float halfConeOuter = lightConeOuters[i] * 0.5;
             float halfConeDelta = halfConeOuter - halfConeInner;
             float halfConeBetween = angle - halfConeInner;
-            float halfConeScalar = clamp(1.0f - halfConeBetween / halfConeDelta, 0.0f, 1.0);
+            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
             float intensity = attenuation * halfConeScalar;
             radiance = lightColors[i] * lightBrightnesses[i] * intensity * cutoffScalar;
         }
@@ -186,7 +189,7 @@ void main()
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
             {
-                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, 0.0000001, 0.333);
+                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, lightShadowBiasAcne, lightShadowBiasBleed);
                 if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
             }
         }
