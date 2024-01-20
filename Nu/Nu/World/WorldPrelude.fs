@@ -189,9 +189,9 @@ module AmbientState =
               TickTime : int64
               TickTimeShavings : int64
               TickWatch : Stopwatch
-              DateTime : DateTimeOffset
-              // cache line 3
               DateDelta : TimeSpan
+              // cache line 3
+              DateTime : DateTimeOffset
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
