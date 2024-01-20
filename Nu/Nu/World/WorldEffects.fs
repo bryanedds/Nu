@@ -84,6 +84,7 @@ module Effect =
         | None -> Live
 
     /// Run an effect, returning any resulting requests as a token.
+    /// TODO: P1: handle spawning effects from tokens.
     let run effect (world : World) : Liveness * Effect * Token =
 
         // run if live
@@ -130,7 +131,7 @@ module Effect =
                 Seq.choose (function TagToken (name, value) -> Some (name, value :?> Slice) | _ -> None) |>
                 Map.ofSeq
 
-            // request emitters via tokens
+            // spawn emitters via tokens
             let particleSystem =
                 tokens |>
                 Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None) |>
