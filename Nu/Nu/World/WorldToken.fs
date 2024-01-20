@@ -84,6 +84,9 @@ module WorldToken =
                 World.enqueueRenderMessage3d (RenderStaticModelSurface renderStaticModelSurface) world
 
             // nothing to do
+            | EffectToken (_, _, _) -> ()
+
+            // nothing to do
             | EmitterToken (_, _) -> ()
 
             // nothing to do

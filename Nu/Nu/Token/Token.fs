@@ -5,20 +5,20 @@ namespace Nu
 open System
 open Prime
 
-/// A tag interface for describing an emitter.
-type EmitterDescriptor = interface end
-
 /// Tokenized processing requests.
+/// NOTE: EffectToken only exists as a way to make effect emitters on emitters work due to issue #141.
+/// NOTE: some case fields are objs because the type information isn't available at the union's definition.
 type [<ReferenceEquality>] Token =
-    | SpriteToken of single * single * AssetTag * SpriteValue
-    | TextToken of single * single * AssetTag * TextValue
-    | Light3dToken of Light3dValue
-    | BillboardToken of BillboardValue
-    | StaticModelToken of StaticModelValue
-    | StaticModelSurfaceToken of StaticModelSurfaceValue
-    | EmitterToken of string * EmitterDescriptor
-    | TagToken of string * obj
-    | Tokens of Token SArray
+    | SpriteToken of Elevation : single * Horizon : single * Image : AssetTag * SpriteValue : SpriteValue
+    | TextToken of Elevation : single * Horizon : single * Font : AssetTag * TextValue : TextValue
+    | Light3dToken of Light3dValue : Light3dValue
+    | BillboardToken of BillboardValue : BillboardValue
+    | StaticModelToken of StaticModelValue : StaticModelValue
+    | StaticModelSurfaceToken of StaticModelSurfaceValue : StaticModelSurfaceValue
+    | EffectToken of Name : string * EffectDescriptorObj : obj * SliceObj : obj
+    | EmitterToken of Name : string * EmitterDescriptorObj : obj
+    | TagToken of Name : string * UserDefined : obj
+    | Tokens of Tokens : Token SArray
 
 [<RequireQualifiedAccess>]
 module Token =
