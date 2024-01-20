@@ -62,6 +62,8 @@ type Slice =
       mutable Volume : single
       mutable Enabled : bool
       mutable PerimeterCentered : bool }
+    static member copy slice =
+        { slice with SliceDelta = slice.SliceDelta }
 
 /// An effect key frame with abstract properties.
 type KeyFrame =
@@ -879,10 +881,10 @@ module EffectSystem =
             let emitCount = int emitCountThisFrame - int emitCountLastFrame
             let effectSystem =
                 Array.fold (fun effectSystem _ ->
-                    let slice = { slice with Elevation = slice.Elevation } // explicit copy
-                    let slice = evalAspects aspects slice effectSystem
-                    if slice.Enabled
-                    then evalContent content slice history effectSystem
+                    let emission = Slice.copy slice
+                    let emission = evalAspects aspects emission effectSystem
+                    if emission.Enabled
+                    then evalContent content emission history effectSystem
                     else effectSystem)
                     { effectSystem with EffectTime = effectTime }
                     [|0 .. emitCount - 1|]
