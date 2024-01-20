@@ -192,6 +192,8 @@ and Aspect =
     | Emissions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
     | Heights of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | IgnoreLightMapses of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
+    | Brightnesses of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | LightCutoffs of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Volumes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Expand of Name : string * Args : Argument array
     | Aspects of Aspects : Aspect array
@@ -237,8 +239,8 @@ type Definitions =
      "Rate " +
      "Shift " +
      "Resource Expand " +
-     "Enabled Position PositionLocal PositionAbsolute Scale Offset Angles Degrees Size Elevation Inset Color Emission Height IgnoreLightMaps Volume " +
-     "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights IgnoreLightMapses Volumes Aspects " +
+     "Enabled PositionAbsolute Position PositionLocal Scale Offset Angles Degrees Size Elevation Inset Color Emission Height IgnoreLightMaps Flip Brightness LightCutoff Volume " +
+     "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights IgnoreLightMapses Brightnesses LightCutoffs Volumes Aspects " +
      "Expand " +
      "StaticSprite AnimatedSprite TextSprite Light3d Billboard StaticModel Mount Repeat Emit Delay Segment Composite Tag Nil " +
      "Token",
@@ -565,7 +567,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Elevation tweened applicator
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Height tweened applicator
                 slice.Height <- applied
             slice
         | IgnoreLightMapses (applicator, playback, keyFrames) ->
@@ -573,6 +575,22 @@ module EffectSystem =
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 slice.IgnoreLightMaps <- applied
+            slice
+        | Brightnesses (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Brightness tweened applicator
+                slice.Brightness <- applied
+            slice
+        | LightCutoffs (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.LightCutoff tweened applicator
+                slice.LightCutoff <- applied
             slice
         | Volumes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
