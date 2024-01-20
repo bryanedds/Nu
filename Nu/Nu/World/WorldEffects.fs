@@ -84,7 +84,6 @@ module Effect =
         | None -> Live
 
     /// Run an effect, returning any resulting requests as a token.
-    /// TODO: P1: handle spawning effects from tokens.
     let run effect (world : World) : Liveness * Effect * Token =
 
         // run if live
