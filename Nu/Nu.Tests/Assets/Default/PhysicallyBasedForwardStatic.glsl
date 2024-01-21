@@ -88,7 +88,7 @@ layout (bindless_sampler) uniform samplerCube irradianceMap;
 layout (bindless_sampler) uniform samplerCube environmentFilterMap;
 layout (bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 layout (bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
-uniform sampler2D shadowTextures[SHADOWS_MAX];
+layout (bindless_sampler) uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
