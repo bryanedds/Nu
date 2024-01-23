@@ -614,7 +614,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 //let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 16, 1.0f / 120.0f)
                 // However, the following line of code seems to give smoother results -
                 let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 2, physicsStepAmount / 2.0f - 0.0001f)
-                // TODO: see if we can't just use a smoothed average of time to get the dynamic frame rate physics running more smoothly.
                 ignore stepsTaken
         | (_, _) -> failwithumf ()
 
