@@ -36,14 +36,14 @@ layout (location = 5) in mat4 model;
 layout (location = 9) in vec4 texCoordsOffset;
 layout (location = 10) in vec4 albedo;
 layout (location = 11) in vec4 material;
-layout (location = 12) in vec2 heightPlus;
+layout (location = 12) in vec3 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
-flat out vec2 heightPlusOut;
+flat out vec3 heightPlusOut;
 
 void main()
 {
@@ -92,7 +92,7 @@ in vec2 texCoordsOut;
 in vec3 normalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
-flat in vec2 heightPlusOut;
+flat in vec3 heightPlusOut;
 
 layout (location = 0) out vec4 position;
 layout (location = 1) out vec3 albedo;
