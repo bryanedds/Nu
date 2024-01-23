@@ -877,7 +877,7 @@ module PhysicallyBased =
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
-                let strideSize = 30 * sizeof<single>
+                let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
                 let instanceDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -904,7 +904,7 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
                 Gl.VertexAttribDivisor (9u, 1u)
                 Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 2, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
+                Gl.VertexAttribPointer (10u, 3, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (10u, 1u)
                 Hl.Assert ()
 
@@ -1001,7 +1001,7 @@ module PhysicallyBased =
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
-                let strideSize = 30 * sizeof<single>
+                let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
                 let instanceDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -1028,7 +1028,7 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
                 Gl.VertexAttribDivisor (11u, 1u)
                 Gl.EnableVertexAttribArray 12u
-                Gl.VertexAttribPointer (12u, 2, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
+                Gl.VertexAttribPointer (12u, 3, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (12u, 1u)
                 Hl.Assert ()
 
@@ -1128,7 +1128,7 @@ module PhysicallyBased =
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
-                let strideSize = 30 * sizeof<single>
+                let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
                 let instanceDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
@@ -1155,7 +1155,7 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
                 Gl.VertexAttribDivisor (12u, 1u)
                 Gl.EnableVertexAttribArray 13u
-                Gl.VertexAttribPointer (13u, 2, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
+                Gl.VertexAttribPointer (13u, 3, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (13u, 1u)
                 Hl.Assert ()
 
@@ -1904,7 +1904,7 @@ module PhysicallyBased =
         // update instance buffer
         let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 30 * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
             Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
             Hl.Assert ()
         finally instanceFieldsPtr.Free ()
@@ -1983,7 +1983,7 @@ module PhysicallyBased =
         // update instance buffer
         let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 30 * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
             Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
             Hl.Assert ()
         finally instanceFieldsPtr.Free ()
@@ -2125,7 +2125,7 @@ module PhysicallyBased =
         // update instance buffer
         let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * 30 * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
             Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
             Hl.Assert ()
         finally instanceFieldsPtr.Free ()
@@ -2211,7 +2211,7 @@ module PhysicallyBased =
         // update instance buffer
         let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
         try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (30 * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+            Gl.BufferData (BufferTarget.ArrayBuffer, uint (Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
             Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
             Hl.Assert ()
         finally instanceFieldsPtr.Free ()

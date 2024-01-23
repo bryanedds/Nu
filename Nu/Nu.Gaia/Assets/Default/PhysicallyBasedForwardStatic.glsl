@@ -31,14 +31,14 @@ layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
-layout (location = 10) in vec2 heightPlus;
+layout (location = 10) in vec3 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
-flat out vec2 heightPlusOut;
+flat out vec3 heightPlusOut;
 
 void main()
 {
@@ -61,9 +61,6 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 5.0;
 const float GAMMA = 2.2;
-const float OPAQUING_DISTANCE_BEGIN = 8.0;
-const float OPAQUING_DISTANCE_END = 12.0;
-const float OPAQUING_DISTANCE_RANGE = OPAQUING_DISTANCE_END - OPAQUING_DISTANCE_BEGIN;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
@@ -112,7 +109,7 @@ in vec2 texCoordsOut;
 in vec3 normalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
-flat in vec2 heightPlusOut;
+flat in vec3 heightPlusOut;
 
 out vec4 frag;
 
@@ -255,7 +252,8 @@ void main()
     albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
     albedo.a = albedoSample.a * albedoOut.a;
     if (albedo.a == 0.0f) discard;
-    albedo.a = mix(albedo.a, 1.0, clamp((distance - OPAQUING_DISTANCE_BEGIN) / OPAQUING_DISTANCE_RANGE, 0.0, 1.0));
+    float distanceOpaque = heightPlusOut.z;
+    albedo.a = mix(albedo.a, 1.0, smoothstep(distanceOpaque * 0.75, distanceOpaque, distance));
 
     // compute material properties
     float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;
