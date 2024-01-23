@@ -65,15 +65,17 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
       HeightOpt : single voption
-      IgnoreLightMapsOpt : bool voption }
+      IgnoreLightMapsOpt : bool voption
+      OpaqueDistanceOpt : single voption }
 
-    member this.AlbedoImage = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
-    member this.RoughnessImage = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
-    member this.MetallicImage = ValueOption.defaultValue Constants.Render.MetallicDefault this.MetallicOpt
-    member this.AmbientOcclusionImage = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
-    member this.EmissionImage = ValueOption.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
-    member this.HeightImage = ValueOption.defaultValue Constants.Render.HeightDefault this.HeightOpt
-    member this.IgnoreLightMaps = ValueOption.defaultValue false this.IgnoreLightMapsOpt
+    member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
+    member this.Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
+    member this.Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault this.MetallicOpt
+    member this.AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
+    member this.Emission = ValueOption.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
+    member this.Height = ValueOption.defaultValue Constants.Render.HeightDefault this.HeightOpt
+    member this.IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
+    member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
 
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
@@ -82,7 +84,8 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
           HeightOpt = ValueSome Constants.Render.HeightDefault
-          IgnoreLightMapsOpt = ValueSome false }
+          IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
+          OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault }
 
     static member empty =
         Unchecked.defaultof<MaterialProperties>
@@ -1012,7 +1015,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                       AmbientOcclusion = surfaceDescriptor.MaterialProperties.AmbientOcclusion
                       Emission = surfaceDescriptor.MaterialProperties.Emission
                       Height = surfaceDescriptor.MaterialProperties.Height
-                      IgnoreLightMaps = surfaceDescriptor.MaterialProperties.IgnoreLightMaps }
+                      IgnoreLightMaps = surfaceDescriptor.MaterialProperties.IgnoreLightMaps
+                      OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance }
 
                 // make material
                 let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
@@ -1655,7 +1659,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- 16.0f
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- surface.SurfaceMaterialProperties.OpaqueDistance
 
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
@@ -1700,7 +1704,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- 16.0f
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- surface.SurfaceMaterialProperties.OpaqueDistance
 
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
@@ -1721,7 +1725,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
               Emission = Constants.Render.EmissionDefault
               Height = ValueOption.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
-              IgnoreLightMaps = ValueOption.defaultValue false terrainMaterialProperties.IgnoreLightMapsOpt }
+              IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
+              OpaqueDistance = Single.MaxValue }
         let (texelWidthAvg, texelHeightAvg, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
@@ -1850,13 +1855,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ValueSome (TextureAsset (_, texture)) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
         let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
-            { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault properties.AlbedoOpt
-              Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault properties.RoughnessOpt
-              Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault properties.MetallicOpt
-              AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault properties.AmbientOcclusionOpt
-              Emission = ValueOption.defaultValue Constants.Render.EmissionDefault properties.EmissionOpt
-              Height = ValueOption.defaultValue Constants.Render.HeightDefault properties.HeightOpt
-              IgnoreLightMaps = ValueOption.defaultValue false properties.IgnoreLightMapsOpt }
+            { Albedo = properties.Albedo
+              Roughness = properties.Roughness
+              Metallic = properties.Metallic
+              AmbientOcclusion = properties.AmbientOcclusion
+              Emission = properties.Emission
+              Height = properties.Height
+              IgnoreLightMaps = properties.IgnoreLightMaps
+              OpaqueDistance = properties.OpaqueDistance }
         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture

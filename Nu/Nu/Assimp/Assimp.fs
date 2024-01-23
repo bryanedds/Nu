@@ -226,6 +226,15 @@ module AssimpExtensions =
                     with _ -> None
                 else None
 
+        member this.OpaqueDistanceOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Constants.Render.OpaqueDistanceName) with
+            | null -> None
+            | property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> Some
+                    with _ -> None
+                else None
+
         member this.TwoSidedOpt =
             match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.TwoSidedName) with
             | null -> None
@@ -303,6 +312,16 @@ module AssimpExtensions =
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<bool> |> Some
+                    with _ -> None
+                | _ -> None
+            | (false, _) -> None
+
+        member this.OpaqueDistanceOpt =
+            match this.Metadata.TryGetValue Constants.Render.OpaqueDistanceName with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> Some
                     with _ -> None
                 | _ -> None
             | (false, _) -> None
