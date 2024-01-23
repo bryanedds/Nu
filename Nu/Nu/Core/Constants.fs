@@ -75,6 +75,7 @@ module Engine =
 module Render =
 
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
+    let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] TwoSidedName = "TwoSided"
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | vsync -> scvalue vsync
     let [<Literal>] VirtualResolutionX = 960
@@ -165,6 +166,8 @@ module Render =
     let [<Literal>] AmbientOcclusionDefault = 1.0f
     let [<Literal>] EmissionDefault = 1.0f
     let [<Literal>] HeightDefault = 1.0f
+    let [<Literal>] IgnoreLightMapsDefault = false
+    let [<Literal>] OpaqueDistanceDefault = Single.MaxValue
 
 [<RequireQualifiedAccess>]
 module Audio =

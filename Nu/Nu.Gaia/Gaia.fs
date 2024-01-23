@@ -1583,6 +1583,24 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ImGui.SameLine ()
         ImGui.Text "IgnoreLightMapsOpt"
 
+        // edit opaque distance
+        let mutable isSome = ValueOption.isSome mp.OpaqueDistanceOpt
+        if ImGui.Checkbox ("##mpOpaqueDistanceIsSome", &isSome) then
+            if isSome
+            then setPropertyValue { mp with OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault } propertyDescriptor simulant
+            else setPropertyValue { mp with OpaqueDistanceOpt = ValueNone } propertyDescriptor simulant
+        else
+            match mp.OpaqueDistanceOpt with
+            | ValueSome opaqueDistance ->
+                let mutable opaqueDistance = opaqueDistance
+                ImGui.SameLine ()
+                if ImGui.InputFloat ("##mpOpaqueDistance", &opaqueDistance) then setPropertyValue { mp with OpaqueDistanceOpt = ValueSome opaqueDistance } propertyDescriptor simulant
+                if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+            | ValueNone -> ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        ImGui.SameLine ()
+        ImGui.Text "OpaqueDistanceOpt"
+
     let private imGuiEditMaterialProperty m propertyDescriptor simulant =
 
         // edit albedo image

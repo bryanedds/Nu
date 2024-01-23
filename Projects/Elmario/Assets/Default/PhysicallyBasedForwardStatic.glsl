@@ -252,8 +252,8 @@ void main()
     albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
     albedo.a = albedoSample.a * albedoOut.a;
     if (albedo.a == 0.0f) discard;
-    float distanceOpaque = heightPlusOut.z;
-    albedo.a = mix(albedo.a, 1.0, smoothstep(distanceOpaque * 0.75, distanceOpaque, distance));
+    float opaqueDistance = heightPlusOut.z;
+    albedo.a = mix(albedo.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance));
 
     // compute material properties
     float roughness = texture(roughnessTexture, texCoords).r * materialOut.r;

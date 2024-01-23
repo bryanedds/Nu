@@ -22,7 +22,8 @@ module PhysicallyBased =
           AmbientOcclusion : single
           Emission : single
           Height : single
-          IgnoreLightMaps : bool }
+          IgnoreLightMaps : bool
+          OpaqueDistance : single }
 
     /// Describes a physically-based material.
     type [<Struct>] PhysicallyBasedMaterial =
@@ -91,6 +92,16 @@ module PhysicallyBased =
                 | Some _ | None -> ignoreLightMapsDefault
             | Some ignoreLightMaps -> ignoreLightMaps
 
+        static member extractOpaqueDistance opaqueDistanceDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.OpaqueDistanceOpt with
+            | None ->
+                match sceneOpt with
+                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    Option.defaultValue opaqueDistanceDefault material.OpaqueDistanceOpt
+                | Some _ | None -> opaqueDistanceDefault
+            | Some opaqueDistance -> opaqueDistance
+
         static member inline hash surface =
             surface.HashCode
 
@@ -144,6 +155,7 @@ module PhysicallyBased =
         let extractPresence = PhysicallyBasedSurface.extractPresence
         let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
         let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
+        let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
         let comparer = HashIdentity.FromFunctions hash equals
@@ -551,11 +563,17 @@ module PhysicallyBased =
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture
 
-        // compute two-sidedness
+        // compute ignore light maps
         let ignoreLightMaps =
             match material.IgnoreLightMapsOpt with
             | Some ignoreLightMaps -> ignoreLightMaps
-            | None -> false
+            | None -> Constants.Render.IgnoreLightMapsDefault
+
+        // compute opaque distance
+        let opaqueDistance =
+            match material.OpaqueDistanceOpt with
+            | Some opqaqueDistance -> opqaqueDistance
+            | None -> Constants.Render.OpaqueDistanceDefault
 
         // compute two-sidedness
         let twoSided =
@@ -571,7 +589,8 @@ module PhysicallyBased =
               AmbientOcclusion = ambientOcclusion
               Emission = emission
               Height = height
-              IgnoreLightMaps = ignoreLightMaps }
+              IgnoreLightMaps = ignoreLightMaps
+              OpaqueDistance = opaqueDistance }
 
         // make material
         let material =
