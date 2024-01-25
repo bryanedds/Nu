@@ -923,7 +923,7 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (9u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
                 Gl.VertexAttribDivisor (9u, 1u)
                 Gl.EnableVertexAttribArray 10u
-                Gl.VertexAttribPointer (10u, 3, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
+                Gl.VertexAttribPointer (10u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (10u, 1u)
                 Hl.Assert ()
 
@@ -1047,7 +1047,7 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (11u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
                 Gl.VertexAttribDivisor (11u, 1u)
                 Gl.EnableVertexAttribArray 12u
-                Gl.VertexAttribPointer (12u, 3, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
+                Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (12u, 1u)
                 Hl.Assert ()
 
@@ -1174,7 +1174,7 @@ module PhysicallyBased =
                 Gl.VertexAttribPointer (12u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (24 * sizeof<single>))
                 Gl.VertexAttribDivisor (12u, 1u)
                 Gl.EnableVertexAttribArray 13u
-                Gl.VertexAttribPointer (13u, 3, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
+                Gl.VertexAttribPointer (13u, 4, VertexAttribPointerType.Float, false, strideSize, nativeint (28 * sizeof<single>))
                 Gl.VertexAttribDivisor (13u, 1u)
                 Hl.Assert ()
 

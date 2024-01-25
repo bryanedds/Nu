@@ -1279,6 +1279,7 @@ module EffectFacetModule =
             World.renderToken renderPass token world
 
             // render particles
+            let presence = entity.GetPresence world
             let particleSystem = entity.GetParticleSystem world
             let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
             for descriptor in descriptors do
@@ -1294,6 +1295,7 @@ module EffectFacetModule =
                     let message =
                         RenderBillboardParticles
                             { Absolute = descriptor.Absolute
+                              Presence = presence
                               MaterialProperties = descriptor.MaterialProperties
                               Material = descriptor.Material
                               Particles = descriptor.Particles
@@ -2203,6 +2205,7 @@ module StaticBillboardFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
             let insetOpt = entity.GetInsetOpt world
             let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
@@ -2212,7 +2215,7 @@ module StaticBillboardFacetModule =
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             World.enqueueRenderMessage3d
                 (RenderBillboard
-                    { Absolute = absolute; ModelMatrix = affineMatrix; InsetOpt = insetOpt
+                    { Absolute = absolute; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
                       MaterialProperties = properties; Material = material; RenderType = renderType; RenderPass = renderPass })
                 world
 
@@ -2429,6 +2432,7 @@ module BasicStaticBillboardEmitterFacetModule =
 
         override this.Render (renderPass, entity, world) =
             let time = world.GameTime
+            let presence = entity.GetPresence world
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem |>
@@ -2459,6 +2463,7 @@ module BasicStaticBillboardEmitterFacetModule =
                         Some
                             (RenderBillboardParticles
                                 { Absolute = descriptor.Absolute
+                                  Presence = presence
                                   MaterialProperties = properties
                                   Material = material
                                   Particles = descriptor.Particles
@@ -2565,6 +2570,7 @@ module StaticModelSurfaceFacetModule =
                 let mutable transform = entity.GetTransform world
                 let absolute = transform.Absolute
                 let affineMatrix = transform.AffineMatrix
+                let presence = transform.Presence
                 let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
                 let properties = entity.GetMaterialProperties world
                 let material = entity.GetMaterial world
@@ -2573,7 +2579,7 @@ module StaticModelSurfaceFacetModule =
                     match entity.GetRenderStyle world with
                     | Deferred -> DeferredRenderType
                     | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
+                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -2672,11 +2678,12 @@ module AnimatedModelFacetModule =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
             let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
             let animatedModel = entity.GetAnimatedModel world
             match entity.GetBoneTransformsOpt world with
-            | Some boneTransforms -> World.renderAnimatedModelFast (absolute, &affineMatrix, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
+            | Some boneTransforms -> World.renderAnimatedModelFast (absolute, &affineMatrix, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
             | None -> ()
 
         override this.GetAttributesInferred (entity, world) =

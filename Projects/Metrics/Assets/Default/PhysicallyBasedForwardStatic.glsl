@@ -31,14 +31,14 @@ layout (location = 3) in mat4 model;
 layout (location = 7) in vec4 texCoordsOffset;
 layout (location = 8) in vec4 albedo;
 layout (location = 9) in vec4 material;
-layout (location = 10) in vec3 heightPlus;
+layout (location = 10) in vec4 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
 out vec3 normalOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
-flat out vec3 heightPlusOut;
+flat out vec4 heightPlusOut;
 
 void main()
 {
@@ -109,7 +109,7 @@ in vec2 texCoordsOut;
 in vec3 normalOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
-flat in vec3 heightPlusOut;
+flat in vec4 heightPlusOut;
 
 out vec4 frag;
 
@@ -223,6 +223,17 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
+    // discard if depth out of range
+    float depthCutoff = heightPlusOut.z;
+    if (depthCutoff >= 0.0)
+    {
+        if (gl_FragCoord.z / gl_FragCoord.w > depthCutoff) discard;
+    }
+    else
+    {
+        if (gl_FragCoord.z / gl_FragCoord.w <= -depthCutoff) discard;
+    }
+
     // compute basic fragment data
     vec3 position = positionOut.xyz;
     vec3 normal = normalize(normalOut);
@@ -252,7 +263,7 @@ void main()
     albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
     albedo.a = albedoSample.a * albedoOut.a;
     if (albedo.a == 0.0f) discard;
-    float opaqueDistance = heightPlusOut.z;
+    float opaqueDistance = heightPlusOut.w;
     albedo.a = mix(albedo.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance));
 
     // compute material properties

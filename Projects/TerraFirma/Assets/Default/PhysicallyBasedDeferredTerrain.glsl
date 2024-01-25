@@ -34,7 +34,7 @@ layout (location = 6) in mat4 model;
 layout (location = 10) in vec4 texCoordsOffset;
 layout (location = 11) in vec4 albedo;
 layout (location = 12) in vec4 material;
-layout (location = 13) in vec3 heightPlus;
+layout (location = 13) in vec4 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -43,7 +43,7 @@ out vec4 blendsOut[2];
 out vec3 tintOut;
 flat out vec4 albedoOut;
 flat out vec4 materialOut;
-flat out vec3 heightPlusOut;
+flat out vec4 heightPlusOut;
 
 void main()
 {
@@ -84,7 +84,7 @@ in vec4 blendsOut[2];
 in vec3 tintOut;
 flat in vec4 albedoOut;
 flat in vec4 materialOut;
-flat in vec3 heightPlusOut;
+flat in vec4 heightPlusOut;
 
 layout (location = 0) out vec4 position;
 layout (location = 1) out vec3 albedo;

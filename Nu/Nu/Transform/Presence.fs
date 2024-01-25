@@ -20,10 +20,15 @@ type [<Struct>] Presence =
     /// Always visible.
     | Omnipresent
 
-    member this.InteriorType with get () = match this with Interior -> true | _ -> false
-    member this.ExteriorType with get () = match this with Exterior -> true | _ -> false
-    member this.ImposterType with get () = match this with Imposter -> true | _ -> false
-    member this.OmnipresentType with get () = match this with Omnipresent -> true | _ -> false
+    member this.InteriorType = match this with Interior -> true | _ -> false
+    member this.ExteriorType = match this with Exterior -> true | _ -> false
+    member this.ImposterType = match this with Imposter -> true | _ -> false
+    member this.OmnipresentType = match this with Omnipresent -> true | _ -> false
+    member this.DepthCutoff =
+        match this with
+        | Omnipresent -> Constants.Render.FarPlaneDistanceOmnipresent
+        | Imposter -> -Constants.Render.NearPlaneDistanceImposter
+        | Exterior | Interior -> Constants.Render.FarPlaneDistanceExterior
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
     static member intersects3d (frustumInteriorOpt : Frustum option) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 option) (lightProbe : bool) (light : bool) presence (bounds : Box3) =
