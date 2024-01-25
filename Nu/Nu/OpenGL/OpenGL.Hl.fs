@@ -44,10 +44,10 @@ module Hl =
         Marshal.Copy (message, messageBytes, 0, length)
         let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
         match severity with
-        | DebugSeverity.DebugSeverityLow
         | DebugSeverity.DebugSeverityMedium
         | DebugSeverity.DebugSeverityHigh -> Log.info messageStr
         | DebugSeverity.DebugSeverityNotification
+        | DebugSeverity.DebugSeverityLow
         | DebugSeverity.DontCare
         | _ -> ()
 
@@ -56,6 +56,9 @@ module Hl =
 
     /// Listen to the OpenGL error stream.
     let AttachDebugMessageCallback () =
+        Gl.Enable EnableCap.DebugOutput
+        Gl.Enable EnableCap.DebugOutputSynchronous
+        Gl.DebugMessageControl (DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, [||], true)
         Gl.DebugMessageCallback (DebugMessageProc, nativeint 0)
 #else
     /// Listen to the OpenGL error stream.
@@ -77,6 +80,8 @@ module Hl =
 
     /// Initialize OpenGL context once created.
     let InitContext () =
+
+        // enable debugging explicitly and synchronously
 
         // listen to debug messages
         AttachDebugMessageCallback ()

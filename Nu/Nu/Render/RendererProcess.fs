@@ -168,6 +168,7 @@ type RendererInline () =
 
                 // render imgui
                 rendererImGui.Render drawData
+                OpenGL.Hl.Assert ()
 
                 // end frame
                 OpenGL.Hl.EndFrame ()
