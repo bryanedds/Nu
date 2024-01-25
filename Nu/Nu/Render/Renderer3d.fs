@@ -2261,7 +2261,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderTasks.RenderForwardStaticRelative.Clear ()
 
         // setup geometry buffer and viewport
-        let (positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.GeometryBuffers
+        let (positionTexture, albedoTexture, materialTexture, normalPlusTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.GeometryBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, geometryRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
@@ -2347,7 +2347,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // deferred render light mapping quad
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightMappingSurface
-                    (positionTexture, normalAndHeightTexture,
+                    (positionTexture, normalPlusTexture,
                      lightMapOrigins, lightMapMins, lightMapSizes, lightMapsCount,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightMappingShader)
                 OpenGL.Hl.Assert ()
@@ -2367,7 +2367,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render irradiance quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredIrradianceSurface
-            (positionTexture, normalAndHeightTexture, lightMappingTexture,
+            (positionTexture, normalPlusTexture, lightMappingTexture,
              lightMapFallback.IrradianceMap, lightMapIrradianceMaps,
              lightMapOrigins, lightMapMins, lightMapSizes,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredIrradianceShader)
@@ -2385,7 +2385,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render environment filter quad
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredEnvironmentFilterSurface
             (eyeCenter,
-             positionTexture, materialTexture, normalAndHeightTexture, lightMappingTexture,
+             positionTexture, materialTexture, normalPlusTexture, lightMappingTexture,
              lightMapFallback.EnvironmentFilterMap, lightMapEnvironmentFilterMaps,
              lightMapOrigins, lightMapMins, lightMapSizes,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredEnvironmentFilterShader)
@@ -2409,7 +2409,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 // deferred render ssao quad
                 OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSsaoSurface
                     (viewRelativeArray, rasterProjectionArray,
-                     positionTexture, normalAndHeightTexture,
+                     positionTexture, normalPlusTexture,
                      [|Constants.Render.SsaoResolution.X; Constants.Render.SsaoResolution.Y|],
                      renderer.SsaoConfig.SsaoIntensity, renderer.SsaoConfig.SsaoBias, renderer.SsaoConfig.SsaoRadius, renderer.SsaoConfig.SsaoDistanceMax, renderer.SsaoConfig.SsaoSampleCount,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredSsaoShader)
@@ -2460,7 +2460,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render lighting quad to filter buffer
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.LightShadowBiasAcne, renderer.LightingConfig.LightShadowBiasBleed,
-             positionTexture, albedoTexture, materialTexture, normalAndHeightTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
+             positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
