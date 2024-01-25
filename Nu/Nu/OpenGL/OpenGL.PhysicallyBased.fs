@@ -2279,12 +2279,8 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // setup textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, positionTexture.TextureId)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
-        //Gl.UniformHandleARB (shader.PositionTextureUniform, positionTexture.TextureHandle)
-        //Gl.UniformHandleARB (shader.NormalPlusTextureUniform, normalPlusTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.PositionTextureUniform, positionTexture.TextureHandle)
+        Gl.UniformHandleARB (shader.NormalPlusTextureUniform, normalPlusTexture.TextureHandle)
         Hl.Assert ()
 
         // setup geometry
@@ -2300,13 +2296,6 @@ module PhysicallyBased =
 
         // teardown geometry
         Gl.BindVertexArray 0u
-        Hl.Assert ()
-
-        // teardown textures
-        Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // teardown shader
