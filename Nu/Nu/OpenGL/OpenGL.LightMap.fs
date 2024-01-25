@@ -204,8 +204,6 @@ module LightMap =
           ProjectionUniform : int
           RoughnessUniform : int
           ResolutionUniform : int
-          ColorUniform : int
-          BrightnessUniform : int
           CubeMapUniform : int
           EnvironmentFilterShader : uint }
 
@@ -221,8 +219,6 @@ module LightMap =
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let roughnessUniform = Gl.GetUniformLocation (shader, "roughness")
         let resolutionUniform = Gl.GetUniformLocation (shader, "resolution")
-        let colorUniform = Gl.GetUniformLocation (shader, "color")
-        let brightnessUniform = Gl.GetUniformLocation (shader, "brightness")
         let cubeMapUniform = Gl.GetUniformLocation (shader, "cubeMap")
         Hl.Assert ()
 
@@ -231,8 +227,6 @@ module LightMap =
           ProjectionUniform = projectionUniform
           RoughnessUniform = roughnessUniform
           ResolutionUniform = resolutionUniform
-          ColorUniform = colorUniform
-          BrightnessUniform = brightnessUniform
           CubeMapUniform = cubeMapUniform
           EnvironmentFilterShader = shader }
 
