@@ -20,8 +20,8 @@ const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;
 const int LIGHT_MAPS_MAX = 32;
 
-layout (bindless_sampler) uniform sampler2D positionTexture;
-layout (bindless_sampler) uniform sampler2D normalPlusTexture;
+uniform sampler2D positionTexture;
+uniform sampler2D normalPlusTexture;
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
