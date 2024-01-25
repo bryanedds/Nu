@@ -42,12 +42,12 @@ void main()
 {
     // retrieve normal value first, allowing for early-out
     vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
-    vec3 normal = normalPlus.xyz;
-    bool ignoreLightMaps = normalPlus.w == 1.0;
+    vec3 normal = vec3(0.0, 1.0, 0.0);//normalPlus.xyz;
+    bool ignoreLightMaps = false;//normalPlus.w == 1.0;
     if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
 
     // retrieve remaining data from geometry buffers
-    vec3 position = texture(positionTexture, texCoordsOut).xyz;
+    vec3 position = vec3(0.0);//texture(positionTexture, texCoordsOut).xyz;
 
     // compute nearest light map indices
     int lm1 = -1;
