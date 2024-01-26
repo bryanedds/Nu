@@ -86,15 +86,15 @@ module Hl =
         Assert ()
         
         // globally configure opengl for physically-based rendering
-        OpenGL.Gl.Enable OpenGL.EnableCap.TextureCubeMapSeamless
+        Gl.Enable EnableCap.TextureCubeMapSeamless
         Assert ()
 
         // query extensions
         let mutable extensionsCount = 0
         let extensions = hashSetPlus StringComparer.Ordinal []
-        OpenGL.Gl.GetInteger (OpenGL.GetPName.NumExtensions, &extensionsCount)
+        Gl.GetInteger (GetPName.NumExtensions, &extensionsCount)
         for i in 0 .. dec extensionsCount do
-            extensions.Add (OpenGL.Gl.GetString (OpenGL.StringName.Extensions, uint i)) |> ignore<bool>
+            extensions.Add (Gl.GetString (StringName.Extensions, uint i)) |> ignore<bool>
 
         // assert that GL_ARB_bindless_texture is available
         if not (extensions.Contains "GL_ARB_bindless_texture") then
