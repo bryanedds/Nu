@@ -17,7 +17,7 @@ void main()
 #extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;
-const float REFLECTION_LOD_MAX = 5.0;
+const float REFLECTION_LOD_MAX = 7.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
