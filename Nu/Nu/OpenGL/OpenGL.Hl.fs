@@ -81,8 +81,6 @@ module Hl =
     /// Initialize OpenGL context once created.
     let InitContext () =
 
-        // enable debugging explicitly and synchronously
-
         // listen to debug messages
         AttachDebugMessageCallback ()
         Assert ()
