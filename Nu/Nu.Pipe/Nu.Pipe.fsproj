@@ -5,9 +5,9 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ProjectGuid>{85D631A5-821A-4755-A68E-C1FFC64E469A}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<ServerGarbageCollection>true</ServerGarbageCollection>
-		<TieredPGO>true</TieredPGO>
-		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+		<ServerGarbageCollection>True</ServerGarbageCollection>
+		<TieredPGO>True</TieredPGO>
+		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
 		<StartArguments>../../.. . ../../refinement True</StartArguments>
 	</PropertyGroup>
 

@@ -285,72 +285,72 @@ module WorldModule3 =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher (true, false, false)
-                 Entity2dDispatcher (false) :> EntityDispatcher
-                 Entity3dDispatcher (false) :> EntityDispatcher
-                 StaticSpriteDispatcher () :> EntityDispatcher
-                 AnimatedSpriteDispatcher () :> EntityDispatcher
-                 GuiDispatcher () :> EntityDispatcher
-                 TextDispatcher () :> EntityDispatcher
-                 LabelDispatcher () :> EntityDispatcher
-                 ButtonDispatcher () :> EntityDispatcher
-                 ToggleButtonDispatcher () :> EntityDispatcher
-                 RadioButtonDispatcher () :> EntityDispatcher
-                 FillBarDispatcher () :> EntityDispatcher
-                 FeelerDispatcher () :> EntityDispatcher
-                 FpsDispatcher () :> EntityDispatcher
-                 BasicStaticSpriteEmitterDispatcher () :> EntityDispatcher
-                 Effect2dDispatcher () :> EntityDispatcher
-                 Block2dDispatcher () :> EntityDispatcher
-                 Box2dDispatcher () :> EntityDispatcher
-                 Character2dDispatcher () :> EntityDispatcher
-                 TileMapDispatcher () :> EntityDispatcher
-                 TmxMapDispatcher () :> EntityDispatcher
-                 LightProbe3dDispatcher () :> EntityDispatcher
-                 Light3dDispatcher () :> EntityDispatcher
-                 SkyBoxDispatcher () :> EntityDispatcher
-                 StaticBillboardDispatcher () :> EntityDispatcher
-                 StaticModelSurfaceDispatcher () :> EntityDispatcher
-                 RigidModelSurfaceDispatcher () :> EntityDispatcher
-                 StaticModelDispatcher () :> EntityDispatcher
-                 AnimatedModelDispatcher () :> EntityDispatcher
-                 RigidModelDispatcher () :> EntityDispatcher
-                 Effect3dDispatcher () :> EntityDispatcher
-                 Block3dDispatcher () :> EntityDispatcher
-                 Box3dDispatcher () :> EntityDispatcher
-                 Character3dDispatcher () :> EntityDispatcher
-                 TerrainDispatcher () :> EntityDispatcher
-                 StaticModelHierarchyDispatcher () :> EntityDispatcher
-                 RigidModelHierarchyDispatcher () :> EntityDispatcher]
+                 Entity2dDispatcher (false)
+                 Entity3dDispatcher (false)
+                 StaticSpriteDispatcher ()
+                 AnimatedSpriteDispatcher ()
+                 GuiDispatcher ()
+                 TextDispatcher ()
+                 LabelDispatcher ()
+                 ButtonDispatcher ()
+                 ToggleButtonDispatcher ()
+                 RadioButtonDispatcher ()
+                 FillBarDispatcher ()
+                 FeelerDispatcher ()
+                 FpsDispatcher ()
+                 BasicStaticSpriteEmitterDispatcher ()
+                 Effect2dDispatcher ()
+                 Block2dDispatcher ()
+                 Box2dDispatcher ()
+                 Character2dDispatcher ()
+                 TileMapDispatcher ()
+                 TmxMapDispatcher ()
+                 LightProbe3dDispatcher ()
+                 Light3dDispatcher ()
+                 SkyBoxDispatcher ()
+                 StaticBillboardDispatcher ()
+                 StaticModelSurfaceDispatcher ()
+                 RigidModelSurfaceDispatcher ()
+                 StaticModelDispatcher ()
+                 AnimatedModelDispatcher ()
+                 RigidModelDispatcher ()
+                 Effect3dDispatcher ()
+                 Block3dDispatcher ()
+                 Box3dDispatcher ()
+                 Character3dDispatcher ()
+                 TerrainDispatcher ()
+                 StaticModelHierarchyDispatcher ()
+                 RigidModelHierarchyDispatcher ()]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [Facet false
-                 StaticSpriteFacet () :> Facet
-                 AnimatedSpriteFacet () :> Facet
-                 TextFacet () :> Facet
-                 BackdroppableFacet () :> Facet
-                 LabelFacet () :> Facet
-                 ButtonFacet () :> Facet
-                 ToggleButtonFacet () :> Facet
-                 RadioButtonFacet () :> Facet
-                 FillBarFacet () :> Facet
-                 FeelerFacet () :> Facet
-                 BasicStaticSpriteEmitterFacet () :> Facet
-                 EffectFacet () :> Facet
-                 RigidBodyFacet () :> Facet
-                 TileMapFacet () :> Facet
-                 TmxMapFacet () :> Facet
-                 LayoutFacet () :> Facet
-                 LightProbe3dFacet () :> Facet
-                 Light3dFacet () :> Facet
-                 SkyBoxFacet () :> Facet
-                 StaticBillboardFacet () :> Facet
-                 StaticModelSurfaceFacet () :> Facet
-                 StaticModelFacet () :> Facet
-                 AnimatedModelFacet () :> Facet
-                 TerrainFacet () :> Facet
-                 FreezerFacet () :> Facet]
+                 StaticSpriteFacet ()
+                 AnimatedSpriteFacet ()
+                 TextFacet ()
+                 BackdroppableFacet ()
+                 LabelFacet ()
+                 ButtonFacet ()
+                 ToggleButtonFacet ()
+                 RadioButtonFacet ()
+                 FillBarFacet ()
+                 FeelerFacet ()
+                 BasicStaticSpriteEmitterFacet ()
+                 EffectFacet ()
+                 RigidBodyFacet ()
+                 TileMapFacet ()
+                 TmxMapFacet ()
+                 LayoutFacet ()
+                 LightProbe3dFacet ()
+                 Light3dFacet ()
+                 SkyBoxFacet ()
+                 StaticBillboardFacet ()
+                 StaticModelSurfaceFacet ()
+                 StaticModelFacet ()
+                 AnimatedModelFacet ()
+                 TerrainFacet ()
+                 FreezerFacet ()]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =
