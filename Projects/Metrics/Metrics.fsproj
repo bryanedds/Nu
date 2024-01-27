@@ -5,9 +5,9 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ProjectGuid>{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<ServerGarbageCollection>true</ServerGarbageCollection>
-		<TieredPGO>true</TieredPGO>
-		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+		<ServerGarbageCollection>True</ServerGarbageCollection>
+		<TieredPGO>True</TieredPGO>
+		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
 		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net7.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net7.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
 	</PropertyGroup>
 
