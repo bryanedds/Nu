@@ -8,7 +8,7 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE;DISABLE_ENTITY_PRE_UPDATE;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
@@ -16,7 +16,7 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE;DISABLE_ENTITY_PRE_UPDATE;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
