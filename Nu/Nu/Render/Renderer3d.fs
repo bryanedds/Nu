@@ -775,7 +775,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer3d.invalidateCaches renderer
         match renderAsset with
-        | RawAsset _ ->
+        | RawAsset ->
             () // nothing to do
         | TextureAsset (_, texture) ->
             OpenGL.Texture.DestroyTexture texture

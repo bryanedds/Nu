@@ -637,7 +637,7 @@ module CueSystem =
             match cue with
             | Fin | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
             | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
-            | Wait _ | WaitState _ | Tint _ | TintState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+            | Wait _ | WaitState _ | Tint _ | TintState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState | Battle _ | BattleState | Dialog _ | DialogState | Prompt _ | PromptState -> true
             | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
             | If (p, c, a) ->
                 match p with

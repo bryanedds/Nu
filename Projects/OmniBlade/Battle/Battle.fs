@@ -124,7 +124,7 @@ module Battle =
 
         (* Local Properties *)
         member this.UpdateTime = this.UpdateTime_
-        member this.Running = match this.BattleState with BattleRunning _ -> true | _ -> false
+        member this.Running = match this.BattleState with BattleRunning -> true | _ -> false
         member this.Characters = this.Characters_
         member this.Inventory = this.Inventory_
         member this.PrizePool = this.PrizePool_

@@ -285,8 +285,8 @@ module WorldModule3 =
             // TODO: consider if we should reflectively generate these.
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher (true, false, false)
-                 Entity2dDispatcher (false)
-                 Entity3dDispatcher (false)
+                 Entity2dDispatcher false
+                 Entity3dDispatcher false
                  StaticSpriteDispatcher ()
                  AnimatedSpriteDispatcher ()
                  GuiDispatcher ()
