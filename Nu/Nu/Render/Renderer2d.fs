@@ -26,6 +26,8 @@ type [<Struct>] TextValue =
     { mutable Transform : Transform
       mutable Text : string
       mutable Font : Font AssetTag
+      mutable FontSize : int
+      mutable FontStyle : int
       mutable Color : Color
       mutable Justification : Justification }
 
@@ -76,6 +78,8 @@ type TextDescriptor =
     { mutable Transform : Transform
       Text : string
       Font : Font AssetTag
+      FontSize : int
+      FontStyle : int
       Color : Color
       Justification : Justification }
 
@@ -574,6 +578,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         (transform : Transform byref,
          text : string,
          font : Font AssetTag,
+         fontSize : int,
+         fontStyle : int,
          color : Color inref,
          justification : Justification,
          eyeCenter : Vector2,
@@ -603,6 +609,10 @@ type [<ReferenceEquality>] GlRenderer2d =
                         // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
                         // surface and texture one or more times a frame must be understood!
                         let (offset, textSurface, textSurfacePtr) =
+
+                            let mutable font = font
+                            if fontSize <> 0 then SDL_ttf.TTF_SetFontSize (font, fontSize) |> ignore else ()
+                            SDL_ttf.TTF_SetFontStyle (font, fontStyle)
 
                             // create sdl color
                             let mutable colorSdl = SDL.SDL_Color ()
@@ -686,6 +696,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | _ -> Log.infoOnce ("TextDescriptor failed due to unloadable asset for '" + scstring font + "'.")
             OpenGL.Hl.Assert ()
 
+
+
     static member
 #if !DEBUG
         inline
@@ -714,7 +726,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
+                (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSize, descriptor.FontStyle, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
