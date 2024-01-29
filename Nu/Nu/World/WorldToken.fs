@@ -23,8 +23,8 @@ module WorldToken =
                     { Transform = text.Transform
                       Text = text.Text
                       Font = text.Font
-                      FontSize = text.FontSize
-                      FontStyle = text.FontStyle
+                      FontSizing = text.FontSizing
+                      FontStyling = text.FontStyling
                       Color = text.Color
                       Justification = text.Justification }
                 World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world

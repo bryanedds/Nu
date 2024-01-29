@@ -203,7 +203,7 @@ and Content =
     | Nil // first to make default value when missing
     | StaticSprite of Image : Resource * Aspects : Aspect array * Content : Content
     | AnimatedSprite of Image : Resource * Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
-    | TextSprite of Font : Resource * Text : string * Aspects : Aspect array * Content : Content
+    | TextSprite of Font : Resource * Text : string * FontSizing : int option * FontStyling : FontStyle Set * Aspects : Aspect array * Content : Content
     | Billboard of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * HeightMap : Resource * TwoSided : bool * Aspects : Aspect array * Content : Content
     | StaticModel of Resource * Aspects : Aspect array * Content : Content
     | Light3d of LightType * Aspects : Aspect array * Content : Content
@@ -700,7 +700,7 @@ module EffectSystem =
         // abandon evaL
         else effectSystem
 
-    and private evalTextSprite resource text aspects content slice history effectSystem =
+    and private evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem =
 
         // pull font from resource
         let font = evalResource resource effectSystem
@@ -716,8 +716,8 @@ module EffectSystem =
                     { TextValue.Transform = transform
                       Text = text
                       Font = AssetTag.specialize<Font> font
-                      FontSize = 0
-                      FontStyle = 0
+                      FontSizing = fontSizing
+                      FontStyling = fontStyling
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle) }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
@@ -935,8 +935,8 @@ module EffectSystem =
             evalStaticSprite resource aspects content slice history effectSystem
         | AnimatedSprite (resource, celSize, celCount, celRun, delay, playback, aspects, content) ->
             evalAnimatedSprite resource celSize celCount celRun delay playback aspects content slice history effectSystem
-        | TextSprite (resource, text, aspects, content) ->
-            evalTextSprite resource text aspects content slice history effectSystem
+        | TextSprite (resource, text, fontSizing, fontStyling, aspects, content) ->
+            evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
         | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, twoSided, aspects, content) ->

@@ -15,6 +15,17 @@ type [<Struct>] Blend =
     | Additive
     | Overwrite
 
+/// Represent an aspect of font styling.
+[<Syntax
+    ("Bold Italic Underline Strikethrough", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
+type FontStyle =
+    | Bold
+    | Italic
+    | Underline
+    | Strikethrough
+
 /// Horizontal justification.
 [<Syntax
     ("JustifyLeft JustifyRight JustifyCenter", "", "", "", "",

@@ -26,8 +26,8 @@ type [<Struct>] TextValue =
     { mutable Transform : Transform
       mutable Text : string
       mutable Font : Font AssetTag
-      mutable FontSize : int
-      mutable FontStyle : int
+      mutable FontSizing : int option
+      mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification }
 
@@ -78,8 +78,8 @@ type TextDescriptor =
     { mutable Transform : Transform
       Text : string
       Font : Font AssetTag
-      FontSize : int
-      FontStyle : int
+      FontSizing : int option
+      FontStyling : FontStyle Set
       Color : Color
       Justification : Justification }
 
@@ -578,8 +578,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         (transform : Transform byref,
          text : string,
          font : Font AssetTag,
-         fontSize : int,
-         fontStyle : int,
+         fontSizing : int option,
+         fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
          eyeCenter : Vector2,
@@ -610,16 +610,31 @@ type [<ReferenceEquality>] GlRenderer2d =
                         // surface and texture one or more times a frame must be understood!
                         let (offset, textSurface, textSurfacePtr) =
 
-                            let mutable font = font
-                            if fontSize <> 0 then SDL_ttf.TTF_SetFontSize (font, fontSize) |> ignore else ()
-                            SDL_ttf.TTF_SetFontStyle (font, fontStyle)
-
                             // create sdl color
                             let mutable colorSdl = SDL.SDL_Color ()
                             colorSdl.r <- color.R8
                             colorSdl.g <- color.G8
                             colorSdl.b <- color.B8
                             colorSdl.a <- color.A8
+
+                            // attempt to configure sdl font size
+                            match fontSizing with
+                            | Some fontSize ->
+                                let errorCode = SDL_ttf.TTF_SetFontSize (font, fontSize)
+                                if errorCode <> 0 then
+                                    let error = SDL_ttf.TTF_GetError ()
+                                    Log.info ("Failed to set font size for font '" + scstring font + "' due to: " + error)
+                            | None -> ()
+
+                            // configure sdl font style
+                            let styleSdl =
+                                if fontStyling.Count > 0 then // OPTIMIZATION: avoid set queries where possible.
+                                    (if fontStyling.Contains Bold then SDL_ttf.TTF_STYLE_BOLD else 0) |||
+                                    (if fontStyling.Contains Italic then SDL_ttf.TTF_STYLE_ITALIC else 0) |||
+                                    (if fontStyling.Contains Underline then SDL_ttf.TTF_STYLE_UNDERLINE else 0) |||
+                                    (if fontStyling.Contains Strikethrough then SDL_ttf.TTF_STYLE_STRIKETHROUGH else 0)
+                                else 0
+                            SDL_ttf.TTF_SetFontStyle (font, styleSdl)
 
                             // render text to surface
                             match justification with
@@ -726,7 +741,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSize, descriptor.FontStyle, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
+                (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
