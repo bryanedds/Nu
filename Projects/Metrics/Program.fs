@@ -143,6 +143,7 @@ type MyGameDispatcher () =
         let world =
             Array.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
+                let world = entity.SetPresence Omnipresent world
                 let world = entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
                 let world = entity.SetScale (v3Dup 0.1f) world
                 world)
