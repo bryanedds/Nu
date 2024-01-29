@@ -217,12 +217,6 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | WavAsset _ ->
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | OggAsset oggAsset ->
-                // NOTE: this code will get the accurate song start time when SDL_mixer.Mix_GetMusicLoopLengthTime gets implemented...
-                //let songLength = SDL_mixer.Mix_GetMusicLoopLengthTime oggAsset
-                //let songStart =
-                //    if songLength < 0.0 // NOTE: may be -1.0 if duration query is unsupported.
-                //    then playSongMessage.Start - playSongMessage.Start % songLength
-                //    else 0.0
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 match SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime.Seconds) with
