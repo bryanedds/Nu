@@ -165,12 +165,6 @@ module WorldModuleGame =
                 let gameState = { gameState with SelectedScreenOpt = value }
                 let world = World.setGameState gameState game world
 
-                // set selected ecs opt
-                let world =
-                    match value with
-                    | Some screen -> World.setSelectedEcsOpt (Some (WorldModule.getScreenEcs screen world)) world
-                    | None -> World.setSelectedEcsOpt None world
-
                 // raise change event for Some case
                 match value with
                 | Some screen ->

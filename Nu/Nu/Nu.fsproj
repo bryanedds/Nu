@@ -40,8 +40,6 @@
 		<Compile Include="Collections\KeyedArray.fs" />
 		<Compile Include="Collections\ForgetfulDictionary.fs" />
 		<Compile Include="Collections\OrderedDictionary.fs" />
-		<Compile Include="Ecs\EcsPrelude.fs" />
-		<Compile Include="Ecs\Ecs.fs" />
 		<Compile Include="Transform\Presence.fs" />
 		<Compile Include="Transform\Viewport.fs" />
 		<Compile Include="Transform\Quadtree.fs" />

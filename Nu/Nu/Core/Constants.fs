@@ -235,16 +235,6 @@ module Effects =
     let [<Literal>] EffectHistoryMaxDefault = 60 // 1 second of effect history @ 60 fps
 
 [<RequireQualifiedAccess>]
-module Ecs =
-
-    let [<Literal>] ArrayReserve = 256 // just large enough to amortize cache misses
-    let [<Literal>] ParallelTaskSizeMinimum = 1024
-    let [<Literal>] PreallocateAmount = ArrayReserve
-    let [<Literal>] IntraComponentPrefix = "@"
-    let [<Literal>] UnscheduledEventSuffix = "!U"
-    let [<Literal>] ScheduledEventSuffix = "!S"
-
-[<RequireQualifiedAccess>]
 module Paths =
 
     let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite.glsl"

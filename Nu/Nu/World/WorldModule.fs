@@ -44,10 +44,6 @@ module WorldModule =
     let mutable internal ignorePropertyBindings : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
-    /// F# reach-around for getting a screen's Ecs.
-    let mutable internal getScreenEcs : Screen -> World -> Ecs.Ecs =
-        Unchecked.defaultof<_>
-
     /// F# reach-around for sorting subscriptions by elevation.
     let mutable internal sortSubscriptionsByElevation : (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
@@ -423,24 +419,6 @@ module WorldModule =
 
         static member internal getOctree world =
             world.Octree
-
-    type World with // SelectedEcsOpt
-
-        /// Attempt to get the currently selected ECS.
-        static member getSelectedEcsOpt world =
-            world.SelectedEcsOpt
-
-        /// Get the currently selected ECS (failing with an exception if there isn't one).
-        static member getSelectedEcs world =
-            match  world.SelectedEcsOpt with
-            | Some selectedEcsOpt -> selectedEcsOpt
-            | None -> failwith "Cannot get Ecs when no screen is selected."
-
-        static member internal setSelectedEcsOpt selectedEcsOpt world =
-            if World.getImperative world then
-                world.SelectedEcsOpt <- selectedEcsOpt
-                world
-            else World.choose { world with SelectedEcsOpt = selectedEcsOpt }
 
     type World with // Subsystems
 

@@ -16,8 +16,6 @@ module WorldScreenModule =
         member this.GetModelGeneric<'a> world = World.getScreenModel<'a> this world
         member this.SetModelGeneric<'a> value world = World.setScreenModel<'a> false value this world |> snd'
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
-        member this.GetEcs world = World.getScreenEcs this world
-        member this.Ecs = lensReadOnly (nameof this.Ecs) this this.GetEcs
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> snd'
         member this.TransitionState = lens (nameof this.TransitionState) this this.GetTransitionState this.SetTransitionState
@@ -123,11 +121,6 @@ module WorldScreenModule =
 
         static member internal preUpdateScreen (screen : Screen) world =
 
-            // pre-update ecs
-            let ecs = World.getScreenEcs screen world
-            let world = ecs.Notify Ecs.EcsEvents.PreUpdate () world
-            let world = ecs.Publish Ecs.EcsEvents.PreUpdate () world
-
             // pre-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.PreUpdate (screen, world)
@@ -137,11 +130,6 @@ module WorldScreenModule =
             World.publishPlus () screen.PreUpdateEvent eventTrace screen false false world
 
         static member internal updateScreen (screen : Screen) world =
-
-            // update ecs
-            let ecs = World.getScreenEcs screen world
-            let world = ecs.Notify Ecs.EcsEvents.Update () world
-            let world = ecs.Publish Ecs.EcsEvents.Update () world
 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
@@ -153,11 +141,6 @@ module WorldScreenModule =
 
         static member internal postUpdateScreen (screen : Screen) world =
 
-            // post-update ecs
-            let ecs = World.getScreenEcs screen world
-            let world = ecs.Notify Ecs.EcsEvents.PostUpdate () world
-            let world = ecs.Publish Ecs.EcsEvents.PostUpdate () world
-
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.PostUpdate (screen, world)
@@ -167,11 +150,6 @@ module WorldScreenModule =
             World.publishPlus () screen.PostUpdateEvent eventTrace screen false false world
 
         static member internal renderScreen renderPass (screen : Screen) world =
-
-            // render ecs
-            let ecs = World.getScreenEcs screen world
-            let world = ecs.Notify Ecs.EcsEvents.Render () world
-            let world = ecs.Publish Ecs.EcsEvents.Render () world
 
             // render via dispatcher
             let dispatcher = screen.GetDispatcher world
@@ -234,8 +212,7 @@ module WorldScreenModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
-            let makeEcs = fun screenName -> world.WorldExtension.Plugin.MakeEcs (Game.Handle / screenName)
-            let screenState = ScreenState.make makeEcs world.GameTime nameOpt dispatcher
+            let screenState = ScreenState.make world.GameTime nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = Game.Handle / screenState.Name
             let world =
@@ -322,8 +299,7 @@ module WorldScreenModule =
                 | None -> failwith ("Could not find a ScreenDispatcher named '" + dispatcherName + "'.")
 
             // make the screen state and populate its properties
-            let makeEcs = fun screenName -> world.WorldExtension.Plugin.MakeEcs (Game.Handle / screenName)
-            let screenState = ScreenState.make makeEcs world.GameTime None dispatcher
+            let screenState = ScreenState.make world.GameTime None dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
