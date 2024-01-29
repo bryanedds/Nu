@@ -402,6 +402,13 @@ module TextFacetModule =
         member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
         member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
         member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
+        member this.GetFontSize world : int = this.Get (nameof this.FontSize) world
+        member this.SetFontSize (value : int) world = this.Set (nameof this.FontSize) value world
+        member this.FontSize = lens (nameof this.FontSize) this this.GetFontSize this.SetFontSize
+        member this.GetFontStyle world : int = this.Get (nameof this.FontStyle) world
+        member this.SetFontStyle (value : int) world = this.Set (nameof this.FontStyle) value world
+        member this.FontStyle = lens (nameof this.FontStyle) this this.GetFontStyle this.SetFontStyle
+
         member this.GetJustification world : Justification = this.Get (nameof this.Justification) world
         member this.SetJustification (value : Justification) world = this.Set (nameof this.Justification) value world
         member this.Justification = lens (nameof this.Justification) this this.GetJustification this.SetJustification
@@ -428,6 +435,8 @@ module TextFacetModule =
         static member Properties =
             [define Entity.Text ""
              define Entity.Font Assets.Default.Font
+             define Entity.FontSize 0
+             define Entity.FontStyle 0
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.TextMargin v2Zero
              define Entity.TextColor Color.Black
@@ -450,6 +459,8 @@ module TextFacetModule =
                 textTransform.Elevation <- transform.Elevation + shift
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
+                let fontSize = entity.GetFontSize world
+                let fontStyle = entity.GetFontStyle world
                 World.enqueueLayeredOperation2d
                     { Elevation = textTransform.Elevation
                       Horizon = horizon
@@ -459,6 +470,8 @@ module TextFacetModule =
                             { Transform = textTransform
                               Text = text
                               Font = font
+                              FontSize = fontSize
+                              FontStyle = fontStyle
                               Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
                               Justification = entity.GetJustification world }}
                     world
