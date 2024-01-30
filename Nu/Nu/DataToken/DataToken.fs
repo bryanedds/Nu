@@ -5,10 +5,10 @@ namespace Nu
 open System
 open Prime
 
-/// Tokenized data and processing requests.
+/// Data tokens for optional downstream processing.
 /// NOTE: EffectToken only exists as a way to make effect emitters on emitters work due to issue #141.
 /// NOTE: some case fields are objs because the type information isn't available at the union's definition.
-type [<ReferenceEquality>] Token =
+type [<ReferenceEquality>] DataToken =
     | SpriteToken of Elevation : single * Horizon : single * Image : AssetTag * SpriteValue : SpriteValue
     | TextToken of Elevation : single * Horizon : single * Font : AssetTag * TextValue : TextValue
     | Light3dToken of Light3dValue : Light3dValue
@@ -18,17 +18,17 @@ type [<ReferenceEquality>] Token =
     | EffectToken of Name : string * EffectDescriptorObj : obj * SliceObj : obj
     | EmitterToken of Name : string * EmitterDescriptorObj : obj
     | TagToken of Name : string * UserDefined : obj
-    | Tokens of Tokens : Token SArray
+    | DataTokens of DataTokens : DataToken SArray
 
 [<RequireQualifiedAccess>]
-module Token =
+module DataToken =
 
-    /// Convert a token to a seq of zero or more tokens.
-    let rec toSeq token =
+    /// Convert a data token to a seq of zero or more data tokens.
+    let rec toSeq dataToken =
         seq {
-            match token with
-            | Tokens tokens -> for token in tokens do yield! toSeq token
-            | _ -> yield token }
+            match dataToken with
+            | DataTokens dataTokens -> for token in dataTokens do yield! toSeq token
+            | _ -> yield dataToken }
 
-    /// The empty token.
-    let empty = Tokens SArray.empty
+    /// The empty data token.
+    let empty = DataTokens SArray.empty

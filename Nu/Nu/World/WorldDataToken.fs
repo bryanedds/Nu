@@ -6,12 +6,12 @@ open System
 open Prime
 
 [<AutoOpen>]
-module WorldToken =
+module WorldDataToken =
 
     type World with
 
-        static member internal renderToken renderPass token world =
-            match token with
+        static member internal renderDataToken renderPass dataToken world =
+            match dataToken with
 
             // render sprite
             | SpriteToken (elevation, horizon, assetTag, sprite) ->
@@ -97,6 +97,6 @@ module WorldToken =
             | TagToken (_, _) -> ()
 
             // recur
-            | Tokens tokens ->
-                for token in tokens do
-                    World.renderToken renderPass token world
+            | DataTokens dataTokens ->
+                for dataToken in dataTokens do
+                    World.renderDataToken renderPass dataToken world

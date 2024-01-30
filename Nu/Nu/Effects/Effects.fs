@@ -242,8 +242,7 @@ type Definitions =
      "Enabled PositionAbsolute Position PositionLocal Scale Offset Angles Degrees Size Elevation Inset Color Emission Height IgnoreLightMaps Flip Brightness LightCutoff Volume " +
      "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights IgnoreLightMapses Brightnesses LightCutoffs Volumes Aspects " +
      "Expand " +
-     "StaticSprite AnimatedSprite TextSprite Light3d Billboard StaticModel Mount Repeat Emit Delay Segment Composite Tag Nil " +
-     "Token",
+     "StaticSprite AnimatedSprite TextSprite Light3d Billboard StaticModel Mount Repeat Emit Delay Segment Composite Tag Nil",
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
@@ -290,11 +289,11 @@ module EffectSystem =
               EffectAbsolute : bool
               EffectPresence : Presence
               EffectRenderType : RenderType
-              EffectTokens : Token SList
+              EffectDataTokens : DataToken SList
               EffectEnv : Definitions }
 
-    let rec private addToken token effectSystem =
-        effectSystem.EffectTokens.Add token
+    let rec private addDataToken dataToken effectSystem =
+        effectSystem.EffectDataTokens.Add dataToken
         effectSystem
 
     let rec private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
@@ -434,12 +433,12 @@ module EffectSystem =
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
                 asset Assets.Default.PackageName Assets.Default.ImageName
 
-    let rec private iterateTokens incrementAspects content slice history effectSystem =
+    let rec private iterateDataTokens incrementAspects content slice history effectSystem =
         let effectSystem = { effectSystem with EffectProgressOffset = 0.0f }
         let slice = evalAspects incrementAspects slice effectSystem
         (slice, evalContent content slice history effectSystem)
 
-    and private cycleTokens incrementAspects content slice history effectSystem =
+    and private cycleDataTokens incrementAspects content slice history effectSystem =
         let slice = evalAspects incrementAspects slice effectSystem
         evalContent content slice history effectSystem
 
@@ -654,7 +653,7 @@ module EffectSystem =
                       Emission = slice.Emission
                       Flip = slice.Flip }
                 let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
-                addToken spriteToken effectSystem
+                addDataToken spriteToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -691,7 +690,7 @@ module EffectSystem =
                           Emission = slice.Emission
                           Flip = slice.Flip }
                     let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
-                    addToken spriteToken effectSystem
+                    addDataToken spriteToken effectSystem
                 else effectSystem
 
             // build implicitly mounted content
@@ -721,7 +720,7 @@ module EffectSystem =
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle) }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
-                addToken textToken effectSystem
+                addDataToken textToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -751,7 +750,7 @@ module EffectSystem =
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
                           DesireShadows = false }
-                addToken lightToken effectSystem
+                addDataToken lightToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -803,7 +802,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           Material = material
                           RenderType = effectSystem.EffectRenderType }
-                addToken billboardToken effectSystem
+                addDataToken billboardToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -841,7 +840,7 @@ module EffectSystem =
                           MaterialProperties = properties
                           StaticModel = staticModel
                           RenderType = effectSystem.EffectRenderType }
-                addToken staticModelToken effectSystem
+                addDataToken staticModelToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -862,7 +861,7 @@ module EffectSystem =
         | Iterate count ->
             Array.fold
                 (fun (slice, effectSystem) _ ->
-                    let (slice, effectSystem) = iterateTokens incrementAspects content slice history effectSystem
+                    let (slice, effectSystem) = iterateDataTokens incrementAspects content slice history effectSystem
                     (slice, effectSystem))
                 (slice, effectSystem)
                 [|0 .. count - 1|] |>
@@ -873,7 +872,7 @@ module EffectSystem =
             Array.fold
                 (fun effectSystem i ->
                     let effectSystem = { effectSystem with EffectProgressOffset = 1.0f / single count * single i }
-                    cycleTokens incrementAspects content slice history effectSystem)
+                    cycleDataTokens incrementAspects content slice history effectSystem)
                 effectSystem
                 [|0 .. count - 1|]
 
@@ -886,7 +885,7 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let tagToken = Nu.TagToken (name, slice)
-                addToken tagToken effectSystem
+                addDataToken tagToken effectSystem
             else effectSystem
 
         // build implicitly mounted content
@@ -967,9 +966,9 @@ module EffectSystem =
             contents
 
     let private release effectSystem =
-        let tokens = Tokens (SArray.ofSeq effectSystem.EffectTokens)
-        let effectSystem = { effectSystem with EffectTokens = SList.make () }
-        (tokens, effectSystem)
+        let dataTokens = DataTokens (SArray.ofSeq effectSystem.EffectDataTokens)
+        let effectSystem = { effectSystem with EffectDataTokens = SList.make () }
+        (dataTokens, effectSystem)
 
     /// Evaluates an EffectDescriptor, applying the effect if it is still alive, with the following parameters:
     ///   - descriptor: The EffectDescriptor to be evaluated.
@@ -1010,7 +1009,7 @@ module EffectSystem =
           EffectAbsolute = absolute
           EffectPresence = presence
           EffectRenderType = renderType
-          EffectTokens = SList.make ()
+          EffectDataTokens = SList.make ()
           EffectEnv = globalEnv }
 
 /// Evaluates effect descriptors.

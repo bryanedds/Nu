@@ -90,7 +90,7 @@
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
 		<Compile Include="Metadata\Metadata.fs" />
-		<Compile Include="Token\Token.fs" />
+		<Compile Include="DataToken\DataToken.fs" />
 		<Compile Include="Particles\Particles.fs" />
 		<Compile Include="Effects\Effects.fs" />
 		<Compile Include="World\WorldPrelude.fs" />
@@ -115,7 +115,7 @@
 		<Compile Include="World\WorldAudio.fs" />
 		<Compile Include="World\WorldImGui.fs" />
 		<Compile Include="World\WorldTmxMap.fs" />
-		<Compile Include="World\WorldToken.fs" />
+		<Compile Include="World\WorldDataToken.fs" />
 		<Compile Include="World\WorldEffects.fs" />
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />
