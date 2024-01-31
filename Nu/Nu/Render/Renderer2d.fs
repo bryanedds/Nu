@@ -713,8 +713,6 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | _ -> Log.infoOnce ("TextDescriptor failed due to unloadable asset for '" + scstring font + "'.")
             OpenGL.Hl.Assert ()
 
-
-
     static member
 #if !DEBUG
         inline
