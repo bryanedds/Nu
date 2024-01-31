@@ -103,7 +103,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
 type RenderAsset =
     | RawAsset
     | TextureAsset of TextureMetadata : OpenGL.Texture.TextureMetadata * Texture : OpenGL.Texture.Texture
-    | FontAsset of PointSize : int * Font : nativeint
+    | FontAsset of FontSizeDefault : int * Font : nativeint
     | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapMemoKey * CubeMap : OpenGL.Texture.Texture * IrradianceAndEnvironmentMapOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref
     | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelAsset of AnimatedModel : OpenGL.PhysicallyBased.PhysicallyBasedModel

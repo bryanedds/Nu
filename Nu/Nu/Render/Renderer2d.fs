@@ -603,7 +603,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 match GlRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
-                    | FontAsset (_, font) ->
+                    | FontAsset (fontSizeDefault, font) ->
 
                         // gather rendering resources
                         // NOTE: the resource implications (throughput and fragmentation?) of creating and destroying a
@@ -618,13 +618,15 @@ type [<ReferenceEquality>] GlRenderer2d =
                             colorSdl.a <- color.A8
 
                             // attempt to configure sdl font size
-                            match fontSizing with
-                            | Some fontSize ->
-                                let errorCode = SDL_ttf.TTF_SetFontSize (font, fontSize)
-                                if errorCode <> 0 then
-                                    let error = SDL_ttf.TTF_GetError ()
-                                    Log.info ("Failed to set font size for font '" + scstring font + "' due to: " + error)
-                            | None -> ()
+                            let fontSize =
+                                match fontSizing with
+                                | Some fontSize -> fontSize
+                                | None -> fontSizeDefault
+                            let errorCode = SDL_ttf.TTF_SetFontSize (font, fontSize)
+                            if errorCode <> 0 then
+                                let error = SDL_ttf.TTF_GetError ()
+                                Log.info ("Failed to set font size for font '" + scstring font + "' due to: " + error)
+                                SDL_ttf.TTF_SetFontSize (font, fontSize) |> ignore<int>
 
                             // configure sdl font style
                             let styleSdl =

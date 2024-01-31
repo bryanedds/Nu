@@ -7,9 +7,7 @@
    [Assets Assets/Default [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Default [nugroup tsx tmx] [] []]]]
  [Gui
-  [[Asset ClearSans12Font "Assets/Gui/ClearSans.012.ttf" [Render2d] []]
-   [Asset ClearSans18Font "Assets/Gui/ClearSans.018.ttf" [Render2d] []]
-   [Asset ClearSans24Font "Assets/Gui/ClearSans.024.ttf" [Render2d] []]
+  [[Asset ClearSansFont "Assets/Gui/ClearSans.024.ttf" [Render2d] []]
    [Assets Assets/Gui [bmp png psd] [Render2d Render3d] [PsdToPng]]
    [Assets Assets/Gui [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Gui [cbm fbx dae obj mtl glsl raw] [Render3d] []]

@@ -1,16 +1,16 @@
 ﻿[[Twenty48ButtonOverlay
   [ButtonOverlay]
   [ButtonDispatcher]
-  [[Font [Gui ClearSans24Font]]]]
+  [[Font [Gui ClearSansFont]]]]
  [Twenty48TextOverlay
   [TextOverlay]
   [TextDispatcher]
-  [[Font [Gui ClearSans24Font]]]]
+  [[Font [Gui ClearSansFont]]]]
  [Twenty48ToggleButtonOverlay
   [ToggleButtonOverlay]
   [ToggleButtonDispatcher]
-  [[Font [Gui ClearSans24Font]]]]
+  [[Font [Gui ClearSansFont]]]]
  [Twenty48RadioButtonOverlay
   [RadioButtonOverlay]
   [RadioButtonDispatcher]
-  [[Font [Gui ClearSans24Font]]]]]
+  [[Font [Gui ClearSansFont]]]]]
