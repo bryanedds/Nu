@@ -202,7 +202,7 @@ and Aspect =
 and Content =
     | Nil // first to make default value when missing
     | StaticSprite of Image : Resource * Aspects : Aspect array * Content : Content
-    | AnimatedSprite of Image : Resource * Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
+    | AnimatedSprite of Image : Resource * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
     | TextSprite of Font : Resource * Text : string * FontSizing : int option * FontStyling : FontStyle Set * Aspects : Aspect array * Content : Content
     | Billboard of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * HeightMap : Resource * TwoSided : bool * Aspects : Aspect array * Content : Content
     | StaticModel of Resource * Aspects : Aspect array * Content : Content
@@ -902,7 +902,7 @@ module EffectSystem =
             let emitCount = int emitCountThisFrame - int emitCountLastFrame
             let effectSystem =
                 Array.fold (fun effectSystem _ ->
-                    let emission = Slice.copy slice
+                    let emission = Slice.copy slice // protect original slice from mutation
                     let emission = evalAspects aspects emission effectSystem
                     if emission.Enabled
                     then evalContent content emission history effectSystem
@@ -927,6 +927,7 @@ module EffectSystem =
         evalContents3 contents slice history effectSystem
 
     and private evalContent content slice history effectSystem =
+        let slice = Slice.copy slice // protect original slice from mutation
         match content with
         | Nil ->
             effectSystem
