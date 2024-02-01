@@ -77,6 +77,7 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
     member this.IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
     member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
 
+    /// Material properties with populated default properties.
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
@@ -87,6 +88,7 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
           IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault }
 
+    /// Empty material properties.
     static member empty =
         Unchecked.defaultof<MaterialProperties>
 
@@ -110,6 +112,7 @@ type [<SymbolicExpansion; Struct>] Material =
     member this.HeightImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
 
+    /// The material with populated default images.
     static member defaultMaterial =
         { AlbedoImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName)
           RoughnessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName)
@@ -120,9 +123,11 @@ type [<SymbolicExpansion; Struct>] Material =
           HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName)
           TwoSidedOpt = ValueSome false }
 
+    /// The empty material.
     static member empty =
         Unchecked.defaultof<Material>
 
+/// A mutable 3d light probe value.
 and [<Struct>] LightProbe3dValue =
     { mutable LightProbeId : uint64
       mutable Enabled : bool
@@ -2225,9 +2230,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderTasks.RenderLightMaps |>
             Array.ofSeq |>
             Array.filter (fun lightMap -> lightMap.SortableLightMapEnabled && geometryFrustum.Intersects lightMap.SortableLightMapBounds)
-
-        // compute light maps count for shaders
-        let lightMapsCount = min lightMaps.Length Constants.Render.LightMapsMaxDeferred
 
         // compute lights count for shaders
         let lightsCount = min renderTasks.RenderLights.Count Constants.Render.LightsMaxDeferred
