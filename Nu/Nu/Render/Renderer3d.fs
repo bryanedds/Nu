@@ -616,9 +616,6 @@ and [<ReferenceEquality>] SortableLight =
 
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 and Renderer3d =
-    inherit Renderer
-    /// The physically-based shader.
-    abstract PhysicallyBasedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
     /// Render a frame of the game.
     abstract Render : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
     /// Swap a rendered frame of the game.
@@ -632,7 +629,6 @@ type [<ReferenceEquality>] StubRenderer3d =
         { StubRenderer3d : unit }
 
     interface Renderer3d with
-        member renderer.PhysicallyBasedShader = Unchecked.defaultof<_>
         member renderer.Render _ _ _ _ _ _ _ _ _ = ()
         member renderer.Swap () = ()
         member renderer.CleanUp () = ()
@@ -3021,9 +3017,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer
 
     interface Renderer3d with
-
-        member renderer.PhysicallyBasedShader =
-            renderer.PhysicallyBasedForwardStaticShader
 
         member renderer.Render skipCulling frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize renderMessages =
             if renderMessages.Count > 0 then

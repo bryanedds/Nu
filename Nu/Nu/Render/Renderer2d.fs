@@ -111,9 +111,6 @@ and [<ReferenceEquality>] RenderMessage2d =
 
 /// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
 and Renderer2d =
-    inherit Renderer
-    /// The sprite batch operational environment if it exists for this implementation.
-    abstract SpriteBatchEnvOpt : OpenGL.SpriteBatch.SpriteBatchEnv option
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -125,7 +122,6 @@ type [<ReferenceEquality>] StubRenderer2d =
         { StubRenderer2d : unit }
 
     interface Renderer2d with
-        member renderer.SpriteBatchEnvOpt = None
         member renderer.Render _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
@@ -809,9 +805,6 @@ type [<ReferenceEquality>] GlRenderer2d =
         renderer
 
     interface Renderer2d with
-
-        member renderer.SpriteBatchEnvOpt =
-            Some renderer.SpriteBatchEnv
 
         member renderer.Render eyeCenter eyeSize _ renderMessages =
             if renderMessages.Count > 0 then

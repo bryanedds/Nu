@@ -649,14 +649,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
-        World.enqueueRenderMessage3d
-            (RenderStaticModels
-                { Absolute = false
-                  StaticModels = lightProbeModels
-                  StaticModel = Assets.Default.LightProbeModel
-                  RenderType = DeferredRenderType
-                  RenderPass = NormalPass false })
-            world
+        if SList.notEmpty lightProbeModels then
+            World.enqueueRenderMessage3d
+                (RenderStaticModels
+                    { Absolute = false
+                      StaticModels = lightProbeModels
+                      StaticModel = Assets.Default.LightProbeModel
+                      RenderType = DeferredRenderType
+                      RenderPass = NormalPass false })
+                world
 
         // render lights of the selected group in play
         let (entities, wtemp) = World.getLights3dInBox lightBox (HashSet ()) world in world <- wtemp
@@ -665,14 +666,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
-        World.enqueueRenderMessage3d
-            (RenderStaticModels
-                { Absolute = false
-                  StaticModels = lightModels
-                  StaticModel = Assets.Default.LightbulbModel
-                  RenderType = DeferredRenderType
-                  RenderPass = NormalPass false })
-            world
+        if SList.notEmpty lightModels then
+            World.enqueueRenderMessage3d
+                (RenderStaticModels
+                    { Absolute = false
+                      StaticModels = lightModels
+                      StaticModel = Assets.Default.LightbulbModel
+                      RenderType = DeferredRenderType
+                      RenderPass = NormalPass false })
+                world
 
         // render selection highlights
         match selectedEntityOpt with
