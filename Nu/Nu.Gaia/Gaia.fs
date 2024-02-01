@@ -2856,43 +2856,53 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // renderer window
                     if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
+
+                        // configure lighting
                         ImGui.Text "Lighting"
+                        let mutable lightingChanged = false
                         let mutable lightCutoffMargin = lightingConfig.LightCutoffMargin
                         let mutable lightShadowBiasAcneStr = lightingConfig.LightShadowBiasAcne.ToString "0.00000000"
                         let mutable lightShadowBiasBleed = lightingConfig.LightShadowBiasBleed
                         let mutable lightMappingEnabled = lightingConfig.LightMappingEnabled
-                        ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) |> ignore<bool>
-                        ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) |> ignore<bool>
-                        ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) |> ignore<bool>
-                        ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
-                        lightingConfig <-
-                            { LightCutoffMargin = lightCutoffMargin
-                              LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
-                              LightShadowBiasBleed = lightShadowBiasBleed
-                              LightMappingEnabled = lightMappingEnabled }
-                        World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
+                        lightingChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lightingChanged
+                        lightingChanged <- ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) || lightingChanged
+                        lightingChanged <- ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) || lightingChanged
+                        lightingChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || lightingChanged
+                        if lightingChanged then
+                            lightingConfig <-
+                                { LightCutoffMargin = lightCutoffMargin
+                                  LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
+                                  LightShadowBiasBleed = lightShadowBiasBleed
+                                  LightMappingEnabled = lightMappingEnabled }
+                            World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
+
+                        // configure ssao
                         ImGui.Text "Ssao (screen-space ambient occlusion)"
+                        let mutable ssaoChanged = false
                         let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
                         let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
                         let mutable ssaoBias = ssaoConfig.SsaoBias
                         let mutable ssaoRadius = ssaoConfig.SsaoRadius
                         let mutable ssaoDistanceMax = ssaoConfig.SsaoDistanceMax
                         let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
-                        ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
+                        ssaoChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || ssaoChanged
                         if ssaoEnabled then
-                            ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) |> ignore<bool>
-                            ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
-                            ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
-                            ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) |> ignore<bool>
-                            ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) |> ignore<bool>
-                        ssaoConfig <-
-                            { SsaoEnabled = ssaoEnabled
-                              SsaoIntensity = ssaoIntensity
-                              SsaoBias = ssaoBias
-                              SsaoRadius = ssaoRadius
-                              SsaoDistanceMax = ssaoDistanceMax
-                              SsaoSampleCount = ssaoSampleCount }
-                        World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || ssaoChanged
+                        if ssaoChanged then
+                            ssaoConfig <-
+                                { SsaoEnabled = ssaoEnabled
+                                  SsaoIntensity = ssaoIntensity
+                                  SsaoBias = ssaoBias
+                                  SsaoRadius = ssaoRadius
+                                  SsaoDistanceMax = ssaoDistanceMax
+                                  SsaoSampleCount = ssaoSampleCount }
+                            World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
+
+                        // fin
                         ImGui.End ()
 
                     // audio player window
