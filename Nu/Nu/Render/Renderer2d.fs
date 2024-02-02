@@ -616,13 +616,13 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // attempt to configure sdl font size
                             let fontSize =
                                 match fontSizing with
-                                | Some fontSize -> fontSize
-                                | None -> fontSizeDefault
+                                | Some fontSize -> fontSize * Constants.Render.VirtualScalar
+                                | None -> fontSizeDefault * Constants.Render.VirtualScalar
                             let errorCode = SDL_ttf.TTF_SetFontSize (font, fontSize)
                             if errorCode <> 0 then
                                 let error = SDL_ttf.TTF_GetError ()
-                                Log.info ("Failed to set font size for font '" + scstring font + "' due to: " + error)
-                                SDL_ttf.TTF_SetFontSize (font, fontSize) |> ignore<int>
+                                Log.infoOnce ("Failed to set font size for font '" + scstring font + "' due to: " + error)
+                                SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * Constants.Render.VirtualScalar) |> ignore<int>
 
                             // configure sdl font style
                             let styleSdl =
@@ -639,30 +639,28 @@ type [<ReferenceEquality>] GlRenderer2d =
                             | Unjustified wrapped ->
                                 let textSurfacePtr =
                                     if wrapped
-                                    then SDL_ttf.TTF_RenderUNICODE_Blended_Wrapped (font, text, colorSdl, uint32 (size.X / Constants.Render.VirtualScalar2.X))
+                                    then SDL_ttf.TTF_RenderUNICODE_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
                                     else SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
                                 let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
-                                let textSurfaceHeight = single (textSurface.h * Constants.Render.VirtualScalar)
+                                let textSurfaceHeight = single textSurface.h
                                 let offsetY = size.Y - textSurfaceHeight
                                 (v2 0.0f offsetY, textSurface, textSurfacePtr)
                             | Justified (h, v) ->
                                 let mutable width = 0
                                 let mutable height = 0
                                 SDL_ttf.TTF_SizeUNICODE (font, text, &width, &height) |> ignore
-                                let width = single (width * Constants.Render.VirtualScalar)
-                                let height = single (height * Constants.Render.VirtualScalar)
                                 let textSurfacePtr = SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
                                 let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
                                 let offsetX =
                                     match h with
                                     | JustifyLeft -> 0.0f
-                                    | JustifyCenter -> (size.X - width) * 0.5f
-                                    | JustifyRight -> size.X - width
+                                    | JustifyCenter -> (size.X - single width) * 0.5f
+                                    | JustifyRight -> size.X - single width
                                 let offsetY =
                                     match v with
                                     | JustifyTop -> 0.0f
-                                    | JustifyMiddle -> (size.Y - height) * 0.5f
-                                    | JustifyBottom -> size.Y - height
+                                    | JustifyMiddle -> (size.Y - single height) * 0.5f
+                                    | JustifyBottom -> size.Y - single height
                                 let offset = v2 offsetX offsetY
                                 (offset, textSurface, textSurfacePtr)
 
@@ -673,7 +671,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let textSurfaceWidth = textSurface.pitch / 4 // NOTE: textSurface.w may be an innacurate representation of texture width in SDL2_ttf versions beyond v2.0.15 because... I don't know why.
                             let textSurfaceHeight = textSurface.h
                             let translation = (position + offset).V3
-                            let scale = v3 (single (textSurfaceWidth * Constants.Render.VirtualScalar)) (single (textSurfaceHeight * Constants.Render.VirtualScalar)) 1.0f
+                            let scale = v3 (single textSurfaceWidth) (single textSurfaceHeight) 1.0f
                             let modelTranslation = Matrix4x4.CreateTranslation translation
                             let modelScale = Matrix4x4.CreateScale scale
                             let modelMatrix = modelScale * modelTranslation
