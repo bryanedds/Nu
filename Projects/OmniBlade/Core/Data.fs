@@ -86,10 +86,10 @@ type AffinityType =
     | Lightning
     | Water
     | Wind
-    | Metal // vulnerable to shadow
-    | Earth // not resistant to self
-    | Light // not resistant to self
-    | Shadow // not resistant to self
+    | Metal
+    | Earth
+    | Light
+    | Shadow
 
     static member getScalar source target =
         match (source, target) with
@@ -239,9 +239,9 @@ type EffectType =
     | Magical
 
 type AimType =
-    | EnemyAim of bool // healthy (N/A)
-    | AllyAim of bool // healthy
-    | AnyAim of bool // healthy
+    | EnemyAim of Healthy : bool // NOTE: Healthy state is not currently utilized for enemies.
+    | AllyAim of Healthy : bool
+    | AnyAim of Healthy : bool
     | NoAim
 
 type TargetType =

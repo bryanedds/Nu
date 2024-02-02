@@ -37,6 +37,7 @@
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\Constants.fs" />
 		<Compile Include="Core\Simulants.fs" />
+		<Compile Include="Core\Advents.fs" />
 		<Compile Include="Core\Inventory.fs" />
 		<Compile Include="Core\RandMap.fs" />
 		<Compile Include="Core\Data.fs" />
