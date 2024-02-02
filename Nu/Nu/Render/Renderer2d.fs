@@ -188,15 +188,18 @@ type [<ReferenceEquality>] GlRenderer2d =
         | ".ttf" ->
             let fileFirstName = PathF.GetFileNameWithoutExtension asset.FilePath
             let fileFirstNameLength = String.length fileFirstName
-            if fileFirstNameLength >= 3 then
-                let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
-                match Int32.TryParse fontSizeText with
-                | (true, fontSize) ->
-                    let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                    if fontOpt <> IntPtr.Zero then Some (FontAsset (fontSize, fontOpt))
-                    else Log.info ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
-                | (false, _) -> Log.info ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
-            else Log.info ("Could not load font '" + asset.FilePath + "'."); None
+            let fontSizeDefault =
+                if fileFirstNameLength >= 3 then
+                    let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
+                    match Int32.TryParse fontSizeText with
+                    | (true, fontSize) -> fontSize
+                    | (false, _) -> Constants.Render.FontSizeDefault
+                else Constants.Render.FontSizeDefault
+            let fontSize = fontSizeDefault * Constants.Render.VirtualScalar
+            let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
+            if fontOpt <> IntPtr.Zero
+            then Some (FontAsset (fontSizeDefault, fontOpt))
+            else Log.info ("Could not load font due to '" + SDL_ttf.TTF_GetError () + "'."); None
         | _ -> None
 
     static member private tryLoadRenderPackage packageName renderer =
