@@ -79,15 +79,16 @@ module Texture =
     /// blend map, or specified as uncompressed).
     /// TODO: move this somewhere more general?
     let BlockCompressable (assetNameOrFilePath : string) =
-        let name = PathF.GetFileNameWithoutExtension assetNameOrFilePath
-        not (name.EndsWith "_n") &&
-        not (name.EndsWith "_u") &&
-        not (name.EndsWith "_b") &&
-        not (name.EndsWith "_t") &&
-        not (name.EndsWith "Normal") &&
-        not (name.EndsWith "Uncompressed") &&
-        not (name.EndsWith "Blend") &&
-        not (name.EndsWith "Tint")
+        false
+        //let name = PathF.GetFileNameWithoutExtension assetNameOrFilePath
+        //not (name.EndsWith "_n") &&
+        //not (name.EndsWith "_u") &&
+        //not (name.EndsWith "_b") &&
+        //not (name.EndsWith "_t") &&
+        //not (name.EndsWith "Normal") &&
+        //not (name.EndsWith "Uncompressed") &&
+        //not (name.EndsWith "Blend") &&
+        //not (name.EndsWith "Tint")
 
     let private TryFormatUncompressedPfimageData (image : IImage) =
         let data = image.Data
