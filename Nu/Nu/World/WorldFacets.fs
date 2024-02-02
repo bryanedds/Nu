@@ -402,6 +402,12 @@ module TextFacetModule =
         member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
         member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
         member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
+        member this.GetFontSizing world : int option = this.Get (nameof this.FontSizing) world
+        member this.SetFontSizing (value : int option) world = this.Set (nameof this.FontSizing) value world
+        member this.FontSizing = lens (nameof this.FontSizing) this this.GetFontSizing this.SetFontSizing
+        member this.GetFontStyling world : FontStyle Set = this.Get (nameof this.FontStyling) world
+        member this.SetFontStyling (value : FontStyle Set) world = this.Set (nameof this.FontStyling) value world
+        member this.FontStyling = lens (nameof this.FontStyling) this this.GetFontStyling this.SetFontStyling
         member this.GetJustification world : Justification = this.Get (nameof this.Justification) world
         member this.SetJustification (value : Justification) world = this.Set (nameof this.Justification) value world
         member this.Justification = lens (nameof this.Justification) this this.GetJustification this.SetJustification
@@ -428,6 +434,8 @@ module TextFacetModule =
         static member Properties =
             [define Entity.Text ""
              define Entity.Font Assets.Default.Font
+             define Entity.FontSizing None
+             define Entity.FontStyling Set.empty
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.TextMargin v2Zero
              define Entity.TextColor Color.Black
@@ -450,6 +458,8 @@ module TextFacetModule =
                 textTransform.Elevation <- transform.Elevation + shift
                 textTransform.Absolute <- transform.Absolute
                 let font = entity.GetFont world
+                let fontSizing = entity.GetFontSizing world
+                let fontStyling = entity.GetFontStyling world
                 World.enqueueLayeredOperation2d
                     { Elevation = textTransform.Elevation
                       Horizon = horizon
@@ -459,6 +469,8 @@ module TextFacetModule =
                             { Transform = textTransform
                               Text = text
                               Font = font
+                              FontSizing = fontSizing
+                              FontStyling = fontStyling
                               Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
                               Justification = entity.GetJustification world }}
                     world
@@ -1142,9 +1154,9 @@ module EffectFacetModule =
         member this.GetEffectTagTokens world : Map<string, Effects.Slice> = this.Get (nameof this.EffectTagTokens) world
         member this.SetEffectTagTokens (value : Map<string, Effects.Slice>) world = this.Set (nameof this.EffectTagTokens) value world
         member this.EffectTagTokens = lens (nameof this.EffectTagTokens) this this.GetEffectTagTokens this.SetEffectTagTokens
-        member this.GetEffectToken world : Token = this.Get (nameof this.EffectToken) world
-        member this.SetEffectToken (value : Token) world = this.Set (nameof this.EffectToken) value world
-        member this.EffectToken = lens (nameof this.EffectToken) this this.GetEffectToken this.SetEffectToken
+        member this.GetEffectDataToken world : DataToken = this.Get (nameof this.EffectDataToken) world
+        member this.SetEffectDataToken (value : DataToken) world = this.Set (nameof this.EffectDataToken) value world
+        member this.EffectDataToken = lens (nameof this.EffectDataToken) this this.GetEffectDataToken this.SetEffectDataToken
 
     /// Augments an entity with an effect.
     type EffectFacet () =
@@ -1176,10 +1188,10 @@ module EffectFacetModule =
                     (entity.GetEffectDescriptor world)
 
             // run effect, optionally destroying upon exhaustion
-            let (liveness, effect, token) = Effect.run effect world
+            let (liveness, effect, dataToken) = Effect.run effect world
             let world = entity.SetParticleSystem effect.ParticleSystem world
             let world = entity.SetEffectTagTokens effect.TagTokens world
-            let world = entity.SetEffectToken token world
+            let world = entity.SetEffectDataToken dataToken world
             if liveness = Dead && entity.GetSelfDestruct world
             then World.destroyEntity entity world
             else world
@@ -1242,7 +1254,7 @@ module EffectFacetModule =
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))
              nonPersistent Entity.EffectTagTokens Map.empty
-             nonPersistent Entity.EffectToken Token.empty]
+             nonPersistent Entity.EffectDataToken DataToken.empty]
 
         override this.Register (entity, world) =
             let effectStartTime = Option.defaultValue world.GameTime (entity.GetEffectStartTimeOpt world)
@@ -1273,10 +1285,10 @@ module EffectFacetModule =
 #endif
         override this.Render (renderPass, entity, world) =
 
-            // render effect token
+            // render effect data token
             let time = world.GameTime
-            let token = entity.GetEffectToken world
-            World.renderToken renderPass token world
+            let dataToken = entity.GetEffectDataToken world
+            World.renderDataToken renderPass dataToken world
 
             // render particles
             let presence = entity.GetPresence world

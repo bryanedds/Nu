@@ -10,7 +10,7 @@ open BattleInteractionSystem
 
 type BattleMessage =
     | Update
-    | UpdateRideTagTokens of Map<string, Effects.Slice>
+    | UpdateRideTokens of Map<string, Effects.Slice>
     | InteractDialog
     | RegularItemSelect of CharacterIndex * string
     | RegularItemCancel of CharacterIndex
@@ -124,7 +124,7 @@ module Battle =
 
         (* Local Properties *)
         member this.UpdateTime = this.UpdateTime_
-        member this.Running = match this.BattleState with BattleRunning _ -> true | _ -> false
+        member this.Running = match this.BattleState with BattleRunning -> true | _ -> false
         member this.Characters = this.Characters_
         member this.Inventory = this.Inventory_
         member this.PrizePool = this.PrizePool_

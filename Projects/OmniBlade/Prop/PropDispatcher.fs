@@ -40,7 +40,7 @@ module PropDispatcher =
                     BodyBox { Size = v3Dup 0.9f; TransformOpt = None; PropertiesOpt = None }
                 | Switch _ ->
                     BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None }
-                | SavePoint _ ->
+                | SavePoint ->
                     BodySphere { Radius = 0.1f; TransformOpt = None; PropertiesOpt = None }
                 | Door (doorType, _, _, _, _) ->
                     match propPlus.Prop.PropState with

@@ -860,7 +860,6 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       Xtension : Xtension
       Model : DesignerProperty
       Content : ScreenContent
-      Ecs : Ecs.Ecs
       TransitionState : TransitionState
       Incoming : Transition
       Outgoing : Transition
@@ -872,13 +871,12 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       Name : string }
 
     /// Make a screen state value.
-    static member make makeEcs time nameOpt (dispatcher : ScreenDispatcher) =
+    static member make time nameOpt (dispatcher : ScreenDispatcher) =
         let (id, name) = Gen.id64AndNameIf nameOpt
         { Dispatcher = dispatcher
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyScreenContent :?> ScreenContent
-          Ecs = makeEcs name
           TransitionState = IdlingState time
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
@@ -1568,7 +1566,6 @@ and [<ReferenceEquality>] World =
           EntityMounts : UMap<Entity, Entity USet>
           Quadtree : Entity Quadtree
           Octree : Entity Octree
-          mutable SelectedEcsOpt : Ecs.Ecs option // mutated when Imperative
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
@@ -1634,7 +1631,7 @@ and [<ReferenceEquality>] World =
     member this.DateDelta =
         AmbientState.getDateDelta this.AmbientState
 
-    /// Get the clock time as of when the current frame began.
+    /// Get the date time as of when the current frame began.
     member this.DateTime =
         AmbientState.getDateTime this.AmbientState
 
@@ -1672,10 +1669,6 @@ and [<AbstractClass>] NuPlugin () =
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
     default this.MakeKeyedValues world = ([], world)
-
-    /// Make the Ecs for the given screen.
-    abstract MakeEcs : Screen -> Ecs.Ecs
-    default this.MakeEcs _ = Ecs.Ecs ()
 
     /// Attempt to make an emitter of the given name.
     abstract TryMakeEmitter : GameTime -> GameTime -> GameTime -> single -> int -> string -> Particles.Emitter option

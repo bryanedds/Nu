@@ -40,13 +40,13 @@ A critical battle with evil itself!
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/fa3613d7-3dc6-46ec-b668-45d1f4e83883)
-Animated 3D model rendering.
+![image](https://github.com/bryanedds/Nu/assets/1625560/0b4778aa-c493-4d9d-9a8a-00e527c831ad)
+Animated 3D model rendering with soft self-shadowing.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
 Scalable rendering thanks to instancing-by-default render technique.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/9c616281-6675-4c99-9f51-6684662580db)
+![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
 **Public Sponsors We Wish to Thank**

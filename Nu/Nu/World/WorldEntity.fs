@@ -16,7 +16,6 @@ module WorldEntityModule =
     [<RequireQualifiedAccess>]
     module private Cached =
         let mutable Dispatcher = Unchecked.defaultof<Lens<EntityDispatcher, Entity>>
-        let mutable Ecs = Unchecked.defaultof<Lens<Ecs.Ecs, Entity>>
         let mutable Facets = Unchecked.defaultof<Lens<Facet array, Entity>>
         let mutable Transform = Unchecked.defaultof<Lens<Transform, Entity>>
         let mutable PerimeterCenter = Unchecked.defaultof<Lens<Vector3, Entity>>
@@ -82,8 +81,6 @@ module WorldEntityModule =
         member this.GetModelGeneric<'a> world = World.getEntityModel<'a> this world
         member this.SetModelGeneric<'a> value world = World.setEntityModel<'a> false value this world |> snd'
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
-        member this.GetEcs world = World.getScreenEcs this.Screen world
-        member this.Ecs = if notNull (this :> obj) then lensReadOnly (nameof this.Ecs) this this.GetEcs else Cached.Ecs
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = if notNull (this :> obj) then lensReadOnly (nameof this.Facets) this this.GetFacets else Cached.Facets
         member this.GetTransform world = World.getEntityTransform this world
@@ -246,7 +243,6 @@ module WorldEntityModule =
         member this.Id = if notNull (this :> obj) then lensReadOnly (nameof this.Id) this this.GetId else Cached.Id
         static member internal init () =
             Cached.Dispatcher <- lensReadOnly (nameof Cached.Dispatcher) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Ecs <- lensReadOnly (nameof Cached.Ecs) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Facets <- lensReadOnly (nameof Cached.Facets) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Transform <- lens (nameof Cached.Transform) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterUnscaled <- lens (nameof Cached.PerimeterUnscaled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>

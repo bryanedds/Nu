@@ -3,12 +3,12 @@
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
 		<ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE;DISABLE_ENTITY_PRE_UPDATE;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
@@ -16,7 +16,7 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE;DISABLE_ENTITY_PRE_UPDATE;DISABLE_ENTITY_POST_UPDATE</DefineConstants>
@@ -40,8 +40,6 @@
 		<Compile Include="Collections\KeyedArray.fs" />
 		<Compile Include="Collections\ForgetfulDictionary.fs" />
 		<Compile Include="Collections\OrderedDictionary.fs" />
-		<Compile Include="Ecs\EcsPrelude.fs" />
-		<Compile Include="Ecs\Ecs.fs" />
 		<Compile Include="Transform\Presence.fs" />
 		<Compile Include="Transform\Viewport.fs" />
 		<Compile Include="Transform\Quadtree.fs" />
@@ -84,7 +82,7 @@
 		<Compile Include="Physics\PhysicsEngine.fs" />
 		<Compile Include="Physics\PhysicsEngine2d.fs" />
 		<Compile Include="Physics\PhysicsEngine3d.fs" />
-		<Compile Include="Render\Renderer.fs" />
+		<Compile Include="Render\RendererPrelude.fs" />
 		<Compile Include="Render\Renderer2d.fs" />
 		<Compile Include="Render\Renderer3d.fs" />
 		<Compile Include="Render\RendererImGui.fs" />
@@ -92,7 +90,7 @@
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
 		<Compile Include="Metadata\Metadata.fs" />
-		<Compile Include="Token\Token.fs" />
+		<Compile Include="DataToken\DataToken.fs" />
 		<Compile Include="Particles\Particles.fs" />
 		<Compile Include="Effects\Effects.fs" />
 		<Compile Include="World\WorldPrelude.fs" />
@@ -117,7 +115,7 @@
 		<Compile Include="World\WorldAudio.fs" />
 		<Compile Include="World\WorldImGui.fs" />
 		<Compile Include="World\WorldTmxMap.fs" />
-		<Compile Include="World\WorldToken.fs" />
+		<Compile Include="World\WorldDataToken.fs" />
 		<Compile Include="World\WorldEffects.fs" />
 		<Compile Include="World\WorldFacets.fs" />
 		<Compile Include="World\WorldDispatchers.fs" />
@@ -160,12 +158,6 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Include="libpng16-16.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Include="libvorbisfile-3.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Include="libvorbis-0.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Include="libFLAC-8.dll">
@@ -215,7 +207,7 @@
 		<PackageReference Include="Aether.Physics2D" Version="2.0.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.5.0" />
 		<PackageReference Include="Pfim" Version="0.11.2" />
-		<PackageReference Include="Prime" Version="9.16.0" />
+		<PackageReference Include="Prime" Version="9.17.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />

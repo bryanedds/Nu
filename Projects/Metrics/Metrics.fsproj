@@ -5,15 +5,15 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ProjectGuid>{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9}</ProjectGuid>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<ServerGarbageCollection>true</ServerGarbageCollection>
-		<TieredPGO>true</TieredPGO>
-		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+		<ServerGarbageCollection>True</ServerGarbageCollection>
+		<TieredPGO>True</TieredPGO>
+		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
 		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net7.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net7.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
@@ -21,7 +21,7 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536</NoWarn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
@@ -65,7 +65,7 @@
 		<PackageReference Include="Aether.Physics2D" Version="2.0.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.5.0" />
 		<PackageReference Include="Pfim" Version="0.11.2" />
-		<PackageReference Include="Prime" Version="9.16.0" />
+		<PackageReference Include="Prime" Version="9.17.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />

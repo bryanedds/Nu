@@ -649,14 +649,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
-        World.enqueueRenderMessage3d
-            (RenderStaticModels
-                { Absolute = false
-                  StaticModels = lightProbeModels
-                  StaticModel = Assets.Default.LightProbeModel
-                  RenderType = DeferredRenderType
-                  RenderPass = NormalPass false })
-            world
+        if SList.notEmpty lightProbeModels then
+            World.enqueueRenderMessage3d
+                (RenderStaticModels
+                    { Absolute = false
+                      StaticModels = lightProbeModels
+                      StaticModel = Assets.Default.LightProbeModel
+                      RenderType = DeferredRenderType
+                      RenderPass = NormalPass false })
+                world
 
         // render lights of the selected group in play
         let (entities, wtemp) = World.getLights3dInBox lightBox (HashSet ()) world in world <- wtemp
@@ -665,14 +666,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
             Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
             SList.ofSeq
-        World.enqueueRenderMessage3d
-            (RenderStaticModels
-                { Absolute = false
-                  StaticModels = lightModels
-                  StaticModel = Assets.Default.LightbulbModel
-                  RenderType = DeferredRenderType
-                  RenderPass = NormalPass false })
-            world
+        if SList.notEmpty lightModels then
+            World.enqueueRenderMessage3d
+                (RenderStaticModels
+                    { Absolute = false
+                      StaticModels = lightModels
+                      StaticModel = Assets.Default.LightbulbModel
+                      RenderType = DeferredRenderType
+                      RenderPass = NormalPass false })
+                world
 
         // render selection highlights
         match selectedEntityOpt with
@@ -993,7 +995,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
                         String.Join ("\n", fsprojProjectLines) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
-                    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536" // TODO: pull these from fsproj!
+                    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560" // TODO: pull these from fsproj!
                     // TODO: add warnings as errors, too?
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; fsProjectNoWarn|] // TODO: see can we use --wwarnon as well.
@@ -1486,7 +1488,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome roughness ->
                 let mutable roughness = roughness
                 ImGui.SameLine ()
-                if ImGui.SliderFloat ("##mpRoughness", &roughness, 0.0f, 1.0f) then setPropertyValue { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
+                if ImGui.SliderFloat ("##mpRoughness", &roughness, 0.0f, 10.0f) then setPropertyValue { mp with RoughnessOpt = ValueSome roughness } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1504,7 +1506,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | ValueSome metallic ->
                 let mutable metallic = metallic
                 ImGui.SameLine ()
-                if ImGui.SliderFloat ("##mpMetallic", &metallic, 0.0f, 1.0f) then setPropertyValue { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
+                if ImGui.SliderFloat ("##mpMetallic", &metallic, 0.0f, 10.0f) then setPropertyValue { mp with MetallicOpt = ValueSome metallic } propertyDescriptor simulant
                 if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
             | ValueNone -> ()
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -2061,7 +2063,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ty.GenericTypeArguments.[0] = typeof<string> ||
                     ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
-                    if ImGui.Checkbox ((if isSome then "##" else "") + name, &isSome) then
+                    if ImGui.Checkbox ("##" + name, &isSome) then
                         if isSome then
                             if ty.GenericTypeArguments.[0].IsValueType then
                                 if ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name
@@ -2080,6 +2082,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
                         imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant
+                    else
+                        ImGui.SameLine ()
+                        ImGui.Text name
                 elif ty.IsGenericType &&
                      ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
                      ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
@@ -2089,7 +2094,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                       ty.GenericTypeArguments.[0] = typeof<string> ||
                       ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
-                    if ImGui.Checkbox ((if isSome then "##" else "") + name, &isSome) then
+                    if ImGui.Checkbox ("##" + name, &isSome) then
                         if isSome then
                             if ty.GenericTypeArguments.[0].IsValueType then
                                 setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
@@ -2107,6 +2112,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
                         let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
                         imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant
+                    else
+                        ImGui.SameLine ()
+                        ImGui.Text name
                 elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
                     let mutable propertyValueStr = propertyValueStr
                     if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
@@ -2854,43 +2862,53 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // renderer window
                     if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
+
+                        // configure lighting
                         ImGui.Text "Lighting"
+                        let mutable lightingChanged = false
                         let mutable lightCutoffMargin = lightingConfig.LightCutoffMargin
                         let mutable lightShadowBiasAcneStr = lightingConfig.LightShadowBiasAcne.ToString "0.00000000"
                         let mutable lightShadowBiasBleed = lightingConfig.LightShadowBiasBleed
                         let mutable lightMappingEnabled = lightingConfig.LightMappingEnabled
-                        ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) |> ignore<bool>
-                        ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) |> ignore<bool>
-                        ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) |> ignore<bool>
-                        ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) |> ignore<bool>
-                        lightingConfig <-
-                            { LightCutoffMargin = lightCutoffMargin
-                              LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
-                              LightShadowBiasBleed = lightShadowBiasBleed
-                              LightMappingEnabled = lightMappingEnabled }
-                        World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
+                        lightingChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lightingChanged
+                        lightingChanged <- ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) || lightingChanged
+                        lightingChanged <- ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) || lightingChanged
+                        lightingChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || lightingChanged
+                        if lightingChanged then
+                            lightingConfig <-
+                                { LightCutoffMargin = lightCutoffMargin
+                                  LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
+                                  LightShadowBiasBleed = lightShadowBiasBleed
+                                  LightMappingEnabled = lightMappingEnabled }
+                            World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
+
+                        // configure ssao
                         ImGui.Text "Ssao (screen-space ambient occlusion)"
+                        let mutable ssaoChanged = false
                         let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
                         let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
                         let mutable ssaoBias = ssaoConfig.SsaoBias
                         let mutable ssaoRadius = ssaoConfig.SsaoRadius
                         let mutable ssaoDistanceMax = ssaoConfig.SsaoDistanceMax
                         let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
-                        ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) |> ignore<bool>
+                        ssaoChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || ssaoChanged
                         if ssaoEnabled then
-                            ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) |> ignore<bool>
-                            ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) |> ignore<bool>
-                            ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) |> ignore<bool>
-                            ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) |> ignore<bool>
-                            ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) |> ignore<bool>
-                        ssaoConfig <-
-                            { SsaoEnabled = ssaoEnabled
-                              SsaoIntensity = ssaoIntensity
-                              SsaoBias = ssaoBias
-                              SsaoRadius = ssaoRadius
-                              SsaoDistanceMax = ssaoDistanceMax
-                              SsaoSampleCount = ssaoSampleCount }
-                        World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || ssaoChanged
+                            ssaoChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || ssaoChanged
+                        if ssaoChanged then
+                            ssaoConfig <-
+                                { SsaoEnabled = ssaoEnabled
+                                  SsaoIntensity = ssaoIntensity
+                                  SsaoBias = ssaoBias
+                                  SsaoRadius = ssaoRadius
+                                  SsaoDistanceMax = ssaoDistanceMax
+                                  SsaoSampleCount = ssaoSampleCount }
+                            World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
+
+                        // fin
                         ImGui.End ()
 
                     // audio player window

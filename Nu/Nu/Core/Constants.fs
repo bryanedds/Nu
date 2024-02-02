@@ -62,7 +62,7 @@ module Engine =
     let [<Uniform>] Particle3dSizeDefault = Vector3 (0.1f, 0.1f, 0.1f)
     let [<Uniform>] Eye3dCenterDefault = Vector3 (0.0f, 1.0f, 4.0f)
     let [<Uniform>] mutable QuadnodeSize = match ConfigurationManager.AppSettings.["QuadnodeSize"] with null -> 512.0f | size -> scvalue size
-    let [<Uniform>] mutable QuadtreeDepth = match ConfigurationManager.AppSettings.["QuadtreeDepth"] with null -> 6 | depth -> scvalue depth
+    let [<Uniform>] mutable QuadtreeDepth = match ConfigurationManager.AppSettings.["QuadtreeDepth"] with null -> 7 | depth -> scvalue depth
     let [<Uniform>] QuadtreeSize = Vector2 (QuadnodeSize * single (pown 2 QuadtreeDepth))
     let [<Uniform>] mutable OctnodeSize = match ConfigurationManager.AppSettings.["OctnodeSize"] with null -> 8.0f | size -> scvalue size
     let [<Uniform>] mutable OctreeDepth = match ConfigurationManager.AppSettings.["OctreeDepth"] with null -> 6 | depth -> scvalue depth
@@ -139,10 +139,10 @@ module Render =
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ShadowsMaxShader = 16 // NOTE: remember to update SHADOWS_MAX in shaders when changing this!
     let [<Uniform>] mutable ShadowsMax = match ConfigurationManager.AppSettings.["ShadowsMax"] with null -> 8 | shadowsMax -> min (scvalue shadowsMax) ShadowsMaxShader
-    let [<Literal>] ReflectionMapResolution = 512
+    let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
-    let [<Literal>] EnvironmentFilterResolution = 128
-    let [<Literal>] EnvironmentFilterMips = 5 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
+    let [<Literal>] EnvironmentFilterResolution = 512
+    let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] LightShadowBiasAcneDefault = 0.0000002f
     let [<Literal>] LightShadowBiasBleedDefault = 0.5f
@@ -168,6 +168,7 @@ module Render =
     let [<Literal>] HeightDefault = 1.0f
     let [<Literal>] IgnoreLightMapsDefault = false
     let [<Literal>] OpaqueDistanceDefault = Single.MaxValue
+    let [<Literal>] FontSizeDefault = 24
 
 [<RequireQualifiedAccess>]
 module Audio =
@@ -233,16 +234,6 @@ module Particles =
 module Effects =
 
     let [<Literal>] EffectHistoryMaxDefault = 60 // 1 second of effect history @ 60 fps
-
-[<RequireQualifiedAccess>]
-module Ecs =
-
-    let [<Literal>] ArrayReserve = 256 // just large enough to amortize cache misses
-    let [<Literal>] ParallelTaskSizeMinimum = 1024
-    let [<Literal>] PreallocateAmount = ArrayReserve
-    let [<Literal>] IntraComponentPrefix = "@"
-    let [<Literal>] UnscheduledEventSuffix = "!U"
-    let [<Literal>] ScheduledEventSuffix = "!S"
 
 [<RequireQualifiedAccess>]
 module Paths =

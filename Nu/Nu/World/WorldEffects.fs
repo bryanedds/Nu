@@ -83,8 +83,8 @@ module Effect =
             else ParticleSystem.getLiveness time particleSystem
         | None -> Live
 
-    /// Run an effect, returning any resulting requests as a token.
-    let run effect (world : World) : Liveness * Effect * Token =
+    /// Run an effect, returning any resulting requests as data tokens.
+    let run effect (world : World) : Liveness * Effect * DataToken =
 
         // run if live
         match liveness effect world with
@@ -119,20 +119,20 @@ module Effect =
             let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.Presence effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
-            let (token, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
+            let (dataToken, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
 
             // convert token to sequence for storing tag tokens and spawning emitters
-            let tokens = Token.toSeq token
+            let dataTokens = DataToken.toSeq dataToken
 
             // extract tag tokens
             let tagTokens =
-                tokens |>
+                dataTokens |>
                 Seq.choose (function TagToken (name, value) -> Some (name, value :?> Slice) | _ -> None) |>
                 Map.ofSeq
 
             // spawn emitters via tokens
             let particleSystem =
-                tokens |>
+                dataTokens |>
                 Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None) |>
                 Seq.choose (fun (name : string, descriptorObj : obj) ->
                     match descriptorObj with
@@ -179,10 +179,10 @@ module Effect =
             let effect = processParticleSystemOutput output effect world
 
             // fin
-            (Live, effect, token)
+            (Live, effect, dataToken)
 
         // dead
-        | Dead -> (Dead, effect, Token.empty)
+        | Dead -> (Dead, effect, DataToken.empty)
 
     /// Make an effect.
     let makePlus startTime perimeterCentered offset transform renderType particleSystem historyMax history definitions descriptor =

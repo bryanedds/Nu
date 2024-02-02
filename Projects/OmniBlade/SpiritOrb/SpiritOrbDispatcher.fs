@@ -3,7 +3,6 @@
 
 namespace OmniBlade
 open System
-open System.Numerics
 open Prime
 open Nu
 
@@ -24,7 +23,7 @@ module SpiritOrbDispatcher =
                Narratives = [||]
                Spirits = [||] })
 
-        static let viewInhabitants time avatarLowerCenter (orbTransform : Transform) inhabitants world =
+        static let renderInhabitants time avatarLowerCenter (orbTransform : Transform) inhabitants world =
             let mutable orbTransform = orbTransform
             for inhabitant in inhabitants do
                 let (center, image, color, insetOpt) =
@@ -90,7 +89,7 @@ module SpiritOrbDispatcher =
                   RenderOperation2d = RenderSprite avatarDescriptor }
                 world
             let chests = Array.filter (fun (chest : Chest) -> spiritOrb.ShowUnopenedChests || chest.Opened) spiritOrb.Chests
-            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant chests) world
-            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals) world
-            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map NarrativeInhabitant spiritOrb.Narratives) world
-            viewInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits) world
+            renderInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map ChestInhabitant chests) world
+            renderInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map PortalInhabitant spiritOrb.Portals) world
+            renderInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map NarrativeInhabitant spiritOrb.Narratives) world
+            renderInhabitants world.UpdateTime spiritOrb.AvatarLowerCenter orbTransform (Array.map SpiritInhabitant spiritOrb.Spirits) world
