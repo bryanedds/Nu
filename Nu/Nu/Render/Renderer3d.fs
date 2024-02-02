@@ -2906,19 +2906,19 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialAlbedo.dds") |> Either.getRight
+        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialAlbedo.dds") |> Either.getRight
         OpenGL.Hl.Assert ()
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialRoughness.dds") |> Either.getRight |> snd
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialMetallic.dds") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialAmbientOcclusion.dds") |> Either.getRight |> snd
-              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialEmission.dds") |> Either.getRight |> snd
+              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialRoughness.dds") |> Either.getRight |> snd
+              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialMetallic.dds") |> Either.getRight |> snd
+              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialAmbientOcclusion.dds") |> Either.getRight |> snd
+              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialEmission.dds") |> Either.getRight |> snd
               NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialNormal.dds") |> Either.getRight |> snd
-              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialHeight.dds") |> Either.getRight |> snd
+              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialHeight.dds") |> Either.getRight |> snd
               TwoSided = false }
 
         // make light mapping config
