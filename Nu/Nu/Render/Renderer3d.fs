@@ -2531,9 +2531,6 @@ type [<ReferenceEquality>] GlRenderer3d =
     /// Render 3d surfaces.
     static member render skipCulling frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
-        // reset draw call count
-        OpenGL.Hl.ResetDrawCalls ()
-
         // categorize messages
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
@@ -3017,6 +3014,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     interface Renderer3d with
 
         member renderer.Render skipCulling frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize renderMessages =
+            OpenGL.Hl.ResetDrawCalls ()
             if renderMessages.Count > 0 then
                 GlRenderer3d.render skipCulling frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
 
