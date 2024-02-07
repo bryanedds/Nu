@@ -1269,10 +1269,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 desiredEye3dCenter <- position + Vector3.Transform (v3Right, rotation) * moveSpeed
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Up) < 0.995f then desiredEye3dRotation <- rotation'
+                if Vector3.Dot (rotation'.Forward, v3Up) < 0.99f then desiredEye3dRotation <- rotation'
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Down) < 0.995f then desiredEye3dRotation <- rotation'
+                if Vector3.Dot (rotation'.Forward, v3Down) < 0.99f then desiredEye3dRotation <- rotation'
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
                 desiredEye3dCenter <- position + Vector3.Transform (v3Up, rotation) * moveSpeed
             if ImGui.IsKeyDown (if alternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
