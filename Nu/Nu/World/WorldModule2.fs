@@ -80,11 +80,11 @@ module WorldModule2 =
             Quadtree.clear quadtree
             let omniEntities =
                 match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
             let entities = Seq.append omniEntities selectedEntities
             for entity in entities do
@@ -102,11 +102,11 @@ module WorldModule2 =
             Octree.clear octree
             let omniEntities =
                 match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
             let entities =
                 Seq.append omniEntities selectedEntities
@@ -458,7 +458,7 @@ module WorldModule2 =
                     let world = World.setOverlayRouter overlayRouter world
 
                     // apply overlays to all entities
-                    let entities = World.getEntitiesFlattened1 world
+                    let entities = World.getEntities1 world
                     let world = Seq.fold (World.applyEntityOverlay overlayerOld overlayer) world entities
                     (Right overlayer, world)
 
@@ -535,7 +535,7 @@ module WorldModule2 =
                 let groups = World.getGroups screen world
                 Seq.fold (fun world (group : Group) ->
                     if group.Exists world then
-                        let entities = World.getEntitiesFlattened group world
+                        let entities = World.getEntities group world
                         Seq.fold (fun world (entity : Entity) ->
                             if entity.Exists world
                             then World.registerEntityPhysics entity world

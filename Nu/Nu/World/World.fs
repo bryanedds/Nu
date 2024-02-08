@@ -184,7 +184,7 @@ module Nu =
 
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SList.ofSeq
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SList.ofSeq
                 let (entities2d, entities3d) = SList.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let quadtree = World.getQuadtree world
                 for entity in entities2d do
@@ -200,7 +200,7 @@ module Nu =
                 
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
-                let entities = World.getGroups screen world |> Seq.map (flip World.getEntitiesFlattened world) |> Seq.concat |> SArray.ofSeq
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SArray.ofSeq
                 let (entities2d, entities3d) = SArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
                 let quadtree = World.getQuadtree world
                 for entity in entities2d do
@@ -218,7 +218,7 @@ module Nu =
             WorldModule.registerScreenPhysics <- fun screen world ->
                 let entities =
                     World.getGroups screen world |>
-                    Seq.map (flip World.getEntitiesFlattened world) |>
+                    Seq.map (flip World.getEntities world) |>
                     Seq.concat |>
                     SList.ofSeq
                 SList.fold (fun world (entity : Entity) ->
@@ -229,7 +229,7 @@ module Nu =
             WorldModule.unregisterScreenPhysics <- fun screen world ->
                 let entities =
                     World.getGroups screen world |>
-                    Seq.map (flip World.getEntitiesFlattened world) |>
+                    Seq.map (flip World.getEntities world) |>
                     Seq.concat |>
                     SList.ofSeq
                 SList.fold (fun world (entity : Entity) ->

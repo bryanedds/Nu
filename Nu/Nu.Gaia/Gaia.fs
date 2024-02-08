@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open System.Numerics
 open System.Reflection
+open System.Text
 open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
 open FSharp.Reflection
@@ -82,6 +83,9 @@ module Gaia =
     let mutable private eyeChangedElsewhere = false
     let mutable private fpsStartDateTime = DateTimeOffset.Now
     let mutable private fpsStartUpdateTime = 0L
+    let mutable private interactiveInputFocusRequested = false
+    let mutable private interactiveInputStr = ""
+    let mutable private interactiveOutputStr = ""
 
     (* Configuration States *)
 
@@ -118,6 +122,12 @@ module Gaia =
     let mutable private groupFilePaths = Map.empty<Group Address, string>
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
+
+    (* Fsi Session *)
+    let private fsiErrorStream = new StringWriter ()
+    let private fsiInStream = new StringReader ""
+    let private fsiOutStream = new StringWriter ()
+    let mutable private fsiSession = Unchecked.defaultof<Shell.FsiEvaluationSession>
 
     (* Modal Activity States *)
 
@@ -172,56 +182,62 @@ Collapsed=0
 DockId=0x00000002,0
 
 [Window][Edit Overlayer]
-Pos=284,854
-Size=677,226
+Pos=284,852
+Size=677,228
 Collapsed=0
 DockId=0x00000001,2
 
 [Window][Edit Asset Graph]
-Pos=284,854
-Size=677,226
+Pos=284,852
+Size=677,228
 Collapsed=0
 DockId=0x00000001,1
 
 [Window][Edit Property]
-Pos=284,854
-Size=677,226
+Pos=284,852
+Size=677,228
 Collapsed=0
 DockId=0x00000001,0
 
 [Window][Metrics]
-Pos=963,854
-Size=659,226
+Pos=963,852
+Size=659,228
+Collapsed=0
+DockId=0x00000009,6
+
+[Window][Interactive]
+Pos=963,852
+Size=659,228
 Collapsed=0
 DockId=0x00000009,5
 
 [Window][Event Tracing]
-Pos=963,854
-Size=659,226
+Pos=963,852
+Size=659,228
 Collapsed=0
 DockId=0x00000009,4
 
 [Window][Renderer]
-Pos=963,854
-Size=659,226
+Pos=963,852
+Size=659,228
 Collapsed=0
 DockId=0x00000009,3
 
 [Window][Audio Player]
-Pos=963,854
-Size=659,226
+Pos=963,852
+Size=659,228
 Collapsed=0
 DockId=0x00000009,2
 
 [Window][Editor]
-Pos=963,854
-Size=659,226
+Pos=963,852
+Size=659,228
 Collapsed=0
 DockId=0x00000009,1
 
 [Window][Asset Viewer]
-Pos=963,854
-Size=659,226
+Pos=963,852
+Size=659,228
 Collapsed=0
 DockId=0x00000009,0
 
@@ -370,10 +386,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Selected=0xAE464409
       DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1338,1080 Split=X
         DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
-          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,796 CentralNode=1
-          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,226 Split=X Selected=0xD4E24632
+          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,794 CentralNode=1
+          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,228 Split=X Selected=0xD4E24632
             DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=677,205 Selected=0x9CF3CB04
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=659,205 Selected=0xD92922EC
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=659,205 Selected=0x093AD9B2
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
 
@@ -533,7 +549,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let groups = World.getGroups selectedScreen world
         let freezers =
             groups |>
-            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
+            Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat |>
             Seq.filter (fun entity -> entity.Has<FreezerFacet> world)
         for freezer in freezers do
@@ -543,7 +559,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let groups = World.getGroups selectedScreen world
         let freezers =
             groups |>
-            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
+            Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat |>
             Seq.filter (fun entity -> entity.Has<FreezerFacet> world)
         for freezer in freezers do
@@ -553,7 +569,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let groups = World.getGroups selectedScreen world
         let lightProbes =
             groups |>
-            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
+            Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat |>
             Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world)
         for lightProbe in lightProbes do
@@ -995,28 +1011,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
                         String.Join ("\n", fsprojProjectLines) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
-                    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560" // TODO: pull these from fsproj!
-                    // TODO: add warnings as errors, too?
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
-                    let defaultArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; fsProjectNoWarn|] // TODO: see can we use --wwarnon as well.
-                    use errorStream = new StringWriter ()
-                    use inStream = new StringReader ""
-                    use outStream = new StringWriter ()
-                    let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
-                    use session = Shell.FsiEvaluationSession.Create (fsiConfig, defaultArgs, inStream, outStream, errorStream)
-                    try session.EvalInteraction fsxFileString
-                        let error = string errorStream
-                        if error.Length > 0
-                        then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + error)
+                    try fsiSession.EvalInteraction fsxFileString
+                        let errorStr = string fsiErrorStream
+                        if errorStr.Length > 0
+                        then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + errorStr)
                         else Log.info "Code compiled with no warnings."
                         Log.info "Updating code..."
                         focusedPropertyDescriptorOpt <- None // drop any reference to old property type
-                        world <- World.updateLateBindings session.DynamicAssemblies world // replace references to old types
+                        world <- World.updateLateBindings fsiSession.DynamicAssemblies world // replace references to old types
                         Log.info "Code updated."
                     with _ ->
-                        let error = string errorStream
-                        Log.info ("Failed to compile code due to (see full output in the console):\n" + error)
+                        let errorStr = string fsiErrorStream
+                        Log.info ("Failed to compile code due to (see full output in the console):\n" + errorStr)
                         world <- World.switch worldOld
+                    fsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
+                    fsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
             with exn ->
                 Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
                 world <- World.switch worldOld
@@ -2846,6 +2856,72 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text (string (OpenGL.Hl.GetDrawInstanceCount ()))
                         ImGui.End ()
 
+                    // interactive window
+                    if ImGui.Begin ("Interactive", ImGuiWindowFlags.NoNav) then
+                        let mutable toBottom = false
+                        let eval = ImGui.Button "Eval" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsShiftDown ()
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Evaluate current expression (Shift+Enter)"
+                            ImGui.EndTooltip ()
+                        ImGui.SameLine ()
+                        let enter = ImGui.Button "Enter" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown ()
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Evaluate current expression, then clear input (Ctrl+Enter)"
+                            ImGui.EndTooltip ()
+                        if eval || enter then
+                            snapshot ()
+                            if fsiSession.DynamicAssemblies.Length = 0 then
+                                let projectDllPathValid = File.Exists projectDllPath
+                                let initial =
+                                    "#r \"Prime.dll\"\n" +
+                                    "#r \"Nu.dll\"\n" +
+                                    "#r \"Nu.Gaia.dll\"\n" +
+                                    (if projectDllPathValid then "#r \"" + PathF.GetFileName projectDllPath + "\"\n" else "") +
+                                    "open Prime\n" +
+                                    "open Nu\n" +
+                                    "open Nu.Gaia\n" +
+                                    (if projectDllPathValid then "open " + PathF.GetFileNameWithoutExtension projectDllPath + "\n" else "")
+                                try fsiSession.EvalInteraction initial
+                                with _ -> ()
+                            try fsiSession.AddBoundValue ("world", world)
+                                fsiSession.EvalInteraction (interactiveInputStr + ";;")
+                                let errorStr = string fsiErrorStream
+                                let outStr = string fsiOutStream
+                                if errorStr.Length > 0
+                                then interactiveOutputStr <- interactiveOutputStr + errorStr
+                                else interactiveOutputStr <- interactiveOutputStr + Environment.NewLine + outStr
+                                match fsiSession.TryFindBoundValue "it" with
+                                | Some it when it.Value.ReflectionType = typeof<World> ->
+                                    world <- it.Value.ReflectionValue :?> World
+                                | Some _ | None ->
+                                    match fsiSession.TryFindBoundValue "world" with
+                                    | Some wtemp when wtemp.Value.ReflectionType = typeof<World> ->
+                                        world <- wtemp.Value.ReflectionValue :?> World
+                                    | Some _ | None -> ()
+                            with _ -> interactiveOutputStr <- interactiveOutputStr + string fsiErrorStream
+                            interactiveOutputStr <-
+                                interactiveOutputStr.Split Environment.NewLine |>
+                                Array.filter (not << String.IsNullOrWhiteSpace) |>
+                                String.join Environment.NewLine
+                            fsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
+                            fsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
+                            toBottom <- true
+                        ImGui.SameLine ()
+                        if ImGui.Button "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then interactiveOutputStr <- ""
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Clear evaluation output (Alt+C)"
+                            ImGui.EndTooltip ()
+                        if interactiveInputFocusRequested then ImGui.SetKeyboardFocusHere (); interactiveInputFocusRequested <- false
+                        ImGui.InputTextMultiline ("##interactiveInputStr", &interactiveInputStr, 131072u, v2 -1.0f 100.0f, if eval then ImGuiInputTextFlags.ReadOnly else ImGuiInputTextFlags.None) |> ignore<bool>
+                        if enter then interactiveInputStr <- ""
+                        if eval || enter then interactiveInputFocusRequested <- true
+                        ImGui.Separator ()
+                        ImGui.BeginChild "##interactiveOutputStr" |> ignore<bool>
+                        ImGui.TextUnformatted interactiveOutputStr
+                        if toBottom then ImGui.SetScrollHereY 1.0f
+                        ImGui.EndChild ()
+                        ImGui.End ()
+
                     // event tracing window
                     if ImGui.Begin ("Event Tracing", ImGuiWindowFlags.NoNav) then
                         let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
@@ -3489,7 +3565,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                 ""
+        let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560"// TODO: add warnings as errors, too?    
+        let fsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; fsProjectNoWarn|] // TODO: see if can we use --warnon as well.
+        let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
+        fsiSession <- Shell.FsiEvaluationSession.Create (fsiConfig, fsiArgs, fsiInStream, fsiOutStream, fsiErrorStream)
         let result = World.runWithCleanUp tautology imGuiPostProcess id imGuiRender imGuiProcess imGuiPostProcess Live true world
+        (fsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
+        fsiErrorStream.Dispose ()
+        fsiInStream.Dispose ()
+        fsiOutStream.Dispose ()
         world <- Unchecked.defaultof<_>
         result
 

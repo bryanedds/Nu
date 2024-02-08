@@ -668,7 +668,7 @@ module WorldEntityModule =
             dispatcher.TryUntruncateModel<'model> (model, entity, world)
 
         /// Get all the entities in a group.
-        static member getEntitiesFlattened (group : Group) world =
+        static member getEntities (group : Group) world =
             let rec getEntitiesRec parent world =
                 let simulants = World.getSimulants world
                 match simulants.TryGetValue parent with
@@ -992,7 +992,7 @@ module WorldEntityModule =
         /// Generate a sequential, editor-friendly entity name.
         static member generateEntitySequentialName dispatcherName group world =
             let existingEntityNames =
-                World.getEntitiesFlattened group world |>
+                World.getEntities group world |>
                 Seq.map (fun entity -> entity.Name) |>
                 Set.ofSeq
             World.generateEntitySequentialName2 dispatcherName existingEntityNames

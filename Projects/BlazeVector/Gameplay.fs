@@ -66,7 +66,7 @@ module Gameplay =
 
                     // shift all entities in the loaded section so that they go after the previously loaded section
                     let sectionXShift = 2048.0f * single sectionIndex
-                    let sectionEntities = World.getEntitiesFlattened section world
+                    let sectionEntities = World.getEntities section world
                     Seq.fold (fun world (sectionEntity : Entity) ->
                         sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
                         world sectionEntities)

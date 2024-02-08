@@ -201,9 +201,9 @@ module WorldGameModule =
             dispatcher.TryUntruncateModel (model, game, world)
 
         /// Get all the entities in the world.
-        static member getEntitiesFlattened1 world =
+        static member getEntities1 world =
             World.getGroups1 world |>
-            Seq.map (fun group -> World.getEntitiesFlattened group world) |>
+            Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat
 
         /// Get all the groups in the world.
