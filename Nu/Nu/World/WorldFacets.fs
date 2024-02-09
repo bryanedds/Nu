@@ -2576,22 +2576,20 @@ module StaticModelSurfaceFacetModule =
              define Entity.SurfaceIndex 0]
 
         override this.Render (renderPass, entity, world) =
-            match entity.GetSurfaceIndex world with
-            | -1 -> ()
-            | surfaceIndex ->
-                let mutable transform = entity.GetTransform world
-                let absolute = transform.Absolute
-                let affineMatrix = transform.AffineMatrix
-                let presence = transform.Presence
-                let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
-                let properties = entity.GetMaterialProperties world
-                let material = entity.GetMaterial world
-                let staticModel = entity.GetStaticModel world
-                let renderType =
-                    match entity.GetRenderStyle world with
-                    | Deferred -> DeferredRenderType
-                    | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                World.renderStaticModelSurfaceFast (absolute, &affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
+            let mutable transform = entity.GetTransform world
+            let absolute = transform.Absolute
+            let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
+            let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
+            let properties = entity.GetMaterialProperties world
+            let material = entity.GetMaterial world
+            let staticModel = entity.GetStaticModel world
+            let surfaceIndex = entity.GetSurfaceIndex world
+            let renderType =
+                match entity.GetRenderStyle world with
+                | Deferred -> DeferredRenderType
+                | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+            World.renderStaticModelSurfaceFast (absolute, &affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
