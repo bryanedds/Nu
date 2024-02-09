@@ -8,13 +8,13 @@ open System.Threading
 open SDL2
 open Prime
 
-[<RequireQualifiedAccess>]
-module Nu =
+[<AbstractClass; Sealed>]
+type Nu () =
 
-    let mutable private Initialized = false
+    static let mutable Initialized = false
 
     /// Initialize the Nu game engine.
-    let init () =
+    static member init () =
 
         // init only if needed
         if not Initialized then
