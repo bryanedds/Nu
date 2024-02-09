@@ -42,110 +42,110 @@ type TerrainMaterial =
 
 /// Material properties for terrain surfaces.
 type [<SymbolicExpansion>] TerrainMaterialProperties =
-    { AlbedoOpt : Color voption
-      RoughnessOpt : single voption
-      AmbientOcclusionOpt : single voption
-      HeightOpt : single voption
-      IgnoreLightMapsOpt : bool voption }
+    { AlbedoOpt : Color option
+      RoughnessOpt : single option
+      AmbientOcclusionOpt : single option
+      HeightOpt : single option
+      IgnoreLightMapsOpt : bool option }
 
     static member defaultProperties =
-        { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
-          RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
-          AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
-          HeightOpt = ValueSome Constants.Render.HeightDefault
-          IgnoreLightMapsOpt = ValueSome false }
+        { AlbedoOpt = Some Constants.Render.AlbedoDefault
+          RoughnessOpt = Some Constants.Render.RoughnessDefault
+          AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
+          HeightOpt = Some Constants.Render.HeightDefault
+          IgnoreLightMapsOpt = Some false }
 
     static member empty =
-        { AlbedoOpt = ValueNone
-          RoughnessOpt = ValueNone
-          AmbientOcclusionOpt = ValueNone
-          HeightOpt = ValueNone
-          IgnoreLightMapsOpt = ValueNone }
+        { AlbedoOpt = None
+          RoughnessOpt = None
+          AmbientOcclusionOpt = None
+          HeightOpt = None
+          IgnoreLightMapsOpt = None }
 
 /// Material properties for surfaces.
 /// NOTE: this type has to go after TerrainMaterialProperties lest the latter's field names shadow this one's.
 type [<SymbolicExpansion>] MaterialProperties =
-    { AlbedoOpt : Color voption
-      RoughnessOpt : single voption
-      MetallicOpt : single voption
-      AmbientOcclusionOpt : single voption
-      EmissionOpt : single voption
-      HeightOpt : single voption
-      IgnoreLightMapsOpt : bool voption
-      OpaqueDistanceOpt : single voption }
+    { AlbedoOpt : Color option
+      RoughnessOpt : single option
+      MetallicOpt : single option
+      AmbientOcclusionOpt : single option
+      EmissionOpt : single option
+      HeightOpt : single option
+      IgnoreLightMapsOpt : bool option
+      OpaqueDistanceOpt : single option }
 
-    member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
-    member this.Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
-    member this.Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault this.MetallicOpt
-    member this.AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
-    member this.Emission = ValueOption.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
-    member this.Height = ValueOption.defaultValue Constants.Render.HeightDefault this.HeightOpt
-    member this.IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
-    member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
+    member this.Albedo = Option.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
+    member this.Roughness = Option.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
+    member this.Metallic = Option.defaultValue Constants.Render.MetallicDefault this.MetallicOpt
+    member this.AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
+    member this.Emission = Option.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
+    member this.Height = Option.defaultValue Constants.Render.HeightDefault this.HeightOpt
+    member this.IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
+    member this.OpaqueDistance = Option.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
 
     /// Material properties with populated default properties.
     static member defaultProperties =
-        { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
-          RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
-          MetallicOpt = ValueSome Constants.Render.MetallicDefault
-          AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
-          EmissionOpt = ValueSome Constants.Render.EmissionDefault
-          HeightOpt = ValueSome Constants.Render.HeightDefault
-          IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
-          OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault }
+        { AlbedoOpt = Some Constants.Render.AlbedoDefault
+          RoughnessOpt = Some Constants.Render.RoughnessDefault
+          MetallicOpt = Some Constants.Render.MetallicDefault
+          AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
+          EmissionOpt = Some Constants.Render.EmissionDefault
+          HeightOpt = Some Constants.Render.HeightDefault
+          IgnoreLightMapsOpt = Some Constants.Render.IgnoreLightMapsDefault
+          OpaqueDistanceOpt = Some Constants.Render.OpaqueDistanceDefault }
 
     /// Empty material properties.
     static member empty =
-        { AlbedoOpt = ValueNone
-          RoughnessOpt = ValueNone
-          MetallicOpt = ValueNone
-          AmbientOcclusionOpt = ValueNone
-          EmissionOpt = ValueNone
-          HeightOpt = ValueNone
-          IgnoreLightMapsOpt = ValueNone
-          OpaqueDistanceOpt = ValueNone }
+        { AlbedoOpt = None
+          RoughnessOpt = None
+          MetallicOpt = None
+          AmbientOcclusionOpt = None
+          EmissionOpt = None
+          HeightOpt = None
+          IgnoreLightMapsOpt = None
+          OpaqueDistanceOpt = None }
 
 /// Material description for surfaces.
 type [<SymbolicExpansion>] Material =
-    { AlbedoImageOpt : Image AssetTag voption
-      RoughnessImageOpt : Image AssetTag voption
-      MetallicImageOpt : Image AssetTag voption
-      AmbientOcclusionImageOpt : Image AssetTag voption
-      EmissionImageOpt : Image AssetTag voption
-      NormalImageOpt : Image AssetTag voption
-      HeightImageOpt : Image AssetTag voption
-      TwoSidedOpt : bool voption }
+    { AlbedoImageOpt : Image AssetTag option
+      RoughnessImageOpt : Image AssetTag option
+      MetallicImageOpt : Image AssetTag option
+      AmbientOcclusionImageOpt : Image AssetTag option
+      EmissionImageOpt : Image AssetTag option
+      NormalImageOpt : Image AssetTag option
+      HeightImageOpt : Image AssetTag option
+      TwoSidedOpt : bool option }
 
-    member this.AlbedoImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName) this.AlbedoImageOpt
-    member this.RoughnessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName) this.RoughnessImageOpt
-    member this.MetallicImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName) this.MetallicImageOpt
-    member this.AmbientOcclusionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName) this.AmbientOcclusionImageOpt
-    member this.EmissionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName) this.EmissionImageOpt
-    member this.NormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialNormalName) this.NormalImageOpt
-    member this.HeightImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
-    member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
+    member this.AlbedoImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName) this.AlbedoImageOpt
+    member this.RoughnessImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName) this.RoughnessImageOpt
+    member this.MetallicImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName) this.MetallicImageOpt
+    member this.AmbientOcclusionImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName) this.AmbientOcclusionImageOpt
+    member this.EmissionImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName) this.EmissionImageOpt
+    member this.NormalImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialNormalName) this.NormalImageOpt
+    member this.HeightImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
+    member this.TwoSided = Option.defaultValue false this.TwoSidedOpt
 
     /// The material with populated default images.
     static member defaultMaterial =
-        { AlbedoImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName)
-          RoughnessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName)
-          MetallicImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName)
-          AmbientOcclusionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName)
-          EmissionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName)
-          NormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialNormalName)
-          HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName)
-          TwoSidedOpt = ValueSome false }
+        { AlbedoImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName)
+          RoughnessImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName)
+          MetallicImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName)
+          AmbientOcclusionImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName)
+          EmissionImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName)
+          NormalImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialNormalName)
+          HeightImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialHeightName)
+          TwoSidedOpt = Some false }
 
     /// The empty material.
     static member empty =
-        { AlbedoImageOpt = ValueNone
-          RoughnessImageOpt = ValueNone
-          MetallicImageOpt = ValueNone
-          AmbientOcclusionImageOpt = ValueNone
-          EmissionImageOpt = ValueNone
-          NormalImageOpt = ValueNone
-          HeightImageOpt = ValueNone
-          TwoSidedOpt = ValueNone }
+        { AlbedoImageOpt = None
+          RoughnessImageOpt = None
+          MetallicImageOpt = None
+          AmbientOcclusionImageOpt = None
+          EmissionImageOpt = None
+          NormalImageOpt = None
+          HeightImageOpt = None
+          TwoSidedOpt = None }
 
 /// A mutable 3d light probe value.
 and [<Struct>] LightProbe3dValue =
@@ -1483,7 +1483,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let renderStyle = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle renderStyle modelAsset.SceneOpt surface
                     let renderType = match renderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                     let ignoreLightMaps = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps modelAsset.SceneOpt surface
-                    let properties = if ignoreLightMaps <> properties.IgnoreLightMaps then { properties with IgnoreLightMapsOpt = ValueSome ignoreLightMaps } else properties
+                    let properties = if ignoreLightMaps <> properties.IgnoreLightMaps then { properties with IgnoreLightMapsOpt = Some ignoreLightMaps } else properties
                     let unculled =
                         match renderPass with // OPTIMIZATION: in normal pass, we cull surfaces based on view.
                         | NormalPass skipCulling -> skipCulling || Presence.intersects3d (Some frustumInterior) frustumExterior frustumImposter (Some lightBox) false false presence surfaceBounds
@@ -1683,13 +1683,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
-            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
-            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
-            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
-            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
-            let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
-            let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+            let albedo = match properties.AlbedoOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Albedo
+            let roughness = match properties.RoughnessOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Emission
+            let height = match properties.HeightOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Height
+            let ignoreLightMaps = match properties.IgnoreLightMapsOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.IgnoreLightMaps
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -1729,13 +1729,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
-            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
-            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
-            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
-            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
-            let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
-            let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+            let albedo = match properties.AlbedoOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Albedo
+            let roughness = match properties.RoughnessOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Emission
+            let height = match properties.HeightOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.Height
+            let ignoreLightMaps = match properties.IgnoreLightMapsOpt with Some value -> value | None -> surface.SurfaceMaterialProperties.IgnoreLightMaps
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -1762,13 +1762,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         let elementsCount = dec resolutionX * dec resolutionY * 6
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
         let materialProperties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
-            { Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
-              Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault terrainMaterialProperties.RoughnessOpt
+            { Albedo = Option.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
+              Roughness = Option.defaultValue Constants.Render.RoughnessDefault terrainMaterialProperties.RoughnessOpt
               Metallic = Constants.Render.MetallicDefault
-              AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
+              AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
               Emission = Constants.Render.EmissionDefault
-              Height = ValueOption.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
-              IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
+              Height = Option.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
+              IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
               OpaqueDistance = Single.MaxValue }
         let (texelWidthAvg, texelHeightAvg, materials) =
             match terrainDescriptor.Material with
@@ -1921,57 +1921,57 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private applySurfaceMaterial (material : Material inref, surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial inref, renderer) =
         let struct (albedoMetadata, albedoTexture) =
             match material.AlbedoImageOpt with
-            | ValueSome image ->
+            | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset (metadata, texture)) -> struct (metadata, texture)
                 | _ -> struct (surfaceMaterial.AlbedoMetadata, surfaceMaterial.AlbedoTexture)
-            | ValueNone -> struct (surfaceMaterial.AlbedoMetadata, surfaceMaterial.AlbedoTexture)
+            | None -> struct (surfaceMaterial.AlbedoMetadata, surfaceMaterial.AlbedoTexture)
         let roughnessTexture =
             match material.RoughnessImageOpt with
-            | ValueSome image ->
+            | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset (_, texture)) -> texture
                 | _ -> surfaceMaterial.RoughnessTexture
-            | ValueNone -> surfaceMaterial.RoughnessTexture
+            | None -> surfaceMaterial.RoughnessTexture
         let metallicTexture =
             match material.MetallicImageOpt with
-            | ValueSome image ->
+            | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset (_, texture)) -> texture
                 | _ -> surfaceMaterial.MetallicTexture
-            | ValueNone -> surfaceMaterial.MetallicTexture
+            | None -> surfaceMaterial.MetallicTexture
         let ambientOcclusionTexture =
             match material.AmbientOcclusionImageOpt with
-            | ValueSome image ->
+            | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset (_, texture)) -> texture
                 | _ -> surfaceMaterial.AmbientOcclusionTexture
-            | ValueNone -> surfaceMaterial.AmbientOcclusionTexture
+            | None -> surfaceMaterial.AmbientOcclusionTexture
         let emissionTexture =
             match material.EmissionImageOpt with
-            | ValueSome image ->
+            | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset (_, texture)) -> texture
                 | _ -> surfaceMaterial.EmissionTexture
-            | ValueNone -> surfaceMaterial.EmissionTexture
+            | None -> surfaceMaterial.EmissionTexture
         let normalTexture =
             match material.NormalImageOpt with
-            | ValueSome image ->
+            | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset (_, texture)) -> texture
                 | _ -> surfaceMaterial.NormalTexture
-            | ValueNone -> surfaceMaterial.NormalTexture
+            | None -> surfaceMaterial.NormalTexture
         let heightTexture =
             match material.HeightImageOpt with
-            | ValueSome image ->
+            | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset (_, texture)) -> texture
                 | _ -> surfaceMaterial.HeightTexture
-            | ValueNone -> surfaceMaterial.HeightTexture
+            | None -> surfaceMaterial.HeightTexture
         let twoSided =
             match material.TwoSidedOpt with
-            | ValueSome twoSided -> twoSided
-            | ValueNone -> surfaceMaterial.TwoSided
+            | Some twoSided -> twoSided
+            | None -> surfaceMaterial.TwoSided
         let surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             { AlbedoMetadata = albedoMetadata
               AlbedoTexture = albedoTexture
