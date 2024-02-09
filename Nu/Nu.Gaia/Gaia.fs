@@ -123,12 +123,6 @@ module Gaia =
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
 
-    (* Fsi Session *)
-    let private fsiErrorStream = new StringWriter ()
-    let private fsiInStream = new StringReader ""
-    let private fsiOutStream = new StringWriter ()
-    let mutable private fsiSession = Unchecked.defaultof<Shell.FsiEvaluationSession>
-
     (* Modal Activity States *)
 
     let mutable private messageBoxOpt = Option<string>.None
@@ -171,6 +165,12 @@ module Gaia =
     (* Memoization *)
     let mutable toSymbolMemo = new ForgetfulDictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
     let mutable ofSymbolMemo = new ForgetfulDictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
+
+    (* Fsi Session *)
+    let private fsiErrorStream = new StringWriter ()
+    let private fsiInStream = new StringReader ""
+    let private fsiOutStream = new StringWriter ()
+    let mutable private fsiSession = Unchecked.defaultof<Shell.FsiEvaluationSession>
 
     (* Initial imgui.ini File Content *)
 
@@ -2873,7 +2873,24 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if fsiSession.DynamicAssemblies.Length = 0 then
                                 let projectDllPathValid = File.Exists projectDllPath
                                 let initial =
+                                    "#r \"System.Configuration.ConfigurationManager.dll\"\n" +
+                                    "#r \"System.Drawing.Common.dll\"\n" +
+                                    "#r \"FSharp.Core.dll\"\n" +
+                                    "#r \"FSharp.Compiler.Service.dll\"\n" +
+                                    "#r \"Aether.Physics2D.dll\"\n" +
+                                    "#r \"AssimpNet.dll\"\n" +
+                                    "#r \"BulletSharp.dll\"\n" +
+                                    "#r \"Csv.dll\"\n" +
+                                    "#r \"FParsec.dll\"\n" +
+                                    "#r \"Magick.NET-Q8-AnyCPU.dll\"\n" +
+                                    "#r \"OpenGL.Net.dll\"\n" +
+                                    "#r \"Pfim.dll\"\n" +
+                                    "#r \"SDL2-CS.dll\"\n" +
+                                    "#r \"TiledSharp.dll\"\n" +
+                                    "#r \"ImGui.NET.dll\"\n" +
+                                    "#r \"ImGuizmo.NET.dll\"\n" +
                                     "#r \"Prime.dll\"\n" +
+                                    "#r \"Nu.Math.dll\"\n" +
                                     "#r \"Nu.dll\"\n" +
                                     "#r \"Nu.Gaia.dll\"\n" +
                                     (if projectDllPathValid then "#r \"" + PathF.GetFileName projectDllPath + "\"\n" else "") +

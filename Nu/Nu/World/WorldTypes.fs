@@ -1666,6 +1666,10 @@ and [<AbstractClass>] NuPlugin () =
     abstract EditModes : Map<string, World -> World>
     default this.EditModes = Map.empty
 
+    /// Invoke a user-defined callback.
+    abstract Invoke : string -> obj list -> World -> World
+    default this.Invoke _ _ world = world
+
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
     default this.MakeKeyedValues world = ([], world)
