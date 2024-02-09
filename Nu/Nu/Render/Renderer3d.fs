@@ -48,14 +48,17 @@ type [<SymbolicExpansion>] TerrainMaterialProperties =
       HeightOpt : single option
       IgnoreLightMapsOpt : bool option }
 
-    static member defaultProperties =
+[<RequireQualifiedAccess>]
+module TerrainMaterialProperties =
+
+    let defaultProperties =
         { AlbedoOpt = Some Constants.Render.AlbedoDefault
           RoughnessOpt = Some Constants.Render.RoughnessDefault
           AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
           HeightOpt = Some Constants.Render.HeightDefault
           IgnoreLightMapsOpt = Some false }
 
-    static member empty =
+    let empty =
         { AlbedoOpt = None
           RoughnessOpt = None
           AmbientOcclusionOpt = None
@@ -83,8 +86,11 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
     member this.OpaqueDistance = Option.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
 
+[<RequireQualifiedAccess>]
+module MaterialProperties =
+
     /// Material properties with populated default properties.
-    static member defaultProperties =
+    let defaultProperties =
         { AlbedoOpt = Some Constants.Render.AlbedoDefault
           RoughnessOpt = Some Constants.Render.RoughnessDefault
           MetallicOpt = Some Constants.Render.MetallicDefault
@@ -95,7 +101,7 @@ type [<SymbolicExpansion>] MaterialProperties =
           OpaqueDistanceOpt = Some Constants.Render.OpaqueDistanceDefault }
 
     /// Empty material properties.
-    static member empty =
+    let empty =
         { AlbedoOpt = None
           RoughnessOpt = None
           MetallicOpt = None
@@ -125,8 +131,11 @@ type [<SymbolicExpansion>] Material =
     member this.HeightImage = Option.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
     member this.TwoSided = Option.defaultValue false this.TwoSidedOpt
 
+[<RequireQualifiedAccess>]
+module Material =
+
     /// The material with populated default images.
-    static member defaultMaterial =
+    let defaultMaterial =
         { AlbedoImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName)
           RoughnessImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName)
           MetallicImageOpt = Some (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName)
@@ -137,7 +146,7 @@ type [<SymbolicExpansion>] Material =
           TwoSidedOpt = Some false }
 
     /// The empty material.
-    static member empty =
+    let empty =
         { AlbedoImageOpt = None
           RoughnessImageOpt = None
           MetallicImageOpt = None
@@ -148,7 +157,7 @@ type [<SymbolicExpansion>] Material =
           TwoSidedOpt = None }
 
 /// A mutable 3d light probe value.
-and [<Struct>] LightProbe3dValue =
+type [<Struct>] LightProbe3dValue =
     { mutable LightProbeId : uint64
       mutable Enabled : bool
       mutable Origin : Vector3
