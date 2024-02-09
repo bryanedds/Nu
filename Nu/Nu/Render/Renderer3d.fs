@@ -41,24 +41,30 @@ type TerrainMaterial =
     | BlendMaterial of BlendMaterial
 
 /// Material properties for terrain surfaces.
-type [<SymbolicExpansion; Struct>] TerrainMaterialProperties =
+type [<SymbolicExpansion>] TerrainMaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
       AmbientOcclusionOpt : single voption
       HeightOpt : single voption
       IgnoreLightMapsOpt : bool voption }
+
     static member defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           HeightOpt = ValueSome Constants.Render.HeightDefault
           IgnoreLightMapsOpt = ValueSome false }
+
     static member empty =
-        Unchecked.defaultof<TerrainMaterialProperties>
+        { AlbedoOpt = ValueNone
+          RoughnessOpt = ValueNone
+          AmbientOcclusionOpt = ValueNone
+          HeightOpt = ValueNone
+          IgnoreLightMapsOpt = ValueNone }
 
 /// Material properties for surfaces.
 /// NOTE: this type has to go after TerrainMaterialProperties lest the latter's field names shadow this one's.
-type [<SymbolicExpansion; Struct>] MaterialProperties =
+type [<SymbolicExpansion>] MaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
       MetallicOpt : single voption
@@ -90,10 +96,17 @@ type [<SymbolicExpansion; Struct>] MaterialProperties =
 
     /// Empty material properties.
     static member empty =
-        Unchecked.defaultof<MaterialProperties>
+        { AlbedoOpt = ValueNone
+          RoughnessOpt = ValueNone
+          MetallicOpt = ValueNone
+          AmbientOcclusionOpt = ValueNone
+          EmissionOpt = ValueNone
+          HeightOpt = ValueNone
+          IgnoreLightMapsOpt = ValueNone
+          OpaqueDistanceOpt = ValueNone }
 
 /// Material description for surfaces.
-type [<SymbolicExpansion; Struct>] Material =
+type [<SymbolicExpansion>] Material =
     { AlbedoImageOpt : Image AssetTag voption
       RoughnessImageOpt : Image AssetTag voption
       MetallicImageOpt : Image AssetTag voption
@@ -125,7 +138,14 @@ type [<SymbolicExpansion; Struct>] Material =
 
     /// The empty material.
     static member empty =
-        Unchecked.defaultof<Material>
+        { AlbedoImageOpt = ValueNone
+          RoughnessImageOpt = ValueNone
+          MetallicImageOpt = ValueNone
+          AmbientOcclusionImageOpt = ValueNone
+          EmissionImageOpt = ValueNone
+          NormalImageOpt = ValueNone
+          HeightImageOpt = ValueNone
+          TwoSidedOpt = ValueNone }
 
 /// A mutable 3d light probe value.
 and [<Struct>] LightProbe3dValue =
@@ -648,9 +668,10 @@ type [<NoEquality; NoComparison>] private RenderPackageCached =
       CachedPackageAssets : Dictionary<string, DateTimeOffset * string * RenderAsset> }
 
 /// The internally used cached asset descriptor.
+/// OPTIMIZATION: allowing optional asset tag to reduce allocation of RenderAssetCached instances.
 type [<NoEquality; NoComparison>] private RenderAssetCached =
-    { mutable CachedAssetTag : AssetTag
-      CachedRenderAsset : RenderAsset }
+    { mutable CachedAssetTagOpt : AssetTag
+      mutable CachedRenderAsset : RenderAsset }
 
 /// The OpenGL implementation of Renderer3d.
 type [<ReferenceEquality>] GlRenderer3d =
@@ -708,13 +729,14 @@ type [<ReferenceEquality>] GlRenderer3d =
           RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           RenderPackages : Packages<RenderAsset, GlPackageState3d>
           mutable RenderPackageCachedOpt : RenderPackageCached
-          mutable RenderAssetCachedOpt : RenderAssetCached
+          mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
           RenderMessages : RenderMessage3d List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
-        renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
+        renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
+        renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
 
     static member private tryLoadTextureAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
@@ -919,17 +941,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ValueNone -> None
 
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
-        if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
-            assetEq assetTag renderer.RenderAssetCachedOpt.CachedAssetTag then
-            renderer.RenderAssetCachedOpt.CachedAssetTag <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
-            ValueSome renderer.RenderAssetCachedOpt.CachedRenderAsset
+        if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
+            assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
+            renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
+            ValueSome renderer.RenderAssetCached.CachedRenderAsset
         elif
             renderer.RenderPackageCachedOpt :> obj |> notNull &&
             renderer.RenderPackageCachedOpt.CachedPackageName = assetTag.PackageName then
             let assets = renderer.RenderPackageCachedOpt.CachedPackageAssets
             match assets.TryGetValue assetTag.AssetName with
             | (true, (_, _, asset)) ->
-                renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
+                renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
             | (false, _) -> ValueNone
         else
@@ -938,7 +961,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
                 match package.Assets.TryGetValue assetTag.AssetName with
                 | (true, (_, _, asset)) ->
-                    renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
+                    renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                    renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
                 | (false, _) -> ValueNone
             | None ->
@@ -949,7 +973,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
                     match package.Assets.TryGetValue assetTag.AssetName with
                     | (true, (_, _, asset)) ->
-                        renderer.RenderAssetCachedOpt <- { CachedAssetTag = assetTag; CachedRenderAsset = asset }
+                        renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                        renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
                     | (false, _) -> ValueNone
                 | (false, _) -> ValueNone
@@ -3004,7 +3029,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               RenderTasksDictionary = renderTasksDictionary
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
-              RenderAssetCachedOpt = Unchecked.defaultof<_>
+              RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
               RenderMessages = List () }
 
