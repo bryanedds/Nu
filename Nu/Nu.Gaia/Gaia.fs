@@ -1016,7 +1016,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     (fsiSession :> IDisposable).Dispose ()
-                    interactiveOutputStr <- interactiveOutputStr + "\n(fsi session reset)"
+                    interactiveOutputStr <- "(fsi session reset)"
                     fsiSession <- Shell.FsiEvaluationSession.Create (fsiConfig, fsiArgs, fsiInStream, fsiOutStream, fsiErrorStream)
                     try fsiSession.EvalInteraction fsxFileString
                         let errorStr = string fsiErrorStream
