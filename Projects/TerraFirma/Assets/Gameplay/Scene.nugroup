@@ -31,11 +31,11 @@
         [[Gameplay TerraLayerBlend] [Gameplay TerraLayer2Blend] [Gameplay TerraLayer3Blend] [Gameplay TerraLayer4Blend]]]]]]
     [TerrainMaterialProperties
      [[AlbedoOpt
-       [ValueSome [1 1 1 1]]]
-      [RoughnessOpt [ValueSome 1]]
-      [AmbientOcclusionOpt [ValueSome 1]]
-      [HeightOpt [ValueSome 8]]
-      [InvertRoughnessOpt [ValueSome False]]]]
+       [Some [1 1 1 1]]]
+      [RoughnessOpt [Some 1]]
+      [AmbientOcclusionOpt [Some 1]]
+      [HeightOpt [Some 8]]
+      [InvertRoughnessOpt [Some False]]]]
     [Tiles [512 512]]]
    []]
   [CharacterDispatcher
