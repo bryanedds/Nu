@@ -167,6 +167,9 @@ module Gaia =
     let mutable ofSymbolMemo = new ForgetfulDictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
 
     (* Fsi Session *)
+    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560"// TODO: add warnings as errors, too?    
+    let fsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; fsProjectNoWarn|] // TODO: see if can we use --warnon as well.
+    let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
     let private fsiErrorStream = new StringWriter ()
     let private fsiInStream = new StringReader ""
     let private fsiOutStream = new StringWriter ()
@@ -1012,6 +1015,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         String.Join ("\n", fsprojProjectLines) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
+                    (fsiSession :> IDisposable).Dispose ()
+                    interactiveOutputStr <- interactiveOutputStr + "\n(fsi session reset)"
+                    fsiSession <- Shell.FsiEvaluationSession.Create (fsiConfig, fsiArgs, fsiInStream, fsiOutStream, fsiErrorStream)
                     try fsiSession.EvalInteraction fsxFileString
                         let errorStr = string fsiErrorStream
                         if errorStr.Length > 0
@@ -3582,9 +3588,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             | Left error ->
                 messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
                 ""
-        let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560"// TODO: add warnings as errors, too?    
-        let fsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; fsProjectNoWarn|] // TODO: see if can we use --warnon as well.
-        let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
         fsiSession <- Shell.FsiEvaluationSession.Create (fsiConfig, fsiArgs, fsiInStream, fsiOutStream, fsiErrorStream)
         let result = World.runWithCleanUp tautology imGuiPostProcess id imGuiRender imGuiProcess imGuiPostProcess Live true world
         (fsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
