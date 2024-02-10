@@ -950,7 +950,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ValueNone -> None
 
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
-        let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * string * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom.
+        let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * string * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
             assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
             renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
@@ -1312,7 +1312,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         Constants.Render.ShadowResolution * scalar
 
     static member private getRenderTasks renderPass renderer =
-        let mutable renderTasks = Unchecked.defaultof<RenderTasks> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom.
+        let mutable renderTasks = Unchecked.defaultof<RenderTasks> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if renderer.RenderTasksDictionary.TryGetValue (renderPass, &renderTasks)
         then renderTasks
         else
