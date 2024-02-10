@@ -950,6 +950,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | ValueNone -> None
 
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
+        let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * string * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom.
         if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
             assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
             renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
@@ -958,34 +959,34 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.RenderPackageCachedOpt :> obj |> notNull &&
             renderer.RenderPackageCachedOpt.CachedPackageName = assetTag.PackageName then
             let assets = renderer.RenderPackageCachedOpt.CachedPackageAssets
-            match assets.TryGetValue assetTag.AssetName with
-            | (true, (_, _, asset)) ->
+            if assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                let asset = Triple.thd assetInfo
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            | (false, _) -> ValueNone
+            else ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
                 renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
-                match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, (_, _, asset)) ->
+                if package.Assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                    let asset = Triple.thd assetInfo
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                | (false, _) -> ValueNone
+                else ValueNone
             | None ->
                 Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 GlRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, package) ->
                     renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
-                    match package.Assets.TryGetValue assetTag.AssetName with
-                    | (true, (_, _, asset)) ->
+                    if package.Assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                        let asset = Triple.thd assetInfo
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    | (false, _) -> ValueNone
+                    else ValueNone
                 | (false, _) -> ValueNone
 
     static member private tryGetTextureData (assetTag : Image AssetTag) renderer =
