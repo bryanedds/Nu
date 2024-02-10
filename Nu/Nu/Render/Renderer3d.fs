@@ -251,7 +251,7 @@ type TerrainDescriptor =
           Segments = this.Segments }
 
 /// A collection of render tasks in a pass.
-and [<ReferenceEquality>] RenderTasks =
+type [<ReferenceEquality>] RenderTasks =
     { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) List
       RenderLightProbes : Dictionary<uint64, struct (bool * Vector3 * Box3 * bool)>
       RenderLightMaps : SortableLightMap List
