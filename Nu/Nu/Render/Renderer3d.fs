@@ -1309,11 +1309,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             then Constants.Render.ShadowDetailedResolutionScalar
             else 1
         Constants.Render.ShadowResolution * scalar
-    
+
     static member private getRenderTasks renderPass renderer =
-        match renderer.RenderTasksDictionary.TryGetValue renderPass with
-        | (true, renderTasks) -> renderTasks
-        | (false, _) ->
+        let mutable renderTasks = Unchecked.defaultof<RenderTasks> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom.
+        if renderer.RenderTasksDictionary.TryGetValue (renderPass, &renderTasks)
+        then renderTasks
+        else
             let renderTasks = RenderTasks.make ()
             renderer.RenderTasksDictionary.Add (renderPass, renderTasks)
             renderTasks
