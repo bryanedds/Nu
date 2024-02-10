@@ -85,7 +85,8 @@ module internal KeyboardState =
 
     /// Check that the given keyboard key is down.
     let internal isKeyDown (key : KeyboardKey) =
-        let keyboardStatePtr = fst (SDL.SDL_GetKeyboardState ())
+        let mutable unused = 0
+        let keyboardStatePtr = SDL.SDL_GetKeyboardState &unused
         let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
         let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr (int key)
         state = byte 1
