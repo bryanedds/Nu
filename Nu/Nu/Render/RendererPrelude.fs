@@ -82,11 +82,11 @@ type [<CustomEquality; NoComparison>] RenderPass =
         | ReflectionPass (reflectorId, _) -> hash reflectorId
 
     static member equals left right =
-        match (left, right) with
-        | (NormalPass _, NormalPass _) -> true
-        | (ShadowPass (lightId, _, _), ShadowPass (lightId2, _, _)) -> lightId = lightId2
-        | (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
-        | (_, _) -> false
+        match struct (left, right) with
+        | struct (NormalPass _, NormalPass _) -> true
+        | struct (ShadowPass (lightId, _, _), ShadowPass (lightId2, _, _)) -> lightId = lightId2
+        | struct (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
+        | struct (_, _) -> false
 
     static member comparer =
         HashIdentity.FromFunctions RenderPass.hash RenderPass.equals
