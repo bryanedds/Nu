@@ -14,7 +14,7 @@ module WorldEntityHierarchy =
     type World with
 
         /// Attempt to import a static model hierarchy below the target entity.
-        static member tryImportEntityHierarchy presenceConferred staticModel rigid (parent : Either<Group, Entity>) world =
+        static member tryImportEntityHierarchy presenceConferred staticModel surfaceMaterialsPopulated rigid (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
@@ -108,14 +108,16 @@ module WorldEntityHierarchy =
                                   OpaqueDistanceOpt = Some opaqueDistance }
                             let world = child.SetMaterialProperties properties world
                             let material =
-                                { AlbedoImageOpt = Metadata.tryGetStaticModelAlbedoImage surface.SurfaceMaterialIndex staticModel
-                                  RoughnessImageOpt = Metadata.tryGetStaticModelRoughnessImage surface.SurfaceMaterialIndex staticModel
-                                  MetallicImageOpt = Metadata.tryGetStaticModelMetallicImage surface.SurfaceMaterialIndex staticModel
-                                  AmbientOcclusionImageOpt = Metadata.tryGetStaticModelAmbientOcclusionImage surface.SurfaceMaterialIndex staticModel
-                                  EmissionImageOpt = Metadata.tryGetStaticModelEmissionImage surface.SurfaceMaterialIndex staticModel
-                                  NormalImageOpt = Metadata.tryGetStaticModelNormalImage surface.SurfaceMaterialIndex staticModel
-                                  HeightImageOpt = Metadata.tryGetStaticModelHeightImage surface.SurfaceMaterialIndex staticModel
-                                  TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel }
+                                if surfaceMaterialsPopulated then
+                                    { AlbedoImageOpt = Metadata.tryGetStaticModelAlbedoImage surface.SurfaceMaterialIndex staticModel
+                                      RoughnessImageOpt = Metadata.tryGetStaticModelRoughnessImage surface.SurfaceMaterialIndex staticModel
+                                      MetallicImageOpt = Metadata.tryGetStaticModelMetallicImage surface.SurfaceMaterialIndex staticModel
+                                      AmbientOcclusionImageOpt = Metadata.tryGetStaticModelAmbientOcclusionImage surface.SurfaceMaterialIndex staticModel
+                                      EmissionImageOpt = Metadata.tryGetStaticModelEmissionImage surface.SurfaceMaterialIndex staticModel
+                                      NormalImageOpt = Metadata.tryGetStaticModelNormalImage surface.SurfaceMaterialIndex staticModel
+                                      HeightImageOpt = Metadata.tryGetStaticModelHeightImage surface.SurfaceMaterialIndex staticModel
+                                      TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel }
+                                else Material.empty
                             let world = child.SetMaterial material world
                             let world = child.SetRenderStyle renderStyle world
                             let world = child.AutoBounds world
@@ -230,6 +232,9 @@ module FreezeFacetModule =
         member this.GetPresenceConferred world : Presence = this.Get (nameof this.PresenceConferred) world
         member this.SetPresenceConferred (value : Presence) world = this.Set (nameof this.PresenceConferred) value world
         member this.PresenceConferred = lens (nameof this.PresenceConferred) this this.GetPresenceConferred this.SetPresenceConferred
+        member this.GetSurfaceMaterialsPopulated world : bool = this.Get (nameof this.SurfaceMaterialsPopulated) world
+        member this.SetSurfaceMaterialsPopulated (value : bool) world = this.Set (nameof this.SurfaceMaterialsPopulated) value world
+        member this.SurfaceMaterialsPopulated = lens (nameof this.SurfaceMaterialsPopulated) this this.GetSurfaceMaterialsPopulated this.SetSurfaceMaterialsPopulated
         member this.UpdateFrozenHierarchy world =
             if this.GetFrozen world then
                 let (frozenProbes, frozenLights, frozenSurfaces, world) = World.freezeEntityHierarchy this world
@@ -259,7 +264,8 @@ module FreezeFacetModule =
              nonPersistent Entity.FrozenRenderLights3d [||]
              nonPersistent Entity.FrozenRenderStaticModelSurfaces [||]
              define Entity.Frozen false
-             define Entity.PresenceConferred Exterior]
+             define Entity.PresenceConferred Exterior
+             define Entity.SurfaceMaterialsPopulated false]
 
         override this.Register (entity, world) =
             let world = entity.SetOffset v3Zero world
@@ -327,7 +333,10 @@ module StaticModelHierarchyDispatcherModule =
                     world (entity.GetChildren world)
             let world =
                 World.tryImportEntityHierarchy
-                    (entity.GetPresenceConferred world) (entity.GetStaticModel world) false (Right entity) world
+                    (entity.GetPresenceConferred world)
+                    (entity.GetStaticModel world)
+                    (entity.GetSurfaceMaterialsPopulated world)
+                    false (Right entity) world
             entity.UpdateFrozenHierarchy world
 
         static let handleUpdateLoadedHierarchy evt world =
@@ -350,6 +359,7 @@ module StaticModelHierarchyDispatcherModule =
                 else world
             let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+            let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
             world
 
         override this.Edit (op, _, world) =
@@ -374,7 +384,10 @@ module RigidModelHierarchyDispatcherModule =
                     world (entity.GetChildren world)
             let world =
                 World.tryImportEntityHierarchy
-                    (entity.GetPresenceConferred world) (entity.GetStaticModel world) true (Right entity) world
+                    (entity.GetPresenceConferred world)
+                    (entity.GetStaticModel world)
+                    (entity.GetSurfaceMaterialsPopulated world)
+                    true (Right entity) world
             entity.UpdateFrozenHierarchy world
 
         static let handleUpdateLoadedHierarchy evt world =
@@ -397,6 +410,7 @@ module RigidModelHierarchyDispatcherModule =
                 else world
             let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.StaticModel)) entity world
             let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.PresenceConferred)) entity world
+            let world = World.monitor handleUpdateLoadedHierarchy (entity.ChangeEvent (nameof entity.SurfaceMaterialsPopulated)) entity world
             world
 
         override this.Edit (op, _, world) =
