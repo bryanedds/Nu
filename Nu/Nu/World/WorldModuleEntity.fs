@@ -2376,12 +2376,6 @@ module WorldModuleEntity =
             | (_, _) ->
                 (Left "Could not set the entity's overlay name to None because doing so is currently not implemented.", world)
             
-        /// Try to set the entity's facet names from script.
-        static member internal trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
-            match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
-            | (Right _, world) -> world
-            | (Left _, world) -> world
-
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
@@ -2403,12 +2397,6 @@ module WorldModuleEntity =
                     (Right (), world)
                 | Left error -> (Left error, world)
             else (Right (), world)
-
-        /// Try to set the entity's facet names from script.
-        static member internal trySetEntityFacetNamesFromScript facetNames entity world =
-            match World.trySetEntityFacetNames facetNames entity world with
-            | (Right _, world) -> world
-            | (Left _, world) -> world
 
         static member internal updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld (presenceOld : Presence) boundsOld (entity : Entity) world =
 
