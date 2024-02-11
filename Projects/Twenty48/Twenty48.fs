@@ -21,7 +21,7 @@ module Twenty48 =
         | ShowGameplay
         | Update
         interface Nu.Message
-        
+
     // this is our MMCC command type. Commands are used instead of messages when the world is to be
     // transformed.
     type Command =

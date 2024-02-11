@@ -9,6 +9,38 @@ open System.Numerics
 open SDL2
 open Prime
 
+/// Enables efficient comparison of animated model surfaces.
+type [<CustomEquality; NoComparison; Struct>] AnimatedModelSurfaceKey =
+    { BoneTransforms : Matrix4x4 array
+      AnimatedModelSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
+
+    static member hash amsKey =
+        let mutable hashCode = 0
+        for i in 0 .. dec amsKey.BoneTransforms.Length do hashCode <- hashCode ^^^ amsKey.BoneTransforms.[i].GetHashCode ()
+        hashCode <- hashCode ^^^ OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.hash amsKey.AnimatedModelSurface
+        hashCode
+
+    static member equals left right =
+        if left.BoneTransforms.Length = right.BoneTransforms.Length then
+            let mutable equal = true
+            let mutable i = 0
+            while i < left.BoneTransforms.Length && equal do
+                equal <- m4Eq left.BoneTransforms.[i] right.BoneTransforms.[i]
+                i <- inc i
+            equal && OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedModelSurface right.AnimatedModelSurface
+        else false
+
+    static member comparer =
+        HashIdentity.FromFunctions AnimatedModelSurfaceKey.hash AnimatedModelSurfaceKey.equals
+
+    override this.GetHashCode () =
+        AnimatedModelSurfaceKey.hash this
+
+    override this.Equals thatObj =
+        match thatObj with
+        | :? AnimatedModelSurfaceKey as that -> AnimatedModelSurfaceKey.equals this that
+        | _ -> false
+
 /// A layer from which a 3d terrain's material is composed.
 type TerrainLayer =
     { AlbedoImage : Image AssetTag
@@ -258,8 +290,8 @@ type [<ReferenceEquality>] RenderTasks =
       RenderLights : SortableLight List
       RenderDeferredStaticAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
       RenderDeferredStaticRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
-      RenderDeferredAnimatedAbsolute : Dictionary<struct (Matrix4x4 array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
-      RenderDeferredAnimatedRelative : Dictionary<struct (Matrix4x4 array * OpenGL.PhysicallyBased.PhysicallyBasedSurface), struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
+      RenderDeferredAnimatedAbsolute : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
+      RenderDeferredAnimatedRelative : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
       RenderDeferredTerrainsAbsolute : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
       RenderDeferredTerrainsRelative : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
       RenderForwardStaticAbsolute : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
@@ -274,8 +306,8 @@ type [<ReferenceEquality>] RenderTasks =
           RenderLights = List ()
           RenderDeferredStaticAbsolute = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
           RenderDeferredStaticRelative = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
-          RenderDeferredAnimatedAbsolute = dictPlus HashIdentity.Structural []
-          RenderDeferredAnimatedRelative = dictPlus HashIdentity.Structural []
+          RenderDeferredAnimatedAbsolute = dictPlus AnimatedModelSurfaceKey.comparer []
+          RenderDeferredAnimatedRelative = dictPlus AnimatedModelSurfaceKey.comparer []
           RenderDeferredTerrainsAbsolute = SList.make ()
           RenderDeferredTerrainsRelative = SList.make ()
           RenderForwardStaticAbsolute = SList.make ()
@@ -346,7 +378,7 @@ and CachedAnimatedModelMessage =
       mutable CachedAnimatedModelMaterialProperties : MaterialProperties
       mutable CachedAnimatedModelBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModel : AnimatedModel AssetTag
-      mutable CachedAnimatedModelRenderPass : RenderPass }
+      mutable CachedAnimatedModelRenderPass : RenderPass }        
 
 /// Describes a static model surface.
 and StaticModelSurfaceDescriptor =
@@ -1542,13 +1574,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     // render animated surface
                     if absolute then
-                        match renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue struct (boneTransforms, surface) with
+                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                        match renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue animatedModelSurfaceKey with
                         | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
-                        | (false, _) -> renderTasks.RenderDeferredAnimatedAbsolute.Add (struct (boneTransforms, surface), SList.singleton struct (model, presence, texCoordsOffset, properties))
+                        | (false, _) -> renderTasks.RenderDeferredAnimatedAbsolute.Add (animatedModelSurfaceKey, SList.singleton struct (model, presence, texCoordsOffset, properties))
                     else
-                        match renderTasks.RenderDeferredAnimatedRelative.TryGetValue struct (boneTransforms, surface) with
+                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                        match renderTasks.RenderDeferredAnimatedRelative.TryGetValue animatedModelSurfaceKey with
                         | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
-                        | (false, _) -> renderTasks.RenderDeferredAnimatedRelative.Add (struct (boneTransforms, surface), SList.singleton struct (model, presence, texCoordsOffset, properties))
+                        | (false, _) -> renderTasks.RenderDeferredAnimatedRelative.Add (animatedModelSurfaceKey, SList.singleton struct (model, presence, texCoordsOffset, properties))
 
             // unable to render
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
@@ -1591,13 +1625,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         // render animated surface
                         if modelAbsolute then
-                            match renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue struct (boneTransforms, surface) with
+                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                            match renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue animatedModelSurfaceKey with
                             | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
-                            | (false, _) -> renderTasks.RenderDeferredAnimatedAbsolute.Add (struct (boneTransforms, surface), SList.singleton struct (model, presence, texCoordsOffset, properties))
+                            | (false, _) -> renderTasks.RenderDeferredAnimatedAbsolute.Add (animatedModelSurfaceKey, SList.singleton struct (model, presence, texCoordsOffset, properties))
                         else
-                            match renderTasks.RenderDeferredAnimatedRelative.TryGetValue struct (boneTransforms, surface) with
+                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                            match renderTasks.RenderDeferredAnimatedRelative.TryGetValue animatedModelSurfaceKey with
                             | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
-                            | (false, _) -> renderTasks.RenderDeferredAnimatedRelative.Add (struct (boneTransforms, surface), SList.singleton struct (model, presence, texCoordsOffset, properties))
+                            | (false, _) -> renderTasks.RenderDeferredAnimatedRelative.Add (animatedModelSurfaceKey, SList.singleton struct (model, presence, texCoordsOffset, properties))
 
             // unable to render
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
@@ -2063,22 +2099,22 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render animated surface shadows w/ absolute transforms if in top level render
         if topLevelRender then
             for entry in renderTasks.RenderDeferredAnimatedAbsolute do
-                let struct (boneTransforms, surface) = entry.Key
+                let surfaceKey = entry.Key
                 let parameters = entry.Value
-                let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) boneTransforms
+                let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
                 GlRenderer3d.renderPhysicallyBasedShadowSurfaces
                     SingletonPhase lightViewAbsoluteArray lightProjectionArray bonesArray parameters
-                    surface renderer.PhysicallyBasedShadowAnimatedShader renderer
+                    surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render animated surface shadows w/ relative transforms
         for entry in renderTasks.RenderDeferredAnimatedRelative do
-            let struct (boneTransforms, surface) = entry.Key
+            let surfaceKey = entry.Key
             let parameters = entry.Value
-            let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) boneTransforms
+            let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
             GlRenderer3d.renderPhysicallyBasedShadowSurfaces
                 SingletonPhase lightViewRelativeArray lightProjectionArray bonesArray parameters
-                surface renderer.PhysicallyBasedShadowAnimatedShader renderer
+                surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows w/ absolute transforms if in top level render
@@ -2342,22 +2378,22 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render animated surfaces w/ absolute transforms if in top level render
         if topLevelRender then
             for entry in renderTasks.RenderDeferredAnimatedAbsolute do
-                let struct (boneTransforms, surface) = entry.Key
+                let surfaceKey = entry.Key
                 let parameters = entry.Value
-                let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) boneTransforms
+                let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                     SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters
-                    surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+                    surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render animated surfaces w/ relative transforms
         for entry in renderTasks.RenderDeferredAnimatedRelative do
-            let struct (boneTransforms, surface) = entry.Key
+            let surfaceKey = entry.Key
             let parameters = entry.Value
-            let bonesArray = Array.map (fun (bone : Matrix4x4) -> bone.ToArray ()) boneTransforms
+            let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 SingletonPhase viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters
-                surface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+                surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrains w/ absolute transforms if in top level render
