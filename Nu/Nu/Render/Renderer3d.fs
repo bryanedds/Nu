@@ -9,38 +9,6 @@ open System.Numerics
 open SDL2
 open Prime
 
-/// Enables efficient comparison of animated model surfaces.
-type [<CustomEquality; NoComparison; Struct>] AnimatedModelSurfaceKey =
-    { BoneTransforms : Matrix4x4 array
-      AnimatedModelSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
-
-    static member hash amsKey =
-        let mutable hashCode = 0
-        for i in 0 .. dec amsKey.BoneTransforms.Length do hashCode <- hashCode ^^^ amsKey.BoneTransforms.[i].GetHashCode ()
-        hashCode <- hashCode ^^^ OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.hash amsKey.AnimatedModelSurface
-        hashCode
-
-    static member equals left right =
-        if left.BoneTransforms.Length = right.BoneTransforms.Length then
-            let mutable equal = true
-            let mutable i = 0
-            while i < left.BoneTransforms.Length && equal do
-                equal <- m4Eq left.BoneTransforms.[i] right.BoneTransforms.[i]
-                i <- inc i
-            equal && OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedModelSurface right.AnimatedModelSurface
-        else false
-
-    static member comparer =
-        HashIdentity.FromFunctions AnimatedModelSurfaceKey.hash AnimatedModelSurfaceKey.equals
-
-    override this.GetHashCode () =
-        AnimatedModelSurfaceKey.hash this
-
-    override this.Equals thatObj =
-        match thatObj with
-        | :? AnimatedModelSurfaceKey as that -> AnimatedModelSurfaceKey.equals this that
-        | _ -> false
-
 /// A layer from which a 3d terrain's material is composed.
 type TerrainLayer =
     { AlbedoImage : Image AssetTag
@@ -282,71 +250,8 @@ type TerrainDescriptor =
           HeightMap = this.HeightMap
           Segments = this.Segments }
 
-/// A collection of render tasks in a pass.
-type [<ReferenceEquality>] RenderTasks =
-    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) List
-      RenderLightProbes : Dictionary<uint64, struct (bool * Vector3 * Box3 * bool)>
-      RenderLightMaps : SortableLightMap List
-      RenderLights : SortableLight List
-      RenderDeferredStaticAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
-      RenderDeferredStaticRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
-      RenderDeferredAnimatedAbsolute : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
-      RenderDeferredAnimatedRelative : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
-      RenderDeferredTerrainsAbsolute : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
-      RenderDeferredTerrainsRelative : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
-      RenderForwardStaticAbsolute : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderForwardStaticRelative : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderForwardStaticAbsoluteSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
-      RenderForwardStaticRelativeSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
-
-    static member make () =
-        { RenderSkyBoxes = List ()
-          RenderLightProbes = Dictionary HashIdentity.Structural
-          RenderLightMaps = List ()
-          RenderLights = List ()
-          RenderDeferredStaticAbsolute = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
-          RenderDeferredStaticRelative = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
-          RenderDeferredAnimatedAbsolute = dictPlus AnimatedModelSurfaceKey.comparer []
-          RenderDeferredAnimatedRelative = dictPlus AnimatedModelSurfaceKey.comparer []
-          RenderDeferredTerrainsAbsolute = SList.make ()
-          RenderDeferredTerrainsRelative = SList.make ()
-          RenderForwardStaticAbsolute = SList.make ()
-          RenderForwardStaticRelative = SList.make ()
-          RenderForwardStaticAbsoluteSorted = SList.make ()
-          RenderForwardStaticRelativeSorted = SList.make () }
-
-    static member clear renderTasks =
-        renderTasks.RenderSkyBoxes.Clear ()
-        renderTasks.RenderLightProbes.Clear ()
-        renderTasks.RenderLightMaps.Clear ()
-        renderTasks.RenderLights.Clear ()
-        renderTasks.RenderDeferredStaticAbsolute.Clear ()
-        renderTasks.RenderDeferredStaticRelative.Clear ()
-        renderTasks.RenderDeferredAnimatedAbsolute.Clear ()
-        renderTasks.RenderDeferredAnimatedRelative.Clear ()
-        renderTasks.RenderForwardStaticAbsoluteSorted.Clear ()
-        renderTasks.RenderForwardStaticRelativeSorted.Clear ()
-        renderTasks.RenderDeferredTerrainsAbsolute.Clear ()
-        renderTasks.RenderDeferredTerrainsRelative.Clear ()
-
-/// Configures lighting.
-and [<ReferenceEquality>] LightingConfig =
-    { LightCutoffMargin : single
-      LightShadowBiasAcne : single
-      LightShadowBiasBleed : single
-      LightMappingEnabled : bool }
-
-/// Configures SSAO.
-and [<ReferenceEquality>] SsaoConfig =
-    { SsaoEnabled : bool
-      SsaoIntensity : single
-      SsaoBias : single
-      SsaoRadius : single
-      SsaoDistanceMax : single
-      SsaoSampleCount : int }
-
 /// An internally cached static model used to reduce GC promotion or pressure.
-and CachedStaticModelMessage =
+type CachedStaticModelMessage =
     { mutable CachedStaticModelAbsolute : bool
       mutable CachedStaticModelMatrix : Matrix4x4
       mutable CachedStaticModelPresence : Presence
@@ -357,7 +262,7 @@ and CachedStaticModelMessage =
       mutable CachedStaticModelRenderPass : RenderPass }
 
 /// An internally cached static model surface used to reduce GC promotion or pressure.
-and CachedStaticModelSurfaceMessage =
+type CachedStaticModelSurfaceMessage =
     { mutable CachedStaticModelSurfaceAbsolute : bool
       mutable CachedStaticModelSurfaceMatrix : Matrix4x4
       mutable CachedStaticModelSurfacePresence : Presence
@@ -370,7 +275,7 @@ and CachedStaticModelSurfaceMessage =
       mutable CachedStaticModelSurfaceRenderPass : RenderPass }
 
 /// An internally cached animated model used to reduce GC promotion or pressure.
-and CachedAnimatedModelMessage =
+type CachedAnimatedModelMessage =
     { mutable CachedAnimatedModelAbsolute : bool
       mutable CachedAnimatedModelMatrix : Matrix4x4
       mutable CachedAnimatedModelPresence : Presence
@@ -381,7 +286,7 @@ and CachedAnimatedModelMessage =
       mutable CachedAnimatedModelRenderPass : RenderPass }        
 
 /// Describes a static model surface.
-and StaticModelSurfaceDescriptor =
+type StaticModelSurfaceDescriptor =
     { Positions : Vector3 array
       TexCoordses : Vector2 array
       Normals : Vector3 array
@@ -399,15 +304,15 @@ and StaticModelSurfaceDescriptor =
       HeightImage : Image AssetTag
       TwoSided : bool }
 
-and [<ReferenceEquality>] CreateUserDefinedStaticModel =
+type [<ReferenceEquality>] CreateUserDefinedStaticModel =
     { StaticModelSurfaceDescriptors : StaticModelSurfaceDescriptor array
       Bounds : Box3
       StaticModel : StaticModel AssetTag }
 
-and [<ReferenceEquality>] DestroyUserDefinedStaticModel =
+type [<ReferenceEquality>] DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
 
-and [<ReferenceEquality>] RenderSkyBox =
+type [<ReferenceEquality>] RenderSkyBox =
     { AmbientColor : Color
       AmbientBrightness : single
       CubeMapColor : Color
@@ -415,7 +320,7 @@ and [<ReferenceEquality>] RenderSkyBox =
       CubeMap : CubeMap AssetTag
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderLightProbe3d =
+type [<ReferenceEquality>] RenderLightProbe3d =
     { LightProbeId : uint64
       Enabled : bool
       Origin : Vector3
@@ -423,7 +328,7 @@ and [<ReferenceEquality>] RenderLightProbe3d =
       Stale : bool
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderLight3d =
+type [<ReferenceEquality>] RenderLight3d =
     { LightId : uint64
       Origin : Vector3
       Rotation : Quaternion
@@ -437,7 +342,7 @@ and [<ReferenceEquality>] RenderLight3d =
       DesireShadows : bool
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderBillboard =
+type [<ReferenceEquality>] RenderBillboard =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -447,7 +352,7 @@ and [<ReferenceEquality>] RenderBillboard =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderBillboards =
+type [<ReferenceEquality>] RenderBillboards =
     { Absolute : bool
       Billboards : (Matrix4x4 * Presence * Box2 option) SList
       MaterialProperties : MaterialProperties
@@ -455,7 +360,7 @@ and [<ReferenceEquality>] RenderBillboards =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderBillboardParticles =
+type [<ReferenceEquality>] RenderBillboardParticles =
     { Absolute : bool
       Presence : Presence
       MaterialProperties : MaterialProperties
@@ -464,7 +369,7 @@ and [<ReferenceEquality>] RenderBillboardParticles =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderStaticModelSurface =
+type [<ReferenceEquality>] RenderStaticModelSurface =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -476,7 +381,7 @@ and [<ReferenceEquality>] RenderStaticModelSurface =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderStaticModel =
+type [<ReferenceEquality>] RenderStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -486,14 +391,14 @@ and [<ReferenceEquality>] RenderStaticModel =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderStaticModels =
+type [<ReferenceEquality>] RenderStaticModels =
     { Absolute : bool
       StaticModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
       StaticModel : StaticModel AssetTag
       RenderType : RenderType
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderAnimatedModel =
+type [<ReferenceEquality>] RenderAnimatedModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -503,14 +408,14 @@ and [<ReferenceEquality>] RenderAnimatedModel =
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderAnimatedModels =
+type [<ReferenceEquality>] RenderAnimatedModels =
     { Absolute : bool
       BoneTransforms : Matrix4x4 array
       AnimatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderUserDefinedStaticModel =
+type [<ReferenceEquality>] RenderUserDefinedStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -521,14 +426,30 @@ and [<ReferenceEquality>] RenderUserDefinedStaticModel =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-and [<ReferenceEquality>] RenderTerrain =
+type [<ReferenceEquality>] RenderTerrain =
     { Absolute : bool
       Visible : bool
       TerrainDescriptor : TerrainDescriptor
       RenderPass : RenderPass }
 
+/// Configures lighting.
+type [<ReferenceEquality>] LightingConfig =
+    { LightCutoffMargin : single
+      LightShadowBiasAcne : single
+      LightShadowBiasBleed : single
+      LightMappingEnabled : bool }
+
+/// Configures SSAO.
+type [<ReferenceEquality>] SsaoConfig =
+    { SsaoEnabled : bool
+      SsaoIntensity : single
+      SsaoBias : single
+      SsaoRadius : single
+      SsaoDistanceMax : single
+      SsaoSampleCount : int }
+
 /// A message to the 3d renderer.
-and [<ReferenceEquality>] RenderMessage3d =
+type [<ReferenceEquality>] RenderMessage3d =
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
     | RenderSkyBox of RenderSkyBox
@@ -555,7 +476,7 @@ and [<ReferenceEquality>] RenderMessage3d =
 
 /// A sortable light map.
 /// OPTIMIZATION: mutable field for caching distance squared.
-and [<ReferenceEquality>] SortableLightMap =
+type [<ReferenceEquality>] SortableLightMap =
     { SortableLightMapEnabled : bool
       SortableLightMapOrigin : Vector3
       SortableLightMapBounds : Box3
@@ -605,7 +526,7 @@ and [<ReferenceEquality>] SortableLightMap =
 
 /// A sortable light.
 /// OPTIMIZATION: mutable field for caching distance squared.
-and [<ReferenceEquality>] SortableLight =
+type [<ReferenceEquality>] SortableLight =
     { SortableLightId : uint64
       SortableLightOrigin : Vector3
       SortableLightRotation : Quaternion
@@ -675,8 +596,87 @@ and [<ReferenceEquality>] SortableLight =
                 | (false, _) -> -1 // TODO: log here?
             else -1|]
 
+/// Enables efficient comparison of animated model surfaces.
+type [<CustomEquality; NoComparison; Struct>] AnimatedModelSurfaceKey =
+    { BoneTransforms : Matrix4x4 array
+      AnimatedModelSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
+
+    static member hash amsKey =
+        let mutable hashCode = 0
+        for i in 0 .. dec amsKey.BoneTransforms.Length do hashCode <- hashCode ^^^ amsKey.BoneTransforms.[i].GetHashCode ()
+        hashCode <- hashCode ^^^ OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.hash amsKey.AnimatedModelSurface
+        hashCode
+
+    static member equals left right =
+        if left.BoneTransforms.Length = right.BoneTransforms.Length then
+            let mutable equal = true
+            let mutable i = 0
+            while i < left.BoneTransforms.Length && equal do
+                equal <- m4Eq left.BoneTransforms.[i] right.BoneTransforms.[i]
+                i <- inc i
+            equal && OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedModelSurface right.AnimatedModelSurface
+        else false
+
+    static member comparer =
+        HashIdentity.FromFunctions AnimatedModelSurfaceKey.hash AnimatedModelSurfaceKey.equals
+
+    override this.GetHashCode () =
+        AnimatedModelSurfaceKey.hash this
+
+    override this.Equals thatObj =
+        match thatObj with
+        | :? AnimatedModelSurfaceKey as that -> AnimatedModelSurfaceKey.equals this that
+        | _ -> false
+
+/// A collection of tasks in a render pass.
+type [<ReferenceEquality>] RenderTasks =
+    { RenderSkyBoxes : (Color * single * Color * single * CubeMap AssetTag) List
+      RenderLightProbes : Dictionary<uint64, struct (bool * Vector3 * Box3 * bool)>
+      RenderLightMaps : SortableLightMap List
+      RenderLights : SortableLight List
+      RenderDeferredStaticAbsolute : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
+      RenderDeferredStaticRelative : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
+      RenderDeferredAnimatedAbsolute : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
+      RenderDeferredAnimatedRelative : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList>
+      RenderDeferredTerrainsAbsolute : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
+      RenderDeferredTerrainsRelative : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) SList
+      RenderForwardStaticAbsolute : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticRelative : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticAbsoluteSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList
+      RenderForwardStaticRelativeSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) SList }
+
+    static member make () =
+        { RenderSkyBoxes = List ()
+          RenderLightProbes = Dictionary HashIdentity.Structural
+          RenderLightMaps = List ()
+          RenderLights = List ()
+          RenderDeferredStaticAbsolute = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
+          RenderDeferredStaticRelative = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
+          RenderDeferredAnimatedAbsolute = dictPlus AnimatedModelSurfaceKey.comparer []
+          RenderDeferredAnimatedRelative = dictPlus AnimatedModelSurfaceKey.comparer []
+          RenderDeferredTerrainsAbsolute = SList.make ()
+          RenderDeferredTerrainsRelative = SList.make ()
+          RenderForwardStaticAbsolute = SList.make ()
+          RenderForwardStaticRelative = SList.make ()
+          RenderForwardStaticAbsoluteSorted = SList.make ()
+          RenderForwardStaticRelativeSorted = SList.make () }
+
+    static member clear renderTasks =
+        renderTasks.RenderSkyBoxes.Clear ()
+        renderTasks.RenderLightProbes.Clear ()
+        renderTasks.RenderLightMaps.Clear ()
+        renderTasks.RenderLights.Clear ()
+        renderTasks.RenderDeferredStaticAbsolute.Clear ()
+        renderTasks.RenderDeferredStaticRelative.Clear ()
+        renderTasks.RenderDeferredAnimatedAbsolute.Clear ()
+        renderTasks.RenderDeferredAnimatedRelative.Clear ()
+        renderTasks.RenderForwardStaticAbsoluteSorted.Clear ()
+        renderTasks.RenderForwardStaticRelativeSorted.Clear ()
+        renderTasks.RenderDeferredTerrainsAbsolute.Clear ()
+        renderTasks.RenderDeferredTerrainsRelative.Clear ()
+
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
-and Renderer3d =
+type Renderer3d =
     /// Render a frame of the game.
     abstract Render : bool -> Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
     /// Swap a rendered frame of the game.
