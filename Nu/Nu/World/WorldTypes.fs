@@ -1579,10 +1579,6 @@ and [<ReferenceEquality>] World =
     member this.Halted =
         AmbientState.getHalted this.AmbientState
 
-    /// Check that the world is advancing (not halted).
-    member this.SetAdvancing advancing =
-        AmbientState.setAdvancing advancing this.AmbientState
-
     /// Check that the world is executing with imperative semantics where applicable.
     member this.Imperative =
         AmbientState.getImperative this.AmbientState
