@@ -47,7 +47,7 @@ A critical battle with evil itself!
 Directly editing the entire game state in the new editor.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
-Algebraic terrain rendering thanks to contributions from @deanjl.
+Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
 **Public Sponsors We Wish to Thank**
 ====================================
