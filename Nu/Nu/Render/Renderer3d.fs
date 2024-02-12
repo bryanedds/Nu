@@ -1589,7 +1589,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
     static member private categorizeAnimatedModels
-        (modelAbsolute : bool,
+        (absolute : bool,
          animatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList,
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
@@ -1624,7 +1624,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             | None -> box2 v2Zero v2Zero
 
                         // render animated surface
-                        if modelAbsolute then
+                        if absolute then
                             let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
                             match renderTasks.RenderDeferredAnimatedAbsolute.TryGetValue animatedModelSurfaceKey with
                             | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
@@ -1639,7 +1639,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
         | _ -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
-    static member private categorizeTerrain (absolute, visible, terrainDescriptor : TerrainDescriptor, renderPass, renderer) =
+    static member private categorizeTerrain
+        (absolute : bool,
+         visible : bool,
+         terrainDescriptor : TerrainDescriptor,
+         renderPass : RenderPass,
+         renderer) =
 
         // attempt to create terrain geometry
         let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor

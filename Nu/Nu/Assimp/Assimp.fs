@@ -9,7 +9,7 @@ open System.Numerics
 open Prime
 
 /// Determines how an animation is played.
-type Playback =
+type [<Struct>] Playback =
     | Once
     | Loop
     | Bounce
@@ -30,7 +30,7 @@ type RenderStyle =
     | Forward of Subsort : single * Sort : single
 
 /// The batch phasing such involved in persisting OpenGL state.
-type BatchPhase =
+type [<Struct>] BatchPhase =
     | StartingPhase
     | ResumingPhase
     | StoppingPhase

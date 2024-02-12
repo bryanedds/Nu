@@ -50,12 +50,12 @@ module PresenceOperators =
     
     /// Test two presence values for equality without allocating.
     let presenceEq left right =
-        match (left, right) with
-        | (Interior, Interior)
-        | (Exterior, Exterior)
-        | (Imposter, Imposter)
-        | (Omnipresent, Omnipresent) -> true
-        | (_, _) -> false
+        match struct (left, right) with
+        | struct (Interior, Interior)
+        | struct (Exterior, Exterior)
+        | struct (Imposter, Imposter)
+        | struct (Omnipresent, Omnipresent) -> true
+        | struct (_, _) -> false
 
     /// Test two presence values for inequality.
     let presenceNeq left right =
