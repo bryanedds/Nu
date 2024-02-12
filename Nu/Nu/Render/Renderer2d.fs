@@ -92,25 +92,24 @@ type [<ReferenceEquality>] RenderOperation2d =
     | RenderCachedSprite of CachedSpriteDescriptor
     | RenderText of TextDescriptor
     | RenderTiles of TilesDescriptor
-    | RenderCallback2d of (Vector2 * Vector2 * Renderer2d -> unit)
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
-and [<ReferenceEquality>] LayeredOperation2d =
+type [<ReferenceEquality>] LayeredOperation2d =
     { mutable Elevation : single
       mutable Horizon : single
       mutable AssetTag : AssetTag
       mutable RenderOperation2d : RenderOperation2d }
 
 /// A message to a 2d rendering subsystem.
-and [<ReferenceEquality>] RenderMessage2d =
+type [<ReferenceEquality>] RenderMessage2d =
     | LayeredOperation2d of LayeredOperation2d
     | LoadRenderPackage2d of string
     | UnloadRenderPackage2d of string
     | ReloadRenderAssets2d
 
 /// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
-and Renderer2d =
+type Renderer2d =
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -744,8 +743,6 @@ type [<ReferenceEquality>] GlRenderer2d =
                 (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
                  descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  eyeCenter, eyeSize, renderer)
-        | RenderCallback2d callback ->
-            GlRenderer2d.renderCallback callback eyeCenter eyeSize renderer
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do

@@ -200,8 +200,7 @@ type Vector3Converter () =
             match symbol with
             | Symbols ([Number (x, _); Number (y, _); Number (z, _)], _) ->
                 Vector3 (Single.Parse x, Single.Parse y, Single.Parse z) :> obj
-            | _ ->
-                failconv "Invalid Vector3Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Vector3Converter conversion from source." (Some symbol)
         | :? Vector3 -> source
         | _ -> failconv "Invalid Vector3Converter conversion from source." None
 
@@ -281,8 +280,7 @@ type Vector4Converter () =
             match symbol with
             | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
                 Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
-            | _ ->
-                failconv "Invalid Vector4Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Vector4Converter conversion from source." (Some symbol)
         | :? Vector4 -> source
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
 
@@ -415,8 +413,7 @@ type Vector3iConverter () =
             match symbol with
             | Symbols ([Number (x, _); Number (y, _); Number (z, _)], _) ->
                 Vector3i (Int32.Parse x, Int32.Parse y, Int32.Parse z) :> obj
-            | _ ->
-                failconv "Invalid Vector3iConverter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Vector3iConverter conversion from source." (Some symbol)
         | :? Vector3i -> source
         | _ -> failconv "Invalid Vector3iConverter conversion from source." None
 
@@ -493,8 +490,7 @@ type Vector4iConverter () =
             match symbol with
             | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
                 Vector4i (Int32.Parse x, Int32.Parse y, Int32.Parse z, Int32.Parse w) :> obj
-            | _ ->
-                failconv "Invalid Vector4iConverter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Vector4iConverter conversion from source." (Some symbol)
         | :? Vector4i -> source
         | _ -> failconv "Invalid Vector4iConverter conversion from source." None
 
@@ -583,8 +579,7 @@ type QuaternionConverter () =
             match symbol with
             | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
                 Quaternion (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
-            | _ ->
-                failconv "Invalid QuaternionConverter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid QuaternionConverter conversion from source." (Some symbol)
         | :? Quaternion -> source
         | _ -> failconv "Invalid QuaternionConverter conversion from source." None
 
@@ -649,10 +644,8 @@ type Box2Converter () =
                 match (minSymbol, sizeSymbol) with
                 | (Symbols ([Number (px, _); Number (py, _)], _), Symbols ([Number (sx, _); Number (sy, _)], _)) ->
                     Box2 (Single.Parse px, Single.Parse py, Single.Parse sx, Single.Parse sy) :> obj
-                | _ ->
-                    failconv "Invalid Box2Converter conversion from source." (Some symbol)
-            | _ ->
-                failconv "Invalid Box2Converter conversion from source." (Some symbol)
+                | _ -> failconv "Invalid Box2Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Box2Converter conversion from source." (Some symbol)
         | :? Box2 -> source
         | _ -> failconv "Invalid Box2Converter conversion from source." None
 
@@ -751,10 +744,8 @@ type Box3Converter () =
                 match (minSymbol, sizeSymbol) with
                 | (Symbols ([Number (px, _); Number (py, _); Number (pz, _)], _), Symbols ([Number (sx, _); Number (sy, _); Number (sz, _)], _)) ->
                     Box3 (Single.Parse px, Single.Parse py, Single.Parse pz, Single.Parse sx, Single.Parse sy, Single.Parse sz) :> obj
-                | _ ->
-                    failconv "Invalid Box3Converter conversion from source." (Some symbol)
-            | _ ->
-                failconv "Invalid Box3Converter conversion from source." (Some symbol)
+                | _ -> failconv "Invalid Box3Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Box3Converter conversion from source." (Some symbol)
         | :? Box2 -> source
         | _ -> failconv "Invalid Box3Converter conversion from source." None
 
@@ -818,10 +809,8 @@ type Box2iConverter () =
                 match (minSymbol, sizeSymbol) with
                 | (Symbols ([Number (px, _); Number (py, _)], _), Symbols ([Number (sx, _); Number (sy, _)], _)) ->
                     Box2i (Int32.Parse px, Int32.Parse py, Int32.Parse sx, Int32.Parse sy) :> obj
-                | _ ->
-                    failconv "Invalid Box2iConverter conversion from source." (Some symbol)
-            | _ ->
-                failconv "Invalid Box2iConverter conversion from source." (Some symbol)
+                | _ -> failconv "Invalid Box2iConverter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Box2iConverter conversion from source." (Some symbol)
         | :? Box2 -> source
         | _ -> failconv "Invalid Box2iConverter conversion from source." None
 
@@ -1005,8 +994,7 @@ type ColorConverter () =
                 Color packed :> obj
             | Symbols ([Number (r, _); Number (g, _); Number (b, _); Number (a, _)], _) ->
                 Color (Single.Parse r, Single.Parse g, Single.Parse b, Single.Parse a) :> obj
-            | _ ->
-                failconv "Invalid ColorConverter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid ColorConverter conversion from source." (Some symbol)
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 

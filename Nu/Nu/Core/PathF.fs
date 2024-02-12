@@ -5,7 +5,8 @@ namespace Nu
 open System
 open System.IO
 
-/// Performs operations on System.String instances that contain file or directory path information. These operations are performed in a normalized manner where '/' is use as the directory seperator.
+/// Performs operations on System.String instances that contain file or directory path information. These operations
+/// are performed in a normalized manner where '/' is always used as the directory seperator.
 [<RequireQualifiedAccess>]
 module PathF =
 
