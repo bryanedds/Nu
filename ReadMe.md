@@ -38,7 +38,7 @@ Animated 3D model rendering with physically-based, deferred rendering with soft 
 Rendering made efficient with instancing-by-default.
 
 ![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
-Wandering around the forest in OmniBlade.
+First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 
 ![image](https://user-images.githubusercontent.com/1625560/209454643-7142731e-ede7-48d3-8a97-d691fd9263e7.png)
 A critical battle with evil itself!
@@ -47,7 +47,7 @@ A critical battle with evil itself!
 Directly editing the entire game state in the new editor.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
-Terrain in place with foliage rendering in progress.
+Algebraic terrain rendering thanks to contributions from @deanjl.
 
 **Public Sponsors We Wish to Thank**
 ====================================
