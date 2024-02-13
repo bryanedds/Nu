@@ -28,11 +28,17 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
-Physically based rendering with image-based lighting in the Nu Game Engine.
+![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
+Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
+
+![image](https://github.com/bryanedds/Nu/assets/1625560/0b4778aa-c493-4d9d-9a8a-00e527c831ad)
+Animated 3D model rendering with physically-based, deferred rendering with soft shadows.
+
+![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
+Rendering made efficient with instancing-by-default.
 
 ![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
-Wandering around the forest in OmniBlade.
+First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 
 ![image](https://user-images.githubusercontent.com/1625560/209454643-7142731e-ede7-48d3-8a97-d691fd9263e7.png)
 A critical battle with evil itself!
@@ -40,14 +46,8 @@ A critical battle with evil itself!
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/0b4778aa-c493-4d9d-9a8a-00e527c831ad)
-Animated 3D model rendering with soft self-shadowing.
-
-![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
-Scalable rendering thanks to instancing-by-default render technique.
-
-![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
-Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
+![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
+Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
 **Public Sponsors We Wish to Thank**
 ====================================
