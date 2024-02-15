@@ -1,12 +1,13 @@
 [GroupDispatcher
- [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
     [Position [-96 -192 0]]
-    [Text Back]]]
+    [Text Back]]
+   []]
   [ButtonDispatcher
    [[ClickSoundOpt
      [Some [Gui Slot]]]
@@ -15,7 +16,9 @@
     [Position [-168 -108 0]]
     [Size [336 72 0]]
     [Text "Load Game 3"]
-    [UpImage [Gui ButtonLongUp]]]]
+    [UpImage [Gui ButtonLongUp]]
+    [Visible False]]
+   []]
   [ButtonDispatcher
    [[ClickSoundOpt
      [Some [Gui Slot]]]
@@ -24,7 +27,9 @@
     [Position [-168 0 0]]
     [Size [336 72 0]]
     [Text "Load Game 2"]
-    [UpImage [Gui ButtonLongUp]]]]
+    [UpImage [Gui ButtonLongUp]]
+    [Visible False]]
+   []]
   [ButtonDispatcher
    [[ClickSoundOpt
      [Some [Gui Slot]]]
@@ -33,7 +38,8 @@
     [Position [-168 0 0]]
     [Size [336 72 0]]
     [Text "New Game  2"]
-    [UpImage [Gui ButtonLongUp]]]]
+    [UpImage [Gui ButtonLongUp]]]
+   []]
   [ButtonDispatcher
    [[ClickSoundOpt
      [Some [Gui Slot]]]
@@ -42,7 +48,8 @@
     [Position [-168 108 0]]
     [Size [336 72 0]]
     [Text "Load Game 1"]
-    [UpImage [Gui ButtonLongUp]]]]
+    [UpImage [Gui ButtonLongUp]]]
+   []]
   [ButtonDispatcher
    [[ClickSoundOpt
      [Some [Gui Slot]]]
@@ -51,7 +58,8 @@
     [Position [-168 -108 0]]
     [Size [336 72 0]]
     [Text "New Game  3"]
-    [UpImage [Gui ButtonLongUp]]]]
+    [UpImage [Gui ButtonLongUp]]]
+   []]
   [ButtonDispatcher
    [[ClickSoundOpt
      [Some [Gui Slot]]]
@@ -60,4 +68,6 @@
     [Position [-168 108 0]]
     [Size [336 72 0]]
     [Text "New Game  1"]
-    [UpImage [Gui ButtonLongUp]]]]]]
+    [UpImage [Gui ButtonLongUp]]
+    [Visible False]]
+   []]]]

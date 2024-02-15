@@ -1,41 +1,46 @@
 [GroupDispatcher
- [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
     [Position [-96 -240 0]]
-    [Text Back]]]
+    [Text Back]]
+   []]
   [TextDispatcher
    [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" Credits]]
     [Position [-432 138 0]]
     [Size [864 90 0]]
-    [Text Credits]]]
+    [Text Credits]]
+   []]
   [TextDispatcher
    [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code: Bryan Edds & Dean J. Lee"]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" "Code: Bryan Edds & Dean J. Lee"]]
     [Position [-432 36 0]]
     [Size [864 90 0]]
-    [Text "Code: Bryan Edds & Dean J. Lee"]]]
+    [Text "Code: Bryan Edds & Dean J. Lee"]]
+   []]
   [TextDispatcher
    [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: FinalBossBlues, SelielTheShaper, and more!"]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" "Art: FinalBossBlues, SelielTheShaper, and more!"]]
     [Position [-432 -66 0]]
     [Size [864 90 0]]
-    [Text "Art: FinalBossBlues, SelielTheShaper, and more!"]]]
+    [Text "Art: FinalBossBlues, SelielTheShaper, and more!"]]
+   []]
   [TextDispatcher
    [[BackdropImageOpt
      [Some [Gui Header]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Music: DrassRay, JPS, OwlThery, Pdk, PeriTune, Suat"]]
+    [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" "Music: DrassRay, JPS, OwlThery, Pdk, PeriTune, Suat"]]
     [Position [-432 -168 0]]
     [Size [864 90 0]]
-    [Text "Music: DrassRay, JPS, OwlTheory, Pdk, PeriTune, Suat"]]]]]
+    [Text "Music: DrassRay, JPS, OwlTheory, Pdk, PeriTune, Suat"]]
+   []]]]

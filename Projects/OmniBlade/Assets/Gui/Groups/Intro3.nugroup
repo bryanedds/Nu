@@ -1,19 +1,20 @@
 [GroupDispatcher
- [[Model
-   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Layer]
   [Persistent True]
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Optimized False]
     [Position [-32 -32 0]]
     [Size [64 64 0]]
-    [Text "After a five day trek into the mountains..."]]]
+    [Text "After a five day trek into the mountains..."]]
+   []]
   [StaticSpriteDispatcher
-   [[Color [0 0 0 1]]
+   [[Absolute True]
+    [Color [0 0 0 1]]
     [Elevation -10]
-    [Optimized True]
     [Position [-480 -270 0]]
+    [Presence Omnipresent]
     [Size [960 540 0]]
-    [StaticImage [Default Black]]]]]]
+    [StaticImage [Default Black]]]
+   []]]]
