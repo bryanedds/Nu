@@ -62,7 +62,7 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       Tiles : TmxLayerTile SList
       TileSourceSize : Vector2i
       TileSize : Vector2
-      TileAssets : (TmxTileset * Image AssetTag) array }
+      TileAssets : struct (TmxTileset * Image AssetTag) array }
 
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
@@ -486,7 +486,7 @@ type [<ReferenceEquality>] GlRenderer2d =
          tiles : TmxLayerTile SList,
          tileSourceSize : Vector2i,
          tileSize : Vector2,
-         tileAssets : (TmxTileset * Image AssetTag) array,
+         tileAssets : struct (TmxTileset * Image AssetTag) array,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer) =
@@ -502,9 +502,9 @@ type [<ReferenceEquality>] GlRenderer2d =
         let tilePivot = tileSize * 0.5f // just rotate around center
         let (allFound, tileSetTextures) =
             tileAssets |>
-            Array.map (fun (tileSet, tileSetImage) ->
+            Array.map (fun struct (tileSet, tileSetImage) ->
                 match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
-                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some struct (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
                 | ValueSome _ -> None
                 | ValueNone -> None) |>
             Array.definitizePlus
@@ -521,7 +521,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let tile = tiles.[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
                     let mapRun = mapSize.X
-                    let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+                    let i = tileIndex % mapRun
+                    let j = tileIndex / mapRun
                     let tileMin =
                         v2
                             (min.X + tileSize.X * single i)
@@ -532,18 +533,18 @@ type [<ReferenceEquality>] GlRenderer2d =
         
                         // compute tile flip
                         let flip =
-                            match (tile.HorizontalFlip, tile.VerticalFlip) with
-                            | (false, false) -> FlipNone
-                            | (true, false) -> FlipH
-                            | (false, true) -> FlipV
-                            | (true, true) -> FlipHV
+                            match struct (tile.HorizontalFlip, tile.VerticalFlip) with
+                            | struct (false, false) -> FlipNone
+                            | struct (true, false) -> FlipH
+                            | struct (false, true) -> FlipV
+                            | struct (true, true) -> FlipHV
         
                         // attempt to compute tile set texture
                         let mutable tileOffset = 1 // gid 0 is the empty tile
                         let mutable tileSetIndex = 0
                         let mutable tileSetWidth = 0
                         let mutable tileSetTextureOpt = None
-                        for (set, _, textureMetadata, texture) in tileSetTextures do
+                        for struct (set, _, textureMetadata, texture) in tileSetTextures do
                             let tileCountOpt = set.TileCount
                             let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
                             if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||

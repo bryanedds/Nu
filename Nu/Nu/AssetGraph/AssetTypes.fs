@@ -71,4 +71,4 @@ module TmxExtensions =
         member this.GetImageAssets tileMapPackage =
             this.Tilesets |>
             Array.ofSeq |>
-            Array.map (fun (tileSet : TmxTileset) -> (tileSet, tileSet.GetImageAsset tileMapPackage))
+            Array.map (fun (tileSet : TmxTileset) -> struct (tileSet, tileSet.GetImageAsset tileMapPackage))

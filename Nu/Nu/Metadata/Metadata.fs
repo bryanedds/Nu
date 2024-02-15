@@ -17,7 +17,7 @@ Metadata from another thread. *)
 type Metadata =
     | RawMetadata
     | TextureMetadata of OpenGL.Texture.TextureMetadata
-    | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap // TODO: create a record for this.
+    | TileMapMetadata of string * struct (TmxTileset * Image AssetTag) array * TmxMap // TODO: create a record for this.
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
