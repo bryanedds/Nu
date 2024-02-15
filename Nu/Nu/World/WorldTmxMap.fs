@@ -167,9 +167,10 @@ module TmxMap =
                     (int tmd.TileMapPosition.Y - tmd.TileSizeI.Y * inc j + tmd.TileMapSizeI.Y) // invert y coords
             let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
             let tileSetTileOpt =
-                match tileSet.Tiles.TryGetValue tileId with
-                | (true, tileSetTile) -> Some tileSetTile
-                | (false, _) -> None
+                let mutable tileSetTile = Unchecked.defaultof<_> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
+                if tileSet.Tiles.TryGetValue (tileId, &tileSetTile)
+                then Some tileSetTile
+                else None
             tileDescriptor.Tile <- tile
             tileDescriptor.TileI <- i
             tileDescriptor.TileJ <- j
