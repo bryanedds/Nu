@@ -500,17 +500,19 @@ type [<ReferenceEquality>] GlRenderer2d =
         let eyeSize = eyeSize * Constants.Render.VirtualScalar2
         let tileSize = tileSize * Constants.Render.VirtualScalar2
         let tilePivot = tileSize * 0.5f // just rotate around center
-        let (allFound, tileSetTextures) =
+        let mutable tileSetTexturesAllFound = true
+        let tileSetTextures =
             tileAssets |>
             Array.map (fun struct (tileSet, tileSetImage) ->
                 match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
-                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> Some struct (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
-                | ValueSome _ -> None
-                | ValueNone -> None) |>
-            Array.definitizePlus
+                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> ValueSome struct (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                | ValueSome _ -> tileSetTexturesAllFound <- false; ValueNone
+                | ValueNone -> tileSetTexturesAllFound <- false; ValueNone) |>
+            Array.filter ValueOption.isSome |>
+            Array.map ValueOption.get
 
         // render only when all needed textures are found
-        if allFound then
+        if tileSetTexturesAllFound then
 
             // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
             let tilesLength = tiles.Length
@@ -543,7 +545,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         let mutable tileOffset = 1 // gid 0 is the empty tile
                         let mutable tileSetIndex = 0
                         let mutable tileSetWidth = 0
-                        let mutable tileSetTextureOpt = None
+                        let mutable tileSetTextureOpt = ValueNone
                         for struct (set, _, textureMetadata, texture) in tileSetTextures do
                             let tileCountOpt = set.TileCount
                             let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
@@ -553,20 +555,20 @@ type [<ReferenceEquality>] GlRenderer2d =
 #if DEBUG
                                 if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
 #endif
-                                tileSetTextureOpt <- Some (textureMetadata, texture)
-                            if Option.isNone tileSetTextureOpt then
+                                tileSetTextureOpt <- ValueSome struct (textureMetadata, texture)
+                            if tileSetTextureOpt.IsNone then
                                 tileSetIndex <- inc tileSetIndex
                                 tileOffset <- tileOffset + tileCount
-        
+
                         // attempt to render tile
                         match tileSetTextureOpt with
-                        | Some (textureMetadata, texture) ->
+                        | ValueSome struct (textureMetadata, texture) ->
                             let tileId = tile.Gid - tileOffset
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
                             GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent emission flip renderer
-                        | None -> ()
+                        | ValueNone -> ()
 
                 // fin
                 tileIndex <- inc tileIndex
