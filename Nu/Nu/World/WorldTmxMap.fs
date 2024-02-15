@@ -142,7 +142,8 @@ module TmxMap =
 
     let tryGetTileDescriptor tileIndex (tl : TmxLayer) tmd (tileDescriptor : TileDescriptor outref) =
         let tileMapRun = tmd.TileMapSizeM.X
-        let (i, j) = (tileIndex % tileMapRun, tileIndex / tileMapRun)
+        let i = tileIndex % tileMapRun
+        let j = tileIndex / tileMapRun
         let tile = tl.Tiles.[tileIndex]
         if tile.Gid <> 0 then // not the empty tile
             let mutable tileOffset = 1 // gid 0 is the empty tile
@@ -167,10 +168,9 @@ module TmxMap =
                     (int tmd.TileMapPosition.Y - tmd.TileSizeI.Y * inc j + tmd.TileMapSizeI.Y) // invert y coords
             let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
             let tileSetTileOpt =
-                let mutable tileSetTile = Unchecked.defaultof<_> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
-                if tileSet.Tiles.TryGetValue (tileId, &tileSetTile)
-                then Some tileSetTile
-                else None
+                match tileSet.Tiles.TryGetValue tileId with
+                | (true, tileSetTile) -> Some tileSetTile
+                | (false, _) -> None
             tileDescriptor.Tile <- tile
             tileDescriptor.TileI <- i
             tileDescriptor.TileJ <- j
