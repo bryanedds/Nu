@@ -703,17 +703,6 @@ type [<ReferenceEquality>] private GlPackageState3d =
       CubeMapMemo : OpenGL.CubeMap.CubeMapMemo
       AssimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo }
 
-/// The internally used cached asset package.
-type [<NoEquality; NoComparison>] private RenderPackageCached =
-    { CachedPackageName : string
-      CachedPackageAssets : Dictionary<string, DateTimeOffset * string * RenderAsset> }
-
-/// The internally used cached asset descriptor.
-/// OPTIMIZATION: allowing optional asset tag to reduce allocation of RenderAssetCached instances.
-type [<NoEquality; NoComparison>] private RenderAssetCached =
-    { mutable CachedAssetTagOpt : AssetTag
-      mutable CachedRenderAsset : RenderAsset }
-
 /// The OpenGL implementation of Renderer3d.
 type [<ReferenceEquality>] GlRenderer3d =
     private

@@ -22,7 +22,11 @@ module SpriteBatch =
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
             state.BlendingEquation <> state2.BlendingEquation ||
-            voptNeq state.TextureOpt state2.TextureOpt
+            (match struct (state.TextureOpt, state2.TextureOpt) with
+             | struct (ValueSome _, ValueNone) -> true
+             | struct (ValueNone, ValueSome _) -> true
+             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueSome t, ValueSome t2) -> t.TextureId <> t2.TextureId) // TODO: consider implementing Texture.equals and maybe texEq / texNeq.
 
         static member make absolute bfs bfd beq texture =
             { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; TextureOpt = ValueSome texture }

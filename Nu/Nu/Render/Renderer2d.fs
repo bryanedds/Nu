@@ -146,6 +146,17 @@ type [<ReferenceEquality>] private GlPackageState2d =
       CubeMapMemo : OpenGL.CubeMap.CubeMapMemo
       AssimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo }
 
+/// The internally used cached asset package.
+type [<NoEquality; NoComparison>] private RenderPackageCached =
+    { CachedPackageName : string
+      CachedPackageAssets : Dictionary<string, DateTimeOffset * string * RenderAsset> }
+
+/// The internally used cached asset descriptor.
+/// OPTIMIZATION: allowing optional asset tag to reduce allocation of RenderAssetCached instances.
+type [<NoEquality; NoComparison>] private RenderAssetCached =
+    { mutable CachedAssetTagOpt : AssetTag
+      mutable CachedRenderAsset : RenderAsset }
+
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =
     private
@@ -155,14 +166,15 @@ type [<ReferenceEquality>] GlRenderer2d =
           TextQuad : uint * uint * uint // TODO: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, GlPackageState2d>
-          mutable RenderPackageCachedOpt : string * Package<RenderAsset, GlPackageState2d> // OPTIMIZATION: nullable for speed.
-          mutable RenderAssetCachedOpt : AssetTag * RenderAsset
+          mutable RenderPackageCachedOpt : RenderPackageCached
+          mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
           LayeredOperations : LayeredOperation2d List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
-        renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
+        renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
+        renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
 
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer2d.invalidateCaches renderer
@@ -278,39 +290,44 @@ type [<ReferenceEquality>] GlRenderer2d =
         | Left error ->
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
-    static member tryGetRenderAsset (assetTag : AssetTag) renderer =
-        if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
-            assetEq assetTag (fst renderer.RenderAssetCachedOpt) then
-            ValueSome (snd renderer.RenderAssetCachedOpt)
+    static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
+        let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * string * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
+        if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
+            assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
+            renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
+            ValueSome renderer.RenderAssetCached.CachedRenderAsset
         elif
             renderer.RenderPackageCachedOpt :> obj |> notNull &&
-            fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
-            let package = snd renderer.RenderPackageCachedOpt
-            match package.Assets.TryGetValue assetTag.AssetName with
-            | (true, (_, _, asset)) ->
-                renderer.RenderAssetCachedOpt <- (assetTag, asset)
+            renderer.RenderPackageCachedOpt.CachedPackageName = assetTag.PackageName then
+            let assets = renderer.RenderPackageCachedOpt.CachedPackageAssets
+            if assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                let asset = Triple.thd assetInfo
+                renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            | (false, _) -> ValueNone
+            else ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
-                renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package)
-                match package.Assets.TryGetValue assetTag.AssetName with
-                | (true, (_, _, asset)) ->
-                    renderer.RenderAssetCachedOpt <- (assetTag, asset)
+                renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
+                if package.Assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                    let asset = Triple.thd assetInfo
+                    renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                    renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                | (false, _) -> ValueNone
+                else ValueNone
             | None ->
                 Log.info ("Loading Render2d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 GlRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, package) ->
-                    renderer.RenderPackageCachedOpt <- (assetTag.PackageName, package)
-                    match package.Assets.TryGetValue assetTag.AssetName with
-                    | (true, (_, _, asset)) ->
-                        renderer.RenderAssetCachedOpt <- (assetTag, asset)
+                    renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
+                    if package.Assets.TryGetValue (assetTag.AssetName, &assetInfo) then
+                        let asset = Triple.thd assetInfo
+                        renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
+                        renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    | (false, _) -> ValueNone
+                    else ValueNone
                 | (false, _) -> ValueNone
 
     static member private handleLoadRenderPackage hintPackageName renderer =
@@ -798,7 +815,7 @@ type [<ReferenceEquality>] GlRenderer2d =
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
-              RenderAssetCachedOpt = Unchecked.defaultof<_>
+              RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
               LayeredOperations = List () }
 
