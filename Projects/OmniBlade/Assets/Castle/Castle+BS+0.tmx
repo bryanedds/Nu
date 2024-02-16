@@ -39,11 +39,12 @@
    <properties>
     <property name="I">[Npc MadTrixterNpc [Some Downward]
  [Sequence
-  [[Dialog &quot;You've run a fool's errand...&quot;]
+  [[Dialog &quot;You've run a fool's errand.&quot;]
    [Wait 60]
    [Dialog &quot;Her soul is forever ours...&quot;]
    [Wait 60]
    [Dialog &quot;...and now so is yours!&quot;]
+   [Wait 60]
    [Battle MadTrixterBattle [MadTrixterDefeated]]]]]</property>
    </properties>
   </object>
