@@ -1053,9 +1053,9 @@ module FieldDispatcher =
                  match field.ShopOpt with
                  | Some shop ->
                     let (pageSize, rows) =
-                        match shop.ShopType with
-                        | Chemist -> (6, 3)
-                        | Armory -> (8, 4)
+                        match (shop.ShopType, shop.ShopState) with
+                        | (Chemist, ShopBuying) -> (6, 3)
+                        | _ -> (8, 4)
                     let items = Content.pageItems 8 field
                     Content.panel "Shop"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
