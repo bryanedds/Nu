@@ -645,9 +645,9 @@ module PhysicallyBased =
 
                 // fin
                 Right (vertexData, indexData, bounds)
-                    
+
             // error
-            else Left ("Vertex / normal / tex coords count mismatch.")
+            else Left "Vertex / normal / tex coords count mismatch."
 
         // error
         else Left "Mesh is missing vertices, normals, or texCoords."
