@@ -102,7 +102,7 @@
      [[Fade [SpriteTarget HeavenlyLight] 480 True] [Wait 557]]]
     [Parallel
      [[Move [CharacterTarget [Enemy Kyla]] [0 384 0] Mosey]
-      [Sequence [[Wait 120] [Dialog &quot;There's already enough suffering in the world...&quot; True] [Wait 180] [Dialog &quot;There's too much suffering in the world...&quot; True] [Wait 180] [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
+      [Sequence [[Wait 120] [Dialog &quot;There's already enough suffering in the world...&quot; True] [Wait 180] [Dialog &quot;There's too much suffering in the world.&quot; True] [Wait 180] [Dialog &quot;I'm sorry for what I've added to it...&quot; True]]]]]
     [Wait 240]
     [FadeOutSong 300]
     [Fade [SpriteTarget HeavenlyLight] 300 False]
