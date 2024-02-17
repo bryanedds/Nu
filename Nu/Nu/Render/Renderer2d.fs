@@ -522,8 +522,10 @@ type [<ReferenceEquality>] GlRenderer2d =
             tileAssets |>
             Array.map (fun struct (tileSet, tileSetImage) ->
                 match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
-                | ValueSome (TextureAsset (tileSetTexture, tileSetTextureMetadata)) -> ValueSome struct (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
-                | ValueSome _ -> tileSetTexturesAllFound <- false; ValueNone
+                | ValueSome asset ->
+                    match asset with
+                    | TextureAsset (tileSetTexture, tileSetTextureMetadata) -> ValueSome struct (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                    | _ -> tileSetTexturesAllFound <- false; ValueNone
                 | ValueNone -> tileSetTexturesAllFound <- false; ValueNone) |>
             Array.filter ValueOption.isSome |>
             Array.map ValueOption.get
