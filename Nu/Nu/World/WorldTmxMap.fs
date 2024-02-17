@@ -150,7 +150,7 @@ module TmxMap =
             let mutable tileSetIndex = 0
             let mutable tileSetFound = false
             let mutable enr = tmd.TileMap.Tilesets.GetEnumerator ()
-            while enr.MoveNext () && not tileSetFound do
+            while enr.MoveNext () && not tileSetFound do // TODO: P1: try to figure out how to remove allocation here.
                 let set = enr.Current
                 let tileCountOpt = set.TileCount
                 let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
