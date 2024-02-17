@@ -1335,9 +1335,9 @@ module Battle =
                                     | ConjureRamuh ->
                                         let playThunders =
                                             [PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ThunderSound) |> signal
-                                             PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.Explosion2Sound)
-                                             PlaySound (30L, Constants.Audio.SoundVolumeDefault, Assets.Field.Explosion2Sound)
-                                             PlaySound (45L, Constants.Audio.SoundVolumeDefault, Assets.Field.Explosion2Sound)]
+                                             PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)
+                                             PlaySound (30L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)
+                                             PlaySound (45L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)]
                                         let displayScatterBolts =
                                             [DisplayScatterBolt 0L |> signal
                                              DisplayScatterBolt 15L

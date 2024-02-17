@@ -153,7 +153,6 @@ module Assets =
         let InfernoSound = asset<Sound> PackageName "Inferno"
         let ThunderSound = asset<Sound> PackageName "Thunder"
         let ExplosionSound = asset<Sound> PackageName "Explosion"
-        let Explosion2Sound = asset<Sound> PackageName "Explosion2"
         let ReadySound = asset<Sound> PackageName "Ready"
         let BuffSound = asset<Sound> PackageName "Buff"
         let DebuffSound = asset<Sound> PackageName "Debuff"
