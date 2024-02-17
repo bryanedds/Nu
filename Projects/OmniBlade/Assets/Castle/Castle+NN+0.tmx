@@ -74,7 +74,7 @@
     [Wait 120]
     [Dialog &quot;How much longer can this go on...?&quot;]
     [Wait 120]
-    [Dialog &quot;How much more must I bear...?&quot;]
+    [Dialog &quot;How much more can I bear...?&quot;]
     [FadeOutSong 120]
     [Fade [CharacterTarget [Enemy Kyla]] 150]
     [ReplaceAdvent [KylaAdvent 1] [KylaAdvent 2]]
