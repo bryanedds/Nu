@@ -186,11 +186,11 @@ module TmxMap =
         if tryGetTileDescriptor tileIndex tileLayer tileMapDescriptor &tileDescriptor then
             match tileDescriptor.TileSetTileOpt with
             | Some tileSetTile ->
-                match tileSetTile.Properties.TryGetValue Constants.TileMap.AnimationPropertyName with
-                | (true, tileAnimationStr) ->
+                let mutable tileAnimationStr = Unchecked.defaultof<_> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
+                if tileSetTile.Properties.TryGetValue (Constants.TileMap.AnimationPropertyName, &tileAnimationStr) then
                     try ValueSome (scvalueMemo<TileAnimationDescriptor> tileAnimationStr)
                     with _ -> ValueNone
-                | (false, _) -> ValueNone
+                else ValueNone
             | None -> ValueNone
         else ValueNone
 
