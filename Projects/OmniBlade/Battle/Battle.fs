@@ -1333,14 +1333,18 @@ module Battle =
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playSound; displayBolt] battle
                                     | ConjureRamuh ->
-                                        let playThunder = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ThunderSound)
+                                        let playThunders =
+                                            [PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ThunderSound) |> signal
+                                             PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.Explosion2Sound)
+                                             PlaySound (30L, Constants.Audio.SoundVolumeDefault, Assets.Field.Explosion2Sound)
+                                             PlaySound (45L, Constants.Audio.SoundVolumeDefault, Assets.Field.Explosion2Sound)]
                                         let displayScatterBolts =
                                             [DisplayScatterBolt 0L |> signal
                                              DisplayScatterBolt 15L
                                              DisplayScatterBolt 30L
                                              DisplayScatterBolt 45L]
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
-                                        withSignals (playThunder :: displayScatterBolts) battle
+                                        withSignals (playThunders @ displayScatterBolts) battle
                                     | Inferno ->
                                         let playInferno = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.InfernoSound)
                                         let displayInferno = DisplayInferno 0L
