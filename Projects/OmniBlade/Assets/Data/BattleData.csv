@@ -28,6 +28,6 @@ Castle3Battle4,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[Cloak Cloak
 Castle3Battle5,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BloodArmoros PitViper PitViper],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle2]]
 Castle3Battle6,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[Cloak Cloak PitViper PitViper],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle2]]
 Castle3Battle7,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BloodArmoros PitViper PitViper PitViper PitViper],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle2]]
-Castle3Battle8,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BloodArmoros Cloak Cloak PtViper],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle2]]
+Castle3Battle8,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BloodArmoros Cloak Cloak PitViper],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle2]]
 Castle3Battle9,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[BloodArmoros BloodArmoros Cloak],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBattle2]]
 AraneaImplicitumBattle,[[240 -48 0] [-384 -48 0] [-384 78 0] [-384 -162 0]],[AraneaImplicitum BloodArmoros BloodArmoros],[Castle CastleBattle],-18,[0 1480],[Some [Castle CastleBoss]]
