@@ -150,18 +150,14 @@ module Reflection =
 
     /// Get a map of the counts of the property definitions names.
     let getPropertyNameCounts definitions =
-        Map.fold
-            (fun map (_ : string) definitions ->
-                List.fold
-                    (fun map (definition : PropertyDefinition) ->
-                        let definitionName = definition.PropertyName
-                        match Map.tryFind definitionName map with
-                        | Some count -> Map.add definitionName (count + 1) map
-                        | None -> Map.add definitionName 1 map)
-                    map
-                    definitions)
-            Map.empty
-            definitions
+        Map.fold (fun map (_ : string) definitions ->
+            List.fold (fun map (definition : PropertyDefinition) ->
+                let definitionName = definition.PropertyName
+                match Map.tryFind definitionName map with
+                | Some count -> Map.add definitionName (count + 1) map
+                | None -> Map.add definitionName 1 map)
+                map definitions)
+            Map.empty definitions
 
     /// Get all the reflective property containers of a target, including dispatcher and / or facets.
     let getReflectivePropertyContainers (target : 'a) =
@@ -296,11 +292,10 @@ module Reflection =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let overlayNameOptPropertyOpt =
-            Array.tryFind
-                (fun (property : PropertyInfo) ->
-                    property.Name = Constants.Engine.OverlayNameOptPropertyName &&
-                    property.PropertyType = typeof<string option> &&
-                    property.CanWrite)
+            Array.tryFind (fun (property : PropertyInfo) ->
+                property.Name = Constants.Engine.OverlayNameOptPropertyName &&
+                property.PropertyType = typeof<string option> &&
+                property.CanWrite)
                 targetProperties
         match overlayNameOptPropertyOpt with
         | Some overlayNameOptProperty ->
@@ -318,11 +313,10 @@ module Reflection =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let facetNamesProperty =
-            Array.find
-                (fun (property : PropertyInfo) ->
-                    property.Name = Constants.Engine.FacetNamesPropertyName &&
-                    property.PropertyType = typeof<string Set> &&
-                    property.CanWrite)
+            Array.find (fun (property : PropertyInfo) ->
+                property.Name = Constants.Engine.FacetNamesPropertyName &&
+                property.PropertyType = typeof<string Set> &&
+                property.CanWrite)
                 targetProperties
         match Map.tryFind facetNamesProperty.Name propertyDescriptors with
         | Some facetNamesSymbol ->
@@ -497,22 +491,20 @@ module Reflection =
     let attachIntrinsicFacetsViaNames (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
         let target = copyTarget target
         let facets =
-            List.map
-                (fun facetName ->
-                    match Map.tryFind facetName facetMap with
-                    | Some facet -> facet
-                    | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
+            List.map (fun facetName ->
+                match Map.tryFind facetName facetMap with
+                | Some facet -> facet
+                | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
                 facetNames |>
             List.toArray
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
         | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
         | facetsProperty ->
-            Array.iter
-                (fun facet ->
-                    if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
-                    then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
-                    else ())
+            Array.iter (fun facet ->
+                if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
+                then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
+                else ())
                 facets
             facetsProperty.SetValue (target, facets)
             Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets

@@ -161,9 +161,8 @@ module AssetGraph =
 
     /// Apply all refinements to an asset.
     let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
-        List.fold
-            (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
-                refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
+        List.fold (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
+            refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
             (inputFileSubpath, inputDirectory)
             refinements
 

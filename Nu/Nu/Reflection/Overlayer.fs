@@ -45,41 +45,39 @@ type Overlay =
 
         // get the descriptors needed to construct the overlays
         let overlayDescriptors =
-            List.map
-                (fun (sourceType : Type) ->
-                    let includeNames =
-                        if sourceType.BaseType <> typeof<obj>
-                        then [Overlay.dispatcherNameToOverlayName sourceType.BaseType.Name]
-                        else []
-                    let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
-                    let requiresFacetNames = requiresFacetNames sourceType
-                    (Overlay.dispatcherNameToOverlayName sourceType.Name, sourceType.Name, includeNames, definitions, requiresFacetNames))
+            List.map (fun (sourceType : Type) ->
+                let includeNames =
+                    if sourceType.BaseType <> typeof<obj>
+                    then [Overlay.dispatcherNameToOverlayName sourceType.BaseType.Name]
+                    else []
+                let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
+                let requiresFacetNames = requiresFacetNames sourceType
+                (Overlay.dispatcherNameToOverlayName sourceType.Name, sourceType.Name, includeNames, definitions, requiresFacetNames))
                 decomposedTypes
 
         // create the intrinsic overlays with the above descriptors
         let overlays =
-            List.map
-                (fun (overlayName, overlaidTypeName, includeNames, definitions, requiresFacetNames) ->
-                    let overlayProperties =
-                        List.foldBack
-                            (fun definition overlayProperties ->
-                                match definition.PropertyExpr with
-                                | DefineExpr value ->
-                                    let converter = SymbolicConverter (false, None, definition.PropertyType)
-                                    let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
-                                    Map.add definition.PropertyName overlayProperty overlayProperties
-                                | VariableExpr _ -> overlayProperties
-                                | ComputedExpr _ -> overlayProperties)
-                            definitions
-                            Map.empty
-                    let overlayProperties =
-                        if requiresFacetNames
-                        then Map.add Constants.Engine.FacetNamesPropertyName (Symbols ([], ValueNone)) overlayProperties
-                        else overlayProperties
-                    { OverlayName = overlayName
-                      OverlaysInherited = includeNames
-                      OverlaidTypeNames = [overlaidTypeName]
-                      OverlayProperties = overlayProperties })
+            List.map (fun (overlayName, overlaidTypeName, includeNames, definitions, requiresFacetNames) ->
+                let overlayProperties =
+                    List.foldBack
+                        (fun definition overlayProperties ->
+                            match definition.PropertyExpr with
+                            | DefineExpr value ->
+                                let converter = SymbolicConverter (false, None, definition.PropertyType)
+                                let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
+                                Map.add definition.PropertyName overlayProperty overlayProperties
+                            | VariableExpr _ -> overlayProperties
+                            | ComputedExpr _ -> overlayProperties)
+                        definitions
+                        Map.empty
+                let overlayProperties =
+                    if requiresFacetNames
+                    then Map.add Constants.Engine.FacetNamesPropertyName (Symbols ([], ValueNone)) overlayProperties
+                    else overlayProperties
+                { OverlayName = overlayName
+                  OverlaysInherited = includeNames
+                  OverlaidTypeNames = [overlaidTypeName]
+                  OverlayProperties = overlayProperties })
                 overlayDescriptors
 
         // fin

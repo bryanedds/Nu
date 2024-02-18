@@ -330,12 +330,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | _ -> failwithnie ()
 
     static member private createJoints (createJointsMessage : CreateJointsMessage) physicsEngine =
-        List.iter
-            (fun (jointProperties : JointProperties) ->
-                let createJointMessage =
-                    { JointSource = createJointsMessage.JointsSource
-                      JointProperties = jointProperties }
-                PhysicsEngine2d.createJoint createJointMessage physicsEngine)
+        List.iter (fun (jointProperties : JointProperties) ->
+            let createJointMessage = { JointSource = createJointsMessage.JointsSource; JointProperties = jointProperties }
+            PhysicsEngine2d.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties
 
     static member private destroyJoint (destroyJointMessage : DestroyJointMessage) physicsEngine =
@@ -473,7 +470,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     static member private applyGravity physicsStepAmount physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
             let (gravityOverride, body) = bodyEntry.Value
-            if  body.BodyType = Dynamics.BodyType.Dynamic then
+            if body.BodyType = Dynamics.BodyType.Dynamic then
                 let gravity =
                     match gravityOverride with
                     | Some gravity -> PhysicsEngine2d.toPhysicsV2 gravity
@@ -513,10 +510,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             v3 body.AngularVelocity 0.0f 0.0f
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            List.filter
-                (fun normal ->
-                    let theta = Vector2.Dot (normal.V2, Vector2.UnitY) |> acos |> abs
-                    theta < Constants.Physics.GroundAngleMax)
+            List.filter (fun normal ->
+                let theta = Vector2.Dot (normal.V2, Vector2.UnitY) |> acos |> abs
+                theta < Constants.Physics.GroundAngleMax)
                 ((physicsEngine :> PhysicsEngine).GetBodyContactNormals bodyId)
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =

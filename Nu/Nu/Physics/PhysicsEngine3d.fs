@@ -379,12 +379,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         PhysicsEngine3d.createBody4 bodyProperties.BodyShape bodyId bodyProperties physicsEngine
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
-        List.iter
-            (fun (bodyProperties : BodyProperties) ->
-                let createBodyMessage =
-                    { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
-                      BodyProperties = bodyProperties }
-                PhysicsEngine3d.createBody createBodyMessage physicsEngine)
+        List.iter (fun (bodyProperties : BodyProperties) ->
+            let createBodyMessage =
+                { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
+                  BodyProperties = bodyProperties }
+            PhysicsEngine3d.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
@@ -432,12 +431,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | _ -> failwithnie ()
 
     static member private createJoints (createJointsMessage : CreateJointsMessage) physicsEngine =
-        List.iter
-            (fun (jointProperties : JointProperties) ->
-                let createJointMessage =
-                    { JointSource = createJointsMessage.JointsSource
-                      JointProperties = jointProperties }
-                PhysicsEngine3d.createJoint createJointMessage physicsEngine)
+        List.iter (fun (jointProperties : JointProperties) ->
+            let createJointMessage = { JointSource = createJointsMessage.JointsSource; JointProperties = jointProperties }
+            PhysicsEngine3d.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties
 
     static member private destroyJoint (destroyJointMessage : DestroyJointMessage) physicsEngine =

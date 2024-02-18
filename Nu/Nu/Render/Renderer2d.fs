@@ -731,14 +731,6 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | None -> Log.infoOnce ("TextDescriptor failed due to unloadable asset for '" + scstring font + "'.")
             OpenGL.Hl.Assert ()
 
-    static member
-#if !DEBUG
-        inline
-#endif
-        private renderCallback callback eyeCenter eyeSize renderer =
-        flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () -> callback (eyeCenter, eyeSize, renderer)
-        OpenGL.Hl.Assert ()
-
     static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
         | RenderSprite descriptor ->

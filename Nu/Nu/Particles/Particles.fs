@@ -56,13 +56,14 @@ type Constraint =
         | (_, _) -> Constraints (SArray.ofList [constrain; constrain2])
 
     /// The empty constraint.
-    static member empty = Constraints SArray.empty
+    static member empty =
+        Constraints SArray.empty
 
     /// Checks that constraint is the empty constraint constant.
     static member isEmpty constrain =
-            match constrain with
-            | Constraints constraints -> constraints.Length = 0
-            | _ -> false
+        match constrain with
+        | Constraints constraints -> constraints.Length = 0
+        | _ -> false
 
     /// Checks that constraint is not the empty constraint constant.
     static member notEmpty constrain =
@@ -160,13 +161,14 @@ type [<ReferenceEquality>] Output =
         | (_, _) -> Outputs (SArray.ofList [output; output2])
 
     /// The empty output.
-    static member empty = Outputs SArray.empty
+    static member empty =
+        Outputs SArray.empty
 
     /// Checks that output is the empty output constant.
     static member isEmpty output =
-            match output with
-            | Outputs outputs -> outputs.Length = 0
-            | _ -> false
+        match output with
+        | Outputs outputs -> outputs.Length = 0
+        | _ -> false
 
     /// Checks that output is not the empty output constant.
     static member notEmpty output =
@@ -855,8 +857,8 @@ module BasicStaticSpriteEmitter =
         let particles =
             SArray.append
                 (if emitter.ParticleWatermark > emitter.ParticleIndex
-                    then SArray.skip emitter.ParticleIndex emitter.ParticleRing
-                    else SArray.empty)
+                 then SArray.skip emitter.ParticleIndex emitter.ParticleRing
+                 else SArray.empty)
                 (SArray.take emitter.ParticleIndex emitter.ParticleRing)
         let particles' =
             SArray.zeroCreate<Nu.Particle> particles.Length
@@ -1107,8 +1109,8 @@ module BasicStaticBillboardEmitter =
         let particles =
             SArray.append
                 (if emitter.ParticleWatermark > emitter.ParticleIndex
-                    then SArray.skip emitter.ParticleIndex emitter.ParticleRing
-                    else SArray.empty)
+                 then SArray.skip emitter.ParticleIndex emitter.ParticleRing
+                 else SArray.empty)
                 (SArray.take emitter.ParticleIndex emitter.ParticleRing)
         let particles' =
             SArray.zeroCreate<Nu.Particle> particles.Length
