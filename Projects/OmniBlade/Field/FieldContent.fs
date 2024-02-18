@@ -164,6 +164,6 @@ module FieldContent =
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.TextMargin == v2 16.0f 0.0f
                      Entity.Text := techName
-                     Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
-                     Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
+                     Entity.UpImage := if useSmallButtons then Assets.Gui.ButtonSquishedUpImage else Assets.Gui.ButtonLongUpImage
+                     Entity.DownImage := if useSmallButtons then Assets.Gui.ButtonSquishedDownImage else Assets.Gui.ButtonLongDownImage
                      Entity.ClickEvent => fieldMsg index]]
