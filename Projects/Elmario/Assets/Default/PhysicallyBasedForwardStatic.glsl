@@ -1,5 +1,5 @@
 #shader vertex
-#version 410 core
+#version 410
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 
@@ -55,7 +55,7 @@ void main()
 }
 
 #shader fragment
-#version 410 core
+#version 410
 #extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;

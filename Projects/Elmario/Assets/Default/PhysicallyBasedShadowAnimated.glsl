@@ -1,5 +1,5 @@
 #shader vertex
-#version 410 core
+#version 410
 
 const int BONES_MAX = 128;
 const int BONES_INFLUENCE_MAX = 4;
@@ -29,7 +29,7 @@ void main()
 }
 
 #shader fragment
-#version 410 core
+#version 410
 
 layout (location = 0) out vec2 moments;
 

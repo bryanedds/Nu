@@ -1,5 +1,5 @@
 #shader vertex
-#version 410 core
+#version 410
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -17,7 +17,7 @@ void main()
 }
 
 #shader fragment
-#version 410 core
+#version 410
 
 layout (location = 0) out vec2 moments;
 

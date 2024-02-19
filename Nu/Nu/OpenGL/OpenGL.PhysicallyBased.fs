@@ -2290,6 +2290,7 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // draw geometry
+        Gl.ValidateProgram shader.PhysicallyBasedDeferredLightMappingShader
         Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.ReportDrawCall 1
         Hl.Assert ()

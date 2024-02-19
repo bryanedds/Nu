@@ -1,5 +1,5 @@
 #shader vertex
-#version 410 core
+#version 410
 
 const int VERTS = 6;
 const int SPRITE_BATCH_SIZE = 192;
@@ -53,7 +53,7 @@ void main()
 }
 
 #shader fragment
-#version 410 core
+#version 410
 #extension GL_ARB_bindless_texture : require
 layout (bindless_sampler) uniform sampler2D tex;
 in vec2 texCoords;

@@ -1,5 +1,5 @@
 #shader vertex
-#version 410 core
+#version 410
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 const int TERRAIN_LAYERS_MAX = 8;
@@ -63,7 +63,7 @@ void main()
 }
 
 #shader fragment
-#version 410 core
+#version 410
 #extension GL_ARB_bindless_texture : require
 
 const float GAMMA = 2.2;

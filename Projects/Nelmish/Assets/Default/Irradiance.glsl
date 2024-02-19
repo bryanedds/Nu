@@ -1,5 +1,5 @@
 #shader vertex
-#version 410 core
+#version 410
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -15,7 +15,7 @@ void main()
 }
 
 #shader fragment
-#version 410 core
+#version 410
 #extension GL_ARB_bindless_texture : require
 
 const float PI = 3.14159265359;
