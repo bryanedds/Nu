@@ -16,12 +16,12 @@ void main()
 #version 410
 #extension GL_ARB_bindless_texture : require
 
-in vec2 texCoordsOut;
-
-out vec2 frag;
-
 uniform vec2 scale;
 layout (bindless_sampler) uniform sampler2D inputTexture;
+
+in vec2 texCoordsOut;
+
+layout (location = 0) out vec2 frag;
 
 void main()
 {

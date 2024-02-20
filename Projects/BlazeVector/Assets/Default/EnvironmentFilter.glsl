@@ -28,7 +28,7 @@ layout (bindless_sampler) uniform samplerCube cubeMap;
 
 in vec3 positionOut;
 
-out vec4 frag;
+layout (location = 0) out vec4 frag;
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
 {

@@ -24,7 +24,7 @@ layout (bindless_sampler) uniform sampler2D inputTexture;
 
 in vec2 texCoordsOut;
 
-out vec4 frag;
+layout (location = 0) out vec4 frag;
 
 void main()
 {

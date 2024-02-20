@@ -55,7 +55,7 @@ uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
-out vec4 frag;
+layout (location = 0) out vec4 frag;
 
 float linstep(float low, float high, float v)
 {

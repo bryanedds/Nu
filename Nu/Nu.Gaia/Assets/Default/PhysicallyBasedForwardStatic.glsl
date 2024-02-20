@@ -111,7 +111,7 @@ flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
 
-out vec4 frag;
+layout (location = 0) out vec4 frag;
 
 float linstep(float low, float high, float v)
 {

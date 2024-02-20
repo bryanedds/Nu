@@ -18,13 +18,13 @@ void main()
 #version 410
 #extension GL_ARB_bindless_texture : require
 
-in vec3 texCoordsOut;
-
-out vec4 frag;
-
 uniform vec3 color;
 uniform float brightness;
 layout (bindless_sampler) uniform samplerCube cubeMap;
+
+in vec3 texCoordsOut;
+
+layout (location = 0) out vec4 frag;
 
 void main()
 {

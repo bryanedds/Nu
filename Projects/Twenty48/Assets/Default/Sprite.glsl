@@ -28,7 +28,7 @@ void main()
 layout (bindless_sampler) uniform sampler2D tex;
 uniform vec4 color;
 in vec2 texCoords;
-out vec4 frag;
+layout (location = 0) out vec4 frag;
 void main()
 {
     frag = color * texture(tex, texCoords);

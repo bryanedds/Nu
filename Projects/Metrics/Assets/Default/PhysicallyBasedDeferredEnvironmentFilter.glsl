@@ -33,7 +33,7 @@ uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
 
 in vec2 texCoordsOut;
 
-out vec4 frag;
+layout (location = 0) out vec4 frag;
 
 vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, vec3 boxSize)
 {

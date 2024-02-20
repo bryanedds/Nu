@@ -29,7 +29,7 @@ uniform int lightMapsCount;
 
 in vec2 texCoordsOut;
 
-out vec4 frag;
+layout (location = 0) out vec4 frag;
 
 bool inBounds(vec3 point, vec3 min, vec3 size)
 {

@@ -73,7 +73,7 @@ uniform int ssaoSampleCount;
 
 in vec2 texCoordsOut;
 
-out float frag;
+layout (location = 0) out float frag;
 
 float randomAngle()
 {
