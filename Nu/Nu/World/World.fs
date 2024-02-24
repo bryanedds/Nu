@@ -63,7 +63,7 @@ type Nu () =
             WorldTypes.viewGroup <- fun group world -> World.viewGroupProperties (group :?> Group) (world :?> World)
             WorldTypes.viewEntity <- fun entity world -> World.viewEntityProperties (entity :?> Entity) (world :?> World)
 
-            // init handleSubscribeAndUnsubscribeEvent F# reach-around
+            // init EventGraph F# reach-arounds
             WorldTypes.getSelectedScreenIdling <- fun worldObj -> World.getSelectedScreenIdling (worldObj :?> World)
             WorldTypes.getSelectedScreenTransitioning <- fun worldObj -> World.getSelectedScreenTransitioning (worldObj :?> World)
             WorldTypes.handleSubscribeAndUnsubscribeEvent <- fun subscribing eventAddress _ worldObj ->
