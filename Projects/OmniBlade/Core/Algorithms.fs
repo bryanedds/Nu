@@ -234,6 +234,6 @@ module Algorithms =
         // TODO: pull this from CharacterData in sequel?
         if Gen.randomf < Constants.Battle.ItemDropRate then
             if level <= 12 then Some (Consumable GreenHerb)
-            elif level <= 25 then Some (Consumable RedHerb)
+            elif level <= 18 then Some (Consumable RedHerb)
             else Some (Consumable GoldHerb)
         else None
