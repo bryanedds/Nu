@@ -165,23 +165,25 @@ type [<ReferenceEquality>] WorldConfig =
           ModeOpt = None
           SdlConfig = SdlConfig.defaultConfig }
 
+/// Masks for AmbientState flags.
+module AmbientStateMasks =
+
+    let [<Literal>] ImperativeMask =    0b0001u
+    let [<Literal>] AccompaniedMask =   0b0010u
+    let [<Literal>] AdvancingMask =     0b0100u
+
+// NOTE: opening masks for succintness.
+open AmbientStateMasks
+
 [<AutoOpen>]
 module AmbientState =
-
-    /// Tracks whether the engine is running imperatively.
-    /// TODO: pack this flag into AmbientState.Advancing.
-    let mutable private Imperative = true
-
-    /// Tracks whether the engine is running accompanied by another program, such as an editor.
-    /// TODO: pack this flag into AmbientState.Advancing.
-    let mutable private Accompanied = true
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
               Liveness : Liveness
-              Advancing : bool
+              Flags : uint
               UpdateTime : int64
               TickDelta : int64
               // cache line 2
@@ -199,44 +201,48 @@ module AmbientState =
               OverlayRouter : OverlayRouter
               UnculledRenderRequested : bool }
 
+        member this.Imperative = this.Flags &&& ImperativeMask <> 0u
+        member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
+        member this.Advancing = this.Flags &&& AdvancingMask <> 0u
+
+    /// Get the the liveness state of the engine.
+    let getLiveness state =
+        state.Liveness
+
+    /// Check that the engine is executing with imperative semantics where applicable.
+    let getImperative (state : 'w AmbientState) =
+        state.Imperative
+
+    /// Check that the engine is executing with functional semantics.
+    let getFunctional (state : 'w AmbientState) =
+        not state.Imperative
+
+    /// Get whether the engine is running accompanied, such as in an editor.
+    let getAccompanied (state : 'w AmbientState) =
+        state.Accompanied
+
+    /// Get whether the engine is running unaccompanied.
+    let getUnaccompanied (state : 'w AmbientState) =
+        not state.Accompanied
+
     /// Check that the world's state is advancing.
-    let getAdvancing state =
+    let getAdvancing (state : 'w AmbientState) =
         state.Advancing
 
     /// Check that the world's state is advancing.
-    let getHalted state =
+    let getHalted (state : 'w AmbientState) =
         not state.Advancing
 
     /// Set whether the world's state is advancing.
     let setAdvancing advancing (state : _ AmbientState) =
         if advancing <> state.Advancing then
             if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
-            { state with Advancing = advancing }
+            { state with Flags = if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask }
         else state
 
-    /// Check that the engine is executing with imperative semantics where applicable.
-    let getImperative (_ : 'w AmbientState) =
-        Imperative
-
-    /// Check that the engine is executing with functional semantics.
-    let getFunctional (_ : 'w AmbientState) =
-        not Imperative
-
-    /// Get whether the engine is running accompanied, such as in an editor.
-    let getAccompanied (_ : 'w AmbientState) =
-        Accompanied
-
-    /// Get whether the engine is running unaccompanied.
-    let getUnaccompanied (_ : 'w AmbientState) =
-        not Accompanied
-
     /// Get the collection config value.
-    let getConfig (_ : 'w AmbientState) =
-        if Imperative then TConfig.Imperative else TConfig.Functional
-
-    /// Get the the liveness state of the engine.
-    let getLiveness state =
-        state.Liveness
+    let getConfig (state : 'w AmbientState) =
+        if state.Imperative then TConfig.Imperative else TConfig.Functional
 
     /// Get the update time.
     let getUpdateTime state =
@@ -259,7 +265,7 @@ module AmbientState =
         single state.TickTime / single Stopwatch.Frequency
 
     /// Get the polymorphic engine time delta.
-    let getGameDelta state =
+    let getGameDelta (state : 'w AmbientState) =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (if state.Advancing then 1L else 0L)
         | DynamicFrameRate _ -> ClockTime (getClockDelta state)
@@ -279,7 +285,7 @@ module AmbientState =
         state.DateTime
 
     /// Update the update and clock times.
-    let updateTime state =
+    let updateTime (state : 'w AmbientState) =
         let updateDelta = if state.Advancing then 1L else 0L
         let tickTimeShaved = state.TickWatch.ElapsedTicks - state.TickTimeShavings
         let tickDelta = tickTimeShaved - state.TickTime
@@ -295,7 +301,7 @@ module AmbientState =
             DateDelta = dateTime - state.DateTime }
 
     /// Switch simulation to use this ambient state.
-    let switch state =
+    let switch (state : 'w AmbientState) =
         if state.Advancing
         then state.TickWatch.Start ()
         else state.TickWatch.Stop ()
@@ -380,7 +386,7 @@ module AmbientState =
         | Some (SglWindow window) ->
             let (width, height) = (ref 0, ref 0)
             SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
-            Some (v2i !width !height)
+            Some (v2i width.Value height.Value)
         | _ -> None
 
     /// Get symbolics with the by map.
@@ -434,11 +440,13 @@ module AmbientState =
 
     /// Make an ambient state value.
     let make imperative accompanied advancing symbolics overlayer overlayRouter sdlDepsOpt =
-        Imperative <- imperative
-        Accompanied <- accompanied
         let config = if imperative then TConfig.Imperative else TConfig.Functional
+        let flags =
+            (if imperative then ImperativeMask else 0u) |||
+            (if accompanied then AccompaniedMask else 0u) |||
+            (if advancing then AdvancingMask else 0u)
         { Liveness = Live
-          Advancing = advancing
+          Flags = flags
           UpdateTime = 0L
           TickDelta = 0L
           KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
