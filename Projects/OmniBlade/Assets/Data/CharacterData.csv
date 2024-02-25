@@ -16,5 +16,5 @@ Type,ArchetypeType,LevelBase,AbsorbCreep,Boss,AnimationSheet,PortraitOpt,WeaponO
 [Enemy PitViper],Snake,6,1,False,[Castle PitViper],None,[Some Paws],None,[],[Some 1],[],[],1,1,
 [Enemy Cloak],Shaman,6,1,False,[Castle Cloak],None,[Some Paws],None,[],[Some 0.4],[],[],1,1,
 [Enemy BloodArmoros],Armoros,6,1,False,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.3],[],[],1,1,
-[Enemy AraneaImplicitum],Arachnos,8,1,True,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],[],[],20,5,
+[Enemy AraneaImplicitum],Arachnos,8,1,True,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],[],[],20,7.5,
 [Enemy Kyla],Apprentice,1,1,False,[Castle Kyla],None,None,None,[],None,[],[],1,1,
