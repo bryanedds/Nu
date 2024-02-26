@@ -156,32 +156,32 @@ module WorldModule =
             World.choose { world with AmbientState = updater world.AmbientState }
 
         /// Check that the update rate is non-zero.
-        static member getAdvancing world =
-            World.getAmbientStateBy AmbientState.getAdvancing world
+        static member getAdvancing (world : World) =
+            world.Advancing
 
         /// Check that the update rate is zero.
-        static member getHalted world =
-            World.getAmbientStateBy AmbientState.getHalted world
+        static member getHalted (world : World) =
+            world.Halted
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing world =
             World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
         /// Check that the world is executing with imperative semantics where applicable.
-        static member getImperative world =
-            World.getAmbientStateBy AmbientState.getImperative world
+        static member getImperative (world : World) =
+            world.Imperative
 
         /// Check that the world is executing with functional semantics.
-        static member getFunctional world =
-            World.getAmbientStateBy AmbientState.getFunctional world
+        static member getFunctional (world : World) =
+            world.Functional
 
         /// Get whether the engine is running accompanied, such as in an editor.
-        static member getAccompanied world =
-            World.getAmbientStateBy AmbientState.getAccompanied world
+        static member getAccompanied (world : World) =
+            world.Accompanied
 
         /// Get whether the engine is running unaccompanied, such as outside of an editor.
-        static member getUnaccompanied world =
-            World.getAmbientStateBy AmbientState.getUnaccompanied world
+        static member getUnaccompanied (world : World) =
+            world.Unaccompanied
 
         /// Get collection config value.
         static member getCollectionConfig world =

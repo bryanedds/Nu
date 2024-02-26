@@ -182,8 +182,8 @@ module AmbientState =
     type [<ReferenceEquality>] 'w AmbientState =
         private
             { // cache line 1 (assuming 16 byte header)
-              Liveness : Liveness
               Flags : uint
+              Liveness : Liveness
               UpdateTime : int64
               TickDelta : int64
               // cache line 2
@@ -208,30 +208,6 @@ module AmbientState =
     /// Get the the liveness state of the engine.
     let getLiveness state =
         state.Liveness
-
-    /// Check that the engine is executing with imperative semantics where applicable.
-    let getImperative (state : 'w AmbientState) =
-        state.Imperative
-
-    /// Check that the engine is executing with functional semantics.
-    let getFunctional (state : 'w AmbientState) =
-        not state.Imperative
-
-    /// Get whether the engine is running accompanied, such as in an editor.
-    let getAccompanied (state : 'w AmbientState) =
-        state.Accompanied
-
-    /// Get whether the engine is running unaccompanied.
-    let getUnaccompanied (state : 'w AmbientState) =
-        not state.Accompanied
-
-    /// Check that the world's state is advancing.
-    let getAdvancing (state : 'w AmbientState) =
-        state.Advancing
-
-    /// Check that the world's state is advancing.
-    let getHalted (state : 'w AmbientState) =
-        not state.Advancing
 
     /// Set whether the world's state is advancing.
     let setAdvancing advancing (state : _ AmbientState) =
@@ -440,13 +416,13 @@ module AmbientState =
 
     /// Make an ambient state value.
     let make imperative accompanied advancing symbolics overlayer overlayRouter sdlDepsOpt =
-        let config = if imperative then TConfig.Imperative else TConfig.Functional
         let flags =
             (if imperative then ImperativeMask else 0u) |||
             (if accompanied then AccompaniedMask else 0u) |||
             (if advancing then AdvancingMask else 0u)
-        { Liveness = Live
-          Flags = flags
+        let config = if imperative then TConfig.Imperative else TConfig.Functional
+        { Flags = flags
+          Liveness = Live
           UpdateTime = 0L
           TickDelta = 0L
           KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config

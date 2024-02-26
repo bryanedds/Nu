@@ -1570,29 +1570,29 @@ and [<ReferenceEquality>] World =
           JobSystem : JobSystem
           WorldExtension : WorldExtension }
 
-    /// Check that the world is advancing (not halted).
-    member this.Advancing =
-        AmbientState.getAdvancing this.AmbientState
-
-    /// Check that the world is halted (not advancing).
-    member this.Halted =
-        AmbientState.getHalted this.AmbientState
-
     /// Check that the world is executing with imperative semantics where applicable.
     member this.Imperative =
-        AmbientState.getImperative this.AmbientState
+        this.AmbientState.Imperative
 
     /// Check that the world is executing with functional semantics.
     member this.Functional =
-        AmbientState.getFunctional this.AmbientState
+        not this.AmbientState.Imperative
 
     /// Check that the world is accompanied (such as by an editor program that controls it).
     member this.Accompanied =
-        AmbientState.getAccompanied this.AmbientState
+        this.AmbientState.Accompanied
 
     /// Check that the world is unaccompanied (such as being absent of an editor program that controls it).
     member this.Unaccompanied =
-        AmbientState.getUnaccompanied this.AmbientState
+        not this.AmbientState.Accompanied
+
+    /// Check that the world is advancing (not halted).
+    member this.Advancing =
+        this.AmbientState.Advancing
+
+    /// Check that the world is halted (not advancing).
+    member this.Halted =
+        not this.AmbientState.Advancing
 
     /// Get the number of updates that have transpired.
     member this.UpdateTime =
