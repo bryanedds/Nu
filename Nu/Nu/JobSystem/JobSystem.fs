@@ -29,6 +29,7 @@ type JobResult =
         | JobException (_, resultTime, _) -> resultTime
 
 /// Processes jobs based on priority.
+/// TODO: rename this to JobGraph.
 type JobSystem =
 
     /// Add a job for processing with the given priority (low number is higher priority).
