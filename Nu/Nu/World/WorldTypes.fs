@@ -1545,8 +1545,7 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { JobSystem : JobSystem // might be nice if there were room for this in the World type...
-      DestructionListRev : Simulant list
+    { DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin }
 
@@ -1568,6 +1567,7 @@ and [<ReferenceEquality>] World =
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
+          JobSystem : JobSystem
           WorldExtension : WorldExtension }
 
     /// Check that the world is advancing (not halted).

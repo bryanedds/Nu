@@ -415,7 +415,7 @@ module WorldModule3 =
             let gameState = GameState.make activeGameDispatcher
             let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
-            let worldExtension = { JobSystem = jobSystem; DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin }
+            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin }
             let world =
                 { ChooseCount = 0
                   EventGraph = eventGraph
@@ -429,6 +429,7 @@ module WorldModule3 =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
+                  JobSystem = jobSystem
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world

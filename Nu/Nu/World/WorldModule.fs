@@ -98,12 +98,12 @@ module WorldModule =
 
         /// Enqueue a job for threaded execution.
         static member enqueueJob priority job world =
-            world.WorldExtension.JobSystem.Enqueue (priority, job)
+            world.JobSystem.Enqueue (priority, job)
 
         /// Await a job from threaded execution.
         /// Order of jobs with the same key is not guaranteed.
         static member tryAwaitJob deadline (jobId : obj) world =
-            world.WorldExtension.JobSystem.TryAwait (deadline, jobId)
+            world.JobSystem.TryAwait (deadline, jobId)
 
     type World with // Destruction
 
