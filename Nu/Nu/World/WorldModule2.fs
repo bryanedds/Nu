@@ -69,12 +69,6 @@ module WorldModule2 =
 
     type World with
 
-        static member internal makeQuadtree () =
-            Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
-
-        static member internal makeOctree () =
-            Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
-
         static member internal rebuildQuadtree world =
             let quadtree = World.getQuadtree world
             Quadtree.clear quadtree
@@ -98,28 +92,30 @@ module WorldModule2 =
             world
 
         static member internal rebuildOctree world =
-            let octree = World.getOctree world
-            Octree.clear octree
-            let omniEntities =
-                match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                | None -> Seq.empty
-            let selectedEntities =
-                match World.getSelectedScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                | None -> Seq.empty
-            let entities =
-                Seq.append omniEntities selectedEntities
-            for entity in entities do
-                let bounds = entity.GetBounds world
-                let visible = entity.GetVisible world || entity.GetAlwaysRender world
-                let static_ = entity.GetStatic world
-                let lightProbe = entity.GetLightProbe world
-                let light = entity.GetLight world
-                let presence = entity.GetPresence world
-                if entity.GetIs3d world then
-                    let element = Octelement.make visible static_ lightProbe light presence bounds entity
-                    Octree.addElement presence bounds element octree
+            match World.getOctreeOpt world with
+            | Some octree ->
+                Octree.clear octree
+                let omniEntities =
+                    match World.getOmniScreenOpt world with
+                    | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                    | None -> Seq.empty
+                let selectedEntities =
+                    match World.getSelectedScreenOpt world with
+                    | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                    | None -> Seq.empty
+                let entities =
+                    Seq.append omniEntities selectedEntities
+                for entity in entities do
+                    let bounds = entity.GetBounds world
+                    let visible = entity.GetVisible world || entity.GetAlwaysRender world
+                    let static_ = entity.GetStatic world
+                    let lightProbe = entity.GetLightProbe world
+                    let light = entity.GetLight world
+                    let presence = entity.GetPresence world
+                    if entity.GetIs3d world then
+                        let element = Octelement.make visible static_ lightProbe light presence bounds entity
+                        Octree.addElement presence bounds element octree
+            | None -> ()
             world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
@@ -793,9 +789,11 @@ module WorldModule2 =
             World.getEntities2dBy (Quadtree.getElements set) world
 
         static member private getElements3dBy (getElementsFromOctree : Entity Octree -> Entity Octelement seq) world =
-            let octree = World.getOctree world
-            let elements = getElementsFromOctree octree
-            (elements, world)
+            match World.getOctreeOpt world with
+            | Some octree ->
+                let elements = getElementsFromOctree octree
+                (elements, world)
+            | None -> (Seq.empty, world)
 
         static member private getElements3dInPlay set world =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
@@ -815,10 +813,12 @@ module WorldModule2 =
             World.getElements3dBy (Octree.getElements set) world
 
         static member private getEntities3dBy getElementsFromOctree world =
-            let octree = World.getOctree world
-            let elements = getElementsFromOctree octree
-            let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) elements
-            (entities, world)
+            match World.getOctreeOpt world with
+            | Some octree ->
+                let elements = getElementsFromOctree octree
+                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) elements
+                (entities, world)
+            | None -> (Seq.empty, world)
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =

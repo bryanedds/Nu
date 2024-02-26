@@ -417,8 +417,16 @@ module WorldModule =
 
     type World with // Octree
 
-        static member internal getOctree world =
-            world.Octree
+        static member internal getOctreeOpt world =
+            world.OctreeOpt
+
+        static member internal getOctreeCreating world =
+            match world.OctreeOpt with
+            | Some octree -> octree
+            | None ->
+                let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
+                world.OctreeOpt <- Some octree
+                octree
 
     type World with // Subsystems
 

@@ -191,11 +191,12 @@ type Nu () =
                     let entityState = World.getEntityState entity world
                     let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                     Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
-                let octree = World.getOctree world
-                for entity in entities3d do
-                    let entityState = World.getEntityState entity world
-                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                    Octree.addElement entityState.Presence entityState.Bounds element octree
+                if SList.notEmpty entities3d then
+                    let octree = World.getOctreeCreating world
+                    for entity in entities3d do
+                        let entityState = World.getEntityState entity world
+                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                        Octree.addElement entityState.Presence entityState.Bounds element octree
                 world
                 
             // init evictScreenElements F# reach-around
@@ -207,11 +208,12 @@ type Nu () =
                     let entityState = World.getEntityState entity world
                     let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                     Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
-                let octree = World.getOctree world
-                for entity in entities3d do
-                    let entityState = World.getEntityState entity world
-                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                    Octree.removeElement entityState.Presence entityState.Bounds element octree
+                if SArray.notEmpty entities3d then
+                    let octree = World.getOctreeCreating world
+                    for entity in entities3d do
+                        let entityState = World.getEntityState entity world
+                        let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                        Octree.removeElement entityState.Presence entityState.Bounds element octree
                 world
 
             // init registerScreenPhysics F# reach-around
@@ -406,7 +408,7 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make plugin eventGraph jobSystem dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member make plugin eventGraph jobSystem dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
@@ -425,7 +427,7 @@ module WorldModule3 =
                   GameState = gameState
                   EntityMounts = UMap.makeEmpty HashIdentity.Structural config
                   Quadtree = quadtree
-                  Octree = octree
+                  OctreeOpt = None
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
@@ -475,13 +477,10 @@ module WorldModule3 =
                 AmbientState.make config.Imperative config.Accompanied true symbolics Overlayer.empty overlayRouter None
 
             // make the world's quadtree
-            let quadtree = World.makeQuadtree ()
-
-            // make the world's octree
-            let octree = World.makeOctree ()
+            let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
 
             // make the world
-            let world = World.make plugin eventGraph jobSystem dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make plugin eventGraph jobSystem dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame Game world
@@ -571,13 +570,10 @@ module WorldModule3 =
                         AmbientState.make config.Imperative config.Accompanied config.Advancing symbolics overlayer overlayRouter (Some sdlDeps)
 
                     // make the world's quadtree
-                    let quadtree = World.makeQuadtree ()
-
-                    // make the world's octree
-                    let octree = World.makeOctree ()
+                    let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
 
                     // make the world
-                    let world = World.make plugin eventGraph jobSystem dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make plugin eventGraph jobSystem dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
