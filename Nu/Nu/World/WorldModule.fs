@@ -420,7 +420,7 @@ module WorldModule =
         static member internal getOctreeOpt world =
             world.OctreeOpt
 
-        static member internal getOctreeCreating world =
+        static member internal getOrCreateOctree world =
             match world.OctreeOpt with
             | Some octree -> octree
             | None ->
