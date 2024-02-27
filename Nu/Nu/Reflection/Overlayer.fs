@@ -245,7 +245,7 @@ module Overlayer =
         applyOverlayToXtension target overlaySymbolsOld overlaySymbolsNew
         target
 
-    /// Apply an overlay to the given target.
+    /// Apply an overlay to the given target (except for any FacetNames property).
     /// Only the properties that are overlaid by the old overlay will be changed.
     let applyOverlay copyTarget overlayNameOld overlayNameNew facetNames target overlayer =
         applyOverlay6 copyTarget overlayNameOld overlayNameNew facetNames target overlayer overlayer
