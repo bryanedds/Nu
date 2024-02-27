@@ -180,16 +180,16 @@ module AmbientState =
               Liveness : Liveness
               UpdateTime : int64
               TickDelta : int64
-              // cache line 2
               KeyValueStore : SUMap<obj, obj>
               TickTime : int64
+              // cache line 2
               TickTimeShavings : int64
               TickWatch : Stopwatch
               DateDelta : TimeSpan
-              // cache line 3
               DateTime : DateTimeOffset
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
+              // cache line 3
               Symbolics : Symbolics
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
