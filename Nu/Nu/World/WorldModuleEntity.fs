@@ -20,9 +20,8 @@ module WorldModuleEntity =
     let internal EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
     let internal EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
 
-    /// Publishing IDs.
+    /// Change Publishing ID.
     let internal EntityChangeCountsId = Gen.id
-    let internal EntityBindingCountsId = Gen.id
 
     // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
     let mutable changeEventNamesFree = true
@@ -90,8 +89,18 @@ module WorldModuleEntity =
             let entityStates = SUMap.add entity entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
 
-        static member private addEntityState entityState (entity : Entity) world =
-            World.synchronizeEntityState entityState entity world
+        static member private addEntityState (entityState : EntityState) (entity : Entity) world =
+
+            // apply publish change events state
+            let entityAddress = entity.EntityAddress
+            match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
+            | (false, _) -> ()
+
+            // apply mounted state
+            entityState.Mounted <- UMap.containsKey entity world.EntityMounts
+
+            // add entity state to world
             World.entityStateAdder entityState entity world
 
         static member private removeEntityState (entity : Entity) world =
@@ -139,19 +148,6 @@ module WorldModuleEntity =
         static member internal getEntityXtensionProperties entity world =
             let entityState = World.getEntityState entity world
             entityState.Xtension |> Xtension.toSeq |> Seq.toList
-
-        static member private synchronizeEntityState (entityState : EntityState) (entity : Entity) world =
-
-            // grab address
-            let entityAddress = entity.EntityAddress
-
-            // apply publish changes state
-            match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
-            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
-            | (false, _) -> ()
-            
-            // apply mounted state
-            entityState.Mounted <- UMap.containsKey entity world.EntityMounts
 
         static member inline internal setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
