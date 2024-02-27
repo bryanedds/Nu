@@ -165,18 +165,12 @@ type [<ReferenceEquality>] WorldConfig =
           ModeOpt = None
           SdlConfig = SdlConfig.defaultConfig }
 
-/// Masks for AmbientState flags.
-module AmbientStateMasks =
-
-    let [<Literal>] ImperativeMask =    0b0001u
-    let [<Literal>] AccompaniedMask =   0b0010u
-    let [<Literal>] AdvancingMask =     0b0100u
-
-// NOTE: opening masks for succintness.
-open AmbientStateMasks
-
 [<AutoOpen>]
 module AmbientState =
+
+    let [<Literal>] private ImperativeMask =    0b0001u
+    let [<Literal>] private AccompaniedMask =   0b0010u
+    let [<Literal>] private AdvancingMask =     0b0100u
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
