@@ -30,8 +30,6 @@ module Reflection =
              ("Protected", true)
              ("Order", true)
              ("Id", true)
-             ("IdRef", true)
-             ("ScriptFrame", true)
 
              // game properties
              ("Eye3dFrustumInterior", true)
@@ -39,14 +37,10 @@ module Reflection =
              ("Eye3dFrustumImposter", true)
 
              // screen properties
-             ("Ecs", true)
              ("TransitionState", true)
-             ("TransitionUpdates", true)
-             ("EntityTree", true)
 
              // entity properties
              ("Facets", true)
-             ("ScriptFrameOpt", true)
              ("Surnames", true)
              ("PerimeterCenter", true)
              ("PerimeterBottom", true)
