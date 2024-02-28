@@ -2984,7 +2984,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // make light mapping config
         let lightingConfig =
-            { LightCutoffMargin = Constants.Render.LightCutoffDefault
+            { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
               LightShadowBiasAcne = Constants.Render.LightShadowBiasAcneDefault
               LightShadowBiasBleed = Constants.Render.LightShadowBiasBleedDefault
               LightMappingEnabled = Constants.Render.LightMappingEnabledDefault }
