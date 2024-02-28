@@ -1137,8 +1137,39 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     interface SimulantState with
         member this.GetXtension () = this.Xtension
 
+/// Converts Game types, interning its strings for look-up speed.
+and GameConverter (pointType : Type) =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
+        destType = pointType
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then (source :?> Game).ToString ()
+        elif destType = typeof<Symbol> then (AddressConverter typeof<Game Address>).ConvertTo ((source :?> Game).GameAddress, destType)
+        elif destType = pointType then source
+        else failconv "Invalid GameConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
+        sourceType = pointType
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string as addressStr -> Game (stoa addressStr)
+        | :? Symbol as addressSymbol ->
+            match addressSymbol with
+            | Atom (addressStr, _) | Text (addressStr, _) -> Game (stoa addressStr)
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) -> failconv "Expected Atom or Text for conversion to Game." (Some addressSymbol)
+        | _ ->
+            if pointType.IsInstanceOfType source then source
+            else failconv "Invalid GameConverter conversion from source." None
+
 /// The game type that hosts the various screens used to navigate through a game.
-and Game (gameAddress : Game Address) =
+and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) =
 
 #if DEBUG
     // check that address is of correct length for a game
@@ -1201,9 +1232,40 @@ and Game (gameAddress : Game Address) =
             | :? Game as that -> (this :> Game IComparable).CompareTo that
             | _ -> failwith "Invalid Game comparison (comparee not of type Game)."
 
+/// Converts Screen types, interning its strings for look-up speed.
+and ScreenConverter (pointType : Type) =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
+        destType = pointType
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then (source :?> Screen).ToString ()
+        elif destType = typeof<Symbol> then (AddressConverter typeof<Screen Address>).ConvertTo ((source :?> Screen).ScreenAddress, destType)
+        elif destType = pointType then source
+        else failconv "Invalid ScreenConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
+        sourceType = pointType
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string as addressStr -> Screen (stoa addressStr)
+        | :? Symbol as addressSymbol ->
+            match addressSymbol with
+            | Atom (addressStr, _) | Text (addressStr, _) -> Screen (stoa addressStr)
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) -> failconv "Expected Atom or Text for conversion to Screen." (Some addressSymbol)
+        | _ ->
+            if pointType.IsInstanceOfType source then source
+            else failconv "Invalid ScreenConverter conversion from source." None
+
 /// The screen type that allows transitioning to and from other screens, and also hosts the
 /// currently interactive groups of entities.
-and Screen (screenAddress) =
+and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
 
 #if DEBUG
     // check that address is of correct length for a screen
@@ -1272,8 +1334,39 @@ and Screen (screenAddress) =
         member this.SimulantAddress = simulantAddress
         end
 
+/// Converts Group types, interning its strings for look-up speed.
+and GroupConverter (pointType : Type) =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
+        destType = pointType
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then (source :?> Group).ToString ()
+        elif destType = typeof<Symbol> then (AddressConverter typeof<Group Address>).ConvertTo ((source :?> Group).GroupAddress, destType)
+        elif destType = pointType then source
+        else failconv "Invalid GroupConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
+        sourceType = pointType
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string as addressStr -> Group (stoa addressStr)
+        | :? Symbol as addressSymbol ->
+            match addressSymbol with
+            | Atom (addressStr, _) | Text (addressStr, _) -> Group (stoa addressStr)
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) -> failconv "Expected Atom or Text for conversion to Group." (Some addressSymbol)
+        | _ ->
+            if pointType.IsInstanceOfType source then source
+            else failconv "Invalid GroupConverter conversion from source." None
+
 /// Forms a logical group of entities.
-and Group (groupAddress) =
+and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
 
 #if DEBUG
     // check that address is of correct length for a group
@@ -1345,9 +1438,40 @@ and Group (groupAddress) =
             | :? Group as that -> (this :> Group IComparable).CompareTo that
             | _ -> failwith "Invalid Group comparison (comparee not of type Group)."
 
+/// Converts Entity types, interning its strings for look-up speed.
+and EntityConverter (pointType : Type) =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string> ||
+        destType = typeof<Symbol> ||
+        destType = pointType
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<string> then (source :?> Entity).ToString ()
+        elif destType = typeof<Symbol> then (AddressConverter typeof<Entity Address>).ConvertTo ((source :?> Entity).EntityAddress, destType)
+        elif destType = pointType then source
+        else failconv "Invalid EntityConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<string> ||
+        sourceType = typeof<Symbol> ||
+        sourceType = pointType
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? string as addressStr -> Entity (stoa addressStr)
+        | :? Symbol as addressSymbol ->
+            match addressSymbol with
+            | Atom (addressStr, _) | Text (addressStr, _) -> Entity (stoa addressStr)
+            | Number (_, _) | Quote (_, _) | Symbols (_, _) -> failconv "Expected Atom or Text for conversion to Entity." (Some addressSymbol)
+        | _ ->
+            if pointType.IsInstanceOfType source then source
+            else failconv "Invalid EntityConverter conversion from source." None
+
 /// The type around which the whole game engine is based! Used in combination with dispatchers to implement things
 /// like buttons, characters, blocks, and things of that sort.
-and Entity (entityAddress) =
+and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
 
 #if DEBUG
     // check that address is of correct length for an entity

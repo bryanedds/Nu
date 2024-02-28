@@ -26,47 +26,47 @@ type Link =
     | Name of string
 
 /// Converts Relation types.
-type RelationConverter (targetType : Type) =
+type RelationConverter (pointType : Type) =
     inherit TypeConverter ()
 
     override this.CanConvertTo (_, destType) =
         destType = typeof<string> ||
         destType = typeof<Symbol> ||
-        destType = targetType
+        destType = pointType
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
-            let toStringMethod = targetType.GetMethod "ToString"
+            let toStringMethod = pointType.GetMethod "ToString"
             toStringMethod.Invoke (source, null)
         elif destType = typeof<Symbol> then
-            let toStringMethod = targetType.GetMethod "ToString"
+            let toStringMethod = pointType.GetMethod "ToString"
             let relationStr = toStringMethod.Invoke (source, null) :?> string
             if Symbol.shouldBeExplicit relationStr then Text (relationStr, ValueNone) :> obj
             else Atom (relationStr, ValueNone) :> obj
-        elif destType = targetType then source
+        elif destType = pointType then source
         else failconv "Invalid RelationConverter conversion to source." None
 
     override this.CanConvertFrom (_, sourceType) =
         sourceType = typeof<string> ||
         sourceType = typeof<Symbol> ||
-        sourceType = targetType
+        sourceType = pointType
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as fullName ->
-            let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-            makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
+        | :? string as addressStr ->
+            let makeFromStringFunction = pointType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ()).[0])
+            makeFromStringFunctionGeneric.Invoke (null, [|addressStr|])
         | :? Symbol as relationSymbol ->
             match relationSymbol with
-            | Atom (fullName, _) | Text (fullName, _) ->
-                let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-                makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
+            | Atom (addressStr, _) | Text (addressStr, _) ->
+                let makeFromStringFunction = pointType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ()).[0])
+                makeFromStringFunctionGeneric.Invoke (null, [|addressStr|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol or String for conversion to Relation." (Some relationSymbol)
+                failconv "Expected Atom or Text for conversion to Relation." (Some relationSymbol)
         | _ ->
-            if targetType.IsInstanceOfType source then source
+            if pointType.IsInstanceOfType source then source
             else failconv "Invalid RelationConverter conversion from source." None
 
 [<AutoOpen>]

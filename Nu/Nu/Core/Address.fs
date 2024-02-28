@@ -18,47 +18,47 @@ open System.Reflection
 open Prime
 
 /// Converts Address types.
-type AddressConverter (targetType : Type) =
+type AddressConverter (pointType : Type) =
     inherit TypeConverter ()
 
     override this.CanConvertTo (_, destType) =
         destType = typeof<string> ||
         destType = typeof<Symbol> ||
-        destType = targetType
+        destType = pointType
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
-            let toStringMethod = targetType.GetMethod "ToString"
+            let toStringMethod = pointType.GetMethod "ToString"
             toStringMethod.Invoke (source, null)
         elif destType = typeof<Symbol> then
-            let toStringMethod = targetType.GetMethod "ToString"
+            let toStringMethod = pointType.GetMethod "ToString"
             let addressStr = toStringMethod.Invoke (source, null) :?> string
             if Symbol.shouldBeExplicit addressStr then Text (addressStr, ValueNone) :> obj
             else Atom (addressStr, ValueNone) :> obj
-        elif destType = targetType then source
+        elif destType = pointType then source
         else failconv "Invalid AddressConverter conversion to source." None
 
     override this.CanConvertFrom (_, sourceType) =
         sourceType = typeof<string> ||
         sourceType = typeof<Symbol> ||
-        sourceType = targetType
+        sourceType = pointType
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as fullName ->
-            let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-            makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
+        | :? string as addressStr ->
+            let makeFromStringFunction = pointType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ()).[0])
+            makeFromStringFunctionGeneric.Invoke (null, [|addressStr|])
         | :? Symbol as addressSymbol ->
             match addressSymbol with
-            | Atom (fullName, _) | Text (fullName, _) ->
-                let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-                makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
+            | Atom (addressStr, _) | Text (addressStr, _) ->
+                let makeFromStringFunction = pointType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ()).[0])
+                makeFromStringFunctionGeneric.Invoke (null, [|addressStr|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol or String for conversion to Address." (Some addressSymbol)
+                failconv "Expected Atom or Text for conversion to Address." (Some addressSymbol)
         | _ ->
-            if targetType.IsInstanceOfType source then source
+            if pointType.IsInstanceOfType source then source
             else failconv "Invalid AddressConverter conversion from source." None
 
 [<AutoOpen>]
