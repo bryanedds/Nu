@@ -2370,10 +2370,18 @@ module WorldModuleEntity =
                 let world = World.destroyEntityImmediateInternal false source world
                 let world = World.addEntity false entityState destination world
                 let world = World.setEntityOrder order destination world |> snd'
-                Seq.fold (fun world (child : Entity) ->
-                    let destination = destination / child.Name
-                    World.renameEntityImmediate child destination world)
-                    world children
+                let world =
+                    Seq.fold (fun world target ->
+                        if World.getEntityExists target world
+                        then World.setEntityOriginOpt (Some destination) target world |> snd'
+                        else world)
+                        world (World.getPropagationTargets source world)
+                let world =
+                    Seq.fold (fun world (child : Entity) ->
+                        let destination = destination / child.Name
+                        World.renameEntityImmediate child destination world)
+                        world children
+                world
 
         /// Rename an entity.
         static member renameEntity source destination world =
