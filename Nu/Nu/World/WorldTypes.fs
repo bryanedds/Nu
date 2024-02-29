@@ -483,6 +483,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
          Define? MountOpt Option<Entity Relation>.None
+         Define? OriginOpt Option<Entity>.None
          Define? PublishChangeEvents false
          Define? Enabled true
          Define? EnabledLocal true
@@ -498,7 +499,8 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
          Define? PublishPreUpdates false
          Define? PublishUpdates false
          Define? PublishPostUpdates false
-         Define? Persistent true]
+         Define? Persistent true
+         Define? PropagatedDescriptorOpt Option<EntityDescriptor>.None]
 
     /// Register an entity when adding it to a group.
     abstract Register : Entity * World -> World
@@ -998,8 +1000,10 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
       mutable AnglesLocal : Vector3
       mutable ElevationLocal : single
       mutable MountOpt : Entity Relation option
+      mutable OriginOpt : Entity option
       mutable OverlayNameOpt : string option
       mutable FacetNames : string Set
+      mutable PropagatedDescriptorOpt : EntityDescriptor option
       mutable Order : int64
       Id : uint64
       Surnames : string array }
@@ -1075,8 +1079,10 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           AnglesLocal = Vector3.Zero
           ElevationLocal = 0.0f
           MountOpt = None
+          OriginOpt = None
           OverlayNameOpt = overlayNameOpt
           FacetNames = Set.empty
+          PropagatedDescriptorOpt = None
           Order = Core.getTimeStampUnique ()
           Id = id
           Surnames = surnames }
@@ -1672,7 +1678,8 @@ and [<ReferenceEquality>] internal Subsystems =
 and [<ReferenceEquality>] internal WorldExtension =
     { DestructionListRev : Simulant list
       Dispatchers : Dispatchers
-      Plugin : NuPlugin }
+      Plugin : NuPlugin
+      PropagationTargets : UMap<Entity, Entity USet> }
 
 /// The world, in a functional programming sense. Hosts the simulation state, the dependencies needed to implement a
 /// game, messages to by consumed by the various engine subsystems, and general configuration data.

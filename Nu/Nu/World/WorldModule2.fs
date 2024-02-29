@@ -419,6 +419,80 @@ module WorldModule2 =
         static member createSlideScreen<'d when 'd :> ScreenDispatcher> nameOpt slideDescriptor destination world =
             World.createSlideScreen6 typeof<'d>.Name nameOpt slideDescriptor destination world
 
+        static member private mapEntityDescriptors entityDescriptors =
+            entityDescriptors |>
+            List.map (fun descriptor -> (descriptor.EntityProperties.[Constants.Engine.NamePropertyName], descriptor)) |>
+            Map.ofList
+
+        static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor =
+
+            // propagate descriptor at this level
+            let propagatedDescriptor =
+                Seq.fold (fun targetDescriptor (propertyName, currentValue) ->
+                    if  propertyName <> nameof Entity.Position &&
+                        propertyName <> nameof Entity.Rotation &&
+                        propertyName <> nameof Entity.Elevation then
+                        match previousDescriptor.EntityProperties.TryGetValue propertyName with
+                        | (true, previousPropertySymbol) ->
+                            match targetDescriptor.EntityProperties.TryGetValue propertyName with
+                            | (true, targetPropertySymbol) ->
+                                if targetPropertySymbol = previousPropertySymbol
+                                then { targetDescriptor with EntityProperties = Map.add propertyName currentValue targetDescriptor.EntityProperties }
+                                else targetDescriptor
+                            | (false, _) ->
+                                { targetDescriptor with EntityProperties = Map.add propertyName currentValue targetDescriptor.EntityProperties }
+                        | (false, _) ->
+                            { targetDescriptor with EntityProperties = Map.add propertyName currentValue targetDescriptor.EntityProperties }
+                    else targetDescriptor)
+                    targetDescriptor
+                    currentDescriptor.EntityProperties.Pairs
+
+            // attempt to propagate entity descriptors
+            let propagatedDescriptorOpts =
+                let previousDescriptorMap = World.mapEntityDescriptors previousDescriptor.EntityDescriptors
+                let currentDescriptorMap = World.mapEntityDescriptors currentDescriptor.EntityDescriptors
+                let targetDescriptorMap = World.mapEntityDescriptors targetDescriptor.EntityDescriptors
+                let keys = Set.ofSeq (previousDescriptorMap.Keys |> Seq.append currentDescriptorMap.Keys |> Seq.append targetDescriptorMap.Keys)
+                let entityDescriptorsList = [for key in keys do (previousDescriptorMap.TryFind key, currentDescriptorMap.TryFind key, targetDescriptorMap.TryFind key)]
+                List.map (fun (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) ->
+                    match (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) with
+                    | (Some previousDescriptor, Some currentDescriptor, Some targetDescriptor) ->
+                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor)
+                    | (Some previousDescriptor, Some currentDescriptor, None) ->
+                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor EntityDescriptor.empty)
+                    | (Some _, None, None) ->
+                        None
+                    | (Some previousDescriptor, None, Some targetDescriptor) ->
+                        Some (World.propagateEntityDescriptor previousDescriptor EntityDescriptor.empty targetDescriptor)
+                    | (None, None, Some targetDescriptor) ->
+                        Some targetDescriptor
+                    | (None, Some currentDescriptor, None) ->
+                        Some currentDescriptor
+                    | (None, Some currentDescriptor, Some targetDescriptor) ->
+                        Some (World.propagateEntityDescriptor EntityDescriptor.empty currentDescriptor targetDescriptor)
+                    | (None, None, None) -> None)
+                    entityDescriptorsList
+
+            // compose fully propagated descriptor
+            { propagatedDescriptor with EntityDescriptors = List.definitize propagatedDescriptorOpts }
+
+        /// Propagate the structure of an entity to all other entities with it as their origin.
+        static member propagateEntityStructure entity world =
+            let targets = World.getPropagationTargets entity world
+            let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
+            let currentDescriptor = World.writeEntity entity EntityDescriptor.empty world
+            let world =
+                Seq.fold (fun world target ->
+                    let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
+                    let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor
+                    let order = target.GetOrder world
+                    let world = World.destroyEntityImmediate target world
+                    let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
+                    let world = target.SetOrder order world
+                    world)
+                    world targets
+            entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
+
         static member internal makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
             let facets = facets |> Map.toValueList |> List.map box
@@ -1636,7 +1710,7 @@ module EntityPropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
-        if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "OverlayNameOpt" then "Ambient Properties"
+        if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "OriginOpt" || propertyName = "OverlayNameOpt" then "Ambient Properties"
         elif propertyName = "FacetNames" then "Applied Facets"
         elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
              propertyName = "Elevation" || propertyName = "ElevationLocal" ||
@@ -1652,12 +1726,14 @@ module EntityPropertyDescriptor =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Uncategorized Properties"
 
-    // HACK: we show degrees instead of rotation in editor.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if propertyName = "Rotation" || propertyName = "RotationLocal" then false
+        if  propertyName = "Rotation" ||
+            propertyName = "RotationLocal" ||
+            propertyName = "PropagatedDescriptorOpt" then false
         else
-            propertyName = "Degrees" || propertyName = "DegreesLocal" ||
+            propertyName = "Degrees" ||
+            propertyName = "DegreesLocal" ||
             not (Reflection.isPropertyNonPersistentByName propertyName)
 
     let getValue propertyDescriptor (entity : Entity) world : obj =

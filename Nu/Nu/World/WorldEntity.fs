@@ -11,7 +11,7 @@ open Prime
 module WorldEntityModule =
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
-    let mutable private Clipboard : EntityDescriptor option = None
+    let mutable private Clipboard : (EntityDescriptor * Entity) option = None
 
     [<RequireQualifiedAccess>]
     module private Cached =
@@ -52,6 +52,7 @@ module WorldEntityModule =
         let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Imperative = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable MountOpt = Unchecked.defaultof<Lens<Entity Relation option, Entity>>
+        let mutable OriginOpt = Unchecked.defaultof<Lens<Entity option, Entity>>
         let mutable Enabled = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Visible = Unchecked.defaultof<Lens<bool, Entity>>
@@ -72,6 +73,7 @@ module WorldEntityModule =
         let mutable Destroying = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable OverlayNameOpt = Unchecked.defaultof<Lens<string option, Entity>>
         let mutable FacetNames = Unchecked.defaultof<Lens<string Set, Entity>>
+        let mutable PropagatedDescriptorOpt = Unchecked.defaultof<Lens<EntityDescriptor option, Entity>>
         let mutable Order = Unchecked.defaultof<Lens<int64, Entity>>
         let mutable Id = Unchecked.defaultof<Lens<uint64, Entity>>
 
@@ -185,6 +187,9 @@ module WorldEntityModule =
         member this.GetMountOpt world = World.getEntityMountOpt this world
         member this.SetMountOpt value world = World.setEntityMountOpt value this world |> snd'
         member this.MountOpt = if notNull (this :> obj) then lens (nameof this.MountOpt) this this.GetMountOpt this.SetMountOpt else Cached.MountOpt
+        member this.GetOriginOpt world = World.getEntityOriginOpt this world
+        member this.SetOriginOpt value world = World.setEntityOriginOpt value this world |> snd'
+        member this.OriginOpt = if notNull (this :> obj) then lens (nameof this.OriginOpt) this this.GetOriginOpt this.SetOriginOpt else Cached.OriginOpt
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world |> snd'
         member this.Enabled = if notNull (this :> obj) then lens (nameof this.Enabled) this this.GetEnabled this.SetEnabled else Cached.Enabled
@@ -237,8 +242,12 @@ module WorldEntityModule =
         member this.OverlayNameOpt = if notNull (this :> obj) then lensReadOnly (nameof this.OverlayNameOpt) this this.GetOverlayNameOpt else Cached.OverlayNameOpt
         member this.GetFacetNames world = World.getEntityFacetNames this world
         member this.FacetNames = if notNull (this :> obj) then lensReadOnly (nameof this.FacetNames) this this.GetFacetNames else Cached.FacetNames
+        member this.GetPropagatedDescriptorOpt world = World.getEntityPropagatedDescriptorOpt this world
+        member this.SetPropagatedDescriptorOpt value world = World.setEntityPropagatedDescriptorOpt value this world |> snd'
+        member this.PropagatedDescriptorOpt = if notNull (this :> obj) then lens (nameof this.PropagatedDescriptorOpt) this this.GetPropagatedDescriptorOpt this.SetPropagatedDescriptorOpt else Cached.PropagatedDescriptorOpt
         member this.GetOrder world = World.getEntityOrder this world
-        member this.Order = if notNull (this :> obj) then lensReadOnly (nameof this.Order) this this.GetOrder else Cached.Order
+        member this.SetOrder value world = World.setEntityOrder value this world |> snd'
+        member this.Order = if notNull (this :> obj) then lens (nameof this.Order) this this.GetOrder this.SetOrder else Cached.Order
         member this.GetId world = World.getEntityId this world
         member this.Id = if notNull (this :> obj) then lensReadOnly (nameof this.Id) this this.GetId else Cached.Id
         static member internal init () =
@@ -279,6 +288,7 @@ module WorldEntityModule =
             Cached.Absolute <- lens (nameof Cached.Absolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Imperative <- lens (nameof Cached.Imperative) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.MountOpt <- lens (nameof Cached.MountOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.OriginOpt <- lens (nameof Cached.OriginOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Enabled <- lens (nameof Cached.Enabled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.EnabledLocal <- lens (nameof Cached.EnabledLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Visible <- lens (nameof Cached.Visible) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -297,6 +307,7 @@ module WorldEntityModule =
             Cached.Destroying <- lensReadOnly (nameof Cached.Destroying) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.OverlayNameOpt <- lensReadOnly (nameof Cached.OverlayNameOpt) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.FacetNames <- lensReadOnly (nameof Cached.FacetNames) Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PropagatedDescriptorOpt <- lensReadOnly (nameof Cached.PropagatedDescriptorOpt) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Order <- lensReadOnly (nameof Cached.Order) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Id <- lensReadOnly (nameof Cached.Id) Unchecked.defaultof<_> Unchecked.defaultof<_>
 
@@ -1004,7 +1015,7 @@ module WorldEntityModule =
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
             let entityDescriptor = World.writeEntity entity EntityDescriptor.empty world
-            Clipboard <- Some entityDescriptor
+            Clipboard <- Some (entityDescriptor, entity)
 
         /// Cut an entity to the world's clipboard.
         static member cutEntityToClipboard (entity : Entity) world =
@@ -1014,7 +1025,7 @@ module WorldEntityModule =
         /// Paste an entity from the world's clipboard.
         static member pasteEntityFromClipboard pasteType (distance : single) rightClickPosition snapsEir (parent : Simulant) world =
             match Clipboard with
-            | Some entityDescriptor ->
+            | Some (entityDescriptor, entityOrigin) ->
                 let nameOpt =
                     match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
                     | (true, nameSymbol) ->
@@ -1062,6 +1073,13 @@ module WorldEntityModule =
                 | Some (positionSnap, degreesSnap, scaleSnap) -> transform.Snap (positionSnap, degreesSnap, scaleSnap)
                 | None -> ()
                 let world = entity.SetTransform transform world
+                let world =
+                    match entity.GetOriginOpt world with
+                    | None ->
+                        if entityOrigin.Exists world
+                        then entity.SetOriginOpt (Some entityOrigin) world
+                        else world
+                    | Some _ -> world
                 let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
                 let world = entity.SetMountOpt mountOpt world
                 (Some entity, world)

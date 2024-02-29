@@ -417,7 +417,11 @@ module WorldModule3 =
             let gameState = GameState.make activeGameDispatcher
             let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
-            let worldExtension = { DestructionListRev = []; Dispatchers = dispatchers; Plugin = plugin }
+            let worldExtension =
+                { DestructionListRev = []
+                  Dispatchers = dispatchers
+                  Plugin = plugin
+                  PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }
             let world =
                 { ChooseCount = 0
                   EventGraph = eventGraph

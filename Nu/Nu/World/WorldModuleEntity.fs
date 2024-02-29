@@ -372,8 +372,10 @@ module WorldModuleEntity =
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) (World.getDestructionListRev world)
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
+        static member internal getEntityOriginOpt entity world = (World.getEntityState entity world).OriginOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
+        static member internal getEntityPropagatedDescriptorOpt entity world = (World.getEntityState entity world).PropagatedDescriptorOpt
         static member internal getEntityOrder entity world = (World.getEntityState entity world).Order
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntitySurnames entity world = (World.getEntityState entity world).Surnames
@@ -487,7 +489,23 @@ module WorldModuleEntity =
                 let world = World.publishEntityChange (nameof entityState.Mounted) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
-        
+
+        static member internal setEntityPropagatedDescriptorOpt value entity world =
+            let entityState = World.getEntityState entity world
+            let previous = entityState.PropagatedDescriptorOpt
+            if value <> previous then
+                let struct (entityState, world) =
+                    if entityState.Imperative then
+                        entityState.PropagatedDescriptorOpt <- value
+                        struct (entityState, world)
+                    else
+                        let entityState = EntityState.diverge entityState
+                        entityState.PropagatedDescriptorOpt <- value
+                        struct (entityState, World.setEntityState entityState entity world)
+                let world = World.publishEntityChange (nameof entityState.PropagatedDescriptorOpt) previous value entityState.PublishChangeEvents entity world
+                struct (true, world)
+            else struct (false, world)
+
         static member internal setEntityOrder value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Order
@@ -662,6 +680,23 @@ module WorldModuleEntity =
                 let world = World.publishPlus (MountOptChangeData (previous, value, entity)) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
                 struct (true, world)
 
+            else struct (false, world)
+
+        static member internal setEntityOriginOpt value entity world =
+            let entityState = World.getEntityState entity world
+            let previous = entityState.OriginOpt
+            if value <> previous then
+                let struct (entityState, world) =
+                    if entityState.Imperative then
+                        entityState.OriginOpt <- value
+                        struct (entityState, world)
+                    else
+                        let entityState = EntityState.diverge entityState
+                        entityState.OriginOpt <- value
+                        struct (entityState, World.setEntityState entityState entity world)
+                let world = World.updateEntityInPropagationTargets previous value entity world
+                let world = World.publishEntityChange (nameof entityState.OriginOpt) previous value entityState.PublishChangeEvents entity world
+                struct (true, world)
             else struct (false, world)
 
         static member internal setEntityAbsolute value entity world =
@@ -2114,6 +2149,13 @@ module WorldModuleEntity =
                 let mountOpt = World.getEntityMountOpt entity world
                 let world = World.addEntityToMounts mountOpt entity world
 
+                // update propagation hierarchy
+                let originOpt = World.getEntityOriginOpt entity world
+                let world =
+                    match originOpt with
+                    | Some origin -> World.addEntityToPropagationTargets origin entity world
+                    | None -> world
+
                 // mutate respective spatial tree if entity is selected
                 if WorldModule.getSelected entity world then
                     if World.getEntityIs2d entity world then
@@ -2146,8 +2188,11 @@ module WorldModuleEntity =
                 // cache entity children for later possible destruction
                 let children = World.getEntityChildren entity world
 
-                // unmount from hierarchy
+                // update mount hierarchy
                 let world = World.setEntityMountOpt None entity world |> snd'
+
+                // update propagation hierarchy
+                let world = World.setEntityOriginOpt None entity world |> snd'
 
                 // unregister entity
                 let world = World.unregisterEntity entity world
@@ -2270,10 +2315,6 @@ module WorldModuleEntity =
 #if !DISABLE_ENTITY_POST_UPDATE
             let world = World.updateEntityPublishPostUpdateFlag entity world |> snd'
 #endif
-
-            // update mount hierarchy
-            let mountOpt = World.getEntityMountOpt entity world
-            let world = World.addEntityToMounts mountOpt entity world
 
             // propagate properties
             let world =
@@ -2472,6 +2513,7 @@ module WorldModuleEntity =
         EntityGetters.["Absolute"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world }
         EntityGetters.["Model"] <- fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue }
         EntityGetters.["MountOpt"] <- fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world }
+        EntityGetters.["OriginOpt"] <- fun entity world -> { PropertyType = typeof<Entity option>; PropertyValue = World.getEntityOriginOpt entity world }
         EntityGetters.["Imperative"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
         EntityGetters.["PublishChangeEvents"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world }
         EntityGetters.["Enabled"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }
@@ -2497,6 +2539,7 @@ module WorldModuleEntity =
         EntityGetters.["Destroying"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world }
         EntityGetters.["OverlayNameOpt"] <- fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world }
         EntityGetters.["FacetNames"] <- fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world }
+        EntityGetters.["PropagatedDescriptorOpt"] <- fun entity world -> { PropertyType = typeof<EntityDescriptor option>; PropertyValue = World.getEntityPropagatedDescriptorOpt entity world }
         EntityGetters.["Order"] <- fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityOrder entity world }
         EntityGetters.["Id"] <- fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
         EntityGetters.["Surnames"] <- fun entity world -> { PropertyType = typeof<string array>; PropertyValue = World.getEntitySurnames entity world }
@@ -2536,6 +2579,7 @@ module WorldModuleEntity =
         EntitySetters.["Absolute"] <- fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world
         EntitySetters.["Model"] <- fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world
         EntitySetters.["MountOpt"] <- fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world
+        EntitySetters.["OriginOpt"] <- fun property entity world -> World.setEntityOriginOpt (property.PropertyValue :?> Entity option) entity world
         EntitySetters.["Imperative"] <- fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world
         EntitySetters.["Enabled"] <- fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world
         EntitySetters.["EnabledLocal"] <- fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world
@@ -2549,6 +2593,8 @@ module WorldModuleEntity =
         EntitySetters.["AlwaysUpdate"] <- fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
         EntitySetters.["AlwaysRender"] <- fun property entity world -> World.setEntityAlwaysRender (property.PropertyValue :?> bool) entity world
         EntitySetters.["Persistent"] <- fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
+        EntitySetters.["PropagatedDescriptorOpt"] <- fun property entity world -> World.setEntityPropagatedDescriptorOpt (property.PropertyValue :?> EntityDescriptor option) entity world
+        EntitySetters.["Order"] <- fun property entity world -> World.setEntityOrder (property.PropertyValue :?> int64) entity world
 
     /// Initialize getters and setters
     let internal init () =

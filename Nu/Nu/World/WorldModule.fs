@@ -737,6 +737,57 @@ module WorldModule =
         static member internal imGuiPostProcess world =
             world.WorldExtension.Plugin.ImGuiPostProcess world
 
+    type World with // Propagation
+
+        /// Check that entity has entities to propagate its structure to.
+        static member hasPropagationTargets entity world =
+            match world.WorldExtension.PropagationTargets.TryGetValue entity with
+            | (true, targets) -> USet.notEmpty targets
+            | (false, _) -> false
+
+        /// Find all the entities to which an entity may propagate its structure.
+        static member getPropagationTargets entity world =
+            match world.WorldExtension.PropagationTargets.TryGetValue entity with
+            | (true, targets) -> seq targets
+            | (false, _) -> Seq.empty
+
+        static member internal addEntityToPropagationTargets origin entity world =
+            match world.WorldExtension.PropagationTargets.TryGetValue origin with
+            | (true, targets) ->
+                let targets = USet.add entity targets
+                let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add origin targets world.WorldExtension.PropagationTargets }
+                World.choose { world with WorldExtension = worldExtension }
+            | (false, _) ->
+                let config = World.getCollectionConfig world
+                let targets = USet.singleton HashIdentity.Structural config entity
+                let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add origin targets world.WorldExtension.PropagationTargets }
+                World.choose { world with WorldExtension = worldExtension }
+
+        static member internal removeEntityFromPropagationTargets origin entity world =
+            match world.WorldExtension.PropagationTargets.TryGetValue origin with
+            | (true, targets) ->
+                let targets = USet.remove entity targets
+                if USet.isEmpty targets then
+                    let worldExtension = { world.WorldExtension with PropagationTargets = UMap.remove origin world.WorldExtension.PropagationTargets }
+                    World.choose { world with WorldExtension = worldExtension }
+                else
+                    let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add origin targets world.WorldExtension.PropagationTargets }
+                    World.choose { world with WorldExtension = worldExtension }
+            | (false, _) -> world
+
+        static member internal updateEntityInPropagationTargets (originOldOpt : Entity option) originNewOpt entity world =
+            if originOldOpt <> originNewOpt then
+                let world =
+                    match originOldOpt with
+                    | Some originOld -> World.removeEntityFromPropagationTargets originOld entity world
+                    | None -> world
+                let world =
+                    match originNewOpt with
+                    | Some originNew -> World.addEntityToPropagationTargets originNew entity world
+                    | None -> world
+                world
+            else world
+
     type World with // Debugging
 
         /// View the member properties of some SimulantState.

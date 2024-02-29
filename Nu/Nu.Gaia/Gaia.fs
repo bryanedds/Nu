@@ -1448,6 +1448,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world <- entity.SetFrozen (not frozen) world
             ImGui.PopID ()
             ImGui.PopStyleColor ()
+        if World.hasPropagationTargets entity world then
+            ImGui.SameLine ()
+            ImGui.Separator ()
+            ImGui.SameLine ()
+            if ImGui.SmallButton "Propagate" then
+                snapshot ()
+                world <- World.propagateEntityStructure entity world
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
@@ -2207,16 +2214,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Constants.Engine.NamePropertyName -> "!00" // put Name first
                         | Constants.Engine.ModelPropertyName -> "!01" // put Model second
                         | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
-                        | Constants.Engine.OverlayNameOptPropertyName -> "!03"
-                        | nameof Entity.Position -> "!04"
-                        | nameof Entity.PositionLocal -> "!05"
-                        | nameof Entity.Degrees -> "!06"
-                        | nameof Entity.DegreesLocal -> "!07"
-                        | nameof Entity.Scale -> "!08"
-                        | nameof Entity.ScaleLocal -> "!09"
-                        | nameof Entity.Size -> "!10"
-                        | nameof Entity.Offset -> "!11"
-                        | nameof Entity.Overflow -> "!12"
+                        | Constants.Engine.OriginOptPropertyName -> "!03"
+                        | Constants.Engine.OverlayNameOptPropertyName -> "!04"
+                        | nameof Entity.Position -> "!05"
+                        | nameof Entity.PositionLocal -> "!06"
+                        | nameof Entity.Degrees -> "!07"
+                        | nameof Entity.DegreesLocal -> "!08"
+                        | nameof Entity.Scale -> "!09"
+                        | nameof Entity.ScaleLocal -> "!10"
+                        | nameof Entity.Size -> "!11"
+                        | nameof Entity.Offset -> "!12"
+                        | nameof Entity.Overflow -> "!13"
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if containsProperty propertyDescriptor simulant then
@@ -2262,6 +2270,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             world <- World.edit replaceProperty simulant world
                             if not replaced then
                                 imGuiEditProperty getPropertyValue setPropertyValue focusProperty "" propertyDescriptor simulant
+                                if propertyDescriptor.PropertyName = Constants.Engine.OverlayNameOptPropertyName then
+                                    match simulant with
+                                    | :? Entity as entity when World.hasPropagationTargets entity world && ImGui.Button "Propagate Structure" ->
+                                        snapshot ()
+                                        world <- World.propagateEntityStructure entity world
+                                    | _ -> ()
         let appendProperties =
             { Snapshot = fun world -> snapshot (); world
               UnfocusProperty = fun world -> focusedPropertyDescriptorOpt <- None; world }
@@ -2695,7 +2709,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                             showSelectedEntity <- true
                                         else messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
                                 | None -> ()
-                        
+
                         // entity editing
                         let entities =
                             World.getEntitiesSovereign selectedGroup world |>
