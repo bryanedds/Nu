@@ -2084,6 +2084,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                    ty.GenericTypeArguments.[0] <> typeof<Material> &&
                    (ty.GenericTypeArguments.[0].IsValueType && ty.GenericTypeArguments.[0].Name <> typedefof<_ AssetTag>.Name ||
                     ty.GenericTypeArguments.[0] = typeof<string> ||
+                    ty.GenericTypeArguments.[0] = typeof<Entity> ||
                     ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
                     if ImGui.Checkbox ("##" + name, &isSome) then
@@ -2093,7 +2094,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 then setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant
                                 else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                setProperty (Activator.CreateInstance (ty, [|""|])) propertyDescriptor simulant
+                                setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
+                            elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant
                             elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
                                 setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant
                             else ()
@@ -2115,6 +2118,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                      ty.GenericTypeArguments.[0] <> typeof<Material> &&
                      (ty.GenericTypeArguments.[0].IsValueType && ty.GenericTypeArguments.[0].Name <> typedefof<_ AssetTag>.Name ||
                       ty.GenericTypeArguments.[0] = typeof<string> ||
+                      ty.GenericTypeArguments.[0] = typeof<Entity> ||
                       ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
                     if ImGui.Checkbox ("##" + name, &isSome) then
@@ -2122,7 +2126,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ty.GenericTypeArguments.[0].IsValueType then
                                 setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                setProperty (Activator.CreateInstance (ty, [|""|])) propertyDescriptor simulant
+                                setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
+                            elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant
                             elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
                                 setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant
                             else
