@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.ComponentModel
 open System.Diagnostics
 open System.Numerics
 open System.Reflection

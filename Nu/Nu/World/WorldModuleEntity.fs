@@ -572,7 +572,7 @@ module WorldModuleEntity =
                     match world.EntityMounts.TryGetValue mountNew with
                     | (true, mounters) ->
                         let mounters = USet.add entity mounters
-                        let world = { world with EntityMounts = UMap.add mountNew mounters world.EntityMounts }
+                        let world = World.choose { world with EntityMounts = UMap.add mountNew mounters world.EntityMounts }
                         world
                     | (false, _) ->
                         let mounters = USet.singleton HashIdentity.Structural (World.getCollectionConfig world) entity
