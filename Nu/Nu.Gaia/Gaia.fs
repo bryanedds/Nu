@@ -2082,7 +2082,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                    ty.GenericTypeArguments.[0] <> typedefof<_ option> &&
                    ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
                    ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                   (ty.GenericTypeArguments.[0].IsValueType && ty.GenericTypeArguments.[0].Name <> typedefof<_ AssetTag>.Name ||
+                   (ty.GenericTypeArguments.[0].IsValueType ||
                     ty.GenericTypeArguments.[0] = typeof<string> ||
                     ty.GenericTypeArguments.[0] = typeof<Entity> ||
                     ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
@@ -2090,8 +2090,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.Checkbox ("##" + name, &isSome) then
                         if isSome then
                             if ty.GenericTypeArguments.[0].IsValueType then
-                                if ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name
-                                then setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant
+                                if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                    setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant
+                                elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                    setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant
                                 else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<string> then
                                 setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
@@ -2116,7 +2118,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                      ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
                      ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
                      ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                     (ty.GenericTypeArguments.[0].IsValueType && ty.GenericTypeArguments.[0].Name <> typedefof<_ AssetTag>.Name ||
+                     (ty.GenericTypeArguments.[0].IsValueType ||
                       ty.GenericTypeArguments.[0] = typeof<string> ||
                       ty.GenericTypeArguments.[0] = typeof<Entity> ||
                       ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
@@ -2124,7 +2126,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.Checkbox ("##" + name, &isSome) then
                         if isSome then
                             if ty.GenericTypeArguments.[0].IsValueType then
-                                setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
+                                if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                    setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant
+                                elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                    setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant
+                                else
+                                    setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<string> then
                                 setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<Entity> then
