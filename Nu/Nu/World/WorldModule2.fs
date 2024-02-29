@@ -421,7 +421,11 @@ module WorldModule2 =
 
         static member private mapEntityDescriptors entityDescriptors =
             entityDescriptors |>
-            List.map (fun descriptor -> (descriptor.EntityProperties.[Constants.Engine.NamePropertyName], descriptor)) |>
+            List.map (fun descriptor ->
+                match descriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
+                | Atom (entityName, _) -> (entityName, descriptor)
+                | Text (entityName, _) -> (entityName, descriptor)
+                | _ -> failwithumf ()) |>
             Map.ofList
 
         static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor =
@@ -429,7 +433,8 @@ module WorldModule2 =
             // propagate descriptor at this level
             let propagatedDescriptor =
                 Seq.fold (fun targetDescriptor (propertyName, currentValue) ->
-                    if  propertyName <> nameof Entity.Position &&
+                    if  propertyName <> nameof Entity.PropagatedDescriptorOpt &&
+                        propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
                         propertyName <> nameof Entity.Elevation then
                         match previousDescriptor.EntityProperties.TryGetValue propertyName with
@@ -491,6 +496,7 @@ module WorldModule2 =
                     let world = target.SetOrder order world
                     world)
                     world targets
+            let currentDescriptor = { currentDescriptor with EntityProperties = Map.remove (nameof Entity.PropagatedDescriptorOpt) currentDescriptor.EntityProperties }
             entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
 
         static member internal makeIntrinsicOverlays facets entityDispatchers =
