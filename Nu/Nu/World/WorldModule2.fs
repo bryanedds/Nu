@@ -428,7 +428,7 @@ module WorldModule2 =
                 | _ -> failwithumf ()) |>
             Map.ofList
 
-        static member private propagateEntityDescriptorStructure previousDescriptor currentDescriptor targetDescriptor world =
+        static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world =
 
             // propagate descriptor at this level
             let propagatedDescriptor =
@@ -484,26 +484,26 @@ module WorldModule2 =
                 List.map (fun (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) ->
                     match (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) with
                     | (Some previousDescriptor, Some currentDescriptor, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptorStructure previousDescriptor currentDescriptor targetDescriptor world)
+                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world)
                     | (Some previousDescriptor, Some currentDescriptor, None) ->
-                        Some (World.propagateEntityDescriptorStructure previousDescriptor currentDescriptor EntityDescriptor.empty world)
+                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor EntityDescriptor.empty world)
                     | (Some _, None, None) ->
                         None
                     | (Some previousDescriptor, None, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptorStructure previousDescriptor EntityDescriptor.empty targetDescriptor world)
+                        Some (World.propagateEntityDescriptor previousDescriptor EntityDescriptor.empty targetDescriptor world)
                     | (None, None, Some targetDescriptor) ->
                         Some targetDescriptor
                     | (None, Some currentDescriptor, None) ->
                         Some currentDescriptor
                     | (None, Some currentDescriptor, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptorStructure EntityDescriptor.empty currentDescriptor targetDescriptor world)
+                        Some (World.propagateEntityDescriptor EntityDescriptor.empty currentDescriptor targetDescriptor world)
                     | (None, None, None) -> None)
                     entityDescriptorsList
 
             // compose fully propagated descriptor
             { propagatedDescriptor with EntityDescriptors = List.definitize propagatedDescriptorOpts }
 
-        /// Propagate the structure of an entity to all other entities with it as their origin.
+        /// Propagate the structure of an entity to all other entities with it as their propagation source.
         static member propagateEntityStructure entity world =
             let targets = World.getPropagationTargets entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
@@ -511,7 +511,7 @@ module WorldModule2 =
             let world =
                 Seq.fold (fun world target ->
                     let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
-                    let propagatedDescriptor = World.propagateEntityDescriptorStructure previousDescriptor currentDescriptor targetDescriptor world
+                    let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world
                     let order = target.GetOrder world
                     let world = World.destroyEntityImmediate target world
                     let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd

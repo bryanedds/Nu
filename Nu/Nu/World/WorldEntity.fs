@@ -1027,7 +1027,7 @@ module WorldEntityModule =
         /// Paste an entity from the world's clipboard.
         static member pasteEntityFromClipboard pasteType (distance : single) rightClickPosition snapsEir (parent : Simulant) world =
             match Clipboard with
-            | Some (entityDescriptor, entityOrigin) ->
+            | Some (entityDescriptor, entitySource) ->
                 let nameOpt =
                     match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
                     | (true, nameSymbol) ->
@@ -1078,8 +1078,8 @@ module WorldEntityModule =
                 let world =
                     match entity.GetPropagationSourceOpt world with
                     | None ->
-                        if entityOrigin.Exists world
-                        then entity.SetPropagationSourceOpt (Some entityOrigin) world
+                        if entitySource.Exists world
+                        then entity.SetPropagationSourceOpt (Some entitySource) world
                         else world
                     | Some _ -> world
                 let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
