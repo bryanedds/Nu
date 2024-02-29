@@ -372,7 +372,7 @@ module WorldModuleEntity =
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) (World.getDestructionListRev world)
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
-        static member internal getEntityOriginOpt entity world = (World.getEntityState entity world).OriginOpt
+        static member internal getEntityPropagationSourceOpt entity world = (World.getEntityState entity world).PropagationSourceOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityPropagatedDescriptorOpt entity world = (World.getEntityState entity world).PropagatedDescriptorOpt
@@ -682,20 +682,20 @@ module WorldModuleEntity =
 
             else struct (false, world)
 
-        static member internal setEntityOriginOpt value entity world =
+        static member internal setEntityPropagationSourceOpt value entity world =
             let entityState = World.getEntityState entity world
-            let previous = entityState.OriginOpt
+            let previous = entityState.PropagationSourceOpt
             if value <> previous then
                 let struct (entityState, world) =
                     if entityState.Imperative then
-                        entityState.OriginOpt <- value
+                        entityState.PropagationSourceOpt <- value
                         struct (entityState, world)
                     else
                         let entityState = EntityState.diverge entityState
-                        entityState.OriginOpt <- value
+                        entityState.PropagationSourceOpt <- value
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInPropagationTargets previous value entity world
-                let world = World.publishEntityChange (nameof entityState.OriginOpt) previous value entityState.PublishChangeEvents entity world
+                let world = World.publishEntityChange (nameof entityState.PropagationSourceOpt) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -2150,9 +2150,9 @@ module WorldModuleEntity =
                 let world = World.addEntityToMounts mountOpt entity world
 
                 // update propagation hierarchy
-                let originOpt = World.getEntityOriginOpt entity world
+                let propagationSourceOpt = World.getEntityPropagationSourceOpt entity world
                 let world =
-                    match originOpt with
+                    match propagationSourceOpt with
                     | Some origin -> World.addEntityToPropagationTargets origin entity world
                     | None -> world
 
@@ -2192,7 +2192,7 @@ module WorldModuleEntity =
                 let world = World.setEntityMountOpt None entity world |> snd'
 
                 // update propagation hierarchy
-                let world = World.setEntityOriginOpt None entity world |> snd'
+                let world = World.setEntityPropagationSourceOpt None entity world |> snd'
 
                 // unregister entity
                 let world = World.unregisterEntity entity world
@@ -2373,7 +2373,7 @@ module WorldModuleEntity =
                 let world =
                     Seq.fold (fun world target ->
                         if World.getEntityExists target world
-                        then World.setEntityOriginOpt (Some destination) target world |> snd'
+                        then World.setEntityPropagationSourceOpt (Some destination) target world |> snd'
                         else world)
                         world (World.getPropagationTargets source world)
                 let world =
@@ -2523,7 +2523,7 @@ module WorldModuleEntity =
         EntityGetters.["Absolute"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world }
         EntityGetters.["Model"] <- fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue }
         EntityGetters.["MountOpt"] <- fun entity world -> { PropertyType = typeof<Entity Relation option>; PropertyValue = World.getEntityMountOpt entity world }
-        EntityGetters.["OriginOpt"] <- fun entity world -> { PropertyType = typeof<Entity option>; PropertyValue = World.getEntityOriginOpt entity world }
+        EntityGetters.["PropagationSourceOpt"] <- fun entity world -> { PropertyType = typeof<Entity option>; PropertyValue = World.getEntityPropagationSourceOpt entity world }
         EntityGetters.["Imperative"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
         EntityGetters.["PublishChangeEvents"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world }
         EntityGetters.["Enabled"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }
@@ -2589,7 +2589,7 @@ module WorldModuleEntity =
         EntitySetters.["Absolute"] <- fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world
         EntitySetters.["Model"] <- fun property entity world -> World.setEntityModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world
         EntitySetters.["MountOpt"] <- fun property entity world -> World.setEntityMountOpt (property.PropertyValue :?> Entity Relation option) entity world
-        EntitySetters.["OriginOpt"] <- fun property entity world -> World.setEntityOriginOpt (property.PropertyValue :?> Entity option) entity world
+        EntitySetters.["PropagationSourceOpt"] <- fun property entity world -> World.setEntityPropagationSourceOpt (property.PropertyValue :?> Entity option) entity world
         EntitySetters.["Imperative"] <- fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world
         EntitySetters.["Enabled"] <- fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world
         EntitySetters.["EnabledLocal"] <- fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world

@@ -483,7 +483,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
          Define? Absolute false
          Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
          Define? MountOpt Option<Entity Relation>.None
-         Define? OriginOpt Option<Entity>.None
+         Define? PropagationSourceOpt Option<Entity>.None
          Define? PublishChangeEvents false
          Define? Enabled true
          Define? EnabledLocal true
@@ -1000,7 +1000,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
       mutable AnglesLocal : Vector3
       mutable ElevationLocal : single
       mutable MountOpt : Entity Relation option
-      mutable OriginOpt : Entity option
+      mutable PropagationSourceOpt : Entity option
       mutable OverlayNameOpt : string option
       mutable FacetNames : string Set
       mutable PropagatedDescriptorOpt : EntityDescriptor option
@@ -1079,7 +1079,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           AnglesLocal = Vector3.Zero
           ElevationLocal = 0.0f
           MountOpt = None
-          OriginOpt = None
+          PropagationSourceOpt = None
           OverlayNameOpt = overlayNameOpt
           FacetNames = Set.empty
           PropagatedDescriptorOpt = None

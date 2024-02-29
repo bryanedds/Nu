@@ -2227,8 +2227,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Constants.Engine.NamePropertyName -> "!00" // put Name first
                         | Constants.Engine.ModelPropertyName -> "!01" // put Model second
                         | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
-                        | Constants.Engine.OriginOptPropertyName -> "!03"
-                        | Constants.Engine.OverlayNameOptPropertyName -> "!04"
+                        | Constants.Engine.OverlayNameOptPropertyName -> "!03"
+                        | Constants.Engine.PropagationSourceOptPropertyName -> "!04"
                         | nameof Entity.Position -> "!05"
                         | nameof Entity.PositionLocal -> "!06"
                         | nameof Entity.Degrees -> "!07"

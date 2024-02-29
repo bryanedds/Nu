@@ -52,7 +52,7 @@ module WorldEntityModule =
         let mutable Absolute = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Imperative = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable MountOpt = Unchecked.defaultof<Lens<Entity Relation option, Entity>>
-        let mutable OriginOpt = Unchecked.defaultof<Lens<Entity option, Entity>>
+        let mutable PropagationSourceOpt = Unchecked.defaultof<Lens<Entity option, Entity>>
         let mutable Enabled = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Visible = Unchecked.defaultof<Lens<bool, Entity>>
@@ -187,9 +187,9 @@ module WorldEntityModule =
         member this.GetMountOpt world = World.getEntityMountOpt this world
         member this.SetMountOpt value world = World.setEntityMountOpt value this world |> snd'
         member this.MountOpt = if notNull (this :> obj) then lens (nameof this.MountOpt) this this.GetMountOpt this.SetMountOpt else Cached.MountOpt
-        member this.GetOriginOpt world = World.getEntityOriginOpt this world
-        member this.SetOriginOpt value world = World.setEntityOriginOpt value this world |> snd'
-        member this.OriginOpt = if notNull (this :> obj) then lens (nameof this.OriginOpt) this this.GetOriginOpt this.SetOriginOpt else Cached.OriginOpt
+        member this.GetPropagationSourceOpt world = World.getEntityPropagationSourceOpt this world
+        member this.SetPropagationSourceOpt value world = World.setEntityPropagationSourceOpt value this world |> snd'
+        member this.PropagationSourceOpt = if notNull (this :> obj) then lens (nameof this.PropagationSourceOpt) this this.GetPropagationSourceOpt this.SetPropagationSourceOpt else Cached.PropagationSourceOpt
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world |> snd'
         member this.Enabled = if notNull (this :> obj) then lens (nameof this.Enabled) this this.GetEnabled this.SetEnabled else Cached.Enabled
@@ -288,7 +288,7 @@ module WorldEntityModule =
             Cached.Absolute <- lens (nameof Cached.Absolute) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Imperative <- lens (nameof Cached.Imperative) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.MountOpt <- lens (nameof Cached.MountOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.OriginOpt <- lens (nameof Cached.OriginOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.PropagationSourceOpt <- lens (nameof Cached.PropagationSourceOpt) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Enabled <- lens (nameof Cached.Enabled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.EnabledLocal <- lens (nameof Cached.EnabledLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Visible <- lens (nameof Cached.Visible) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -1076,10 +1076,10 @@ module WorldEntityModule =
                 | None -> ()
                 let world = entity.SetTransform transform world
                 let world =
-                    match entity.GetOriginOpt world with
+                    match entity.GetPropagationSourceOpt world with
                     | None ->
                         if entityOrigin.Exists world
-                        then entity.SetOriginOpt (Some entityOrigin) world
+                        then entity.SetPropagationSourceOpt (Some entityOrigin) world
                         else world
                     | Some _ -> world
                 let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
