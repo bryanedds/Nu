@@ -7,7 +7,7 @@
 #r "nuget: FParsec, 1.1.1"
 #r "nuget: Twizzle.ImGuizmo.NET, 1.89.4.1"
 #r "nuget: Magick.NET-Q8-x64, 7.5.0.1"
-#r "nuget: Prime, 9.18.0"
+#r "nuget: Prime, 9.19.0"
 #r "nuget: System.Configuration.ConfigurationManager, 8.0.0"
 #r "nuget: System.Drawing.Common, 8.0.0"
 #r "../../../Nu/Nu.Dependencies/AssimpNet/netstandard1.3/AssimpNet.dll"

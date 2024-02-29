@@ -441,7 +441,7 @@ module WorldModule2 =
                         | (true, previousPropertySymbol) ->
                             match targetDescriptor.EntityProperties.TryGetValue propertyName with
                             | (true, targetPropertySymbol) ->
-                                if Symbol.toString targetPropertySymbol = Symbol.toString previousPropertySymbol
+                                if targetPropertySymbol = previousPropertySymbol
                                 then { targetDescriptor with EntityProperties = Map.add propertyName currentValue targetDescriptor.EntityProperties }
                                 else targetDescriptor
                             | (false, _) ->
