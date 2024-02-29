@@ -444,33 +444,31 @@ module WorldModule2 =
                                 if targetPropertySymbol = previousPropertySymbol
                                 then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
                                 else targetDescriptor
-                            | (false, _) ->
-                                { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
+                            | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
                         | (false, _) ->
                             match targetDescriptor.EntityProperties.TryGetValue propertyName with
                             | (true, targetPropertySymbol) ->
-                                match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
-                                | (true, overlayNameOptSymbol) ->
-                                    try let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
-                                        let overlayName =
-                                            match overlayNameOpt with
-                                            | Some overlayName -> overlayName
-                                            | None -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
-                                        let facetNames =
-                                            match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
-                                            | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
-                                            | (false, _) -> Set.empty
-                                        let overlayer = World.getOverlayer world
-                                        let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
-                                        match overlaySymbols.TryGetValue propertyName with
-                                        | (true, overlayPropertySymbol) ->
-                                            if targetPropertySymbol = overlayPropertySymbol // property unchanged from default value
-                                            then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
-                                            else targetDescriptor
-                                        | (false, _) ->
-                                            { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
-                                    with _ -> targetDescriptor // incorrect OverlayNameOpt type - abort
-                                | (false, _) -> targetDescriptor // can't find OverlayNameOpt - abort
+                                let overlayNameOpt =
+                                    match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
+                                    | (true, overlayNameOptSymbol) ->
+                                        try symbolToValue<string option> overlayNameOptSymbol
+                                        with _ -> Some (Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName)
+                                    | (false, _) -> Some (Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName)
+                                match overlayNameOpt with
+                                | Some overlayName ->
+                                    let facetNames =
+                                        match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
+                                        | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
+                                        | (false, _) -> Set.empty
+                                    let overlayer = World.getOverlayer world
+                                    let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
+                                    match overlaySymbols.TryGetValue propertyName with
+                                    | (true, overlayPropertySymbol) ->
+                                        if targetPropertySymbol = overlayPropertySymbol
+                                        then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
+                                        else targetDescriptor
+                                    | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
+                                | None ->  targetDescriptor // overlay name opt explicitly assinged to None - no valid defaults
                             | (false, _) -> targetDescriptor // can't find matching target property - nothing to do
                     else targetDescriptor)
                     targetDescriptor
