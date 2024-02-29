@@ -493,6 +493,7 @@ module WorldModule2 =
                     let order = target.GetOrder world
                     let world = World.destroyEntityImmediate target world
                     let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
+                    let world = World.propagateEntityAffineMatrix target world
                     let world = target.SetOrder order world
                     world)
                     world targets
