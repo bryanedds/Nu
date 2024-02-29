@@ -987,9 +987,11 @@ module WorldEntityModule =
             let (entitiesRev, world) =
                 List.fold
                     (fun (entities, world) entityDescriptor ->
-                        let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
-                        let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
-                        (entity :: entities, world))
+                        if String.notEmpty entityDescriptor.EntityDispatcherName then
+                            let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
+                            let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
+                            (entity :: entities, world)
+                        else (entities, world))
                         ([], world)
                         entityDescriptors
             (List.rev entitiesRev, world)

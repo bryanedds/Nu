@@ -2366,8 +2366,10 @@ module WorldModuleEntity =
             | _ ->
                 let entityState = { entityStateOpt with Id = Gen.id64; Surnames = destination.Surnames; Content = EntityContent.empty }
                 let children = World.getEntityChildren source world
+                let order = World.getEntityOrder source world
                 let world = World.destroyEntityImmediateInternal false source world
                 let world = World.addEntity false entityState destination world
+                let world = World.setEntityOrder order destination world |> snd'
                 Seq.fold (fun world (child : Entity) ->
                     let destination = destination / child.Name
                     World.renameEntityImmediate child destination world)

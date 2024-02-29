@@ -380,9 +380,9 @@ module WorldModule =
         static member internal setOverlayer overlayer world =
             World.updateAmbientState (AmbientState.setOverlayer overlayer) world
 
-        /// Get overlays.
-        static member getOverlays world =
-            World.getOverlayerBy Overlayer.getOverlays world
+        /// Get overlay names.
+        static member getOverlayNames world =
+            (World.getOverlayerBy Overlayer.getOverlays world).Keys
 
         /// Attempt to get the given dispatcher's optional routed overlay name.
         static member tryGetRoutedOverlayNameOpt dispatcherName world =

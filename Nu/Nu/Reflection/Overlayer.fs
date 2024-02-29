@@ -26,6 +26,7 @@ type Overlay =
       OverlaidTypeNames : string list
       OverlayProperties : Map<string, Symbol> }
 
+    /// Convert a dispatcher (entity facet or simulant dispatcher) name to an overlay name.
     static member dispatcherNameToOverlayName (typeName : string) =
         typeName
             .Replace("Dispatcher", "Overlay")
@@ -147,7 +148,7 @@ module Overlayer =
                 | None -> Bare
             | None -> Bare
         else NonPersistent
-        
+
     let internal shouldPropertySerialize propertyName propertyType target overlaySymbols =
         match getPropertyState propertyName propertyType target overlaySymbols with
         | Altered | Bare -> true

@@ -2568,7 +2568,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text "w/ Overlay"
                         ImGui.SameLine ()
                         ImGui.SetNextItemWidth 150.0f
-                        let overlayNames = Array.append [|"(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"|] (World.getOverlays world |> Map.toKeyArray)
+                        let overlayNames = Seq.append ["(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"] (World.getOverlayNames world)
                         if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
                             let overlayNamePicked = tryPickName overlayNames
                             for overlayName in overlayNames do

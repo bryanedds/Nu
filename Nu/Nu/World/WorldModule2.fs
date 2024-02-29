@@ -428,11 +428,11 @@ module WorldModule2 =
                 | _ -> failwithumf ()) |>
             Map.ofList
 
-        static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor =
+        static member private propagateEntityDescriptorStructure previousDescriptor currentDescriptor targetDescriptor world =
 
             // propagate descriptor at this level
             let propagatedDescriptor =
-                Seq.fold (fun targetDescriptor (propertyName, currentValue) ->
+                Seq.fold (fun targetDescriptor (propertyName, currentSymbol) ->
                     if  propertyName <> nameof Entity.PropagatedDescriptorOpt &&
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
@@ -442,12 +442,36 @@ module WorldModule2 =
                             match targetDescriptor.EntityProperties.TryGetValue propertyName with
                             | (true, targetPropertySymbol) ->
                                 if targetPropertySymbol = previousPropertySymbol
-                                then { targetDescriptor with EntityProperties = Map.add propertyName currentValue targetDescriptor.EntityProperties }
+                                then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
                                 else targetDescriptor
                             | (false, _) ->
-                                { targetDescriptor with EntityProperties = Map.add propertyName currentValue targetDescriptor.EntityProperties }
+                                { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
                         | (false, _) ->
-                            { targetDescriptor with EntityProperties = Map.add propertyName currentValue targetDescriptor.EntityProperties }
+                            match targetDescriptor.EntityProperties.TryGetValue propertyName with
+                            | (true, targetPropertySymbol) ->
+                                match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
+                                | (true, overlayNameOptSymbol) ->
+                                    try let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
+                                        let overlayName =
+                                            match overlayNameOpt with
+                                            | Some overlayName -> overlayName
+                                            | None -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
+                                        let facetNames =
+                                            match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
+                                            | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
+                                            | (false, _) -> Set.empty
+                                        let overlayer = World.getOverlayer world
+                                        let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
+                                        match overlaySymbols.TryGetValue propertyName with
+                                        | (true, overlayPropertySymbol) ->
+                                            if targetPropertySymbol = overlayPropertySymbol // property unchanged from default value
+                                            then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
+                                            else targetDescriptor
+                                        | (false, _) ->
+                                            { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
+                                    with _ -> targetDescriptor // incorrect OverlayNameOpt type - abort
+                                | (false, _) -> targetDescriptor // can't find OverlayNameOpt - abort
+                            | (false, _) -> targetDescriptor // can't find matching target property - nothing to do
                     else targetDescriptor)
                     targetDescriptor
                     currentDescriptor.EntityProperties.Pairs
@@ -462,19 +486,19 @@ module WorldModule2 =
                 List.map (fun (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) ->
                     match (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) with
                     | (Some previousDescriptor, Some currentDescriptor, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor)
+                        Some (World.propagateEntityDescriptorStructure previousDescriptor currentDescriptor targetDescriptor world)
                     | (Some previousDescriptor, Some currentDescriptor, None) ->
-                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor EntityDescriptor.empty)
+                        Some (World.propagateEntityDescriptorStructure previousDescriptor currentDescriptor EntityDescriptor.empty world)
                     | (Some _, None, None) ->
                         None
                     | (Some previousDescriptor, None, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptor previousDescriptor EntityDescriptor.empty targetDescriptor)
+                        Some (World.propagateEntityDescriptorStructure previousDescriptor EntityDescriptor.empty targetDescriptor world)
                     | (None, None, Some targetDescriptor) ->
                         Some targetDescriptor
                     | (None, Some currentDescriptor, None) ->
                         Some currentDescriptor
                     | (None, Some currentDescriptor, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptor EntityDescriptor.empty currentDescriptor targetDescriptor)
+                        Some (World.propagateEntityDescriptorStructure EntityDescriptor.empty currentDescriptor targetDescriptor world)
                     | (None, None, None) -> None)
                     entityDescriptorsList
 
@@ -489,7 +513,7 @@ module WorldModule2 =
             let world =
                 Seq.fold (fun world target ->
                     let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
-                    let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor
+                    let propagatedDescriptor = World.propagateEntityDescriptorStructure previousDescriptor currentDescriptor targetDescriptor world
                     let order = target.GetOrder world
                     let world = World.destroyEntityImmediate target world
                     let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
