@@ -2078,12 +2078,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if not combo then
                 if ty.IsGenericType &&
                    ty.GetGenericTypeDefinition () = typedefof<_ option> &&
-                   ty.GenericTypeArguments.[0] <> typedefof<_ option> &&
+                   (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                   (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
                    ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
                    ty.GenericTypeArguments.[0] <> typeof<Material> &&
                    (ty.GenericTypeArguments.[0].IsValueType ||
                     ty.GenericTypeArguments.[0] = typeof<string> ||
                     ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                    (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
                     ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
                     if ImGui.Checkbox ("##" + name, &isSome) then
@@ -2096,6 +2098,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<string> then
                                 setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
+                            elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                let relationType = ty.GenericTypeArguments.[0]
+                                let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                 setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant
                             elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
@@ -2114,12 +2122,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.Text name
                 elif ty.IsGenericType &&
                      ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                     ty.GenericTypeArguments.[0] <> typedefof<_ voption> &&
+                     (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                     (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
                      ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
                      ty.GenericTypeArguments.[0] <> typeof<Material> &&
                      (ty.GenericTypeArguments.[0].IsValueType ||
                       ty.GenericTypeArguments.[0] = typeof<string> ||
                       ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                      (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
                       ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                     let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
                     if ImGui.Checkbox ("##" + name, &isSome) then
@@ -2133,6 +2143,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<string> then
                                 setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
+                            elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                let relationType = ty.GenericTypeArguments.[0]
+                                let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                 setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant
                             elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
