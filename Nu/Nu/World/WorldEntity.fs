@@ -466,20 +466,15 @@ module WorldEntityModule =
             match (Option.bind (tryResolve this) (this.GetMountOpt world), Option.bind (tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
                 if mountOld.Exists world && mountNew.Exists world then
-                    let world =
-                        if  not (World.getEntityPhysical this world && World.getEntityPhysical mountOld world) &&
-                            not (World.getEntityPhysical this world && World.getEntityPhysical mountNew world) then
-                            let affineMatrixMount = World.getEntityAffineMatrix mountNew world
-                            let affineMatrixMounter = World.getEntityAffineMatrix this world
-                            let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
-                            let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
-                            let rotationLocal = affineMatrixLocal.Rotation
-                            let scaleLocal = affineMatrixLocal.Scale
-                            let world = this.SetPositionLocal positionLocal world
-                            let world = this.SetRotationLocal rotationLocal world
-                            let world = this.SetScaleLocal scaleLocal world
-                            world
-                        else world
+                    let affineMatrixMount = World.getEntityAffineMatrix mountNew world
+                    let affineMatrixMounter = World.getEntityAffineMatrix this world
+                    let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
+                    let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
+                    let rotationLocal = affineMatrixLocal.Rotation
+                    let scaleLocal = affineMatrixLocal.Scale
+                    let world = this.SetPositionLocal positionLocal world
+                    let world = this.SetRotationLocal rotationLocal world
+                    let world = this.SetScaleLocal scaleLocal world
                     let elevationLocal = this.GetElevation world - mountNew.GetElevation world
                     let world = this.SetElevationLocal elevationLocal world
                     let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
@@ -490,19 +485,15 @@ module WorldEntityModule =
             | (Some mountOld, None) ->
                 if mountOld.Exists world then
                     let world = this.SetMountOpt value world
-                    let world =
-                        if not (World.getEntityPhysical this world && World.getEntityPhysical mountOld world) then
-                            let position = this.GetPosition world
-                            let rotation = this.GetRotation world
-                            let scale = this.GetScale world
-                            let world = this.SetPositionLocal v3Zero world
-                            let world = this.SetRotationLocal quatIdentity world
-                            let world = this.SetScaleLocal v3One world
-                            let world = this.SetPosition position world
-                            let world = this.SetRotation rotation world
-                            let world = this.SetScale scale world
-                            world
-                        else world
+                    let position = this.GetPosition world
+                    let rotation = this.GetRotation world
+                    let scale = this.GetScale world
+                    let world = this.SetPositionLocal v3Zero world
+                    let world = this.SetRotationLocal quatIdentity world
+                    let world = this.SetScaleLocal v3One world
+                    let world = this.SetPosition position world
+                    let world = this.SetRotation rotation world
+                    let world = this.SetScale scale world
                     let elevation = this.GetElevation world
                     let world = this.SetElevationLocal 0.0f world
                     let world = this.SetElevation elevation world
@@ -512,19 +503,15 @@ module WorldEntityModule =
                 else world
             | (None, Some mountNew) ->
                 if mountNew.Exists world then
-                    let world =
-                        if not (World.getEntityPhysical this world && World.getEntityPhysical mountNew world) then
-                            let affineMatrixMount = World.getEntityAffineMatrix mountNew world
-                            let affineMatrixMounter = World.getEntityAffineMatrix this world
-                            let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
-                            let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
-                            let rotationLocal = affineMatrixLocal.Rotation
-                            let scaleLocal = affineMatrixLocal.Scale
-                            let world = this.SetPositionLocal positionLocal world
-                            let world = this.SetRotationLocal rotationLocal world
-                            let world = this.SetScaleLocal scaleLocal world
-                            world
-                        else world
+                    let affineMatrixMount = World.getEntityAffineMatrix mountNew world
+                    let affineMatrixMounter = World.getEntityAffineMatrix this world
+                    let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
+                    let positionLocal = affineMatrixLocal.Translation // TODO: use Matrix4x4.Decompose here.
+                    let rotationLocal = affineMatrixLocal.Rotation
+                    let scaleLocal = affineMatrixLocal.Scale
+                    let world = this.SetPositionLocal positionLocal world
+                    let world = this.SetRotationLocal rotationLocal world
+                    let world = this.SetScaleLocal scaleLocal world
                     let elevationLocal = this.GetElevation world - mountNew.GetElevation world
                     let world = this.SetElevationLocal elevationLocal world
                     let world = this.SetEnabled (this.GetEnabledLocal world && mountNew.GetEnabled world) world
