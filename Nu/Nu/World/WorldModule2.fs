@@ -445,31 +445,7 @@ module WorldModule2 =
                                 then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
                                 else targetDescriptor
                             | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
-                        | (false, _) ->
-                            match targetDescriptor.EntityProperties.TryGetValue propertyName with
-                            | (true, targetPropertySymbol) ->
-                                let overlayNameOpt =
-                                    match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
-                                    | (true, overlayNameOptSymbol) ->
-                                        try symbolToValue<string option> overlayNameOptSymbol
-                                        with _ -> Some (Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName)
-                                    | (false, _) -> Some (Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName)
-                                match overlayNameOpt with
-                                | Some overlayName ->
-                                    let facetNames =
-                                        match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
-                                        | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
-                                        | (false, _) -> Set.empty
-                                    let overlayer = World.getOverlayer world
-                                    let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
-                                    match overlaySymbols.TryGetValue propertyName with
-                                    | (true, overlayPropertySymbol) ->
-                                        if targetPropertySymbol = overlayPropertySymbol
-                                        then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
-                                        else targetDescriptor
-                                    | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
-                                | None ->  targetDescriptor // overlay name opt explicitly assinged to None - no valid defaults
-                            | (false, _) -> targetDescriptor // can't find matching target property - nothing to do
+                        | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
                     else targetDescriptor)
                     targetDescriptor
                     currentDescriptor.EntityProperties.Pairs
@@ -506,8 +482,8 @@ module WorldModule2 =
         /// Propagate the structure of an entity to all other entities with it as their propagation source.
         static member propagateEntityStructure entity world =
             let targets = World.getPropagationTargets entity world
-            let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let currentDescriptor = World.writeEntity entity EntityDescriptor.empty world
+            let previousDescriptor = Option.defaultValue currentDescriptor (entity.GetPropagatedDescriptorOpt world)
             let world =
                 Seq.fold (fun world target ->
                     let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
