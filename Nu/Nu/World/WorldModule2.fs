@@ -432,8 +432,9 @@ module WorldModule2 =
 
             // propagate descriptor at this level
             let propagatedDescriptor =
-                Seq.fold (fun targetDescriptor (propertyName, currentSymbol) ->
+                Seq.fold (fun targetDescriptor (propertyName, currentDescriptorSymbol) ->
                     if  propertyName <> nameof Entity.Name &&
+                        propertyName <> nameof Entity.PropagationSourceOpt &&
                         propertyName <> nameof Entity.PropagatedDescriptorOpt &&
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
@@ -443,10 +444,35 @@ module WorldModule2 =
                             match targetDescriptor.EntityProperties.TryGetValue propertyName with
                             | (true, targetPropertySymbol) ->
                                 if targetPropertySymbol = previousPropertySymbol
-                                then { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
+                                then { targetDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol targetDescriptor.EntityProperties }
                                 else targetDescriptor
-                            | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
-                        | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentSymbol targetDescriptor.EntityProperties }
+                            | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol targetDescriptor.EntityProperties }
+                        | (false, _) ->
+                            match targetDescriptor.EntityProperties.TryGetValue propertyName with
+                            | (true, targetPropertySymbol) ->
+                                match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
+                                | (true, overlayNameOptSymbol) ->
+                                    try let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
+                                        let overlayName =
+                                            match overlayNameOpt with
+                                            | Some overlayName -> overlayName
+                                            | None -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
+                                        let facetNames =
+                                            match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
+                                            | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
+                                            | (false, _) -> Set.empty
+                                        let overlayer = World.getOverlayer world
+                                        let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
+                                        match overlaySymbols.TryGetValue propertyName with
+                                        | (true, overlayPropertySymbol) ->
+                                            if targetPropertySymbol = overlayPropertySymbol // property unchanged from default value
+                                            then { targetDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol targetDescriptor.EntityProperties }
+                                            else targetDescriptor
+                                        | (false, _) ->
+                                            { targetDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol targetDescriptor.EntityProperties }
+                                    with _ -> targetDescriptor
+                                | (false, _) -> targetDescriptor
+                            | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol targetDescriptor.EntityProperties }
                     else targetDescriptor)
                     targetDescriptor
                     currentDescriptor.EntityProperties.Pairs
@@ -487,14 +513,16 @@ module WorldModule2 =
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
                 Seq.fold (fun world target ->
-                    let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
-                    let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world
-                    let order = target.GetOrder world
-                    let world = World.destroyEntityImmediate target world
-                    let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
-                    let world = World.propagateEntityAffineMatrix target world
-                    let world = target.SetOrder order world
-                    world)
+                    if World.getEntityExists target world then
+                        let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
+                        let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world
+                        let order = target.GetOrder world
+                        let world = World.destroyEntityImmediate target world
+                        let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
+                        let world = World.propagateEntityAffineMatrix target world
+                        let world = target.SetOrder order world
+                        world
+                    else world)
                     world targets
             let currentDescriptor = { currentDescriptor with EntityProperties = Map.remove (nameof Entity.PropagatedDescriptorOpt) currentDescriptor.EntityProperties }
             entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
