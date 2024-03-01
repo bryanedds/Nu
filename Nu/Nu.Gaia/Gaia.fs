@@ -1950,23 +1950,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let propertyValueStr = converter.ConvertToString propertyValue
         match propertyValue with
         | :? Frustum -> () // TODO: P1: implement FrustumConverter.
-        | :? bool as b -> let mutable b' = b in if ImGui.Checkbox (name, &b') then setProperty b' propertyDescriptor simulant
-        | :? int8 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int8 i') propertyDescriptor simulant
-        | :? uint8 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint8 i') propertyDescriptor simulant
-        | :? int16 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int16 i') propertyDescriptor simulant
-        | :? uint16 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint16 i') propertyDescriptor simulant
-        | :? int32 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int32 i') propertyDescriptor simulant
-        | :? uint32 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint32 i') propertyDescriptor simulant
-        | :? int64 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (int64 i') propertyDescriptor simulant
-        | :? uint64 as i -> let mutable i' = int32 i in if ImGui.DragInt (name, &i') then setProperty (uint64 i') propertyDescriptor simulant
-        | :? single as f -> let mutable f' = single f in if ImGui.DragFloat (name, &f', snapDrag) then setProperty (single f') propertyDescriptor simulant
-        | :? double as f -> let mutable f' = single f in if ImGui.DragFloat (name, &f', snapDrag) then setProperty (double f') propertyDescriptor simulant
-        | :? Vector2 as v -> let mutable v' = v in if ImGui.DragFloat2 (name, &v', snapDrag) then setProperty v' propertyDescriptor simulant
-        | :? Vector3 as v -> let mutable v' = v in if ImGui.DragFloat3 (name, &v', snapDrag) then setProperty v' propertyDescriptor simulant
-        | :? Vector4 as v -> let mutable v' = v in if ImGui.DragFloat4 (name, &v', snapDrag) then setProperty v' propertyDescriptor simulant
-        | :? Vector2i as v -> let mutable v' = v in if ImGui.DragInt2 (name, &v'.X, snapDrag) then setProperty v' propertyDescriptor simulant
-        | :? Vector3i as v -> let mutable v' = v in if ImGui.DragInt3 (name, &v'.X, snapDrag) then setProperty v' propertyDescriptor simulant
-        | :? Vector4i as v -> let mutable v' = v in if ImGui.DragInt4 (name, &v'.X, snapDrag) then setProperty v' propertyDescriptor simulant
+        | :? bool as b -> let mutable b = b in if ImGui.Checkbox (name, &b) then setProperty b propertyDescriptor simulant
+        | :? int8 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int8 i) propertyDescriptor simulant
+        | :? uint8 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint8 i) propertyDescriptor simulant
+        | :? int16 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int16 i) propertyDescriptor simulant
+        | :? uint16 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint16 i) propertyDescriptor simulant
+        | :? int32 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int32 i) propertyDescriptor simulant
+        | :? uint32 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint32 i) propertyDescriptor simulant
+        | :? int64 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int64 i) propertyDescriptor simulant
+        | :? uint64 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint64 i) propertyDescriptor simulant
+        | :? single as f -> let mutable f = single f in if ImGui.DragFloat (name, &f, snapDrag) then setProperty (single f) propertyDescriptor simulant
+        | :? double as f -> let mutable f = single f in if ImGui.DragFloat (name, &f, snapDrag) then setProperty (double f) propertyDescriptor simulant
+        | :? Vector2 as v -> let mutable v = v in if ImGui.DragFloat2 (name, &v, snapDrag) then setProperty v propertyDescriptor simulant
+        | :? Vector3 as v -> let mutable v = v in if ImGui.DragFloat3 (name, &v, snapDrag) then setProperty v propertyDescriptor simulant
+        | :? Vector4 as v -> let mutable v = v in if ImGui.DragFloat4 (name, &v, snapDrag) then setProperty v propertyDescriptor simulant
+        | :? Vector2i as v -> let mutable v = v in if ImGui.DragInt2 (name, &v.X, snapDrag) then setProperty v propertyDescriptor simulant
+        | :? Vector3i as v -> let mutable v = v in if ImGui.DragInt3 (name, &v.X, snapDrag) then setProperty v propertyDescriptor simulant
+        | :? Vector4i as v -> let mutable v = v in if ImGui.DragInt4 (name, &v.X, snapDrag) then setProperty v propertyDescriptor simulant
         | :? MaterialProperties as mp -> imGuiEditMaterialPropertiesProperty mp propertyDescriptor simulant
         | :? Material as m -> imGuiEditMaterialProperty m propertyDescriptor simulant
         | :? Box2 as b ->
@@ -1977,9 +1977,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let minChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Min via " + name, &min, snapDrag)
             focusProperty ()
             let sizeChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Size via " + name, &size, snapDrag)
-            if minChanged || sizeChanged then
-                let b' = box2 min size
-                setProperty b' propertyDescriptor simulant
+            if minChanged || sizeChanged then setProperty (box2 min size) propertyDescriptor simulant
             ImGui.Unindent ()
         | :? Box3 as b ->
             ImGui.Text name
@@ -1989,9 +1987,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let minChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Min via " + name, &min, snapDrag)
             focusProperty ()
             let sizeChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Size via " + name, &size, snapDrag)
-            if minChanged || sizeChanged then
-                let b' = box3 min size
-                setProperty b' propertyDescriptor simulant
+            if minChanged || sizeChanged then setProperty (box3 min size) propertyDescriptor simulant
             ImGui.Unindent ()
         | :? Box2i as b ->
             ImGui.Text name
@@ -2001,20 +1997,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let minChanged = ImGui.DragInt2 (propertyLabelPrefix + "Min via " + name, &min.X, snapDrag)
             focusProperty ()
             let sizeChanged = ImGui.DragInt2 (propertyLabelPrefix + "Size via " + name, &size.X, snapDrag)
-            if minChanged || sizeChanged then
-                let b' = box2i min size
-                setProperty b' propertyDescriptor simulant
+            if minChanged || sizeChanged then setProperty (box2i min size) propertyDescriptor simulant
             ImGui.Unindent ()
         | :? Quaternion as q ->
             let mutable v = v4 q.X q.Y q.Z q.W
-            if ImGui.DragFloat4 (name, &v, snapDrag) then
-                let q' = quat v.X v.Y v.Z v.W
-                setProperty q' propertyDescriptor simulant
+            if ImGui.DragFloat4 (name, &v, snapDrag) then setProperty (quat v.X v.Y v.Z v.W) propertyDescriptor simulant
         | :? Color as c ->
             let mutable v = v4 c.R c.G c.B c.A
-            if ImGui.ColorEdit4 (name, &v) then
-                let c' = color v.X v.Y v.Z v.W
-                setPropertyValue c' propertyDescriptor simulant
+            if ImGui.ColorEdit4 (name, &v) then setPropertyValue (color v.X v.Y v.Z v.W) propertyDescriptor simulant
         | :? RenderStyle as style ->
             let mutable index = match style with Deferred -> 0 | Forward _ -> 1
             let (changed, style) =
