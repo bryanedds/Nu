@@ -2189,28 +2189,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.PopID ()
                     ImGui.SameLine ()
                     ImGui.Text name
-                elif name = Constants.Engine.FacetNamesPropertyName && ty = typeof<string Set> then
-                    let facetNameEmpty = "(Empty)"
-                    let facetNamesValue = scvalue<string Set> propertyValueStr
-                    let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
-                    let mutable facetNamesValue' = Set.empty
-                    let mutable changed = false
-                    ImGui.Indent ()
-                    for i in 0 .. facetNamesValue.Count do
-                        let last = i = facetNamesValue.Count
-                        let mutable facetName = if not last then Seq.item i facetNamesValue else facetNameEmpty
-                        if ImGui.BeginCombo ("##" + name + string i, facetName) then
-                            let facetNameSelectablePicked = tryPickName facetNamesSelectable
-                            for facetNameSelectable in facetNamesSelectable do
-                                if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.2f
-                                if ImGui.Selectable (facetNameSelectable, strEq facetName newEntityDispatcherName) then
-                                    facetName <- facetNameSelectable
-                                    changed <- true
-                            ImGui.EndCombo ()
-                        if not last then focusProperty ()
-                        if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
-                    ImGui.Unindent ()
-                    if changed then setPropertyValueIgnoreError facetNamesValue' propertyDescriptor simulant
                 else
                     let mutable propertyValueStr = propertyValueStr
                     if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> propertyValueStrPrevious then
@@ -2222,8 +2200,44 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         propertyValueStrPrevious <- propertyValueStr
         focusProperty ()
 
+    let private imGuiEditEntityAppliedTypes (entity : Entity) =
+        let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
+        if ImGui.BeginCombo ("DispatcherName", dispatcherNameCurrent) then
+            let dispatcherNames = (World.getEntityDispatchers world).Keys
+            let dispatcherNamePicked = tryPickName dispatcherNames
+            for dispatcherName in dispatcherNames do
+                if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
+                if ImGui.Selectable (dispatcherName, strEq dispatcherName dispatcherNameCurrent) then
+                    if not (entity.GetProtected world) then
+                        snapshot ()
+                        world <- World.changeEntityDispatcher dispatcherName entity world
+                    else
+                        messageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."
+            ImGui.EndCombo ()
+        let facetNameEmpty = "(Empty)"
+        let facetNamesValue = entity.GetFacetNames world
+        let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
+        let facetNamesPropertyDescriptor = { PropertyName = Constants.Engine.FacetNamesPropertyName; PropertyType = typeof<string Set> }
+        let mutable facetNamesValue' = Set.empty
+        let mutable changed = false
+        ImGui.Indent ()
+        for i in 0 .. facetNamesValue.Count do
+            let last = i = facetNamesValue.Count
+            let mutable facetName = if not last then Seq.item i facetNamesValue else facetNameEmpty
+            if ImGui.BeginCombo ("Facet Name " + string i, facetName) then
+                let facetNameSelectablePicked = tryPickName facetNamesSelectable
+                for facetNameSelectable in facetNamesSelectable do
+                    if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.2f
+                    if ImGui.Selectable (facetNameSelectable, strEq facetName newEntityDispatcherName) then
+                        facetName <- facetNameSelectable
+                        changed <- true
+                ImGui.EndCombo ()
+            if not last && ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (facetNamesPropertyDescriptor, entity :> Simulant)
+            if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
+        ImGui.Unindent ()
+        if changed then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity
+
     let private imGuiEditProperties (simulant : Simulant) =
-        let mutable simulant = simulant
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
         for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
@@ -2276,7 +2290,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
                         elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
                             let mutable clickToEditModel = "*click to edit*"
-                            ImGui.InputText ("Model", &clickToEditModel, 256u) |> ignore<bool>
+                            ImGui.InputText ("Model", &clickToEditModel, uint clickToEditModel.Length, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                             if ImGui.IsItemFocused () then
                                 focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
                                 propertyEditorFocusRequested <- true
@@ -2292,12 +2306,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             world <- World.edit replaceProperty simulant world
                             if not replaced then
                                 imGuiEditProperty getPropertyValue setPropertyValue focusProperty "" propertyDescriptor simulant
-                                if propertyDescriptor.PropertyName = Constants.Engine.OverlayNameOptPropertyName then
-                                    match simulant with
-                                    | :? Entity as entity when World.hasPropagationTargets entity world && ImGui.Button "Propagate Structure" ->
-                                        snapshot ()
-                                        world <- World.propagateEntityStructure entity world
-                                    | _ -> ()
+            if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
+                if ImGui.CollapsingHeader ("Applied Types", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                    match simulant with
+                    | :? Game as game ->
+                        let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
+                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                    | :? Screen as screen ->
+                        let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
+                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                    | :? Group as group ->
+                        let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
+                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                    | :? Entity as entity ->
+                        imGuiEditEntityAppliedTypes entity
+                    | _ -> Log.infoOnce "Unexpected simulant type."
         let appendProperties =
             { Snapshot = fun world -> snapshot (); world
               UnfocusProperty = fun world -> focusedPropertyDescriptorOpt <- None; world }

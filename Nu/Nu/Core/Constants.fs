@@ -47,6 +47,7 @@ module Engine =
     let [<Literal>] XtensionPropertyName = "Xtension"
     let [<Literal>] MountOptPropertyName = "MountOpt"
     let [<Literal>] PropagationSourceOptPropertyName = "PropagationSourceOpt"
+    let [<Literal>] PropagatedDescriptorOptPropertyName = "PropagatedDescriptorOpt"
     let [<Literal>] ModelPropertyName = "Model"
     let [<Literal>] FacetNamesPropertyName = "FacetNames"
     let [<Literal>] TransformPropertyName = "Transform"

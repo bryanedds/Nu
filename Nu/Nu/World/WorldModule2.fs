@@ -499,6 +499,22 @@ module WorldModule2 =
             let currentDescriptor = { currentDescriptor with EntityProperties = Map.remove (nameof Entity.PropagatedDescriptorOpt) currentDescriptor.EntityProperties }
             entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
 
+        static member changeEntityDispatcher dispatcherName entity world =
+            let dispatcherNameCurrent = getTypeName (World.getEntityDispatcher entity world)
+            if dispatcherNameCurrent <> dispatcherName then
+                let dispatchers = World.getEntityDispatchers world
+                if dispatchers.ContainsKey dispatcherName then
+                    let entityDescriptor = World.writeEntity entity EntityDescriptor.empty world
+                    let entityDescriptor = { entityDescriptor with EntityDispatcherName = dispatcherName }
+                    let order = entity.GetOrder world
+                    let world = World.destroyEntityImmediate entity world
+                    let world = World.readEntity entityDescriptor (Some entity.Name) entity.Parent world |> snd
+                    let world = entity.SetOrder order world
+                    let world = entity.AutoBounds world
+                    world
+                else world
+            else world
+
         static member internal makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
             let facets = facets |> Map.toValueList |> List.map box
@@ -1717,7 +1733,6 @@ module EntityPropertyDescriptor =
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "PropagationSourceOpt" || propertyName = "OverlayNameOpt" then "Ambient Properties"
-        elif propertyName = "FacetNames" then "Applied Facets"
         elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
              propertyName = "Elevation" || propertyName = "ElevationLocal" ||
              propertyName = "Offset" || propertyName = "Overflow" ||
@@ -1734,9 +1749,11 @@ module EntityPropertyDescriptor =
 
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if  propertyName = "Rotation" ||
-            propertyName = "RotationLocal" ||
-            propertyName = "PropagatedDescriptorOpt" then false
+        if  propertyName = Constants.Engine.FacetNamesPropertyName ||
+            propertyName = Constants.Engine.PropagatedDescriptorOptPropertyName ||
+            propertyName = "Rotation" ||
+            propertyName = "RotationLocal" then
+            false
         else
             propertyName = "Degrees" ||
             propertyName = "DegreesLocal" ||
