@@ -800,7 +800,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
         if surnames.Length > 1 then
-            world <- entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+            world <-
+                if World.getEntityAllowedToMount entity world
+                then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                else world
         match entity.TryGetProperty (nameof entity.ProbeBounds) world with
         | Some property when property.PropertyType = typeof<Box3> ->
             world <- entity.ResetProbeBounds world
@@ -1416,7 +1419,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     snapshot ()
                                     world <- World.insertEntityOrder sourceEntity previousOpt next world
                                     world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                    world <- sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                                    world <-
+                                        if World.getEntityAllowedToMount sourceEntity' world
+                                        then sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                                        else world
                                     if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
                                     selectEntityOpt (Some sourceEntity')
                                     showSelectedEntity <- true
@@ -1428,7 +1434,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if not (sourceEntity'.Exists world) then
                                     snapshot ()
                                     world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                    world <- sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                                    world <-
+                                        if World.getEntityAllowedToMount sourceEntity' world
+                                        then sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                                        else world
                                     if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
                                     selectEntityOpt (Some sourceEntity')
                                     showSelectedEntity <- true
@@ -2715,7 +2724,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if not (sourceEntity.GetProtected world) then
                                         let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
                                         if not (sourceEntity'.Exists world) then
-                                            world <- sourceEntity.SetMountOptWithAdjustment None world
+                                            world <-
+                                                if World.getEntityAllowedToMount sourceEntity world
+                                                then sourceEntity.SetMountOptWithAdjustment None world
+                                                else world
                                             world <- World.renameEntityImmediate sourceEntity sourceEntity' world
                                             if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
                                             selectEntityOpt (Some sourceEntity')

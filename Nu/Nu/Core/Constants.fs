@@ -50,6 +50,7 @@ module Engine =
     let [<Literal>] ModelPropertyName = "Model"
     let [<Literal>] FacetNamesPropertyName = "FacetNames"
     let [<Literal>] TransformPropertyName = "Transform"
+    let [<Literal>] BodyTypePropertyName = "BodyType"
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "Refinement"
     let [<Uniform>] Entity2dSizeDefault = Vector3 (Meter2d, Meter2d, 0.0f)

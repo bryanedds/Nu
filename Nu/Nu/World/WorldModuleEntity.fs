@@ -369,7 +369,6 @@ module WorldModuleEntity =
         static member internal getEntityLight entity world = (World.getEntityState entity world).Light
         static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
-        static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).Imperative
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) (World.getDestructionListRev world)
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
         static member internal getEntityPropagationSourceOpt entity world = (World.getEntityState entity world).PropagationSourceOpt
@@ -566,7 +565,17 @@ module WorldModuleEntity =
             let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
-        /// Check than an entity has any other entitiese mounted on it.
+        /// Check that an entity should be allowed to mount another entity.
+        static member getEntityAllowedToMount entity world =
+            let mutable property = Unchecked.defaultof<Property>
+            if  World.tryGetEntityProperty (Constants.Engine.BodyTypePropertyName, entity, world, &property) &&
+                property.PropertyType = typeof<BodyType> then
+                match property.PropertyValue :?> BodyType with
+                | Static | Kinematic -> true
+                | Dynamic -> false
+            else true
+
+        /// Check that an entity has any other entities mounted on it.
         static member getEntityHasMounters entity world =
             match world.EntityMounts.TryGetValue entity with
             | (true, mounters) -> Seq.exists (flip World.getEntityExists world) mounters
@@ -620,9 +629,10 @@ module WorldModuleEntity =
                 World.publishPlus mountData (Events.UnmountEvent --> mountOld) eventTrace entity false false world
             | None -> world
 
-        static member internal propagateEntityAffineMatrix3 fromPhysical mount mounter world =
+        static member internal propagateEntityAffineMatrix3 mount mounter world =
             let mounterState = World.getEntityState mounter world
-            if not (fromPhysical && mounterState.Physical) then
+            if  not mounterState.Physical || // OPTIMIZATION: skip call to getEntityAllowedToMount when non-physical.
+                World.getEntityAllowedToMount mounter world then
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
                 let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
                 let affineMatrix = affineMatrixLocal * affineMatrixWorld
@@ -639,8 +649,7 @@ module WorldModuleEntity =
         static member internal propagateEntityProperties3 mountOpt entity world =
             match Option.bind (tryResolve entity) mountOpt with
             | Some mount when World.getEntityExists mount world ->
-                let fromPhysical = World.getEntityPhysical mount world
-                let world = World.propagateEntityAffineMatrix3 fromPhysical mount entity world
+                let world = World.propagateEntityAffineMatrix3 mount entity world
                 let world = World.propagateEntityElevation3 mount entity world
                 let world = World.propagateEntityEnabled3 mount entity world
                 let world = World.propagateEntityVisible3 mount entity world
@@ -648,8 +657,7 @@ module WorldModuleEntity =
             | _ -> world
 
         static member internal propagateEntityAffineMatrix entity world =
-            let fromPhysical = World.getEntityPhysical entity world
-            World.traverseEntityMounters (World.propagateEntityAffineMatrix3 fromPhysical) entity world
+            World.traverseEntityMounters World.propagateEntityAffineMatrix3 entity world
 
         static member internal setEntityMountOpt value entity world =
             let entityState = World.getEntityState entity world
@@ -1809,9 +1817,8 @@ module WorldModuleEntity =
 
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>
-            match World.tryGetEntityProperty (propertyName, entity, world, &property) with
-            | true -> property
-            | false -> failwithf "Could not find property '%s'." propertyName
+            if World.tryGetEntityProperty (propertyName, entity, world, &property) then property
+            else failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityXtensionPropertyWithoutEvent propertyName (property : Property) entityState entity world =
             let mutable propertyOld = Unchecked.defaultof<_>
