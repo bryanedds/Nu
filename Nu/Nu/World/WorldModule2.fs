@@ -466,8 +466,8 @@ module WorldModule2 =
                         Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor EntityDescriptor.empty world)
                     | (Some _, None, None) ->
                         None
-                    | (Some previousDescriptor, None, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptor previousDescriptor EntityDescriptor.empty targetDescriptor world)
+                    | (Some _, None, Some _) ->
+                        None
                     | (None, None, Some targetDescriptor) ->
                         Some targetDescriptor
                     | (None, Some currentDescriptor, None) ->
