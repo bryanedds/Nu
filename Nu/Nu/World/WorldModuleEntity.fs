@@ -372,8 +372,8 @@ module WorldModuleEntity =
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) (World.getDestructionListRev world)
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
         static member internal getEntityPropagationSourceOpt entity world = (World.getEntityState entity world).PropagationSourceOpt
-        static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
+        static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityPropagatedDescriptorOpt entity world = (World.getEntityState entity world).PropagatedDescriptorOpt
         static member internal getEntityOrder entity world = (World.getEntityState entity world).Order
         static member internal getEntityId entity world = (World.getEntityState entity world).Id

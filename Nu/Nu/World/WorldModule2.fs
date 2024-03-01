@@ -1749,7 +1749,8 @@ module EntityPropertyDescriptor =
 
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if  propertyName = Constants.Engine.FacetNamesPropertyName ||
+        if  propertyName = Constants.Engine.OverlayNameOptPropertyName ||
+            propertyName = Constants.Engine.FacetNamesPropertyName ||
             propertyName = Constants.Engine.PropagatedDescriptorOptPropertyName ||
             propertyName = "Rotation" ||
             propertyName = "RotationLocal" then

@@ -2250,17 +2250,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Constants.Engine.NamePropertyName -> "!00" // put Name first
                         | Constants.Engine.ModelPropertyName -> "!01" // put Model second
                         | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
-                        | Constants.Engine.OverlayNameOptPropertyName -> "!03"
-                        | Constants.Engine.PropagationSourceOptPropertyName -> "!04"
-                        | nameof Entity.Position -> "!05"
-                        | nameof Entity.PositionLocal -> "!06"
-                        | nameof Entity.Degrees -> "!07"
-                        | nameof Entity.DegreesLocal -> "!08"
-                        | nameof Entity.Scale -> "!09"
-                        | nameof Entity.ScaleLocal -> "!10"
-                        | nameof Entity.Size -> "!11"
-                        | nameof Entity.Offset -> "!12"
-                        | nameof Entity.Overflow -> "!13"
+                        | Constants.Engine.PropagationSourceOptPropertyName -> "!03"
+                        | nameof Entity.Position -> "!04"
+                        | nameof Entity.PositionLocal -> "!05"
+                        | nameof Entity.Degrees -> "!06"
+                        | nameof Entity.DegreesLocal -> "!07"
+                        | nameof Entity.Scale -> "!08"
+                        | nameof Entity.ScaleLocal -> "!09"
+                        | nameof Entity.Size -> "!10"
+                        | nameof Entity.Offset -> "!11"
+                        | nameof Entity.Overflow -> "!12"
                         | name -> name)
                 for propertyDescriptor in propertyDescriptors do
                     if containsProperty propertyDescriptor simulant then

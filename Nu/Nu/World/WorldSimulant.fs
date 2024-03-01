@@ -303,8 +303,8 @@ module PropertyDescriptor =
         | Some simulant ->
             // OPTIMIZATION: seqs used for speed.
             let properties = typeof<'s>.GetProperties ()
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.TransformPropertyName) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Flags") properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
             let properties =
