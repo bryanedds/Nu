@@ -433,7 +433,8 @@ module WorldModule2 =
             // propagate descriptor at this level
             let propagatedDescriptor =
                 Seq.fold (fun targetDescriptor (propertyName, currentSymbol) ->
-                    if  propertyName <> nameof Entity.PropagatedDescriptorOpt &&
+                    if  propertyName <> nameof Entity.Name &&
+                        propertyName <> nameof Entity.PropagatedDescriptorOpt &&
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
                         propertyName <> nameof Entity.Elevation then
@@ -483,7 +484,7 @@ module WorldModule2 =
         static member propagateEntityStructure entity world =
             let targets = World.getPropagationTargets entity world
             let currentDescriptor = World.writeEntity entity EntityDescriptor.empty world
-            let previousDescriptor = Option.defaultValue currentDescriptor (entity.GetPropagatedDescriptorOpt world)
+            let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
                 Seq.fold (fun world target ->
                     let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
