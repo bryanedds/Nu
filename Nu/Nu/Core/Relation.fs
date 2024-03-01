@@ -114,9 +114,10 @@ module Relation =
         /// Resolve a relation from an address.
         static member resolve<'a, 'b> (address : 'a Address) (relation : 'b Relation) : 'b Address =
             // TODO: optimize this with hand-written code.
+            // NOTE: we specially handle '?' with a temporary substitution.
             let addressStr = string address
             let relationStr = string relation
-            let pathStr = relationStr.Replace("^", "..").Replace('~', '.')
+            let pathStr = relationStr.Replace("^", "..").Replace('~', '.').Replace('?', '\b')
             let resultStr =
                 addressStr + Constants.Address.SeparatorStr + pathStr |>
                 (fun path -> Uri(Uri("http://example.com/"), path).AbsolutePath.TrimStart('/')) |>
@@ -126,6 +127,7 @@ module Relation =
                 if resultStrLen > 0 && resultStr.[dec resultStrLen] = '/'
                 then resultStr.Substring (0, dec resultStrLen)
                 else resultStr
+            let resultStr = resultStr.Replace('\b', '?')
             let result = Address.makeFromString resultStr
             result
 
@@ -133,6 +135,7 @@ module Relation =
         static member relate<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Relation =
             // TODO: P1: use Uri.MakeRelativeUri here instead of this likely screwed up algorithm -
             // https://stackoverflow.com/a/1766773/1082782
+            // ...and don't forget to special handle the '?' character like resolve does!
             let names = Address.getNames address
             let names2 = Address.getNames address2
             let namesMatching =

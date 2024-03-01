@@ -2102,7 +2102,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let relationType = ty.GenericTypeArguments.[0]
                                 let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
                                 let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
                                 setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant
                             elif ty.GenericTypeArguments.[0] = typeof<Entity> then
                                 setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant
