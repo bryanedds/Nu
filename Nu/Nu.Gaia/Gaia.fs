@@ -120,6 +120,8 @@ module Gaia =
     let mutable private projectImperativeExecution = false
     let mutable private groupFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
     let mutable private groupFilePaths = Map.empty<Group Address, string>
+    let mutable private entityFileDialogState : ImGuiFileDialogState = null // this will be initialized on start
+    let mutable private entityFilePaths = Map.empty<Entity Address, string>
     let mutable private assetGraphStr = null // this will be initialized on start
     let mutable private overlayerStr = null // this will be initialized on start
 
@@ -136,6 +138,8 @@ module Gaia =
     let mutable private showOpenGroupDialog = false
     let mutable private showSaveGroupDialog = false
     let mutable private showRenameGroupDialog = false
+    let mutable private showOpenEntityDialog = false
+    let mutable private showSaveEntityDialog = false
     let mutable private showRenameEntityDialog = false
     let mutable private showConfirmExitDialog = false
     let mutable private showRestartDialog = false
@@ -155,6 +159,8 @@ module Gaia =
         showOpenGroupDialog ||
         showSaveGroupDialog ||
         showRenameGroupDialog ||
+        showOpenEntityDialog ||
+        showSaveEntityDialog ||
         showRenameEntityDialog ||
         showConfirmExitDialog ||
         showRestartDialog ||
@@ -332,6 +338,16 @@ Collapsed=0
 [Window][Choose an Asset...]
 Pos=796,323
 Size=336,458
+Collapsed=0
+
+[Window][Choose a nuentity file...]
+Pos=602,352
+Size=677,399
+Collapsed=0
+
+[Window][Save a nuentity file...]
+Pos=613,358
+Size=664,399
 Collapsed=0
 
 [Window][Rename group...]
@@ -742,28 +758,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     (* Editor Commands *)
 
-    let private createEntity atMouse inHierarchy =
-        snapshot ()
-        let dispatcherName = newEntityDispatcherName
-        let overlayNameDescriptor =
-            match newEntityOverlayName with
-            | "(Default Overlay)" -> DefaultOverlay
-            | "(Routed Overlay)" -> RoutedOverlay
-            | "(No Overlay)" -> NoOverlay
-            | overlayName -> ExplicitOverlay overlayName
-        let name = World.generateEntitySequentialName dispatcherName selectedGroup world
-        let surnames =
-            match selectedEntityOpt with
-            | Some entity ->
-                if inHierarchy then
-                    if entity.Exists world then Array.add name entity.Surnames
-                    else [|name|]
-                else
-                    match newEntityParentOpt with
-                    | Some newEntityParent when newEntityParent.Exists world -> Array.add name newEntityParent.Surnames
-                    | Some _ | None -> [|name|]
-            | None -> [|name|]
-        let (entity, wtemp) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup world in world <- wtemp
+    let private inductEntity atMouse (entity : Entity) =
         let (positionSnap, degreesSnap, scaleSnap) = getSnaps ()
         let viewport = World.getViewport world
         let mutable entityTransform = entity.GetTransform world
@@ -799,7 +794,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if not snaps2dSelected && ImGui.IsCtrlUp ()
             then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
-        if surnames.Length > 1 then
+        if entity.Surnames.Length > 1 then
             world <-
                 if World.getEntityAllowedToMount entity world
                 then entity.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
@@ -808,68 +803,124 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some property when property.PropertyType = typeof<Box3> ->
             world <- entity.ResetProbeBounds world
         | Some _ | None -> ()
+
+    let private createEntity atMouse inHierarchy =
+        snapshot ()
+        let dispatcherName = newEntityDispatcherName
+        let overlayNameDescriptor =
+            match newEntityOverlayName with
+            | "(Default Overlay)" -> DefaultOverlay
+            | "(Routed Overlay)" -> RoutedOverlay
+            | "(No Overlay)" -> NoOverlay
+            | overlayName -> ExplicitOverlay overlayName
+        let name = World.generateEntitySequentialName dispatcherName selectedGroup world
+        let surnames =
+            match selectedEntityOpt with
+            | Some entity ->
+                if inHierarchy then
+                    if entity.Exists world then Array.add name entity.Surnames
+                    else [|name|]
+                else
+                    match newEntityParentOpt with
+                    | Some newEntityParent when newEntityParent.Exists world -> Array.add name newEntityParent.Surnames
+                    | Some _ | None -> [|name|]
+            | None -> [|name|]
+        let (entity, wtemp) = World.createEntity5 dispatcherName overlayNameDescriptor (Some surnames) selectedGroup world in world <- wtemp
+        inductEntity atMouse entity
         selectEntityOpt (Some entity)
         ImGui.SetWindowFocus "Viewport"
         showSelectedEntity <- true
 
-    let private trySaveSelectedGroup filePath =
-        try World.writeGroupToFile filePath selectedGroup world
-            try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
-                if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
-                    File.Copy (filePath, deploymentPath, true)
-            with exn ->
-                messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
-            groupFilePaths <- Map.add selectedGroup.GroupAddress groupFileDialogState.FilePath groupFilePaths
-            true
-        with exn ->
-            messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
-            false
-
-    let private tryLoadSelectedGroup filePath =
-
-        // ensure group isn't protected
-        if not (selectedGroup.GetProtected world) then
-
-            // attempt to load group descriptor
-            let groupAndDescriptorOpt =
-                try let groupDescriptorStr = File.ReadAllText filePath
-                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                    let groupName =
-                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
-                        | Some (Atom (name, _)) -> name
-                        | _ -> failwithumf ()
-                    Right (selectedScreen / groupName, groupDescriptor)
+    let private trySaveSelectedEntity filePath =
+        match selectedEntityOpt with
+        | Some selectedEntity ->
+            try World.writeEntityToFile filePath selectedEntity world
+                try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
+                    if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
+                        File.Copy (filePath, deploymentPath, true)
                 with exn ->
-                    Left exn
+                    messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
+                entityFilePaths <- Map.add selectedEntity.EntityAddress entityFileDialogState.FilePath entityFilePaths
+                true
+            with exn ->
+                messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
+                false
+        | None -> false
 
-            // attempt to load group
-            match groupAndDescriptorOpt with
-            | Right (group, groupDescriptor) ->
+    let private tryLoadSelectedEntity filePath =
+
+        // ensure entity isn't protected
+        if selectedEntityOpt.IsNone || not (selectedEntityOpt.Value.GetProtected world) then
+
+            // attempt to load entity descriptor
+            let entityAndDescriptorOpt =
+                try let entityDescriptorStr = File.ReadAllText filePath
+                    let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+                    let entityProperties = Map.removeMany [nameof Entity.Position; nameof Entity.Rotation; nameof Entity.Elevation] entityDescriptor.EntityProperties
+                    let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
+                    let entity =
+                        match selectedEntityOpt with
+                        | Some selectedEntity -> selectedEntity
+                        | None ->
+                            let name = Gen.nameForEditor entityDescriptor.EntityDispatcherName
+                            let surnames =
+                                match newEntityParentOpt with
+                                | Some newEntityParent when newEntityParent.Exists world -> Array.add name newEntityParent.Surnames
+                                | Some _ | None -> [|name|]
+                            Nu.Entity (Array.append selectedGroup.GroupAddress.Names surnames)
+                    Right (entity, entityDescriptor)
+                with exn -> Left exn
+
+            // attempt to load entity
+            match entityAndDescriptorOpt with
+            | Right (entity, entityDescriptor) ->
                 let worldOld = world
-                try if group.Exists world then
-                        world <- World.destroyGroupImmediate selectedGroup world
-                    let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
-                    selectGroup group
-                    match selectedEntityOpt with
-                    | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
-                    | Some _ | None -> ()
-                    groupFilePaths <- Map.add group.GroupAddress groupFileDialogState.FilePath groupFilePaths
-                    groupFileDialogState.FileName <- ""
+                try if entity.Exists world then
+                        let order = entity.GetOrder world
+                        let position = entity.GetPosition world
+                        let rotation = entity.GetRotation world
+                        let elevation = entity.GetElevation world
+                        let propagatedDescriptorOpt = entity.GetPropagatedDescriptorOpt world
+                        world <- World.destroyEntityImmediate entity world
+                        let (entity, wtemp) = World.readEntity entityDescriptor (Some entity.Name) entity.Parent world in world <- wtemp
+                        world <- entity.SetOrder order world
+                        world <- entity.SetPosition position world
+                        world <- entity.SetRotation rotation world
+                        world <- entity.SetElevation elevation world
+                        world <- entity.SetPropagatedDescriptorOpt propagatedDescriptorOpt world
+                    else
+                        let (entity, wtemp) = World.readEntity entityDescriptor (Some entity.Name) entity.Parent world in world <- wtemp
+                        inductEntity false entity
+                    selectedEntityOpt <- Some entity
+                    entityFilePaths <- Map.add entity.EntityAddress entityFileDialogState.FilePath entityFilePaths
+                    entityFileDialogState.FileName <- ""
                     true
                 with exn ->
                     world <- World.switch worldOld
-                    messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                    messageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
                     false
 
             // error
             | Left exn ->
-                messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                messageBoxOpt <- Some ("Could not load entity file due to: " + scstring exn)
                 false
 
         // error
         else
             messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC API)."
             false
+
+    let private tryDeleteSelectedEntity () =
+        match selectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            if not (entity.GetProtected world) then
+                snapshot ()
+                world <- World.destroyEntity entity world
+                true
+            else
+                messageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC API)."
+                false
+        | Some _ | None -> false
 
     let private tryAutoBoundsSelectedEntity () =
         match selectedEntityOpt with
@@ -895,18 +946,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
             | Some _ | None -> ()
-
-    let private tryDeleteSelectedEntity () =
-        match selectedEntityOpt with
-        | Some entity when entity.Exists world ->
-            if not (entity.GetProtected world) then
-                snapshot ()
-                world <- World.destroyEntity entity world
-                true
-            else
-                messageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC API)."
-                false
-        | Some _ | None -> false
 
     let private tryCutSelectedEntity () =
         match selectedEntityOpt with
@@ -951,6 +990,63 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             snapshot ()
             setEntityFamilyStatic static_ entity
         | Some _ | None -> ()
+
+    let private trySaveSelectedGroup filePath =
+        try World.writeGroupToFile filePath selectedGroup world
+            try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
+                if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
+                    File.Copy (filePath, deploymentPath, true)
+            with exn ->
+                messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
+            groupFilePaths <- Map.add selectedGroup.GroupAddress groupFileDialogState.FilePath groupFilePaths
+            true
+        with exn ->
+            messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
+            false
+
+    let private tryLoadSelectedGroup filePath =
+
+        // ensure group isn't protected
+        if not (selectedGroup.GetProtected world) then
+
+            // attempt to load group descriptor
+            let groupAndDescriptorOpt =
+                try let groupDescriptorStr = File.ReadAllText filePath
+                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                    let groupName =
+                        match groupDescriptor.GroupProperties.TryFind Constants.Engine.NamePropertyName with
+                        | Some (Atom (name, _) | Text (name, _)) -> name
+                        | _ -> failwithumf ()
+                    Right (selectedScreen / groupName, groupDescriptor)
+                with exn -> Left exn
+
+            // attempt to load group
+            match groupAndDescriptorOpt with
+            | Right (group, groupDescriptor) ->
+                let worldOld = world
+                try if group.Exists world then world <- World.destroyGroupImmediate selectedGroup world
+                    let (group, wtemp) = World.readGroup groupDescriptor None selectedScreen world in world <- wtemp
+                    selectGroup group
+                    match selectedEntityOpt with
+                    | Some entity when not (entity.Exists world) || entity.Group <> selectedGroup -> selectEntityOpt None
+                    | Some _ | None -> ()
+                    groupFilePaths <- Map.add group.GroupAddress groupFileDialogState.FilePath groupFilePaths
+                    groupFileDialogState.FileName <- ""
+                    true
+                with exn ->
+                    world <- World.switch worldOld
+                    messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                    false
+
+            // error
+            | Left exn ->
+                messageBoxOpt <- Some ("Could not load group file due to: " + scstring exn)
+                false
+
+        // error
+        else
+            messageBoxOpt <- Some "Cannot load into a protected simulant (such as a group created by the MMCC API)."
+            false
 
     let private tryReloadAssets () =
         let assetSourceDir = targetDir + "/../../.."
@@ -1311,18 +1407,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.F8 then reloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 then reloadCodeRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F11 then fullScreen <- not fullScreen
-            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then showNewGroupDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then showOpenGroupDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then showSaveGroupDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then tryAutoBoundsSelectedEntity () |> ignore<bool>
-            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then reloadAllRequested <- 1
-            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () then searchEntityHierarchy ()
-            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then showOpenProjectDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then freezeEntities ()
-            elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then thawEntities ()
-            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () then rerenderLightMaps ()
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false
+            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then showNewGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then showOpenGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then showSaveGroupDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryAutoBoundsSelectedEntity () |> ignore<bool>
+            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then showOpenEntityDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then showSaveEntityDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then reloadAllRequested <- 1
+            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
+            elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then showOpenProjectDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities ()
+            elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities ()
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps ()
             elif not (ImGui.GetIO ()).WantCaptureKeyboardGlobal || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
@@ -2540,7 +2638,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem "Open Project" then showOpenProjectDialog <- true
                                 if ImGui.MenuItem "Close Project" then showCloseProjectDialog <- true
                                 ImGui.Separator ()
-                                if ImGui.MenuItem "Exit" then showConfirmExitDialog <- true
+                                if ImGui.MenuItem ("Exit", "Alt+F4") then showConfirmExitDialog <- true
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Group" then
                                 if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
@@ -2569,6 +2667,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
                                 if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Auto Bounds", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
+                                if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
+                                    match selectedEntityOpt with
+                                    | Some selectedEntity ->
+                                        match Map.tryFind selectedEntity.EntityAddress entityFilePaths with
+                                        | Some filePath -> entityFileDialogState.FilePath <- filePath
+                                        | None -> entityFileDialogState.FileName <- ""
+                                        showSaveEntityDialog <- true
+                                    | None -> ()
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Edit" then
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
@@ -3423,6 +3531,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.EndPopup ()
                         | _ -> showRenameGroupDialog <- false
 
+                    // open entity dialog
+                    if showOpenEntityDialog then
+                        entityFileDialogState.Title <- "Choose a nuentity file..."
+                        entityFileDialogState.FilePattern <- "*.nuentity"
+                        entityFileDialogState.FileDialogType <- ImGuiFileDialogType.Open
+                        if ImGui.FileDialog (&showOpenEntityDialog, entityFileDialogState) then
+                            snapshot ()
+                            showOpenEntityDialog <- not (tryLoadSelectedEntity entityFileDialogState.FilePath)
+
+                    // save entity dialog
+                    if showSaveEntityDialog then
+                        entityFileDialogState.Title <- "Save a nuentity file..."
+                        entityFileDialogState.FilePattern <- "*.nuentity"
+                        entityFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
+                        if ImGui.FileDialog (&showSaveEntityDialog, entityFileDialogState) then
+                            snapshot ()
+                            if not (PathF.HasExtension entityFileDialogState.FilePath) then entityFileDialogState.FilePath <- entityFileDialogState.FilePath + ".nuentity"
+                            showSaveEntityDialog <- not (trySaveSelectedEntity entityFileDialogState.FilePath)
+
                     // rename entity dialog
                     if showRenameEntityDialog then
                         match selectedEntityOpt with
@@ -3633,6 +3760,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         projectEditMode <- Option.defaultValue "" gaiaState.ProjectEditModeOpt
         projectImperativeExecution <- openProjectImperativeExecution
         groupFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
+        entityFileDialogState <- ImGuiFileDialogState (targetDir + "/../../..")
         selectScreen screen
         selectGroupInitial screen
         newEntityDispatcherName <- Nu.World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key

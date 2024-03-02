@@ -5,7 +5,7 @@
    [Assets Assets/Default [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Default [wav ogg] [Audio] []]
    [Assets Assets/Default [nueffect nuscript csv] [Symbol] []]
-   [Assets Assets/Default [nugroup tsx tmx] [] []]]]
+   [Assets Assets/Default [nuentity nugroup tsx tmx] [] []]]]
  [Gui
   [[Asset ClearSansFont "Assets/Gui/ClearSans.024.ttf" [Render2d] []]
    [Assets Assets/Gui [bmp png psd] [Render2d Render3d] [PsdToPng]]
@@ -13,11 +13,11 @@
    [Assets Assets/Gui [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Gui [wav ogg] [Audio] []]
    [Assets Assets/Gui [nueffect nuscript csv] [Symbol] []]
-   [Assets Assets/Gui [nugroup tsx tmx] [] []]]]
+   [Assets Assets/Gui [nuentity nugroup tsx tmx] [] []]]]
  [Gameplay
   [[Assets Assets/Gameplay [bmp png psd] [Render2d Render3d] [PsdToPng]]
    [Assets Assets/Gameplay [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Gameplay [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Gameplay [wav ogg] [Audio] []]
    [Assets Assets/Gameplay [nueffect nuscript csv] [Symbol] []]
-   [Assets Assets/Gameplay [nugroup tsx tmx] [] []]]]]
+   [Assets Assets/Gameplay [nuentity nugroup tsx tmx] [] []]]]]

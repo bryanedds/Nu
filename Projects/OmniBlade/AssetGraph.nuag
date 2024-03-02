@@ -4,14 +4,14 @@
    [Assets Assets/Battle [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Battle [ogg wav] [Audio] []]
    [Assets Assets/Battle [csv nueffect nuscript] [Symbol] []]
-   [Assets Assets/Battle [nugroup tmx tsx] [] []]]]
+   [Assets Assets/Battle [nuentity nugroup tmx tsx] [] []]]]
  [Castle
   [[Assets Assets/Castle [bmp png psd] [Render2d Render3d] [PsdToPng]]
    [Assets Assets/Castle [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Castle [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Castle [ogg wav] [Audio] []]
    [Assets Assets/Castle [csv nueffect nuscript] [Symbol] []]
-   [Assets Assets/Castle [nugroup tmx tsx] [] []]]]
+   [Assets Assets/Castle [nuentity nugroup tmx tsx] [] []]]]
  [Data
   [[Assets Assets/Data [csv] [Symbol] []]]]
  [Default
@@ -21,14 +21,14 @@
    [Assets Assets/Default [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Default [ogg wav] [Audio] []]
    [Assets Assets/Default [csv nueffect nuscript] [Symbol] []]
-   [Assets Assets/Default [nugroup tmx tsx] [] []]]]
+   [Assets Assets/Default [nuentity nugroup tmx tsx] [] []]]]
  [Field
   [[Assets Assets/Field [bmp png psd] [Render2d Render3d] [PsdToPng]]
    [Assets Assets/Field [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Field [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Field [ogg wav] [Audio] []]
    [Assets Assets/Field [csv nueffect nuscript] [Symbol] []]
-   [Assets Assets/Field [nugroup tmx tsx] [] []]]]
+   [Assets Assets/Field [nuentity nugroup tmx tsx] [] []]]]
  [Gui
   [[Asset Font "Assets/Gui/Fonts/Manaspc.024.ttf" [Render2d] []]
    [Assets Assets/Gui [bmp png psd] [Render2d Render3d] [PsdToPng]]
@@ -36,4 +36,4 @@
    [Assets Assets/Gui [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Gui [ogg wav] [Audio] []]
    [Assets Assets/Gui [csv nueffect nuscript] [Symbol] []]
-   [Assets Assets/Gui [nugroup tmx tsx] [] []]]]]
+   [Assets Assets/Gui [nuentity nugroup tmx tsx] [] []]]]]

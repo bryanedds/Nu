@@ -434,11 +434,11 @@ module WorldModule2 =
             let propagatedDescriptor =
                 Seq.fold (fun targetDescriptor (propertyName, currentDescriptorSymbol) ->
                     if  propertyName <> nameof Entity.Name &&
-                        propertyName <> nameof Entity.PropagationSourceOpt &&
-                        propertyName <> nameof Entity.PropagatedDescriptorOpt &&
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
-                        propertyName <> nameof Entity.Elevation then
+                        propertyName <> nameof Entity.Elevation &&
+                        propertyName <> nameof Entity.PropagationSourceOpt &&
+                        propertyName <> nameof Entity.PropagatedDescriptorOpt then
                         match previousDescriptor.EntityProperties.TryGetValue propertyName with
                         | (true, previousPropertySymbol) ->
                             match targetDescriptor.EntityProperties.TryGetValue propertyName with
