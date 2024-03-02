@@ -213,20 +213,20 @@ module WorldGameModule =
             Seq.concat
 
         /// Write a game to a game descriptor.
-        static member writeGame gameDescriptor game world =
+        static member writeGame writePropagationHistory gameDescriptor game world =
             let gameState = World.getGameState game world
             let gameDispatcherName = getTypeName gameState.Dispatcher
             let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
             let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
             let screens = World.getScreens world
-            { gameDescriptor with ScreenDescriptors = World.writeScreens screens world }
+            { gameDescriptor with ScreenDescriptors = World.writeScreens writePropagationHistory screens world }
 
         /// Write a game to a file.
-        static member writeGameToFile (filePath : string) game world =
+        static member writeGameToFile writePropagationHistory (filePath : string) game world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let gameDescriptor = World.writeGame GameDescriptor.empty game world
+            let gameDescriptor = World.writeGame writePropagationHistory GameDescriptor.empty game world
             let gameDescriptorStr = scstring gameDescriptor
             let gameDescriptorPretty = PrettyPrinter.prettyPrint gameDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, gameDescriptorPretty)

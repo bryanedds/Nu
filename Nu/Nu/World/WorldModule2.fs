@@ -509,12 +509,12 @@ module WorldModule2 =
         /// Propagate the structure of an entity to all other entities with it as their propagation source.
         static member propagateEntityStructure entity world =
             let targets = World.getPropagationTargets entity world
-            let currentDescriptor = World.writeEntity entity EntityDescriptor.empty world
+            let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
                 Seq.fold (fun world target ->
                     if World.getEntityExists target world then
-                        let targetDescriptor = World.writeEntity target EntityDescriptor.empty world
+                        let targetDescriptor = World.writeEntity true EntityDescriptor.empty target world
                         let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world
                         let order = target.GetOrder world
                         let world = World.destroyEntityImmediate target world
@@ -532,7 +532,7 @@ module WorldModule2 =
             if dispatcherNameCurrent <> dispatcherName then
                 let dispatchers = World.getEntityDispatchers world
                 if dispatchers.ContainsKey dispatcherName then
-                    let entityDescriptor = World.writeEntity entity EntityDescriptor.empty world
+                    let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
                     let entityDescriptor = { entityDescriptor with EntityDispatcherName = dispatcherName }
                     let order = entity.GetOrder world
                     let world = World.destroyEntityImmediate entity world

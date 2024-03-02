@@ -260,29 +260,29 @@ module WorldGroupModule =
             World.frame (World.renameGroupImmediate source destination) Game.Handle world
 
         /// Write a group to a group descriptor.
-        static member writeGroup group (groupDescriptor : GroupDescriptor) world =
+        static member writeGroup writePropagationHistory (groupDescriptor : GroupDescriptor) group world =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.Dispatcher
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
             let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             let entities = World.getEntitiesSovereign group world
-            { groupDescriptor with EntityDescriptors = World.writeEntities entities world }
+            { groupDescriptor with EntityDescriptors = World.writeEntities writePropagationHistory entities world }
 
         /// Write multiple groups to a screen descriptor.
-        static member writeGroups groups world =
+        static member writeGroups writePropagationHistory groups world =
             groups |>
             Seq.sortBy (fun (group : Group) -> group.GetOrder world) |>
             Seq.filter (fun (group : Group) -> group.GetPersistent world) |>
-            Seq.fold (fun groupDescriptors group -> World.writeGroup group GroupDescriptor.empty world :: groupDescriptors) [] |>
+            Seq.fold (fun groupDescriptors group -> World.writeGroup writePropagationHistory GroupDescriptor.empty group world :: groupDescriptors) [] |>
             Seq.rev |>
             Seq.toList
 
         /// Write a group to a file.
-        static member writeGroupToFile (filePath : string) group world =
+        static member writeGroupToFile writePropagationHistory (filePath : string) group world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let groupDescriptor = World.writeGroup group GroupDescriptor.empty world
+            let groupDescriptor = World.writeGroup writePropagationHistory GroupDescriptor.empty group world
             let groupDescriptorStr = scstring groupDescriptor
             let groupDescriptorPretty = PrettyPrinter.prettyPrint groupDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, groupDescriptorPretty)

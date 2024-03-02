@@ -830,7 +830,7 @@ module WorldEntityModule =
 
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
-            let entityDescriptor = World.writeEntity entity EntityDescriptor.empty world
+            let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
             Clipboard <- Some (entityDescriptor, entity)
 
         /// Cut an entity to the world's clipboard.

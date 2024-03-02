@@ -834,7 +834,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private trySaveSelectedEntity filePath =
         match selectedEntityOpt with
         | Some selectedEntity ->
-            try World.writeEntityToFile filePath selectedEntity world
+            try World.writeEntityToFile false filePath selectedEntity world
                 try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
                     if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                         File.Copy (filePath, deploymentPath, true)
@@ -856,13 +856,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let entityAndDescriptorOpt =
                 try let entityDescriptorStr = File.ReadAllText filePath
                     let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-                    let entityProperties =
-                        Map.removeMany
-                            [nameof Entity.Position
-                             nameof Entity.Rotation
-                             nameof Entity.Elevation
-                             nameof Entity.PropagatedDescriptorOpt]
-                            entityDescriptor.EntityProperties
+                    let entityProperties = Map.removeMany [nameof Entity.Position; nameof Entity.Rotation; nameof Entity.Elevation] entityDescriptor.EntityProperties
                     let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
                     let entity =
                         match selectedEntityOpt with
@@ -998,7 +992,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Some _ | None -> ()
 
     let private trySaveSelectedGroup filePath =
-        try World.writeGroupToFile filePath selectedGroup world
+        try World.writeGroupToFile true filePath selectedGroup world
             try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                     File.Copy (filePath, deploymentPath, true)

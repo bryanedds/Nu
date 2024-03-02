@@ -684,7 +684,7 @@ module WorldModuleEntity =
                 let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add source targets world.WorldExtension.PropagationTargets }
                 let world = World.choose { world with WorldExtension = worldExtension }
                 if World.getEntityExists source world then
-                    let sourceDescriptor = World.writeEntity source EntityDescriptor.empty world
+                    let sourceDescriptor = World.writeEntity false EntityDescriptor.empty source world
                     World.setEntityPropagatedDescriptorOpt (Some sourceDescriptor) source world |> snd'
                 else world
 
@@ -2394,7 +2394,7 @@ module WorldModuleEntity =
             let world =
                 match World.getEntityPropagatedDescriptorOpt entity world with
                 | None when World.hasPropagationTargets entity world ->
-                    let propagatedDescriptor = World.writeEntity entity EntityDescriptor.empty world
+                    let propagatedDescriptor = World.writeEntity false EntityDescriptor.empty entity world
                     World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) entity world |> snd'
                 | Some _ | None -> world
 
@@ -2430,7 +2430,7 @@ module WorldModuleEntity =
                 let world =
                     match World.getEntityPropagatedDescriptorOpt destination world with
                     | None when World.hasPropagationTargets destination world ->
-                        let propagatedDescriptor = World.writeEntity destination EntityDescriptor.empty world
+                        let propagatedDescriptor = World.writeEntity false EntityDescriptor.empty destination world
                         World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> snd'
                     | Some _ | None -> world
                 world
@@ -2463,7 +2463,7 @@ module WorldModuleEntity =
                 let world =
                     match World.getEntityPropagatedDescriptorOpt destination world with
                     | None when World.hasPropagationTargets destination world ->
-                        let propagatedDescriptor = World.writeEntity destination EntityDescriptor.empty world
+                        let propagatedDescriptor = World.writeEntity false EntityDescriptor.empty destination world
                         World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> snd'
                     | Some _ | None -> world
                 world
@@ -2473,7 +2473,7 @@ module WorldModuleEntity =
             World.frame (World.renameEntityImmediate source destination) Game.Handle world
 
         /// Write an entity to an entity descriptor.
-        static member writeEntity (entity : Entity) (entityDescriptor : EntityDescriptor) world =
+        static member writeEntity writePropagationHistory (entityDescriptor : EntityDescriptor) (entity : Entity) world =
             let overlayer = World.getOverlayer world
             let entityState = World.getEntityState entity world
             let entityDispatcherName = getTypeName entityState.Dispatcher
@@ -2492,28 +2492,32 @@ module WorldModuleEntity =
                     | Some overlaySymbols -> Overlayer.shouldPropertySerialize propertyName propertyType entityState overlaySymbols
                     | None -> true
             let entityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
+            let entityProperties =
+                if not writePropagationHistory
+                then Map.remove Constants.Engine.PropagatedDescriptorOptPropertyName entityProperties
+                else entityProperties
             let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
             let entityDescriptor =
                 if not (Gen.isNameGenerated entity.Name)
                 then EntityDescriptor.setNameOpt (Some entity.Name) entityDescriptor
                 else entityDescriptor
             let entities = World.getEntityChildren entity world
-            { entityDescriptor with EntityDescriptors = World.writeEntities entities world }
+            { entityDescriptor with EntityDescriptors = World.writeEntities writePropagationHistory entities world }
 
         /// Write multiple entities to a group descriptor.
-        static member writeEntities entities world =
+        static member writeEntities writePropagationHistory entities world =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world) |>
             Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) [] |>
+            Seq.fold (fun entityDescriptors entity -> World.writeEntity writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) [] |>
             Seq.rev |>
             Seq.toList
 
         /// Write an entity to a file.
-        static member writeEntityToFile (filePath : string) enity world =
+        static member writeEntityToFile writePropagationHistory (filePath : string) enity world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let enityDescriptor = World.writeEntity enity EntityDescriptor.empty world
+            let enityDescriptor = World.writeEntity writePropagationHistory EntityDescriptor.empty enity world
             let enityDescriptorStr = scstring enityDescriptor
             let enityDescriptorPretty = PrettyPrinter.prettyPrint enityDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, enityDescriptorPretty)
@@ -2626,7 +2630,7 @@ module WorldModuleEntity =
             let world =
                 match World.getEntityPropagatedDescriptorOpt entity world with
                 | None when World.hasPropagationTargets entity world ->
-                    let propagatedDescriptor = World.writeEntity entity EntityDescriptor.empty world
+                    let propagatedDescriptor = World.writeEntity false EntityDescriptor.empty entity world
                     World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) entity world |> snd'
                 | Some _ | None -> world
 
