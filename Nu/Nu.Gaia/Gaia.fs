@@ -856,7 +856,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let entityAndDescriptorOpt =
                 try let entityDescriptorStr = File.ReadAllText filePath
                     let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-                    let entityProperties = Map.removeMany [nameof Entity.Position; nameof Entity.Rotation; nameof Entity.Elevation] entityDescriptor.EntityProperties
+                    let entityProperties =
+                        Map.removeMany
+                            [nameof Entity.Position
+                             nameof Entity.Rotation
+                             nameof Entity.Elevation
+                             nameof Entity.Visible]
+                            entityDescriptor.EntityProperties
                     let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
                     let entity =
                         match selectedEntityOpt with

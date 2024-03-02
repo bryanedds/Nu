@@ -437,6 +437,7 @@ module WorldModule2 =
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
                         propertyName <> nameof Entity.Elevation &&
+                        propertyName <> nameof Entity.Visible &&
                         propertyName <> nameof Entity.PropagationSourceOpt &&
                         propertyName <> nameof Entity.PropagatedDescriptorOpt then
                         match previousDescriptor.EntityProperties.TryGetValue propertyName with
