@@ -944,6 +944,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         | None -> false
 
+    let private tryWipePropagationTargets () =
+        match selectedEntityOpt with
+        | Some selectedEntity ->
+            snapshot ()
+            world <- World.clearPropagationTargets selectedEntity world
+            true
+        | None -> false
+
     let private tryReorderSelectedEntity up =
         if String.IsNullOrWhiteSpace entityHierarchySearchStr then
             match selectedEntityOpt with
@@ -1430,6 +1438,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then showOpenEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then showSaveEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then reloadAllRequested <- 1
+            elif ImGui.IsKeyPressed ImGuiKey.W && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryWipePropagationTargets () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntity () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then showOpenProjectDialog <- true
@@ -1557,12 +1566,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                     else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
+        let mutable separatorInserted = false
         if entity.Has<FreezerFacet> world then
             let frozen = entity.GetFrozen world
             let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
             ImGui.SameLine ()
-            ImGui.Separator ()
-            ImGui.SameLine ()
+            if not separatorInserted then
+                ImGui.Separator ()
+                ImGui.SameLine ()
+                separatorInserted <- true
             ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
             ImGui.PushID ("##frozen" + scstring entity)
             if ImGui.SmallButton text then
@@ -1572,15 +1584,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.PopStyleColor ()
         if World.hasPropagationTargets entity world then
             ImGui.SameLine ()
-            ImGui.Separator ()
-            ImGui.SameLine ()
+            if not separatorInserted then
+                ImGui.Separator ()
+                ImGui.SameLine ()
+                separatorInserted <- true
             if ImGui.SmallButton "Push" then
                 snapshot ()
                 world <- World.propagateEntityStructure entity world
+            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                ImGui.Text "Propagate entity structure to all targets."
+                ImGui.EndTooltip ()
             ImGui.SameLine ()
-            if ImGui.SmallButton "X" then
+            if ImGui.SmallButton "Wipe" then
                 snapshot ()
                 world <- World.clearPropagationTargets entity world
+            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                ImGui.Text "Clear entity structure propagation targets."
+                ImGui.EndTooltip ()
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
@@ -2685,8 +2705,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
                                 if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Auto Bounds", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Propagate", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
                                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
