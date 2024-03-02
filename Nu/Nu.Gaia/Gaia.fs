@@ -856,7 +856,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let entityAndDescriptorOpt =
                 try let entityDescriptorStr = File.ReadAllText filePath
                     let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-                    let entityProperties = Map.removeMany [nameof Entity.Position; nameof Entity.Rotation; nameof Entity.Elevation] entityDescriptor.EntityProperties
+                    let entityProperties =
+                        Map.removeMany
+                            [nameof Entity.Position
+                             nameof Entity.Rotation
+                             nameof Entity.Elevation
+                             nameof Entity.PropagatedDescriptorOpt]
+                            entityDescriptor.EntityProperties
                     let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
                     let entity =
                         match selectedEntityOpt with
@@ -3503,7 +3509,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         groupFileDialogState.FilePattern <- "*.nugroup"
                         groupFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
                         if ImGui.FileDialog (&showSaveGroupDialog, groupFileDialogState) then
-                            snapshot ()
                             if not (PathF.HasExtension groupFileDialogState.FilePath) then groupFileDialogState.FilePath <- groupFileDialogState.FilePath + ".nugroup"
                             showSaveGroupDialog <- not (trySaveSelectedGroup groupFileDialogState.FilePath)
 
@@ -3546,7 +3551,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         entityFileDialogState.FilePattern <- "*.nuentity"
                         entityFileDialogState.FileDialogType <- ImGuiFileDialogType.Save
                         if ImGui.FileDialog (&showSaveEntityDialog, entityFileDialogState) then
-                            snapshot ()
                             if not (PathF.HasExtension entityFileDialogState.FilePath) then entityFileDialogState.FilePath <- entityFileDialogState.FilePath + ".nuentity"
                             showSaveEntityDialog <- not (trySaveSelectedEntity entityFileDialogState.FilePath)
 
