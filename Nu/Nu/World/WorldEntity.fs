@@ -455,11 +455,7 @@ module WorldEntityModule =
         member this.RayCast ray world = World.rayCastEntity ray this world
 
         /// Automatically change an entity's bounds using its inferred attributes.
-        member this.AutoBounds world =
-            let attributes = this.GetAttributesInferred world
-            let world = World.setEntitySize attributes.SizeInferred this world |> snd'
-            let world = World.setEntityOffset attributes.OffsetInferred this world |> snd'
-            world
+        member this.AutoBounds world = World.autoBoundsEntity this world
 
         /// Set an entity's mount while adjusting its mount properties such that they do not change.
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =

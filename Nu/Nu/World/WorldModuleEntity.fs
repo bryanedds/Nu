@@ -2112,6 +2112,12 @@ module WorldModuleEntity =
               SortHorizon = entityState.Transform.Horizon
               SortTarget = entity }
 
+        static member internal autoBoundsEntity entity world =
+            let attributes = World.getEntityAttributesInferred entity world
+            let world = World.setEntitySize attributes.SizeInferred entity world |> snd'
+            let world = World.setEntityOffset attributes.OffsetInferred entity world |> snd'
+            world
+
         static member internal rayCastEntity ray (entity : Entity) world =
             let facets = World.getEntityFacets entity world
             let dispatcher = World.getEntityDispatcher entity world
@@ -2471,6 +2477,23 @@ module WorldModuleEntity =
         /// Rename an entity.
         static member renameEntity source destination world =
             World.frame (World.renameEntityImmediate source destination) Game.Handle world
+
+        /// Change the dispatcher of the given entity.
+        static member changeEntityDispatcher dispatcherName entity world =
+            let dispatcherNameCurrent = getTypeName (World.getEntityDispatcher entity world)
+            if dispatcherNameCurrent <> dispatcherName then
+                let dispatchers = World.getEntityDispatchers world
+                if dispatchers.ContainsKey dispatcherName then
+                    let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+                    let entityDescriptor = { entityDescriptor with EntityDispatcherName = dispatcherName }
+                    let order = World.getEntityOrder entity world
+                    let world = World.destroyEntityImmediate entity world
+                    let world = World.readEntity entityDescriptor (Some entity.Name) entity.Parent world |> snd
+                    let world = World.setEntityOrder order entity world |> snd'
+                    let world = World.autoBoundsEntity entity world
+                    world
+                else world
+            else world
 
         /// Write an entity to an entity descriptor.
         static member writeEntity writePropagationHistory (entityDescriptor : EntityDescriptor) (entity : Entity) world =

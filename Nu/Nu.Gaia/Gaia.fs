@@ -1565,9 +1565,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.SameLine ()
             ImGui.Separator ()
             ImGui.SameLine ()
-            if ImGui.SmallButton "Propagate" then
+            if ImGui.SmallButton "Push" then
                 snapshot ()
                 world <- World.propagateEntityStructure entity world
+            ImGui.SameLine ()
+            if ImGui.SmallButton "X" then
+                snapshot ()
+                world <- World.clearPropagationTargets entity world
         expanded
 
     let rec private imGuiEntityHierarchy (entity : Entity) =

@@ -528,21 +528,14 @@ module WorldModule2 =
             let currentDescriptor = { currentDescriptor with EntityProperties = Map.remove (nameof Entity.PropagatedDescriptorOpt) currentDescriptor.EntityProperties }
             entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
 
-        static member changeEntityDispatcher dispatcherName entity world =
-            let dispatcherNameCurrent = getTypeName (World.getEntityDispatcher entity world)
-            if dispatcherNameCurrent <> dispatcherName then
-                let dispatchers = World.getEntityDispatchers world
-                if dispatchers.ContainsKey dispatcherName then
-                    let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
-                    let entityDescriptor = { entityDescriptor with EntityDispatcherName = dispatcherName }
-                    let order = entity.GetOrder world
-                    let world = World.destroyEntityImmediate entity world
-                    let world = World.readEntity entityDescriptor (Some entity.Name) entity.Parent world |> snd
-                    let world = entity.SetOrder order world
-                    let world = entity.AutoBounds world
-                    world
-                else world
-            else world
+        /// Clear all propagation targets pointing back to the given entity.
+        static member clearPropagationTargets entity world =
+            let targets = World.getPropagationTargets entity world
+            Seq.fold (fun world target ->
+                if World.getEntityExists target world
+                then target.SetPropagationSourceOpt None world
+                else world)
+                world targets
 
         static member internal makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
