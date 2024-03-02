@@ -2390,6 +2390,14 @@ module WorldModuleEntity =
                     world
                 else world
 
+            // insert a propagated descriptor if needed
+            let world =
+                match World.getEntityPropagatedDescriptorOpt entity world with
+                | None when World.hasPropagationTargets entity world ->
+                    let propagatedDescriptor = World.writeEntity entity EntityDescriptor.empty world
+                    World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) entity world |> snd'
+                | Some _ | None -> world
+
             // fin
             (entity, world)
 
@@ -2418,7 +2426,14 @@ module WorldModuleEntity =
             | null -> world
             | _ ->
                 let entityState = { entityStateOpt with Order = Core.getTimeStampUnique (); Id = Gen.id64; Surnames = destination.Surnames }
-                World.addEntity false entityState destination world
+                let world = World.addEntity false entityState destination world
+                let world =
+                    match World.getEntityPropagatedDescriptorOpt destination world with
+                    | None when World.hasPropagationTargets destination world ->
+                        let propagatedDescriptor = World.writeEntity destination EntityDescriptor.empty world
+                        World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> snd'
+                    | Some _ | None -> world
+                world
 
         /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
         /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its
@@ -2445,6 +2460,12 @@ module WorldModuleEntity =
                         let destination = destination / child.Name
                         World.renameEntityImmediate child destination world)
                         world children
+                let world =
+                    match World.getEntityPropagatedDescriptorOpt destination world with
+                    | None when World.hasPropagationTargets destination world ->
+                        let propagatedDescriptor = World.writeEntity destination EntityDescriptor.empty world
+                        World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> snd'
+                    | Some _ | None -> world
                 world
 
         /// Rename an entity.
@@ -2600,6 +2621,14 @@ module WorldModuleEntity =
 
             // read the entity's children
             let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
+
+            // insert a propagated descriptor if needed
+            let world =
+                match World.getEntityPropagatedDescriptorOpt entity world with
+                | None when World.hasPropagationTargets entity world ->
+                    let propagatedDescriptor = World.writeEntity entity EntityDescriptor.empty world
+                    World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) entity world |> snd'
+                | Some _ | None -> world
 
             // fin
             (entity, world)
