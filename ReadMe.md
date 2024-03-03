@@ -49,6 +49,9 @@ Directly editing the entire game state in the new editor.
 ![image](https://github.com/bryanedds/Nu/assets/1625560/69cd30f1-06fe-450e-a83f-8a7a9fd504d0)
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
+![image](https://github.com/bryanedds/Nu/assets/1625560/60661b15-f38d-433d-a2c5-930e78cb8505)
+Prefab-like system for design-driven development with Entity Structure Propagation.
+
 **Public Sponsors We Wish to Thank**
 ====================================
 
