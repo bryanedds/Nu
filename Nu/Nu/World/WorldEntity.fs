@@ -363,9 +363,9 @@ module WorldEntityModule =
             World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
-        member this.SetTransformSnapped positionSnap degreesSnap scaleSnap (value : Transform) world =
+        member this.SetTransformPositionSnapped positionSnap (value : Transform) world =
             let mutable transform = value
-            transform.Snap (positionSnap, degreesSnap, scaleSnap)
+            transform.SnapPosition positionSnap
             this.SetTransform transform world
 
         /// Try to get a property value and type.
@@ -835,7 +835,7 @@ module WorldEntityModule =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard pasteType (distance : single) rightClickPosition snapsEir (parent : Simulant) world =
+        static member pasteEntityFromClipboard pasteType (distance : single) rightClickPosition positionSnapEir (parent : Simulant) world =
             match Clipboard with
             | Some (entityDescriptor, entitySource) ->
                 let nameOpt =
@@ -848,7 +848,7 @@ module WorldEntityModule =
                         else Some name
                     | (_, _) -> failwithumf () // entity descriptor should always have a name property
                 let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
-                let (position, snapsOpt) =
+                let (position, positionSnapOpt) =
                     let absolute = entity.GetAbsolute world
                     if entity.GetIs2d world then
                         let viewport = World.getViewport world
@@ -859,8 +859,8 @@ module WorldEntityModule =
                             | PasteAtMouse -> (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
                             | PasteAtLook -> (viewport.MouseToWorld2d (absolute, World.getEye2dSize world, eyeCenter, eyeSize)).V3
                             | PasteAt position -> position
-                        match snapsEir with
-                        | Left (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
+                        match positionSnapEir with
+                        | Left positionSnap -> (position, Some positionSnap)
                         | Right _ -> (position, None)
                     else
                         let eyeCenter = World.getEye3dCenter world
@@ -876,13 +876,13 @@ module WorldEntityModule =
                                 intersectionOpt.Value
                             | PasteAtLook -> eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * distance
                             | PasteAt position -> position
-                        match snapsEir with
-                        | Right (positionSnap, degreesSnap, scaleSnap) -> (position, Some (positionSnap, degreesSnap, scaleSnap))
+                        match positionSnapEir with
+                        | Right positionSnap -> (position, Some positionSnap)
                         | Left _ -> (position, None)
                 let mutable transform = entity.GetTransform world
                 transform.Position <- position
-                match snapsOpt with
-                | Some (positionSnap, degreesSnap, scaleSnap) -> transform.Snap (positionSnap, degreesSnap, scaleSnap)
+                match positionSnapOpt with
+                | Some positionSnap -> transform.SnapPosition positionSnap
                 | None -> ()
                 let world = entity.SetTransform transform world
                 let world =

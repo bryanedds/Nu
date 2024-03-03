@@ -760,7 +760,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     (* Editor Commands *)
 
     let private inductEntity atMouse (entity : Entity) =
-        let (positionSnap, degreesSnap, scaleSnap) = getSnaps ()
+        let (positionSnap, _, _) = getSnaps ()
         let viewport = World.getViewport world
         let mutable entityTransform = entity.GetTransform world
         if entity.GetIs2d world then
@@ -776,7 +776,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             entityTransform.Offset <- attributes.OffsetInferred
             entityTransform.Elevation <- newEntityElevation
             if snaps2dSelected && ImGui.IsCtrlUp ()
-            then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
+            then world <- entity.SetTransformPositionSnapped positionSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
         else
             let eyeCenter = World.getEye3dCenter world
@@ -793,7 +793,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             entityTransform.Size <- attributes.SizeInferred
             entityTransform.Offset <- attributes.OffsetInferred
             if not snaps2dSelected && ImGui.IsCtrlUp ()
-            then world <- entity.SetTransformSnapped positionSnap degreesSnap scaleSnap entityTransform world
+            then world <- entity.SetTransformPositionSnapped positionSnap entityTransform world
             else world <- entity.SetTransform entityTransform world
         if entity.Surnames.Length > 1 then
             world <-
@@ -992,9 +992,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private tryPaste atMouse parentOpt =
         snapshot ()
-        let snapsEir = if snaps2dSelected then Left snaps2d else Right snaps3d
+        let positionSnapEir = if snaps2dSelected then Left (a__ snaps2d) else Right (a__ snaps3d)
         let parent = match parentOpt with Some parent -> parent | None -> selectedGroup :> Simulant
-        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse newEntityDistance rightClickPosition snapsEir parent world in world <- wtemp
+        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse newEntityDistance rightClickPosition positionSnapEir parent world in world <- wtemp
         match entityOpt with
         | Some entity ->
             selectEntityOpt (Some entity)

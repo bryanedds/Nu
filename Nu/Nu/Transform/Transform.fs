@@ -316,10 +316,8 @@ type [<NoEquality; NoComparison>] Transform =
             this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
             this.RotationMatrixDirty <- false
 
-    member this.Snap (positionSnap, degreesSnap, scaleSnap) =
+    member this.SnapPosition positionSnap =
         this.Position <- Math.SnapF3d positionSnap this.Position
-        this.Degrees <- Math.SnapF3d degreesSnap this.Degrees
-        this.Scale <- Math.SnapF3d scaleSnap this.Scale
 
     member this.InvalidateFast () =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
