@@ -97,6 +97,7 @@ module Gaia =
     let mutable private snapDrag = 0.1f
     let mutable private alternativeEyeTravelInput = false
     let mutable private entityHierarchySearchStr = ""
+    let mutable private entityHierarchyFilterPropagationSources = false
     let mutable private assetViewerSearchStr = ""
     let mutable private lightingConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -191,62 +192,62 @@ Collapsed=0
 DockId=0x00000002,0
 
 [Window][Edit Overlayer]
-Pos=284,852
-Size=677,228
+Pos=286,869
+Size=675,211
 Collapsed=0
 DockId=0x00000001,2
 
 [Window][Edit Asset Graph]
-Pos=284,852
-Size=677,228
+Pos=286,869
+Size=675,211
 Collapsed=0
 DockId=0x00000001,1
 
 [Window][Edit Property]
-Pos=284,852
-Size=677,228
+Pos=286,869
+Size=675,211
 Collapsed=0
 DockId=0x00000001,0
 
 [Window][Metrics]
-Pos=963,852
-Size=659,228
+Pos=963,869
+Size=650,211
 Collapsed=0
 DockId=0x00000009,6
 
 [Window][Interactive]
-Pos=963,852
-Size=659,228
+Pos=963,869
+Size=650,211
 Collapsed=0
 DockId=0x00000009,5
 
 [Window][Event Tracing]
-Pos=963,852
-Size=659,228
+Pos=963,869
+Size=650,211
 Collapsed=0
 DockId=0x00000009,4
 
 [Window][Renderer]
-Pos=963,852
-Size=659,228
+Pos=963,869
+Size=650,211
 Collapsed=0
 DockId=0x00000009,3
 
 [Window][Audio Player]
-Pos=963,852
-Size=659,228
+Pos=963,869
+Size=650,211
 Collapsed=0
 DockId=0x00000009,2
 
 [Window][Editor]
-Pos=963,852
-Size=659,228
+Pos=963,869
+Size=650,211
 Collapsed=0
 DockId=0x00000009,1
 
 [Window][Asset Viewer]
-Pos=963,852
-Size=659,228
+Pos=963,869
+Size=650,211
 Collapsed=0
 DockId=0x00000009,0
 
@@ -281,32 +282,32 @@ Size=1920,1080
 Collapsed=0
 
 [Window][Entity Properties]
-Pos=1624,56
-Size=296,1024
+Pos=1615,56
+Size=305,1024
 Collapsed=0
 DockId=0x0000000E,3
 
 [Window][Group Properties]
-Pos=1624,56
-Size=296,1024
+Pos=1615,56
+Size=305,1024
 Collapsed=0
 DockId=0x0000000E,2
 
 [Window][Screen Properties]
-Pos=1624,56
-Size=296,1024
+Pos=1615,56
+Size=305,1024
 Collapsed=0
 DockId=0x0000000E,1
 
 [Window][Game Properties]
-Pos=1624,56
-Size=296,1024
+Pos=1615,56
+Size=305,1024
 Collapsed=0
 DockId=0x0000000E,0
 
 [Window][Entity Hierarchy]
 Pos=0,56
-Size=282,1024
+Size=284,1024
 Collapsed=0
 DockId=0x0000000C,0
 
@@ -399,18 +400,18 @@ Collapsed=0
 DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Split=Y
   DockNode            ID=0x00000002 Parent=0x8B93E3BD SizeRef=1920,54 HiddenTabBar=1 Selected=0x48908BE7
   DockNode            ID=0x0000000F Parent=0x8B93E3BD SizeRef=1920,1024 Split=X
-    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1622,1080 Split=X
-      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=282,1080 Split=X Selected=0x29EABFBD
+    DockNode          ID=0x0000000D Parent=0x0000000F SizeRef=1613,1080 Split=X
+      DockNode        ID=0x00000007 Parent=0x0000000D SizeRef=284,1080 Split=X Selected=0x29EABFBD
         DockNode      ID=0x0000000B Parent=0x00000007 SizeRef=174,1022 Selected=0x29EABFBD
         DockNode      ID=0x0000000C Parent=0x00000007 SizeRef=171,1022 Selected=0xAE464409
-      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1338,1080 Split=X
+      DockNode        ID=0x00000008 Parent=0x0000000D SizeRef=1327,1080 Split=X
         DockNode      ID=0x00000005 Parent=0x00000008 SizeRef=1223,979 Split=Y
-          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,794 CentralNode=1
-          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,228 Split=X Selected=0xD4E24632
-            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=677,205 Selected=0x9CF3CB04
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=659,205 Selected=0x093AD9B2
+          DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,811 CentralNode=1
+          DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,211 Split=X Selected=0xD4E24632
+            DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=675,205 Selected=0x9CF3CB04
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=650,205 Selected=0xD4E24632
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
-    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=296,1080 Selected=0xD5116FF8
+    DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=305,1080 Selected=0xD5116FF8
 
 """
 
@@ -1458,14 +1459,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     then entityHierarchySearchStr <- ""
                     else deselectEntity ()
 
-    let private imGuiEntity branch searchActive (entity : Entity) =
+    let private imGuiEntity branch filtering (entity : Entity) =
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
-            (if not branch || searchActive then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
+            (if not branch || filtering then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
             (if newEntityParentOpt = Some entity && DateTimeOffset.Now.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.OpenOnArrow
-        if not searchActive then
+        if not filtering then
             if expandEntityHierarchy then ImGui.SetNextItemOpen true
             if collapseEntityHierarchy then ImGui.SetNextItemOpen false
         match selectedEntityOpt with
@@ -1605,16 +1606,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let rec private imGuiEntityHierarchy (entity : Entity) =
         if entity.Exists world then // NOTE: entity may have been moved during this process.
-            let searchActive =
-                not (String.IsNullOrWhiteSpace entityHierarchySearchStr)
+            let filtering =
+                not (String.IsNullOrWhiteSpace entityHierarchySearchStr) ||
+                entityHierarchyFilterPropagationSources
             let visible =
-                not searchActive || entity.Name.ToLowerInvariant().Contains (entityHierarchySearchStr.ToLowerInvariant ())
+                if entityHierarchyFilterPropagationSources then
+                    if World.hasPropagationTargets entity world
+                    then String.IsNullOrWhiteSpace entityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (entityHierarchySearchStr.ToLowerInvariant ())
+                    else false
+                else String.IsNullOrWhiteSpace entityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (entityHierarchySearchStr.ToLowerInvariant ())
             let expanded =
                 if visible then
                     let branch = entity.HasChildren world
-                    imGuiEntity branch searchActive entity
+                    imGuiEntity branch filtering entity
                 else false
-            if expanded || searchActive then
+            if filtering || expanded then
                 let children =
                     entity.GetChildren world |>
                     Array.ofSeq |>
@@ -2345,7 +2351,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiEditEntityAppliedTypes (entity : Entity) =
         let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
-        if ImGui.BeginCombo ("DispatcherName", dispatcherNameCurrent) then
+        if ImGui.BeginCombo ("Dispatcher Name", dispatcherNameCurrent) then
             let dispatcherNames = (World.getEntityDispatchers world).Keys
             let dispatcherNamePicked = tryPickName dispatcherNames
             for dispatcherName in dispatcherNames do
@@ -2865,8 +2871,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.SetKeyboardFocusHere ()
                             entityHierarchySearchStr <- ""
                             entityHierarchySearchRequested <- false
-                        ImGui.SetNextItemWidth -1.0f
+                        ImGui.SetNextItemWidth 165.0f
                         ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &entityHierarchySearchStr, 4096u) |> ignore<bool>
+                        ImGui.SameLine ()
+                        ImGui.Checkbox ("Propagators", &entityHierarchyFilterPropagationSources) |> ignore<bool>
 
                         // creation parent display
                         match newEntityParentOpt with
@@ -3286,14 +3294,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             assetViewerSearchStr <- ""
                             assetViewerSearchRequested <- false
                         ImGui.SetNextItemWidth -1.0f
-                        let searchActivePrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
+                        let filteringPrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr) || entityHierarchyFilterPropagationSources
                         ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
-                        let searchActiveCurrent = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
-                        let searchDeactivated = searchActivePrevious && not searchActiveCurrent
+                        let filteringCurrent = not (String.IsNullOrWhiteSpace assetViewerSearchStr) || entityHierarchyFilterPropagationSources
+                        let searchDeactivated = filteringPrevious && not filteringCurrent
                         let assets = Metadata.getDiscoveredAssets ()
                         for package in assets do
                             let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
-                            if searchActiveCurrent then ImGui.SetNextItemOpen true
+                            if filteringCurrent then ImGui.SetNextItemOpen true
                             if searchDeactivated then ImGui.SetNextItemOpen false
                             if ImGui.TreeNodeEx (package.Key, flags) then
                                 for assetName in package.Value do
