@@ -3294,9 +3294,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             assetViewerSearchStr <- ""
                             assetViewerSearchRequested <- false
                         ImGui.SetNextItemWidth -1.0f
-                        let filteringPrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr) || entityHierarchyFilterPropagationSources
+                        let filteringPrevious = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
                         ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &assetViewerSearchStr, 4096u) |> ignore<bool>
-                        let filteringCurrent = not (String.IsNullOrWhiteSpace assetViewerSearchStr) || entityHierarchyFilterPropagationSources
+                        let filteringCurrent = not (String.IsNullOrWhiteSpace assetViewerSearchStr)
                         let searchDeactivated = filteringPrevious && not filteringCurrent
                         let assets = Metadata.getDiscoveredAssets ()
                         for package in assets do
