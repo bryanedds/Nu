@@ -2661,10 +2661,10 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Read an entity from a file.
-        static member readEntityFromFile (filePath : string) nameOpt group world =
+        static member readEntityFromFile filePath nameOpt parent world =
             let entityDescriptorStr = File.ReadAllText filePath
             let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-            World.readEntity entityDescriptor nameOpt group world
+            World.readEntity entityDescriptor nameOpt parent world
 
         /// Read multiple entities.
         static member readEntities (entityDescriptors : EntityDescriptor list) (parent : Simulant) world =

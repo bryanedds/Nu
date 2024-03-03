@@ -752,6 +752,7 @@ and [<ReferenceEquality>] GroupContent =
 and [<ReferenceEquality>] EntityContent =
     { EntityDispatcherName : string
       EntityName : string
+      EntityFilePathOpt : string option
       mutable EntityCachedOpt : Entity // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
       mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
       mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
@@ -768,6 +769,7 @@ and [<ReferenceEquality>] EntityContent =
     static member empty =
         { EntityDispatcherName = nameof EntityDispatcher
           EntityName = nameof Entity
+          EntityFilePathOpt = None
           EntityCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = null
           EventHandlerContentsOpt = null

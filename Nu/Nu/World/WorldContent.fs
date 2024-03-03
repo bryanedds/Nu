@@ -258,8 +258,10 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
-                            if not (entity.Exists world) || entity.GetDestroying world
-                            then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                            if not (entity.Exists world) || entity.GetDestroying world then
+                                match entityContent.EntityFilePathOpt with
+                                | Some entityFilePath -> World.readEntityFromFile entityFilePath (Some entity.Name) entity.Parent world |> snd
+                                | None -> World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
                         synchronizeEntity true EntityContent.empty entityContent origin entity world)
@@ -348,8 +350,8 @@ module Content =
             | None -> (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
         else (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
 
-    /// Describe an entity with the given initializers as well as its contained entities.
-    let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =
+    /// Describe an entity with the given dispatcher type and initializers as well as its contained entities.
+    let composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt initializers entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -362,13 +364,25 @@ module Content =
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
             entityContentsOpt.Add (entity.EntityName, entity)
-        { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; EntityCachedOpt = Unchecked.defaultof<_>
+        { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; EntityFilePathOpt = entityFilePathOpt; EntityCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           EntityContentsOpt = entityContentsOpt }
+
+    /// Describe an entity with the given dispatcher type and initializers as well as its contained entities.
+    let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =
+        composite4<'entityDispatcher> entityName None initializers entities
+
+    /// Describe an entity with the given dispatcher type and initializers as well as its contained entities.
+    let compositeFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath initializers entities =
+        composite4<'entityDispatcher> entityName (Some filePath) initializers entities
 
     /// Describe an entity with the given dispatcher type and initializers.
     let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers =
         composite<'entityDispatcher> entityName initializers []
+
+    /// Describe an entity with the given dispatcher type and initializers.
+    let entityFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath initializers =
+        compositeFromFile<'entityDispatcher> entityName filePath initializers []
 
     /// Describe a 2d effect with the given initializers.
     let effect2d entityName initializers = entity<Effect2dDispatcher> entityName initializers
