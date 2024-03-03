@@ -2456,16 +2456,16 @@ module WorldModuleEntity =
                 let world = World.addEntity false entityState destination world
                 let world = World.setEntityOrder order destination world |> snd'
                 let world =
+                    Seq.fold (fun world (child : Entity) ->
+                        let destination = destination / child.Name
+                        World.renameEntityImmediate child destination world)
+                        world children
+                let world =
                     Seq.fold (fun world target ->
                         if World.getEntityExists target world
                         then World.setEntityPropagationSourceOpt (Some destination) target world |> snd'
                         else world)
                         world (World.getPropagationTargets source world)
-                let world =
-                    Seq.fold (fun world (child : Entity) ->
-                        let destination = destination / child.Name
-                        World.renameEntityImmediate child destination world)
-                        world children
                 let world =
                     match World.getEntityPropagatedDescriptorOpt destination world with
                     | None when World.hasPropagationTargets destination world ->
