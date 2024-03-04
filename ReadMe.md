@@ -50,7 +50,7 @@ Directly editing the entire game state in the new editor.
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
-Recursive Prefab-like system by way of the new Entity Structure Propagation features.
+Recursive Prefab-like functionality via Entity Structure Propagation.
 
 **Public Sponsors We Wish to Thank**
 ====================================
