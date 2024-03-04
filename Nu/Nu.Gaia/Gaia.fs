@@ -1543,14 +1543,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let sourceEntityAddressStr = payload
                     let sourceEntity = Nu.Entity sourceEntityAddressStr
                     if not (sourceEntity.GetProtected world) then
-                        if ImGui.IsAltDown () then
+                        if ImGui.IsCtrlDown () then
+                            let entityDescriptor = World.writeEntity true EntityDescriptor.empty sourceEntity world
+                            let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
+                            let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                            let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                            selectEntityOpt (Some newEntity)
+                            showSelectedEntity <- true
+                        elif ImGui.IsAltDown () then
                             let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let previousOpt = World.tryGetPreviousEntity next world
                             let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
                             if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
                                 let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
                                 let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
-                                if not (sourceEntity'.Exists world) then
+                                if sourceEntity'.Exists world then
+                                    snapshot ()
+                                    world <- World.insertEntityOrder sourceEntity previousOpt next world
+                                    showSelectedEntity <- true
+                                else
                                     snapshot ()
                                     world <- World.insertEntityOrder sourceEntity previousOpt next world
                                     world <- World.renameEntityImmediate sourceEntity sourceEntity' world
@@ -1561,7 +1572,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
                                     selectEntityOpt (Some sourceEntity')
                                     showSelectedEntity <- true
-                                else messageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."
                         else
                             let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let sourceEntity' = parent / sourceEntity.Name
@@ -2920,17 +2930,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let sourceEntityAddressStr = payload
                                     let sourceEntity = Nu.Entity sourceEntityAddressStr
                                     if not (sourceEntity.GetProtected world) then
-                                        let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
-                                        if not (sourceEntity'.Exists world) then
-                                            world <-
-                                                if World.getEntityAllowedToMount sourceEntity world
-                                                then sourceEntity.SetMountOptWithAdjustment None world
-                                                else world
-                                            world <- World.renameEntityImmediate sourceEntity sourceEntity' world
-                                            if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
-                                            selectEntityOpt (Some sourceEntity')
+                                        if ImGui.IsCtrlDown () then
+                                            let entityDescriptor = World.writeEntity true EntityDescriptor.empty sourceEntity world
+                                            let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
+                                            let parent = sourceEntity.Group
+                                            let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                                            selectEntityOpt (Some newEntity)
                                             showSelectedEntity <- true
-                                        else messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
+                                        else
+                                            let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
+                                            if not (sourceEntity'.Exists world) then
+                                                world <-
+                                                    if World.getEntityAllowedToMount sourceEntity world
+                                                    then sourceEntity.SetMountOptWithAdjustment None world
+                                                    else world
+                                                world <- World.renameEntityImmediate sourceEntity sourceEntity' world
+                                                if newEntityParentOpt = Some sourceEntity then newEntityParentOpt <- Some sourceEntity'
+                                                selectEntityOpt (Some sourceEntity')
+                                                showSelectedEntity <- true
+                                            else messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
+                                    else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                                 | None -> ()
 
                         // entity editing
