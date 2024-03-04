@@ -836,7 +836,7 @@ module WorldEntityModule =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the world's clipboard.
-        static member pasteEntityFromClipboard pasteType (distance : single) rightClickPosition positionSnapEir (parent : Simulant) world =
+        static member pasteEntityFromClipboard clearPropagationSource (distance : single) rightClickPosition positionSnapEir pasteType (parent : Simulant) world =
             match Clipboard with
             | Some (cut, entityDescriptor, entitySource) ->
                 let nameOpt =
@@ -891,12 +891,15 @@ module WorldEntityModule =
                 | None -> ()
                 let world = entity.SetTransform transform world
                 let world =
-                    match entity.GetPropagationSourceOpt world with
-                    | None ->
-                        if entitySource.Exists world
-                        then entity.SetPropagationSourceOpt (Some entitySource) world
-                        else world
-                    | Some _ -> world
+                    if clearPropagationSource
+                    then entity.SetPropagationSourceOpt None world
+                    else
+                        match entity.GetPropagationSourceOpt world with
+                        | None ->
+                            if entitySource.Exists world
+                            then entity.SetPropagationSourceOpt (Some entitySource) world
+                            else world
+                        | Some _ -> world
                 let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
                 let world = entity.SetMountOpt mountOpt world
                 (Some entity, world)

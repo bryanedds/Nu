@@ -990,11 +990,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         | Some _ | None -> false
 
-    let private tryPaste atMouse parentOpt =
+    let private tryPaste clearPropagationSource atMouse parentOpt =
         snapshot ()
         let positionSnapEir = if snaps2dSelected then Left (a__ snaps2d) else Right (a__ snaps3d)
         let parent = match parentOpt with Some parent -> parent | None -> selectedGroup :> Simulant
-        let (entityOpt, wtemp) = World.pasteEntityFromClipboard atMouse newEntityDistance rightClickPosition positionSnapEir parent world in world <- wtemp
+        let (entityOpt, wtemp) = World.pasteEntityFromClipboard clearPropagationSource newEntityDistance rightClickPosition positionSnapEir atMouse parent world in world <- wtemp
         match entityOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
@@ -1460,7 +1460,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 elif ImGui.IsKeyPressed ImGuiKey.Y && ImGui.IsCtrlDown () then tryRedo () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.X && ImGui.IsCtrlDown () then tryCutSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlDown () then tryCopySelectedEntity () |> ignore<bool>
-                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
+                elif ImGui.IsKeyPressed ImGuiKey.V && ImGui.IsCtrlDown () then tryPaste (ImGui.IsShiftDown ()) PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () then createEntity false false
                 elif ImGui.IsKeyPressed ImGuiKey.Delete then tryDeleteSelectedEntity () |> ignore<bool>
                 elif ImGui.IsKeyPressed ImGuiKey.Escape then
@@ -1511,7 +1511,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Separator ()
             if ImGui.MenuItem "Cut Entity" then tryCutSelectedEntity () |> ignore<bool>
             if ImGui.MenuItem "Copy Entity" then tryCopySelectedEntity () |> ignore<bool>
-            if ImGui.MenuItem "Paste Entity" then tryPaste PasteAtLook (Some entity) |> ignore<bool>
+            if ImGui.MenuItem "Paste Entity" then tryPaste false PasteAtLook (Some entity) |> ignore<bool>
+            if ImGui.MenuItem "Paste Entity (w/o Propagation Source)" then tryPaste true PasteAtLook (Some entity) |> ignore<bool>
             ImGui.Separator ()
             if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
             if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
@@ -2754,7 +2755,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
+                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste false PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
+                                if ImGui.MenuItem ("Paste Entity (w/o Propagation Source)", "Ctrl+Shift+V") then tryPaste true PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
                                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
@@ -3721,7 +3723,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // entity context menu
                 if showEntityContextMenu then
                     ImGui.SetNextWindowPos rightClickPosition
-                    ImGui.SetNextWindowSize (v2 280.0f 300.0f)
+                    ImGui.SetNextWindowSize (v2 280.0f 323.0f)
                     if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoResize) then
                         if ImGui.Button "Create" then
                             createEntity true false
@@ -3743,9 +3745,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.IsKeyReleased ImGuiKey.Escape then
                             showEntityContextMenu <- false
                         ImGui.Separator ()
-                        if ImGui.Button "Cut" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
-                        if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
-                        if ImGui.Button "Paste" then tryPaste PasteAtMouse (Option.map cast newEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Cut Entity" then tryCutSelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Copy Entity" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Paste Entity" then tryPaste false PasteAtMouse (Option.map cast newEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
+                        if ImGui.Button "Paste Entity (w/o Propagation Source)" then tryPaste true PasteAtMouse (Option.map cast newEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
                         ImGui.Separator ()
                         if ImGui.Button "Open Entity" then showOpenEntityDialog <- true
                         if ImGui.Button "Save Entity" then
