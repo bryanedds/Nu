@@ -1492,7 +1492,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let eyeRotation = World.getEye3dRotation world
                     let eyeCenterOffset = Vector3.Transform (v3Back * newEntityDistance, eyeRotation)
                     desiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
-        let popupContextItemTitle = "##popupContextItem"
+        let popupContextItemTitle = "##popupContextItem" + scstring entity
         let mutable openPopupContextItemWhenUnselected = false
         if ImGui.BeginPopupContextItem popupContextItemTitle then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
