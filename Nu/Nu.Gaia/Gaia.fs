@@ -834,19 +834,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private trySaveSelectedEntity filePath =
         match selectedEntityOpt with
-        | Some selectedEntity ->
-            try World.writeEntityToFile false filePath selectedEntity world
+        | Some entity when entity.Exists world ->
+            try World.writeEntityToFile false filePath entity world
                 try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
                     if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                         File.Copy (filePath, deploymentPath, true)
                 with exn ->
                     messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
-                entityFilePaths <- Map.add selectedEntity.EntityAddress entityFileDialogState.FilePath entityFilePaths
+                entityFilePaths <- Map.add entity.EntityAddress entityFileDialogState.FilePath entityFilePaths
                 true
             with exn ->
                 messageBoxOpt <- Some ("Could not save file due to: " + scstring exn)
                 false
-        | None -> false
+        | Some _ | None -> false
 
     let private tryLoadSelectedEntity filePath =
 
@@ -867,8 +867,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
                     let entity =
                         match selectedEntityOpt with
-                        | Some selectedEntity -> selectedEntity
-                        | None ->
+                        | Some entity when entity.Exists world -> entity
+                        | Some _ | None ->
                             let name = Gen.nameForEditor entityDescriptor.EntityDispatcherName
                             let surnames =
                                 match newEntityParentOpt with
@@ -939,19 +939,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private tryPropagateSelectedEntity () =
         match selectedEntityOpt with
-        | Some selectedEntity ->
+        | Some entity when entity.Exists world ->
             snapshot ()
-            world <- World.propagateEntityStructure selectedEntity world
+            world <- World.propagateEntityStructure entity world
             true
-        | None -> false
+        | Some _ | None -> false
 
     let private tryWipePropagationTargets () =
         match selectedEntityOpt with
-        | Some selectedEntity ->
+        | Some entity when entity.Exists world ->
             snapshot ()
-            world <- World.clearPropagationTargets selectedEntity world
+            world <- World.clearPropagationTargets entity world
             true
-        | None -> false
+        | Some _ | None -> false
 
     let private tryReorderSelectedEntity up =
         if String.IsNullOrWhiteSpace entityHierarchySearchStr then
@@ -1470,7 +1470,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if expandEntityHierarchy then ImGui.SetNextItemOpen true
             if collapseEntityHierarchy then ImGui.SetNextItemOpen false
         match selectedEntityOpt with
-        | Some selectedEntity when showSelectedEntity ->
+        | Some selectedEntity when selectedEntity.Exists world && showSelectedEntity ->
             let relation = relate entity selectedEntity
             if  Array.notExists (fun t -> t = Parent || t = Current) relation.Links &&
                 relation.Links.Length > 0 then
@@ -2718,12 +2718,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
                                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
                                     match selectedEntityOpt with
-                                    | Some selectedEntity ->
-                                        match Map.tryFind selectedEntity.EntityAddress entityFilePaths with
+                                    | Some entity when entity.Exists world ->
+                                        match Map.tryFind entity.EntityAddress entityFilePaths with
                                         | Some filePath -> entityFileDialogState.FilePath <- filePath
                                         | None -> entityFileDialogState.FileName <- ""
                                         showSaveEntityDialog <- true
-                                    | None -> ()
+                                    | Some _ | None -> ()
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Edit" then
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>

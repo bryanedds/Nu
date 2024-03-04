@@ -11,7 +11,7 @@ open Prime
 module WorldEntityModule =
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
-    let mutable private Clipboard : (EntityDescriptor * Entity) option = None
+    let mutable private Clipboard : (bool * EntityDescriptor * Entity) option = None
 
     [<RequireQualifiedAccess>]
     module private Cached =
@@ -827,26 +827,31 @@ module WorldEntityModule =
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
             let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
-            Clipboard <- Some (entityDescriptor, entity)
+            Clipboard <- Some (false, entityDescriptor, entity)
 
         /// Cut an entity to the world's clipboard.
         static member cutEntityToClipboard (entity : Entity) world =
-            World.copyEntityToClipboard entity world
+            let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+            Clipboard <- Some (true, entityDescriptor, entity)
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the world's clipboard.
         static member pasteEntityFromClipboard pasteType (distance : single) rightClickPosition positionSnapEir (parent : Simulant) world =
             match Clipboard with
-            | Some (entityDescriptor, entitySource) ->
+            | Some (cut, entityDescriptor, entitySource) ->
                 let nameOpt =
-                    match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
-                    | (true, nameSymbol) ->
-                        let name = symbolToValue nameSymbol
-                        let entityProposed = parent.Names |> Array.add name |> Entity
-                        if World.getEntityExists entityProposed world
-                        then Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entityProposed.Group world)
-                        else Some name
-                    | (_, _) -> failwithumf () // entity descriptor should always have a name property
+                    if cut then // try to preserve name only if cut
+                        match entityDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
+                        | (true, nameSymbol) ->
+                            let name = symbolToValue nameSymbol
+                            let entityProposed = parent.Names |> Array.add name |> Entity
+                            if World.getEntityExists entityProposed world
+                            then Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entityProposed.Group world)
+                            else Some name
+                        | (_, _) -> Log.info "EntityDescriptor missing its Name property."; None
+                    else
+                        let group = Group (Array.take 3 parent.Names)
+                        Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName group world) // otherwise use generated name
                 let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
                 let (position, positionSnapOpt) =
                     let absolute = entity.GetAbsolute world
