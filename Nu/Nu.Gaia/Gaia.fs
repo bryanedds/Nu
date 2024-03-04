@@ -1299,10 +1299,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             dragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         else
                             let entity =
-                                if  World.isKeyboardCtrlDown world &&
-                                    tryCopySelectedEntity () &&
-                                    tryPaste (PasteAt (entity.GetPosition world)) (Option.map cast newEntityParentOpt) then
-                                    Option.defaultValue entity selectedEntityOpt
+                                if ImGui.IsCtrlDown () then
+                                    let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+                                    let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
+                                    let parent = newEntityParentOpt |> Option.map cast |> Option.defaultValue entity.Group
+                                    let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                                    if Option.isNone (newEntity.GetPropagationSourceOpt world) then
+                                        world <- newEntity.SetPropagationSourceOpt (Some entity) world
+                                    selectEntityOpt (Some newEntity)
+                                    ImGui.SetWindowFocus "Viewport"
+                                    showSelectedEntity <- true
+                                    newEntity
                                 else entity
                             let viewport = World.getViewport world
                             let eyeCenter = World.getEye2dCenter world
@@ -1548,6 +1555,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
                             let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                            if Option.isNone (newEntity.GetPropagationSourceOpt world) then
+                                world <- newEntity.SetPropagationSourceOpt (Some entity) world
                             selectEntityOpt (Some newEntity)
                             showSelectedEntity <- true
                         elif ImGui.IsAltDown () then
@@ -2619,10 +2628,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if scale.Y < 0.01f then scale.Y <- 0.01f
                                 if scale.Z < 0.01f then scale.Z <- 0.01f
                             let entity =
-                                if  copying &&
-                                    tryCopySelectedEntity () &&
-                                    tryPaste (PasteAt position) (Option.map cast newEntityParentOpt) then
-                                    Option.defaultValue entity selectedEntityOpt
+                                if copying then
+                                    let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+                                    let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
+                                    let parent = newEntityParentOpt |> Option.map cast |> Option.defaultValue entity.Group
+                                    let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                                    if Option.isNone (newEntity.GetPropagationSourceOpt world) then
+                                        world <- newEntity.SetPropagationSourceOpt (Some entity) world
+                                    selectEntityOpt (Some newEntity)
+                                    ImGui.SetWindowFocus "Viewport"
+                                    showSelectedEntity <- true
+                                    newEntity
                                 else entity
                             match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
                             | Some mount ->
