@@ -1497,24 +1497,36 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.BeginPopupContextItem popupContextItemTitle then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
             selectEntityOpt (Some entity)
-            if ImGui.MenuItem "Create" then createEntity false true
-            if ImGui.MenuItem "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem "Create Entity" then createEntity false true
+            if ImGui.MenuItem "Delete Entity" then tryDeleteSelectedEntity () |> ignore<bool>
             ImGui.Separator ()
-            if ImGui.MenuItem "Cut" then tryCutSelectedEntity () |> ignore<bool>
-            if ImGui.MenuItem "Copy" then tryCopySelectedEntity () |> ignore<bool>
-            if ImGui.MenuItem "Paste" then tryPaste PasteAtLook (Some entity) |> ignore<bool>
+            if ImGui.MenuItem "Cut Entity" then tryCutSelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem "Copy Entity" then tryCopySelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem "Paste Entity" then tryPaste PasteAtLook (Some entity) |> ignore<bool>
             ImGui.Separator ()
-            if newEntityParentOpt = Some entity then
-                if ImGui.MenuItem "Reset Creation Parent" then newEntityParentOpt <- None; showEntityContextMenu <- false
-            else
-                if ImGui.MenuItem "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
+            if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
+            if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
+                match selectedEntityOpt with
+                | Some entity when entity.Exists world ->
+                    match Map.tryFind entity.EntityAddress entityFilePaths with
+                    | Some filePath -> entityFileDialogState.FilePath <- filePath
+                    | None -> entityFileDialogState.FileName <- ""
+                    showSaveEntityDialog <- true
+                | Some _ | None -> ()
             ImGui.Separator ()
+            if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
             match selectedEntityOpt with
             | Some entity when entity.Exists world ->
                 if entity.GetStatic world
                 then if ImGui.MenuItem "Make Entity Family Non-Static" then trySetSelectedEntityFamilyStatic false
                 else if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true
             | Some _ | None -> ()
+            if newEntityParentOpt = Some entity then
+                if ImGui.MenuItem "Reset Creation Parent" then newEntityParentOpt <- None; showEntityContextMenu <- false
+            else
+                if ImGui.MenuItem "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
             ImGui.EndPopup ()
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
@@ -2705,15 +2717,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     else messageBoxOpt <- Some "Cannot close protected or only group."
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Entity" then
+                                if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
+                                if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
+                                ImGui.Separator ()
                                 if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
-                                if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
                                 if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
@@ -2724,13 +2733,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         | None -> entityFileDialogState.FileName <- ""
                                         showSaveEntityDialog <- true
                                     | Some _ | None -> ()
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Edit" then
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
                                 if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
                                 if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
+                                if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
                                 if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
                                 ImGui.Separator ()
                                 if not world.Advancing
@@ -3663,7 +3676,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // entity context menu
                 if showEntityContextMenu then
                     ImGui.SetNextWindowPos rightClickPosition
-                    ImGui.SetNextWindowSize (v2 280.0f 185.0f)
+                    ImGui.SetNextWindowSize (v2 280.0f 300.0f)
                     if ImGui.Begin ("ContextMenu", ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoResize) then
                         if ImGui.Button "Create" then
                             createEntity true false
@@ -3689,9 +3702,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.Button "Copy" then tryCopySelectedEntity () |> ignore<bool>; showEntityContextMenu <- false
                         if ImGui.Button "Paste" then tryPaste PasteAtMouse (Option.map cast newEntityParentOpt) |> ignore<bool>; showEntityContextMenu <- false
                         ImGui.Separator ()
-                        if ImGui.Button "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
+                        if ImGui.Button "Open Entity" then showOpenEntityDialog <- true
+                        if ImGui.Button "Save Entity" then
+                            match selectedEntityOpt with
+                            | Some entity when entity.Exists world ->
+                                match Map.tryFind entity.EntityAddress entityFilePaths with
+                                | Some filePath -> entityFileDialogState.FilePath <- filePath
+                                | None -> entityFileDialogState.FileName <- ""
+                                showSaveEntityDialog <- true
+                            | Some _ | None -> ()
                         ImGui.Separator ()
+                        if ImGui.Button "Auto Bounds Entity" then tryAutoBoundsSelectedEntity () |> ignore<bool>
+                        if ImGui.Button "Propagate Entity" then tryPropagateSelectedEntity () |> ignore<bool>
+                        if ImGui.Button "Wipe Propagation Targets" then tryWipePropagationTargets () |> ignore<bool>
                         if ImGui.Button "Show in Hierarchy" then showSelectedEntity <- true; showEntityContextMenu <- false
+                        if ImGui.Button "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
                         ImGui.End ()
 
                 // imgui inspector window
