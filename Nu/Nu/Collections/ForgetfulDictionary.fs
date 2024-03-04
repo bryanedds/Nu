@@ -10,9 +10,9 @@ open Prime
 /// NOTE: not supported by SymbolicConverter.
 type ForgetfulDictionary<'k, 'v when 'k : equality> (capacity : int, comparer : 'k IEqualityComparer) =
 
-    let entries = new Dictionary<'k, 'v> (capacity, comparer)
-    let accesses = new Dictionary<'k, int64> (capacity, comparer)
-    let evictions = new List<'k> () // OPTIMIZATION: cached to avoid thrashing LOH.
+    let entries = Dictionary<'k, 'v> (capacity, comparer)
+    let accesses = Dictionary<'k, int64> (capacity, comparer)
+    let evictions = List<'k> () // OPTIMIZATION: cached to avoid thrashing LOH.
 
     new (capacity) =
         ForgetfulDictionary (capacity, HashIdentity.Structural)

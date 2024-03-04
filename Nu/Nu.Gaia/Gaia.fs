@@ -1568,7 +1568,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
                 | None -> ()
         let mutable separatorInserted = false
-        if entity.Has<FreezerFacet> world then
+        if entity.Exists world && entity.Has<FreezerFacet> world then // check for existence since entity may have been deleted just above
             let frozen = entity.GetFrozen world
             let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
             ImGui.SameLine ()
