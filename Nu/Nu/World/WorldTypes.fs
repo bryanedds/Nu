@@ -796,9 +796,9 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Eye2dSize : Vector2
       Eye3dCenter : Vector3
       Eye3dRotation : Quaternion
-      Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value
-      Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value
-      Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value
+      Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value.
+      Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
+      Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
       Order : int64
       Id : Guid }
 

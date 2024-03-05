@@ -2128,7 +2128,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let propertyValue = getProperty propertyDescriptor simulant
         let propertyValueStr = converter.ConvertToString propertyValue
         match propertyValue with
-        | :? Frustum -> () // TODO: P1: implement FrustumConverter.
         | :? bool as b -> let mutable b = b in if ImGui.Checkbox (name, &b) then setProperty b propertyDescriptor simulant
         | :? int8 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int8 i) propertyDescriptor simulant
         | :? uint8 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint8 i) propertyDescriptor simulant
@@ -2181,6 +2180,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | :? Quaternion as q ->
             let mutable v = v4 q.X q.Y q.Z q.W
             if ImGui.DragFloat4 (name, &v, snapDrag) then setProperty (quat v.X v.Y v.Z v.W) propertyDescriptor simulant
+        | :? Frustum as frustum ->
+            let mutable frustumStr = string frustum
+            ImGui.InputText (name, &frustumStr, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
         | :? Color as c ->
             let mutable v = v4 c.R c.G c.B c.A
             if ImGui.ColorEdit4 (name, &v) then setPropertyValue (color v.X v.Y v.Z v.W) propertyDescriptor simulant
