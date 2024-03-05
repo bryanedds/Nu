@@ -43,9 +43,9 @@ module CoreOperators =
     let inline (=/=) (a : obj) (b : obj) =
         objNeq a b
 
-/// An value representation of a pair.
-/// TODO: removed this and replace its use with StructPair after updating Prime.
-type [<Struct>] PairValue<'a, 'b> =
+/// An struct representation of a pair.
+/// TODO: removed this after updating Prime.
+type [<Struct>] StructPair<'a, 'b> =
     { Fst : 'a; Snd : 'b }
     static member make<'a, 'b> (fst : 'a) (snd : 'b) =
         { Fst = fst; Snd = snd }
