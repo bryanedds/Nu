@@ -386,17 +386,7 @@ module WorldModule =
 
         /// Attempt to get the given dispatcher's optional routed overlay name.
         static member tryGetRoutedOverlayNameOpt dispatcherName world =
-            World.getOverlayRouterBy (OverlayRouter.tryGetOverlayNameOpt dispatcherName) world
-
-        static member internal getOverlayRouter world =
-            World.getAmbientStateBy AmbientState.getOverlayRouter world
-
-        static member internal getOverlayRouterBy by world =
-            let overlayRouter = World.getOverlayRouter world
-            by overlayRouter
-
-        static member internal setOverlayRouter router world =
-            World.updateAmbientState (AmbientState.setOverlayRouter router) world
+            World.getOverlayerBy (Overlayer.tryGetOverlayNameOpt dispatcherName) world
 
         static member internal acknowledgeUnculledRenderRequest world =
             World.updateAmbientState AmbientState.acknowledgeUnculledRenderRequest world

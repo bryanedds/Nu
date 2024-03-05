@@ -44,7 +44,7 @@ module CoreOperators =
         objNeq a b
 
 /// An value representation of a pair.
-/// TODO: move this into Prime and give it the same fns as Pair.
+/// TODO: removed this and replace its use with StructPair after updating Prime.
 type [<Struct>] PairValue<'a, 'b> =
     { Fst : 'a; Snd : 'b }
     static member make<'a, 'b> (fst : 'a) (snd : 'b) =

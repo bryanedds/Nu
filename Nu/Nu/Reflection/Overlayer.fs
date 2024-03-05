@@ -92,7 +92,8 @@ module Overlayer =
         private
             { IntrinsicOverlays : Overlay list
               ExtrinsicOverlays : Overlay list
-              Overlays : Map<string, Overlay> }
+              Overlays : Map<string, Overlay>
+              Routes : Map<string, string> }
 
     let rec private getOverlaySymbols2 overlayName overlayer =
         match Map.tryFind overlayName overlayer.Overlays with
@@ -263,19 +264,31 @@ module Overlayer =
     let getOverlays overlayer =
         overlayer.Overlays
 
+    /// Try to find an optional overlay name for a given classification.
+    let tryGetOverlayNameOpt dispatcherName overlayRouter =
+        Map.tryFind dispatcherName overlayRouter.Routes
+
     /// The empty overlayer.
     let empty =
         { IntrinsicOverlays = List.empty
           ExtrinsicOverlays = List.empty
-          Overlays = Map.empty }
+          Overlays = Map.empty
+          Routes = Map.empty }
 
     /// Make an overlayer.
     let make intrinsicOverlays extrinsicOverlays =
         let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) intrinsicOverlays
         let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
+        let overlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap
+        let overlayRoutes =
+            overlays.Pairs |>
+            Seq.map (fun (_, overlay) -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
+            Seq.concat |>
+            Map.ofSeq
         { IntrinsicOverlays = intrinsicOverlays
           ExtrinsicOverlays = extrinsicOverlays
-          Overlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap }
+          Overlays = overlays
+          Routes = overlayRoutes }
 
     /// Attempt to make an overlayer by loading overlays from a file and then combining it with
     /// the given intrinsic overlays.

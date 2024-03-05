@@ -192,7 +192,6 @@ module AmbientState =
               // cache line 3
               Symbolics : Symbolics
               Overlayer : Overlayer
-              OverlayRouter : OverlayRouter
               UnculledRenderRequested : bool }
 
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
@@ -384,18 +383,6 @@ module AmbientState =
     let setOverlayer overlayer state =
         { state with Overlayer = overlayer }
 
-    /// Get the overlay router.
-    let getOverlayRouter state =
-        state.OverlayRouter
-
-    /// Get the overlay router.
-    let getOverlayRouterBy by state =
-        by state.OverlayRouter
-
-    /// Set the overlay router.
-    let setOverlayRouter router state =
-        { state with OverlayRouter = router }
-
     /// Acknowledge an unculled render request.
     let acknowledgeUnculledRenderRequest state =
         { state with UnculledRenderRequested = false }
@@ -409,7 +396,7 @@ module AmbientState =
         { state with UnculledRenderRequested = true }
 
     /// Make an ambient state value.
-    let make imperative accompanied advancing symbolics overlayer overlayRouter sdlDepsOpt =
+    let make imperative accompanied advancing symbolics overlayer sdlDepsOpt =
         let flags =
             (if imperative then ImperativeMask else 0u) |||
             (if accompanied then AccompaniedMask else 0u) |||
@@ -429,7 +416,6 @@ module AmbientState =
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics
           Overlayer = overlayer
-          OverlayRouter = overlayRouter
           UnculledRenderRequested = false }
 
 /// The ambient state of the world.

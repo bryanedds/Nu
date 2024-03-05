@@ -476,9 +476,8 @@ module WorldModule3 =
 
             // make the world's ambient state
             let ambientState =
-                let overlayRouter = OverlayRouter.empty
                 let symbolics = Symbolics.makeEmpty ()
-                AmbientState.make config.Imperative config.Accompanied true symbolics Overlayer.empty overlayRouter None
+                AmbientState.make config.Imperative config.Accompanied true symbolics Overlayer.empty None
 
             // make the world's quadtree
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -564,14 +563,8 @@ module WorldModule3 =
 
                     // make the world's ambient state
                     let ambientState =
-                        let overlays = Overlayer.getIntrinsicOverlays overlayer @ Overlayer.getExtrinsicOverlays overlayer
-                        let overlayRoutes =
-                            overlays |>
-                            List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
-                            List.concat
-                        let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolics = Symbolics.makeEmpty ()
-                        AmbientState.make config.Imperative config.Accompanied config.Advancing symbolics overlayer overlayRouter (Some sdlDeps)
+                        AmbientState.make config.Imperative config.Accompanied config.Advancing symbolics overlayer (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize

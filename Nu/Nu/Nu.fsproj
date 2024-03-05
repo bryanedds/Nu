@@ -70,7 +70,6 @@
 		<Compile Include="ImGui\ImGuizmo.fs" />
 		<Compile Include="Reflection\Reflection.fs" />
 		<Compile Include="Reflection\Overlayer.fs" />
-		<Compile Include="Reflection\OverlayRouter.fs" />
 		<Compile Include="EventGraph\Simulant.fs" />
 		<Compile Include="EventGraph\EventTrace.fs" />
 		<Compile Include="EventGraph\Event.fs" />

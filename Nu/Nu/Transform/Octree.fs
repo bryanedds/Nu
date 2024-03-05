@@ -12,10 +12,10 @@ open Prime
 module OctelementMasks =
 
     // OPTIMIZATION: Octelement flag bit-masks for performance.
-    let [<Literal>] VisibleMask =       0b00000001u
-    let [<Literal>] StaticMask =        0b00000010u
-    let [<Literal>] LightProbeMask =    0b00000100u
-    let [<Literal>] LightMask =         0b00001000u
+    let [<Literal>] VisibleMask =       0b0001u
+    let [<Literal>] StaticMask =        0b0010u
+    let [<Literal>] LightProbeMask =    0b0100u
+    let [<Literal>] LightMask =         0b1000u
 
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks

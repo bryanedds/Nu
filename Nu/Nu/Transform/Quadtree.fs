@@ -12,8 +12,8 @@ open Prime
 module QuadelementMasks =
 
     // OPTIMIZATION: Quadelement flag bit-masks for performance.
-    let [<Literal>] VisibleMask =   0b00000001u
-    let [<Literal>] StaticMask =    0b00000010u
+    let [<Literal>] VisibleMask =   0b0001u
+    let [<Literal>] StaticMask =    0b0010u
 
 // NOTE: opening this in order to make the Quadelement property implementations reasonably succinct.
 open QuadelementMasks
