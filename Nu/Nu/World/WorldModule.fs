@@ -26,6 +26,7 @@ module WorldModuleOperators =
 module WorldModule =
 
     /// Track if we're in the portion of the frame before tasklet processing has started or after.
+    /// TODO: consider making this an AmbientState flag.
     let mutable internal TaskletProcessingStarted = false
 
     /// F# reach-around for adding script unsubscriptions to simulants.

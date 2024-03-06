@@ -42,7 +42,6 @@ type UnsubscriptionEntries =
 module EventGraph =
 
     /// OPTIMIZATION: caches event address for fast wildcard address generation.
-    let mutable private EventAddressCaching = false
     let private EventAddressCache = Dictionary<obj, obj> HashIdentity.Structural
     let private EventAddressListCache = Dictionary<obj Address, obj List> HashIdentity.Structural
 
@@ -108,23 +107,14 @@ module EventGraph =
     let setEventFilter filter (eventGraph : EventGraph) =
         { eventGraph with EventFilter = filter }
 
-    /// Set whether event addresses are cached internally.
-    let setEventAddressCaching caching =
-        if not caching then
-            EventAddressCache.Clear ()
-            EventAddressListCache.Clear ()
-        EventAddressCaching <- caching
-
     /// Remove from the event address cache all addresses belonging to the given target.
     let cleanEventAddressCache (eventTarget : 'a Address) =
-        if EventAddressCaching then
-            let eventTargetOa = atooa eventTarget
-            match EventAddressListCache.TryGetValue eventTargetOa with
-            | (true, entries) ->
-                for entry in entries do EventAddressCache.Remove entry |> ignore
-                EventAddressListCache.Remove eventTargetOa |> ignore
-            | (false, _) -> ()
-        else ()
+        let eventTargetOa = atooa eventTarget
+        match EventAddressListCache.TryGetValue eventTargetOa with
+        | (true, entries) ->
+            for entry in entries do EventAddressCache.Remove entry |> ignore
+            EventAddressListCache.Remove eventTargetOa |> ignore
+        | (false, _) -> ()
 
     // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
     // any specific subscribers.
@@ -186,28 +176,26 @@ module EventGraph =
 
     /// Get the wild-carded addresses of an event address.
     let getEventAddresses2 (eventAddress : 'a Address) (_ : EventGraph) =
-        if EventAddressCaching then
-            match EventAddressCache.TryGetValue eventAddress with
-            | (false, _) ->
-                let eventAddressNames = Address.getNames eventAddress
-                let eventAddresses = getEventAddresses1 eventAddress
-                match Array.tryFindIndex (fun name -> name = "Event") eventAddressNames with
-                | Some eventIndex ->
-                    let eventTargetIndex = inc eventIndex
-                    if eventTargetIndex < Array.length eventAddressNames then
-                        let eventTarget = eventAddressNames |> Array.skip eventTargetIndex |> Address.makeFromArray
-                        match EventAddressListCache.TryGetValue eventTarget with
-                        | (false, _) -> EventAddressListCache.Add (eventTarget, List [eventAddress :> obj]) |> ignore
-                        | (true, list) -> list.Add eventAddress
-                        EventAddressCache.Add (eventAddress, eventAddresses)
-                    eventAddresses
-                | None ->
-                    failwith
-                        ("The event address '" + scstring eventAddress +
-                         "' is missing the 'Event' name. All event addresses must separate the event names from the publisher names with 'Event', " +
-                         "like 'Click/Event/Button', or 'Mouse/Left/Down/Event' if there is no publisher.")
-            | (true, eventAddressesObj) -> eventAddressesObj :?> 'a Address array
-        else getEventAddresses1 eventAddress
+        match EventAddressCache.TryGetValue eventAddress with
+        | (false, _) ->
+            let eventAddressNames = Address.getNames eventAddress
+            let eventAddresses = getEventAddresses1 eventAddress
+            match Array.tryFindIndex (fun name -> name = "Event") eventAddressNames with
+            | Some eventIndex ->
+                let eventTargetIndex = inc eventIndex
+                if eventTargetIndex < Array.length eventAddressNames then
+                    let eventTarget = eventAddressNames |> Array.skip eventTargetIndex |> Address.makeFromArray
+                    match EventAddressListCache.TryGetValue eventTarget with
+                    | (false, _) -> EventAddressListCache.Add (eventTarget, List [eventAddress :> obj]) |> ignore
+                    | (true, list) -> list.Add eventAddress
+                    EventAddressCache.Add (eventAddress, eventAddresses)
+                eventAddresses
+            | None ->
+                failwith
+                    ("The event address '" + scstring eventAddress +
+                        "' is missing the 'Event' name. All event addresses must separate the event names from the publisher names with 'Event', " +
+                        "like 'Click/Event/Button', or 'Mouse/Left/Down/Event' if there is no publisher.")
+        | (true, eventAddressesObj) -> eventAddressesObj :?> 'a Address array
 
     /// Get subscriptions for eventAddress sorted by publishSorter.
     let getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress (eventGraph : EventGraph) (world : 'w) =

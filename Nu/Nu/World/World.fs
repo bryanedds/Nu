@@ -256,9 +256,6 @@ type Nu () =
             // init miscellaneous F# reach-arounds
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
 
-            // init event world caching
-            EventGraph.setEventAddressCaching true
-
             // mark init flag
             Initialized <- true
 
