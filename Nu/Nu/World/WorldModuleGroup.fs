@@ -10,8 +10,8 @@ open Prime
 module WorldModuleGroup =
 
     /// Dynamic property getters / setters.
-    let internal GroupGetters = Dictionary<string, Group -> World -> Property> StringComparer.Ordinal
-    let internal GroupSetters = Dictionary<string, Property -> Group -> World -> struct (bool * World)> StringComparer.Ordinal
+    let private GroupGetters = Dictionary<string, Group -> World -> Property> StringComparer.Ordinal
+    let private GroupSetters = Dictionary<string, Property -> Group -> World -> struct (bool * World)> StringComparer.Ordinal
 
     type World with
     

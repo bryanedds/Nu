@@ -12,21 +12,21 @@ open Prime
 module WorldModuleEntity =
 
     /// A reflective property getter.
-    type internal PropertyGetter = Entity -> World -> Property
+    type private PropertyGetter = Entity -> World -> Property
 
     /// A reflective property setter.
-    type internal PropertySetter = Property -> Entity -> World -> struct (bool * World)
+    type private PropertySetter = Property -> Entity -> World -> struct (bool * World)
 
     /// Reflective property getters / setters.
-    let internal EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
-    let internal EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
+    let private EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
+    let private EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
+
+    // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
+    let mutable private ChangeEventNamesFree = true
+    let private ChangeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
 
     /// Change Publishing ID.
     let internal EntityChangeCountsId = Gen.id
-
-    // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
-    let mutable changeEventNamesFree = true
-    let changeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
 
     type World with
 
@@ -116,19 +116,19 @@ module WorldModuleEntity =
                     // OPTIMIZATION: this optimization should be hit >= 90% of the time. The 10% of cases where
                     // it isn't should be acceptable.
                     if  Array.length entityNames = 4 &&
-                        changeEventNamesFree then
-                        changeEventNamesFree <- false
+                        ChangeEventNamesFree then
+                        ChangeEventNamesFree <- false
                         changeEventNamesUtilized <- true
-                        changeEventNamesCached.[1] <- propertyName
-                        changeEventNamesCached.[3] <- entityNames.[0]
-                        changeEventNamesCached.[4] <- entityNames.[1]
-                        changeEventNamesCached.[5] <- entityNames.[2]
-                        changeEventNamesCached.[6] <- entityNames.[3]
-                        rtoa<ChangeData> changeEventNamesCached
+                        ChangeEventNamesCached.[1] <- propertyName
+                        ChangeEventNamesCached.[3] <- entityNames.[0]
+                        ChangeEventNamesCached.[4] <- entityNames.[1]
+                        ChangeEventNamesCached.[5] <- entityNames.[2]
+                        ChangeEventNamesCached.[6] <- entityNames.[3]
+                        rtoa<ChangeData> ChangeEventNamesCached
                     else rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|] entityNames)
                 let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
                 let world = World.publishPlus changeData changeEventAddress eventTrace entity false false world
-                if changeEventNamesUtilized then changeEventNamesFree <- true
+                if changeEventNamesUtilized then ChangeEventNamesFree <- true
                 world
             else world
 
