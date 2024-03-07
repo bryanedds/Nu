@@ -280,15 +280,15 @@ module Overlayer =
         let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) intrinsicOverlays
         let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
         let overlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap
-        let overlayRoutes =
-            overlays.Pairs |>
-            Seq.map (fun (_, overlay) -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
-            Seq.concat |>
-            Map.ofSeq
+        let routes =
+            (intrinsicOverlays @ extrinsicOverlays) |>
+            List.map (fun overlay -> overlay.OverlaidTypeNames |> List.map (fun typeName -> (typeName, overlay.OverlayName))) |>
+            List.concat |>
+            Map.ofList
         { IntrinsicOverlays = intrinsicOverlays
           ExtrinsicOverlays = extrinsicOverlays
           Overlays = overlays
-          Routes = overlayRoutes }
+          Routes = routes }
 
     /// Attempt to make an overlayer by loading overlays from a file and then combining it with
     /// the given intrinsic overlays.
