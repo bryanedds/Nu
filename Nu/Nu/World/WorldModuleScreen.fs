@@ -14,7 +14,7 @@ module WorldModuleScreen =
     let private ScreenSetters = Dictionary<string, Property -> Screen -> World -> struct (bool * World)> StringComparer.Ordinal
 
     type World with
-    
+
         static member private screenStateFinder (screen : Screen) world =
             UMap.tryFind screen world.ScreenStates
 
@@ -36,7 +36,7 @@ module WorldModuleScreen =
                 else simulants
             let screenStates = UMap.add screen screenState world.ScreenStates
             World.choose { world with Simulants = simulants; ScreenStates = screenStates }
-        
+
         static member private screenStateRemover (screen : Screen) world =
             let simulants =
                 match world.Simulants.TryGetValue (Game.Handle :> Simulant) with

@@ -101,7 +101,8 @@ module SdlDeps =
     let internal attemptPerformSdlInit create destroy =
         let initResult = create ()
         let error = SDL.SDL_GetError ()
-        if initResult = 0 then Right ((), destroy)
+        if initResult = 0
+        then Right ((), destroy)
         else Left error
 
     /// Attempt to initalize an SDL resource.
@@ -109,27 +110,24 @@ module SdlDeps =
         let resourceEir = create ()
         match resourceEir with
         | Right resource ->
-            if resource <> IntPtr.Zero then Right (resourceEir, destroy)
-            else
-                let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
-                Left error
+            if resource <> IntPtr.Zero
+            then Right (resourceEir, destroy)
+            else Left ("SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'.")
         | Left _ -> Right (resourceEir, destroy)
 
     /// Attempt to initalize an SDL resource.
     let internal tryMakeSdlResource create destroy =
         let resource = create ()
-        if resource <> IntPtr.Zero then Right (resource, destroy)
-        else
-            let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
-            Left error
+        if resource <> IntPtr.Zero
+        then Right (resource, destroy)
+        else Left ("SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'.")
 
     /// Attempt to initalize a global SDL resource.
     let internal tryMakeSdlGlobalResource create destroy =
         let resource = create ()
-        if resource = 0 then Right ((), destroy)
-        else
-            let error = "SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'."
-            Left error
+        if resource = 0
+        then Right ((), destroy)
+        else Left ("SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'.")
 
     /// Attempt to make an SdlDeps instance.
     let tryMake sdlConfig =
@@ -183,11 +181,7 @@ module SdlDeps =
                 | Left error -> Left error
                 | Right ((), destroy) ->
                     match tryMakeSdlGlobalResource
-#if MIX_INIT_OGG
-                        (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds... WHY?
-#else
                         (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
-#endif
                         (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
                     | Left error -> Left error
                     | Right ((), destroy) ->

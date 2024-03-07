@@ -545,6 +545,171 @@ module WorldModule2 =
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
+        static member internal handleSubscribeAndUnsubscribeEvent subscribing (eventAddress : obj Address) (_ : Simulant) world =
+            // here we need to update the event publish flags for entities based on whether there are subscriptions to
+            // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
+            // that these optimizations do not support, and warn the developer if they are invoked. Additionally, we
+            // warn if the user attempts to subscribe to a Change event with a wildcard as doing so is not supported.
+            let eventNames = Address.getNames eventAddress
+            let eventNamesLength = Array.length eventNames
+            let world =
+                if eventNamesLength >= 6 then
+                    let eventFirstName = eventNames.[0]
+                    match eventFirstName with
+#if !DISABLE_ENTITY_PRE_UPDATE
+                    | "PreUpdate" ->
+#if DEBUG
+                        if  Array.contains Address.WildcardName eventNames ||
+                            Array.contains Address.EllipsisName eventNames then
+                            Log.debug
+                                ("Subscribing to entity pre-update events with a wildcard or ellipsis is not supported. " +
+                                 "This will cause a bug where some entity pre-update events are not published.")
+#endif
+                        let entity = Nu.Entity (Array.skip 2 eventNames)
+                        World.updateEntityPublishPreUpdateFlag entity world |> snd'
+#endif
+                    | "Update" ->
+#if DEBUG
+                        if  Array.contains Address.WildcardName eventNames ||
+                            Array.contains Address.EllipsisName eventNames then
+                            Log.debug
+                                ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
+                                 "This will cause a bug where some entity update events are not published.")
+#endif
+                        let entity = Nu.Entity (Array.skip 2 eventNames)
+                        World.updateEntityPublishUpdateFlag entity world |> snd'
+#if !DISABLE_ENTITY_POST_UPDATE
+                    | "PostUpdate" ->
+#if DEBUG
+                        if  Array.contains Address.WildcardName eventNames ||
+                            Array.contains Address.EllipsisName eventNames then
+                            Log.debug
+                                ("Subscribing to entity post-update events with a wildcard or ellipsis is not supported. " +
+                                 "This will cause a bug where some entity post-update events are not published.")
+#endif
+                        let entity = Nu.Entity (Array.skip 2 eventNames)
+                        World.updateEntityPublishPostUpdateFlag entity world |> snd'
+#endif
+                    | "BodyCollision" | "BodySeparationExplicit" ->
+                        let entity = Nu.Entity (Array.skip 2 eventNames)
+                        World.updateBodyObservable subscribing entity world
+                    | _ -> world
+                else world
+            let world =
+                if eventNamesLength >= 4 then
+                    match eventNames.[0] with
+                    | "Change" ->
+                        let world =
+                            if eventNamesLength >= 6 then
+                                let entityAddress = rtoa (Array.skip 3 eventNames)
+                                let entity = Nu.Entity entityAddress
+                                match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+                                | (true, entityChangeCounts) ->
+                                    match entityChangeCounts.TryGetValue entityAddress with
+                                    | (true, entityChangeCount) ->
+                                        let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
+                                        let entityChangeCounts =
+                                            if entityChangeCount = 0
+                                            then UMap.remove entityAddress entityChangeCounts
+                                            else UMap.add entityAddress entityChangeCount entityChangeCounts
+                                        let world =
+                                            if entity.Exists world then
+                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd'
+                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd'
+                                                else world
+                                            else world
+                                        World.addKeyedValue EntityChangeCountsId entityChangeCounts world
+                                    | (false, _) ->
+                                        if not subscribing then failwithumf ()
+                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
+                                        World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                                | (false, _) ->
+                                    if not subscribing then failwithumf ()
+                                    let config = World.getCollectionConfig world
+                                    let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
+                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
+                                    World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                            else world
+                        if  Array.contains Address.WildcardName eventNames ||
+                            Array.contains Address.EllipsisName eventNames then
+                            Log.debug "Subscribing to change events with a wildcard or ellipsis is not supported."
+                        world
+                    | _ -> world
+                else world
+            world
+
+        static member internal sortSubscriptionsByElevation subscriptions world =
+            EventGraph.sortSubscriptionsBy
+                (fun (simulant : Simulant) _ ->
+                    match simulant with
+                    | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortHorizon = 0.0f; SortTarget = entity } :> IComparable
+                    | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortHorizon = 0.0f; SortTarget = group } :> IComparable
+                    | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortHorizon = 0.0f; SortTarget = screen } :> IComparable
+                    | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortHorizon = 0.0f; SortTarget = Game } :> IComparable
+                    | _ -> failwithumf ())
+                subscriptions
+                world
+
+        static member internal admitScreenElements screen world =
+            let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SList.ofSeq
+            let (entities2d, entities3d) = SList.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
+            let quadtree = World.getQuadtree world
+            for entity in entities2d do
+                let entityState = World.getEntityState entity world
+                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
+            if SList.notEmpty entities3d then
+                let octree = World.getOrCreateOctree world
+                for entity in entities3d do
+                    let entityState = World.getEntityState entity world
+                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    Octree.addElement entityState.Presence entityState.Bounds element octree
+            world
+                
+        static member internal evictScreenElements screen world =
+            let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> SArray.ofSeq
+            let (entities2d, entities3d) = SArray.partition (fun (entity : Entity) -> entity.GetIs2d world) entities
+            let quadtree = World.getQuadtree world
+            for entity in entities2d do
+                let entityState = World.getEntityState entity world
+                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
+            if SArray.notEmpty entities3d then
+                let octree = World.getOrCreateOctree world
+                for entity in entities3d do
+                    let entityState = World.getEntityState entity world
+                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    Octree.removeElement entityState.Presence entityState.Bounds element octree
+            world
+
+        static member internal registerScreenPhysics screen world =
+            let entities =
+                World.getGroups screen world |>
+                Seq.map (flip World.getEntities world) |>
+                Seq.concat |>
+                SList.ofSeq
+            SList.fold (fun world (entity : Entity) ->
+                World.registerEntityPhysics entity world)
+                world entities
+
+        static member internal unregisterScreenPhysics screen world =
+            let entities =
+                World.getGroups screen world |>
+                Seq.map (flip World.getEntities world) |>
+                Seq.concat |>
+                SList.ofSeq
+            SList.fold (fun world (entity : Entity) ->
+                World.unregisterEntityPhysics entity world)
+                world entities
+
+        static member internal signalFn (signalObj : obj) (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> (entity.GetDispatcher world).Signal (signalObj, entity, world)
+            | :? Group as group -> (group.GetDispatcher world).Signal (signalObj, group, world)
+            | :? Screen as screen -> (screen.GetDispatcher world).Signal (signalObj, screen, world)
+            | :? Game as game -> (game.GetDispatcher world).Signal (signalObj, game, world)
+            | _ -> failwithumf ()
+
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlayer inputDirectory outputDirectory world =
             
