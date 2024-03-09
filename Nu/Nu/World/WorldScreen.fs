@@ -447,7 +447,7 @@ module WorldScreenModule =
             // geometry not found
             | None -> None
 
-        static member internal setScreenNavigationContentOpt contentOpt (source : Entity) world =
+        static member internal setNavigationContentOpt contentOpt (source : Entity) world =
             let screen = source.Screen
             let navigation = World.getScreenNavigation screen world
             match (navigation.NavigationContents.TryFind source, contentOpt) with
@@ -464,14 +464,15 @@ module WorldScreenModule =
                 World.setScreenNavigation navigation screen world |> snd'
             | (None, None) -> world
 
-        static member internal setScreenNavigationConfig config screen world =
+        static member internal setNavigationConfig config screen world =
             let navigation = World.getScreenNavigation screen world
             if config <> navigation.NavigationConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
                 let navigation = { navigation with NavigationConfig = config }
                 World.setScreenNavigation navigation screen world |> snd'
             else world
 
-        static member internal synchronizeScreenNavigation screen world =
+        /// Attempt to synchronize the given screen's navigation information.
+        static member synchronizeNavigation screen world =
             let navigation = World.getScreenNavigation screen world
             let rebuild =
                 match (navigation.NavigationContentsOldOpt, navigation.NavigationConfigOldOpt) with
@@ -493,6 +494,7 @@ module WorldScreenModule =
 
         /// Query the given screen's navigation information if it exists.
         static member tryQueryNavigation query screen world =
+            let world = World.synchronizeNavigation screen world
             let navigation = World.getScreenNavigation screen world
             match navigation.NavigationMeshOpt with
             | Some (_, dtQuery) -> Some (query dtQuery)

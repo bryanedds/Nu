@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Numerics
+open ImGuiNET
 open TiledSharp
 open Prime
 open Nu
@@ -2894,7 +2895,7 @@ module NavigationContentFacetModule =
         static let propagateNavigationContent (entity : Entity) world =
             let affineMatrix = entity.GetAffineMatrix world
             let content = entity.GetNavigationContent world
-            World.setScreenNavigationContentOpt (Some (affineMatrix, content)) entity world
+            World.setNavigationContentOpt (Some (affineMatrix, content)) entity world
 
         static member Properties =
             [define Entity.NavigationContent (NavigationModel Assets.Default.StaticModel)]
@@ -2903,6 +2904,14 @@ module NavigationContentFacetModule =
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavigationContentFacet) world
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.NavigationContent)) entity (nameof NavigationContentFacet) world
             world
+
+        override this.Edit (op, entity, world) =
+            match op with
+            | AppendProperties _ ->
+                if ImGui.Button "Synchronize Navigation" then
+                    World.synchronizeNavigation entity.Screen world
+                else world
+            | _ -> world
 
 [<AutoOpen>]
 module NavigationConfigFacetModule =
@@ -2918,7 +2927,7 @@ module NavigationConfigFacetModule =
 
         static let propagateNavigationConfig (entity : Entity) world =
             let config = entity.GetNavigationConfig world
-            World.setScreenNavigationConfig config entity.Screen world
+            World.setNavigationConfig config entity.Screen world
 
         static member Properties =
             [define Entity.NavigationConfig NavigationConfig.defaultConfig]
@@ -2926,3 +2935,11 @@ module NavigationConfigFacetModule =
         override this.Register (entity, world) =
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationConfig entity world)) (entity.ChangeEvent (nameof entity.NavigationConfig)) entity (nameof NavigationConfigFacet) world
             world
+
+        override this.Edit (op, entity, world) =
+            match op with
+            | AppendProperties _ ->
+                if ImGui.Button "Synchronize Navigation" then
+                    World.synchronizeNavigation entity.Screen world
+                else world
+            | _ -> world
