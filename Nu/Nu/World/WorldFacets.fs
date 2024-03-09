@@ -2952,14 +2952,81 @@ module NavigationConfigFacetModule =
                 let navigation = World.getScreenNavigation entity.Screen world
                 match navigation.NavigationMeshOpt with
                 | Some (builderResult, _, _) ->
+
+                    // draw interior edges
                     let dmesh = builderResult.GetMeshDetail ()
+                    let segments =
+                        seq {
+                            for i in 0 .. dec dmesh.nmeshes do
+                                let m = i * 4
+                                let bverts = dmesh.meshes.[m]
+                                let btris = dmesh.meshes.[m + 2]
+                                let ntris = dmesh.meshes.[m + 3]
+                                let verts = bverts * 3
+                                let tris = btris * 4
+                                for j in 0 .. dec ntris do
+                                    let t = tris + j * 4
+                                    let mutable k = 0
+                                    let mutable kp = 2
+                                    while k < 3 do
+                                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                                        if ef = 0 then
+                                            let begin_ =
+                                                v3
+                                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                                            let end_ =
+                                                v3
+                                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                                            struct (begin_, end_)
+                                        kp <- k
+                                        k <- inc k }
+                    World.imGuiSegments3d false segments 1.0f Color.Brown world
+
+                    // draw exterior edges
+                    let dmesh = builderResult.GetMeshDetail ()
+                    let segments =
+                        seq {
+                            for i in 0 .. dec dmesh.nmeshes do
+                                let m = i * 4
+                                let bverts = dmesh.meshes.[m]
+                                let btris = dmesh.meshes.[m + 2]
+                                let ntris = dmesh.meshes.[m + 3]
+                                let verts = bverts * 3
+                                let tris = btris * 4
+                                for j in 0 .. dec ntris do
+                                    let t = tris + j * 4
+                                    let mutable k = 0
+                                    let mutable kp = 2
+                                    while k < 3 do
+                                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                                        if ef <> 0 then
+                                            let begin_ =
+                                                v3
+                                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                                            let end_ =
+                                                v3
+                                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
+                                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                                            struct (begin_, end_)
+                                        kp <- k
+                                        k <- inc k }
+                    World.imGuiSegments3d false segments 1.0f Color.Yellow world
+
+                    // draw points
                     let points =
                         seq {
                             for i in 0 .. dec dmesh.nmeshes do
-                                let m = i * 4;
-                                let bverts = dmesh.meshes[m];
-                                let nverts = dmesh.meshes[m + 1];
-                                let verts = bverts * 3;
+                                let m = i * 4
+                                let bverts = dmesh.meshes.[m]
+                                let nverts = dmesh.meshes.[m + 1]
+                                let verts = bverts * 3
                                 for j in 0 .. dec nverts do
                                     v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2] }
                     World.imGuiCircles3d false points 2.0f Color.Yellow true world

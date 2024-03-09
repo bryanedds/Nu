@@ -10,7 +10,6 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
 open Prime
-open DotRecast.Recast.Toolset.Geom
 
 [<AutoOpen>]
 module WorldScreenModule =

@@ -35,7 +35,7 @@ module WorldImGui =
             World.imGuiCircles3d absolute (SArray.singleton position) radius color filled world
 
         /// Render segments via ImGui in the current eye 3d space.
-        static member imGuiSegments3d absolute (segments : struct (Vector3 * Vector3) seq) (color : Color) thickness world =
+        static member imGuiSegments3d absolute (segments : struct (Vector3 * Vector3) seq) thickness (color : Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
@@ -49,5 +49,5 @@ module WorldImGui =
                 drawList.AddLine (beginWindow, endWindow, color.Abgr, thickness)
 
         /// Render a segment via ImGui in the current eye 3d space.
-        static member imGuiSegment3d absolute segment color world =
-            World.imGuiSegments3d absolute (SArray.singleton segment) color world
+        static member imGuiSegment3d absolute segment thickness color world =
+            World.imGuiSegments3d absolute (SArray.singleton segment) thickness color world
