@@ -13,6 +13,7 @@ open DotRecast.Core
 open DotRecast.Core.Numerics
 open DotRecast.Recast
 open DotRecast.Recast.Geom
+open DotRecast.Core.Collections
 
 // The inferred attributes of an entity that are used to construct its bounds.
 type AttributesInferred =
@@ -107,12 +108,13 @@ type NavigationMap =
 /// Navigation input geometry provider.
 type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =
     let triMesh = RcTriMesh (vertices, faces)
+    let meshes = RcImmutableArray.Create triMesh
     let convexVolumes = List ()
     interface IInputGeomProvider with
         member this.GetMesh () = triMesh
         member this.GetMeshBoundsMin () = RcVec3f (bounds.Min.X, bounds.Min.Y, bounds.Min.Z)
         member this.GetMeshBoundsMax () = RcVec3f (bounds.Max.X, bounds.Max.Y, bounds.Max.Z)
-        member this.Meshes () = Unchecked.defaultof<_>
+        member this.Meshes () = meshes
         member this.AddConvexVolume convexVolume = convexVolumes.Add convexVolume
         member this.ConvexVolumes () = convexVolumes
         member this.GetOffMeshConnections () = failwithnie ()
