@@ -379,6 +379,7 @@ module WorldScreenModule =
                         else None
                     | None -> None
 
+            // attempt execute navigation mesh construction steps
             match geomProviderOpt with
             | Some geomProvider ->
 
@@ -482,18 +483,18 @@ module WorldScreenModule =
 
                 (* Step 7: Create detail mesh which allows to access approximate height on each polygon. *)
                 let dmesh = RcMeshDetails.BuildPolyMeshDetail (ctx, pmesh, chf, rcConfig.DetailSampleDist, rcConfig.DetailSampleMaxError)
-                Some (chf, cset, dmesh, ctx)
+                Some (chf, cset, pmesh, dmesh, ctx)
 
             | None -> None
 
         static member internal setScreenNavigationMeshOpt meshName meshOpt screen world =
             let map = World.getScreenNavigationMap screen world
             match (map.NavigationMeshes.TryFind meshName, meshOpt) with
-            | (Some (mesh, _, _, _, _), Some mesh') ->
+            | (Some (mesh, _, _, _, _, _), Some mesh') ->
                 if mesh' <> mesh then
                     match World.tryCreateNavigationMesh mesh' world with
-                    | Some (chf', cset', dmesh', ctx') ->
-                        let map = { map with NavigationMeshes = Map.add meshName (mesh', chf', cset', dmesh', ctx') map.NavigationMeshes }
+                    | Some (chf', cset', pmesh', dmesh', ctx') ->
+                        let map = { map with NavigationMeshes = Map.add meshName (mesh', chf', cset', pmesh', dmesh', ctx') map.NavigationMeshes }
                         World.setScreenNavigationMap map screen world |> snd'
                     | None ->
                         let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
@@ -501,13 +502,13 @@ module WorldScreenModule =
                 else world
             | (None, Some mesh) ->
                 match World.tryCreateNavigationMesh mesh world with
-                | Some (chf, cset, dmesh, ctx) ->
-                    let map = { map with NavigationMeshes = Map.add meshName (mesh, chf, cset, dmesh, ctx) map.NavigationMeshes }
+                | Some (chf, cset, pmesh, dmesh, ctx) ->
+                    let map = { map with NavigationMeshes = Map.add meshName (mesh, chf, cset, pmesh, dmesh, ctx) map.NavigationMeshes }
                     World.setScreenNavigationMap map screen world |> snd'
                 | None ->
                     let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
                     World.setScreenNavigationMap map screen world |> snd'
-            | (Some (_, _, _, _, _), None) ->
+            | (Some (_, _, _, _, _, _), None) ->
                 let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
                 World.setScreenNavigationMap map screen world |> snd'
             | (None, None) -> world

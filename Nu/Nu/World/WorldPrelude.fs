@@ -99,7 +99,7 @@ type NavigationMesh =
 
 /// Represents a composed navigation map.
 type NavigationMap =
-    { NavigationMeshes : Map<string, NavigationMesh * RcCompactHeightfield * RcContourSet * RcPolyMeshDetail * RcContext> }
+    { NavigationMeshes : Map<string, NavigationMesh * RcCompactHeightfield * RcContourSet * RcPolyMesh * RcPolyMeshDetail * RcContext> }
 
     // The empty navigation map.
     static member empty = { NavigationMeshes = Map.empty }
