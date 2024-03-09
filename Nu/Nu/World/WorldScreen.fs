@@ -10,6 +10,7 @@ open DotRecast.Recast
 open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
 open Prime
+open DotRecast.Recast.Toolset.Geom
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -431,7 +432,7 @@ module WorldScreenModule =
                          config.EdgeMaxLength, config.EdgeMaxError,
                          config.VertsPerPolygon, config.DetailSampleDistance, config.DetailSampleMaxError,
                          true, true, true,
-                         SampleAreaModifications.SAMPLE_AREAMOD_GROUND, true)
+                         SampleAreaModifications.SAMPLE_AREAMOD_WALKABLE, true)
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig)
