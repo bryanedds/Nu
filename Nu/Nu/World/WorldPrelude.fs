@@ -87,14 +87,17 @@ type [<SymbolicExpansion>] NavigationMeshConfig =
           DetailSampleMaxError = 1.0f
           PartitionType = RcPartition.WATERSHED }
 
+/// The geometric content of a navigation mesh.
 type NavigationMeshContent =
     | NavigationMeshModel of StaticModel AssetTag
     | NavigationMeshModelSurface of StaticModel AssetTag * int
 
+/// Describes a navigation mesh.
 type NavigationMesh =
     { NavigationMeshConfig : NavigationMeshConfig
       NavigationMeshContent : NavigationMeshContent }
 
+/// Represents a composed navigation map.
 type NavigationMap =
     { NavigationMeshes : Map<string, NavigationMesh * RcCompactHeightfield * RcContourSet * RcPolyMeshDetail * RcContext> }
 
