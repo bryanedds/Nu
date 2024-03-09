@@ -5,11 +5,11 @@ namespace Nu
 open System
 open System.IO
 open System.Numerics
+open DotRecast.Detour
 open DotRecast.Recast
 open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
 open Prime
-open DotRecast.Detour
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -359,21 +359,21 @@ module WorldScreenModule =
                 World.setOmniScreen screen world
 
         static member internal getNavigationSurfaces contents =
-            [for content in contents do
+            [for (affineMatrix, content) in contents do
                 match content with
-                | NavigationModel (affineMatrix, staticModel) ->
+                | NavigationModel staticModel ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do
                             yield (affineMatrix, surface)
                     | None -> ()
-                | NavigationModelSurface (affineMatrix, staticModel, surfaceIndex) ->
+                | NavigationModelSurface (staticModel, surfaceIndex) ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                             yield (affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()
-                | NavigationModelSurfaces (affineMatrix, staticModel, surfaceIndices) ->
+                | NavigationModelSurfaces (staticModel, surfaceIndices) ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surfaceIndex in surfaceIndices do
@@ -441,38 +441,59 @@ module WorldScreenModule =
                 | dtMeshData ->
                     DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
                     let dtNavMesh = DtNavMesh (dtMeshData, 6, 0) // TODO: introduce constant?
-                    Some dtNavMesh
+                    let dtQuery = DtNavMeshQuery dtNavMesh
+                    Some (dtNavMesh, dtQuery)
 
             // geometry not found
             | None -> None
 
-        static member internal setScreenNavigationMeshOpt contentName contentOpt screen world =
+        static member internal setScreenNavigationContentOpt contentOpt (source : Entity) world =
+            let screen = source.Screen
             let navigation = World.getScreenNavigation screen world
-            match (navigation.NavigationContents.TryFind contentName, contentOpt) with
+            match (navigation.NavigationContents.TryFind source, contentOpt) with
             | (Some content, Some content') ->
                 if content' <> content then // OPTIMIZATION: preserve map reference if no content changes detected.
-                    let navigation = { navigation with NavigationContents = Map.add contentName content' navigation.NavigationContents }
+                    let navigation = { navigation with NavigationContents = Map.add source content' navigation.NavigationContents }
                     World.setScreenNavigation navigation screen world |> snd'
                 else world
             | (None, Some content) ->
-                let navigation = { navigation with NavigationContents = Map.add contentName content navigation.NavigationContents }
+                let navigation = { navigation with NavigationContents = Map.add source content navigation.NavigationContents }
                 World.setScreenNavigation navigation screen world |> snd'
             | (Some _, None) ->
-                let navigation = { navigation with NavigationContents = Map.remove contentName navigation.NavigationContents }
+                let navigation = { navigation with NavigationContents = Map.remove source navigation.NavigationContents }
                 World.setScreenNavigation navigation screen world |> snd'
             | (None, None) -> world
 
-        static member internal synchronizeNavigation screen world =
+        static member internal setScreenNavigationConfig config screen world =
+            let navigation = World.getScreenNavigation screen world
+            if config <> navigation.NavigationConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
+                let navigation = { navigation with NavigationConfig = config }
+                World.setScreenNavigation navigation screen world |> snd'
+            else world
+
+        static member internal synchronizeScreenNavigation screen world =
             let navigation = World.getScreenNavigation screen world
             let rebuild =
-                match navigation.NavigationContentsOldOpt with
-                | Some contentsOld -> navigation.NavigationContents =/= contentsOld
-                | None -> navigation.NavigationContents.Count <> 0
+                match (navigation.NavigationContentsOldOpt, navigation.NavigationConfigOldOpt) with
+                | (Some contentsOld, Some configOld) -> navigation.NavigationContents =/= contentsOld || navigation.NavigationConfig =/= configOld
+                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected navigation state; navigation rebuild denied."; false
+                | (None, None) -> navigation.NavigationContents.Count <> 0
             if rebuild then
                 let contents = navigation.NavigationContents.Values
                 match World.tryBuildNavigationMesh contents navigation.NavigationConfig with
                 | Some navigationMesh ->
-                    let navigation = { navigation with NavigationMeshOpt = Some navigationMesh; NavigationContentsOldOpt = Some navigation.NavigationContents }
+                    let navigation =
+                        { navigation with
+                            NavigationContentsOldOpt = Some navigation.NavigationContents
+                            NavigationConfigOldOpt = Some navigation.NavigationConfig
+                            NavigationMeshOpt = Some navigationMesh }
                     World.setScreenNavigation navigation screen world |> snd'
-                | None -> world
+                | None -> Log.info "Unable to build navigation mesh."; world
             else world
+
+        /// Query the given screen's navigation information if it exists.
+        static member tryQueryNavigation query screen world =
+            let navigation = World.getScreenNavigation screen world
+            match navigation.NavigationMeshOpt with
+            | Some (_, dtQuery) -> Some (query dtQuery)
+            | None -> None

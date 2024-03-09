@@ -8,10 +8,8 @@ open System.Diagnostics
 open System.Numerics
 open SDL2
 open TiledSharp
-open DotRecast.Core
 open DotRecast.Core.Collections
 open DotRecast.Core.Numerics
-open DotRecast.Detour
 open DotRecast.Recast
 open DotRecast.Recast.Geom
 open Prime
@@ -91,26 +89,9 @@ type [<SymbolicExpansion>] NavigationConfig =
 
 /// Geometric navigation content.
 type NavigationContent =
-    | NavigationModel of Matrix4x4 * StaticModel AssetTag
-    | NavigationModelSurface of Matrix4x4 * StaticModel AssetTag * int
-    | NavigationModelSurfaces of Matrix4x4 * StaticModel AssetTag * int array
-
-/// Represents navigation capabilies for a screen.
-/// NOTE: this type is intended only for internal engine use.
-type Navigation =
-    { NavigationContext : RcContext
-      NavigationConfig : NavigationConfig
-      NavigationContents : Map<Address, NavigationContent>
-      NavigationContentsOldOpt : Map<Address, NavigationContent> option
-      NavigationMeshOpt : DtNavMesh option }
-
-    // Make an empty navigation map.
-    static member make () =
-        { NavigationContext = RcContext ()
-          NavigationConfig = NavigationConfig.defaultConfig
-          NavigationContents = Map.empty
-          NavigationContentsOldOpt = None
-          NavigationMeshOpt = None }
+    | NavigationModel of StaticModel AssetTag
+    | NavigationModelSurface of StaticModel AssetTag * int
+    | NavigationModelSurfaces of StaticModel AssetTag * int array
 
 /// Navigation input geometry provider.
 type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =

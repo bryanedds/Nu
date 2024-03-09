@@ -8,6 +8,8 @@ open System.ComponentModel
 open System.Diagnostics
 open System.Numerics
 open System.Reflection
+open DotRecast.Core
+open DotRecast.Detour
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -235,24 +237,6 @@ and Message = inherit Signal
 /// A model-message-command-content (MMCC) command tag type.
 and Command = inherit Signal
 
-/// Specifies the desired screen, if any, or whether to ignore screen desire functionality altogether.
-and DesiredScreen =
-    | Desire of Screen
-    | DesireNone
-    | DesireIgnore
-
-/// The data required to execute slide screen presentation.
-and Slide =
-    { IdlingTime : GameTime
-      Destination : Screen }
-
-/// Describes the behavior of a screen.
-and ScreenBehavior =
-    | Vanilla
-    | Dissolve of DissolveDescriptor * SongDescriptor option
-    | Slide of DissolveDescriptor * SlideDescriptor * SongDescriptor option * Screen
-    | OmniScreen
-
 /// The data for a change in the world's ambient state.
 and AmbientChangeData = 
     { OldWorldWithOldState : World }
@@ -293,6 +277,43 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             match that with
             | :? SortPriority as that -> (this :> SortPriority IComparable).CompareTo that
             | _ -> failwithumf ()
+
+/// Specifies the desired screen, if any, or whether to ignore screen desire functionality altogether.
+and DesiredScreen =
+    | Desire of Screen
+    | DesireNone
+    | DesireIgnore
+
+/// Describes the behavior of a screen.
+and ScreenBehavior =
+    | Vanilla
+    | Dissolve of DissolveDescriptor * SongDescriptor option
+    | Slide of DissolveDescriptor * SlideDescriptor * SongDescriptor option * Screen
+    | OmniScreen
+
+/// The data required to execute slide screen presentation.
+and Slide =
+    { IdlingTime : GameTime
+      Destination : Screen }
+
+/// Represents navigation capabilies for a screen.
+/// NOTE: this type is intended only for internal engine use.
+and Navigation =
+    { NavigationContext : RcContext
+      NavigationContents : Map<Entity, Matrix4x4 * NavigationContent>
+      NavigationContentsOldOpt : Map<Entity, Matrix4x4 * NavigationContent> option
+      NavigationConfig : NavigationConfig
+      NavigationConfigOldOpt : NavigationConfig option
+      NavigationMeshOpt : (DtNavMesh * DtNavMeshQuery) option }
+
+    // Make an empty navigation map.
+    static member make () =
+        { NavigationContext = RcContext ()
+          NavigationContents = Map.empty
+          NavigationContentsOldOpt = None
+          NavigationConfig = NavigationConfig.defaultConfig
+          NavigationConfigOldOpt = None
+          NavigationMeshOpt = None }
 
 /// Generalized interface tag for late-bound objects.
 and LateBindings = interface end

@@ -170,6 +170,8 @@ module WorldModule3 =
                  StaticModelFacet ()
                  AnimatedModelFacet ()
                  TerrainFacet ()
+                 NavigationContentFacet ()
+                 NavigationConfigFacet ()
                  FreezerFacet ()]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
