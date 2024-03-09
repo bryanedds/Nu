@@ -16,7 +16,7 @@ open Prime
 
 // The inferred attributes of an entity that are used to construct its bounds.
 // HACK: added Important field to allow attributes to be marked as unimportant.
-// TODO: see if we can refactor this type to make its representation and algo less hacky.
+// TODO: P1: see if we can refactor this type to make its representation and algo less hacky.
 type AttributesInferred =
     { Unimportant : bool
       SizeInferred : Vector3
@@ -104,10 +104,10 @@ type NavigationContent =
     | NavigationModelSurfaces of StaticModel AssetTag * int array
 
 /// Navigation input geometry provider.
-type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =
-    let triMesh = RcTriMesh (vertices, faces)
+type NavigationInputGeomProvider (vertices, indices, bounds : Box3) =
+    let triMesh = RcTriMesh (vertices, indices)
     let meshes = RcImmutableArray.Create triMesh
-    let offMeshConnections = List<RcOffMeshConnection> ()
+    let offMeshConnections = List ()
     let convexVolumes = List ()
     interface IInputGeomProvider with
         member this.GetMesh () = triMesh
@@ -117,7 +117,7 @@ type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =
         member this.AddConvexVolume convexVolume = convexVolumes.Add convexVolume
         member this.ConvexVolumes () = convexVolumes
         member this.GetOffMeshConnections () = offMeshConnections
-        member this.AddOffMeshConnection (start, end_, radius, bidir, area, flags) = offMeshConnections.Add(RcOffMeshConnection(start, end_, radius, bidir, area, flags))
+        member this.AddOffMeshConnection (start, end_, radius, bidir, area, flags) = offMeshConnections.Add (RcOffMeshConnection (start, end_, radius, bidir, area, flags))
         member this.RemoveOffMeshConnections filter = offMeshConnections.RemoveAll filter |> ignore<int>
         end
 
