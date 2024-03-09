@@ -3,11 +3,16 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
 open SDL2
 open TiledSharp
 open Prime
+open DotRecast.Core
+open DotRecast.Core.Numerics
+open DotRecast.Recast
+open DotRecast.Recast.Geom
 
 // The inferred attributes of an entity that are used to construct its bounds.
 type AttributesInferred =
@@ -47,6 +52,70 @@ type TileMapDescriptor =
       TileMapSizeI : Vector2i
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
+
+/// Configure the construction of a navigation mesh.
+type [<SymbolicExpansion>] NavigationMeshConfig =
+    { CellSize : single
+      CellHeight : single
+      AgentHeight : single
+      AgentRadius : single
+      AgentMaxClimb : single
+      AgentMaxSlope : single
+      RegionMinSize : int
+      RegionMergeSize : int
+      EdgeMaxLength : single
+      EdgeMaxError : single
+      VertsPerPolygon : int
+      DetailSampleDistance : single
+      DetailSampleMaxError : single
+      PartitionType : RcPartition }
+
+    /// The default navigation map configuration.
+    static member defaultConfig =
+        { CellSize = 0.3f
+          CellHeight = 0.2f
+          AgentHeight = 2.0f
+          AgentRadius = 0.6f
+          AgentMaxClimb = 0.9f
+          AgentMaxSlope = 45.0f
+          RegionMinSize = 8
+          RegionMergeSize = 20
+          EdgeMaxLength = 12.0f
+          EdgeMaxError = 1.3f
+          VertsPerPolygon = 6
+          DetailSampleDistance = 6.0f
+          DetailSampleMaxError = 1.0f
+          PartitionType = RcPartition.WATERSHED }
+
+type NavigationMeshContent =
+    | NavigationMeshModel of StaticModel AssetTag
+    | NavigationMeshModelSurface of StaticModel AssetTag * int
+
+type NavigationMesh =
+    { NavigationMeshConfig : NavigationMeshConfig
+      NavigationMeshContent : NavigationMeshContent }
+
+type NavigationMap =
+    { NavigationMeshes : Map<string, NavigationMesh * RcCompactHeightfield * RcContourSet * RcPolyMeshDetail * RcContext> }
+
+    // The empty navigation map.
+    static member empty = { NavigationMeshes = Map.empty }
+
+/// Navigation input geometry provider.
+type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =
+    let triMesh = RcTriMesh (vertices, faces)
+    let convexVolumes = List ()
+    interface IInputGeomProvider with
+        member this.GetMesh () = triMesh
+        member this.GetMeshBoundsMin () = RcVec3f (bounds.Min.X, bounds.Min.Y, bounds.Min.Z)
+        member this.GetMeshBoundsMax () = RcVec3f (bounds.Max.X, bounds.Max.Y, bounds.Max.Z)
+        member this.Meshes () = Unchecked.defaultof<_>
+        member this.AddConvexVolume convexVolume = convexVolumes.Add convexVolume
+        member this.ConvexVolumes () = convexVolumes
+        member this.GetOffMeshConnections () = failwithnie ()
+        member this.AddOffMeshConnection (_, _, _, _, _, _) = failwithnie ()
+        member this.RemoveOffMeshConnections _ = failwithnie ()
+        end
 
 /// The manner in which a gui entity may be docked by a parent entity.
 type DockType =

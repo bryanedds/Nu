@@ -2878,3 +2878,39 @@ module TerrainFacetModule =
             match entity.TryGetTerrainResolution world with
             | Some resolution -> AttributesInferred.make (v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))) v3Zero
             | None -> AttributesInferred.make (v3 512.0f 128.0f 512.0f) v3Zero
+
+[<AutoOpen>]
+module NavigationMeshFacetModule =
+
+    type Entity with
+        member this.GetNavigationMeshName world : string = this.Get (nameof this.NavigationMeshName) world
+        member this.SetNavigationMeshName (value : string) world = this.Set (nameof this.NavigationMeshName) value world
+        member this.NavigationMeshName = lens (nameof this.NavigationMeshName) this this.GetNavigationMeshName this.SetNavigationMeshName
+        member this.GetNavigationMeshConfig world : NavigationMeshConfig = this.Get (nameof this.NavigationMeshConfig) world
+        member this.SetNavigationMeshConfig (value : NavigationMeshConfig) world = this.Set (nameof this.NavigationMeshConfig) value world
+        member this.NavigationMeshConfig = lens (nameof this.NavigationMeshConfig) this this.GetNavigationMeshConfig this.SetNavigationMeshConfig
+        member this.GetNavigationMeshContent world : NavigationMeshContent = this.Get (nameof this.NavigationMeshContent) world
+        member this.SetNavigationMeshContent (value : NavigationMeshContent) world = this.Set (nameof this.NavigationMeshContent) value world
+        member this.NavigationMeshContent = lens (nameof this.NavigationMeshContent) this this.GetNavigationMeshContent this.SetNavigationMeshContent
+
+    /// Augments an entity with a navigation mesh.
+    type NavigationMeshFacet () =
+        inherit Facet (false)
+
+        static let propagateNavigationMesh (entity : Entity) world =
+            let meshName = entity.GetNavigationMeshName world
+            let meshConfig = entity.GetNavigationMeshConfig world
+            let meshContent = entity.GetNavigationMeshContent world
+            let mesh = { NavigationMeshConfig = meshConfig; NavigationMeshContent = meshContent }
+            World.setScreenNavigationMeshOpt meshName (Some mesh) entity.Screen world
+
+        static member Properties =
+            [define Entity.NavigationMeshName "NavigationMesh"
+             define Entity.NavigationMeshConfig NavigationMeshConfig.defaultConfig
+             define Entity.NavigationMeshContent (NavigationMeshModel Assets.Default.StaticModel)]
+
+        override this.Register (entity, world) =
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigationMesh entity world)) (entity.ChangeEvent (nameof entity.NavigationMeshName)) entity (nameof NavigationMeshFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigationMesh entity world)) (entity.ChangeEvent (nameof entity.NavigationMeshConfig)) entity (nameof NavigationMeshFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigationMesh entity world)) (entity.ChangeEvent (nameof entity.NavigationMeshContent)) entity (nameof NavigationMeshFacet) world
+            world

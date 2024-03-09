@@ -38,6 +38,7 @@ module Reflection =
 
              // screen properties
              ("TransitionState", true)
+             ("NavigationMap", true)
 
              // entity properties
              ("Facets", true)

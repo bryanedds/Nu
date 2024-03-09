@@ -4,6 +4,7 @@
 #I __SOURCE_DIRECTORY__
 #r "nuget: Aether.Physics2D, 2.0.0"
 #r "nuget: Csv, 2.0.93"
+#r "nuget: DotRecast.Recast.Toolset, 2024.1.3"
 #r "nuget: FParsec, 1.1.1"
 #r "nuget: Twizzle.ImGuizmo.NET, 1.89.4.1"
 #r "nuget: Magick.NET-Q8-x64, 7.5.0.1"

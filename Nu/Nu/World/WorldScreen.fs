@@ -5,6 +5,10 @@ namespace Nu
 open System
 open System.IO
 open Prime
+open DotRecast.Core
+open DotRecast.Recast
+open DotRecast.Recast.Geom
+open DotRecast.Recast.Toolset.Builder
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -28,6 +32,8 @@ module WorldScreenModule =
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
+        member this.GetNavigationMap world = World.getScreenNavigationMap this world
+        member this.NavigationMap = lensReadOnly (nameof this.NavigationMap) this this.GetNavigationMap
         member this.GetProtected world = World.getScreenProtected this world
         member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getScreenPersistent this world
@@ -90,7 +96,10 @@ module WorldScreenModule =
             World.setScreenXtensionProperty propertyName property this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
-        member this.Idling world = match this.GetTransitionState world with IdlingState _ -> true | _ -> false
+        member this.Idling world =
+            match this.GetTransitionState world with
+            | IdlingState _ -> true
+            | _ -> false
 
         /// Check that a screen is selected.
         member this.Selected world =
@@ -347,3 +356,158 @@ module WorldScreenModule =
                 setScreenSlide slideDescriptor destination screen world
             | OmniScreen ->
                 World.setOmniScreen screen world
+
+        static member internal tryCreateNavigationMesh mesh (_ : World) =
+
+            // attempt to create an input geometry provider
+            let meshConfig = mesh.NavigationMeshConfig
+            let meshContent = mesh.NavigationMeshContent
+            let geomProviderOpt =
+                match meshContent with
+                | NavigationMeshModel _ -> failwithnie ()
+                | NavigationMeshModelSurface (staticModel, surfaceIndex) ->
+                    match Metadata.tryGetStaticModelMetadata staticModel with
+                    | Some physicallyBasedModel ->
+                        if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
+                            let surface = physicallyBasedModel.Surfaces.[surfaceIndex]
+                            let geometry = surface.PhysicallyBasedGeometry
+                            if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
+                                let vertices = [|for v in geometry.Vertices do yield v.X; yield v.Y; yield v.Z|]
+                                let provider = NavigationInputGeomProvider (vertices, geometry.Indices, geometry.Bounds)
+                                Some (provider :> IInputGeomProvider)
+                            else None
+                        else None
+                    | None -> None
+
+            match geomProviderOpt with
+            | Some geomProvider ->
+
+                (* Step 1: Initialize builder config. *)
+                let bmin = geomProvider.GetMeshBoundsMin ()
+                let bmax = geomProvider.GetMeshBoundsMax ()
+                let ctx = RcContext ()
+                let rcConfig =
+                    RcConfig
+                        (meshConfig.PartitionType,
+                         meshConfig.CellSize, meshConfig.CellHeight,
+                         meshConfig.AgentMaxSlope, meshConfig.AgentHeight, meshConfig.AgentRadius, meshConfig.AgentMaxClimb,
+                         meshConfig.RegionMinSize, meshConfig.RegionMergeSize,
+                         meshConfig.EdgeMaxLength, meshConfig.EdgeMaxError,
+                         meshConfig.VertsPerPolygon,
+                         meshConfig.DetailSampleDistance, meshConfig.DetailSampleMaxError,
+                         true, true, true,
+                         SampleAreaModifications.SAMPLE_AREAMOD_GROUND, true)
+                let rcBuilderConfig = RcBuilderConfig (rcConfig, bmin, bmax)
+
+                (* Step 2: Rasterize input polygon soup. *)
+                let solid = RcHeightfield (rcBuilderConfig.width, rcBuilderConfig.height, rcBuilderConfig.bmin, rcBuilderConfig.bmax, rcConfig.Cs, rcConfig.Ch, rcConfig.BorderSize)
+                for geom in geomProvider.Meshes () do
+
+                    // allocate array that can hold triangle area types.
+                    // if you have multiple meshes you need to process, allocate an array which can hold the max number
+                    // of triangles you need to process.
+                    let verts = geom.GetVerts ()
+                    let tris = geom.GetTris ()
+                    let ntris = tris.Length / 3
+
+                    // find triangles which are walkable based on their slope and rasterize them.
+                    // if your input data is multiple meshes, you can transform them here, calculate the are type for
+                    // each of the meshes and rasterize them.
+                    let triareas = RcCommons.MarkWalkableTriangles (ctx, rcConfig.WalkableSlopeAngle, verts, tris, ntris, rcConfig.WalkableAreaMod)
+                    RcRasterizations.RasterizeTriangles (ctx, verts, tris, triareas, ntris, solid, rcConfig.WalkableClimb)
+
+                (* Step 3: Filter walkable surfaces. *)
+                
+                // once all geometry is rasterized, we do initial pass of filtering to remove unwanted overhangs caused
+                // by the conservative rasterization as well as filter spans where the character cannot possibly stand.
+                RcFilters.FilterLowHangingWalkableObstacles (ctx, rcConfig.WalkableClimb, solid)
+                RcFilters.FilterLedgeSpans (ctx, rcConfig.WalkableHeight, rcConfig.WalkableClimb, solid)
+                RcFilters.FilterWalkableLowHeightSpans (ctx, rcConfig.WalkableHeight, solid)
+
+                (* Step 4: Partition walkable surface to simple regions. *)
+                
+                // compact the heightfield so that it is faster to handle from now on.
+                // this will result more cache coherent data as well as the neighbours between walkable cells will be
+                // calculated.
+                let chf = RcCompacts.BuildCompactHeightfield (ctx, rcConfig.WalkableHeight, rcConfig.WalkableClimb, solid)
+
+                // erode the walkable area by agent radius.
+                RcAreas.ErodeWalkableArea (ctx, rcConfig.WalkableRadius, chf)
+
+                // partition the heightfield so that we can use simple algorithm later to triangulate the walkable areas.
+                // there are 3 partitioning methods, each with some pros and cons:
+                // 1) watershed partitioning
+                // - the classic Recast partitioning
+                // - creates the nicest tessellation
+                // - usually slowest
+                // - partitions the heightfield into nice regions without holes or overlaps
+                // - the are some corner cases where this method creates produces holes and overlaps
+                // - holes may appear when a small obstacles is close to large open area (triangulation can handle this)
+                // - overlaps may occur if you have narrow spiral corridors (i.e stairs), this make triangulation to fail
+                // * generally the best choice if you precompute the navmesh, use this if you have large open areas
+                // 2) monotone partioning
+                // - fastest
+                // - partitions the heightfield into regions without holes and overlaps (guaranteed)
+                // - creates long thin polygons, which sometimes causes paths with detours
+                // * use this if you want fast navmesh generation
+                // 3) layer partitoining
+                // - quite fast
+                // - partitions the heighfield into non-overlapping regions
+                // - relies on the triangulation code to cope with holes (thus slower than monotone partitioning)
+                // - produces better triangles than monotone partitioning
+                // - does not have the corner cases of watershed partitioning
+                // - can be slow and create a bit ugly tessellation (still better than monotone) if you have large open
+                // areas with small obstacles (not a problem if you use tiles)
+                // * good choice to use for tiled navmesh with medium and small sized tiles
+                match meshConfig.PartitionType with
+                | RcPartition.WATERSHED ->
+                    // prepare for region partitioning, by calculating distance field along the walkable surface and
+                    // partition the walkable surface into simple regions without holes.
+                    RcRegions.BuildDistanceField (ctx, chf)
+                    RcRegions.BuildRegions (ctx, chf, rcConfig.MinRegionArea, rcConfig.MergeRegionArea)
+                | RcPartition.MONOTONE ->
+                    // partition the walkable surface into simple regions without holes. Monotone partitioning does not
+                    // need distancefield.
+                    RcRegions.BuildRegionsMonotone (ctx, chf, rcConfig.MinRegionArea, rcConfig.MergeRegionArea)
+                | RcPartition.LAYERS ->
+                    // partition the walkable surface into simple regions without holes.
+                    RcRegions.BuildLayerRegions (ctx, chf, rcConfig.MinRegionArea) |> ignore<bool>
+                | _ -> failwithumf ()
+
+                (* Step 5: Trace and simplify region contours. *)
+                let cset = RcContours.BuildContours (ctx, chf, rcConfig.MaxSimplificationError, rcConfig.MaxEdgeLen, RcBuildContoursFlags.RC_CONTOUR_TESS_WALL_EDGES)
+
+                (* Step 6: Build polygons mesh from contours. *)
+                let pmesh = RcMeshs.BuildPolyMesh (ctx, cset, rcConfig.MaxVertsPerPoly)
+
+                (* Step 7: Create detail mesh which allows to access approximate height on each polygon. *)
+                let dmesh = RcMeshDetails.BuildPolyMeshDetail (ctx, pmesh, chf, rcConfig.DetailSampleDist, rcConfig.DetailSampleMaxError)
+                Some (chf, cset, dmesh, ctx)
+
+            | None -> None
+
+        static member internal setScreenNavigationMeshOpt meshName meshOpt screen world =
+            let map = World.getScreenNavigationMap screen world
+            match (map.NavigationMeshes.TryFind meshName, meshOpt) with
+            | (Some (mesh, _, _, _, _), Some mesh') ->
+                if mesh' <> mesh then
+                    match World.tryCreateNavigationMesh mesh' world with
+                    | Some (chf', cset', dmesh', ctx') ->
+                        let map = { map with NavigationMeshes = Map.add meshName (mesh', chf', cset', dmesh', ctx') map.NavigationMeshes }
+                        World.setScreenNavigationMap map screen world |> snd'
+                    | None ->
+                        let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
+                        World.setScreenNavigationMap map screen world |> snd'
+                else world
+            | (None, Some mesh) ->
+                match World.tryCreateNavigationMesh mesh world with
+                | Some (chf, cset, dmesh, ctx) ->
+                    let map = { map with NavigationMeshes = Map.add meshName (mesh, chf, cset, dmesh, ctx) map.NavigationMeshes }
+                    World.setScreenNavigationMap map screen world |> snd'
+                | None ->
+                    let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
+                    World.setScreenNavigationMap map screen world |> snd'
+            | (Some (_, _, _, _, _), None) ->
+                let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
+                World.setScreenNavigationMap map screen world |> snd'
+            | (None, None) -> world

@@ -869,6 +869,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       Incoming : Transition
       Outgoing : Transition
       SlideOpt : Slide option
+      NavigationMap : NavigationMap
       Protected : bool
       Persistent : bool
       Order : int64
@@ -886,6 +887,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
           SlideOpt = None
+          NavigationMap = NavigationMap.empty
           Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()
