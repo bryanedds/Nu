@@ -39,14 +39,18 @@ module WorldImGui =
             let drawList = ImGui.GetBackgroundDrawList ()
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
+            let eyeFrustum = World.getEye3dFrustumView world
             let viewport = Constants.Render.Viewport
             let view = viewport.View3d (absolute, eyeCenter, eyeRotation)
             let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
             let viewProjection = view * projection
             for segment in segments do
-                let beginWindow = ImGui.PositionToWindow (viewProjection, fst' segment)
-                let endWindow = ImGui.PositionToWindow (viewProjection, snd' segment)
-                drawList.AddLine (beginWindow, endWindow, color.Abgr, thickness)
+                match Math.tryUnionSegmentAndFrustum (fst' segment) (snd' segment) eyeFrustum with
+                | Some (begin_, end_) ->
+                    let beginWindow = ImGui.PositionToWindow (viewProjection, begin_)
+                    let endWindow = ImGui.PositionToWindow (viewProjection, end_)
+                    drawList.AddLine (beginWindow, endWindow, color.Abgr, thickness)
+                | None -> ()
 
         /// Render a segment via ImGui in the current eye 3d space.
         static member imGuiSegment3d absolute segment thickness color world =
