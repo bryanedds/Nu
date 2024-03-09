@@ -8,12 +8,13 @@ open System.Diagnostics
 open System.Numerics
 open SDL2
 open TiledSharp
-open Prime
 open DotRecast.Core
+open DotRecast.Core.Collections
 open DotRecast.Core.Numerics
+open DotRecast.Detour
 open DotRecast.Recast
 open DotRecast.Recast.Geom
-open DotRecast.Core.Collections
+open Prime
 
 // The inferred attributes of an entity that are used to construct its bounds.
 type AttributesInferred =
@@ -54,8 +55,8 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
-/// Configure the construction of a navigation mesh.
-type [<SymbolicExpansion>] NavigationMeshConfig =
+/// Configure the construction of navigation data.
+type [<SymbolicExpansion>] NavigationConfig =
     { CellSize : single
       CellHeight : single
       AgentHeight : single
@@ -71,7 +72,7 @@ type [<SymbolicExpansion>] NavigationMeshConfig =
       DetailSampleMaxError : single
       PartitionType : RcPartition }
 
-    /// The default navigation map configuration.
+    /// The default navigation configuration.
     static member defaultConfig =
         { CellSize = 0.3f
           CellHeight = 0.2f
@@ -88,22 +89,28 @@ type [<SymbolicExpansion>] NavigationMeshConfig =
           DetailSampleMaxError = 1.0f
           PartitionType = RcPartition.WATERSHED }
 
-/// The geometric content of a navigation mesh.
-type NavigationMeshContent =
-    | NavigationMeshModel of StaticModel AssetTag
-    | NavigationMeshModelSurface of StaticModel AssetTag * int
+/// Geometric navigation content.
+type NavigationContent =
+    | NavigationModel of Matrix4x4 * StaticModel AssetTag
+    | NavigationModelSurface of Matrix4x4 * StaticModel AssetTag * int
+    | NavigationModelSurfaces of Matrix4x4 * StaticModel AssetTag * int array
 
-/// Describes a navigation mesh.
-type NavigationMesh =
-    { NavigationMeshConfig : NavigationMeshConfig
-      NavigationMeshContent : NavigationMeshContent }
+/// Represents navigation capabilies for a screen.
+/// NOTE: this type is intended only for internal engine use.
+type Navigation =
+    { NavigationContext : RcContext
+      NavigationConfig : NavigationConfig
+      NavigationContents : Map<Address, NavigationContent>
+      NavigationContentsOldOpt : Map<Address, NavigationContent> option
+      NavigationMeshOpt : DtNavMesh option }
 
-/// Represents a composed navigation map.
-type NavigationMap =
-    { NavigationMeshes : Map<string, NavigationMesh * RcCompactHeightfield * RcContourSet * RcPolyMesh * RcPolyMeshDetail * RcContext> }
-
-    // The empty navigation map.
-    static member empty = { NavigationMeshes = Map.empty }
+    // Make an empty navigation map.
+    static member make () =
+        { NavigationContext = RcContext ()
+          NavigationConfig = NavigationConfig.defaultConfig
+          NavigationContents = Map.empty
+          NavigationContentsOldOpt = None
+          NavigationMeshOpt = None }
 
 /// Navigation input geometry provider.
 type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =

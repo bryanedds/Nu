@@ -4,11 +4,12 @@
 namespace Nu
 open System
 open System.IO
-open Prime
-open DotRecast.Core
+open System.Numerics
 open DotRecast.Recast
 open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
+open Prime
+open DotRecast.Detour
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -32,8 +33,8 @@ module WorldScreenModule =
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
-        member this.GetNavigationMap world = World.getScreenNavigationMap this world
-        member this.NavigationMap = lensReadOnly (nameof this.NavigationMap) this this.GetNavigationMap
+        member this.GetNavigation world = World.getScreenNavigation this world
+        member this.Navigation = lensReadOnly (nameof this.Navigation) this this.GetNavigation
         member this.GetProtected world = World.getScreenProtected this world
         member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getScreenPersistent this world
@@ -357,158 +358,121 @@ module WorldScreenModule =
             | OmniScreen ->
                 World.setOmniScreen screen world
 
-        static member internal tryCreateNavigationMesh mesh (_ : World) =
-
-            // attempt to create an input geometry provider
-            let meshConfig = mesh.NavigationMeshConfig
-            let meshContent = mesh.NavigationMeshContent
-            let geomProviderOpt =
-                match meshContent with
-                | NavigationMeshModel _ -> failwithnie ()
-                | NavigationMeshModelSurface (staticModel, surfaceIndex) ->
+        static member internal getNavigationSurfaces contents =
+            [for content in contents do
+                match content with
+                | NavigationModel (affineMatrix, staticModel) ->
+                    match Metadata.tryGetStaticModelMetadata staticModel with
+                    | Some physicallyBasedModel ->
+                        for surface in physicallyBasedModel.Surfaces do
+                            yield (affineMatrix, surface)
+                    | None -> ()
+                | NavigationModelSurface (affineMatrix, staticModel, surfaceIndex) ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                            let surface = physicallyBasedModel.Surfaces.[surfaceIndex]
+                            yield (affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                    | None -> ()
+                | NavigationModelSurfaces (affineMatrix, staticModel, surfaceIndices) ->
+                    match Metadata.tryGetStaticModelMetadata staticModel with
+                    | Some physicallyBasedModel ->
+                        for surfaceIndex in surfaceIndices do
+                            if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
+                                yield (affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                    | None -> ()]
+
+        static member internal tryBuildNavigationMesh contents config =
+
+            // attempt to create an input geometry provider
+            let geomProviderOpt =
+                match World.getNavigationSurfaces contents with
+                | [] -> None
+                | surfaces ->
+
+                    // attempt to compute bounds and vertices
+                    let mutable boundsOpt = None
+                    let vertices =
+                        [|for (affineMatrix, surface) in surfaces do
+                            let geometry = surface.PhysicallyBasedGeometry
+                            match boundsOpt with
+                            | None -> boundsOpt <- Some (geometry.Bounds.Transform affineMatrix)
+                            | Some bounds -> boundsOpt <- Some (bounds.Combine (geometry.Bounds.Transform affineMatrix))
+                            if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
+                                for v in geometry.Vertices do
+                                    let v' = Vector3.Transform (v, affineMatrix)
+                                    yield v'.X; yield v'.Y; yield v'.Z|]
+
+                    // compute indices
+                    let mutable offset = 0
+                    let indices =
+                        [|for (_, surface) in surfaces do
                             let geometry = surface.PhysicallyBasedGeometry
                             if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
-                                let vertices = [|for v in geometry.Vertices do yield v.X; yield v.Y; yield v.Z|]
-                                let provider = NavigationInputGeomProvider (vertices, geometry.Indices, geometry.Bounds)
-                                Some (provider :> IInputGeomProvider)
-                            else None
-                        else None
-                    | None -> None
+                                for i in geometry.Indices do
+                                    i + offset
+                            offset <- offset + geometry.Vertices.Length|]
+
+                    // attempt to create geometry provider
+                    match boundsOpt with
+                    | Some bounds when vertices.Length >= 3 && indices.Length >= 3 ->
+                        let provider = NavigationInputGeomProvider (vertices, indices, bounds)
+                        Some (provider :> IInputGeomProvider)
+                    | Some _ | None -> None
 
             // attempt execute navigation mesh construction steps
             match geomProviderOpt with
             | Some geomProvider ->
-
-                (* Step 1: Initialize builder config. *)
-                let bmin = geomProvider.GetMeshBoundsMin ()
-                let bmax = geomProvider.GetMeshBoundsMax ()
-                let ctx = RcContext ()
                 let rcConfig =
                     RcConfig
-                        (meshConfig.PartitionType,
-                         meshConfig.CellSize, meshConfig.CellHeight,
-                         meshConfig.AgentMaxSlope, meshConfig.AgentHeight, meshConfig.AgentRadius, meshConfig.AgentMaxClimb,
-                         meshConfig.RegionMinSize, meshConfig.RegionMergeSize,
-                         meshConfig.EdgeMaxLength, meshConfig.EdgeMaxError,
-                         meshConfig.VertsPerPolygon,
-                         meshConfig.DetailSampleDistance, meshConfig.DetailSampleMaxError,
+                        (config.PartitionType,
+                         config.CellSize, config.CellHeight,
+                         config.AgentMaxSlope, config.AgentHeight, config.AgentRadius, config.AgentMaxClimb,
+                         config.RegionMinSize, config.RegionMergeSize,
+                         config.EdgeMaxLength, config.EdgeMaxError,
+                         config.VertsPerPolygon, config.DetailSampleDistance, config.DetailSampleMaxError,
                          true, true, true,
                          SampleAreaModifications.SAMPLE_AREAMOD_GROUND, true)
-                let rcBuilderConfig = RcBuilderConfig (rcConfig, bmin, bmax)
+                let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
+                let rcBuilder = RcBuilder ()
+                let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig)
+                let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentMaxClimb, rcBuilderResult)
+                match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
+                | null -> None // some sort of argument issue
+                | dtMeshData ->
+                    DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
+                    let dtNavMesh = DtNavMesh (dtMeshData, 6, 0) // TODO: introduce constant?
+                    Some dtNavMesh
 
-                (* Step 2: Rasterize input polygon soup. *)
-                let solid = RcHeightfield (rcBuilderConfig.width, rcBuilderConfig.height, rcBuilderConfig.bmin, rcBuilderConfig.bmax, rcConfig.Cs, rcConfig.Ch, rcConfig.BorderSize)
-                for geom in geomProvider.Meshes () do
-
-                    // allocate array that can hold triangle area types.
-                    // if you have multiple meshes you need to process, allocate an array which can hold the max number
-                    // of triangles you need to process.
-                    let verts = geom.GetVerts ()
-                    let tris = geom.GetTris ()
-                    let ntris = tris.Length / 3
-
-                    // find triangles which are walkable based on their slope and rasterize them.
-                    // if your input data is multiple meshes, you can transform them here, calculate the are type for
-                    // each of the meshes and rasterize them.
-                    let triareas = RcCommons.MarkWalkableTriangles (ctx, rcConfig.WalkableSlopeAngle, verts, tris, ntris, rcConfig.WalkableAreaMod)
-                    RcRasterizations.RasterizeTriangles (ctx, verts, tris, triareas, ntris, solid, rcConfig.WalkableClimb)
-
-                (* Step 3: Filter walkable surfaces. *)
-                
-                // once all geometry is rasterized, we do initial pass of filtering to remove unwanted overhangs caused
-                // by the conservative rasterization as well as filter spans where the character cannot possibly stand.
-                RcFilters.FilterLowHangingWalkableObstacles (ctx, rcConfig.WalkableClimb, solid)
-                RcFilters.FilterLedgeSpans (ctx, rcConfig.WalkableHeight, rcConfig.WalkableClimb, solid)
-                RcFilters.FilterWalkableLowHeightSpans (ctx, rcConfig.WalkableHeight, solid)
-
-                (* Step 4: Partition walkable surface to simple regions. *)
-                
-                // compact the heightfield so that it is faster to handle from now on.
-                // this will result more cache coherent data as well as the neighbours between walkable cells will be
-                // calculated.
-                let chf = RcCompacts.BuildCompactHeightfield (ctx, rcConfig.WalkableHeight, rcConfig.WalkableClimb, solid)
-
-                // erode the walkable area by agent radius.
-                RcAreas.ErodeWalkableArea (ctx, rcConfig.WalkableRadius, chf)
-
-                // partition the heightfield so that we can use simple algorithm later to triangulate the walkable areas.
-                // there are 3 partitioning methods, each with some pros and cons:
-                // 1) watershed partitioning
-                // - the classic Recast partitioning
-                // - creates the nicest tessellation
-                // - usually slowest
-                // - partitions the heightfield into nice regions without holes or overlaps
-                // - the are some corner cases where this method creates produces holes and overlaps
-                // - holes may appear when a small obstacles is close to large open area (triangulation can handle this)
-                // - overlaps may occur if you have narrow spiral corridors (i.e stairs), this make triangulation to fail
-                // * generally the best choice if you precompute the navmesh, use this if you have large open areas
-                // 2) monotone partioning
-                // - fastest
-                // - partitions the heightfield into regions without holes and overlaps (guaranteed)
-                // - creates long thin polygons, which sometimes causes paths with detours
-                // * use this if you want fast navmesh generation
-                // 3) layer partitoining
-                // - quite fast
-                // - partitions the heighfield into non-overlapping regions
-                // - relies on the triangulation code to cope with holes (thus slower than monotone partitioning)
-                // - produces better triangles than monotone partitioning
-                // - does not have the corner cases of watershed partitioning
-                // - can be slow and create a bit ugly tessellation (still better than monotone) if you have large open
-                // areas with small obstacles (not a problem if you use tiles)
-                // * good choice to use for tiled navmesh with medium and small sized tiles
-                match meshConfig.PartitionType with
-                | RcPartition.WATERSHED ->
-                    // prepare for region partitioning, by calculating distance field along the walkable surface and
-                    // partition the walkable surface into simple regions without holes.
-                    RcRegions.BuildDistanceField (ctx, chf)
-                    RcRegions.BuildRegions (ctx, chf, rcConfig.MinRegionArea, rcConfig.MergeRegionArea)
-                | RcPartition.MONOTONE ->
-                    // partition the walkable surface into simple regions without holes. Monotone partitioning does not
-                    // need distancefield.
-                    RcRegions.BuildRegionsMonotone (ctx, chf, rcConfig.MinRegionArea, rcConfig.MergeRegionArea)
-                | RcPartition.LAYERS ->
-                    // partition the walkable surface into simple regions without holes.
-                    RcRegions.BuildLayerRegions (ctx, chf, rcConfig.MinRegionArea) |> ignore<bool>
-                | _ -> failwithumf ()
-
-                (* Step 5: Trace and simplify region contours. *)
-                let cset = RcContours.BuildContours (ctx, chf, rcConfig.MaxSimplificationError, rcConfig.MaxEdgeLen, RcBuildContoursFlags.RC_CONTOUR_TESS_WALL_EDGES)
-
-                (* Step 6: Build polygons mesh from contours. *)
-                let pmesh = RcMeshs.BuildPolyMesh (ctx, cset, rcConfig.MaxVertsPerPoly)
-
-                (* Step 7: Create detail mesh which allows to access approximate height on each polygon. *)
-                let dmesh = RcMeshDetails.BuildPolyMeshDetail (ctx, pmesh, chf, rcConfig.DetailSampleDist, rcConfig.DetailSampleMaxError)
-                Some (chf, cset, pmesh, dmesh, ctx)
-
+            // geometry not found
             | None -> None
 
-        static member internal setScreenNavigationMeshOpt meshName meshOpt screen world =
-            let map = World.getScreenNavigationMap screen world
-            match (map.NavigationMeshes.TryFind meshName, meshOpt) with
-            | (Some (mesh, _, _, _, _, _), Some mesh') ->
-                if mesh' <> mesh then
-                    match World.tryCreateNavigationMesh mesh' world with
-                    | Some (chf', cset', pmesh', dmesh', ctx') ->
-                        let map = { map with NavigationMeshes = Map.add meshName (mesh', chf', cset', pmesh', dmesh', ctx') map.NavigationMeshes }
-                        World.setScreenNavigationMap map screen world |> snd'
-                    | None ->
-                        let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
-                        World.setScreenNavigationMap map screen world |> snd'
+        static member internal setScreenNavigationMeshOpt contentName contentOpt screen world =
+            let navigation = World.getScreenNavigation screen world
+            match (navigation.NavigationContents.TryFind contentName, contentOpt) with
+            | (Some content, Some content') ->
+                if content' <> content then // OPTIMIZATION: preserve map reference if no content changes detected.
+                    let navigation = { navigation with NavigationContents = Map.add contentName content' navigation.NavigationContents }
+                    World.setScreenNavigation navigation screen world |> snd'
                 else world
-            | (None, Some mesh) ->
-                match World.tryCreateNavigationMesh mesh world with
-                | Some (chf, cset, pmesh, dmesh, ctx) ->
-                    let map = { map with NavigationMeshes = Map.add meshName (mesh, chf, cset, pmesh, dmesh, ctx) map.NavigationMeshes }
-                    World.setScreenNavigationMap map screen world |> snd'
-                | None ->
-                    let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
-                    World.setScreenNavigationMap map screen world |> snd'
-            | (Some (_, _, _, _, _, _), None) ->
-                let map = { map with NavigationMeshes = Map.remove meshName map.NavigationMeshes }
-                World.setScreenNavigationMap map screen world |> snd'
+            | (None, Some content) ->
+                let navigation = { navigation with NavigationContents = Map.add contentName content navigation.NavigationContents }
+                World.setScreenNavigation navigation screen world |> snd'
+            | (Some _, None) ->
+                let navigation = { navigation with NavigationContents = Map.remove contentName navigation.NavigationContents }
+                World.setScreenNavigation navigation screen world |> snd'
             | (None, None) -> world
+
+        static member internal synchronizeNavigation screen world =
+            let navigation = World.getScreenNavigation screen world
+            let rebuild =
+                match navigation.NavigationContentsOldOpt with
+                | Some contentsOld -> navigation.NavigationContents =/= contentsOld
+                | None -> navigation.NavigationContents.Count <> 0
+            if rebuild then
+                let contents = navigation.NavigationContents.Values
+                match World.tryBuildNavigationMesh contents navigation.NavigationConfig with
+                | Some navigationMesh ->
+                    let navigation = { navigation with NavigationMeshOpt = Some navigationMesh; NavigationContentsOldOpt = Some navigation.NavigationContents }
+                    World.setScreenNavigation navigation screen world |> snd'
+                | None -> world
+            else world
