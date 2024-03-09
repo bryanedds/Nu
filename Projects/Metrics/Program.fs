@@ -25,7 +25,7 @@ type MetricsEntityDispatcher () =
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetModelGeneric world
         let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
-        AttributesInferred.make bounds.Size bounds.Center
+        AttributesInferred.important bounds.Size bounds.Center
 
 #if !MMCC
 type MyGameDispatcher () =

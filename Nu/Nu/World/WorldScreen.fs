@@ -442,7 +442,7 @@ module WorldScreenModule =
                     DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
                     let dtNavMesh = DtNavMesh (dtMeshData, 6, 0) // TODO: introduce constant?
                     let dtQuery = DtNavMeshQuery dtNavMesh
-                    Some (dtNavMesh, dtQuery)
+                    Some (rcBuilderResult, dtNavMesh, dtQuery)
 
             // geometry not found
             | None -> None
@@ -497,5 +497,5 @@ module WorldScreenModule =
             let world = World.synchronizeNavigation screen world
             let navigation = World.getScreenNavigation screen world
             match navigation.NavigationMeshOpt with
-            | Some (_, dtQuery) -> Some (query dtQuery)
+            | Some (_, _, dtQuery) -> Some (query dtQuery)
             | None -> None

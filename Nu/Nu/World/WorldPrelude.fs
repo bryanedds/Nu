@@ -15,17 +15,27 @@ open DotRecast.Recast.Geom
 open Prime
 
 // The inferred attributes of an entity that are used to construct its bounds.
+// HACK: added Important field to allow attributes to be marked as unimportant.
+// TODO: see if we can refactor this type to make its representation and algo less hacky.
 type AttributesInferred =
-    { SizeInferred : Vector3
+    { Unimportant : bool
+      SizeInferred : Vector3
       OffsetInferred : Vector3 }
 
-    static member make size offset =
-        { SizeInferred = size
+    static member important size offset =
+        { Unimportant = false
+          SizeInferred = size
           OffsetInferred = offset }
 
-    static member choose left right =
-        if right.OffsetInferred.MagnitudeSquared >= left.OffsetInferred.MagnitudeSquared // HACK: picking the attribute whose offset is more impactful...
-        then right
+    static member unimportant =
+        { Unimportant = true
+          SizeInferred = v3Zero
+          OffsetInferred = v3Zero }
+
+    static member choose (left : AttributesInferred) (right : AttributesInferred) =
+        if left.Unimportant then right
+        elif right.Unimportant then left
+        elif right.OffsetInferred.MagnitudeSquared >= left.OffsetInferred.MagnitudeSquared then right // HACK: picking the attribute whose offset is more impactful...
         else left
 
 /// Describes a Tiled tile.
@@ -97,6 +107,7 @@ type NavigationContent =
 type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =
     let triMesh = RcTriMesh (vertices, faces)
     let meshes = RcImmutableArray.Create triMesh
+    let offMeshConnections = List<RcOffMeshConnection> ()
     let convexVolumes = List ()
     interface IInputGeomProvider with
         member this.GetMesh () = triMesh
@@ -105,9 +116,9 @@ type NavigationInputGeomProvider (vertices, faces, bounds : Box3) =
         member this.Meshes () = meshes
         member this.AddConvexVolume convexVolume = convexVolumes.Add convexVolume
         member this.ConvexVolumes () = convexVolumes
-        member this.GetOffMeshConnections () = failwithnie ()
-        member this.AddOffMeshConnection (_, _, _, _, _, _) = failwithnie ()
-        member this.RemoveOffMeshConnections _ = failwithnie ()
+        member this.GetOffMeshConnections () = offMeshConnections
+        member this.AddOffMeshConnection (start, end_, radius, bidir, area, flags) = offMeshConnections.Add(RcOffMeshConnection(start, end_, radius, bidir, area, flags))
+        member this.RemoveOffMeshConnections filter = offMeshConnections.RemoveAll filter |> ignore<int>
         end
 
 /// The manner in which a gui entity may be docked by a parent entity.

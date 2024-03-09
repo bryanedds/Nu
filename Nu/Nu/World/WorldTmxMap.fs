@@ -432,7 +432,7 @@ module TmxMap =
         List.concat descriptorLists
 
     let getAttributesInferred (tileMap : TmxMap) =
-        AttributesInferred.make
+        AttributesInferred.important
             (v3
                 (single (tileMap.Width * tileMap.TileWidth))
                 (single (tileMap.Height * tileMap.TileHeight))

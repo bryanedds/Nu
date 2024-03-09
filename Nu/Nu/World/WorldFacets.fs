@@ -73,8 +73,8 @@ module StaticSpriteFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
-            | Some size -> AttributesInferred.make size.V3 v3Zero
-            | None -> AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
+            | Some size -> AttributesInferred.important size.V3 v3Zero
+            | None -> AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -146,7 +146,7 @@ module AnimatedSpriteFacetModule =
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, animationSheet, &color, blend, &emission, flip, world)
 
         override this.GetAttributesInferred (entity, world) =
-            AttributesInferred.make (entity.GetCelSize world).V3 v3Zero
+            AttributesInferred.important (entity.GetCelSize world).V3 v3Zero
 
 [<AutoOpen>]
 module BasicStaticSpriteEmitterFacetModule =
@@ -477,7 +477,7 @@ module TextFacetModule =
                     world
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+            AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module BackdroppableFacetModule =
@@ -523,9 +523,9 @@ module BackdroppableFacetModule =
             match entity.GetBackdropImageOpt world with
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
-                | Some size -> AttributesInferred.make size.V3 v3Zero
-                | None -> AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
-            | None -> AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
+                | Some size -> AttributesInferred.important size.V3 v3Zero
+                | None -> AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
+            | None -> AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
 
 [<AutoOpen>]
 module LabelFacetModule =
@@ -564,8 +564,8 @@ module LabelFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
-            | Some size -> AttributesInferred.make size.V3 v3Zero
-            | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+            | Some size -> AttributesInferred.important size.V3 v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module ButtonFacetModule =
@@ -673,8 +673,8 @@ module ButtonFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
-            | Some size -> AttributesInferred.make size.V3 v3Zero
-            | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+            | Some size -> AttributesInferred.important size.V3 v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module ToggleButtonFacetModule =
@@ -800,8 +800,8 @@ module ToggleButtonFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
-            | Some size -> AttributesInferred.make size.V3 v3Zero
-            | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+            | Some size -> AttributesInferred.important size.V3 v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module RadioButtonFacetModule =
@@ -922,8 +922,8 @@ module RadioButtonFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
-            | Some size -> AttributesInferred.make size.V3 v3Zero
-            | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+            | Some size -> AttributesInferred.important size.V3 v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module FillBarFacetModule =
@@ -1023,8 +1023,8 @@ module FillBarFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
-            | Some size -> AttributesInferred.make size.V3 v3Zero
-            | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+            | Some size -> AttributesInferred.important size.V3 v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module FeelerFacetModule =
@@ -1108,7 +1108,7 @@ module FeelerFacetModule =
             else world
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
+            AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -1629,7 +1629,7 @@ module TileMapFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) with
             | Some tileMap -> TmxMap.getAttributesInferred tileMap
-            | None -> AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
+            | None -> AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
 
 [<AutoOpen>]
 module TmxMapFacetModule =
@@ -2079,7 +2079,7 @@ module LightProbe3dFacetModule =
             else [||]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.25f) v3Zero
+            AttributesInferred.important (v3Dup 0.25f) v3Zero
 
         override this.Edit (op, entity, world) =
             match op with
@@ -2175,7 +2175,7 @@ module Light3dFacetModule =
             else [||]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.25f) v3Zero
+            AttributesInferred.important (v3Dup 0.25f) v3Zero
 
         override this.Edit (op, entity, world) =
             match op with
@@ -2529,7 +2529,7 @@ module StaticModelFacetModule =
             match Metadata.tryGetStaticModelMetadata staticModel with
             | Some staticModelMetadata ->
                 let bounds = staticModelMetadata.Bounds
-                AttributesInferred.make bounds.Size bounds.Center
+                AttributesInferred.important bounds.Size bounds.Center
             | None -> base.GetAttributesInferred (entity, world)
 
         override this.RayCast (ray, entity, world) =
@@ -2598,7 +2598,7 @@ module StaticModelSurfaceFacetModule =
                 let surfaceIndex = entity.GetSurfaceIndex world
                 if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
                     let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
-                    AttributesInferred.make bounds.Size bounds.Center
+                    AttributesInferred.important bounds.Size bounds.Center
                 else base.GetAttributesInferred (entity, world)
             | None -> base.GetAttributesInferred (entity, world)
 
@@ -2702,7 +2702,7 @@ module AnimatedModelFacetModule =
             match Metadata.tryGetAnimatedModelMetadata animatedModel with
             | Some animatedModelMetadata ->
                 let bounds = animatedModelMetadata.Bounds
-                AttributesInferred.make bounds.Size bounds.Center
+                AttributesInferred.important bounds.Size bounds.Center
             | None -> base.GetAttributesInferred (entity, world)
 
         override this.RayCast (ray, entity, world) =
@@ -2877,8 +2877,8 @@ module TerrainFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match entity.TryGetTerrainResolution world with
-            | Some resolution -> AttributesInferred.make (v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))) v3Zero
-            | None -> AttributesInferred.make (v3 512.0f 128.0f 512.0f) v3Zero
+            | Some resolution -> AttributesInferred.important (v3 (single (dec resolution.X)) 128.0f (single (dec resolution.Y))) v3Zero
+            | None -> AttributesInferred.important (v3 512.0f 128.0f 512.0f) v3Zero
 
 [<AutoOpen>]
 module NavigationContentFacetModule =
@@ -2913,6 +2913,9 @@ module NavigationContentFacetModule =
                 else world
             | _ -> world
 
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.unimportant
+
 [<AutoOpen>]
 module NavigationConfigFacetModule =
 
@@ -2942,4 +2945,24 @@ module NavigationConfigFacetModule =
                 if ImGui.Button "Synchronize Navigation" then
                     World.synchronizeNavigation entity.Screen world
                 else world
+            | OverlayViewport _ ->
+                let navigation = World.getScreenNavigation entity.Screen world
+                match navigation.NavigationMeshOpt with
+                | Some (builderResult, _, _) ->
+                    let dmesh = builderResult.GetMeshDetail ()
+                    let points =
+                        seq {
+                            for i in 0 .. dec dmesh.nmeshes do
+                                let m = i * 4;
+                                let bverts = dmesh.meshes[m];
+                                let nverts = dmesh.meshes[m + 1];
+                                let verts = bverts * 3;
+                                for j in 0 .. dec nverts do
+                                    v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2] }
+                    World.imGuiCircles3d false points 2.0f Color.Yellow true world
+                    world
+                | None -> world
             | _ -> world
+
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.unimportant

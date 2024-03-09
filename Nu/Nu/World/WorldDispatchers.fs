@@ -120,9 +120,9 @@ module TextDispatcherModule =
             match entity.GetBackdropImageOpt world with
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
-                | Some size -> AttributesInferred.make size.V3 v3Zero
-                | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
-            | None -> AttributesInferred.make Constants.Engine.EntityGuiSizeDefault v3Zero
+                | Some size -> AttributesInferred.important size.V3 v3Zero
+                | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -457,7 +457,7 @@ module LightProbe3dDispatcherModule =
              define Entity.ProbeStale false]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.25f) v3Zero
+            AttributesInferred.important (v3Dup 0.25f) v3Zero
 
 [<AutoOpen>]
 module Light3dDispatcherModule =
@@ -480,7 +480,7 @@ module Light3dDispatcherModule =
              define Entity.LightType PointLight]
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.make (v3Dup 0.25f) v3Zero
+            AttributesInferred.important (v3Dup 0.25f) v3Zero
 
 [<AutoOpen>]
 module StaticBillboardDispatcherModule =

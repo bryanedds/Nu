@@ -10,6 +10,7 @@ open System.Numerics
 open System.Reflection
 open DotRecast.Core
 open DotRecast.Detour
+open DotRecast.Recast
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -304,7 +305,7 @@ and Navigation =
       NavigationContentsOldOpt : Map<Entity, Matrix4x4 * NavigationContent> option
       NavigationConfig : NavigationConfig
       NavigationConfigOldOpt : NavigationConfig option
-      NavigationMeshOpt : (DtNavMesh * DtNavMeshQuery) option }
+      NavigationMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }
 
     // Make an empty navigation map.
     static member make () =
@@ -571,8 +572,8 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (_, _) =
         if this.Is2d
-        then AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
-        else AttributesInferred.make Constants.Engine.Entity3dSizeDefault v3Zero
+        then AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
+        else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
 
     /// Attempt to pick an entity with a ray.
     abstract RayCast : Ray3 * Entity * World -> single array
@@ -649,8 +650,8 @@ and Facet (physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (entity, world) =
         if WorldTypes.getEntityIs2d entity world
-        then AttributesInferred.make Constants.Engine.Entity2dSizeDefault v3Zero
-        else AttributesInferred.make Constants.Engine.Entity3dSizeDefault v3Zero
+        then AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
+        else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Entity * World -> World
