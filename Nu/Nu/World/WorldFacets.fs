@@ -1399,7 +1399,7 @@ module RigidBodyFacetModule =
 
         static member Properties =
             [define Entity.BodyEnabled true
-             define Entity.BodyType Dynamic
+             define Entity.BodyType Static
              define Entity.SleepingAllowed true
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
