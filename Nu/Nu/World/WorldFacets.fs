@@ -2904,7 +2904,7 @@ module NavigationContentFacetModule =
         override this.Register (entity, world) =
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavigationContentFacet) world
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.NavigationContent)) entity (nameof NavigationContentFacet) world
-            world
+            propagateNavigationContent entity world
 
         override this.Unregister (entity, world) =
             World.setNavigationContentOpt None entity world
