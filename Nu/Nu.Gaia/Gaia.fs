@@ -1452,6 +1452,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntity () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then showOpenProjectDialog <- true
+            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then world <- World.synchronizeNavigation selectedScreen world
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps ()
@@ -2732,6 +2733,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Exit", "Alt+F4") then showConfirmExitDialog <- true
                                 ImGui.EndMenu ()
+                            if ImGui.BeginMenu "Screen" then
+                                if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then world <- World.synchronizeNavigation selectedScreen world
+                                ImGui.EndMenu ()
                             if ImGui.BeginMenu "Group" then
                                 if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
                                 if ImGui.MenuItem ("Open Group", "Ctrl+O") then showOpenGroupDialog <- true
@@ -2879,6 +2883,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.Button "Freeze" then freezeEntities ()
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                             ImGui.Text "Freeze all thawed entities. (Ctrl+Shift+F)"
+                            ImGui.EndTooltip ()
+                        ImGui.SameLine ()
+                        if ImGui.Button "Renavigate" then world <- World.synchronizeNavigation selectedScreen world
+                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                            ImGui.Text "Synchronize navigation mesh. (Ctrl+Shift+N)"
                             ImGui.EndTooltip ()
                         ImGui.SameLine ()
                         if ImGui.Button "Relight" then rerenderLightMaps ()
