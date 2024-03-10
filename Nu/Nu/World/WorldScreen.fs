@@ -532,7 +532,6 @@ module WorldScreenModule =
 
         /// Query the given screen's navigation information if it exists.
         static member tryQueryNavigation query screen world =
-            let world = World.synchronizeNavigation screen world
             let navigation = World.getScreenNavigation screen world
             match navigation.NavigationMeshOpt with
             | Some (_, _, dtQuery) -> Some (query dtQuery)
