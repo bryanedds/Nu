@@ -16,19 +16,21 @@ module WorldImGui =
             world.Subsystems.ImGui
 
         /// Render circles via ImGui in the current eye 3d space.
-        static member imGuiCircles3d absolute positions radius (color : Color) filled world =
+        static member imGuiCircles3d absolute (positions : Vector3 seq) radius (color : Color) filled world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
+            let eyeFrustum = World.getEye3dFrustumView world
             let viewport = Constants.Render.Viewport
             let view = viewport.View3d (absolute, eyeCenter, eyeRotation)
             let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
             let viewProjection = view * projection
             for position in positions do
-                let positionWindow = ImGui.PositionToWindow (viewProjection, position)
-                if filled
-                then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
-                else drawList.AddCircle (positionWindow, radius, color.Abgr)
+                if eyeFrustum.Contains position = ContainmentType.Contains then
+                    let positionWindow = ImGui.PositionToWindow (viewProjection, position)
+                    if filled
+                    then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
+                    else drawList.AddCircle (positionWindow, radius, color.Abgr)
 
         /// Render a circle via ImGui in the current eye 3d space.
         static member imGuiCircle3d absolute position radius color filled world =
