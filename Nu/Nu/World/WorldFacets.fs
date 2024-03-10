@@ -2945,7 +2945,8 @@ module NavigationConfigFacetModule =
         override this.Edit (op, entity, world) =
             match op with
             | AppendProperties _ ->
-                if ImGui.Button "Synchronize Navigation" then
+                if  not (entity.Has<NavigationContentFacet> world) &&
+                    ImGui.Button "Synchronize Navigation" then
                     World.synchronizeNavigation entity.Screen world
                 else world
             | OverlayViewport _ ->
