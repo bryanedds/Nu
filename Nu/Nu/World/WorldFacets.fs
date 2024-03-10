@@ -2893,12 +2893,13 @@ module NavigationContentFacetModule =
         inherit Facet (false)
 
         static let propagateNavigationContent (entity : Entity) world =
+            let bounds = entity.GetBounds world
             let affineMatrix = entity.GetAffineMatrix world
             let content = entity.GetNavigationContent world
-            World.setNavigationContentOpt (Some (affineMatrix, content)) entity world
+            World.setNavigationContentOpt (Some (bounds, affineMatrix, content)) entity world
 
         static member Properties =
-            [define Entity.NavigationContent (NavigationModel Assets.Default.StaticModel)]
+            [define Entity.NavigationContent NavigationBounds]
 
         override this.Register (entity, world) =
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavigationContentFacet) world

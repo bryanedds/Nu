@@ -99,6 +99,8 @@ type [<SymbolicExpansion>] NavigationConfig =
 
 /// Geometric navigation content.
 type NavigationContent =
+    | NavigationEmpty
+    | NavigationBounds
     | NavigationModel of StaticModel AssetTag
     | NavigationModelSurface of StaticModel AssetTag * int
     | NavigationModelSurfaces of StaticModel AssetTag * int array

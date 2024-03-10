@@ -381,29 +381,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// The mirror image of a box.
-        /// </summary>
-        public Box3 Mirror
-        {
-            get
-            {
-                var min = Min;
-                var max = min + Size;
-                var min2 = -max;
-                var max2 = -min;
-                var min3 = new Vector3();
-                var max3 = new Vector3();
-                min3.X = System.Math.Min(min.X, min2.X);
-                min3.Y = System.Math.Min(min.Y, min2.Y);
-                min3.Z = System.Math.Min(min.Z, min2.Z);
-                max3.X = System.Math.Max(max.X, max2.X);
-                max3.Y = System.Math.Max(max.Y, max2.Y);
-                max3.Z = System.Math.Max(max.Z, max2.Z);
-                return new Box3(min3, max3 - min3);
-            }
-        }
-
-        /// <summary>
         /// Get an array of <see cref="Vector3"/> containing the corners of this <see cref="Box3"/>.
         /// </summary>
         /// <returns>An array of <see cref="Vector3"/> containing the corners of this <see cref="Box3"/>.</returns>

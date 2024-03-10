@@ -358,59 +358,97 @@ module WorldScreenModule =
             | OmniScreen ->
                 World.setOmniScreen screen world
 
-        static member internal getNavigationSurfaces contents =
-            [for (affineMatrix, content) in contents do
+        static member internal getNavigationDescriptors contents =
+            [for (bounds, affineMatrix, content) in contents do
                 match content with
+                | NavigationEmpty -> ()
+                | NavigationBounds -> Left bounds
                 | NavigationModel staticModel ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do
-                            yield (affineMatrix, surface)
+                            Right (bounds, affineMatrix, surface)
                     | None -> ()
                 | NavigationModelSurface (staticModel, surfaceIndex) ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                            yield (affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                            Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()
                 | NavigationModelSurfaces (staticModel, surfaceIndices) ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surfaceIndex in surfaceIndices do
                             if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                                yield (affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                                Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()]
 
         static member internal tryBuildNavigationMesh contents config =
 
             // attempt to create an input geometry provider
             let geomProviderOpt =
-                match World.getNavigationSurfaces contents with
+                match World.getNavigationDescriptors contents with
                 | [] -> None
-                | surfaces ->
+                | descriptors ->
 
                     // attempt to compute bounds and vertices
                     let mutable boundsOpt = None
                     let vertices =
-                        [|for (affineMatrix, surface) in surfaces do
-                            let geometry = surface.PhysicallyBasedGeometry
-                            match boundsOpt with
-                            | None -> boundsOpt <- Some (geometry.Bounds.Transform affineMatrix)
-                            | Some bounds -> boundsOpt <- Some (bounds.Combine (geometry.Bounds.Transform affineMatrix))
-                            if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
-                                for v in geometry.Vertices do
-                                    let v' = Vector3.Transform (v, affineMatrix)
-                                    yield v'.X; yield v'.Y; yield v'.Z|]
+                        [|for descriptor in descriptors do
+                            match descriptor with
+                            | Left bounds ->
+                                match boundsOpt with
+                                | None -> boundsOpt <- Some bounds
+                                | Some (bounds' : Box3) -> boundsOpt <- Some (bounds'.Combine bounds)
+                                let corners = bounds.Corners
+                                for corner in corners do
+                                    corner.X; corner.Y; corner.Z
+                            | Right (bounds, affineMatrix : Matrix4x4, surface) ->
+                                let geometry = surface.PhysicallyBasedGeometry
+                                match boundsOpt with
+                                | None -> boundsOpt <- Some bounds
+                                | Some (bounds' : Box3) -> boundsOpt <- Some (bounds'.Combine bounds)
+                                if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
+                                    for v in geometry.Vertices do
+                                        let v' = Vector3.Transform (v, affineMatrix)
+                                        v'.X; v'.Y; v'.Z|]
 
                     // compute indices
                     let mutable offset = 0
                     let indices =
-                        [|for (_, surface) in surfaces do
-                            let geometry = surface.PhysicallyBasedGeometry
-                            if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
-                                for i in geometry.Indices do
-                                    i + offset
-                            offset <- offset + geometry.Vertices.Length|]
+                        [|for descriptor in descriptors do
+                            match descriptor with
+                            | Left _ ->
+                                // as the corners are ordered in Box3.Corners...
+                                //
+                                //     6--------7
+                                //    /|       /|
+                                //   / |      / |
+                                //  5--------4  |
+                                //  |  0-----|--3
+                                //  | /      | /
+                                //  |/       |/
+                                //  1--------2
+                                //
+                                offset + 2; offset + 3; offset + 7 // right
+                                offset + 2; offset + 7; offset + 4
+                                offset + 0; offset + 1; offset + 5 // left
+                                offset + 0; offset + 5; offset + 6
+                                offset + 4; offset + 5; offset + 6 // top
+                                offset + 4; offset + 6; offset + 7
+                                offset + 0; offset + 1; offset + 2 // bottom
+                                offset + 0; offset + 2; offset + 3
+                                offset + 0; offset + 3; offset + 7 // back
+                                offset + 0; offset + 7; offset + 6
+                                offset + 1; offset + 2; offset + 4 // front
+                                offset + 1; offset + 4; offset + 5
+                                offset <- offset + 8
+                            | Right (_, _, surface) ->
+                                let geometry = surface.PhysicallyBasedGeometry
+                                if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
+                                    for i in geometry.Indices do
+                                        i + offset
+                                offset <- offset + geometry.Vertices.Length|]
 
                     // attempt to create geometry provider
                     match boundsOpt with
