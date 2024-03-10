@@ -29,6 +29,15 @@ type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 
+/// Geometric navigation content.
+type NavigationContent =
+    | NavigationNil
+    | NavigationBounds
+    | NavigationGeometry
+    | NavigationStaticModel
+    | NavigationStaticModelSurface of int
+    | NavigationStaticModelSurfaces of int array
+
 /// The batch phasing such involved in persisting OpenGL state.
 type [<Struct>] BatchPhase =
     | StartingPhase
@@ -243,6 +252,15 @@ module AssimpExtensions =
                     try property.GetStringValue () |> scvalueMemo<bool> |> Some
                     with _ -> None
                 else Some true
+
+        member this.NavigationContentOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.NavigationContentName) with
+            | null -> None
+            | property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<NavigationContent> |> Some
+                    with _ -> None
+                else Some NavigationNil
 
     /// Node extensions.
     type Assimp.Node with

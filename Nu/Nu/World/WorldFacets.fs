@@ -2895,14 +2895,20 @@ module NavigationContentFacetModule =
         static let propagateNavigationContent (entity : Entity) world =
             let bounds = entity.GetBounds world
             let affineMatrix = entity.GetAffineMatrix world
+            let staticModel = entity.GetStaticModel world
+            let surfaceIndex = entity.GetSurfaceIndex world
             let content = entity.GetNavigationContent world
-            World.setNavigationContentOpt (Some (bounds, affineMatrix, content)) entity world
+            World.setNavigationContentOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, content)) entity world
 
         static member Properties =
-            [define Entity.NavigationContent NavigationBounds]
+            [define Entity.StaticModel Assets.Default.StaticModel
+             define Entity.SurfaceIndex 0
+             define Entity.NavigationContent NavigationBounds]
 
         override this.Register (entity, world) =
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavigationContentFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavigationContentFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavigationContentFacet) world
             let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.NavigationContent)) entity (nameof NavigationContentFacet) world
             propagateNavigationContent entity world
 

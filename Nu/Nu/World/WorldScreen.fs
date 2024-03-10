@@ -359,23 +359,29 @@ module WorldScreenModule =
                 World.setOmniScreen screen world
 
         static member internal getNavigationDescriptors contents =
-            [for (bounds, affineMatrix, content) in contents do
+            [for (bounds, affineMatrix, staticModel, surfaceIndex, content) in contents do
                 match content with
-                | NavigationEmpty -> ()
+                | NavigationNil -> ()
                 | NavigationBounds -> Left bounds
-                | NavigationModel staticModel ->
-                    match Metadata.tryGetStaticModelMetadata staticModel with
-                    | Some physicallyBasedModel ->
-                        for surface in physicallyBasedModel.Surfaces do
-                            Right (bounds, affineMatrix, surface)
-                    | None -> ()
-                | NavigationModelSurface (staticModel, surfaceIndex) ->
+                | NavigationGeometry ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                             Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()
-                | NavigationModelSurfaces (staticModel, surfaceIndices) ->
+                | NavigationStaticModel ->
+                    match Metadata.tryGetStaticModelMetadata staticModel with
+                    | Some physicallyBasedModel ->
+                        for surface in physicallyBasedModel.Surfaces do
+                            Right (bounds, affineMatrix, surface)
+                    | None -> ()
+                | NavigationStaticModelSurface surfaceIndex ->
+                    match Metadata.tryGetStaticModelMetadata staticModel with
+                    | Some physicallyBasedModel ->
+                        if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
+                            Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                    | None -> ()
+                | NavigationStaticModelSurfaces surfaceIndices ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surfaceIndex in surfaceIndices do

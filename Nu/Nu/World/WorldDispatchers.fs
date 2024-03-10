@@ -553,7 +553,7 @@ module RigidModelDispatcherModule =
             let world =
                 match entity.GetBodyType world with
                 | Static -> entity.SetNavigationContent NavigationBounds world
-                | Dynamic | Kinematic -> entity.SetNavigationContent NavigationEmpty world
+                | Dynamic | Kinematic -> entity.SetNavigationContent NavigationNil world
             (Cascade, world)
 
         static member Facets =

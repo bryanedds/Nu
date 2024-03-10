@@ -301,8 +301,8 @@ and Slide =
 /// NOTE: this type is intended only for internal engine use.
 and Navigation =
     { NavigationContext : RcContext
-      NavigationContents : Map<Entity, Box3 * Matrix4x4 * NavigationContent>
-      NavigationContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * NavigationContent> option
+      NavigationContents : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavigationContent>
+      NavigationContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavigationContent> option
       NavigationConfig : NavigationConfig
       NavigationConfigOldOpt : NavigationConfig option
       NavigationMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }

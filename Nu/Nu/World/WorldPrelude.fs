@@ -97,14 +97,6 @@ type [<SymbolicExpansion>] NavigationConfig =
           DetailSampleMaxError = 1.0f
           PartitionType = RcPartition.WATERSHED }
 
-/// Geometric navigation content.
-type NavigationContent =
-    | NavigationEmpty
-    | NavigationBounds
-    | NavigationModel of StaticModel AssetTag
-    | NavigationModelSurface of StaticModel AssetTag * int
-    | NavigationModelSurfaces of StaticModel AssetTag * int array
-
 /// Navigation input geometry provider.
 type NavigationInputGeomProvider (vertices, indices, bounds : Box3) =
     let triMesh = RcTriMesh (vertices, indices)
