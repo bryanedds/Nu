@@ -82,11 +82,11 @@ type [<SymbolicExpansion>] NavigationConfig =
 
     /// The default navigation configuration.
     static member defaultConfig =
-        { CellSize = 0.3f
-          CellHeight = 0.2f
-          AgentHeight = 2.0f
-          AgentRadius = 0.6f
-          AgentMaxClimb = 0.9f
+        { CellSize = 0.1f
+          CellHeight = 0.1f
+          AgentHeight = 1.7f
+          AgentRadius = 0.2f
+          AgentMaxClimb = 0.4f
           AgentMaxSlope = 45.0f
           RegionMinSize = 8
           RegionMergeSize = 20
@@ -95,7 +95,7 @@ type [<SymbolicExpansion>] NavigationConfig =
           VertsPerPolygon = 6
           DetailSampleDistance = 6.0f
           DetailSampleMaxError = 1.0f
-          PartitionType = RcPartition.WATERSHED }
+          PartitionType = RcPartition.LAYERS }
 
 /// Navigation input geometry provider.
 type NavigationInputGeomProvider (vertices, indices, bounds : Box3) =
