@@ -2984,7 +2984,7 @@ module NavigationConfigFacetModule =
                                             struct (begin_, end_)
                                         kp <- k
                                         k <- inc k }
-                    World.imGuiSegments3d false segments 1.0f Color.Brown world
+                    World.imGuiSegments3d false segments 1.0f (Color.Yellow.MapR((*) 0.85f).MapG((*) 0.85f)) world
 
                     // draw exterior edges
                     let dmesh = builderResult.GetMeshDetail ()
@@ -3029,7 +3029,7 @@ module NavigationConfigFacetModule =
                                 let verts = bverts * 3
                                 for j in 0 .. dec nverts do
                                     v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2] }
-                    World.imGuiCircles3d false points 2.0f Color.Yellow true world
+                    World.imGuiCircles3d false points 3.0f Color.LightYellow true world
                     world
                 | None -> world
             | _ -> world
