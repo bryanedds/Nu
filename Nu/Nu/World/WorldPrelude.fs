@@ -84,9 +84,9 @@ type [<SymbolicExpansion>] NavigationConfig =
     static member defaultConfig =
         { CellSize = 0.1f
           CellHeight = 0.1f
-          AgentHeight = 1.7f
+          AgentHeight = 1.6f // supposing that 'TotalHeight' = AgentHeight + CellHeight * 2.
           AgentRadius = 0.2f
-          AgentMaxClimb = 0.4f
+          AgentMaxClimb = 0.35f
           AgentMaxSlope = 45.0f
           RegionMinSize = 8
           RegionMergeSize = 20
