@@ -299,7 +299,7 @@ and Slide =
 
 /// Represents navigation capabilies for a screen.
 /// NOTE: this type is intended only for internal engine use.
-and Navigation =
+and [<ReferenceEquality; NoComparison>] Navigation =
     { NavigationContext : RcContext
       NavigationContents : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavigationContent>
       NavigationContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavigationContent> option
