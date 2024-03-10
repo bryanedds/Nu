@@ -344,6 +344,16 @@ module AssimpExtensions =
                 | _ -> None
             | (false, _) -> None
 
+        member this.NavigationContentOpt =
+            match this.Metadata.TryGetValue Constants.Render.NavigationContentName with
+            | (true, entry) ->
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<NavigationContent> |> Some
+                    with _ -> None
+                | _ -> None
+            | (false, _) -> None
+
     /// Mesh extensions.
     type Assimp.Scene with
 

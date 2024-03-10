@@ -75,10 +75,12 @@ module WorldEntityHierarchy =
                                 | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames surface.SurfaceNames, entity.Group)
                             let (child, world) =
-                                if rigid
-                                then World.createEntity<RigidModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
+                                if rigid then
+                                    let (child, world) = World.createEntity<RigidModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
+                                    let navigationContent = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavigationContent NavigationBounds staticModelMetadata.SceneOpt surface
+                                    let world = child.SetNavigationContent navigationContent world
+                                    (child, world)
                                 else World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
-                            let world = if rigid then child.SetBodyType Static world else world
                             let (position, rotation, scale, world) =
                                 let transform = surface.SurfaceMatrix
                                 let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
