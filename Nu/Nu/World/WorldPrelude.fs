@@ -78,23 +78,29 @@ type [<SymbolicExpansion>] NavigationConfig =
       VertsPerPolygon : int
       DetailSampleDistance : single
       DetailSampleMaxError : single
+      FilterLowHangingObstacles : bool
+      FilterLedgeSpans : bool
+      FilterWalkableLowHeightSpans : bool
       PartitionType : RcPartition }
 
     /// The default navigation configuration.
     static member defaultConfig =
         { CellSize = 0.1f
-          CellHeight = 0.1f
-          AgentHeight = 1.6f // supposing that 'TotalHeight' = AgentHeight + CellHeight * 2.
-          AgentRadius = 0.2f
+          CellHeight = 0.2f
+          AgentHeight = 1.5f
+          AgentRadius = 0.35f // same as default character 3d radius (maybe should be slightly more?)
           AgentMaxClimb = 0.35f
           AgentMaxSlope = 45.0f
           RegionMinSize = 8
           RegionMergeSize = 20
-          EdgeMaxLength = 12.0f
+          EdgeMaxLength = 6.0f
           EdgeMaxError = 1.3f
           VertsPerPolygon = 6
           DetailSampleDistance = 6.0f
           DetailSampleMaxError = 1.0f
+          FilterLowHangingObstacles = false
+          FilterLedgeSpans = false
+          FilterWalkableLowHeightSpans = false
           PartitionType = RcPartition.LAYERS }
 
 /// Navigation input geometry provider.

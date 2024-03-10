@@ -474,7 +474,7 @@ module WorldScreenModule =
                          config.RegionMinSize, config.RegionMergeSize,
                          config.EdgeMaxLength, config.EdgeMaxError,
                          config.VertsPerPolygon, config.DetailSampleDistance, config.DetailSampleMaxError,
-                         true, true, true,
+                         config.FilterLowHangingObstacles, config.FilterLedgeSpans, config.FilterWalkableLowHeightSpans,
                          SampleAreaModifications.SAMPLE_AREAMOD_WALKABLE, true)
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
