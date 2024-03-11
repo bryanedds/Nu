@@ -2085,12 +2085,12 @@ module LightProbe3dFacetModule =
             match op with
             | AppendProperties append ->
                 let world =
-                    if ImGuiNET.ImGui.Button "Rerender Light Map" then
+                    if ImGui.Button "Rerender Light Map" then
                         let world = append.Snapshot world
                         entity.SetProbeStale true world
                     else world
                 let world =
-                    if ImGuiNET.ImGui.Button "Recenter in Probe Bounds" then
+                    if ImGui.Button "Recenter in Probe Bounds" then
                         let world = append.Snapshot world
                         let probeBounds = entity.GetProbeBounds world
                         if Option.isSome (entity.GetMountOpt world)
@@ -2098,7 +2098,7 @@ module LightProbe3dFacetModule =
                         else entity.SetPosition probeBounds.Center world
                     else world
                 let world =
-                    if ImGuiNET.ImGui.Button "Reset Probe Bounds" then
+                    if ImGui.Button "Reset Probe Bounds" then
                         let world = append.Snapshot world
                         entity.ResetProbeBounds world
                     else world
