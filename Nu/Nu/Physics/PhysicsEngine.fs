@@ -312,6 +312,7 @@ type BodyTerrain =
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body.
+/// TODO: consider renaming this family of types from Body___ to ___Shape.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
