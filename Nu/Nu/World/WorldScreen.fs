@@ -508,7 +508,8 @@ module WorldScreenModule =
                 World.setScreenNavigation navigation screen world |> snd'
             | (None, None) -> world
 
-        static member internal setNavigationConfig config screen world =
+        /// Set the given screen's navigation configuration.
+        static member setNavigationConfig config screen world =
             let navigation = World.getScreenNavigation screen world
             if config <> navigation.NavigationConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
                 let navigation = { navigation with NavigationConfig = config }

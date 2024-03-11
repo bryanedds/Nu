@@ -2915,14 +2915,6 @@ module NavigationContentFacetModule =
         override this.Unregister (entity, world) =
             World.setNavigationContentOpt None entity world
 
-        override this.Edit (op, entity, world) =
-            match op with
-            | AppendProperties _ ->
-                if ImGui.Button "Synchronize Navigation" then
-                    World.synchronizeNavigation entity.Screen world
-                else world
-            | _ -> world
-
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.unimportant
 
@@ -2951,11 +2943,6 @@ module NavigationConfigFacetModule =
 
         override this.Edit (op, entity, world) =
             match op with
-            | AppendProperties _ ->
-                if  not (entity.Has<NavigationContentFacet> world) &&
-                    ImGui.Button "Synchronize Navigation" then
-                    World.synchronizeNavigation entity.Screen world
-                else world
             | OverlayViewport _ ->
                 let navigation = World.getScreenNavigation entity.Screen world
                 match navigation.NavigationMeshOpt with

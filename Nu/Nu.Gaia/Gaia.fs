@@ -17,6 +17,7 @@ open ImGuiNET
 open ImGuizmoNET
 open Prime
 open Nu
+open DotRecast.Recast
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //
@@ -1815,6 +1816,89 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ImGui.SameLine ()
         ImGui.Text "OpaqueDistanceOpt"
 
+    let private imGuiEditNavigationConfigProperty (nc : NavigationConfig) propertyDescriptor simulant =
+
+        let mutable changed = false
+        let mutable cellSize = nc.CellSize
+        let mutable cellHeight = nc.CellHeight
+        let mutable agentHeight = nc.AgentHeight
+        let mutable agentRadius = nc.AgentRadius
+        let mutable agentMaxClimb = nc.AgentMaxClimb
+        let mutable agentMaxSlope = nc.AgentMaxSlope
+        let mutable regionMinSize = nc.RegionMinSize
+        let mutable regionMergeSize = nc.RegionMergeSize
+        let mutable edgeMaxLength = nc.EdgeMaxLength
+        let mutable edgeMaxError = nc.EdgeMaxError
+        let mutable vertsPerPolygon = nc.VertsPerPolygon
+        let mutable detailSampleDistance = nc.DetailSampleDistance
+        let mutable detailSampleMaxError = nc.DetailSampleMaxError
+        let mutable filterLowHangingObstacles = nc.FilterLowHangingObstacles
+        let mutable filterLedgeSpans = nc.FilterLedgeSpans
+        let mutable filterWalkableLowHeightSpans = nc.FilterWalkableLowHeightSpans
+        let mutable partitionTypeStr = scstring nc.PartitionType
+        if ImGui.SliderFloat ("CellSize", &cellSize, 0.01f, 1.0f, "%.2f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("CellHeight", &cellHeight, 0.01f, 1.0f, "%.2f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("AgentHeight", &agentHeight, 0.1f, 5.0f, "%.1f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("AgentRadius", &agentRadius, 0.0f, 5.0f, "%.1f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("AgentMaxClimb", &agentMaxClimb, 0.1f, 5.0f, "%.1f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("AgentMaxSlope", &agentMaxSlope, 1.0f, 90.0f, "%.0f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderInt ("RegionMinSize", &regionMinSize, 1, 150) then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderInt ("RegionMergeSize", &regionMergeSize, 1, 150) then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("MaxEdgeLength", &edgeMaxLength, 0.0f, 50.0f, "%.1f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("MaxEdgeError", &edgeMaxError, 0.1f, 3f, "%.1f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderInt ("VertPerPoly", &vertsPerPolygon, 3, 12) then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("DetailSampleDistance", &detailSampleDistance, 0.0f, 16.0f, "%.1f") then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.SliderFloat ("DetailMaxSampleError", &detailSampleMaxError, 0.0f, 16.0f, "%.1f") then changed <- true        
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.Checkbox ("FilterLowHangingObstacles", &filterLowHangingObstacles) then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.Checkbox ("FilterLedgeSpans", &filterLedgeSpans) then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.Checkbox ("FilterWalkableLowHeightSpans", &filterWalkableLowHeightSpans) then changed <- true
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if ImGui.BeginCombo ("ParitionType", partitionTypeStr) then
+            let partitionTypeStrs = Array.map (fun (ptv : RcPartitionType) -> ptv.Name) RcPartitionType.Values
+            for partitionTypeStr' in partitionTypeStrs do
+                if ImGui.Selectable (partitionTypeStr', strEq partitionTypeStr' partitionTypeStr) then
+                    if strNeq partitionTypeStr partitionTypeStr' then
+                        partitionTypeStr <- partitionTypeStr'
+                        changed <- true
+            ImGui.EndCombo ()
+        if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+        if changed then
+            let nc =
+                { CellSize = cellSize
+                  CellHeight = cellHeight
+                  AgentHeight = agentHeight
+                  AgentRadius = agentRadius
+                  AgentMaxClimb = agentMaxClimb
+                  AgentMaxSlope = agentMaxSlope
+                  RegionMinSize = regionMinSize
+                  RegionMergeSize = regionMergeSize
+                  EdgeMaxLength = edgeMaxLength
+                  EdgeMaxError = edgeMaxError
+                  VertsPerPolygon = vertsPerPolygon
+                  DetailSampleDistance = detailSampleDistance
+                  DetailSampleMaxError = detailSampleMaxError
+                  FilterLowHangingObstacles = filterLowHangingObstacles
+                  FilterLedgeSpans = filterLedgeSpans
+                  FilterWalkableLowHeightSpans = filterWalkableLowHeightSpans
+                  PartitionType = scvalue partitionTypeStr }
+            setPropertyValue nc propertyDescriptor simulant
+        if ImGui.Button "Synchronize Navigation" then world <- World.synchronizeNavigation selectedScreen world
+
     let private imGuiEditMaterialProperty m propertyDescriptor simulant =
 
         // edit albedo image
@@ -2148,6 +2232,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | :? Vector4i as v -> let mutable v = v in if ImGui.DragInt4 (name, &v.X, snapDrag) then setProperty v propertyDescriptor simulant
         | :? MaterialProperties as mp -> imGuiEditMaterialPropertiesProperty mp propertyDescriptor simulant
         | :? Material as m -> imGuiEditMaterialProperty m propertyDescriptor simulant
+        | :? NavigationConfig as nc -> imGuiEditNavigationConfigProperty nc propertyDescriptor simulant
         | :? Box2 as b ->
             ImGui.Text name
             let mutable min = v2 b.Min.X b.Min.Y
@@ -2726,14 +2811,32 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     // main menu window
                     if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar ||| ImGuiWindowFlags.NoNav) then
                         if ImGui.BeginMenuBar () then
-                            if ImGui.BeginMenu "Project" then
+                            if ImGui.BeginMenu "Game" then
                                 if ImGui.MenuItem "New Project" then showNewProjectDialog <- true
                                 if ImGui.MenuItem "Open Project" then showOpenProjectDialog <- true
                                 if ImGui.MenuItem "Close Project" then showCloseProjectDialog <- true
                                 ImGui.Separator ()
+                                if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
+                                if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
+                                ImGui.Separator ()
+                                if not world.Advancing
+                                then if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing ()
+                                else if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing ()
+                                if editWhileAdvancing
+                                then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
+                                else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
+                                ImGui.Separator ()
+                                if ImGui.MenuItem ("Reload Assets", "F8") then reloadAssetsRequested <- 1
+                                if ImGui.MenuItem ("Reload Code", "F9") then reloadCodeRequested <- 1
+                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then reloadAllRequested <- 1
+                                ImGui.Separator ()
                                 if ImGui.MenuItem ("Exit", "Alt+F4") then showConfirmExitDialog <- true
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Screen" then
+                                if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
+                                if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
+                                if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
+                                ImGui.Separator ()
                                 if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then world <- World.synchronizeNavigation selectedScreen world
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Group" then
@@ -2777,25 +2880,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
                                 if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
-                                ImGui.EndMenu ()
-                            if ImGui.BeginMenu "Edit" then
-                                if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
-                                if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
-                                if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
-                                if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
-                                ImGui.Separator ()
-                                if not world.Advancing
-                                then if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing ()
-                                else if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing ()
-                                if editWhileAdvancing
-                                then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
-                                else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Reload Assets", "F8") then reloadAssetsRequested <- 1
-                                if ImGui.MenuItem ("Reload Code", "F9") then reloadCodeRequested <- 1
-                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then reloadAllRequested <- 1
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
                         if ImGui.Button "Create" then createEntity false false

@@ -86,7 +86,7 @@ type [<SymbolicExpansion>] NavigationConfig =
     /// The default navigation configuration.
     static member defaultConfig =
         { CellSize = 0.1f
-          CellHeight = 0.2f
+          CellHeight = 0.1f
           AgentHeight = 1.5f
           AgentRadius = 0.35f // same as default character 3d radius (maybe should be slightly more?)
           AgentMaxClimb = 0.35f
@@ -98,9 +98,9 @@ type [<SymbolicExpansion>] NavigationConfig =
           VertsPerPolygon = 6
           DetailSampleDistance = 6.0f
           DetailSampleMaxError = 1.0f
-          FilterLowHangingObstacles = false
-          FilterLedgeSpans = false
-          FilterWalkableLowHeightSpans = false
+          FilterLowHangingObstacles = true
+          FilterLedgeSpans = true
+          FilterWalkableLowHeightSpans = true
           PartitionType = RcPartition.LAYERS }
 
 /// Navigation input geometry provider.
