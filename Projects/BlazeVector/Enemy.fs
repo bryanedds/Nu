@@ -39,6 +39,7 @@ module EnemyDispatcher =
              Entity.AngularFactor == v3Zero
              Entity.LinearDamping == 3.0f
              Entity.GravityOverride == Some v3Zero
+             Entity.BodyType == Dynamic
              Entity.BodyShape == BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None }
              Entity.CelCount == 6
              Entity.CelRun == 4

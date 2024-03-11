@@ -283,7 +283,8 @@ module Box2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.Default.Box]
+            [define Entity.BodyType Static
+             define Entity.StaticImage Assets.Default.Box]
 
 [<AutoOpen>]
 module Character2dDispatcherModule =
@@ -327,6 +328,7 @@ module Character2dDispatcherModule =
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.AngularFactor v3Zero
              define Entity.GravityOverride (Some (Constants.Physics.Gravity2dDefault * 3.0f))
+             define Entity.BodyType Dynamic
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.Character2dIdleImage Assets.Default.Character2dIdleImage
              define Entity.Character2dJumpImage Assets.Default.Character2dJumpImage

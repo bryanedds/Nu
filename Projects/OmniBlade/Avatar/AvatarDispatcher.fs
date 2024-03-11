@@ -37,6 +37,7 @@ module AvatarDispatcher =
              Entity.LinearDamping == 19.0f
              Entity.AngularFactor == v3Zero
              Entity.GravityOverride == Some v3Zero
+             Entity.BodyType == Dynamic
              Entity.BodyShape := bodyShape
              Entity.ModelDriven == true]
 

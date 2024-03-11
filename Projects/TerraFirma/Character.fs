@@ -48,6 +48,7 @@ module CharacterDispatcher =
              Entity.LinearDamping == 0.5f
              Entity.AngularDamping == 0.999f
              Entity.AngularFactor == v3 0.0f 0.1f 0.0f
+             Entity.BodyType == Dynamic
              Entity.BodyShape == BodyCapsule { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
              Entity.UpdateEvent => UpdateMessage
              Entity.UpdateEvent => UpdateCommand
