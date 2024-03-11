@@ -2907,7 +2907,7 @@ module NavContentFacetModule =
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.SurfaceIndex 0
-             define Entity.NavContent NavBounds]
+             define Entity.NavContent BoundsContent]
 
         override this.Register (entity, world) =
             let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavContentFacet) world

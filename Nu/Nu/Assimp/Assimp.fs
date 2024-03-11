@@ -32,12 +32,12 @@ type RenderStyle =
 /// Navigation content (includes both 2d and 3d representations, with some cases only supported depending on the
 /// dimensionality of the system utilizing it).
 type NavContent =
-    | NavNil
-    | NavBounds
-    | NavGeometry
-    | NavStaticModel
-    | NavStaticModelSurface of int
-    | NavStaticModelSurfaces of int array
+    | EmptyContent
+    | BoundsContent
+    | GeometryContent
+    | StaticModelContent
+    | StaticModelSurfaceContent of int
+    | StaticModelSurfacesContent of int array
 
 /// The batch phasing such involved in persisting OpenGL state.
 type [<Struct>] BatchPhase =
@@ -261,7 +261,7 @@ module AssimpExtensions =
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<NavContent> |> Some
                     with _ -> None
-                else Some NavNil
+                else Some EmptyContent
 
     /// Node extensions.
     type Assimp.Node with
