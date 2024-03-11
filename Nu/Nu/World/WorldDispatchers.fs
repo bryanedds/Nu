@@ -613,7 +613,7 @@ module RigidModelSurfaceDispatcherModule =
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<StaticModelSurfaceFacet>
-             typeof<NavContentFacet>]
+             typeof<NavBodyFacet>]
 
         static member Properties =
             [define Entity.InsetOpt None
@@ -663,7 +663,7 @@ module Block3dDispatcherModule =
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<StaticModelFacet>
-             typeof<NavContentFacet>]
+             typeof<NavBodyFacet>]
 
         static member Properties =
             [define Entity.BodyType Static

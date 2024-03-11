@@ -300,21 +300,21 @@ and Slide =
 /// Represents 3d navigation capabilies for a screen.
 /// NOTE: this type is intended only for internal engine use.
 and [<ReferenceEquality; NoComparison>] Nav3d =
-    { NavContext : RcContext
-      NavContents : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
-      NavContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
-      NavConfig : Nav3dConfig
-      NavConfigOldOpt : Nav3dConfig option
-      NavMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }
+    { Nav3dContext : RcContext
+      Nav3dBodies : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
+      Nav3dBodiesOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
+      Nav3dConfig : Nav3dConfig
+      Nav3dConfigOldOpt : Nav3dConfig option
+      Nav3dMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }
 
     // Make an empty 3d navigation service.
     static member make () =
-        { NavContext = RcContext ()
-          NavContents = Map.empty
-          NavContentsOldOpt = None
-          NavConfig = Nav3dConfig.defaultConfig
-          NavConfigOldOpt = None
-          NavMeshOpt = None }
+        { Nav3dContext = RcContext ()
+          Nav3dBodies = Map.empty
+          Nav3dBodiesOldOpt = None
+          Nav3dConfig = Nav3dConfig.defaultConfig
+          Nav3dConfigOldOpt = None
+          Nav3dMeshOpt = None }
 
 /// Generalized interface tag for late-bound objects.
 and LateBindings = interface end

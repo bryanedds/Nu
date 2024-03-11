@@ -478,28 +478,28 @@ module WorldScreenModule =
             // geometry not found
             | None -> None
 
-        static member internal setNav3dContentOpt contentOpt (source : Entity) world =
+        static member internal setNav3dBodyOpt contentOpt (source : Entity) world =
             let screen = source.Screen
             let nav3d = World.getScreenNav3d screen world
-            match (nav3d.NavContents.TryFind source, contentOpt) with
-            | (Some content, Some content') ->
-                if content' <> content then // OPTIMIZATION: preserve map reference if no content changes detected.
-                    let nav3d = { nav3d with NavContents = Map.add source content' nav3d.NavContents }
+            match (nav3d.Nav3dBodies.TryFind source, contentOpt) with
+            | (Some body, Some body') ->
+                if body' <> body then // OPTIMIZATION: preserve map reference if no content changes detected.
+                    let nav3d = { nav3d with Nav3dBodies = Map.add source body' nav3d.Nav3dBodies }
                     World.setScreenNav3d nav3d screen world |> snd'
                 else world
-            | (None, Some content) ->
-                let nav3d = { nav3d with NavContents = Map.add source content nav3d.NavContents }
+            | (None, Some body) ->
+                let nav3d = { nav3d with Nav3dBodies = Map.add source body nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> snd'
             | (Some _, None) ->
-                let nav3d = { nav3d with NavContents = Map.remove source nav3d.NavContents }
+                let nav3d = { nav3d with Nav3dBodies = Map.remove source nav3d.Nav3dBodies }
                 World.setScreenNav3d nav3d screen world |> snd'
             | (None, None) -> world
 
         /// Set the given screen's 3d navigation configuration.
         static member setNav3dConfig config screen world =
             let nav3d = World.getScreenNav3d screen world
-            if config <> nav3d.NavConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
-                let nav3d = { nav3d with NavConfig = config }
+            if config <> nav3d.Nav3dConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
+                let nav3d = { nav3d with Nav3dConfig = config }
                 World.setScreenNav3d nav3d screen world |> snd'
             else world
 
@@ -507,26 +507,26 @@ module WorldScreenModule =
         static member synchronizeNav3d screen world =
             let nav3d = World.getScreenNav3d screen world
             let rebuild =
-                match (nav3d.NavContentsOldOpt, nav3d.NavConfigOldOpt) with
-                | (Some contentsOld, Some configOld) -> nav3d.NavContents =/= contentsOld || nav3d.NavConfig =/= configOld
-                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected nav 3d state; navigation rebuild declined."; false
-                | (None, None) -> nav3d.NavContents.Count <> 0
+                match (nav3d.Nav3dBodiesOldOpt, nav3d.Nav3dConfigOldOpt) with
+                | (Some bodiesOld, Some configOld) -> nav3d.Nav3dBodies =/= bodiesOld || nav3d.Nav3dConfig =/= configOld
+                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected 3d navigation state; navigation rebuild declined."; false
+                | (None, None) -> nav3d.Nav3dBodies.Count <> 0
             if rebuild then
-                let contents = nav3d.NavContents.Values
-                match World.tryBuildNav3dMesh contents nav3d.NavConfig with
+                let bodies = nav3d.Nav3dBodies.Values
+                match World.tryBuildNav3dMesh bodies nav3d.Nav3dConfig with
                 | Some navMesh ->
                     let nav3d =
                         { nav3d with
-                            NavContentsOldOpt = Some nav3d.NavContents
-                            NavConfigOldOpt = Some nav3d.NavConfig
-                            NavMeshOpt = Some navMesh }
+                            Nav3dBodiesOldOpt = Some nav3d.Nav3dBodies
+                            Nav3dConfigOldOpt = Some nav3d.Nav3dConfig
+                            Nav3dMeshOpt = Some navMesh }
                     World.setScreenNav3d nav3d screen world |> snd'
-                | None -> Log.info "Unable to build navigation mesh."; world
+                | None -> Log.info "Unable to build 3d navigation mesh."; world
             else world
 
         /// Query the given screen's 3d navigation information if it exists.
         static member tryQueryNav3d query screen world =
             let nav3d = World.getScreenNav3d screen world
-            match nav3d.NavMeshOpt with
+            match nav3d.Nav3dMeshOpt with
             | Some (_, _, dtQuery) -> Some (query dtQuery)
             | None -> None

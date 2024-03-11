@@ -2881,18 +2881,18 @@ module TerrainFacetModule =
             | None -> AttributesInferred.important (v3 512.0f 128.0f 512.0f) v3Zero
 
 [<AutoOpen>]
-module NavContentFacetModule =
+module NavBodyFacetModule =
 
     type Entity with
         member this.GetNavShape world : NavShape = this.Get (nameof this.NavShape) world
         member this.SetNavShape (value : NavShape) world = this.Set (nameof this.NavShape) value world
         member this.NavShape = lens (nameof this.NavShape) this this.GetNavShape this.SetNavShape
 
-    /// Augments an entity with a 3d navigation mesh.
-    type NavContentFacet () =
+    /// Augments an entity with a 3d navigation body.
+    type NavBodyFacet () =
         inherit Facet (false)
 
-        static let propagateNavContent (entity : Entity) world =
+        static let propagateNavBody (entity : Entity) world =
             if entity.GetIs2d world then
                 // TODO: implement for 2d nav when it's available.
                 world
@@ -2902,7 +2902,7 @@ module NavContentFacetModule =
                 let staticModel = entity.GetStaticModel world
                 let surfaceIndex = entity.GetSurfaceIndex world
                 let shape = entity.GetNavShape world
-                World.setNav3dContentOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) entity world
+                World.setNav3dBodyOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) entity world
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
@@ -2910,17 +2910,17 @@ module NavContentFacetModule =
              define Entity.NavShape BoundsShape]
 
         override this.Register (entity, world) =
-            let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavContentFacet) world
-            let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavContentFacet) world
-            let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavContentFacet) world
-            let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavContentFacet) world
-            propagateNavContent entity world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavBodyFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
+            propagateNavBody entity world
 
         override this.Unregister (entity, world) =
             if entity.GetIs2d world then
                 // TODO: implement for 2d nav when it's available.
                 world
-            else World.setNav3dContentOpt None entity world
+            else World.setNav3dBodyOpt None entity world
 
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.unimportant
@@ -2951,7 +2951,7 @@ module Nav3dConfigFacetModule =
             match op with
             | OverlayViewport _ ->
                 let nav3d = World.getScreenNav3d entity.Screen world
-                match nav3d.NavMeshOpt with
+                match nav3d.Nav3dMeshOpt with
                 | Some (builderResult, _, _) ->
 
                     // draw interior edges

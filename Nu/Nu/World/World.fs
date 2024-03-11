@@ -170,7 +170,7 @@ module WorldModule3 =
                  StaticModelFacet ()
                  AnimatedModelFacet ()
                  TerrainFacet ()
-                 NavContentFacet ()
+                 NavBodyFacet ()
                  Nav3dConfigFacet ()
                  FreezerFacet ()]
 
