@@ -548,18 +548,17 @@ module RigidModelDispatcherModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        static let updateNavigation3dContent evt world =
+        static let updateNavContent evt world =
             let entity = evt.Subscriber : Entity
             let world =
                 match entity.GetBodyType world with
-                | Static -> entity.SetNavigation3dContent NavigationBounds world
-                | Dynamic | Kinematic -> entity.SetNavigation3dContent NavigationNil world
+                | Static -> entity.SetNavContent NavBounds world
+                | Dynamic | Kinematic -> entity.SetNavContent NavNil world
             (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
-             typeof<StaticModelFacet>
-             typeof<Navigation3dContentFacet>]
+             typeof<StaticModelFacet>]
 
         static member Properties =
             [define Entity.BodyType Static
@@ -567,12 +566,12 @@ module RigidModelDispatcherModule =
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred
-             define Entity.Navigation3dContent NavigationBounds]
+             define Entity.NavContent NavBounds]
 
         override this.Register (entity, world) =
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
-            let world = World.monitor updateNavigation3dContent (entity.GetChangeEvent (nameof entity.BodyType)) entity world
+            let world = World.monitor updateNavContent (entity.GetChangeEvent (nameof entity.BodyType)) entity world
             world
 
 [<AutoOpen>]
@@ -591,7 +590,7 @@ module StaticModelSurfaceDispatcherModule =
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred
-             define Entity.Navigation3dContent NavigationBounds]
+             define Entity.NavContent NavBounds]
 
 [<AutoOpen>]
 module RigidModelSurfaceDispatcherModule =
@@ -614,7 +613,7 @@ module RigidModelSurfaceDispatcherModule =
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<StaticModelSurfaceFacet>
-             typeof<Navigation3dContentFacet>]
+             typeof<NavContentFacet>]
 
         static member Properties =
             [define Entity.InsetOpt None
@@ -664,12 +663,12 @@ module Block3dDispatcherModule =
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<StaticModelFacet>
-             typeof<Navigation3dContentFacet>]
+             typeof<NavContentFacet>]
 
         static member Properties =
             [define Entity.BodyType Static
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.Navigation3dContent NavigationBounds]
+             define Entity.NavContent NavBounds]
 
 [<AutoOpen>]
 module Box3dDispatcherModule =
@@ -685,7 +684,7 @@ module Box3dDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.Navigation3dContent NavigationBounds]
+             define Entity.NavContent NavBounds]
 
 [<AutoOpen>]
 module Character3dDispatcherModule =

@@ -63,8 +63,8 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
-/// Configure the construction of navigation data.
-type [<SymbolicExpansion>] Navigation3dConfig =
+/// Configure the construction of 3d navigation things.
+type [<SymbolicExpansion>] Nav3dConfig =
     { CellSize : single
       CellHeight : single
       AgentHeight : single
@@ -103,8 +103,8 @@ type [<SymbolicExpansion>] Navigation3dConfig =
           FilterWalkableLowHeightSpans = true
           PartitionType = RcPartition.LAYERS }
 
-/// Navigation input geometry provider.
-type NavigationInputGeomProvider (vertices, indices, bounds : Box3) =
+/// 3d navigation input geometry provider.
+type Nav3dInputGeomProvider (vertices, indices, bounds : Box3) =
     let triMesh = RcTriMesh (vertices, indices)
     let meshes = RcImmutableArray.Create triMesh
     let offMeshConnections = List ()

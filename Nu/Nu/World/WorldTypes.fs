@@ -299,22 +299,22 @@ and Slide =
 
 /// Represents 3d navigation capabilies for a screen.
 /// NOTE: this type is intended only for internal engine use.
-and [<ReferenceEquality; NoComparison>] Navigation3d =
-    { Navigation3dContext : RcContext
-      Navigation3dContents : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * Navigation3dContent>
-      Navigation3dContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * Navigation3dContent> option
-      Navigation3dConfig : Navigation3dConfig
-      Navigation3dConfigOldOpt : Navigation3dConfig option
-      Navigation3dMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }
+and [<ReferenceEquality; NoComparison>] Nav3d =
+    { NavContext : RcContext
+      NavContents : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavContent>
+      NavContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavContent> option
+      NavConfig : Nav3dConfig
+      NavConfigOldOpt : Nav3dConfig option
+      NavMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }
 
-    // Make an empty navigation map.
+    // Make an empty 3d navigation service.
     static member make () =
-        { Navigation3dContext = RcContext ()
-          Navigation3dContents = Map.empty
-          Navigation3dContentsOldOpt = None
-          Navigation3dConfig = Navigation3dConfig.defaultConfig
-          Navigation3dConfigOldOpt = None
-          Navigation3dMeshOpt = None }
+        { NavContext = RcContext ()
+          NavContents = Map.empty
+          NavContentsOldOpt = None
+          NavConfig = Nav3dConfig.defaultConfig
+          NavConfigOldOpt = None
+          NavMeshOpt = None }
 
 /// Generalized interface tag for late-bound objects.
 and LateBindings = interface end
@@ -891,7 +891,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       Incoming : Transition
       Outgoing : Transition
       SlideOpt : Slide option
-      Navigation3d : Navigation3d
+      Nav3d : Nav3d
       Protected : bool
       Persistent : bool
       Order : int64
@@ -909,7 +909,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
           SlideOpt = None
-          Navigation3d = Navigation3d.make ()
+          Nav3d = Nav3d.make ()
           Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()

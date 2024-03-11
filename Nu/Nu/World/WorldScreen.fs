@@ -33,8 +33,8 @@ module WorldScreenModule =
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
-        member this.GetNavigation3d world = World.getScreenNavigation3d this world
-        member this.Navigation3d = lensReadOnly (nameof this.Navigation3d) this this.GetNavigation3d
+        member this.GetNav3d world = World.getScreenNav3d this world
+        member this.Nav3d = lensReadOnly (nameof this.Nav3d) this this.GetNav3d
         member this.GetProtected world = World.getScreenProtected this world
         member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getScreenPersistent this world
@@ -358,30 +358,30 @@ module WorldScreenModule =
             | OmniScreen ->
                 World.setOmniScreen screen world
 
-        static member internal getNavigationDescriptors contents =
+        static member internal getNav3dDescriptors contents =
             [for (bounds, affineMatrix, staticModel, surfaceIndex, content) in contents do
                 match content with
-                | NavigationNil -> ()
-                | NavigationBounds -> Left bounds
-                | NavigationGeometry ->
+                | NavNil -> ()
+                | NavBounds -> Left bounds
+                | NavGeometry ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                             Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()
-                | NavigationStaticModel ->
+                | NavStaticModel ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do
                             Right (bounds, affineMatrix, surface)
                     | None -> ()
-                | NavigationStaticModelSurface surfaceIndex ->
+                | NavStaticModelSurface surfaceIndex ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                             Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()
-                | NavigationStaticModelSurfaces surfaceIndices ->
+                | NavStaticModelSurfaces surfaceIndices ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surfaceIndex in surfaceIndices do
@@ -389,11 +389,11 @@ module WorldScreenModule =
                                 Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()]
 
-        static member internal tryBuildNavigationMesh contents config =
+        static member internal tryBuildNav3dMesh contents config =
 
-            // attempt to create an input geometry provider
+            // attempt to create a 3d input geometry provider
             let geomProviderOpt =
-                match World.getNavigationDescriptors contents with
+                match World.getNav3dDescriptors contents with
                 | [] -> None
                 | descriptors ->
 
@@ -459,11 +459,11 @@ module WorldScreenModule =
                     // attempt to create geometry provider
                     match boundsOpt with
                     | Some bounds when vertices.Length >= 3 && indices.Length >= 3 ->
-                        let provider = NavigationInputGeomProvider (vertices, indices, bounds)
+                        let provider = Nav3dInputGeomProvider (vertices, indices, bounds)
                         Some (provider :> IInputGeomProvider)
                     | Some _ | None -> None
 
-            // attempt execute navigation mesh construction steps
+            // attempt to execute 3d navigation mesh construction steps
             match geomProviderOpt with
             | Some geomProvider ->
                 let rcConfig =
@@ -491,55 +491,55 @@ module WorldScreenModule =
             // geometry not found
             | None -> None
 
-        static member internal setNavigation3dContentOpt contentOpt (source : Entity) world =
+        static member internal setNav3dContentOpt contentOpt (source : Entity) world =
             let screen = source.Screen
-            let navigation = World.getScreenNavigation3d screen world
-            match (navigation.Navigation3dContents.TryFind source, contentOpt) with
+            let nav3d = World.getScreenNav3d screen world
+            match (nav3d.NavContents.TryFind source, contentOpt) with
             | (Some content, Some content') ->
                 if content' <> content then // OPTIMIZATION: preserve map reference if no content changes detected.
-                    let navigation = { navigation with Navigation3dContents = Map.add source content' navigation.Navigation3dContents }
-                    World.setScreenNavigation3d navigation screen world |> snd'
+                    let nav3d = { nav3d with NavContents = Map.add source content' nav3d.NavContents }
+                    World.setScreenNav3d nav3d screen world |> snd'
                 else world
             | (None, Some content) ->
-                let navigation = { navigation with Navigation3dContents = Map.add source content navigation.Navigation3dContents }
-                World.setScreenNavigation3d navigation screen world |> snd'
+                let nav3d = { nav3d with NavContents = Map.add source content nav3d.NavContents }
+                World.setScreenNav3d nav3d screen world |> snd'
             | (Some _, None) ->
-                let navigation = { navigation with Navigation3dContents = Map.remove source navigation.Navigation3dContents }
-                World.setScreenNavigation3d navigation screen world |> snd'
+                let nav3d = { nav3d with NavContents = Map.remove source nav3d.NavContents }
+                World.setScreenNav3d nav3d screen world |> snd'
             | (None, None) -> world
 
         /// Set the given screen's 3d navigation configuration.
-        static member setNavigation3dConfig config screen world =
-            let navigation = World.getScreenNavigation3d screen world
-            if config <> navigation.Navigation3dConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
-                let navigation = { navigation with Navigation3dConfig = config }
-                World.setScreenNavigation3d navigation screen world |> snd'
+        static member setNav3dConfig config screen world =
+            let nav3d = World.getScreenNav3d screen world
+            if config <> nav3d.NavConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
+                let nav3d = { nav3d with NavConfig = config }
+                World.setScreenNav3d nav3d screen world |> snd'
             else world
 
         /// Attempt to synchronize the given screen's 3d navigation information.
-        static member synchronizeNavigation3d screen world =
-            let navigation = World.getScreenNavigation3d screen world
+        static member synchronizeNav3d screen world =
+            let nav3d = World.getScreenNav3d screen world
             let rebuild =
-                match (navigation.Navigation3dContentsOldOpt, navigation.Navigation3dConfigOldOpt) with
-                | (Some contentsOld, Some configOld) -> navigation.Navigation3dContents =/= contentsOld || navigation.Navigation3dConfig =/= configOld
-                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected navigation 3d state; navigation rebuild denied."; false
-                | (None, None) -> navigation.Navigation3dContents.Count <> 0
+                match (nav3d.NavContentsOldOpt, nav3d.NavConfigOldOpt) with
+                | (Some contentsOld, Some configOld) -> nav3d.NavContents =/= contentsOld || nav3d.NavConfig =/= configOld
+                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected nav 3d state; navigation rebuild declined."; false
+                | (None, None) -> nav3d.NavContents.Count <> 0
             if rebuild then
-                let contents = navigation.Navigation3dContents.Values
-                match World.tryBuildNavigationMesh contents navigation.Navigation3dConfig with
-                | Some navigationMesh ->
-                    let navigation =
-                        { navigation with
-                            Navigation3dContentsOldOpt = Some navigation.Navigation3dContents
-                            Navigation3dConfigOldOpt = Some navigation.Navigation3dConfig
-                            Navigation3dMeshOpt = Some navigationMesh }
-                    World.setScreenNavigation3d navigation screen world |> snd'
+                let contents = nav3d.NavContents.Values
+                match World.tryBuildNav3dMesh contents nav3d.NavConfig with
+                | Some navMesh ->
+                    let nav3d =
+                        { nav3d with
+                            NavContentsOldOpt = Some nav3d.NavContents
+                            NavConfigOldOpt = Some nav3d.NavConfig
+                            NavMeshOpt = Some navMesh }
+                    World.setScreenNav3d nav3d screen world |> snd'
                 | None -> Log.info "Unable to build navigation mesh."; world
             else world
 
         /// Query the given screen's 3d navigation information if it exists.
-        static member tryQueryNavigation3d query screen world =
-            let navigation = World.getScreenNavigation3d screen world
-            match navigation.Navigation3dMeshOpt with
+        static member tryQueryNav3d query screen world =
+            let nav3d = World.getScreenNav3d screen world
+            match nav3d.NavMeshOpt with
             | Some (_, _, dtQuery) -> Some (query dtQuery)
             | None -> None

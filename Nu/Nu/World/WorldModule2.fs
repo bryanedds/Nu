@@ -1922,7 +1922,7 @@ module EntityPropertyDescriptor =
              "Basic Transform Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
         elif propertyName = "MaterialProperties" || propertyName = "Material" then "Material Properties"
-        elif propertyName = "NavigationConfig" || propertyName = "NavigationContent" then "Navigation Properties"
+        elif propertyName = "NavContent" || propertyName = "Nav3dConfig" then "Navigation Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Uncategorized Properties"
 

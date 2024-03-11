@@ -29,14 +29,15 @@ type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 
-/// 3d navigation content.
-type Navigation3dContent =
-    | NavigationNil
-    | NavigationBounds
-    | NavigationGeometry
-    | NavigationStaticModel
-    | NavigationStaticModelSurface of int
-    | NavigationStaticModelSurfaces of int array
+/// Navigation content (includes both 2d and 3d representations, with some cases only supported depending on the
+/// dimensionality of the system utilizing it).
+type NavContent =
+    | NavNil
+    | NavBounds
+    | NavGeometry
+    | NavStaticModel
+    | NavStaticModelSurface of int
+    | NavStaticModelSurfaces of int array
 
 /// The batch phasing such involved in persisting OpenGL state.
 type [<Struct>] BatchPhase =
@@ -253,14 +254,14 @@ module AssimpExtensions =
                     with _ -> None
                 else Some true
 
-        member this.Navigation3dContentOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.Navigation3dContentName) with
+        member this.NavContentOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.NavContentName) with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<Navigation3dContent> |> Some
+                    try property.GetStringValue () |> scvalueMemo<NavContent> |> Some
                     with _ -> None
-                else Some NavigationNil
+                else Some NavNil
 
     /// Node extensions.
     type Assimp.Node with
@@ -344,12 +345,12 @@ module AssimpExtensions =
                 | _ -> None
             | (false, _) -> None
 
-        member this.Navigation3dContentOpt =
-            match this.Metadata.TryGetValue Constants.Render.Navigation3dContentName with
+        member this.NavContentOpt =
+            match this.Metadata.TryGetValue Constants.Render.NavContentName with
             | (true, entry) ->
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<Navigation3dContent> |> Some
+                    try entry.Data :?> string |> scvalueMemo<NavContent> |> Some
                     with _ -> None
                 | _ -> None
             | (false, _) -> None

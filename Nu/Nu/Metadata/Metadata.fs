@@ -548,13 +548,13 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
-    let private tryGetModelNavigation3dContent materialIndex model =
+    let private tryGetModelNavContent materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
-                match material.Navigation3dContentOpt with
+                match material.NavContentOpt with
                 | Some content -> Some content
                 | None -> None
             | Some _ | None -> None
@@ -604,8 +604,8 @@ module Metadata =
         tryGetModelTwoSided materialIndex staticModel
 
     /// Attempt to get the 3d navigation content for the given material index and static model.
-    let tryGetStaticModelNavigation3dContent materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelNavigation3dContent materialIndex staticModel
+    let tryGetStaticModelNavContent materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelNavContent materialIndex staticModel
 
     /// Attempt to get the metadata of the given animated model.
     let tryGetAnimatedModelMetadata (animatedModel : AnimatedModel AssetTag) =
@@ -651,5 +651,5 @@ module Metadata =
         tryGetModelTwoSided materialIndex animatedModel
 
     /// Attempt to get the 3d navigation content property for the given material index and animated model.
-    let tryGetAnimatedModelNavigation3dContent materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelNavigation3dContent materialIndex animatedModel
+    let tryGetAnimatedModelNavContent materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelNavContent materialIndex animatedModel

@@ -1455,7 +1455,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then showOpenProjectDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then
                 // TODO: sync nav 2d when it's available.
-                world <- World.synchronizeNavigation3d selectedScreen world
+                world <- World.synchronizeNav3d selectedScreen world
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps ()
@@ -1818,7 +1818,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ImGui.SameLine ()
         ImGui.Text "OpaqueDistanceOpt"
 
-    let private imGuiEditNavigation3dConfigProperty (nc : Navigation3dConfig) propertyDescriptor simulant =
+    let private imGuiEditNav3dConfigProperty (nc : Nav3dConfig) propertyDescriptor simulant =
 
         let mutable changed = false
         let mutable cellSize = nc.CellSize
@@ -1901,7 +1901,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             setPropertyValue nc propertyDescriptor simulant
         if ImGui.Button "Synchronize Navigation" then
             // TODO: sync nav 2d when it's available.
-            world <- World.synchronizeNavigation3d selectedScreen world
+            world <- World.synchronizeNav3d selectedScreen world
 
     let private imGuiEditMaterialProperty m propertyDescriptor simulant =
 
@@ -2236,7 +2236,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | :? Vector4i as v -> let mutable v = v in if ImGui.DragInt4 (name, &v.X, snapDrag) then setProperty v propertyDescriptor simulant
         | :? MaterialProperties as mp -> imGuiEditMaterialPropertiesProperty mp propertyDescriptor simulant
         | :? Material as m -> imGuiEditMaterialProperty m propertyDescriptor simulant
-        | :? Navigation3dConfig as nc -> imGuiEditNavigation3dConfigProperty nc propertyDescriptor simulant
+        | :? Nav3dConfig as nc -> imGuiEditNav3dConfigProperty nc propertyDescriptor simulant
         | :? Box2 as b ->
             ImGui.Text name
             let mutable min = v2 b.Min.X b.Min.Y
@@ -2843,7 +2843,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then
                                     // TODO: sync nav 2d when it's available.
-                                    world <- World.synchronizeNavigation3d selectedScreen world
+                                    world <- World.synchronizeNav3d selectedScreen world
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Group" then
                                 if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
@@ -2977,7 +2977,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.SameLine ()
                         if ImGui.Button "Renavigate" then
                             // TODO: sync nav 2d when it's available.
-                            world <- World.synchronizeNavigation3d selectedScreen world
+                            world <- World.synchronizeNav3d selectedScreen world
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                             ImGui.Text "Synchronize navigation mesh. (Ctrl+Shift+N)"
                             ImGui.EndTooltip ()
