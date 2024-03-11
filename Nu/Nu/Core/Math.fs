@@ -1039,10 +1039,6 @@ type [<Struct>] Affine =
         Affine.make v3Zero quatIdentity v3One
 
 /// The flipness of an image.
-[<Syntax
-    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<Struct>] Flip =
     | FlipNone
     | FlipH
@@ -1050,10 +1046,6 @@ type [<Struct>] Flip =
     | FlipHV
 
 /// Type of light.
-[<Syntax
-    ("PointLight DirectionalLight SpotLight", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type LightType =
     | PointLight
     | DirectionalLight

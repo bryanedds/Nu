@@ -231,19 +231,7 @@ type Definitions =
 
 /// Describes an effect in a compositional manner.
 [<Syntax
-    ("Constant Linear Random Chaos Ease EaseIn EaseOut Sin SinScaled Cos CosScaled " +
-     "Or Nor Xor And Nand Equal " +
-     "Sum Delta Scalar Ratio Set " +
-     "Once Loop Bounce " +
-     "Cycle Iterate " +
-     "Rate " +
-     "Shift " +
-     "Resource Expand " +
-     "Enabled PositionAbsolute Position PositionLocal Scale Offset Angles Degrees Size Elevation Inset Color Emission Height IgnoreLightMaps Flip Brightness LightCutoff Volume " +
-     "Enableds Positions PositionLocals Scales Offsets Angleses Degreeses Sizes Elevations Insets Colors Emissions Heights IgnoreLightMapses Brightnesses LightCutoffs Volumes Aspects " +
-     "Expand " +
-     "StaticSprite AnimatedSprite TextSprite Light3d Billboard StaticModel Mount Repeat Emit Delay Segment Composite Tag Nil",
-     "", "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.CompositionalThresholdMax)>]
 [<SymbolicExpansion>]

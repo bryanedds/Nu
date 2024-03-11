@@ -32,10 +32,6 @@ type HeightMapMetadata =
       PositionsAndTexCoordses : struct (Vector3 * Vector2) array }
 
 /// A height map for terrain.
-[<Syntax
-    ("ImageHeightMap RawHeightMap", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
@@ -238,7 +234,7 @@ type [<NoEquality; NoComparison>] BodyUserObject =
 
 /// Describes the substantial nature of a body in terms of mass or density.
 [<Syntax
-    ("Mass Density", "", "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type [<Struct>] Substance =
@@ -247,7 +243,7 @@ type [<Struct>] Substance =
 
 /// Describe the form of collision detection to use.
 [<Syntax
-    ("DiscontinuousDetection ContinuousDetection", "", "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type [<Struct>] CollisionDetection =
@@ -317,7 +313,7 @@ type BodyTerrain =
 
 /// The shape of a physics body.
 [<Syntax
-    ("BodyEmpty BodyBox BodySphere BodyCapsule BodyConvexHull BodyShapes", "", "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyShape =
@@ -335,7 +331,7 @@ type BodyShape =
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
 [<Syntax
-    ("Static Kinematic Dynamic", "", "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type BodyType =
@@ -438,8 +434,7 @@ type JointWheel =
 
 /// A joint on physics bodies.
 [<Syntax
-    ("JointAngle JointDistance JointFriction JointGear JointMotor JointPrismatic JointPulley JointRevolute JointRope JointWheel",
-     "", "", "", "",
+    ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type JointDevice =

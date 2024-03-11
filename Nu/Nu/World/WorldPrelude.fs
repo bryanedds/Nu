@@ -63,7 +63,7 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
-/// Configure the construction of 3d navigation things.
+/// Configure the construction of 3d navigation meshes.
 type [<SymbolicExpansion>] Nav3dConfig =
     { CellSize : single
       CellHeight : single
@@ -143,13 +143,6 @@ type FlowDirection =
     | FlowUpward
 
 /// A gui layout.
-[<Syntax
-    ("Flow Dock Grid Manual",
-     "FlowParent FlowUnlimited FlowTo " +
-     "FlowUpward FlowRightward FlowDownward FlowLeftward",
-     "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type Layout =
     | Flow of FlowDirection * FlowLimit
     | Dock of Vector4 * bool * bool

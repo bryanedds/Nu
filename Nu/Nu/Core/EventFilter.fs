@@ -65,10 +65,6 @@ type [<CLIMutable>] EventInfo =
           MoreInfo = moreInfo }
 
 /// Describes how events are filtered.
-[<Syntax
-    ("All Any NotAny Pattern Pass", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type EventFilter =
     | All of EventFilter list
     | Any of EventFilter list

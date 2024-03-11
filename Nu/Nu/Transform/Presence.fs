@@ -6,10 +6,6 @@ open System
 open Prime
 
 /// Describes the form of an element's presence.
-[<Syntax
-    ("Interior Exterior Imposter Omnipresent", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<Struct>] Presence =
     /// An interior element so you have to be closer to see them.
     | Interior

@@ -586,11 +586,7 @@ module CueSystem =
             | None -> (translation, 1)
 
     [<Syntax
-        ("Fin PlaySound PlaySong FadeOutSong Face Recruit " +
-         "AddItem RemoveItem AddAdvent RemoveAdvent ReplaceAdvent " +
-         "Wait Fade Animate Move Warp Battle Dialog Prompt " +
-         "If Not Define Assign Expand Parallel Sequence",
-         "", "", "", "",
+        ("", "", "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DetailedThresholdMax)>]
     type Cue =

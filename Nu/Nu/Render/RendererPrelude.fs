@@ -6,20 +6,12 @@ open System
 open Prime
 
 /// The blend mode of a sprite.
-[<Syntax
-    ("Transparent Additive Overwrite", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<Struct>] Blend =
     | Transparent
     | Additive
     | Overwrite
 
 /// Represents an aspect of font styling.
-[<Syntax
-    ("Bold Italic Underline Strikethrough", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<Struct>] FontStyle =
     | Bold
     | Italic
@@ -27,30 +19,18 @@ type [<Struct>] FontStyle =
     | Strikethrough
 
 /// Horizontal justification.
-[<Syntax
-    ("JustifyLeft JustifyRight JustifyCenter", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<Struct>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
 /// Vertical justification.
-[<Syntax
-    ("JustifyTop JustifyMiddle JustifyBottom", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<Struct>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
 
 /// Justification (such as for text alignment).
-[<Syntax
-    ("Justified Unjustified", "", "", "", "",
-     Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
