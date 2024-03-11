@@ -2840,7 +2840,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
                                 if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
                                 if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
-                                ImGui.Separator ()
                                 if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then
                                     // TODO: sync nav 2d when it's available.
                                     world <- World.synchronizeNav3d selectedScreen world
