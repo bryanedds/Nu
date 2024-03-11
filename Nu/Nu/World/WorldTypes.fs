@@ -301,8 +301,8 @@ and Slide =
 /// NOTE: this type is intended only for internal engine use.
 and [<ReferenceEquality; NoComparison>] Nav3d =
     { NavContext : RcContext
-      NavContents : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavContent>
-      NavContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavContent> option
+      NavContents : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape>
+      NavContentsOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
       NavConfig : Nav3dConfig
       NavConfigOldOpt : Nav3dConfig option
       NavMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }

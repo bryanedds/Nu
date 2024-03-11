@@ -29,15 +29,13 @@ type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 
-/// Navigation content (includes both 2d and 3d representations, with some cases only supported depending on the
-/// dimensionality of the system utilizing it).
-type NavContent =
-    | EmptyContent
-    | BoundsContent
-    | GeometryContent
-    | StaticModelContent
-    | StaticModelSurfaceContent of int
-    | StaticModelSurfacesContent of int array
+/// Describes how a thing participates in nav mesh construction (includes both 2d and 3d representations, with some
+/// cases only supported depending on the dimensionality of the system utilizing it).
+type NavShape =
+    | EmptyShape
+    | BoundsShape
+    | StaticModelShape
+    | StaticModelSurfaceShape
 
 /// The batch phasing such involved in persisting OpenGL state.
 type [<Struct>] BatchPhase =
@@ -254,14 +252,14 @@ module AssimpExtensions =
                     with _ -> None
                 else Some true
 
-        member this.NavContentOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.NavContentName) with
+        member this.NavShapeOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.NavShapeName) with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<NavContent> |> Some
+                    try property.GetStringValue () |> scvalueMemo<NavShape> |> Some
                     with _ -> None
-                else Some EmptyContent
+                else Some EmptyShape
 
     /// Node extensions.
     type Assimp.Node with
@@ -345,12 +343,12 @@ module AssimpExtensions =
                 | _ -> None
             | (false, _) -> None
 
-        member this.NavContentOpt =
-            match this.Metadata.TryGetValue Constants.Render.NavContentName with
+        member this.NavShapeOpt =
+            match this.Metadata.TryGetValue Constants.Render.NavShapeName with
             | (true, entry) ->
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<NavContent> |> Some
+                    try entry.Data :?> string |> scvalueMemo<NavShape> |> Some
                     with _ -> None
                 | _ -> None
             | (false, _) -> None

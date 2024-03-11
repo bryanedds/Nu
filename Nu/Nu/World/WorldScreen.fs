@@ -361,32 +361,19 @@ module WorldScreenModule =
         static member internal getNav3dDescriptors contents =
             [for (bounds, affineMatrix, staticModel, surfaceIndex, content) in contents do
                 match content with
-                | EmptyContent -> ()
-                | BoundsContent -> Left bounds
-                | GeometryContent ->
+                | EmptyShape -> ()
+                | BoundsShape -> Left bounds
+                | StaticModelSurfaceShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                             Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()
-                | StaticModelContent ->
+                | StaticModelShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do
                             Right (bounds, affineMatrix, surface)
-                    | None -> ()
-                | StaticModelSurfaceContent surfaceIndex ->
-                    match Metadata.tryGetStaticModelMetadata staticModel with
-                    | Some physicallyBasedModel ->
-                        if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                            Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
-                    | None -> ()
-                | StaticModelSurfacesContent surfaceIndices ->
-                    match Metadata.tryGetStaticModelMetadata staticModel with
-                    | Some physicallyBasedModel ->
-                        for surfaceIndex in surfaceIndices do
-                            if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
-                                Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()]
 
         static member internal tryBuildNav3dMesh contents config =

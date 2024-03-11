@@ -77,8 +77,8 @@ module WorldEntityHierarchy =
                             let (child, world) =
                                 if rigid then
                                     let (child, world) = World.createEntity<RigidModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
-                                    let content = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavContent BoundsContent staticModelMetadata.SceneOpt surface
-                                    let world = child.SetNavContent content world
+                                    let shape = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape BoundsShape staticModelMetadata.SceneOpt surface
+                                    let world = child.SetNavShape shape world
                                     (child, world)
                                 else World.createEntity<StaticModelSurfaceDispatcher> DefaultOverlay (Some surnames) group world
                             let (position, rotation, scale, world) =

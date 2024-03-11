@@ -102,15 +102,15 @@ module PhysicallyBased =
                 | Some _ | None -> opaqueDistanceDefault
             | Some opaqueDistance -> opaqueDistance
 
-        static member extractNavContent contentDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.NavContentOpt with
+        static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
+            match surface.SurfaceNode.NavShapeOpt with
             | None ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                     let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    Option.defaultValue contentDefault material.NavContentOpt
-                | Some _ | None -> contentDefault
-            | Some content -> content
+                    Option.defaultValue shapeDefault material.NavShapeOpt
+                | Some _ | None -> shapeDefault
+            | Some shape -> shape
 
         static member inline hash surface =
             surface.HashCode
@@ -166,7 +166,7 @@ module PhysicallyBased =
         let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
         let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
         let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
-        let extractNavContent = PhysicallyBasedSurface.extractNavContent
+        let extractNavShape = PhysicallyBasedSurface.extractNavShape
         let hash = PhysicallyBasedSurface.hash
         let equals = PhysicallyBasedSurface.equals
         let comparer = HashIdentity.FromFunctions hash equals

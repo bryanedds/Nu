@@ -2884,9 +2884,9 @@ module TerrainFacetModule =
 module NavContentFacetModule =
 
     type Entity with
-        member this.GetNavContent world : NavContent = this.Get (nameof this.NavContent) world
-        member this.SetNavContent (value : NavContent) world = this.Set (nameof this.NavContent) value world
-        member this.NavContent = lens (nameof this.NavContent) this this.GetNavContent this.SetNavContent
+        member this.GetNavShape world : NavShape = this.Get (nameof this.NavShape) world
+        member this.SetNavShape (value : NavShape) world = this.Set (nameof this.NavShape) value world
+        member this.NavShape = lens (nameof this.NavShape) this this.GetNavShape this.SetNavShape
 
     /// Augments an entity with a 3d navigation mesh.
     type NavContentFacet () =
@@ -2901,19 +2901,19 @@ module NavContentFacetModule =
                 let affineMatrix = entity.GetAffineMatrix world
                 let staticModel = entity.GetStaticModel world
                 let surfaceIndex = entity.GetSurfaceIndex world
-                let content = entity.GetNavContent world
-                World.setNav3dContentOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, content)) entity world
+                let shape = entity.GetNavShape world
+                World.setNav3dContentOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, shape)) entity world
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.SurfaceIndex 0
-             define Entity.NavContent BoundsContent]
+             define Entity.NavShape BoundsShape]
 
         override this.Register (entity, world) =
             let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavContentFacet) world
             let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavContentFacet) world
             let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavContentFacet) world
-            let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.NavContent)) entity (nameof NavContentFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavContent entity world)) (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavContentFacet) world
             propagateNavContent entity world
 
         override this.Unregister (entity, world) =

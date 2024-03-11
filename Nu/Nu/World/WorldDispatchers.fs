@@ -548,12 +548,12 @@ module RigidModelDispatcherModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        static let updateNavContent evt world =
+        static let updateNavShape evt world =
             let entity = evt.Subscriber : Entity
             let world =
                 match entity.GetBodyType world with
-                | Static -> entity.SetNavContent BoundsContent world
-                | Dynamic | Kinematic -> entity.SetNavContent EmptyContent world
+                | Static -> entity.SetNavShape BoundsShape world
+                | Dynamic | Kinematic -> entity.SetNavShape EmptyShape world
             (Cascade, world)
 
         static member Facets =
@@ -566,12 +566,12 @@ module RigidModelDispatcherModule =
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred
-             define Entity.NavContent BoundsContent]
+             define Entity.NavShape BoundsShape]
 
         override this.Register (entity, world) =
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
-            let world = World.monitor updateNavContent (entity.GetChangeEvent (nameof entity.BodyType)) entity world
+            let world = World.monitor updateNavShape (entity.GetChangeEvent (nameof entity.BodyType)) entity world
             world
 
 [<AutoOpen>]
@@ -590,7 +590,7 @@ module StaticModelSurfaceDispatcherModule =
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred
-             define Entity.NavContent BoundsContent]
+             define Entity.NavShape BoundsShape]
 
 [<AutoOpen>]
 module RigidModelSurfaceDispatcherModule =
@@ -668,7 +668,7 @@ module Block3dDispatcherModule =
         static member Properties =
             [define Entity.BodyType Static
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.NavContent BoundsContent]
+             define Entity.NavShape BoundsShape]
 
 [<AutoOpen>]
 module Box3dDispatcherModule =
@@ -684,7 +684,7 @@ module Box3dDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.NavContent BoundsContent]
+             define Entity.NavShape BoundsShape]
 
 [<AutoOpen>]
 module Character3dDispatcherModule =
