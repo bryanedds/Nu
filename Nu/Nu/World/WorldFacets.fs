@@ -2881,71 +2881,70 @@ module TerrainFacetModule =
             | None -> AttributesInferred.important (v3 512.0f 128.0f 512.0f) v3Zero
 
 [<AutoOpen>]
-module NavigationContentFacetModule =
+module Navigation3dContentFacetModule =
 
     type Entity with
-        member this.GetNavigationContent world : NavigationContent = this.Get (nameof this.NavigationContent) world
-        member this.SetNavigationContent (value : NavigationContent) world = this.Set (nameof this.NavigationContent) value world
-        member this.NavigationContent = lens (nameof this.NavigationContent) this this.GetNavigationContent this.SetNavigationContent
+        member this.GetNavigation3dContent world : Navigation3dContent = this.Get (nameof this.Navigation3dContent) world
+        member this.SetNavigation3dContent (value : Navigation3dContent) world = this.Set (nameof this.Navigation3dContent) value world
+        member this.Navigation3dContent = lens (nameof this.Navigation3dContent) this this.GetNavigation3dContent this.SetNavigation3dContent
 
-    /// Augments an entity with a navigation mesh.
-    type NavigationContentFacet () =
+    /// Augments an entity with a 3d navigation mesh.
+    type Navigation3dContentFacet () =
         inherit Facet (false)
 
-        static let propagateNavigationContent (entity : Entity) world =
+        static let propagateNavigation3dContent (entity : Entity) world =
             let bounds = entity.GetBounds world
             let affineMatrix = entity.GetAffineMatrix world
             let staticModel = entity.GetStaticModel world
             let surfaceIndex = entity.GetSurfaceIndex world
-            let content = entity.GetNavigationContent world
-            World.setNavigationContentOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, content)) entity world
+            let content = entity.GetNavigation3dContent world
+            World.setNavigation3dContentOpt (Some (bounds, affineMatrix, staticModel, surfaceIndex, content)) entity world
 
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.SurfaceIndex 0
-             define Entity.NavigationContent NavigationBounds]
+             define Entity.Navigation3dContent NavigationBounds]
 
         override this.Register (entity, world) =
-            let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof NavigationContentFacet) world
-            let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavigationContentFacet) world
-            let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavigationContentFacet) world
-            let world = World.sense (fun _ world -> (Cascade, propagateNavigationContent entity world)) (entity.ChangeEvent (nameof entity.NavigationContent)) entity (nameof NavigationContentFacet) world
-            propagateNavigationContent entity world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigation3dContent entity world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof Navigation3dContentFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigation3dContent entity world)) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof Navigation3dContentFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigation3dContent entity world)) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof Navigation3dContentFacet) world
+            let world = World.sense (fun _ world -> (Cascade, propagateNavigation3dContent entity world)) (entity.ChangeEvent (nameof entity.Navigation3dContent)) entity (nameof Navigation3dContentFacet) world
+            propagateNavigation3dContent entity world
 
         override this.Unregister (entity, world) =
-            World.setNavigationContentOpt None entity world
+            World.setNavigation3dContentOpt None entity world
 
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.unimportant
 
 [<AutoOpen>]
-module NavigationConfigFacetModule =
+module Navigation3dConfigFacetModule =
 
     type Entity with
-        member this.GetNavigationConfig world : NavigationConfig = this.Get (nameof this.NavigationConfig) world
-        member this.SetNavigationConfig (value : NavigationConfig) world = this.Set (nameof this.NavigationConfig) value world
-        member this.NavigationConfig = lens (nameof this.NavigationConfig) this this.GetNavigationConfig this.SetNavigationConfig
+        member this.GetNavigation3dConfig world : Navigation3dConfig = this.Get (nameof this.Navigation3dConfig) world
+        member this.SetNavigation3dConfig (value : Navigation3dConfig) world = this.Set (nameof this.Navigation3dConfig) value world
+        member this.Navigation3dConfig = lens (nameof this.Navigation3dConfig) this this.GetNavigation3dConfig this.SetNavigation3dConfig
 
     /// Augments an entity with a navigation mesh.
-    type NavigationConfigFacet () =
+    type Navigation3dConfigFacet () =
         inherit Facet (false)
 
-        static let propagateNavigationConfig (entity : Entity) world =
-            let config = entity.GetNavigationConfig world
-            World.setNavigationConfig config entity.Screen world
+        static let propagateNavigation3dConfig (entity : Entity) world =
+            let config = entity.GetNavigation3dConfig world
+            World.setNavigation3dConfig config entity.Screen world
 
         static member Properties =
-            [define Entity.NavigationConfig NavigationConfig.defaultConfig]
+            [define Entity.Navigation3dConfig Navigation3dConfig.defaultConfig]
 
         override this.Register (entity, world) =
-            let world = World.sense (fun _ world -> (Cascade, propagateNavigationConfig entity world)) (entity.ChangeEvent (nameof entity.NavigationConfig)) entity (nameof NavigationConfigFacet) world
-            world
+            World.sense (fun _ world -> (Cascade, propagateNavigation3dConfig entity world)) (entity.ChangeEvent (nameof entity.Navigation3dConfig)) entity (nameof Navigation3dConfigFacet) world
 
         override this.Edit (op, entity, world) =
             match op with
             | OverlayViewport _ ->
-                let navigation = World.getScreenNavigation entity.Screen world
-                match navigation.NavigationMeshOpt with
+                let navigation = World.getScreenNavigation3d entity.Screen world
+                match navigation.Navigation3dMeshOpt with
                 | Some (builderResult, _, _) ->
 
                     // draw interior edges

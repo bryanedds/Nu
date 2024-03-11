@@ -548,14 +548,14 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
-    let private tryGetModelNavigationContent materialIndex model =
+    let private tryGetModelNavigation3dContent materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials.[materialIndex]
-                match material.NavigationContentOpt with
-                | Some navigationContent -> Some navigationContent
+                match material.Navigation3dContentOpt with
+                | Some content -> Some content
                 | None -> None
             | Some _ | None -> None
         | None -> None
@@ -603,9 +603,9 @@ module Metadata =
     let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelTwoSided materialIndex staticModel
 
-    /// Attempt to get the navigation content for the given material index and static model.
-    let tryGetStaticModelNavigationContent materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelNavigationContent materialIndex staticModel
+    /// Attempt to get the 3d navigation content for the given material index and static model.
+    let tryGetStaticModelNavigation3dContent materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelNavigation3dContent materialIndex staticModel
 
     /// Attempt to get the metadata of the given animated model.
     let tryGetAnimatedModelMetadata (animatedModel : AnimatedModel AssetTag) =
@@ -650,6 +650,6 @@ module Metadata =
     let tryGetAnimatedModelTwoSided materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelTwoSided materialIndex animatedModel
 
-    /// Attempt to get the navigation content property for the given material index and animated model.
-    let tryGetAnimatedModelNavigationContent materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelNavigationContent materialIndex animatedModel
+    /// Attempt to get the 3d navigation content property for the given material index and animated model.
+    let tryGetAnimatedModelNavigation3dContent materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelNavigation3dContent materialIndex animatedModel

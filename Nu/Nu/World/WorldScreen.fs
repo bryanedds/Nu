@@ -33,8 +33,8 @@ module WorldScreenModule =
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
-        member this.GetNavigation world = World.getScreenNavigation this world
-        member this.Navigation = lensReadOnly (nameof this.Navigation) this this.GetNavigation
+        member this.GetNavigation3d world = World.getScreenNavigation3d this world
+        member this.Navigation3d = lensReadOnly (nameof this.Navigation3d) this this.GetNavigation3d
         member this.GetProtected world = World.getScreenProtected this world
         member this.Protected = lensReadOnly (nameof this.Protected) this this.GetProtected
         member this.GetPersistent world = World.getScreenPersistent this world
@@ -491,55 +491,55 @@ module WorldScreenModule =
             // geometry not found
             | None -> None
 
-        static member internal setNavigationContentOpt contentOpt (source : Entity) world =
+        static member internal setNavigation3dContentOpt contentOpt (source : Entity) world =
             let screen = source.Screen
-            let navigation = World.getScreenNavigation screen world
-            match (navigation.NavigationContents.TryFind source, contentOpt) with
+            let navigation = World.getScreenNavigation3d screen world
+            match (navigation.Navigation3dContents.TryFind source, contentOpt) with
             | (Some content, Some content') ->
                 if content' <> content then // OPTIMIZATION: preserve map reference if no content changes detected.
-                    let navigation = { navigation with NavigationContents = Map.add source content' navigation.NavigationContents }
-                    World.setScreenNavigation navigation screen world |> snd'
+                    let navigation = { navigation with Navigation3dContents = Map.add source content' navigation.Navigation3dContents }
+                    World.setScreenNavigation3d navigation screen world |> snd'
                 else world
             | (None, Some content) ->
-                let navigation = { navigation with NavigationContents = Map.add source content navigation.NavigationContents }
-                World.setScreenNavigation navigation screen world |> snd'
+                let navigation = { navigation with Navigation3dContents = Map.add source content navigation.Navigation3dContents }
+                World.setScreenNavigation3d navigation screen world |> snd'
             | (Some _, None) ->
-                let navigation = { navigation with NavigationContents = Map.remove source navigation.NavigationContents }
-                World.setScreenNavigation navigation screen world |> snd'
+                let navigation = { navigation with Navigation3dContents = Map.remove source navigation.Navigation3dContents }
+                World.setScreenNavigation3d navigation screen world |> snd'
             | (None, None) -> world
 
-        /// Set the given screen's navigation configuration.
-        static member setNavigationConfig config screen world =
-            let navigation = World.getScreenNavigation screen world
-            if config <> navigation.NavigationConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
-                let navigation = { navigation with NavigationConfig = config }
-                World.setScreenNavigation navigation screen world |> snd'
+        /// Set the given screen's 3d navigation configuration.
+        static member setNavigation3dConfig config screen world =
+            let navigation = World.getScreenNavigation3d screen world
+            if config <> navigation.Navigation3dConfig then // OPTIMIZATION: preserve map reference if no content changes detected.
+                let navigation = { navigation with Navigation3dConfig = config }
+                World.setScreenNavigation3d navigation screen world |> snd'
             else world
 
-        /// Attempt to synchronize the given screen's navigation information.
-        static member synchronizeNavigation screen world =
-            let navigation = World.getScreenNavigation screen world
+        /// Attempt to synchronize the given screen's 3d navigation information.
+        static member synchronizeNavigation3d screen world =
+            let navigation = World.getScreenNavigation3d screen world
             let rebuild =
-                match (navigation.NavigationContentsOldOpt, navigation.NavigationConfigOldOpt) with
-                | (Some contentsOld, Some configOld) -> navigation.NavigationContents =/= contentsOld || navigation.NavigationConfig =/= configOld
-                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected navigation state; navigation rebuild denied."; false
-                | (None, None) -> navigation.NavigationContents.Count <> 0
+                match (navigation.Navigation3dContentsOldOpt, navigation.Navigation3dConfigOldOpt) with
+                | (Some contentsOld, Some configOld) -> navigation.Navigation3dContents =/= contentsOld || navigation.Navigation3dConfig =/= configOld
+                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected navigation 3d state; navigation rebuild denied."; false
+                | (None, None) -> navigation.Navigation3dContents.Count <> 0
             if rebuild then
-                let contents = navigation.NavigationContents.Values
-                match World.tryBuildNavigationMesh contents navigation.NavigationConfig with
+                let contents = navigation.Navigation3dContents.Values
+                match World.tryBuildNavigationMesh contents navigation.Navigation3dConfig with
                 | Some navigationMesh ->
                     let navigation =
                         { navigation with
-                            NavigationContentsOldOpt = Some navigation.NavigationContents
-                            NavigationConfigOldOpt = Some navigation.NavigationConfig
-                            NavigationMeshOpt = Some navigationMesh }
-                    World.setScreenNavigation navigation screen world |> snd'
+                            Navigation3dContentsOldOpt = Some navigation.Navigation3dContents
+                            Navigation3dConfigOldOpt = Some navigation.Navigation3dConfig
+                            Navigation3dMeshOpt = Some navigationMesh }
+                    World.setScreenNavigation3d navigation screen world |> snd'
                 | None -> Log.info "Unable to build navigation mesh."; world
             else world
 
-        /// Query the given screen's navigation information if it exists.
-        static member tryQueryNavigation query screen world =
-            let navigation = World.getScreenNavigation screen world
-            match navigation.NavigationMeshOpt with
+        /// Query the given screen's 3d navigation information if it exists.
+        static member tryQueryNavigation3d query screen world =
+            let navigation = World.getScreenNavigation3d screen world
+            match navigation.Navigation3dMeshOpt with
             | Some (_, _, dtQuery) -> Some (query dtQuery)
             | None -> None

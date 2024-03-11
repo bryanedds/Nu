@@ -64,7 +64,7 @@ type TileMapDescriptor =
       TileMapPosition : Vector2 }
 
 /// Configure the construction of navigation data.
-type [<SymbolicExpansion>] NavigationConfig =
+type [<SymbolicExpansion>] Navigation3dConfig =
     { CellSize : single
       CellHeight : single
       AgentHeight : single
@@ -83,7 +83,7 @@ type [<SymbolicExpansion>] NavigationConfig =
       FilterWalkableLowHeightSpans : bool
       PartitionType : RcPartition }
 
-    /// The default navigation configuration.
+    /// The default 3d navigation configuration.
     static member defaultConfig =
         { CellSize = 0.1f
           CellHeight = 0.1f

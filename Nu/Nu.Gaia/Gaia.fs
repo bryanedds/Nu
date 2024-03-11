@@ -1453,7 +1453,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntity () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then showOpenProjectDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then world <- World.synchronizeNavigation selectedScreen world
+            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then
+                // TODO: sync nav 2d when it's available.
+                world <- World.synchronizeNavigation3d selectedScreen world
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps ()
@@ -1816,7 +1818,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ImGui.SameLine ()
         ImGui.Text "OpaqueDistanceOpt"
 
-    let private imGuiEditNavigationConfigProperty (nc : NavigationConfig) propertyDescriptor simulant =
+    let private imGuiEditNavigation3dConfigProperty (nc : Navigation3dConfig) propertyDescriptor simulant =
 
         let mutable changed = false
         let mutable cellSize = nc.CellSize
@@ -1897,7 +1899,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                   FilterWalkableLowHeightSpans = filterWalkableLowHeightSpans
                   PartitionType = scvalue partitionTypeStr }
             setPropertyValue nc propertyDescriptor simulant
-        if ImGui.Button "Synchronize Navigation" then world <- World.synchronizeNavigation selectedScreen world
+        if ImGui.Button "Synchronize Navigation" then
+            // TODO: sync nav 2d when it's available.
+            world <- World.synchronizeNavigation3d selectedScreen world
 
     let private imGuiEditMaterialProperty m propertyDescriptor simulant =
 
@@ -2232,7 +2236,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | :? Vector4i as v -> let mutable v = v in if ImGui.DragInt4 (name, &v.X, snapDrag) then setProperty v propertyDescriptor simulant
         | :? MaterialProperties as mp -> imGuiEditMaterialPropertiesProperty mp propertyDescriptor simulant
         | :? Material as m -> imGuiEditMaterialProperty m propertyDescriptor simulant
-        | :? NavigationConfig as nc -> imGuiEditNavigationConfigProperty nc propertyDescriptor simulant
+        | :? Navigation3dConfig as nc -> imGuiEditNavigation3dConfigProperty nc propertyDescriptor simulant
         | :? Box2 as b ->
             ImGui.Text name
             let mutable min = v2 b.Min.X b.Min.Y
@@ -2837,7 +2841,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
                                 if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+R") then rerenderLightMaps ()
                                 ImGui.Separator ()
-                                if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then world <- World.synchronizeNavigation selectedScreen world
+                                if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then
+                                    // TODO: sync nav 2d when it's available.
+                                    world <- World.synchronizeNavigation3d selectedScreen world
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Group" then
                                 if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
@@ -2969,7 +2975,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.Text "Freeze all thawed entities. (Ctrl+Shift+F)"
                             ImGui.EndTooltip ()
                         ImGui.SameLine ()
-                        if ImGui.Button "Renavigate" then world <- World.synchronizeNavigation selectedScreen world
+                        if ImGui.Button "Renavigate" then
+                            // TODO: sync nav 2d when it's available.
+                            world <- World.synchronizeNavigation3d selectedScreen world
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                             ImGui.Text "Synchronize navigation mesh. (Ctrl+Shift+N)"
                             ImGui.EndTooltip ()

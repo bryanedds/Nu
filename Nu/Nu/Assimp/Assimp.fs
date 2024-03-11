@@ -29,8 +29,8 @@ type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 
-/// Geometric navigation content.
-type NavigationContent =
+/// 3d navigation content.
+type Navigation3dContent =
     | NavigationNil
     | NavigationBounds
     | NavigationGeometry
@@ -253,12 +253,12 @@ module AssimpExtensions =
                     with _ -> None
                 else Some true
 
-        member this.NavigationContentOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.NavigationContentName) with
+        member this.Navigation3dContentOpt =
+            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.Navigation3dContentName) with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<NavigationContent> |> Some
+                    try property.GetStringValue () |> scvalueMemo<Navigation3dContent> |> Some
                     with _ -> None
                 else Some NavigationNil
 
@@ -344,12 +344,12 @@ module AssimpExtensions =
                 | _ -> None
             | (false, _) -> None
 
-        member this.NavigationContentOpt =
-            match this.Metadata.TryGetValue Constants.Render.NavigationContentName with
+        member this.Navigation3dContentOpt =
+            match this.Metadata.TryGetValue Constants.Render.Navigation3dContentName with
             | (true, entry) ->
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<NavigationContent> |> Some
+                    try entry.Data :?> string |> scvalueMemo<Navigation3dContent> |> Some
                     with _ -> None
                 | _ -> None
             | (false, _) -> None
