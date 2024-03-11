@@ -3298,11 +3298,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
                                 fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
                                 fsiSession.AddBoundValue (nameof selectedGroup, selectedGroup)
-                                //fsiSession.AddBoundValue (nameof selectedEntityOpt, selectedEntityOpt)
+                                let selectedEntityOptNullBindHack = selectedEntityOpt.IsNone && interactiveInputStr.Contains (nameof selectedEntityOpt)
+                                if selectedEntityOptNullBindHack // HACK: 1/2: workaround for binding a null value with AddBoundValue.
+                                then fsiSession.EvalInteraction "let selectedEntityOpt = Option<Entity>.None;;"
+                                else fsiSession.AddBoundValue (nameof selectedEntityOpt, selectedEntityOpt)
                                 fsiSession.AddBoundValue (nameof world, world)
                                 fsiSession.EvalInteraction (interactiveInputStr + ";;")
                                 let errorStr = string fsiErrorStream
                                 let outStr = string fsiOutStream
+                                let outStr =
+                                    if selectedEntityOptNullBindHack // HACK: 2/2: strip eval output relating to hack.
+                                    then outStr.Replace ("val selectedEntityOpt: Entity option = None\r\n", "")
+                                    else outStr
                                 if errorStr.Length > 0
                                 then interactiveOutputStr <- interactiveOutputStr + errorStr
                                 else interactiveOutputStr <- interactiveOutputStr + Environment.NewLine + outStr
