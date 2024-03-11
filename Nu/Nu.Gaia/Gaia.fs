@@ -3293,21 +3293,21 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     (if projectDllPathValid then "open " + PathF.GetFileNameWithoutExtension projectDllPath + "\n" else "")
                                 try fsiSession.EvalInteraction initial
                                 with _ -> ()
-                            try fsiSession.AddBoundValue (nameof targetDir, targetDir)
-                                fsiSession.AddBoundValue (nameof projectDllPath, projectDllPath)
-                                fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
-                                fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
-                                fsiSession.AddBoundValue (nameof selectedGroup, selectedGroup)
-                                let selectedEntityOptNullBindHack = selectedEntityOpt.IsNone && interactiveInputStr.Contains (nameof selectedEntityOpt)
-                                if selectedEntityOptNullBindHack // HACK: 1/2: workaround for binding a null value with AddBoundValue.
-                                then fsiSession.EvalInteraction "let selectedEntityOpt = Option<Entity>.None;;"
-                                else fsiSession.AddBoundValue (nameof selectedEntityOpt, selectedEntityOpt)
-                                fsiSession.AddBoundValue (nameof world, world)
+                            try if interactiveInputStr.Contains (nameof targetDir) then fsiSession.AddBoundValue (nameof targetDir, targetDir)
+                                if interactiveInputStr.Contains (nameof projectDllPath) then fsiSession.AddBoundValue (nameof projectDllPath, projectDllPath)
+                                if interactiveInputStr.Contains (nameof selectedScreen) then fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
+                                if interactiveInputStr.Contains (nameof selectedScreen) then fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
+                                if interactiveInputStr.Contains (nameof selectedGroup) then fsiSession.AddBoundValue (nameof selectedGroup, selectedGroup)
+                                if interactiveInputStr.Contains (nameof selectedEntityOpt) then
+                                    if selectedEntityOpt.IsNone // HACK: 1/2: workaround for binding a null value with AddBoundValue.
+                                    then fsiSession.EvalInteraction "let selectedEntityOpt = Option<Entity>.None;;"
+                                    else fsiSession.AddBoundValue (nameof selectedEntityOpt, selectedEntityOpt)
+                                if interactiveInputStr.Contains (nameof world) then fsiSession.AddBoundValue (nameof world, world)
                                 fsiSession.EvalInteraction (interactiveInputStr + ";;")
                                 let errorStr = string fsiErrorStream
                                 let outStr = string fsiOutStream
                                 let outStr =
-                                    if selectedEntityOptNullBindHack // HACK: 2/2: strip eval output relating to hack.
+                                    if selectedEntityOpt.IsNone // HACK: 2/2: strip eval output relating to above 1/2 hack.
                                     then outStr.Replace ("val selectedEntityOpt: Entity option = None\r\n", "")
                                     else outStr
                                 if errorStr.Length > 0
