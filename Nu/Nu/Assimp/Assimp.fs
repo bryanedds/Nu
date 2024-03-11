@@ -29,8 +29,8 @@ type RenderStyle =
     | Deferred
     | Forward of Subsort : single * Sort : single
 
-/// Describes how a thing participates in nav mesh construction (includes both 2d and 3d representations, with some
-/// cases only supported depending on the dimensionality of the system utilizing it).
+/// The shape of a navigation body (includes both 2d and 3d representations, with some cases unsupported depending on
+/// the dimensionality of the system utilizing it).
 type NavShape =
     | EmptyShape
     | BoundsShape
