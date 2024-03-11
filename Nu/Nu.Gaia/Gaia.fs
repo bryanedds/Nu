@@ -3293,7 +3293,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     (if projectDllPathValid then "open " + PathF.GetFileNameWithoutExtension projectDllPath + "\n" else "")
                                 try fsiSession.EvalInteraction initial
                                 with _ -> ()
-                            try fsiSession.AddBoundValue ("world", world)
+                            try fsiSession.AddBoundValue (nameof targetDir, targetDir)
+                                fsiSession.AddBoundValue (nameof projectDllPath, projectDllPath)
+                                fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
+                                fsiSession.AddBoundValue (nameof selectedScreen, selectedScreen)
+                                fsiSession.AddBoundValue (nameof selectedGroup, selectedGroup)
+                                //fsiSession.AddBoundValue (nameof selectedEntityOpt, selectedEntityOpt)
+                                fsiSession.AddBoundValue (nameof world, world)
                                 fsiSession.EvalInteraction (interactiveInputStr + ";;")
                                 let errorStr = string fsiErrorStream
                                 let outStr = string fsiOutStream
@@ -3304,7 +3310,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | Some it when it.Value.ReflectionType = typeof<World> ->
                                     world <- it.Value.ReflectionValue :?> World
                                 | Some _ | None ->
-                                    match fsiSession.TryFindBoundValue "world" with
+                                    match fsiSession.TryFindBoundValue (nameof world) with
                                     | Some wtemp when wtemp.Value.ReflectionType = typeof<World> ->
                                         world <- wtemp.Value.ReflectionValue :?> World
                                     | Some _ | None -> ()

@@ -170,7 +170,7 @@ module Render =
     let [<Literal>] EmissionDefault = 1.0f
     let [<Literal>] HeightDefault = 1.0f
     let [<Literal>] IgnoreLightMapsDefault = false
-    let [<Literal>] OpaqueDistanceDefault = Single.MaxValue
+    let [<Literal>] OpaqueDistanceDefault = 100000.0f
     let [<Literal>] FontSizeDefault = 24
 
 [<RequireQualifiedAccess>]

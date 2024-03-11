@@ -1810,7 +1810,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               Emission = Constants.Render.EmissionDefault
               Height = Option.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
               IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
-              OpaqueDistance = Single.MaxValue }
+              OpaqueDistance = Constants.Render.OpaqueDistanceDefault }
         let (texelWidthAvg, texelHeightAvg, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
