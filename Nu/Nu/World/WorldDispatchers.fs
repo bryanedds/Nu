@@ -546,7 +546,7 @@ module RigidModelDispatcherModule =
             let bodyShape = entity.GetBodyShape world
             let staticModel = entity.GetStaticModel world
             if (match bodyShape with BodyStaticModel body -> body.StaticModel <> staticModel | _ -> false) then
-                let bodyStaticModel = { StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                let bodyStaticModel = { StaticModel = staticModel; Convex = true; TransformOpt = None; PropertiesOpt = None }
                 let world = entity.SetBodyShape (BodyStaticModel bodyStaticModel) world
                 (Cascade, world)
             else (Cascade, world)
@@ -566,7 +566,7 @@ module RigidModelDispatcherModule =
 
         static member Properties =
             [define Entity.BodyType Static
-             define Entity.BodyShape (BodyStaticModel { StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
+             define Entity.BodyShape (BodyStaticModel { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred
@@ -609,7 +609,7 @@ module RigidModelSurfaceDispatcherModule =
             let surfaceIndex = entity.GetSurfaceIndex world
             let staticModel = entity.GetStaticModel world
             if (match bodyShape with BodyStaticModelSurface body -> body.SurfaceIndex <> surfaceIndex || body.StaticModel <> staticModel | _ -> false) then
-                let bodyStaticModel = { SurfaceIndex = surfaceIndex; StaticModel = staticModel; TransformOpt = None; PropertiesOpt = None }
+                let bodyStaticModel = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
                 let world = entity.SetBodyShape (BodyStaticModelSurface bodyStaticModel) world
                 (Cascade, world)
             else (Cascade, world)
@@ -622,7 +622,7 @@ module RigidModelSurfaceDispatcherModule =
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.BodyType Static
-             define Entity.BodyShape (BodyStaticModelSurface { SurfaceIndex = 0; StaticModel = Assets.Default.StaticModel; TransformOpt = None; PropertiesOpt = None })
+             define Entity.BodyShape (BodyStaticModelSurface { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel

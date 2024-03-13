@@ -278,32 +278,35 @@ type BodyBoxRounded =
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a triangulated physics body geometry.
+/// The shape of a convex physics body defined by body-relative points.
+type BodyPoints =
+    { Points : Vector3 array
+      TransformOpt : Affine option
+      PropertiesOpt : BodyShapeProperties option }
+
+/// The shape of a physics body in terms of triangle faces.
 type BodyGeometry =
     { Vertices : Vector3 array
+      Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a triangulated physics body convex hull.
-type BodyConvexHull =
-    { Vertices : Vector3 array
-      TransformOpt : Affine option
-      PropertiesOpt : BodyShapeProperties option }
-
-/// The shape of a triangulated physics body static model.
+/// The shape of a physics body in terms of a static model.
 type BodyStaticModel =
     { StaticModel : StaticModel AssetTag
+      Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a triangulated physics body static model surface.
+/// The shape of a physics body in terms of a static model surface.
 type BodyStaticModelSurface =
     { SurfaceIndex : int
       StaticModel : StaticModel AssetTag
+      Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
-/// The shape of a triangulated physics body terrain.
+/// The shape of a physics body in terms of a terrain height map.
 type BodyTerrain =
     { Resolution : Vector2i
       Bounds : Box3
@@ -323,8 +326,8 @@ type BodyShape =
     | BodySphere of BodySphere
     | BodyCapsule of BodyCapsule
     | BodyBoxRounded of BodyBoxRounded
+    | BodyPoints of BodyPoints
     | BodyGeometry of BodyGeometry
-    | BodyConvexHull of BodyConvexHull
     | BodyStaticModel of BodyStaticModel
     | BodyStaticModelSurface of BodyStaticModelSurface
     | BodyTerrain of BodyTerrain
@@ -667,8 +670,8 @@ module Physics =
         | BodySphere bodySphere -> BodySphere { bodySphere with Radius = size.X * bodySphere.Radius; TransformOpt = scaleTranslation size bodySphere.TransformOpt }
         | BodyCapsule bodyCapsule -> BodyCapsule { bodyCapsule with Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; TransformOpt = scaleTranslation size bodyCapsule.TransformOpt }
         | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { bodyBoxRounded with Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; TransformOpt = scaleTranslation size bodyBoxRounded.TransformOpt }
+        | BodyPoints bodyPoints -> BodyPoints { bodyPoints with Points = Array.map (fun vertex -> size * vertex) bodyPoints.Points; TransformOpt = scaleTranslation size bodyPoints.TransformOpt }
         | BodyGeometry _ as bodyGeometry -> bodyGeometry
-        | BodyConvexHull bodyConvexHull -> BodyConvexHull { bodyConvexHull with Vertices = Array.map (fun vertex -> size * vertex) bodyConvexHull.Vertices; TransformOpt = scaleTranslation size bodyConvexHull.TransformOpt }
         | BodyStaticModel _ as bodyStaticModel -> bodyStaticModel
         | BodyStaticModelSurface _ as bodyStaticModelSurface -> bodyStaticModelSurface
         | BodyTerrain _ as bodyTerrain -> bodyTerrain

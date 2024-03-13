@@ -205,7 +205,25 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyGeometry bodySource bodyProperties (bodyGeometry : BodyGeometry) (body : Body) =
+    static member private attachBodyConvexHull bodySource bodyProperties (bodyPoints : BodyPoints) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyPoints.TransformOpt
+        let vertices = Array.zeroCreate bodyPoints.Points.Length
+        for i in 0 .. dec bodyPoints.Points.Length do
+            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (bodyPoints.Points.[i], transform))
+        let density =
+            match bodyProperties.Substance with
+            | Density density -> density
+            | Mass mass ->
+                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
+                mass / (box.Width * box.Height)
+        let bodyShape = body.CreatePolygon (Common.Vertices vertices, density)
+        bodyShape.Tag <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyPoints.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyPoints.PropertiesOpt bodyShape
+        bodyShape
+
+    static member private attachBodyTriangles bodySource bodyProperties (bodyGeometry : BodyGeometry) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyGeometry.TransformOpt
         let vertices = Array.zeroCreate bodyGeometry.Vertices.Length
         for i in 0 .. dec bodyGeometry.Vertices.Length do
@@ -225,23 +243,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyGeometry.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyConvexHull bodySource bodyProperties (bodyConvexHull : BodyConvexHull) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyConvexHull.TransformOpt
-        let vertices = Array.zeroCreate bodyConvexHull.Vertices.Length
-        for i in 0 .. dec bodyConvexHull.Vertices.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (bodyConvexHull.Vertices.[i], transform))
-        let density =
-            match bodyProperties.Substance with
-            | Density density -> density
-            | Mass mass ->
-                let box = vertices |> Array.map (fun v -> v2 v.X v.Y) |> Box2.Enclose // TODO: perhaps use a Sphere or Circle instead?
-                mass / (box.Width * box.Height)
-        let bodyShape = body.CreatePolygon (Common.Vertices vertices, density)
-        bodyShape.Tag <-
-            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt bodyShape
-        bodyShape
+    static member private attachBodyGeometry bodySource bodyProperties (bodyGeometry : BodyGeometry) (body : Body) =
+        if bodyGeometry.Convex then
+            let bodyPoints = { Points = bodyGeometry.Vertices; TransformOpt = bodyGeometry.TransformOpt; PropertiesOpt = bodyGeometry.PropertiesOpt }
+            PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties bodyPoints body |> Array.singleton
+        else PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties bodyGeometry body
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
         let list = List ()
@@ -257,8 +263,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | BodySphere bodySphere -> PhysicsEngine2d.attachBodySphere bodySource bodyProperties bodySphere body |> Array.singleton
         | BodyCapsule bodyCapsule -> PhysicsEngine2d.attachBodyCapsule bodySource bodyProperties bodyCapsule body |> Array.ofSeq
         | BodyBoxRounded bodyBoxRounded -> PhysicsEngine2d.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded body |> Array.ofSeq
-        | BodyGeometry bodyGeometry -> PhysicsEngine2d.attachBodyGeometry bodySource bodyProperties bodyGeometry body |> Array.ofSeq
-        | BodyConvexHull bodyConvexHull -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull body |> Array.singleton
+        | BodyPoints bodyPoints -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties bodyPoints body |> Array.singleton
+        | BodyGeometry bodyGeometry -> PhysicsEngine2d.attachBodyGeometry bodySource bodyProperties bodyGeometry body
         | BodyStaticModel _ -> [||]
         | BodyStaticModelSurface _ -> [||]
         | BodyTerrain _ -> [||]

@@ -110,11 +110,11 @@ module TmxMap =
         | BodyBoxRounded boxRounded ->
             Log.traceIf (Option.isSome boxRounded.TransformOpt) "Transform of importing tile map shape should be None."
             BodyBoxRounded { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius; TransformOpt = transformOpt }
+        | BodyPoints points ->
+            Log.traceIf (Option.isSome points.TransformOpt) "Transform of importing tile map shape should be None."
+            BodyPoints { points with Points = Array.map (fun point -> point * tileSize.V3) points.Points; TransformOpt = transformOpt }
         | BodyGeometry _ as geometry ->
             geometry
-        | BodyConvexHull convexHull ->
-            Log.traceIf (Option.isSome convexHull.TransformOpt) "Transform of importing tile map shape should be None."
-            BodyConvexHull { convexHull with Vertices = Array.map (fun point -> point * tileSize.V3) convexHull.Vertices; TransformOpt = transformOpt }
         | BodyStaticModelSurface _ as staticModelSurface ->
             staticModelSurface
         | BodyStaticModel _ as staticModel ->

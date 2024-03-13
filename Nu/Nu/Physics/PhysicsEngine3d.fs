@@ -189,7 +189,43 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
         PhysicsEngine3d.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
 
-    static member private attachBodyGeometry bodySource (bodyProperties : BodyProperties) (bodyGeometry : BodyGeometry) (compoundShape : CompoundShape) centerMassInertiaDisposes =
+    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyPoints : BodyPoints) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
+        let unscaledPointsKey = UnscaledPointsKey.make bodyPoints.Points
+        let (optimized, vertices) =
+            match physicsEngine.UnscaledPointsCached.TryGetValue unscaledPointsKey with
+            | (true, unscaledVertices) -> (true, unscaledVertices)
+            | (false, _) -> (false, bodyPoints.Points)
+        let hull = new ConvexHullShape (vertices)
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyPoints.PropertiesOpt hull
+        if not optimized then
+            hull.OptimizeConvexHull ()
+            let unscaledPoints = Array.ofSeq hull.UnscaledPoints
+            physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
+        hull.LocalScaling <- bodyProperties.Scale
+        hull.UserObject <-
+            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
+              ShapeIndex = match bodyPoints.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+        // NOTE: we approximate volume with the volume of a bounding box.
+        // TODO: use a more accurate volume calculation.
+        let mutable min = v3Zero
+        let mutable max = v3Zero
+        hull.GetAabb (m4Identity, &min, &max)
+        let center =
+            match bodyPoints.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let box = box3 min max
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = box.Width * box.Height * box.Depth
+                volume * density
+            | Mass mass -> mass
+        let inertia = hull.CalculateLocalInertia mass
+        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
+        (center, mass, inertia, id) :: centerMassInertiaDisposes
+
+    static member private attachBodyBvhTriangles bodySource (bodyProperties : BodyProperties) (bodyGeometry : BodyGeometry) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let vertexArray = new TriangleIndexVertexArray (Array.init bodyGeometry.Vertices.Length id, bodyGeometry.Vertices)
         let shape = new BvhTriangleMeshShape (vertexArray, true)
         shape.BuildOptimizedBvh ()
@@ -218,41 +254,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, shape)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
-    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyConvexHull : BodyConvexHull) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
-        let unscaledPointsKey = UnscaledPointsKey.make bodyConvexHull.Vertices
-        let (optimized, vertices) =
-            match physicsEngine.UnscaledPointsCached.TryGetValue unscaledPointsKey with
-            | (true, unscaledVertices) -> (true, unscaledVertices)
-            | (false, _) -> (false, bodyConvexHull.Vertices)
-        let hull = new ConvexHullShape (vertices)
-        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyConvexHull.PropertiesOpt hull
-        if not optimized then
-            hull.OptimizeConvexHull ()
-            let unscaledPoints = Array.ofSeq hull.UnscaledPoints
-            physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
-        hull.LocalScaling <- bodyProperties.Scale
-        hull.UserObject <-
-            { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        // NOTE: we approximate volume with the volume of a bounding box.
-        // TODO: use a more accurate volume calculation.
-        let mutable min = v3Zero
-        let mutable max = v3Zero
-        hull.GetAabb (m4Identity, &min, &max)
-        let center =
-            match bodyConvexHull.TransformOpt with
-            | Some transform -> transform.Translation
-            | None -> v3Zero
-        let box = box3 min max
-        let mass =
-            match bodyProperties.Substance with
-            | Density density ->
-                let volume = box.Width * box.Height * box.Depth
-                volume * density
-            | Mass mass -> mass
-        let inertia = hull.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
-        (center, mass, inertia, id) :: centerMassInertiaDisposes
+    static member private attachBodyGeometry bodySource (bodyProperties : BodyProperties) (bodyGeometry : BodyGeometry) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
+        if bodyGeometry.Convex then
+            let bodyPoints = { Points = bodyGeometry.Vertices; TransformOpt = bodyGeometry.TransformOpt; PropertiesOpt = bodyGeometry.PropertiesOpt }
+            PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyPoints compoundShape centerMassInertiaDisposes physicsEngine
+        else PhysicsEngine3d.attachBodyBvhTriangles bodySource bodyProperties bodyGeometry compoundShape centerMassInertiaDisposes
 
     // TODO: add some error logging.
     static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
@@ -272,7 +278,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             (Vector3.Transform (v3Zero, surface.SurfaceMatrix))
                             (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromQuaternion quatIdentity * surface.SurfaceMatrix))
                             (Vector3.Transform (v3One, surface.SurfaceMatrix))
-                let bodyStaticModelSurface = { SurfaceIndex = i; StaticModel = bodyStaticModel.StaticModel; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
+                let bodyStaticModelSurface = { StaticModel = bodyStaticModel.StaticModel; SurfaceIndex = i; Convex = bodyStaticModel.Convex; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
                 PhysicsEngine3d.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine)
                 centerMassInertiaDisposes
                 [0 .. dec staticModel.Surfaces.Length]
@@ -285,8 +291,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             if  bodyStaticModelSurface.SurfaceIndex > -1 &&
                 bodyStaticModelSurface.SurfaceIndex < staticModel.Surfaces.Length then
                 let geometry = staticModel.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
-                let bodyConvexHull = { BodyConvexHull.Vertices = geometry.Vertices; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
-                PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes physicsEngine
+                let bodyGeometry = { Vertices = geometry.Vertices; Convex = bodyStaticModelSurface.Convex; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
+                PhysicsEngine3d.attachBodyGeometry bodySource bodyProperties bodyGeometry compoundShape centerMassInertiaDisposes physicsEngine
             else centerMassInertiaDisposes
         | None -> centerMassInertiaDisposes
 
@@ -332,8 +338,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | BodySphere bodySphere -> PhysicsEngine3d.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertiaDisposes
         | BodyCapsule bodyCapsule -> PhysicsEngine3d.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertiaDisposes
         | BodyBoxRounded bodyBoxRounded -> PhysicsEngine3d.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertiaDisposes
-        | BodyGeometry bodyGeometry -> PhysicsEngine3d.attachBodyGeometry bodySource bodyProperties bodyGeometry compoundShape centerMassInertiaDisposes
-        | BodyConvexHull bodyConvexHull -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyConvexHull compoundShape centerMassInertiaDisposes physicsEngine
+        | BodyPoints bodyPoints -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyPoints compoundShape centerMassInertiaDisposes physicsEngine
+        | BodyGeometry bodyGeometry -> PhysicsEngine3d.attachBodyGeometry bodySource bodyProperties bodyGeometry compoundShape centerMassInertiaDisposes physicsEngine
         | BodyStaticModel bodyStaticModel -> PhysicsEngine3d.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertiaDisposes physicsEngine
         | BodyStaticModelSurface bodyStaticModelSurface -> PhysicsEngine3d.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine
         | BodyTerrain bodyTerrain -> PhysicsEngine3d.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertiaDisposes
