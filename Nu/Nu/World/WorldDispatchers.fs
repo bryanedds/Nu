@@ -283,7 +283,7 @@ module Box2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
+            [define Entity.BodyType Dynamic
              define Entity.StaticImage Assets.Default.Box]
 
 [<AutoOpen>]
