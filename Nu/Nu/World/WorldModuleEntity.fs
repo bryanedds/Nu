@@ -2675,7 +2675,7 @@ module WorldModuleEntity =
                             let nameOpt = EntityDescriptor.getNameOpt entityDescriptor
                             let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
                             (entity :: entities, world)
-                        else (entities, world))
+                        else Log.info "Entity with empty dispatcher name encountered."; (entities, world))
                         ([], world)
                         entityDescriptors
             (List.rev entitiesRev, world)

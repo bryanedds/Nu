@@ -431,7 +431,7 @@ module WorldModule2 =
 
             // propagate dispatcher at this level
             let propagatedDescriptor =
-                if previousDescriptor.EntityDispatcherName <> String.empty then
+                if String.notEmpty previousDescriptor.EntityDispatcherName then
                     if targetDescriptor.EntityDispatcherName = previousDescriptor.EntityDispatcherName
                     then { targetDescriptor with EntityDispatcherName = currentDescriptor.EntityDispatcherName }
                     else targetDescriptor
@@ -549,7 +549,7 @@ module WorldModule2 =
             let propagatedDescriptors =
                 propagatedDescriptorOpts |>
                 List.definitize |>
-                List.filter (fun propagatedDescriptor -> propagatedDescriptor.EntityDispatcherName <> String.empty) |>
+                List.filter (fun propagatedDescriptor -> String.notEmpty propagatedDescriptor.EntityDispatcherName) |>
                 List.sortBy (fun propagatedDescriptor ->
                     match propagatedDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                     | (Atom (entityName, _) | Text (entityName, _)) ->
