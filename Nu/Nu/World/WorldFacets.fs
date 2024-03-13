@@ -1422,37 +1422,38 @@ module RigidBodyFacetModule =
 
             // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
             let subIds = Array.init 24 (fun _ -> makeGuid ())
-            let world = World.subscribePlus subIds.[0] (fun (evt : Event<_, Entity>) world -> (Cascade, if not (evt.Subscriber.GetModelDriven world) then evt.Subscriber.PropagatePhysics world else world)) (Entity.ChangeEvent (nameof Entity.Position)) entity world |> snd
-            let world = World.subscribePlus subIds.[1] (fun (evt : Event<_, Entity>) world -> (Cascade, if not (evt.Subscriber.GetModelDriven world) then evt.Subscriber.PropagatePhysics world else world)) (Entity.ChangeEvent (nameof Entity.Rotation)) entity world |> snd
-            let world = World.subscribePlus subIds.[2] (fun (evt : Event<_, Entity>) world -> (Cascade, if not (evt.Subscriber.GetModelDriven world) then evt.Subscriber.PropagatePhysics world else world)) (Entity.ChangeEvent (nameof Entity.LinearVelocity)) entity world |> snd
-            let world = World.subscribePlus subIds.[3] (fun (evt : Event<_, Entity>) world -> (Cascade, if not (evt.Subscriber.GetModelDriven world) then evt.Subscriber.PropagatePhysics world else world)) (Entity.ChangeEvent (nameof Entity.AngularVelocity)) entity world |> snd
-            let world = World.subscribePlus subIds.[4] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.Scale)) entity world |> snd
-            let world = World.subscribePlus subIds.[5] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.Offset)) entity world |> snd
-            let world = World.subscribePlus subIds.[6] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.Size)) entity world |> snd
-            let world = World.subscribePlus subIds.[7] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.PerimeterCentered)) entity world |> snd
-            let world = World.subscribePlus subIds.[8] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.BodyEnabled)) entity world |> snd
-            let world = World.subscribePlus subIds.[9] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.BodyType)) entity world |> snd
-            let world = World.subscribePlus subIds.[10] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.SleepingAllowed)) entity world |> snd
-            let world = World.subscribePlus subIds.[11] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.Friction)) entity world |> snd
-            let world = World.subscribePlus subIds.[12] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.Restitution)) entity world |> snd
-            let world = World.subscribePlus subIds.[13] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.LinearDamping)) entity world |> snd
-            let world = World.subscribePlus subIds.[14] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.AngularDamping)) entity world |> snd
-            let world = World.subscribePlus subIds.[15] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.AngularFactor)) entity world |> snd
-            let world = World.subscribePlus subIds.[16] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.Substance)) entity world |> snd
-            let world = World.subscribePlus subIds.[17] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.GravityOverride)) entity world |> snd
-            let world = World.subscribePlus subIds.[18] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.CollisionDetection)) entity world |> snd
-            let world = World.subscribePlus subIds.[19] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.CollisionCategories)) entity world |> snd
-            let world = World.subscribePlus subIds.[20] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.CollisionMask)) entity world |> snd
-            let world = World.subscribePlus subIds.[21] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.BodyShape)) entity world |> snd
-            let world = World.subscribePlus subIds.[23] (fun (evt : Event<_, Entity>) world -> (Cascade, evt.Subscriber.PropagatePhysics world)) (Entity.ChangeEvent (nameof Entity.Sensor)) entity world |> snd
-            let unsubscribe world =
+            let (_, world) = World.subscribePlus subIds.[0] (fun _ world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)) (entity.ChangeEvent (nameof entity.Position)) entity world
+            let (_, world) = World.subscribePlus subIds.[1] (fun _ world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)) (entity.ChangeEvent (nameof entity.Rotation)) entity world
+            let (_, world) = World.subscribePlus subIds.[2] (fun _ world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world
+            let (_, world) = World.subscribePlus subIds.[3] (fun _ world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world
+            let (_, world) = World.subscribePlus subIds.[4] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Scale)) entity world
+            let (_, world) = World.subscribePlus subIds.[5] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Offset)) entity world
+            let (_, world) = World.subscribePlus subIds.[6] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Size)) entity world
+            let (_, world) = World.subscribePlus subIds.[7] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.PerimeterCentered)) entity world
+            let (_, world) = World.subscribePlus subIds.[8] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world
+            let (_, world) = World.subscribePlus subIds.[9] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyType)) entity world
+            let (_, world) = World.subscribePlus subIds.[10] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world
+            let (_, world) = World.subscribePlus subIds.[11] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Friction)) entity world
+            let (_, world) = World.subscribePlus subIds.[12] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Restitution)) entity world
+            let (_, world) = World.subscribePlus subIds.[13] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world
+            let (_, world) = World.subscribePlus subIds.[14] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world
+            let (_, world) = World.subscribePlus subIds.[15] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world
+            let (_, world) = World.subscribePlus subIds.[16] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Substance)) entity world
+            let (_, world) = World.subscribePlus subIds.[17] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world
+            let (_, world) = World.subscribePlus subIds.[18] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world
+            let (_, world) = World.subscribePlus subIds.[19] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world
+            let (_, world) = World.subscribePlus subIds.[20] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world
+            let (_, world) = World.subscribePlus subIds.[21] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world
+            let (_, world) = World.subscribePlus subIds.[23] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world
+            let unsubscribe = fun world ->
                 Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
-            let callback evt world =
+            let callback = fun evt world ->
                 if  Set.contains (nameof RigidBodyFacet) (evt.Data.Previous :?> string Set) &&
                     not (Set.contains (nameof RigidBodyFacet) (evt.Data.Value :?> string Set)) then
                     (Cascade, unsubscribe world)
                 else (Cascade, world)
-            let callback2 _ world = (Cascade, unsubscribe world)
+            let callback2 = fun _ world ->
+                (Cascade, unsubscribe world)
             let world = World.sense callback entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
             let world = World.sense callback2 entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
             world
