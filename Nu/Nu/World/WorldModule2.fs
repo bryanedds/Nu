@@ -544,18 +544,18 @@ module WorldModule2 =
                 Seq.mapi (fun i currentDescriptor ->
                     match currentDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
                     | Atom (entityName, _) | Text (entityName, _) -> (entityName, i)
-                    | _ -> failwithumf ()) |>
-                Map.ofSeq                
+                    | _ -> ("", Int32.MinValue)) |>
+                Map.ofSeq
             let propagatedDescriptors =
                 propagatedDescriptorOpts |>
                 List.definitize |>
                 List.sortBy (fun propagatedDescriptor ->
-                    match propagatedDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
-                    | Atom (entityName, _) | Text (entityName, _) ->
+                    match propagatedDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
+                    | (true, (Atom (entityName, _) | Text (entityName, _))) ->
                         match currentDescriptorsOrder.TryGetValue entityName with
                         | (true, order) -> order
-                        | (false, _) -> failwithumf ()
-                    | _ -> failwithumf ())
+                        | (false, _) -> Int32.MaxValue
+                    | (_, _) -> Int32.MaxValue)
             { propagatedDescriptor with EntityDescriptors = propagatedDescriptors }
 
         /// Propagate the structure of an entity to all other entities with it as their propagation source.
