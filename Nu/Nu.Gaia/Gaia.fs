@@ -2728,7 +2728,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if copying then
                                     let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
                                     let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
-                                    let parent = newEntityParentOpt |> Option.map cast |> Option.defaultValue entity.Group
+                                    let parent = newEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
                                     let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
                                     if ImGui.IsShiftDown () then
                                         world <- newEntity.SetPropagationSourceOpt None world
