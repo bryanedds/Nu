@@ -438,6 +438,7 @@ type JointWheel =
       Anchor2 : Vector3 }
 
 /// A joint on physics bodies.
+/// TODO: consider renaming this family of types from Joint___ to ___Joint.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
