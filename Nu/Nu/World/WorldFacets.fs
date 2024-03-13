@@ -2895,11 +2895,11 @@ module NavBodyFacetModule =
             match entity.GetNavShape world with
             | EmptyShape ->
                 if entity.GetIs2d world
-                then world // TODO: implement for 2d nav when it's available.
+                then world // TODO: implement for 2d navigation when it's available.
                 else World.setNav3dBodyOpt None entity world
             | shape ->
                 if entity.GetIs2d world
-                then world // TODO: implement for 2d nav when it's available.
+                then world // TODO: implement for 2d navigation when it's available.
                 else
                     let bounds = entity.GetBounds world
                     let affineMatrix = entity.GetAffineMatrix world
@@ -2946,7 +2946,7 @@ module NavBodyFacetModule =
 
         override this.Unregister (entity, world) =
             if entity.GetIs2d world
-            then world // TODO: implement for 2d nav when it's available.
+            then world // TODO: implement for 2d navigation when it's available.
             else World.setNav3dBodyOpt None entity world
 
         override this.GetAttributesInferred (_, _) =
@@ -3059,6 +3059,7 @@ module Nav3dConfigFacetModule =
                                     v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2] }
                     World.imGuiCircles3d false points 3.0f Color.LightYellow true world
                     world
+
                 | None -> world
             | _ -> world
 

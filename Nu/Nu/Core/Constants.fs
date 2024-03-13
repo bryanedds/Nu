@@ -50,6 +50,7 @@ module Engine =
     let [<Literal>] PropagatedDescriptorOptPropertyName = "PropagatedDescriptorOpt"
     let [<Literal>] ModelPropertyName = "Model"
     let [<Literal>] TransformPropertyName = "Transform"
+    let [<Literal>] BoundsPropertyName = "Bounds"
     let [<Literal>] XtensionPropertyName = "Xtension"
     let [<Literal>] BodyTypePropertyName = "BodyType"
     let [<Literal>] EffectNameDefault = "Effect"

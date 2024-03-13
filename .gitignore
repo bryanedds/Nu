@@ -60,7 +60,8 @@ packages/
 # Local Items #
 ###############
 /Nu/Nu.Gaia/TestGroups
-/Nu/Nu.Gaia/Assets/Default/QA_HoldingCells
-/Nu/Nu.Gaia/Assets/Default/HQ_AbandonedSchool
 /Nu/Nu.Gaia/Assets/Default/Cerberus_by_Andrew_Maximov
+/Nu/Nu.Gaia/Assets/Default/desert-environment
+/Nu/Nu.Gaia/Assets/Default/HQ_AbandonedSchool
 /Nu/Nu.Gaia/Assets/Default/Residence
+/Nu/Nu.Gaia/Assets/Default/QA_HoldingCells

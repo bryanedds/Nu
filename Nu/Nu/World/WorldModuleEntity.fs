@@ -181,7 +181,7 @@ module WorldModuleEntity =
                         let perimeterChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged || perimeterCenteredChanged
                         let boundsChanged = perimeterChanged || rotationChanged
                         if boundsChanged then
-                            let world = World.publishEntityChange (nameof transformNew.Bounds2d) () () publishChangeEvents entity world
+                            let world = World.publishEntityChange Constants.Engine.BoundsPropertyName () () publishChangeEvents entity world
                             let world =
                                 if perimeterChanged then
                                     let world = World.publishEntityChange (nameof transformNew.Perimeter) () () publishChangeEvents entity world
@@ -203,7 +203,7 @@ module WorldModuleEntity =
                     else
                         let boundsChanged = positionChanged || rotationChanged || scaleChanged || offsetChanged || sizeChanged
                         if boundsChanged then
-                            let world = World.publishEntityChange (nameof transformNew.Bounds3d) () () publishChangeEvents entity world
+                            let world = World.publishEntityChange Constants.Engine.BoundsPropertyName () () publishChangeEvents entity world
                             let world = if positionChanged then World.publishEntityChange (nameof transformNew.Position) transformOld.Position transformNew.Position publishChangeEvents entity world else world
                             let world = if scaleChanged then World.publishEntityChange (nameof transformNew.Scale) transformOld.Scale transformNew.Scale publishChangeEvents entity world else world
                             let world = if offsetChanged then World.publishEntityChange (nameof transformNew.Offset) transformOld.Offset transformNew.Offset publishChangeEvents entity world else world

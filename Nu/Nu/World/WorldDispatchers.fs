@@ -560,7 +560,8 @@ module RigidModelDispatcherModule =
 
         static member Facets =
             [typeof<RigidBodyFacet>
-             typeof<StaticModelFacet>]
+             typeof<StaticModelFacet>
+             typeof<NavBodyFacet>]
 
         static member Properties =
             [define Entity.BodyType Static
