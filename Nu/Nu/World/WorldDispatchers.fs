@@ -329,6 +329,7 @@ module Character2dDispatcherModule =
              define Entity.AngularFactor v3Zero
              define Entity.GravityOverride (Some (Constants.Physics.Gravity2dDefault * 3.0f))
              define Entity.BodyType Dynamic
+             define Entity.SleepingAllowed false
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.Character2dIdleImage Assets.Default.Character2dIdleImage
              define Entity.Character2dJumpImage Assets.Default.Character2dJumpImage
@@ -704,6 +705,7 @@ module Character3dDispatcherModule =
             [define Entity.MaterialProperties MaterialProperties.empty
              define Entity.AnimatedModel Assets.Default.AnimatedModel
              define Entity.BodyType Dynamic
+             define Entity.SleepingAllowed false
              define Entity.Friction 1.0f
              define Entity.LinearDamping 0.5f
              define Entity.AngularDamping 0.999f
