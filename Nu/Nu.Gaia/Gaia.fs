@@ -1842,11 +1842,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         if ImGui.SliderFloat ("CellHeight", &cellHeight, 0.01f, 1.0f, "%.2f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("AgentHeight", &agentHeight, 0.1f, 5.0f, "%.1f") then changed <- true
+        if ImGui.SliderFloat ("AgentHeight", &agentHeight, 0.1f, 5.0f, "%.2f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("AgentRadius", &agentRadius, 0.0f, 5.0f, "%.1f") then changed <- true
+        if ImGui.SliderFloat ("AgentRadius", &agentRadius, 0.0f, 5.0f, "%.2f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("AgentMaxClimb", &agentMaxClimb, 0.1f, 5.0f, "%.1f") then changed <- true
+        if ImGui.SliderFloat ("AgentMaxClimb", &agentMaxClimb, 0.1f, 5.0f, "%.2f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         if ImGui.SliderFloat ("AgentMaxSlope", &agentMaxSlope, 1.0f, 90.0f, "%.0f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
