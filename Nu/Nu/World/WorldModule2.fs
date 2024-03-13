@@ -430,7 +430,7 @@ module WorldModule2 =
 
         static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world =
 
-            // propagate descriptor dispatcher at this level
+            // propagate dispatcher at this level
             let propagatedDescriptor =
                 if previousDescriptor.EntityDispatcherName <> String.empty then
                     if targetDescriptor.EntityDispatcherName = previousDescriptor.EntityDispatcherName
@@ -438,9 +438,12 @@ module WorldModule2 =
                     else targetDescriptor
                 else { targetDescriptor with EntityDispatcherName = currentDescriptor.EntityDispatcherName }
 
-            // propagate descriptor properties at this level
+            // propagate properties at this level
+            let propertyNames =
+                Set.ofSeq currentDescriptor.EntityProperties.Keys |>
+                Set.addMany propagatedDescriptor.EntityProperties.Keys
             let propagatedDescriptor =
-                Seq.fold (fun propagatedDescriptor (propertyName, currentDescriptorSymbol) ->
+                Seq.fold (fun targetDescriptor propertyName ->
                     if  propertyName <> nameof Entity.Name &&
                         propertyName <> nameof Entity.Position &&
                         propertyName <> nameof Entity.Rotation &&
@@ -448,49 +451,73 @@ module WorldModule2 =
                         propertyName <> nameof Entity.Visible &&
                         propertyName <> nameof Entity.PropagationSourceOpt &&
                         propertyName <> nameof Entity.PropagatedDescriptorOpt then
-                        match previousDescriptor.EntityProperties.TryGetValue propertyName with
-                        | (true, previousPropertySymbol) ->
-                            match propagatedDescriptor.EntityProperties.TryGetValue propertyName with
-                            | (true, targetPropertySymbol) ->
-                                if targetPropertySymbol = previousPropertySymbol
-                                then { propagatedDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol propagatedDescriptor.EntityProperties }
-                                else propagatedDescriptor
-                            | (false, _) -> { propagatedDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol propagatedDescriptor.EntityProperties }
-                        | (false, _) ->
-                            match propagatedDescriptor.EntityProperties.TryGetValue propertyName with
-                            | (true, targetPropertySymbol) ->
-                                match propagatedDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
-                                | (true, overlayNameOptSymbol) ->
-                                    try let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
-                                        let overlayName =
+                        let currentPropertySymbolOpt =
+                            match currentDescriptor.EntityProperties.TryGetValue propertyName with
+                            | (true, currentPropertySymbol) -> Some currentPropertySymbol
+                            | (false, _) ->
+                                let overlayName =
+                                    match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
+                                    | (true, overlayNameOptSymbol) ->
+                                        try let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
                                             match overlayNameOpt with
                                             | Some overlayName -> overlayName
-                                            | None -> Overlay.dispatcherNameToOverlayName propagatedDescriptor.EntityDispatcherName
-                                        let facetNames =
-                                            match propagatedDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
-                                            | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
-                                            | (false, _) -> Set.empty
-                                        let overlayer = World.getOverlayer world
-                                        let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
-                                        match overlaySymbols.TryGetValue propertyName with
-                                        | (true, overlayPropertySymbol) ->
-                                            if targetPropertySymbol = overlayPropertySymbol // property unchanged from default value
-                                            then { propagatedDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol propagatedDescriptor.EntityProperties }
-                                            else propagatedDescriptor
-                                        | (false, _) ->
-                                            { propagatedDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol propagatedDescriptor.EntityProperties }
-                                    with _ -> propagatedDescriptor
-                                | (false, _) -> propagatedDescriptor
-                            | (false, _) -> { propagatedDescriptor with EntityProperties = Map.add propertyName currentDescriptorSymbol propagatedDescriptor.EntityProperties }
-                    else propagatedDescriptor)
+                                            | None -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
+                                        with _ -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
+                                    | (false, _) -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
+                                let facetNames =
+                                    match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
+                                    | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
+                                    | (false, _) -> Set.empty
+                                let overlayer = World.getOverlayer world
+                                let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
+                                match overlaySymbols.TryGetValue propertyName with
+                                | (true, overlayPropertySymbol) -> Some overlayPropertySymbol
+                                | (false, _) -> None
+                        match currentPropertySymbolOpt with
+                        | Some currentPropertySymbol ->
+                            match previousDescriptor.EntityProperties.TryGetValue propertyName with
+                            | (true, previousPropertySymbol) ->
+                                match targetDescriptor.EntityProperties.TryGetValue propertyName with
+                                | (true, targetPropertySymbol) ->
+                                    if targetPropertySymbol = previousPropertySymbol
+                                    then { targetDescriptor with EntityProperties = Map.add propertyName currentPropertySymbol targetDescriptor.EntityProperties }
+                                    else targetDescriptor
+                                | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentPropertySymbol targetDescriptor.EntityProperties }
+                            | (false, _) ->
+                                match targetDescriptor.EntityProperties.TryGetValue propertyName with
+                                | (true, targetPropertySymbol) ->
+                                    let overlayName =
+                                        match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.OverlayNameOptPropertyName with
+                                        | (true, overlayNameOptSymbol) ->
+                                            try let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
+                                                match overlayNameOpt with
+                                                | Some overlayName -> overlayName
+                                                | None -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
+                                            with _ -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
+                                        | (false, _) -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
+                                    let facetNames =
+                                        match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
+                                        | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
+                                        | (false, _) -> Set.empty
+                                    let overlayer = World.getOverlayer world
+                                    let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
+                                    match overlaySymbols.TryGetValue propertyName with
+                                    | (true, overlayPropertySymbol) ->
+                                        if targetPropertySymbol = overlayPropertySymbol // property unchanged from default value
+                                        then { targetDescriptor with EntityProperties = Map.add propertyName currentPropertySymbol targetDescriptor.EntityProperties }
+                                        else targetDescriptor
+                                    | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentPropertySymbol targetDescriptor.EntityProperties }
+                                | (false, _) -> { targetDescriptor with EntityProperties = Map.add propertyName currentPropertySymbol targetDescriptor.EntityProperties }
+                        | None -> targetDescriptor
+                    else targetDescriptor)
                     propagatedDescriptor
-                    currentDescriptor.EntityProperties.Pairs
+                    propertyNames
 
             // attempt to propagate entity descriptors
             let propagatedDescriptorOpts =
                 let previousDescriptorMap = World.mapEntityDescriptors previousDescriptor.EntityDescriptors
                 let currentDescriptorMap = World.mapEntityDescriptors currentDescriptor.EntityDescriptors
-                let targetDescriptorMap = World.mapEntityDescriptors propagatedDescriptor.EntityDescriptors
+                let targetDescriptorMap = World.mapEntityDescriptors targetDescriptor.EntityDescriptors
                 let keys = Set.ofSeq (previousDescriptorMap.Keys |> Seq.append currentDescriptorMap.Keys |> Seq.append targetDescriptorMap.Keys)
                 let entityDescriptorsList = [for key in keys do (previousDescriptorMap.TryFind key, currentDescriptorMap.TryFind key, targetDescriptorMap.TryFind key)]
                 List.map (fun (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) ->
