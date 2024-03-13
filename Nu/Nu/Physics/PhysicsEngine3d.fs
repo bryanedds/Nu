@@ -124,6 +124,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachBodyBox bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let box = new BoxShape (bodyBox.Size * 0.5f)
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
+        box.LocalScaling <- bodyProperties.Scale
         box.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -144,6 +145,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let sphere = new SphereShape (bodySphere.Radius)
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
+        sphere.LocalScaling <- bodyProperties.Scale
         sphere.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -164,6 +166,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let capsule = new CapsuleShape (bodyCapsule.Radius, bodyCapsule.Height)
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
+        capsule.LocalScaling <- bodyProperties.Scale
         capsule.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -198,6 +201,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             hull.OptimizeConvexHull ()
             let unscaledPoints = Array.ofSeq hull.UnscaledPoints
             physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
+        hull.LocalScaling <- bodyProperties.Scale
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyConvexHull.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -226,6 +230,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let shape = new BvhTriangleMeshShape (vertexArray, true)
         shape.BuildOptimizedBvh ()
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyGeometry.PropertiesOpt shape
+        shape.LocalScaling <- bodyProperties.Scale
         shape.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               ShapeIndex = match bodyGeometry.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
@@ -347,7 +352,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         if not bodyProperties.Sensor then
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
-            body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
+            body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
             body.UserObject <- { BodyId = bodyId; Dispose = disposer }
             body.UserIndex <- userIndex
             PhysicsEngine3d.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
@@ -360,6 +365,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let ghost = new GhostObject ()
             ghost.CollisionShape <- shape
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+            ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
             ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
             ghost.UserIndex <- userIndex
             PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost

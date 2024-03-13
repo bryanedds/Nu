@@ -345,6 +345,7 @@ type BodyProperties =
     { BodyIndex : int
       Center : Vector3
       Rotation : Quaternion
+      Scale : Vector3
       BodyType : BodyType
       BodyShape : BodyShape
       SleepingAllowed : bool

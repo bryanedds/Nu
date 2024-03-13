@@ -298,6 +298,7 @@ module TmxMap =
             { BodyIndex = bodyIndex
               Center = v3Zero
               Rotation = quatIdentity
+              Scale = v3One
               BodyShape = BodyShapes (getBodyShapes tileMapDescriptor)
               BodyType = BodyType.Static
               SleepingAllowed = true
