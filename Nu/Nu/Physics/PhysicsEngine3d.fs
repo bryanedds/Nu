@@ -660,7 +660,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 normal <- normal / single numContacts
                 if  body0.UserIndex = 1 ||
                     body1.UserIndex = 1 then
-                    physicsEngine.CollisionsFiltered.Add (collisionKey, normal)
+                    physicsEngine.CollisionsFiltered.[collisionKey] <- normal // NOTE: incoming collision keys are not necessarily unique.
 
                 // create ground collision entry for body0 if needed
                 normal <- -normal
