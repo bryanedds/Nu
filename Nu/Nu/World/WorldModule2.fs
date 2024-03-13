@@ -538,7 +538,7 @@ module WorldModule2 =
                     | (None, None, None) -> None)
                     entityDescriptorsList
 
-            // compose fully propagated descriptor in the order they are found in the 
+            // compose fully propagated descriptor in the order they are found in the current descriptor
             let currentDescriptorsOrder =
                 currentDescriptor.EntityDescriptors |>
                 Seq.mapi (fun i currentDescriptor ->
