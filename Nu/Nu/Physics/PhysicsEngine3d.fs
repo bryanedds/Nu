@@ -52,7 +52,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           Constraints : Dictionary<JointId, TypedConstraint>
           NonStaticBodies : Dictionary<BodyId, Vector3 option * RigidBody>
           Bodies : Dictionary<BodyId, RigidBody>
-          Ghosts : Dictionary<BodyId, GhostObject>
+          Ghosts : Dictionary<BodyId, Vector3 option * GhostObject>
           Objects : Dictionary<BodyId, CollisionObject>
           Actions : Dictionary<BodyId, IAction>
           CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
@@ -359,8 +359,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let centerMassInertiaDisposes = attachBodyShape bodyProperties compoundShape []
             (compoundShape, centerMassInertiaDisposes)
         let shape =
-            if  compoundShape.ChildList.Count = 1 (*&& TODO: P0: figure out how to do offsetting with KinChar.
-                compoundShape.ChildList.[0].Transform = m4Identity*) then // strip compound shape if it's unutilized
+            if  compoundShape.ChildList.Count = 1 &&
+                (compoundShape.ChildList.[0].Transform = m4Identity ||
+                 bodyProperties.BodyType = KinematicCharacter) then // attempt to strip compound shape
                 let shape = compoundShape.ChildList.[0].ChildShape
                 compoundShape.RemoveChildShape shape
                 compoundShape.Dispose ()
@@ -379,32 +380,37 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             ghost.UserIndex <- userIndex
             PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
+            if physicsEngine.Ghosts.TryAdd (bodyId, (None, ghost))
             then physicsEngine.Objects.Add (bodyId, ghost)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
         elif bodyProperties.BodyType = KinematicCharacter then
             match shape with
             | :? ConvexShape as convexShape ->
+                let shapeTransform =
+                    match BodyShape.getTransformOpt bodyProperties.BodyShape with
+                    | Some transform -> transform
+                    | None -> Affine.Identity
+                if shapeTransform.Rotation = quatIdentity && shapeTransform.Scale = v3One then
+                    let ghostPairCallback = new GhostPairCallback ()
+                    physicsEngine.PhysicsContext.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
+                    let ghost = new PairCachingGhostObject ()
+                    ghost.CollisionShape <- convexShape
+                    ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+                    ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
+                    ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
+                    ghost.UserIndex <- userIndex
+                    PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
+                    physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
+                    let offsetOpt = if shapeTransform.Translation <> v3Zero then Some shapeTransform.Translation else None
+                    if physicsEngine.Ghosts.TryAdd (bodyId, (offsetOpt, ghost :> GhostObject))
+                    then physicsEngine.Objects.Add (bodyId, ghost)
+                    else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+                    let mutable up = v3Up
+                    let characterController = new KinematicCharacterController (ghost, convexShape, bodyProperties.StepHeight, &up)
+                    physicsEngine.PhysicsContext.AddAction characterController
+                    // TODO: P0: implement removal from Actions.
 
-                let ghostPairCallback = new GhostPairCallback ()
-                physicsEngine.PhysicsContext.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
-                let ghost = new PairCachingGhostObject ()
-                ghost.CollisionShape <- convexShape
-                ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
-                ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
-                ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
-                ghost.UserIndex <- userIndex
-                PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
-                physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-                if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
-                then physicsEngine.Objects.Add (bodyId, ghost)
-                else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
-
-                let mutable up = v3Up
-                let characterController = new KinematicCharacterController (ghost, convexShape, bodyProperties.StepHeight, &up)
-                physicsEngine.PhysicsContext.AddAction characterController
-                // TODO: P0: implement removal from Actions.
-
+                else failwith "Locally rotated / scaled body shapes not supported for BodyType.Character."
             | _ -> failwith "Non-convex body shapes not supported for BodyType.Character."
         else
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
@@ -511,8 +517,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyCenterMessage.BodyId with
         | (true, object) ->
+            let offsetOpt =
+                match physicsEngine.Ghosts.TryGetValue setBodyCenterMessage.BodyId with
+                | (true, (offsetOpt, _)) -> offsetOpt
+                | (false, _) -> None
             let mutable transform = object.WorldTransform
-            transform.Translation <- setBodyCenterMessage.Center
+            transform.Translation <- setBodyCenterMessage.Center + Option.defaultValue v3Zero offsetOpt
             object.WorldTransform <- transform
             object.Activate true // force activation so that a transform message will be produced
         | (false, _) -> ()
@@ -579,7 +589,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (true, body) -> body.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
         | (false, _) ->
             match physicsEngine.Ghosts.TryGetValue setBodyObservableMessage.BodyId with
-            | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
+            | (true, (_, ghost)) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
             | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
@@ -623,12 +633,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.Constraints.Clear ()
 
             // destroy bullet objects
-            for objects in physicsEngine.Objects.Values do
-                bodyUserObjects.Add (objects.UserObject :?> BodyUserObject)
+            for object in physicsEngine.Objects.Values do
+                bodyUserObjects.Add (object.UserObject :?> BodyUserObject)
             physicsEngine.Objects.Clear ()
 
             // destroy ghosts
-            for ghost in physicsEngine.Ghosts.Values do
+            for (_, ghost) in physicsEngine.Ghosts.Values do
                 bodyUserObjects.Add (ghost.UserObject :?> BodyUserObject)
                 physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Ghosts.Clear ()
@@ -747,13 +757,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         // create ghost transform messages
         for ghostEntry in physicsEngine.Ghosts do
-            let ghostObject = ghostEntry.Value
-            if ghostObject.IsActive then
+            let (offsetOpt, ghost) = ghostEntry.Value
+            if ghost.IsActive then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodyId = (ghostObject.UserObject :?> BodyUserObject).BodyId
-                          Center = ghostObject.WorldTransform.Translation
-                          Rotation = ghostObject.WorldTransform.Rotation
+                        { BodyId = (ghost.UserObject :?> BodyUserObject).BodyId
+                          Center = ghost.WorldTransform.Translation - Option.defaultValue v3Zero offsetOpt
+                          Rotation = ghost.WorldTransform.Rotation
                           LinearVelocity = v3Zero
                           AngularVelocity = v3Zero }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage

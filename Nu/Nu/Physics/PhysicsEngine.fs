@@ -333,6 +333,36 @@ type BodyShape =
     | BodyTerrain of BodyTerrain
     | BodyShapes of BodyShape list
 
+    /// Get the shape's transform if it exists.
+    static member getTransformOpt shape =
+        match shape with
+        | BodyEmpty -> None
+        | BodyBox box -> box.TransformOpt
+        | BodySphere sphere -> sphere.TransformOpt
+        | BodyCapsule capsule -> capsule.TransformOpt
+        | BodyBoxRounded boxRounded -> boxRounded.TransformOpt
+        | BodyPoints points -> points.TransformOpt
+        | BodyGeometry geometry -> geometry.TransformOpt
+        | BodyStaticModel staticModel -> staticModel.TransformOpt
+        | BodyStaticModelSurface staticModelSurface -> staticModelSurface.TransformOpt
+        | BodyTerrain terrain -> terrain.TransformOpt
+        | BodyShapes _ -> None
+
+    /// Get the shape's properties if they exist.
+    static member getPropertiesOpt shape =
+        match shape with
+        | BodyEmpty -> None
+        | BodyBox box -> box.PropertiesOpt
+        | BodySphere sphere -> sphere.PropertiesOpt
+        | BodyCapsule capsule -> capsule.PropertiesOpt
+        | BodyBoxRounded boxRounded -> boxRounded.PropertiesOpt
+        | BodyPoints points -> points.PropertiesOpt
+        | BodyGeometry geometry -> geometry.PropertiesOpt
+        | BodyStaticModel staticModel -> staticModel.PropertiesOpt
+        | BodyStaticModelSurface staticModelSurface -> staticModelSurface.PropertiesOpt
+        | BodyTerrain terrain -> terrain.PropertiesOpt
+        | BodyShapes _ -> None
+
 /// The type of a physics body.
 [<Syntax
     ("", "", "", "", "",
