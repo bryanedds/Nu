@@ -64,9 +64,9 @@
       [OpaqueDistanceOpt [Some 100000]]]]
     [Model
      ["TerraFirma.CharacterDispatcher+CharacterModel, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [0 0 0 [Default AnimatedModel]]]]
+      [894 0 894 [Default AnimatedModel]]]]
     [Name Player]
-    [Position [-56.428474 -29.215528 -152.45032]]
+    [Position [-57.302776 -30.020557 -151.56035]]
     [Presence Omnipresent]
     [Rotation [0 0.8844361 0 0.46666142]]
     [Size [2.6602979 3.5022092 1.984515]]

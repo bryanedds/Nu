@@ -396,7 +396,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     let ghost = new PairCachingGhostObject ()
                     ghost.CollisionShape <- convexShape
                     ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
-                    ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
+                    ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
                     ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
                     ghost.UserIndex <- userIndex
                     PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
