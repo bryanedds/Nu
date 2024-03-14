@@ -572,7 +572,7 @@ module WorldModuleEntity =
             if  World.tryGetEntityProperty (Constants.Engine.BodyTypePropertyName, entity, world, &property) &&
                 property.PropertyType = typeof<BodyType> then
                 match property.PropertyValue :?> BodyType with
-                | Static | Kinematic -> true
+                | Static | Kinematic | KinematicCharacter -> true
                 | Dynamic -> false
             else true
 

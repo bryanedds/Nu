@@ -311,6 +311,7 @@ module TmxMap =
               AngularDamping = 0.0f
               AngularFactor = v3One
               Substance = Mass 1.0f // TODO: P1: check if this should be zero.
+              StepHeight = 0.0f
               GravityOverride = Some v3Zero
               CollisionDetection = Discontinuous
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories

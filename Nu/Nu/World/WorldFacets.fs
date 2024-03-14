@@ -1358,6 +1358,9 @@ module RigidBodyFacetModule =
         member this.GetSubstance world : Substance = this.Get (nameof this.Substance) world
         member this.SetSubstance (value : Substance) world = this.Set (nameof this.Substance) value world
         member this.Substance = lens (nameof this.Substance) this this.GetSubstance this.SetSubstance
+        member this.GetStepHeight world : single = this.Get (nameof this.StepHeight) world
+        member this.SetStepHeight (value : single) world = this.Set (nameof this.StepHeight) value world
+        member this.StepHeight = lens (nameof this.StepHeight) this this.GetStepHeight this.SetStepHeight
         member this.GetGravityOverride world : Vector3 option = this.Get (nameof this.GravityOverride) world
         member this.SetGravityOverride (value : Vector3 option) world = this.Set (nameof this.GravityOverride) value world
         member this.GravityOverride = lens (nameof this.GravityOverride) this this.GetGravityOverride this.SetGravityOverride
@@ -1409,6 +1412,7 @@ module RigidBodyFacetModule =
              define Entity.AngularDamping 0.2f
              define Entity.AngularFactor v3One
              define Entity.Substance (Mass 1.0f)
+             define Entity.StepHeight 0.25f
              define Entity.GravityOverride None
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
@@ -1421,7 +1425,7 @@ module RigidBodyFacetModule =
         override this.Register (entity, world) =
 
             // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
-            let subIds = Array.init 24 (fun _ -> makeGuid ())
+            let subIds = Array.init 25 (fun _ -> makeGuid ())
             let world = World.subscribePlus subIds.[0] (fun _ world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
             let world = World.subscribePlus subIds.[1] (fun _ world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
             let world = World.subscribePlus subIds.[2] (fun _ world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
@@ -1439,12 +1443,13 @@ module RigidBodyFacetModule =
             let world = World.subscribePlus subIds.[14] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
             let world = World.subscribePlus subIds.[15] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
             let world = World.subscribePlus subIds.[16] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
-            let world = World.subscribePlus subIds.[17] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
-            let world = World.subscribePlus subIds.[18] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
-            let world = World.subscribePlus subIds.[19] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
-            let world = World.subscribePlus subIds.[20] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
-            let world = World.subscribePlus subIds.[21] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
-            let world = World.subscribePlus subIds.[23] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
+            let world = World.subscribePlus subIds.[17] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.StepHeight)) entity world |> snd
+            let world = World.subscribePlus subIds.[18] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
+            let world = World.subscribePlus subIds.[19] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
+            let world = World.subscribePlus subIds.[10] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
+            let world = World.subscribePlus subIds.[21] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
+            let world = World.subscribePlus subIds.[23] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
+            let world = World.subscribePlus subIds.[24] (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
             let unsubscribe = fun world ->
                 Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
             let callback = fun evt world ->
@@ -1477,6 +1482,7 @@ module RigidBodyFacetModule =
                   AngularDamping = entity.GetAngularDamping world
                   AngularFactor = entity.GetAngularFactor world
                   Substance = entity.GetSubstance world
+                  StepHeight = entity.GetStepHeight world
                   GravityOverride = entity.GetGravityOverride world
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
@@ -2846,6 +2852,7 @@ module TerrainFacetModule =
                       AngularDamping = 0.0f
                       AngularFactor = v3Zero
                       Substance = Mass 0.0f
+                      StepHeight = 0.0f
                       GravityOverride = None
                       CollisionDetection = Discontinuous
                       CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)

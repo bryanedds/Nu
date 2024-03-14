@@ -194,6 +194,8 @@ module Physics =
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
     let [<Literal>] CollisionWildcard = "*"
     let [<Literal>] Collision3dMargin = 0.0078125f // 1.0f >>> 7
+    let [<Uniform>] AxisSweepBoundsSize3d = 16384.0f
+    let [<Literal>] AllowedCcdPenetration3d = 0.01f // NOTE: along with AxisSweep3 broadphase, seems to keep characters from falling through terrain.
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d

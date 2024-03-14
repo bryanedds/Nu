@@ -47,6 +47,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match bodyType with
         | Static -> Dynamics.BodyType.Static
         | Kinematic -> Dynamics.BodyType.Kinematic
+        | KinematicCharacter -> Log.debugOnce "BodyType.KinematicCharacter not supported by PhysicsEngine2d. Using Kinematic instead."; Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
 
     static member private handleCollision

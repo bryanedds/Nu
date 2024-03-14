@@ -333,7 +333,7 @@ type BodyShape =
     | BodyTerrain of BodyTerrain
     | BodyShapes of BodyShape list
 
-/// The type of a physics body; Static, Kinematic, or Dynamic.
+/// The type of a physics body.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
@@ -341,6 +341,7 @@ type BodyShape =
 type BodyType =
     | Static
     | Kinematic
+    | KinematicCharacter
     | Dynamic
 
 /// The properties needed to describe the physical part of a body.
@@ -361,6 +362,7 @@ type BodyProperties =
       AngularDamping : single
       AngularFactor : Vector3
       Substance : Substance
+      StepHeight : single // NOTE: percentage of stepper's height rather than absolute height.
       GravityOverride : Vector3 option
       CollisionDetection : CollisionDetection
       CollisionCategories : int

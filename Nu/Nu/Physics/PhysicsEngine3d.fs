@@ -54,6 +54,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           Bodies : Dictionary<BodyId, RigidBody>
           Ghosts : Dictionary<BodyId, GhostObject>
           Objects : Dictionary<BodyId, CollisionObject>
+          Actions : Dictionary<BodyId, IAction>
           CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
           CollisionsGround : Dictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
@@ -101,12 +102,19 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | Static ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
-        | Dynamic ->
-            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
-            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
         | Kinematic ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
+        | KinematicCharacter ->
+            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.CharacterObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+        | Dynamic ->
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         PhysicsEngine3d.configureCollisionObjectProperties bodyProperties body
@@ -346,27 +354,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertiaDisposes physicsEngine
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
-        let (shape, centerMassInertiaDisposes) =
+        let (compoundShape, centerMassInertiaDisposes) =
             let compoundShape = new CompoundShape ()
             let centerMassInertiaDisposes = attachBodyShape bodyProperties compoundShape []
             (compoundShape, centerMassInertiaDisposes)
+        let shape =
+            if  compoundShape.ChildList.Count = 1 (*&& TODO: P0: figure out how to do offsetting with KinChar.
+                compoundShape.ChildList.[0].Transform = m4Identity*) then // strip compound shape if it's unutilized
+                let shape = compoundShape.ChildList.[0].ChildShape
+                compoundShape.RemoveChildShape shape
+                compoundShape.Dispose ()
+                shape
+            else compoundShape
         let (_, mass, inertia, disposer) =
             // TODO: make this more accurate by making each c weighted proportionately to its respective m.
             List.fold (fun (c, m, i, d) (c', m', i', d') -> (c + c', m + m', i + i', fun () -> d (); d' ())) (v3Zero, 0.0f, v3Zero, id) centerMassInertiaDisposes
         let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalIndex then -1 else 1
-        if not bodyProperties.Sensor then
-            let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
-            let body = new RigidBody (constructionInfo)
-            body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
-            body.UserObject <- { BodyId = bodyId; Dispose = disposer }
-            body.UserIndex <- userIndex
-            PhysicsEngine3d.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
-            physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if physicsEngine.Bodies.TryAdd (bodyId, body) then
-                if not body.IsStaticObject then physicsEngine.NonStaticBodies.Add (bodyId, (bodyProperties.GravityOverride, body))
-                physicsEngine.Objects.Add (bodyId, body)
-            else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
-        else
+        if bodyProperties.Sensor then
             let ghost = new GhostObject ()
             ghost.CollisionShape <- shape
             ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
@@ -377,6 +381,42 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
             then physicsEngine.Objects.Add (bodyId, ghost)
+            else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+        elif bodyProperties.BodyType = KinematicCharacter then
+            match shape with
+            | :? ConvexShape as convexShape ->
+
+                let ghostPairCallback = new GhostPairCallback ()
+                physicsEngine.PhysicsContext.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
+                let ghost = new PairCachingGhostObject ()
+                ghost.CollisionShape <- convexShape
+                ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+                ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
+                ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
+                ghost.UserIndex <- userIndex
+                PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
+                physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
+                if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
+                then physicsEngine.Objects.Add (bodyId, ghost)
+                else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+
+                let mutable up = v3Up
+                let characterController = new KinematicCharacterController (ghost, convexShape, bodyProperties.StepHeight, &up)
+                physicsEngine.PhysicsContext.AddAction characterController
+                // TODO: P0: implement removal from Actions.
+
+            | _ -> failwith "Non-convex body shapes not supported for BodyType.Character."
+        else
+            let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
+            let body = new RigidBody (constructionInfo)
+            body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
+            body.UserObject <- { BodyId = bodyId; Dispose = disposer }
+            body.UserIndex <- userIndex
+            PhysicsEngine3d.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
+            physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
+            if physicsEngine.Bodies.TryAdd (bodyId, body) then
+                if not body.IsStaticObject then physicsEngine.NonStaticBodies.Add (bodyId, (bodyProperties.GravityOverride, body))
+                physicsEngine.Objects.Add (bodyId, body)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
@@ -692,7 +732,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 PhysicsEngine3d.handleSeparation physicsEngine bodySourceA bodySourceB
                 PhysicsEngine3d.handleSeparation physicsEngine bodySourceB bodySourceA
 
-        // create transform messages
+        // create non-static transform messages
         for bodyEntry in physicsEngine.NonStaticBodies do
             let (_, body) = bodyEntry.Value
             if body.IsActive then
@@ -705,6 +745,19 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
+        // create ghost transform messages
+        for ghostEntry in physicsEngine.Ghosts do
+            let ghostObject = ghostEntry.Value
+            if ghostObject.IsActive then
+                let bodyTransformMessage =
+                    BodyTransformMessage
+                        { BodyId = (ghostObject.UserObject :?> BodyUserObject).BodyId
+                          Center = ghostObject.WorldTransform.Translation
+                          Rotation = ghostObject.WorldTransform.Rotation
+                          LinearVelocity = v3Zero
+                          AngularVelocity = v3Zero }
+                physicsEngine.IntegrationMessages.Add bodyTransformMessage
+
     static member make gravity tryGetAssetFilePath tryGetStaticModelMetadata =
         let taskScheduler = Threads.GetSequentialTaskScheduler () // NOTE: we're just using the non-threaded schedular since none of the others are available (perhaps because I didn't enable them when I previously built bullet).
         taskScheduler.NumThreads <- taskScheduler.MaxNumThreads
@@ -712,10 +765,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         use collisionConfigurationInfo = new DefaultCollisionConstructionInfo (DefaultMaxPersistentManifoldPoolSize = 80000, DefaultMaxCollisionAlgorithmPoolSize = 80000)
         let collisionConfiguration = new DefaultCollisionConfiguration (collisionConfigurationInfo)
         let collisionDispatcher = new CollisionDispatcherMultiThreaded (collisionConfiguration)
-        let broadPhaseInterface = new DbvtBroadphase ()
+        let broadPhaseInterface = new AxisSweep3 (v3Dup (Constants.Physics.AxisSweepBoundsSize3d * -0.5f), v3Dup Constants.Physics.AxisSweepBoundsSize3d) // NOTE: along with Constants.Physics.AllowedCcdPenetration3d, seems to keep characters from falling through terrain.
         let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
         let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()
         let world = new DiscreteDynamicsWorldMultiThreaded (collisionDispatcher, broadPhaseInterface, constraintSolverPool, constraintSolver, collisionConfiguration)
+        world.DispatchInfo.AllowedCcdPenetration <- Constants.Physics.AllowedCcdPenetration3d
         world.Gravity <- gravity
         let physicsEngine =
             { PhysicsContext = world
@@ -724,6 +778,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               Bodies = Dictionary HashIdentity.Structural
               Ghosts = Dictionary HashIdentity.Structural
               Objects = Dictionary HashIdentity.Structural
+              Actions = Dictionary HashIdentity.Structural
               CollisionsFiltered = dictPlus HashIdentity.Structural []
               CollisionsGround = dictPlus HashIdentity.Structural []
               CollisionConfiguration = collisionConfiguration

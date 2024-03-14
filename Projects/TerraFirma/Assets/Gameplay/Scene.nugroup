@@ -4,8 +4,7 @@
   [Persistent True]
   [Visible True]]
  [[Light3dDispatcher
-   [[Brightness 3]
-    [LightCutoff 16]
+   [[LightCutoff 16]
     [LightType DirectionalLight]
     [Name Sun]
     [Position [0 12 2]]
@@ -35,13 +34,12 @@
       [RoughnessOpt [Some 1]]
       [AmbientOcclusionOpt [Some 1]]
       [HeightOpt [Some 8]]
-      [InvertRoughnessOpt [Some False]]]]
+      [IgnoreLightMapsOpt None]]]
     [Tiles [512 512]]]
    []]
   [CharacterDispatcher
    [[AngularDamping 0.999]
     [AngularFactor [0 0.1 0]]
-    [AngularVelocity [0 2.9269503E-07 0]]
     [Animations
      [[0 None Armature|Idle Loop 1 0.5 None]]]
     [BodyShape
@@ -51,17 +49,28 @@
        [Some
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
+    [BodyType KinematicCharacter]
     [Friction 1]
     [LinearDamping 0.5]
-    [LinearVelocity [1.5599699E-06 2.2768974E-05 6.044901E-07]]
+    [MaterialProperties
+     [[AlbedoOpt
+       [Some [1 1 1 1]]]
+      [RoughnessOpt [Some 1]]
+      [MetallicOpt [Some 1]]
+      [AmbientOcclusionOpt [Some 1]]
+      [EmissionOpt [Some 1]]
+      [HeightOpt [Some 1]]
+      [IgnoreLightMapsOpt [Some False]]
+      [OpaqueDistanceOpt [Some 100000]]]]
     [Model
      ["TerraFirma.CharacterDispatcher+CharacterModel, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [0 0 0 [Default AnimatedModel]]]]
     [Name Player]
-    [Position [-57.471226 -30.00091 -151.49503]]
+    [Position [-56.428474 -29.215528 -152.45032]]
     [Presence Omnipresent]
     [Rotation [0 0.8844361 0 0.46666142]]
-    [Size [2.6602979 3.5022092 1.984515]]]
+    [Size [2.6602979 3.5022092 1.984515]]
+    [SleepingAllowed False]]
    []]
   [Block3dDispatcher
    [[Name Block3d-0001]

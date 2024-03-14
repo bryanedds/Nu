@@ -33,7 +33,7 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit Entity3dDispatcher<CharacterModel, CharacterMessage, CharacterCommand> (true, CharacterModel.initial)
 
-        static let [<Literal>] WalkForce = 10.0f
+        static let [<Literal>] WalkForce = 0.1f
         static let [<Literal>] TurnForce = 8.0f
         static let [<Literal>] JumpForce = 7.0f
 
@@ -44,11 +44,8 @@ module CharacterDispatcher =
         override this.Initialize (character, _) =
             [Entity.MaterialProperties == MaterialProperties.defaultProperties
              Entity.AnimatedModel := character.AnimatedModel
-             Entity.Friction == 1.0f
-             Entity.LinearDamping == 0.5f
-             Entity.AngularDamping == 0.999f
-             Entity.AngularFactor == v3 0.0f 0.1f 0.0f
-             Entity.BodyType == Dynamic
+             Entity.BodyType == KinematicCharacter
+             Entity.SleepingAllowed == false
              Entity.BodyShape == BodyCapsule { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
              Entity.UpdateEvent => UpdateMessage
              Entity.UpdateEvent => UpdateCommand
@@ -84,6 +81,7 @@ module CharacterDispatcher =
                 // apply physics-based animations
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
+                let position = entity.GetPosition world
                 let rotation = entity.GetRotation world
                 let linearVelocity = World.getBodyLinearVelocity bodyId world
                 let angularVelocity = World.getBodyAngularVelocity bodyId world
@@ -111,7 +109,6 @@ module CharacterDispatcher =
                 // apply walk force
                 let forward = rotation.Forward
                 let right = rotation.Right
-                let contactNormalOpt = World.getBodyToGroundContactNormalOpt bodyId world
                 let walkForceScalar = if grounded then WalkForce else WalkForce * 0.5f
                 let walkForce = 
                     (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkForceScalar else v3Zero) +
@@ -119,22 +116,8 @@ module CharacterDispatcher =
                     (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkForceScalar else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkForceScalar else v3Zero)
                 let world =
-                    if walkForce <> v3Zero then
-                        match contactNormalOpt with
-                        | Some contactNormal ->
-                            let walkForward = walkForce.Normalized
-                            let groundPlane = Plane3 (contactNormal, -1.0f)
-                            let slope = Vector3.Project (walkForward, groundPlane) - v3Up
-                            let angle = Vector3.Dot (slope, v3Up)
-                            let walkForceOriented =
-                                if abs angle > 0.001f then // guard against generating NaNs
-                                    let angleBetween = walkForward.AngleBetween slope
-                                    let rotationMatrix = Matrix4x4.CreateFromAxisAngle (Vector3.Cross (walkForward, v3Up), angleBetween)
-                                    let walkForceOriented = Vector3.Transform (walkForce, rotationMatrix)
-                                    walkForceOriented
-                                else walkForce
-                            World.applyBodyForce walkForceOriented v3Zero bodyId world
-                        | None -> World.applyBodyForce walkForce v3Zero bodyId world
+                    if walkForce <> v3Zero
+                    then World.setBodyCenter (position + walkForce) bodyId world
                     else world
 
                 // apply turn force
