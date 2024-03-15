@@ -34,7 +34,7 @@ module CharacterDispatcher =
         inherit Entity3dDispatcher<CharacterModel, CharacterMessage, CharacterCommand> (true, CharacterModel.initial)
 
         static let [<Literal>] WalkVelocity = 0.1f
-        static let [<Literal>] TurnForce = 8.0f
+        static let [<Literal>] TurnVelocity = 0.035f
         static let [<Literal>] JumpForce = 7.0f
 
         static member Facets =
@@ -83,13 +83,13 @@ module CharacterDispatcher =
                 let grounded = World.getBodyGrounded bodyId world
                 let position = entity.GetPosition world
                 let rotation = entity.GetRotation world
-                let linearVelocity = World.getBodyLinearVelocity bodyId world
-                let angularVelocity = World.getBodyAngularVelocity bodyId world
-                let forwardness = (Vector3.Dot (linearVelocity, rotation.Forward))
-                let backness = (Vector3.Dot (linearVelocity, -rotation.Forward))
-                let rightness = (Vector3.Dot (linearVelocity, rotation.Right))
-                let leftness = (Vector3.Dot (linearVelocity, -rotation.Right))
-                let turnRightness = (angularVelocity * v3Up).Length ()
+                let linearVelocity = entity.GetLinearVelocity world
+                let angularVelocity = entity.GetAngularVelocity world
+                let forwardness = (Vector3.Dot (linearVelocity * 32.0f, rotation.Forward))
+                let backness = (Vector3.Dot (linearVelocity * 32.0f, -rotation.Forward))
+                let rightness = (Vector3.Dot (linearVelocity * 32.0f, rotation.Right))
+                let leftness = (Vector3.Dot (linearVelocity * 32.0f, -rotation.Right))
+                let turnRightness = (angularVelocity * v3Up).Length () * 32.0f
                 let turnLeftness = -turnRightness
                 let animations = [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
                 let animations =
@@ -106,7 +106,7 @@ module CharacterDispatcher =
                     else animations
                 let world = entity.SetAnimations (List.toArray animations) world
 
-                // apply walk force
+                // apply walk velocity
                 let forward = rotation.Forward
                 let right = rotation.Right
                 let walkVelocityScalar = if grounded then WalkVelocity else WalkVelocity * 0.5f
@@ -120,10 +120,15 @@ module CharacterDispatcher =
                     then World.setBodyCenter (position + walkVelocity) bodyId world
                     else world
 
-                // apply turn force
-                let turnForce = if grounded then TurnForce else TurnForce * 0.5f
-                let world = if World.isKeyboardKeyDown KeyboardKey.Right world then World.applyBodyTorque (-v3Up * turnForce) bodyId world else world
-                let world = if World.isKeyboardKeyDown KeyboardKey.Left world then World.applyBodyTorque (v3Up * turnForce) bodyId world else world
+                // apply turn velocity
+                let turnVelocityScalar = if grounded then TurnVelocity else TurnVelocity * 0.5f
+                let turnVelocity =
+                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnVelocityScalar else 0.0f) +
+                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnVelocityScalar else 0.0f)
+                let world =
+                    if turnVelocity <> 0.0f
+                    then World.setBodyRotation (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity)) bodyId world
+                    else world
                 just world
 
             | PostUpdate ->

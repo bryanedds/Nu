@@ -44,6 +44,17 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     override this.GetHashCode () =
         this.HashCode
 
+type KinematicCharacter3d =
+    { CenterOffset : Vector3
+      CenterInterpolations : Vector3 array
+      mutable CenterInterpIndex : int
+      mutable Center : Vector3
+      mutable Rotation : Quaternion
+      mutable LinearVelocity : Vector3
+      mutable AngularVelocity : Vector3
+      CharacterController : KinematicCharacterController
+      Ghost : GhostObject }
+
 /// The 3d implementation of PhysicsEngine in terms of Bullet Physics.
 /// TODO: only record the collisions for bodies that have event subscriptions associated with them?
 type [<ReferenceEquality>] PhysicsEngine3d =
@@ -54,7 +65,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodiesGravitating : Dictionary<BodyId, Vector3 option * RigidBody>
           Objects : Dictionary<BodyId, CollisionObject>
           Ghosts : Dictionary<BodyId, GhostObject>
-          Characters : Dictionary<BodyId, Vector3 * Vector3 array * int ref * KinematicCharacterController * GhostObject>
+          Characters : Dictionary<BodyId, KinematicCharacter3d>
           Actions : Dictionary<BodyId, IAction>
           CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
           CollisionsGround : Dictionary<BodyId, Vector3 List>
@@ -393,23 +404,32 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | Some transform -> transform
                     | None -> Affine.Identity
                 if shapeTransform.Rotation = quatIdentity && shapeTransform.Scale = v3One then
-                    let character = new PairCachingGhostObject ()
-                    character.CollisionShape <- convexShape
-                    character.CollisionFlags <- character.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
-                    character.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
-                    character.UserObject <- { BodyId = bodyId; Dispose = disposer }
-                    character.UserIndex <- userIndex
-                    PhysicsEngine3d.configureCollisionObjectProperties bodyProperties character
-                    physicsEngine.PhysicsContext.AddCollisionObject (character, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
+                    let ghost = new PairCachingGhostObject ()
+                    ghost.CollisionShape <- convexShape
+                    ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+                    ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
+                    ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
+                    ghost.UserIndex <- userIndex
+                    PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
+                    physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
                     let mutable up = v3Up
                     let characterProperties = bodyProperties.KinematicCharacterProperties
-                    let characterController = new KinematicCharacterController (character, convexShape, characterProperties.StepHeight, &up)
+                    let characterController = new KinematicCharacterController (ghost, convexShape, characterProperties.StepHeight, &up)
                     characterController.MaxPenetrationDepth <- characterProperties.PenetrationDepthMax
                     characterController.MaxSlope <- characterProperties.SlopeMax
                     physicsEngine.PhysicsContext.AddAction characterController
-                    let centerInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> character.WorldTransform.Translation)
-                    if physicsEngine.Characters.TryAdd (bodyId, (shapeTransform.Translation, centerInterpolations, ref 0, characterController, character :> GhostObject))
-                    then physicsEngine.Objects.Add (bodyId, character)
+                    let character =
+                        { CenterOffset = shapeTransform.Translation
+                          CenterInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> ghost.WorldTransform.Translation)
+                          CenterInterpIndex = 0
+                          Center = ghost.WorldTransform.Translation
+                          Rotation = ghost.WorldTransform.Rotation
+                          LinearVelocity = v3Zero
+                          AngularVelocity = v3Zero
+                          CharacterController = characterController
+                          Ghost = ghost }
+                    if physicsEngine.Characters.TryAdd (bodyId, character)
+                    then physicsEngine.Objects.Add (bodyId, ghost)
                     else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
                 else failwith "Locally rotated / scaled body shapes not supported for KinematicCharacter."
             | _ -> failwith "Non-convex body shapes not supported for KinematicCharacter."
@@ -458,10 +478,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 userObject.Dispose ()
             | :? GhostObject as ghost ->
                 match physicsEngine.Characters.TryGetValue bodyId with
-                | (true, (_, _, _, characterController, _)) ->
+                | (true, character) ->
                     physicsEngine.Characters.Remove bodyId |> ignore
-                    physicsEngine.PhysicsContext.RemoveAction characterController
-                    characterController.Dispose ()
+                    physicsEngine.PhysicsContext.RemoveAction character.CharacterController
+                    character.CharacterController.Dispose ()
                 | (false, _) -> ()
                 physicsEngine.Ghosts.Remove bodyId |> ignore
                 physicsEngine.Objects.Remove bodyId |> ignore
@@ -526,7 +546,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (true, object) ->
             let mutable transform = object.WorldTransform
             match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
-            | (true, (offset, _, _, _, _)) -> transform.Translation <- setBodyCenterMessage.Center + offset
+            | (true, character) -> transform.Translation <- setBodyCenterMessage.Center + character.CenterOffset
             | (false, _) -> transform.Translation <- setBodyCenterMessage.Center
             object.WorldTransform <- transform
             object.Activate true // force activation so that a transform message will be produced
@@ -544,14 +564,24 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (true, (:? RigidBody as body)) ->
             body.LinearVelocity <- setBodyLinearVelocityMessage.LinearVelocity
             body.Activate ()
-        | (_, _) -> ()
+        | (_, _) ->
+            match physicsEngine.Characters.TryGetValue setBodyLinearVelocityMessage.BodyId with
+            | (true, character) ->
+                character.LinearVelocity <- setBodyLinearVelocityMessage.LinearVelocity
+                character.Ghost.Activate ()
+            | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyAngularVelocityMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
             body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
             body.Activate ()
-        | (_, _) -> ()
+        | (_, _) ->
+            match physicsEngine.Characters.TryGetValue setBodyAngularVelocityMessage.BodyId with
+            | (true, character) ->
+                character.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
+                character.Ghost.Activate ()
+            | (false, _) -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue applyBodyLinearImpulseMessage.BodyId with
@@ -597,7 +627,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
             | (false, _) ->
                 match physicsEngine.Characters.TryGetValue setBodyObservableMessage.BodyId with
-                | (true, (_, _, _, _, character)) -> character.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
+                | (true, character) -> character.Ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
                 | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
@@ -652,11 +682,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.Ghosts.Clear ()
 
             // destroy characters
-            for (_, _, _, characterController, character) in physicsEngine.Characters.Values do
-                bodyUserObjects.Add (character.UserObject :?> BodyUserObject)
-                physicsEngine.PhysicsContext.RemoveCollisionObject character
-                physicsEngine.PhysicsContext.RemoveAction characterController
-                characterController.Dispose ()
+            for character in physicsEngine.Characters.Values do
+                bodyUserObjects.Add (character.Ghost.UserObject :?> BodyUserObject)
+                physicsEngine.PhysicsContext.RemoveCollisionObject character.Ghost
+                physicsEngine.PhysicsContext.RemoveAction character.CharacterController
+                character.CharacterController.Dispose ()
             physicsEngine.Characters.Clear ()
 
             // clear gravitating bodies
@@ -773,22 +803,27 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         // create character transform messages
         for characterEntry in physicsEngine.Characters do
-            let (offset, centerInterpolations, index, _, character) = characterEntry.Value
-            if character.IsActive then
-                let centerUninterpolated = character.WorldTransform.Translation
-                index.Value <- inc index.Value
-                if index.Value = centerInterpolations.Length then index.Value <- 0
-                centerInterpolations.[index.Value] <- centerUninterpolated
+            let character = characterEntry.Value
+            if character.Ghost.IsActive then
+                let centerUninterpolated = character.Ghost.WorldTransform.Translation
+                character.CenterInterpIndex <- inc character.CenterInterpIndex
+                if character.CenterInterpIndex = character.CenterInterpolations.Length then character.CenterInterpIndex <- 0
+                character.CenterInterpolations.[character.CenterInterpIndex] <- centerUninterpolated
                 let mutable centerInterpolated = v3Zero
-                for i in 0 .. dec centerInterpolations.Length do centerInterpolated <- centerInterpolated + centerInterpolations.[i]
-                centerInterpolated <- centerInterpolated / single centerInterpolations.Length
+                for i in 0 .. dec character.CenterInterpolations.Length do centerInterpolated <- centerInterpolated + character.CenterInterpolations.[i]
+                centerInterpolated <- centerInterpolated / single character.CenterInterpolations.Length
+                character.LinearVelocity <- centerInterpolated - character.Center
+                //let rpy = (character.Ghost.WorldTransform.Rotation - character.Rotation).RollPitchYaw
+                character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward //v3 rpy.Z rpy.Y rpy.X
+                character.Center <- centerInterpolated
+                character.Rotation <- character.Ghost.WorldTransform.Rotation
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodyId = (character.UserObject :?> BodyUserObject).BodyId
-                          Center = centerInterpolated - offset
-                          Rotation = character.WorldTransform.Rotation
-                          LinearVelocity = v3Zero
-                          AngularVelocity = v3Zero }
+                        { BodyId = (character.Ghost.UserObject :?> BodyUserObject).BodyId
+                          Center = character.Center - character.CenterOffset
+                          Rotation = character.Rotation
+                          LinearVelocity = character.LinearVelocity
+                          AngularVelocity = character.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member make gravity tryGetAssetFilePath tryGetStaticModelMetadata =
@@ -855,8 +890,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
                 else
-                    if physicsEngine.Characters.ContainsKey bodyId then v3Zero
-                    else failwith ("No body with BodyId = " + scstring bodyId + ".")
+                    match physicsEngine.Characters.TryGetValue bodyId with
+                    | (true, character) -> character.LinearVelocity
+                    | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
@@ -864,8 +900,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
                 else
-                    if physicsEngine.Characters.ContainsKey bodyId then v3Zero
-                    else failwith ("No body with BodyId = " + scstring bodyId + ".")
+                    match physicsEngine.Characters.TryGetValue bodyId with
+                    | (true, character) -> character.AngularVelocity
+                    | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             match physicsEngine.CollisionsGround.TryGetValue bodyId with
