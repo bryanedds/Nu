@@ -50,16 +50,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : DynamicsWorld
           Constraints : Dictionary<JointId, TypedConstraint>
-          NonStaticBodies : Dictionary<BodyId, Vector3 option * RigidBody>
           Bodies : Dictionary<BodyId, RigidBody>
-          Ghosts : Dictionary<BodyId, Vector3 option * GhostObject>
+          BodiesGravitating : Dictionary<BodyId, Vector3 option * RigidBody>
           Objects : Dictionary<BodyId, CollisionObject>
+          Ghosts : Dictionary<BodyId, GhostObject>
+          Characters : Dictionary<BodyId, Vector3 option * KinematicCharacterController * GhostObject>
           Actions : Dictionary<BodyId, IAction>
           CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
           CollisionsGround : Dictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
           CollisionDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
+          GhostPairCallback : GhostPairCallback
           ConstraintSolverPool : ConstraintSolverPoolMultiThreaded
           ConstraintSolver : ConstraintSolver
           TryGetAssetFilePath : AssetTag -> string option
@@ -380,7 +382,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             ghost.UserIndex <- userIndex
             PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if physicsEngine.Ghosts.TryAdd (bodyId, (None, ghost))
+            if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
             then physicsEngine.Objects.Add (bodyId, ghost)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
         elif bodyProperties.BodyType = KinematicCharacter then
@@ -391,27 +393,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | Some transform -> transform
                     | None -> Affine.Identity
                 if shapeTransform.Rotation = quatIdentity && shapeTransform.Scale = v3One then
-                    let ghostPairCallback = new GhostPairCallback ()
-                    physicsEngine.PhysicsContext.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
-                    let ghost = new PairCachingGhostObject ()
-                    ghost.CollisionShape <- convexShape
-                    ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
-                    ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
-                    ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
-                    ghost.UserIndex <- userIndex
-                    PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
-                    physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-                    let offsetOpt = if shapeTransform.Translation <> v3Zero then Some shapeTransform.Translation else None
-                    if physicsEngine.Ghosts.TryAdd (bodyId, (offsetOpt, ghost :> GhostObject))
-                    then physicsEngine.Objects.Add (bodyId, ghost)
-                    else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+                    let character = new PairCachingGhostObject ()
+                    character.CollisionShape <- convexShape
+                    character.CollisionFlags <- character.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+                    character.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
+                    character.UserObject <- { BodyId = bodyId; Dispose = disposer }
+                    character.UserIndex <- userIndex
+                    PhysicsEngine3d.configureCollisionObjectProperties bodyProperties character
+                    physicsEngine.PhysicsContext.AddCollisionObject (character, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
                     let mutable up = v3Up
-                    let characterController = new KinematicCharacterController (ghost, convexShape, bodyProperties.StepHeight, &up)
+                    let characterController = new KinematicCharacterController (character, convexShape, bodyProperties.StepHeight, &up)
                     physicsEngine.PhysicsContext.AddAction characterController
-                    // TODO: P0: implement removal from Actions.
-
-                else failwith "Locally rotated / scaled body shapes not supported for BodyType.Character."
-            | _ -> failwith "Non-convex body shapes not supported for BodyType.Character."
+                    let offsetOpt = if shapeTransform.Translation <> v3Zero then Some shapeTransform.Translation else None
+                    if physicsEngine.Characters.TryAdd (bodyId, (offsetOpt, characterController, character :> GhostObject))
+                    then physicsEngine.Objects.Add (bodyId, character)
+                    else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+                else failwith "Locally rotated / scaled body shapes not supported for KinematicCharacter."
+            | _ -> failwith "Non-convex body shapes not supported for KinematicCharacter."
         else
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
@@ -421,7 +419,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             PhysicsEngine3d.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if physicsEngine.Bodies.TryAdd (bodyId, body) then
-                if not body.IsStaticObject then physicsEngine.NonStaticBodies.Add (bodyId, (bodyProperties.GravityOverride, body))
+                if not body.IsStaticObject then physicsEngine.BodiesGravitating.Add (bodyId, (bodyProperties.GravityOverride, body))
                 physicsEngine.Objects.Add (bodyId, body)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
@@ -450,14 +448,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match object with
             | :? RigidBody as body ->
                 physicsEngine.Objects.Remove bodyId |> ignore
-                physicsEngine.NonStaticBodies.Remove bodyId |> ignore
+                physicsEngine.BodiesGravitating.Remove bodyId |> ignore
                 physicsEngine.Bodies.Remove bodyId |> ignore
                 physicsEngine.PhysicsContext.RemoveRigidBody body
                 let userObject = body.UserObject :?> BodyUserObject
                 userObject.Dispose ()
             | :? GhostObject as ghost ->
-                physicsEngine.Objects.Remove bodyId |> ignore
+                match physicsEngine.Characters.TryGetValue bodyId with
+                | (true, (_, characterController, _)) ->
+                    physicsEngine.Characters.Remove bodyId |> ignore
+                    physicsEngine.PhysicsContext.RemoveAction characterController
+                    characterController.Dispose ()
+                | (false, _) -> ()
                 physicsEngine.Ghosts.Remove bodyId |> ignore
+                physicsEngine.Objects.Remove bodyId |> ignore
                 physicsEngine.PhysicsContext.RemoveCollisionObject ghost
                 let userObject = ghost.UserObject :?> BodyUserObject
                 userObject.Dispose ()
@@ -518,8 +522,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match physicsEngine.Objects.TryGetValue setBodyCenterMessage.BodyId with
         | (true, object) ->
             let offsetOpt =
-                match physicsEngine.Ghosts.TryGetValue setBodyCenterMessage.BodyId with
-                | (true, (offsetOpt, _)) -> offsetOpt
+                match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
+                | (true, (offsetOpt, _, _)) -> offsetOpt
                 | (false, _) -> None
             let mutable transform = object.WorldTransform
             transform.Translation <- setBodyCenterMessage.Center + Option.defaultValue v3Zero offsetOpt
@@ -589,8 +593,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (true, body) -> body.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
         | (false, _) ->
             match physicsEngine.Ghosts.TryGetValue setBodyObservableMessage.BodyId with
-            | (true, (_, ghost)) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
-            | (false, _) -> ()
+            | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
+            | (false, _) ->
+                match physicsEngine.Characters.TryGetValue setBodyObservableMessage.BodyId with
+                | (true, (_, _, character)) -> character.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
+                | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -616,7 +623,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
             // set gravity of all non-static bodies
             physicsEngine.PhysicsContext.Gravity <- gravity
-            for bodyEntry in physicsEngine.NonStaticBodies do
+            for bodyEntry in physicsEngine.BodiesGravitating do
                 let (gravityOverride, body) = bodyEntry.Value
                 match gravityOverride with
                 | Some gravity -> body.Gravity <- gravity
@@ -638,13 +645,21 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.Objects.Clear ()
 
             // destroy ghosts
-            for (_, ghost) in physicsEngine.Ghosts.Values do
+            for ghost in physicsEngine.Ghosts.Values do
                 bodyUserObjects.Add (ghost.UserObject :?> BodyUserObject)
                 physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Ghosts.Clear ()
 
-            // clear non-static bodies
-            physicsEngine.NonStaticBodies.Clear ()
+            // destroy characters
+            for (_, characterController, character) in physicsEngine.Characters.Values do
+                bodyUserObjects.Add (character.UserObject :?> BodyUserObject)
+                physicsEngine.PhysicsContext.RemoveCollisionObject character
+                physicsEngine.PhysicsContext.RemoveAction characterController
+                characterController.Dispose ()
+            physicsEngine.Characters.Clear ()
+
+            // clear gravitating bodies
+            physicsEngine.BodiesGravitating.Clear ()
 
             // destroy bodies
             for body in physicsEngine.Bodies.Values do
@@ -742,8 +757,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 PhysicsEngine3d.handleSeparation physicsEngine bodySourceA bodySourceB
                 PhysicsEngine3d.handleSeparation physicsEngine bodySourceB bodySourceA
 
-        // create non-static transform messages
-        for bodyEntry in physicsEngine.NonStaticBodies do
+        // create gravitating body transform messages
+        for bodyEntry in physicsEngine.BodiesGravitating do
             let (_, body) = bodyEntry.Value
             if body.IsActive then
                 let bodyTransformMessage =
@@ -755,15 +770,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
-        // create ghost transform messages
-        for ghostEntry in physicsEngine.Ghosts do
-            let (offsetOpt, ghost) = ghostEntry.Value
-            if ghost.IsActive then
+        // create character transform messages
+        for characterEntry in physicsEngine.Characters do
+            let (offsetOpt, _, character) = characterEntry.Value
+            if character.IsActive then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodyId = (ghost.UserObject :?> BodyUserObject).BodyId
-                          Center = ghost.WorldTransform.Translation - Option.defaultValue v3Zero offsetOpt
-                          Rotation = ghost.WorldTransform.Rotation
+                        { BodyId = (character.UserObject :?> BodyUserObject).BodyId
+                          Center = character.WorldTransform.Translation - Option.defaultValue v3Zero offsetOpt
+                          Rotation = character.WorldTransform.Rotation
                           LinearVelocity = v3Zero
                           AngularVelocity = v3Zero }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
@@ -775,25 +790,29 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         use collisionConfigurationInfo = new DefaultCollisionConstructionInfo (DefaultMaxPersistentManifoldPoolSize = 80000, DefaultMaxCollisionAlgorithmPoolSize = 80000)
         let collisionConfiguration = new DefaultCollisionConfiguration (collisionConfigurationInfo)
         let collisionDispatcher = new CollisionDispatcherMultiThreaded (collisionConfiguration)
-        let broadPhaseInterface = new AxisSweep3 (v3Dup (Constants.Physics.AxisSweepBoundsSize3d * -0.5f), v3Dup Constants.Physics.AxisSweepBoundsSize3d) // NOTE: along with Constants.Physics.AllowedCcdPenetration3d, seems to keep characters from falling through terrain.
+        let broadphase = new AxisSweep3 (v3Dup (Constants.Physics.AxisSweepBoundsSize3d * -0.5f), v3Dup Constants.Physics.AxisSweepBoundsSize3d) // NOTE: along with Constants.Physics.AllowedCcdPenetration3d, seems to keep characters from falling through terrain.
+        let ghostPairCallback = new GhostPairCallback ()
         let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
         let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()
-        let world = new DiscreteDynamicsWorldMultiThreaded (collisionDispatcher, broadPhaseInterface, constraintSolverPool, constraintSolver, collisionConfiguration)
+        let world = new DiscreteDynamicsWorldMultiThreaded (collisionDispatcher, broadphase, constraintSolverPool, constraintSolver, collisionConfiguration)
+        world.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
         world.DispatchInfo.AllowedCcdPenetration <- Constants.Physics.AllowedCcdPenetration3d
         world.Gravity <- gravity
         let physicsEngine =
             { PhysicsContext = world
               Constraints = Dictionary HashIdentity.Structural
-              NonStaticBodies = Dictionary HashIdentity.Structural
               Bodies = Dictionary HashIdentity.Structural
-              Ghosts = Dictionary HashIdentity.Structural
+              BodiesGravitating = Dictionary HashIdentity.Structural
               Objects = Dictionary HashIdentity.Structural
+              Ghosts = Dictionary HashIdentity.Structural
+              Characters = Dictionary HashIdentity.Structural
               Actions = Dictionary HashIdentity.Structural
               CollisionsFiltered = dictPlus HashIdentity.Structural []
               CollisionsGround = dictPlus HashIdentity.Structural []
               CollisionConfiguration = collisionConfiguration
               CollisionDispatcher = collisionDispatcher
-              BroadPhaseInterface = broadPhaseInterface
+              BroadPhaseInterface = broadphase
+              GhostPairCallback = ghostPairCallback
               ConstraintSolverPool = constraintSolverPool
               ConstraintSolver = constraintSolver
               TryGetAssetFilePath = tryGetAssetFilePath
@@ -806,6 +825,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         physicsEngine.PhysicsContext.Dispose ()
         physicsEngine.ConstraintSolver.Dispose ()
         physicsEngine.ConstraintSolverPool.Dispose ()
+        physicsEngine.GhostPairCallback.Dispose ()
         physicsEngine.BroadPhaseInterface.Dispose ()
         physicsEngine.CollisionDispatcher.Dispose ()
         physicsEngine.CollisionConfiguration.Dispose ()
@@ -826,14 +846,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, body) -> body.LinearVelocity
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
-                else failwith ("No body with BodyId = " + scstring bodyId + ".")
+                else
+                    if physicsEngine.Characters.ContainsKey bodyId then v3Zero
+                    else failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
             | (true, body) -> body.AngularVelocity
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
-                else failwith ("No body with BodyId = " + scstring bodyId + ".")
+                else
+                    if physicsEngine.Characters.ContainsKey bodyId then v3Zero
+                    else failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             match physicsEngine.CollisionsGround.TryGetValue bodyId with
