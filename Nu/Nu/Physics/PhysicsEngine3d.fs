@@ -402,9 +402,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     PhysicsEngine3d.configureCollisionObjectProperties bodyProperties character
                     physicsEngine.PhysicsContext.AddCollisionObject (character, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
                     let mutable up = v3Up
-                    let characterController = new KinematicCharacterController (character, convexShape, bodyProperties.StepHeight, &up)
-                    characterController.MaxPenetrationDepth <- 0.01f
-                    characterController.MaxSlope <- Math.DegreesToRadians 45.0f
+                    let characterProperties = bodyProperties.KinematicCharacterProperties
+                    let characterController = new KinematicCharacterController (character, convexShape, characterProperties.StepHeight, &up)
+                    characterController.MaxPenetrationDepth <- characterProperties.PenetrationDepthMax
+                    characterController.MaxSlope <- characterProperties.SlopeMax
                     physicsEngine.PhysicsContext.AddAction characterController
                     let centerInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> character.WorldTransform.Translation)
                     if physicsEngine.Characters.TryAdd (bodyId, (shapeTransform.Translation, centerInterpolations, ref 0, characterController, character :> GhostObject))

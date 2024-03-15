@@ -374,6 +374,18 @@ type BodyType =
     | KinematicCharacter
     | Dynamic
 
+/// The properties specific to the utilization of the KinematicCharacter body type.
+type [<SymbolicExpansion>] KinematicCharacterProperties =
+    { StepHeight : single // NOTE: percentage of stepper's height rather than absolute height.
+      SlopeMax : single // NOTE: setting much lower than 0.7f tends to cause a lot of terrain fall-throughs.
+      PenetrationDepthMax : single } // NOTE: setting lower or higher seems to cause a lot of terrain fall-throughs.
+
+    /// The default kinematic character properties.
+    static member defaultProperties =
+        { StepHeight = 0.25f
+          SlopeMax = Math.DegreesToRadians 45.0f
+          PenetrationDepthMax = 0.01f }
+
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
     { BodyIndex : int
@@ -392,8 +404,8 @@ type BodyProperties =
       AngularDamping : single
       AngularFactor : Vector3
       Substance : Substance
-      StepHeight : single // NOTE: percentage of stepper's height rather than absolute height.
       GravityOverride : Vector3 option
+      KinematicCharacterProperties : KinematicCharacterProperties
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int

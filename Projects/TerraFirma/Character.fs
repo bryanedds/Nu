@@ -33,7 +33,7 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit Entity3dDispatcher<CharacterModel, CharacterMessage, CharacterCommand> (true, CharacterModel.initial)
 
-        static let [<Literal>] WalkForce = 0.25f
+        static let [<Literal>] WalkVelocity = 0.25f
         static let [<Literal>] TurnForce = 8.0f
         static let [<Literal>] JumpForce = 7.0f
 
@@ -109,15 +109,15 @@ module CharacterDispatcher =
                 // apply walk force
                 let forward = rotation.Forward
                 let right = rotation.Right
-                let walkForceScalar = if grounded then WalkForce else WalkForce * 0.5f
-                let walkForce = 
-                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkForceScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkForceScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkForceScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkForceScalar else v3Zero)
+                let walkVelocityScalar = if grounded then WalkVelocity else WalkVelocity * 0.5f
+                let walkVelocity = 
+                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkVelocityScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkVelocityScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkVelocityScalar else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkVelocityScalar else v3Zero)
                 let world =
-                    if walkForce <> v3Zero
-                    then World.setBodyCenter (position + walkForce) bodyId world
+                    if walkVelocity <> v3Zero
+                    then World.setBodyCenter (position + walkVelocity) bodyId world
                     else world
 
                 // apply turn force
