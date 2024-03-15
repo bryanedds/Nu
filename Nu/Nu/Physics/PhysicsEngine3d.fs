@@ -622,6 +622,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Aether.")
         | (_, _) -> ()
 
+    static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
+        match physicsEngine.Characters.TryGetValue jumpBodyMessage.BodyId with
+        | (true, character) ->
+            if jumpBodyMessage.CanJumpInAir || character.CharacterController.OnGround then
+                character.CharacterController.JumpSpeed <- jumpBodyMessage.JumpSpeed
+                character.CharacterController.Jump ()
+        | (false, _) -> ()
+
     static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyObservableMessage.BodyId with
         | (true, body) -> body.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
@@ -652,6 +660,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
         | SetBodyObservableMessage setBodyObservableMessage -> PhysicsEngine3d.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
 

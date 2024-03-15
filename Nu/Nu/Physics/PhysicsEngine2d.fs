@@ -419,6 +419,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
+    static member private jumpBody (_ : JumpBodyMessage) (_ : PhysicsEngine) =
+        () // character body type not yet supported
+
     static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyObservableMessage.BodyId with
         | (true, (_, body)) ->
@@ -448,6 +451,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine2d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
         | SetBodyObservableMessage setBodyObservableMessage -> PhysicsEngine2d.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
         | ClearPhysicsMessageInternal ->

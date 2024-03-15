@@ -280,7 +280,14 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage3d applyBodyTorqueMessage world
             let world = World.handlePhysicsMessage2d applyBodyTorqueMessage world
             world
-            
+
+        /// Send a physics message to jump to a body with the given physics id (KinematicCharacter only).
+        static member jumpBody canJumpInAir jumpSpeed bodyId world =
+            let jumpBodyMessage = JumpBodyMessage { BodyId = bodyId; CanJumpInAir = canJumpInAir; JumpSpeed = jumpSpeed }
+            let world = World.handlePhysicsMessage3d jumpBodyMessage world
+            let world = World.handlePhysicsMessage2d jumpBodyMessage world
+            world
+
         static member private setBodyObservableInternal allowInternalIndexing observable (bodyId : BodyId) world =
             if allowInternalIndexing || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                 let setBodyObservableMessage = SetBodyObservableMessage { BodyId = bodyId; Observable = observable }

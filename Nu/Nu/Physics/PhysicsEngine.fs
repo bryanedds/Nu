@@ -589,6 +589,12 @@ type ApplyBodyTorqueMessage =
     { BodyId : BodyId
       Torque : Vector3 }
 
+/// A message to the physics system to apply a jump motion to a body (KinematicCharacter only).
+type JumpBodyMessage =
+    { BodyId : BodyId
+      CanJumpInAir : bool
+      JumpSpeed : single }
+
 /// An internally used message to the physics system to set the observed state of a body.
 type SetBodyObservableMessage =
     { BodyId : BodyId
@@ -638,6 +644,7 @@ type PhysicsMessage =
     | ApplyBodyAngularImpulseMessage of ApplyBodyAngularImpulseMessage
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
+    | JumpBodyMessage of JumpBodyMessage
     | SetBodyObservableMessage of SetBodyObservableMessage
     | SetGravityMessage of Vector3
     | ClearPhysicsMessageInternal

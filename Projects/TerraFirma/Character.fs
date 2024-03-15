@@ -33,9 +33,9 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit Entity3dDispatcher<CharacterModel, CharacterMessage, CharacterCommand> (true, CharacterModel.initial)
 
-        static let [<Literal>] WalkVelocity = 0.1f
-        static let [<Literal>] TurnVelocity = 0.035f
-        static let [<Literal>] JumpForce = 7.0f
+        static let [<Literal>] WalkSpeed = 0.1f
+        static let [<Literal>] TurnSpeed = 0.035f
+        static let [<Literal>] JumpSpeed = 5.0f
 
         static member Facets =
             [typeof<AnimatedModelFacet>
@@ -109,22 +109,22 @@ module CharacterDispatcher =
                 // apply walk velocity
                 let forward = rotation.Forward
                 let right = rotation.Right
-                let walkVelocityScalar = if grounded then WalkVelocity else WalkVelocity * 0.5f
+                let walkSpeed = if grounded then WalkSpeed else WalkSpeed * 0.5f
                 let walkVelocity = 
-                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkVelocityScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkVelocityScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkVelocityScalar else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkVelocityScalar else v3Zero)
+                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
                 let world =
                     if walkVelocity <> v3Zero
                     then World.setBodyCenter (position + walkVelocity) bodyId world
                     else world
 
                 // apply turn velocity
-                let turnVelocityScalar = if grounded then TurnVelocity else TurnVelocity * 0.5f
+                let turnSpeed = if grounded then TurnSpeed else TurnSpeed * 0.5f
                 let turnVelocity =
-                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnVelocityScalar else 0.0f) +
-                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnVelocityScalar else 0.0f)
+                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
+                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
                 let world =
                     if turnVelocity <> 0.0f
                     then World.setBodyRotation (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity)) bodyId world
@@ -140,5 +140,5 @@ module CharacterDispatcher =
 
             | Jump ->
                 let bodyId = entity.GetBodyId world
-                let world = World.applyBodyLinearImpulse (v3Up * JumpForce) v3Zero bodyId world
+                let world = World.jumpBody false JumpSpeed bodyId world
                 just world
