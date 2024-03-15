@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Linq
 open System.Numerics
 open System.Runtime.InteropServices
 open BulletSharp
@@ -18,7 +19,7 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
 
     static member equals left right =
         left.HashCode = right.HashCode &&
-        Linq.Enumerable.SequenceEqual (left.Vertices, right.Vertices)
+        Enumerable.SequenceEqual (left.Vertices, right.Vertices)
 
     static member comparer =
         HashIdentity.FromFunctions UnscaledPointsKey.hash UnscaledPointsKey.equals

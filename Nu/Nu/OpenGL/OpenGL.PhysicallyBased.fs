@@ -5,6 +5,7 @@ namespace OpenGL
 open System
 open System.Collections.Generic
 open System.IO
+open System.Linq
 open System.Numerics
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
@@ -1287,9 +1288,9 @@ module PhysicallyBased =
                     let mutable enr = meshAndGeometry.GetEnumerator ()
                     while not found && enr.MoveNext () do
                         let (meshCached, geometryCached) = enr.Current
-                        if  Linq.Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
-                            Linq.Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
-                            Linq.Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
+                        if  Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
+                            Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
+                            Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
                             geometries.Add geometryCached
                             found <- true
                 | None -> ()
