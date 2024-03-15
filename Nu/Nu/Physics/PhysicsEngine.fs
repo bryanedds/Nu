@@ -367,6 +367,7 @@ type BodyType =
     | Kinematic
     | KinematicCharacter
     | Dynamic
+    //| DynamicCharacter
 
 /// The properties specific to the utilization of the KinematicCharacter body type.
 type [<SymbolicExpansion>] KinematicCharacterProperties =

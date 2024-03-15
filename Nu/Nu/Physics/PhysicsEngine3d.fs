@@ -44,7 +44,7 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     override this.GetHashCode () =
         this.HashCode
 
-type KinematicCharacter3d =
+type private KinematicCharacter3d =
     { GravityOverride : Vector3 option
       CenterOffset : Vector3
       CenterInterpolations : Vector3 array
@@ -66,8 +66,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodiesGravitating : Dictionary<BodyId, Vector3 option * RigidBody>
           Objects : Dictionary<BodyId, CollisionObject>
           Ghosts : Dictionary<BodyId, GhostObject>
-          Characters : Dictionary<BodyId, KinematicCharacter3d>
-          Actions : Dictionary<BodyId, IAction>
+          KinematicCharacters : Dictionary<BodyId, KinematicCharacter3d>
           CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
           CollisionsGround : Dictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
@@ -431,7 +430,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = v3Zero
                           CharacterController = characterController
                           Ghost = ghost }
-                    if physicsEngine.Characters.TryAdd (bodyId, character)
+                    if physicsEngine.KinematicCharacters.TryAdd (bodyId, character)
                     then physicsEngine.Objects.Add (bodyId, ghost)
                     else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
                 else failwith "Locally rotated / scaled body shapes not supported for KinematicCharacter."
@@ -480,9 +479,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let userObject = body.UserObject :?> BodyUserObject
                 userObject.Dispose ()
             | :? GhostObject as ghost ->
-                match physicsEngine.Characters.TryGetValue bodyId with
+                match physicsEngine.KinematicCharacters.TryGetValue bodyId with
                 | (true, character) ->
-                    physicsEngine.Characters.Remove bodyId |> ignore
+                    physicsEngine.KinematicCharacters.Remove bodyId |> ignore
                     physicsEngine.PhysicsContext.RemoveAction character.CharacterController
                     character.CharacterController.Dispose ()
                 | (false, _) -> ()
@@ -548,7 +547,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match physicsEngine.Objects.TryGetValue setBodyCenterMessage.BodyId with
         | (true, object) ->
             let mutable transform = object.WorldTransform
-            match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
+            match physicsEngine.KinematicCharacters.TryGetValue setBodyCenterMessage.BodyId with
             | (true, character) -> transform.Translation <- setBodyCenterMessage.Center + character.CenterOffset
             | (false, _) -> transform.Translation <- setBodyCenterMessage.Center
             object.WorldTransform <- transform
@@ -568,7 +567,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             body.LinearVelocity <- setBodyLinearVelocityMessage.LinearVelocity
             body.Activate ()
         | (_, _) ->
-            match physicsEngine.Characters.TryGetValue setBodyLinearVelocityMessage.BodyId with
+            match physicsEngine.KinematicCharacters.TryGetValue setBodyLinearVelocityMessage.BodyId with
             | (true, character) ->
                 character.LinearVelocity <- setBodyLinearVelocityMessage.LinearVelocity
                 character.Ghost.Activate ()
@@ -580,7 +579,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
             body.Activate ()
         | (_, _) ->
-            match physicsEngine.Characters.TryGetValue setBodyAngularVelocityMessage.BodyId with
+            match physicsEngine.KinematicCharacters.TryGetValue setBodyAngularVelocityMessage.BodyId with
             | (true, character) ->
                 character.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
                 character.Ghost.Activate ()
@@ -623,7 +622,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (_, _) -> ()
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
-        match physicsEngine.Characters.TryGetValue jumpBodyMessage.BodyId with
+        match physicsEngine.KinematicCharacters.TryGetValue jumpBodyMessage.BodyId with
         | (true, character) ->
             if jumpBodyMessage.CanJumpInAir || character.CharacterController.OnGround then
                 character.CharacterController.JumpSpeed <- jumpBodyMessage.JumpSpeed
@@ -637,7 +636,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match physicsEngine.Ghosts.TryGetValue setBodyObservableMessage.BodyId with
             | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
             | (false, _) ->
-                match physicsEngine.Characters.TryGetValue setBodyObservableMessage.BodyId with
+                match physicsEngine.KinematicCharacters.TryGetValue setBodyObservableMessage.BodyId with
                 | (true, character) -> character.Ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
                 | (false, _) -> ()
 
@@ -672,8 +671,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | Some gravity -> body.Gravity <- gravity
                 | None -> body.Gravity <- gravity
 
-            // set gravity of all character bodies
-            for characterEntry in physicsEngine.Characters do
+            // set gravity of all kinematic characters
+            for characterEntry in physicsEngine.KinematicCharacters do
                 let character = characterEntry.Value
                 match character.GravityOverride with
                 | Some gravity -> character.CharacterController.Gravity <- gravity
@@ -700,13 +699,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.PhysicsContext.RemoveCollisionObject ghost
             physicsEngine.Ghosts.Clear ()
 
-            // destroy characters
-            for character in physicsEngine.Characters.Values do
+            // destroy kinematic characters
+            for character in physicsEngine.KinematicCharacters.Values do
                 bodyUserObjects.Add (character.Ghost.UserObject :?> BodyUserObject)
                 physicsEngine.PhysicsContext.RemoveCollisionObject character.Ghost
                 physicsEngine.PhysicsContext.RemoveAction character.CharacterController
                 character.CharacterController.Dispose ()
-            physicsEngine.Characters.Clear ()
+            physicsEngine.KinematicCharacters.Clear ()
 
             // clear gravitating bodies
             physicsEngine.BodiesGravitating.Clear ()
@@ -820,8 +819,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
-        // create character transform messages
-        for characterEntry in physicsEngine.Characters do
+        // create kinematic character transform messages
+        for characterEntry in physicsEngine.KinematicCharacters do
             let character = characterEntry.Value
             if character.Ghost.IsActive then
                 let centerUninterpolated = character.Ghost.WorldTransform.Translation
@@ -868,8 +867,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               BodiesGravitating = Dictionary HashIdentity.Structural
               Objects = Dictionary HashIdentity.Structural
               Ghosts = Dictionary HashIdentity.Structural
-              Characters = Dictionary HashIdentity.Structural
-              Actions = Dictionary HashIdentity.Structural
+              KinematicCharacters = Dictionary HashIdentity.Structural
               CollisionsFiltered = dictPlus HashIdentity.Structural []
               CollisionsGround = dictPlus HashIdentity.Structural []
               CollisionConfiguration = collisionConfiguration
@@ -910,7 +908,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
                 else
-                    match physicsEngine.Characters.TryGetValue bodyId with
+                    match physicsEngine.KinematicCharacters.TryGetValue bodyId with
                     | (true, character) -> character.LinearVelocity
                     | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
@@ -920,7 +918,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (false, _) ->
                 if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
                 else
-                    match physicsEngine.Characters.TryGetValue bodyId with
+                    match physicsEngine.KinematicCharacters.TryGetValue bodyId with
                     | (true, character) -> character.AngularVelocity
                     | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
