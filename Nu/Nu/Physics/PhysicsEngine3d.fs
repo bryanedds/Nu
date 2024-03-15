@@ -403,6 +403,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     physicsEngine.PhysicsContext.AddCollisionObject (character, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
                     let mutable up = v3Up
                     let characterController = new KinematicCharacterController (character, convexShape, bodyProperties.StepHeight, &up)
+                    characterController.MaxPenetrationDepth <- 0.01f
+                    characterController.MaxSlope <- Math.DegreesToRadians 45.0f
                     physicsEngine.PhysicsContext.AddAction characterController
                     let centerInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> character.WorldTransform.Translation)
                     if physicsEngine.Characters.TryAdd (bodyId, (shapeTransform.Translation, centerInterpolations, ref 0, characterController, character :> GhostObject))
@@ -795,7 +797,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         use collisionConfigurationInfo = new DefaultCollisionConstructionInfo (DefaultMaxPersistentManifoldPoolSize = 80000, DefaultMaxCollisionAlgorithmPoolSize = 80000)
         let collisionConfiguration = new DefaultCollisionConfiguration (collisionConfigurationInfo)
         let collisionDispatcher = new CollisionDispatcherMultiThreaded (collisionConfiguration)
-        let broadphase = new AxisSweep3 (v3Dup (Constants.Physics.AxisSweepBoundsSize3d * -0.5f), v3Dup Constants.Physics.AxisSweepBoundsSize3d) // NOTE: along with Constants.Physics.AllowedCcdPenetration3d, seems to keep characters from falling through terrain.
+        let broadphase = new AxisSweep3 (v3Dup (Constants.Physics.AxisSweepBoundsSize3d * -0.5f), v3Dup Constants.Physics.AxisSweepBoundsSize3d) // NOTE: seems to keep characters from falling through terrain.
         let ghostPairCallback = new GhostPairCallback ()
         let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
         let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()

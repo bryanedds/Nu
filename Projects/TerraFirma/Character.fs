@@ -33,7 +33,7 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit Entity3dDispatcher<CharacterModel, CharacterMessage, CharacterCommand> (true, CharacterModel.initial)
 
-        static let [<Literal>] WalkForce = 0.2f
+        static let [<Literal>] WalkForce = 0.25f
         static let [<Literal>] TurnForce = 8.0f
         static let [<Literal>] JumpForce = 7.0f
 
@@ -46,7 +46,7 @@ module CharacterDispatcher =
              Entity.AnimatedModel := character.AnimatedModel
              Entity.BodyType == KinematicCharacter
              Entity.SleepingAllowed == false
-             Entity.BodyShape == BodyCapsule { Height = 1.0f; Radius = 0.4f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
+             Entity.BodyShape == BodyCapsule { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
              Entity.UpdateEvent => UpdateMessage
              Entity.UpdateEvent => UpdateCommand
              Game.PostUpdateEvent => PostUpdate

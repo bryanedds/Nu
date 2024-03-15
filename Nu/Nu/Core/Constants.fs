@@ -195,7 +195,7 @@ module Physics =
     let [<Literal>] CollisionWildcard = "*"
     let [<Literal>] Collision3dMargin = 0.01f
     let [<Uniform>] AxisSweepBoundsSize3d = 16384.0f
-    let [<Literal>] AllowedCcdPenetration3d = 0.0001f // NOTE: along with AxisSweep3 broadphase, seems to keep characters from falling through terrain.
+    let [<Literal>] AllowedCcdPenetration3d = 0.01f // NOTE: seems to also change the smoothness at which character slide.
     let [<Literal>] KinematicCharacterCenterInterpolationSteps3d = 4
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
