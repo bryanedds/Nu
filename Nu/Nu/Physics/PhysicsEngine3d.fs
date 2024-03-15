@@ -54,7 +54,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodiesGravitating : Dictionary<BodyId, Vector3 option * RigidBody>
           Objects : Dictionary<BodyId, CollisionObject>
           Ghosts : Dictionary<BodyId, GhostObject>
-          Characters : Dictionary<BodyId, Vector3 option * KinematicCharacterController * GhostObject>
+          Characters : Dictionary<BodyId, Vector3 * Vector3 array * int ref * KinematicCharacterController * GhostObject>
           Actions : Dictionary<BodyId, IAction>
           CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
           CollisionsGround : Dictionary<BodyId, Vector3 List>
@@ -404,8 +404,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     let mutable up = v3Up
                     let characterController = new KinematicCharacterController (character, convexShape, bodyProperties.StepHeight, &up)
                     physicsEngine.PhysicsContext.AddAction characterController
-                    let offsetOpt = if shapeTransform.Translation <> v3Zero then Some shapeTransform.Translation else None
-                    if physicsEngine.Characters.TryAdd (bodyId, (offsetOpt, characterController, character :> GhostObject))
+                    let centerInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> character.WorldTransform.Translation)
+                    if physicsEngine.Characters.TryAdd (bodyId, (shapeTransform.Translation, centerInterpolations, ref 0, characterController, character :> GhostObject))
                     then physicsEngine.Objects.Add (bodyId, character)
                     else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
                 else failwith "Locally rotated / scaled body shapes not supported for KinematicCharacter."
@@ -455,7 +455,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 userObject.Dispose ()
             | :? GhostObject as ghost ->
                 match physicsEngine.Characters.TryGetValue bodyId with
-                | (true, (_, characterController, _)) ->
+                | (true, (_, _, _, characterController, _)) ->
                     physicsEngine.Characters.Remove bodyId |> ignore
                     physicsEngine.PhysicsContext.RemoveAction characterController
                     characterController.Dispose ()
@@ -521,12 +521,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyCenterMessage.BodyId with
         | (true, object) ->
-            let offsetOpt =
-                match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
-                | (true, (offsetOpt, _, _)) -> offsetOpt
-                | (false, _) -> None
             let mutable transform = object.WorldTransform
-            transform.Translation <- setBodyCenterMessage.Center + Option.defaultValue v3Zero offsetOpt
+            match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
+            | (true, (offset, _, _, _, _)) -> transform.Translation <- setBodyCenterMessage.Center + offset
+            | (false, _) -> transform.Translation <- setBodyCenterMessage.Center
             object.WorldTransform <- transform
             object.Activate true // force activation so that a transform message will be produced
         | (false, _) -> ()
@@ -596,7 +594,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
             | (false, _) ->
                 match physicsEngine.Characters.TryGetValue setBodyObservableMessage.BodyId with
-                | (true, (_, _, character)) -> character.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
+                | (true, (_, _, _, _, character)) -> character.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
                 | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
@@ -651,7 +649,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.Ghosts.Clear ()
 
             // destroy characters
-            for (_, characterController, character) in physicsEngine.Characters.Values do
+            for (_, _, _, characterController, character) in physicsEngine.Characters.Values do
                 bodyUserObjects.Add (character.UserObject :?> BodyUserObject)
                 physicsEngine.PhysicsContext.RemoveCollisionObject character
                 physicsEngine.PhysicsContext.RemoveAction characterController
@@ -772,12 +770,19 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         // create character transform messages
         for characterEntry in physicsEngine.Characters do
-            let (offsetOpt, _, character) = characterEntry.Value
+            let (offset, centerInterpolations, index, _, character) = characterEntry.Value
             if character.IsActive then
+                let centerUninterpolated = character.WorldTransform.Translation
+                index.Value <- inc index.Value
+                if index.Value = centerInterpolations.Length then index.Value <- 0
+                centerInterpolations.[index.Value] <- centerUninterpolated
+                let mutable centerInterpolated = v3Zero
+                for i in 0 .. dec centerInterpolations.Length do centerInterpolated <- centerInterpolated + centerInterpolations.[i]
+                centerInterpolated <- centerInterpolated / single centerInterpolations.Length
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodyId = (character.UserObject :?> BodyUserObject).BodyId
-                          Center = character.WorldTransform.Translation - Option.defaultValue v3Zero offsetOpt
+                          Center = centerInterpolated - offset
                           Rotation = character.WorldTransform.Rotation
                           LinearVelocity = v3Zero
                           AngularVelocity = v3Zero }
