@@ -64,21 +64,28 @@
       [OpaqueDistanceOpt [Some 100000]]]]
     [Model
      ["TerraFirma.CharacterDispatcher+CharacterModel, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [894 0 894 [Default AnimatedModel]]]]
+      [0 0 0 [Default AnimatedModel]]]]
     [Name Player]
-    [Position [-57.302776 -30.020557 -151.56035]]
+    [Position [-65.789185 -30.015577 -149.73447]]
     [Presence Omnipresent]
-    [Rotation [0 0.8844361 0 0.46666142]]
+    [Rotation [2.7114705E-08 -0.70725656 7.44491E-08 0.706957]]
     [Size [2.6602979 3.5022092 1.984515]]
     [SleepingAllowed False]]
    []]
   [Block3dDispatcher
    [[Name Block3d-0001]
-    [Position [-59.1 -29.2 -150.4]]]
+    [Position [-59.1 -29.2 -150.4]]
+    [Scale [4.2 4.2 4.2]]]
    []]
   [Block3dDispatcher
    [[Name Block3d-0007]
-    [Position [-61.9 -28.8 -149.7]]]
+    [Position [-63.8 -30 -149.7]]
+    [PropagatedDescriptorOpt
+     [Some
+      [Block3dDispatcher
+       [[Name Block3d-0007]
+        [Position [-63.8 -30 -149.7]]]
+       []]]]]
    []]
   [Block3dDispatcher
    [[Name Block3d-0008]
@@ -95,4 +102,29 @@
   [Block3dDispatcher
    [[Name Block3d-0011]
     [Position [-64.7 -27.1 -156.6]]]
+   []]
+  [Block3dDispatcher
+   [[Name Block3d-0002]
+    [Position [-63.2 -29.5 -149.7]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Block3d-0007]]]
+   []]
+  [Block3dDispatcher
+   [[Name Block3d-0003]
+    [Position [-62.7 -29 -149.7]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Block3d-0007]]]
+   []]
+  [Block3dDispatcher
+   [[Name Block3d-0004]
+    [Position [-62.2 -28.5 -149.7]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Block3d-0007]]]
+   []]
+  [Block3dDispatcher
+   [[Name Block3d-0005]
+    [Position [-61.7 -28 -149.7]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Block3d-0007]]]
+   []]
+  [Block3dDispatcher
+   [[Name Block3d-0006]
+    [Position [-61.2 -27.5 -149.7]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Block3d-0007]]]
    []]]]

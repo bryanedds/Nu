@@ -834,6 +834,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 centerInterpolated.Y <- centerUninterpolated.Y // do not interpolate Y
                 character.LinearVelocity <- centerInterpolated - character.Center
                 character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward
+                if Single.IsNaN character.AngularVelocity.X then character.AngularVelocity <- v3Zero
                 character.Center <- centerInterpolated
                 character.Rotation <- character.Ghost.WorldTransform.Rotation
                 let bodyTransformMessage =

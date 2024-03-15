@@ -376,9 +376,9 @@ type [<SymbolicExpansion>] KinematicCharacterProperties =
 
     /// The default kinematic character properties.
     static member defaultProperties =
-        { StepHeight = 0.3f
+        { StepHeight = 0.4f
           SlopeMax = Math.DegreesToRadians 45.0f
-          PenetrationDepthMax = 0.01f }
+          PenetrationDepthMax = 0.04f }
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
