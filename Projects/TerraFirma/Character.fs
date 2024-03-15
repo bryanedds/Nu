@@ -35,7 +35,7 @@ module CharacterDispatcher =
 
         static let [<Literal>] WalkSpeed = 0.1f
         static let [<Literal>] TurnSpeed = 0.035f
-        static let [<Literal>] JumpSpeed = 5.0f
+        static let [<Literal>] JumpSpeed = 6.0f
 
         static member Facets =
             [typeof<AnimatedModelFacet>
@@ -109,7 +109,7 @@ module CharacterDispatcher =
                 // apply walk velocity
                 let forward = rotation.Forward
                 let right = rotation.Right
-                let walkSpeed = if grounded then WalkSpeed else WalkSpeed * 0.5f
+                let walkSpeed = if grounded then WalkSpeed else WalkSpeed * 0.75f
                 let walkVelocity = 
                     (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
@@ -121,7 +121,7 @@ module CharacterDispatcher =
                     else world
 
                 // apply turn velocity
-                let turnSpeed = if grounded then TurnSpeed else TurnSpeed * 0.5f
+                let turnSpeed = if grounded then TurnSpeed else TurnSpeed * 0.75f
                 let turnVelocity =
                     (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                     (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
@@ -140,5 +140,5 @@ module CharacterDispatcher =
 
             | Jump ->
                 let bodyId = entity.GetBodyId world
-                let world = World.jumpBody false JumpSpeed bodyId world
+                let world = World.jumpBody true JumpSpeed bodyId world
                 just world

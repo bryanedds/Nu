@@ -831,6 +831,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let mutable centerInterpolated = v3Zero
                 for i in 0 .. dec character.CenterInterpolations.Length do centerInterpolated <- centerInterpolated + character.CenterInterpolations.[i]
                 centerInterpolated <- centerInterpolated / single character.CenterInterpolations.Length
+                centerInterpolated.Y <- centerUninterpolated.Y // do not interpolate Y
                 character.LinearVelocity <- centerInterpolated - character.Center
                 character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward
                 character.Center <- centerInterpolated
