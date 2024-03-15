@@ -31,7 +31,7 @@ open DotRecast.Recast
 //  CollisionCategories                                                             //
 //  CollisionDetection                                                              //
 //  BodyShape                                                                       //
-//  JointDevice                                                                     //
+//  BodyJoint                                                                     //
 //  DateTimeOffset?                                                                 //
 //  SymbolicCompression                                                             //
 //  Flag Enums                                                                      //

@@ -22,7 +22,7 @@
     [AnimationDelay 8]
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
-     [BodyCapsule [0.5 0.25 None None]]]
+     [CapsuleShape [0.5 0.25 None None]]]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -41,7 +41,7 @@
     [AnimationDelay 8]
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
-     [BodyCapsule [0.5 0.25 None None]]]
+     [CapsuleShape [0.5 0.25 None None]]]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -60,7 +60,7 @@
     [AnimationDelay 8]
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
-     [BodyCapsule [0.5 0.25 None None]]]
+     [CapsuleShape [0.5 0.25 None None]]]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -79,7 +79,7 @@
     [AnimationDelay 8]
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
-     [BodyCapsule [0.5 0.25 None None]]]
+     [CapsuleShape [0.5 0.25 None None]]]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -98,7 +98,7 @@
     [AnimationDelay 8]
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
-     [BodyCapsule [0.5 0.25 None None]]]
+     [CapsuleShape [0.5 0.25 None None]]]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -117,7 +117,7 @@
     [AnimationDelay 8]
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
-     [BodyCapsule [0.5 0.25 None None]]]
+     [CapsuleShape [0.5 0.25 None None]]]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]

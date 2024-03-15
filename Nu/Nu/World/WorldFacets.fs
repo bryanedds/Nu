@@ -1417,7 +1417,7 @@ module RigidBodyFacetModule =
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask Constants.Physics.CollisionWildcard
-             define Entity.BodyShape (BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None })
+             define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })
              define Entity.Sensor false
              define Entity.ModelDriven false
              computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalIndex }) None]
@@ -1499,36 +1499,36 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetIs2d world) (entity.GetBodyId world) world
 
 [<AutoOpen>]
-module JointFacetModule =
+module BodyJointFacetModule =
 
     type Entity with
-        member this.GetJointDevice world : JointDevice = this.Get (nameof this.JointDevice) world
-        member this.SetJointDevice (value : JointDevice) world = this.Set (nameof this.JointDevice) value world
-        member this.JointDevice = lens (nameof this.JointDevice) this this.GetJointDevice this.SetJointDevice
-        member this.GetJointId world : JointId = this.Get (nameof this.JointId) world
-        member this.JointId = lensReadOnly (nameof this.JointId) this this.GetJointId
+        member this.GetBodyJoint world : BodyJoint = this.Get (nameof this.BodyJoint) world
+        member this.SetBodyJoint (value : BodyJoint) world = this.Set (nameof this.BodyJoint) value world
+        member this.BodyJoint = lens (nameof this.BodyJoint) this this.GetBodyJoint this.SetBodyJoint
+        member this.GetBodyJointId world : BodyJointId = this.Get (nameof this.BodyJointId) world
+        member this.BodyJointId = lensReadOnly (nameof this.BodyJointId) this this.GetBodyJointId
 
     /// Augments an entity with a physics-driven joint.
-    type JointFacet () =
+    type BodyJointFacet () =
         inherit Facet (true)
 
         static member Properties =
-            [define Entity.JointDevice JointEmpty
-             computed Entity.JointId (fun (entity : Entity) _ -> { JointSource = entity; JointIndex = Constants.Physics.InternalIndex }) None]
+            [define Entity.BodyJoint EmptyJoint
+             computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
 
         override this.Register (entity, world) =
-            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof JointFacet) world
-            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.JointDevice)) entity (nameof JointFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Transform)) entity (nameof BodyJointFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
             world
 
         override this.RegisterPhysics (entity, world) =
-            let jointProperties =
-                { JointIndex = (entity.GetJointId world).JointIndex
-                  JointDevice = (entity.GetJointDevice world) }
-            World.createJoint (entity.GetIs2d world) entity jointProperties world
+            let bodyJointProperties =
+                { BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex
+                  BodyJoint = (entity.GetBodyJoint world) }
+            World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyJoint (entity.GetIs2d world) (entity.GetJointId world) world
+            World.destroyBodyJoint (entity.GetIs2d world) (entity.GetBodyJointId world) world
 
 [<AutoOpen>]
 module TileMapFacetModule =
@@ -2832,7 +2832,7 @@ module TerrainFacetModule =
             match entity.TryGetTerrainResolution world with
             | Some resolution ->
                 let mutable transform = entity.GetTransform world
-                let bodyTerrain =
+                let terrainShape =
                     { Resolution = resolution
                       Bounds = transform.Bounds3d
                       HeightMap = entity.GetHeightMap world
@@ -2843,7 +2843,7 @@ module TerrainFacetModule =
                       Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
                       Rotation = transform.Rotation
                       Scale = transform.Scale
-                      BodyShape = BodyTerrain bodyTerrain
+                      BodyShape = TerrainShape terrainShape
                       BodyType = Static
                       SleepingAllowed = true
                       Enabled = entity.GetBodyEnabled world
@@ -2906,7 +2906,7 @@ module NavBodyFacetModule =
 
         static let propagateNavBody (entity : Entity) world =
             match entity.GetNavShape world with
-            | EmptyShape ->
+            | NavShape.EmptyNavShape ->
                 if entity.GetIs2d world
                 then world // TODO: implement for 2d navigation when it's available.
                 else World.setNav3dBodyOpt None entity world
@@ -2923,7 +2923,7 @@ module NavBodyFacetModule =
         static member Properties =
             [define Entity.StaticModel Assets.Default.StaticModel
              define Entity.SurfaceIndex 0
-             define Entity.NavShape BoundsShape]
+             define Entity.NavShape BoundsNavShape]
 
         override this.Register (entity, world) =
 
@@ -2937,8 +2937,8 @@ module NavBodyFacetModule =
                 let entity = evt.Subscriber : Entity
                 let previous = evt.Data.Previous :?> NavShape
                 let shape = evt.Data.Value :?> NavShape
-                let world = match previous with EmptyShape -> world | _ -> unsubscribe world
-                let world = match shape with EmptyShape -> world | _ -> subscribe world
+                let world = match previous with NavShape.EmptyNavShape -> world | _ -> unsubscribe world
+                let world = match shape with NavShape.EmptyNavShape -> world | _ -> subscribe world
                 let world = propagateNavBody entity world
                 (Cascade, world)
             let callback2 evt world =
@@ -2947,7 +2947,7 @@ module NavBodyFacetModule =
                     (Cascade, unsubscribe world)
                 else (Cascade, world)
             let callback3 _ world = (Cascade, unsubscribe world)
-            let world = match entity.GetNavShape world with EmptyShape -> world | _ -> subscribe world
+            let world = match entity.GetNavShape world with NavShape.EmptyNavShape -> world | _ -> subscribe world
             let world = World.sense callback (entity.ChangeEvent (nameof entity.NavShape)) entity (nameof NavBodyFacet) world
             let world = World.sense callback2 entity.FacetNames.ChangeEvent entity (nameof NavBodyFacet) world
             let world = World.sense callback3 entity.UnregisteringEvent entity (nameof NavBodyFacet) world

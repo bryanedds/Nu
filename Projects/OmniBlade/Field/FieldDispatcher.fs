@@ -24,9 +24,9 @@ module FieldDispatcher =
             // NOTE: no special conditions in demo.
             song
 
-        static let isIntersectedProp (collider : ShapeIndex) (collidee : ShapeIndex) world =
+        static let isIntersectedProp (collider : BodyShapeIndex) (collidee : BodyShapeIndex) world =
             let collideeEntity = collidee.BodyId.BodySource :?> Entity
-            if (collider.ShapeIndex = Constants.Field.AvatarCollisionShapeIndex &&
+            if (collider.BodyShapeIndex = Constants.Field.AvatarCollisionShapeIndex &&
                 collideeEntity.Exists world &&
                 collideeEntity.Is<PropDispatcher> world &&
                 match (collideeEntity.GetPropPlus world).Prop.PropData with
@@ -34,7 +34,7 @@ module FieldDispatcher =
                 | Sensor _ -> true
                 | _ -> false) then
                 true
-            elif (collider.ShapeIndex = Constants.Field.AvatarSensorShapeIndex &&
+            elif (collider.BodyShapeIndex = Constants.Field.AvatarSensorShapeIndex &&
                   collideeEntity.Exists world &&
                   collideeEntity.Is<PropDispatcher> world &&
                   match (collideeEntity.GetPropPlus world).Prop.PropData with

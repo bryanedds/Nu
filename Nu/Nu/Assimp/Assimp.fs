@@ -32,10 +32,10 @@ type RenderStyle =
 /// The shape of a navigation body (includes both 2d and 3d representations, with some cases unsupported depending on
 /// the dimensionality of the system utilizing it).
 type NavShape =
-    | EmptyShape
-    | BoundsShape
-    | StaticModelShape
-    | StaticModelSurfaceShape
+    | EmptyNavShape
+    | BoundsNavShape
+    | StaticModelNavShape
+    | StaticModelSurfaceNavShape
 
 /// The batch phasing such involved in persisting OpenGL state.
 type [<Struct>] BatchPhase =
@@ -259,7 +259,7 @@ module AssimpExtensions =
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<NavShape> |> Some
                     with _ -> None
-                else Some EmptyShape
+                else Some EmptyNavShape
 
     /// Node extensions.
     type Assimp.Node with

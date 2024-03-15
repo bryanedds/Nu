@@ -51,7 +51,7 @@ module PlayerDispatcher =
              Entity.LinearDamping == 3.0f
              Entity.GravityOverride == Some v3Zero
              Entity.BodyType == Dynamic
-             Entity.BodyShape == BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None }
+             Entity.BodyShape == CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None }
              Entity.CelCount == 16
              Entity.CelRun == 4
              Entity.CelSize == v2 48.0f 96.0f

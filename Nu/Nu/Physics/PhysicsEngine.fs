@@ -200,18 +200,13 @@ type [<CustomEquality; NoComparison>] BodyId =
         BodyId.hash this
 
 /// Identifies a body shape in a physics engine.
-and ShapeIndex =
+type BodyShapeIndex =
     { BodyId : BodyId
-      ShapeIndex : int }
-
-/// Identifies a joint in a physics engine.
-and JointId =
-    { JointSource : Simulant
-      JointIndex : int }
+      BodyShapeIndex : int }
 
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
-    { ShapeIndex : int
+    { BodyShapeIndex : int
       FrictionOpt : single option
       RestitutionOpt : single option
       CollisionCategoriesOpt : int option
@@ -220,7 +215,7 @@ type BodyShapeProperties =
 
     /// The empty body shape properties value.
     static member empty =
-        { ShapeIndex = 0
+        { BodyShapeIndex = 0
           FrictionOpt = None
           RestitutionOpt = None
           CollisionCategoriesOpt = None
@@ -251,7 +246,7 @@ type [<Struct>] CollisionDetection =
     | Continuous of MotionThreshold : single * SweptSphereRadius : single
 
 /// The shape of a physics body box.
-type BodyBox =
+type BoxShape =
     { Size : Vector3
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
@@ -259,47 +254,47 @@ type BodyBox =
         { Size = box.Size; TransformOpt = Some (Affine.makeTranslation box.Center); PropertiesOpt = None }
 
 /// The shape of a physics body sphere.
-type BodySphere =
+type SphereShape =
     { Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
-type BodyCapsule =
+type CapsuleShape =
     { Height : single
       Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body capsule.
-type BodyBoxRounded =
+type BoxRoundedShape =
     { Size : Vector3
       Radius : single
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a convex physics body defined by body-relative points.
-type BodyPoints =
+type PointsShape =
     { Points : Vector3 array
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of triangle faces.
-type BodyGeometry =
+type GeometryShape =
     { Vertices : Vector3 array
       Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of a static model.
-type BodyStaticModel =
+type StaticModelShape =
     { StaticModel : StaticModel AssetTag
       Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of a static model surface.
-type BodyStaticModelSurface =
+type StaticModelSurfaceShape =
     { SurfaceIndex : int
       StaticModel : StaticModel AssetTag
       Convex : bool
@@ -307,7 +302,7 @@ type BodyStaticModelSurface =
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body in terms of a terrain height map.
-type BodyTerrain =
+type TerrainShape =
     { Resolution : Vector2i
       Bounds : Box3
       HeightMap : HeightMap
@@ -315,52 +310,51 @@ type BodyTerrain =
       PropertiesOpt : BodyShapeProperties option }
 
 /// The shape of a physics body.
-/// TODO: consider renaming this family of types from Body___ to ___Shape.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyShape =
-    | BodyEmpty
-    | BodyBox of BodyBox
-    | BodySphere of BodySphere
-    | BodyCapsule of BodyCapsule
-    | BodyBoxRounded of BodyBoxRounded
-    | BodyPoints of BodyPoints
-    | BodyGeometry of BodyGeometry
-    | BodyStaticModel of BodyStaticModel
-    | BodyStaticModelSurface of BodyStaticModelSurface
-    | BodyTerrain of BodyTerrain
+    | EmptyShape
+    | BoxShape of BoxShape
+    | SphereShape of SphereShape
+    | CapsuleShape of CapsuleShape
+    | BoxRoundedShape of BoxRoundedShape
+    | PointsShape of PointsShape
+    | GeometryShape of GeometryShape
+    | StaticModelShape of StaticModelShape
+    | StaticModelSurfaceShape of StaticModelSurfaceShape
+    | TerrainShape of TerrainShape
     | BodyShapes of BodyShape list
 
     /// Get the shape's transform if it exists.
     static member getTransformOpt shape =
         match shape with
-        | BodyEmpty -> None
-        | BodyBox box -> box.TransformOpt
-        | BodySphere sphere -> sphere.TransformOpt
-        | BodyCapsule capsule -> capsule.TransformOpt
-        | BodyBoxRounded boxRounded -> boxRounded.TransformOpt
-        | BodyPoints points -> points.TransformOpt
-        | BodyGeometry geometry -> geometry.TransformOpt
-        | BodyStaticModel staticModel -> staticModel.TransformOpt
-        | BodyStaticModelSurface staticModelSurface -> staticModelSurface.TransformOpt
-        | BodyTerrain terrain -> terrain.TransformOpt
+        | EmptyShape -> None
+        | BoxShape box -> box.TransformOpt
+        | SphereShape sphere -> sphere.TransformOpt
+        | CapsuleShape capsule -> capsule.TransformOpt
+        | BoxRoundedShape boxRounded -> boxRounded.TransformOpt
+        | PointsShape points -> points.TransformOpt
+        | GeometryShape geometry -> geometry.TransformOpt
+        | StaticModelShape staticModel -> staticModel.TransformOpt
+        | StaticModelSurfaceShape staticModelSurface -> staticModelSurface.TransformOpt
+        | TerrainShape terrain -> terrain.TransformOpt
         | BodyShapes _ -> None
 
     /// Get the shape's properties if they exist.
     static member getPropertiesOpt shape =
         match shape with
-        | BodyEmpty -> None
-        | BodyBox box -> box.PropertiesOpt
-        | BodySphere sphere -> sphere.PropertiesOpt
-        | BodyCapsule capsule -> capsule.PropertiesOpt
-        | BodyBoxRounded boxRounded -> boxRounded.PropertiesOpt
-        | BodyPoints points -> points.PropertiesOpt
-        | BodyGeometry geometry -> geometry.PropertiesOpt
-        | BodyStaticModel staticModel -> staticModel.PropertiesOpt
-        | BodyStaticModelSurface staticModelSurface -> staticModelSurface.PropertiesOpt
-        | BodyTerrain terrain -> terrain.PropertiesOpt
+        | EmptyShape -> None
+        | BoxShape box -> box.PropertiesOpt
+        | SphereShape sphere -> sphere.PropertiesOpt
+        | CapsuleShape capsule -> capsule.PropertiesOpt
+        | BoxRoundedShape boxRounded -> boxRounded.PropertiesOpt
+        | PointsShape points -> points.PropertiesOpt
+        | GeometryShape geometry -> geometry.PropertiesOpt
+        | StaticModelShape staticModel -> staticModel.PropertiesOpt
+        | StaticModelSurfaceShape staticModelSurface -> staticModelSurface.PropertiesOpt
+        | TerrainShape terrain -> terrain.PropertiesOpt
         | BodyShapes _ -> None
 
 /// The type of a physics body.
@@ -411,7 +405,12 @@ type BodyProperties =
       CollisionMask : int
       Sensor : bool }
 
-type JointAngle =
+/// Identifies a joint in a physics engine.
+type BodyJointId =
+    { BodyJointSource : Simulant
+      BodyJointIndex : int }
+
+type AngleJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
@@ -425,7 +424,7 @@ type JointAngle =
       RelaxationFactor : single
       BreakImpulseThreshold : single }
 
-type JointDistance =
+type DistanceJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
@@ -433,80 +432,79 @@ type JointDistance =
       Length : single
       Frequency : single }
 
-type JointFriction =
+type FrictionJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type JointGear =
+type GearJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type JointMotor =
+type MotorJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type JointPrismatic =
+type PrismaticJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type JointPulley =
+type PulleyJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type JointRevolute =
+type RevoluteJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type JointRope =
+type RopeJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
-type JointWheel =
+type WheelJoint =
     { TargetId : BodyId
       TargetId2 : BodyId
       Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// A joint on physics bodies.
-/// TODO: consider renaming this family of types from Joint___ to ___Joint.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
-type JointDevice =
-    | JointEmpty
-    | JointAngle of JointAngle
-    | JointDistance of JointDistance
-    | JointFriction of JointFriction
-    | JointGear of JointGear
-    | JointMotor of JointMotor
-    | JointPrismatic of JointPrismatic
-    | JointPulley of JointPulley
-    | JointRevolute of JointRevolute
-    | JointRope of JointRope
-    | JointWheel of JointWheel
+type BodyJoint =
+    | EmptyJoint
+    | AngleJoint of AngleJoint
+    | DistanceJoint of DistanceJoint
+    | FrictionJoint of FrictionJoint
+    | GearJoint of GearJoint
+    | MotorJoint of MotorJoint
+    | PrismaticJoint of PrismaticJoint
+    | PulleyJoint of PulleyJoint
+    | RevoluteJoint of RevoluteJoint
+    | RopeJoint of RopeJoint
+    | WheelJoint of WheelJoint
 
-type JointProperties =
-    { JointIndex : int
-      JointDevice : JointDevice }
+type BodyJointProperties =
+    { BodyJointIndex : int
+      BodyJoint : BodyJoint }
 
     static member empty =
-        { JointIndex = 0
-          JointDevice = JointEmpty }
+        { BodyJointIndex = 0
+          BodyJoint = EmptyJoint }
 
 /// A message to the physics system to create a body.
 type CreateBodyMessage =
@@ -527,22 +525,22 @@ type DestroyBodiesMessage =
     { BodyIds : BodyId list }
 
 /// A message to the physics system to create a joint.
-type CreateJointMessage =
-    { JointSource : Simulant
-      JointProperties : JointProperties }
+type CreateBodyJointMessage =
+    { BodyJointSource : Simulant
+      BodyJointProperties : BodyJointProperties }
 
 /// A message to the physics system to create multiple joints.
-type CreateJointsMessage =
-    { JointsSource : Simulant
-      JointsProperties : JointProperties list }
+type CreateBodyJointsMessage =
+    { BodyJointsSource : Simulant
+      BodyJointsProperties : BodyJointProperties list }
 
 /// A message to the physics system to destroy a joint.
-type DestroyJointMessage =
-    { JointId : JointId }
+type DestroyBodyJointMessage =
+    { BodyJointId : BodyJointId }
 
 /// A message to the physics system to destroy multiple joints.
-type DestroyJointsMessage =
-    { JointIds : JointId list }
+type DestroyBodyJointsMessage =
+    { BodyJointIds : BodyJointId list }
 
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =
@@ -598,14 +596,14 @@ type SetBodyObservableMessage =
 
 /// A message from the physics system describing a body collision that took place.
 type BodyCollisionMessage =
-    { BodyShapeSource : ShapeIndex
-      BodyShapeSource2 : ShapeIndex
+    { BodyShapeSource : BodyShapeIndex
+      BodyShapeSource2 : BodyShapeIndex
       Normal : Vector3 }
 
 /// A message from the physics system describing a body separation that took place.
 type BodySeparationMessage =
-    { BodyShapeSource : ShapeIndex
-      BodyShapeSource2 : ShapeIndex }
+    { BodyShapeSource : BodyShapeIndex
+      BodyShapeSource2 : BodyShapeIndex }
 
 /// A message from the physics system describing the updated transform of a body.
 type BodyTransformMessage =
@@ -627,10 +625,10 @@ type PhysicsMessage =
     | CreateBodiesMessage of CreateBodiesMessage
     | DestroyBodyMessage of DestroyBodyMessage
     | DestroyBodiesMessage of DestroyBodiesMessage
-    | CreateJointMessage of CreateJointMessage
-    | CreateJointsMessage of CreateJointsMessage
-    | DestroyJointMessage of DestroyJointMessage
-    | DestroyJointsMessage of DestroyJointsMessage
+    | CreateBodyJointMessage of CreateBodyJointMessage
+    | CreateBodyJointsMessage of CreateBodyJointsMessage
+    | DestroyBodyJointMessage of DestroyBodyJointMessage
+    | DestroyBodyJointsMessage of DestroyBodyJointsMessage
     | SetBodyEnabledMessage of SetBodyEnabledMessage
     | SetBodyCenterMessage of SetBodyCenterMessage
     | SetBodyRotationMessage of SetBodyRotationMessage
@@ -710,14 +708,14 @@ module Physics =
             | Some transform -> Some { transform with Translation = transform.Translation * scalar }
             | None -> None
         match bodyShape with
-        | BodyEmpty -> BodyEmpty
-        | BodyBox bodyBox -> BodyBox { bodyBox with Size = Vector3.Multiply (size, bodyBox.Size); TransformOpt = scaleTranslation size bodyBox.TransformOpt }
-        | BodySphere bodySphere -> BodySphere { bodySphere with Radius = size.X * bodySphere.Radius; TransformOpt = scaleTranslation size bodySphere.TransformOpt }
-        | BodyCapsule bodyCapsule -> BodyCapsule { bodyCapsule with Height = size.Y * bodyCapsule.Height; Radius = size.Y * bodyCapsule.Radius; TransformOpt = scaleTranslation size bodyCapsule.TransformOpt }
-        | BodyBoxRounded bodyBoxRounded -> BodyBoxRounded { bodyBoxRounded with Size = Vector3.Multiply (size, bodyBoxRounded.Size); Radius = size.X * bodyBoxRounded.Radius; TransformOpt = scaleTranslation size bodyBoxRounded.TransformOpt }
-        | BodyPoints bodyPoints -> BodyPoints { bodyPoints with Points = Array.map (fun vertex -> size * vertex) bodyPoints.Points; TransformOpt = scaleTranslation size bodyPoints.TransformOpt }
-        | BodyGeometry _ as bodyGeometry -> bodyGeometry
-        | BodyStaticModel _ as bodyStaticModel -> bodyStaticModel
-        | BodyStaticModelSurface _ as bodyStaticModelSurface -> bodyStaticModelSurface
-        | BodyTerrain _ as bodyTerrain -> bodyTerrain
+        | EmptyShape -> EmptyShape
+        | BoxShape boxShape -> BoxShape { boxShape with Size = Vector3.Multiply (size, boxShape.Size); TransformOpt = scaleTranslation size boxShape.TransformOpt }
+        | SphereShape sphereShape -> SphereShape { sphereShape with Radius = size.X * sphereShape.Radius; TransformOpt = scaleTranslation size sphereShape.TransformOpt }
+        | CapsuleShape capsuleShape -> CapsuleShape { capsuleShape with Height = size.Y * capsuleShape.Height; Radius = size.Y * capsuleShape.Radius; TransformOpt = scaleTranslation size capsuleShape.TransformOpt }
+        | BoxRoundedShape boxRoundedShape -> BoxRoundedShape { boxRoundedShape with Size = Vector3.Multiply (size, boxRoundedShape.Size); Radius = size.X * boxRoundedShape.Radius; TransformOpt = scaleTranslation size boxRoundedShape.TransformOpt }
+        | PointsShape pointsShape -> PointsShape { pointsShape with Points = Array.map (fun vertex -> size * vertex) pointsShape.Points; TransformOpt = scaleTranslation size pointsShape.TransformOpt }
+        | GeometryShape _ as geometryShape -> geometryShape
+        | StaticModelShape _ as staticModelShape -> staticModelShape
+        | StaticModelSurfaceShape _ as staticModelSurfaceShape -> staticModelSurfaceShape
+        | TerrainShape _ as terrainShape -> terrainShape
         | BodyShapes bodyShapes -> BodyShapes (List.map (localizeBodyShape size) bodyShapes)

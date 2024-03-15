@@ -361,15 +361,15 @@ module WorldScreenModule =
         static member internal getNav3dDescriptors contents =
             [for (bounds, affineMatrix, staticModel, surfaceIndex, content) in contents do
                 match content with
-                | EmptyShape -> ()
-                | BoundsShape -> Left bounds
-                | StaticModelSurfaceShape ->
+                | NavShape.EmptyNavShape -> ()
+                | NavShape.BoundsNavShape -> Left bounds
+                | NavShape.StaticModelSurfaceNavShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                             Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
                     | None -> ()
-                | StaticModelShape ->
+                | NavShape.StaticModelNavShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | Some physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do

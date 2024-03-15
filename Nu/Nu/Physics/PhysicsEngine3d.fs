@@ -61,7 +61,7 @@ type KinematicCharacter3d =
 type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : DynamicsWorld
-          Constraints : Dictionary<JointId, TypedConstraint>
+          Constraints : Dictionary<BodyJointId, TypedConstraint>
           Bodies : Dictionary<BodyId, RigidBody>
           BodiesGravitating : Dictionary<BodyId, Vector3 option * RigidBody>
           Objects : Dictionary<BodyId, CollisionObject>
@@ -83,16 +83,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private handleCollision physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
         let bodyCollisionMessage =
-            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0 }
-              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0 }
+            { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
+              BodyShapeSource2 = { BodyId = bodyId2; BodyShapeIndex = 0 }
               Normal = normal }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
     
     static member private handleSeparation physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) =
         let bodySeparationMessage =
-            { BodyShapeSource = { BodyId = bodyId; ShapeIndex = 0 }
-              BodyShapeSource2 = { BodyId = bodyId2; ShapeIndex = 0 }}
+            { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
+              BodyShapeSource2 = { BodyId = bodyId2; BodyShapeIndex = 0 }}
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
@@ -143,82 +143,82 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
         body.Gravity <- match bodyProperties.GravityOverride with Some gravityOverride -> gravityOverride | None -> gravity
 
-    static member private attachBodyBox bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        let box = new BoxShape (bodyBox.Size * 0.5f)
-        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt box
+    static member private attachBoxShape bodySource (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
+        let box = new BoxShape (boxShape.Size * 0.5f)
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties boxShape.PropertiesOpt box
         box.LocalScaling <- bodyProperties.Scale
         box.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+              BodyShapeIndex = match boxShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
         let center =
-            match bodyBox.TransformOpt with
+            match boxShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
             match bodyProperties.Substance with
             | Density density ->
-                let volume = bodyBox.Size.X * bodyBox.Size.Y * bodyBox.Size.Z
+                let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
                 volume * density
             | Mass mass -> mass
         let inertia = box.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, box)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
-    static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        let sphere = new SphereShape (bodySphere.Radius)
-        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt sphere
+    static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
+        let sphere = new SphereShape (sphereShape.Radius)
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties sphereShape.PropertiesOpt sphere
         sphere.LocalScaling <- bodyProperties.Scale
         sphere.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+              BodyShapeIndex = match sphereShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
         let center =
-            match bodySphere.TransformOpt with
+            match sphereShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
             match bodyProperties.Substance with
             | Density density ->
-                let volume = 4.0f / 3.0f * MathF.PI * pown bodySphere.Radius 3
+                let volume = 4.0f / 3.0f * MathF.PI * pown sphereShape.Radius 3
                 volume * density
             | Mass mass -> mass
         let inertia = sphere.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, sphere)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
-    static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        let capsule = new CapsuleShape (bodyCapsule.Radius, bodyCapsule.Height)
-        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt capsule
+    static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
+        let capsule = new CapsuleShape (capsuleShape.Radius, capsuleShape.Height)
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties capsuleShape.PropertiesOpt capsule
         capsule.LocalScaling <- bodyProperties.Scale
         capsule.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+              BodyShapeIndex = match capsuleShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
         let center =
-            match bodyCapsule.TransformOpt with
+            match capsuleShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
             match bodyProperties.Substance with
             | Density density ->
-                let volume = MathF.PI * pown bodyCapsule.Radius 2 * (4.0f / 3.0f * bodyCapsule.Radius * bodyCapsule.Height)
+                let volume = MathF.PI * pown capsuleShape.Radius 2 * (4.0f / 3.0f * capsuleShape.Radius * capsuleShape.Height)
                 volume * density
             | Mass mass -> mass
         let inertia = capsule.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, capsule)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
-    static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (compoundShape : CompoundShape) centerMassInertiaDisposes =
+    static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
-        let bodyBox = { Size = bodyBoxRounded.Size; TransformOpt = bodyBoxRounded.TransformOpt; PropertiesOpt = bodyBoxRounded.PropertiesOpt }
-        PhysicsEngine3d.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
+        let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
+        PhysicsEngine3d.attachBoxShape bodySource bodyProperties boxShape compoundShape centerMassInertiaDisposes
 
-    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (bodyPoints : BodyPoints) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
-        let unscaledPointsKey = UnscaledPointsKey.make bodyPoints.Points
+    static member private attachBodyConvexHull bodySource (bodyProperties : BodyProperties) (pointsShape : PointsShape) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
+        let unscaledPointsKey = UnscaledPointsKey.make pointsShape.Points
         let (optimized, vertices) =
             match physicsEngine.UnscaledPointsCached.TryGetValue unscaledPointsKey with
             | (true, unscaledVertices) -> (true, unscaledVertices)
-            | (false, _) -> (false, bodyPoints.Points)
+            | (false, _) -> (false, pointsShape.Points)
         let hull = new ConvexHullShape (vertices)
-        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyPoints.PropertiesOpt hull
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt hull
         if not optimized then
             hull.OptimizeConvexHull ()
             let unscaledPoints = Array.ofSeq hull.UnscaledPoints
@@ -226,14 +226,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         hull.LocalScaling <- bodyProperties.Scale
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyPoints.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+              BodyShapeIndex = match pointsShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation.
         let mutable min = v3Zero
         let mutable max = v3Zero
         hull.GetAabb (m4Identity, &min, &max)
         let center =
-            match bodyPoints.TransformOpt with
+            match pointsShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
         let box = box3 min max
@@ -247,22 +247,22 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
-    static member private attachBodyBvhTriangles bodySource (bodyProperties : BodyProperties) (bodyGeometry : BodyGeometry) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        let vertexArray = new TriangleIndexVertexArray (Array.init bodyGeometry.Vertices.Length id, bodyGeometry.Vertices)
+    static member private attachBodyBvhTriangles bodySource (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
+        let vertexArray = new TriangleIndexVertexArray (Array.init geometryShape.Vertices.Length id, geometryShape.Vertices)
         let shape = new BvhTriangleMeshShape (vertexArray, true)
         shape.BuildOptimizedBvh ()
-        PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyGeometry.PropertiesOpt shape
+        PhysicsEngine3d.configureBodyShapeProperties bodyProperties geometryShape.PropertiesOpt shape
         shape.LocalScaling <- bodyProperties.Scale
         shape.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyGeometry.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+              BodyShapeIndex = match geometryShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation?
         let mutable min = v3Zero
         let mutable max = v3Zero
         shape.GetAabb (m4Identity, &min, &max)
         let center =
-            match bodyGeometry.TransformOpt with
+            match geometryShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
         let box = box3 min max
@@ -276,20 +276,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, shape)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
-    static member private attachBodyGeometry bodySource (bodyProperties : BodyProperties) (bodyGeometry : BodyGeometry) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
-        if bodyGeometry.Convex then
-            let bodyPoints = { Points = bodyGeometry.Vertices; TransformOpt = bodyGeometry.TransformOpt; PropertiesOpt = bodyGeometry.PropertiesOpt }
-            PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyPoints compoundShape centerMassInertiaDisposes physicsEngine
-        else PhysicsEngine3d.attachBodyBvhTriangles bodySource bodyProperties bodyGeometry compoundShape centerMassInertiaDisposes
+    static member private attachGeometryShape bodySource (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
+        if geometryShape.Convex then
+            let pointsShape = { Points = geometryShape.Vertices; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
+            PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
+        else PhysicsEngine3d.attachBodyBvhTriangles bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModel bodySource (bodyProperties : BodyProperties) (bodyStaticModel : BodyStaticModel) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
-        match physicsEngine.TryGetStaticModelMetadata bodyStaticModel.StaticModel with
+    static member private attachStaticModelShape bodySource (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
+        match physicsEngine.TryGetStaticModelMetadata staticModelShape.StaticModel with
         | Some staticModel ->
             Seq.fold (fun centerMassInertiaDisposes i ->
                 let surface = staticModel.Surfaces.[i]
                 let transform =
-                    match bodyStaticModel.TransformOpt with
+                    match staticModelShape.TransformOpt with
                     | Some transform ->
                         Affine.make
                             (Vector3.Transform (transform.Translation, surface.SurfaceMatrix))
@@ -300,28 +300,28 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             (Vector3.Transform (v3Zero, surface.SurfaceMatrix))
                             (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromQuaternion quatIdentity * surface.SurfaceMatrix))
                             (Vector3.Transform (v3One, surface.SurfaceMatrix))
-                let bodyStaticModelSurface = { StaticModel = bodyStaticModel.StaticModel; SurfaceIndex = i; Convex = bodyStaticModel.Convex; TransformOpt = Some transform; PropertiesOpt = bodyStaticModel.PropertiesOpt }
-                PhysicsEngine3d.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine)
+                let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
+                PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine)
                 centerMassInertiaDisposes
                 [0 .. dec staticModel.Surfaces.Length]
         | None -> centerMassInertiaDisposes
 
     // TODO: add some error logging.
-    static member private attachBodyStaticModelSurface bodySource (bodyProperties : BodyProperties) (bodyStaticModelSurface : BodyStaticModelSurface) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
-        match physicsEngine.TryGetStaticModelMetadata bodyStaticModelSurface.StaticModel with
+    static member private attachStaticModelShapeSurface bodySource (bodyProperties : BodyProperties) (staticModelSurfaceShape : StaticModelSurfaceShape) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
+        match physicsEngine.TryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
         | Some staticModel ->
-            if  bodyStaticModelSurface.SurfaceIndex > -1 &&
-                bodyStaticModelSurface.SurfaceIndex < staticModel.Surfaces.Length then
-                let geometry = staticModel.Surfaces.[bodyStaticModelSurface.SurfaceIndex].PhysicallyBasedGeometry
-                let bodyGeometry = { Vertices = geometry.Vertices; Convex = bodyStaticModelSurface.Convex; TransformOpt = bodyStaticModelSurface.TransformOpt; PropertiesOpt = bodyStaticModelSurface.PropertiesOpt }
-                PhysicsEngine3d.attachBodyGeometry bodySource bodyProperties bodyGeometry compoundShape centerMassInertiaDisposes physicsEngine
+            if  staticModelSurfaceShape.SurfaceIndex > -1 &&
+                staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
+                let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
+                let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
             else centerMassInertiaDisposes
         | None -> centerMassInertiaDisposes
 
-    static member private attachBodyTerrain tryGetAssetFilePath bodySource (bodyProperties : BodyProperties) (bodyTerrain : BodyTerrain) (compoundShape : CompoundShape) centerMassInertiaDisposes =
-        let resolution = bodyTerrain.Resolution
-        let bounds = bodyTerrain.Bounds
-        match HeightMap.tryGetMetadata tryGetAssetFilePath bounds v2One bodyTerrain.HeightMap with
+    static member private attachTerrainShape tryGetAssetFilePath bodySource (bodyProperties : BodyProperties) (terrainShape : TerrainShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
+        let resolution = terrainShape.Resolution
+        let bounds = terrainShape.Bounds
+        match HeightMap.tryGetMetadata tryGetAssetFilePath bounds v2One terrainShape.HeightMap with
         | Some heightMapMetadata ->
             let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
             for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
@@ -331,12 +331,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
                 terrain.LocalScaling <- v3 (bounds.Width / single (dec resolution.X)) 1.0f (bounds.Depth / single (dec resolution.Y))
                 terrain.SetFlipTriangleWinding true // match terrain winding order - I think!
-                PhysicsEngine3d.configureBodyShapeProperties bodyProperties bodyTerrain.PropertiesOpt terrain
+                PhysicsEngine3d.configureBodyShapeProperties bodyProperties terrainShape.PropertiesOpt terrain
                 terrain.UserObject <-
                     { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                      ShapeIndex = match bodyTerrain.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
+                      BodyShapeIndex = match terrainShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
                 let center =
-                    match bodyTerrain.TransformOpt with
+                    match terrainShape.TransformOpt with
                     | Some transform -> transform.Translation
                     | None -> v3Zero
                 let mass = 0.0f // infinite mass
@@ -355,16 +355,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine =
         match bodyShape with
-        | BodyEmpty -> centerMassInertiaDisposes
-        | BodyBox bodyBox -> PhysicsEngine3d.attachBodyBox bodySource bodyProperties bodyBox compoundShape centerMassInertiaDisposes
-        | BodySphere bodySphere -> PhysicsEngine3d.attachBodySphere bodySource bodyProperties bodySphere compoundShape centerMassInertiaDisposes
-        | BodyCapsule bodyCapsule -> PhysicsEngine3d.attachBodyCapsule bodySource bodyProperties bodyCapsule compoundShape centerMassInertiaDisposes
-        | BodyBoxRounded bodyBoxRounded -> PhysicsEngine3d.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded compoundShape centerMassInertiaDisposes
-        | BodyPoints bodyPoints -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties bodyPoints compoundShape centerMassInertiaDisposes physicsEngine
-        | BodyGeometry bodyGeometry -> PhysicsEngine3d.attachBodyGeometry bodySource bodyProperties bodyGeometry compoundShape centerMassInertiaDisposes physicsEngine
-        | BodyStaticModel bodyStaticModel -> PhysicsEngine3d.attachBodyStaticModel bodySource bodyProperties bodyStaticModel compoundShape centerMassInertiaDisposes physicsEngine
-        | BodyStaticModelSurface bodyStaticModelSurface -> PhysicsEngine3d.attachBodyStaticModelSurface bodySource bodyProperties bodyStaticModelSurface compoundShape centerMassInertiaDisposes physicsEngine
-        | BodyTerrain bodyTerrain -> PhysicsEngine3d.attachBodyTerrain tryGetAssetFilePath bodySource bodyProperties bodyTerrain compoundShape centerMassInertiaDisposes
+        | EmptyShape -> centerMassInertiaDisposes
+        | BoxShape boxShape -> PhysicsEngine3d.attachBoxShape bodySource bodyProperties boxShape compoundShape centerMassInertiaDisposes
+        | SphereShape sphereShape -> PhysicsEngine3d.attachSphereShape bodySource bodyProperties sphereShape compoundShape centerMassInertiaDisposes
+        | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodySource bodyProperties capsuleShape compoundShape centerMassInertiaDisposes
+        | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape compoundShape centerMassInertiaDisposes
+        | PointsShape pointsShape -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
+        | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
+        | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodySource bodyProperties staticModelShape compoundShape centerMassInertiaDisposes physicsEngine
+        | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine
+        | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape tryGetAssetFilePath bodySource bodyProperties terrainShape compoundShape centerMassInertiaDisposes
         | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertiaDisposes physicsEngine
 
     static member private createBody3 attachBodyShape (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
@@ -499,41 +499,41 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             PhysicsEngine3d.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
-    static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
-        let jointProperties = createJointMessage.JointProperties
-        let jointId = { JointSource = createJointMessage.JointSource; JointIndex = jointProperties.JointIndex }
-        match jointProperties.JointDevice with
-        | JointEmpty -> ()
-        | JointAngle jointAngle ->
+    static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
+        let bodyJointProperties = createBodyJointMessage.BodyJointProperties
+        let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = bodyJointProperties.BodyJointIndex }
+        match bodyJointProperties.BodyJoint with
+        | EmptyJoint -> ()
+        | AngleJoint jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, body), (true, body2)) ->
                 let hinge = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
                 hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor, jointAngle.RelaxationFactor)
                 hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
                 physicsEngine.PhysicsContext.AddConstraint (hinge, false)
-                if physicsEngine.Constraints.TryAdd (jointId, hinge)
+                if physicsEngine.Constraints.TryAdd (bodyJointId, hinge)
                 then () // nothing to do
-                else Log.debug ("Could not add joint via '" + scstring createJointMessage + "'.")
+                else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
             | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
         | _ -> failwithnie ()
 
-    static member private createJoints (createJointsMessage : CreateJointsMessage) physicsEngine =
-        List.iter (fun (jointProperties : JointProperties) ->
-            let createJointMessage = { JointSource = createJointsMessage.JointsSource; JointProperties = jointProperties }
-            PhysicsEngine3d.createJoint createJointMessage physicsEngine)
-            createJointsMessage.JointsProperties
+    static member private createBodyJoints (createBodyJointsMessage : CreateBodyJointsMessage) physicsEngine =
+        List.iter (fun (bodyJointProperties : BodyJointProperties) ->
+            let createBodyJointMessage = { BodyJointSource = createBodyJointsMessage.BodyJointsSource; BodyJointProperties = bodyJointProperties }
+            PhysicsEngine3d.createBodyJoint createBodyJointMessage physicsEngine)
+            createBodyJointsMessage.BodyJointsProperties
 
-    static member private destroyJoint (destroyJointMessage : DestroyJointMessage) physicsEngine =
-        match physicsEngine.Constraints.TryGetValue destroyJointMessage.JointId with
+    static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
+        match physicsEngine.Constraints.TryGetValue destroyBodyJointMessage.BodyJointId with
         | (true, contrain) ->
-            physicsEngine.Constraints.Remove destroyJointMessage.JointId |> ignore
+            physicsEngine.Constraints.Remove destroyBodyJointMessage.BodyJointId |> ignore
             physicsEngine.PhysicsContext.RemoveConstraint contrain
         | (false, _) -> ()
 
-    static member private destroyJoints (destroyJointsMessage : DestroyJointsMessage) physicsEngine =
-        List.iter (fun jointId ->
-            PhysicsEngine3d.destroyJoint { JointId = jointId } physicsEngine)
-            destroyJointsMessage.JointIds
+    static member private destroyBodyJoints (destroyBodyJointsMessage : DestroyBodyJointsMessage) physicsEngine =
+        List.iter (fun bodyJointId ->
+            PhysicsEngine3d.destroyBodyJoint { BodyJointId = bodyJointId } physicsEngine)
+            destroyBodyJointsMessage.BodyJointIds
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyEnabledMessage.BodyId with
@@ -639,10 +639,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | CreateBodiesMessage createBodiesMessage -> PhysicsEngine3d.createBodies createBodiesMessage physicsEngine
         | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine3d.destroyBody destroyBodyMessage physicsEngine
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine3d.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateJointMessage createJointMessage -> PhysicsEngine3d.createJoint createJointMessage physicsEngine
-        | CreateJointsMessage createJointsMessage -> PhysicsEngine3d.createJoints createJointsMessage physicsEngine
-        | DestroyJointMessage destroyJointMessage -> PhysicsEngine3d.destroyJoint destroyJointMessage physicsEngine
-        | DestroyJointsMessage destroyJointsMessage -> PhysicsEngine3d.destroyJoints destroyJointsMessage physicsEngine
+        | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine3d.createBodyJoint createBodyJointMessage physicsEngine
+        | CreateBodyJointsMessage createBodyJointsMessage -> PhysicsEngine3d.createBodyJoints createBodyJointsMessage physicsEngine
+        | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine3d.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | DestroyBodyJointsMessage destroyBodyJointsMessage -> PhysicsEngine3d.destroyBodyJoints destroyBodyJointsMessage physicsEngine
         | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine3d.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine3d.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine

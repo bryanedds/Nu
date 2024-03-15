@@ -43,7 +43,7 @@
     [Animations
      [[0 None Armature|Idle Loop 1 0.5 None]]]
     [BodyShape
-     [BodyCapsule
+     [CapsuleShape
       [1
        0.35
        [Some

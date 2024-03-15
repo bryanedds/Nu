@@ -330,7 +330,7 @@ module Character2dDispatcherModule =
              define Entity.SleepingAllowed false
              define Entity.AngularFactor v3Zero
              define Entity.GravityOverride (Some (Constants.Physics.Gravity2dDefault * 3.0f))
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
+             define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.Character2dIdleImage Assets.Default.Character2dIdleImage
              define Entity.Character2dJumpImage Assets.Default.Character2dJumpImage
              define Entity.Character2dWalkSheet Assets.Default.Character2dWalkImage
@@ -545,9 +545,9 @@ module RigidModelDispatcherModule =
             let entity = evt.Subscriber : Entity
             let bodyShape = entity.GetBodyShape world
             let staticModel = entity.GetStaticModel world
-            if (match bodyShape with BodyStaticModel body -> body.StaticModel <> staticModel | _ -> false) then
-                let bodyStaticModel = { StaticModel = staticModel; Convex = true; TransformOpt = None; PropertiesOpt = None }
-                let world = entity.SetBodyShape (BodyStaticModel bodyStaticModel) world
+            if (match bodyShape with StaticModelShape staticModelShape -> staticModelShape.StaticModel <> staticModel | _ -> false) then
+                let staticModelShape = { StaticModel = staticModel; Convex = true; TransformOpt = None; PropertiesOpt = None }
+                let world = entity.SetBodyShape (StaticModelShape staticModelShape) world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -555,8 +555,8 @@ module RigidModelDispatcherModule =
             let entity = evt.Subscriber : Entity
             let world =
                 match entity.GetBodyType world with
-                | Static -> entity.SetNavShape BoundsShape world
-                | Kinematic | KinematicCharacter | Dynamic -> entity.SetNavShape EmptyShape world
+                | Static -> entity.SetNavShape BoundsNavShape world
+                | Kinematic | KinematicCharacter | Dynamic -> entity.SetNavShape NavShape.EmptyNavShape world
             (Cascade, world)
 
         static member Facets =
@@ -566,11 +566,11 @@ module RigidModelDispatcherModule =
 
         static member Properties =
             [define Entity.BodyType Static
-             define Entity.BodyShape (BodyStaticModel { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })
+             define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred
-             define Entity.NavShape BoundsShape]
+             define Entity.NavShape BoundsNavShape]
 
         override this.Register (entity, world) =
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
@@ -594,7 +594,7 @@ module StaticModelSurfaceDispatcherModule =
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
              define Entity.RenderStyle Deferred
-             define Entity.NavShape BoundsShape]
+             define Entity.NavShape BoundsNavShape]
 
 [<AutoOpen>]
 module RigidModelSurfaceDispatcherModule =
@@ -608,9 +608,9 @@ module RigidModelSurfaceDispatcherModule =
             let bodyShape = entity.GetBodyShape world
             let surfaceIndex = entity.GetSurfaceIndex world
             let staticModel = entity.GetStaticModel world
-            if (match bodyShape with BodyStaticModelSurface body -> body.SurfaceIndex <> surfaceIndex || body.StaticModel <> staticModel | _ -> false) then
-                let bodyStaticModel = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
-                let world = entity.SetBodyShape (BodyStaticModelSurface bodyStaticModel) world
+            if (match bodyShape with StaticModelSurfaceShape staticModelSurfaceShape -> staticModelSurfaceShape.SurfaceIndex <> surfaceIndex || staticModelSurfaceShape.StaticModel <> staticModel | _ -> false) then
+                let staticModelShape = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
+                let world = entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -622,7 +622,7 @@ module RigidModelSurfaceDispatcherModule =
         static member Properties =
             [define Entity.InsetOpt None
              define Entity.BodyType Static
-             define Entity.BodyShape (BodyStaticModelSurface { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })
+             define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.SurfaceIndex 0
              define Entity.StaticModel Assets.Default.StaticModel
@@ -672,7 +672,7 @@ module Block3dDispatcherModule =
         static member Properties =
             [define Entity.BodyType Static
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.NavShape BoundsShape]
+             define Entity.NavShape BoundsNavShape]
 
 [<AutoOpen>]
 module Box3dDispatcherModule =
@@ -688,7 +688,7 @@ module Box3dDispatcherModule =
         static member Properties =
             [define Entity.BodyType Dynamic
              define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.NavShape BoundsShape]
+             define Entity.NavShape BoundsNavShape]
 
 [<AutoOpen>]
 module Character3dDispatcherModule =
@@ -710,7 +710,7 @@ module Character3dDispatcherModule =
              define Entity.LinearDamping 0.5f
              define Entity.AngularDamping 0.999f
              define Entity.AngularFactor (v3 0.0f 0.1f 0.0f)
-             define Entity.BodyShape (BodyCapsule { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
+             define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
 
         override this.Update (entity, world) =
             let bodyId = entity.GetBodyId world

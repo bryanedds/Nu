@@ -53,8 +53,8 @@ type TransformData =
 
 /// The data for a collision event.
 type BodyCollisionData =
-    { BodyShapeCollider : ShapeIndex
-      BodyShapeCollidee : ShapeIndex
+    { BodyShapeCollider : BodyShapeIndex
+      BodyShapeCollidee : BodyShapeIndex
       Normal : Vector3 }
 
 /// The implicit data for a separation event.
@@ -67,8 +67,8 @@ type BodySeparationImplicitData =
 /// Unfortunately, due to the fact that physics system itself does not raise separation events until the following
 /// frame, we need both an implicit and explicit body separation representation and the user MUST handle both!
 type BodySeparationExplicitData =
-    { BodyShapeSeparator : ShapeIndex
-      BodyShapeSeparatee : ShapeIndex }
+    { BodyShapeSeparator : BodyShapeIndex
+      BodyShapeSeparatee : BodyShapeIndex }
 
 /// Tje data for describing a change in transform.
 type BodyTransformData =

@@ -18,7 +18,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     private
         { PhysicsContext : Dynamics.World
           Bodies : Dictionary<BodyId, Vector3 option * Dynamics.Body>
-          Joints : Dictionary<JointId, Dynamics.Joints.Joint>
+          Joints : Dictionary<BodyJointId, Dynamics.Joints.Joint>
           IntegrationMessages : IntegrationMessage List
           CollisionHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler }
@@ -57,8 +57,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         (integrationMessages : IntegrationMessage List) =
         let normal = fst (contact.GetWorldManifold ())
         let bodyCollisionMessage =
-            { BodyShapeSource = bodyShape.Tag :?> ShapeIndex
-              BodyShapeSource2 = bodyShape2.Tag :?> ShapeIndex
+            { BodyShapeSource = bodyShape.Tag :?> BodyShapeIndex
+              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeIndex
               Normal = Vector3 (normal.X, normal.Y, 0.0f) }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         integrationMessages.Add integrationMessage
@@ -69,8 +69,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         (bodyShape2 : Dynamics.Fixture)
         (integrationMessages : IntegrationMessage List) =
         let bodySeparationMessage =
-            { BodyShapeSource = bodyShape.Tag :?> ShapeIndex
-              BodyShapeSource2 = bodyShape2.Tag :?> ShapeIndex }
+            { BodyShapeSource = bodyShape.Tag :?> BodyShapeIndex
+              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeIndex }
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         integrationMessages.Add integrationMessage
 
@@ -117,10 +117,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         body.BodyType <- PhysicsEngine2d.toPhysicsBodyType bodyProperties.BodyType
         body.SetIsSensor bodyProperties.Sensor
 
-    static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyBox.TransformOpt
-        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBox.Size.X * transform.Scale.X)
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBox.Size.Y * transform.Scale.Y)
+    static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity boxShape.TransformOpt
+        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.X * transform.Scale.X)
+        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxShape.Size.Y * transform.Scale.Y)
         let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let density =
             match bodyProperties.Substance with
@@ -129,13 +129,13 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let shape = body.CreateRectangle (width, height, density, offset)
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyBox.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt shape
+              BodyShapeIndex = match boxShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxShape.PropertiesOpt shape
         shape
 
-    static member private attachBodySphere bodySource (bodyProperties : BodyProperties) (bodySphere : BodySphere) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodySphere.TransformOpt
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (bodySphere.Radius * transform.Scale.X)
+    static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : SphereShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity sphereShape.TransformOpt
+        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (sphereShape.Radius * transform.Scale.X)
         let offset = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let density =
             match bodyProperties.Substance with
@@ -144,14 +144,14 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let shape = body.CreateCircle (radius, density, offset)
         shape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodySphere.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodySphere.PropertiesOpt shape
+              BodyShapeIndex = match sphereShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties sphereShape.PropertiesOpt shape
         shape
 
-    static member private attachBodyCapsule bodySource (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyCapsule.TransformOpt
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyCapsule.Height * transform.Scale.Y)
-        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (bodyCapsule.Radius * transform.Scale.Y)
+    static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : CapsuleShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity capsuleShape.TransformOpt
+        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (capsuleShape.Height * transform.Scale.Y)
+        let endRadius = PhysicsEngine2d.toPhysicsPolygonRadius (capsuleShape.Radius * transform.Scale.Y)
         let skinnyScalar = 0.9f // scales in the capsule's width to stop corner sticking.
         let density =
             match bodyProperties.Substance with
@@ -169,15 +169,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                  ShapeIndex = match bodyCapsule.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape
+                  BodyShapeIndex = match capsuleShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties capsuleShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyBoxRounded bodySource (bodyProperties : BodyProperties) (bodyBoxRounded : BodyBoxRounded) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (a : Affine) -> let mutable t = a in t.Matrix) m4Identity bodyBoxRounded.TransformOpt
-        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBoxRounded.Size.X * transform.Scale.X)
-        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (bodyBoxRounded.Size.Y * transform.Scale.Y)
-        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (bodyBoxRounded.Radius * transform.Scale.X)
+    static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : BoxRoundedShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (a : Affine) -> let mutable t = a in t.Matrix) m4Identity boxRoundedShape.TransformOpt
+        let width = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.X * transform.Scale.X)
+        let height = PhysicsEngine2d.toPhysicsPolygonDiameter (boxRoundedShape.Size.Y * transform.Scale.Y)
+        let radius = PhysicsEngine2d.toPhysicsPolygonRadius (boxRoundedShape.Radius * transform.Scale.X)
         let center = PhysicsEngine2d.toPhysicsV2 transform.Translation
         let boxVerticalWidth = width - radius * 2.0f
         let boxHorizontalHeight = height - radius * 2.0f
@@ -202,15 +202,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                  ShapeIndex = match bodyBoxRounded.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyBoxRounded.PropertiesOpt bodyShape
+                  BodyShapeIndex = match boxRoundedShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties boxRoundedShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyConvexHull bodySource bodyProperties (bodyPoints : BodyPoints) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyPoints.TransformOpt
-        let vertices = Array.zeroCreate bodyPoints.Points.Length
-        for i in 0 .. dec bodyPoints.Points.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (bodyPoints.Points.[i], transform))
+    static member private attachBodyConvexHull bodySource bodyProperties (pointsShape : PointsShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity pointsShape.TransformOpt
+        let vertices = Array.zeroCreate pointsShape.Points.Length
+        for i in 0 .. dec pointsShape.Points.Length do
+            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (pointsShape.Points.[i], transform))
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -220,15 +220,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let bodyShape = body.CreatePolygon (Common.Vertices vertices, density)
         bodyShape.Tag <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-              ShapeIndex = match bodyPoints.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-        PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyPoints.PropertiesOpt bodyShape
+              BodyShapeIndex = match pointsShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+        PhysicsEngine2d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt bodyShape
         bodyShape
 
-    static member private attachBodyTriangles bodySource bodyProperties (bodyGeometry : BodyGeometry) (body : Body) =
-        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity bodyGeometry.TransformOpt
-        let vertices = Array.zeroCreate bodyGeometry.Vertices.Length
-        for i in 0 .. dec bodyGeometry.Vertices.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (bodyGeometry.Vertices.[i], transform))
+    static member private attachBodyTriangles bodySource bodyProperties (geometryShape : GeometryShape) (body : Body) =
+        let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity geometryShape.TransformOpt
+        let vertices = Array.zeroCreate geometryShape.Vertices.Length
+        for i in 0 .. dec geometryShape.Vertices.Length do
+            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (geometryShape.Vertices.[i], transform))
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -240,15 +240,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         for bodyShape in bodyShapes do
             bodyShape.Tag <-
                 { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
-                  ShapeIndex = match bodyGeometry.PropertiesOpt with Some p -> p.ShapeIndex | None -> 0 }
-            PhysicsEngine2d.configureBodyShapeProperties bodyProperties bodyGeometry.PropertiesOpt bodyShape
+                  BodyShapeIndex = match geometryShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
+            PhysicsEngine2d.configureBodyShapeProperties bodyProperties geometryShape.PropertiesOpt bodyShape
         Array.ofSeq bodyShapes
 
-    static member private attachBodyGeometry bodySource bodyProperties (bodyGeometry : BodyGeometry) (body : Body) =
-        if bodyGeometry.Convex then
-            let bodyPoints = { Points = bodyGeometry.Vertices; TransformOpt = bodyGeometry.TransformOpt; PropertiesOpt = bodyGeometry.PropertiesOpt }
-            PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties bodyPoints body |> Array.singleton
-        else PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties bodyGeometry body
+    static member private attachGeometryShape bodySource bodyProperties (geometryShape : GeometryShape) (body : Body) =
+        if geometryShape.Convex then
+            let pointsShape = { Points = geometryShape.Vertices; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
+            PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
+        else PhysicsEngine2d.attachBodyTriangles bodySource bodyProperties geometryShape body
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes (body : Body) =
         let list = List ()
@@ -259,16 +259,16 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private attachBodyShape bodySource bodyProperties bodyShape (body : Body) =
         match bodyShape with
-        | BodyEmpty -> [||]
-        | BodyBox bodyBox -> PhysicsEngine2d.attachBoxBody bodySource bodyProperties bodyBox body |> Array.singleton
-        | BodySphere bodySphere -> PhysicsEngine2d.attachBodySphere bodySource bodyProperties bodySphere body |> Array.singleton
-        | BodyCapsule bodyCapsule -> PhysicsEngine2d.attachBodyCapsule bodySource bodyProperties bodyCapsule body |> Array.ofSeq
-        | BodyBoxRounded bodyBoxRounded -> PhysicsEngine2d.attachBodyBoxRounded bodySource bodyProperties bodyBoxRounded body |> Array.ofSeq
-        | BodyPoints bodyPoints -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties bodyPoints body |> Array.singleton
-        | BodyGeometry bodyGeometry -> PhysicsEngine2d.attachBodyGeometry bodySource bodyProperties bodyGeometry body
-        | BodyStaticModel _ -> [||]
-        | BodyStaticModelSurface _ -> [||]
-        | BodyTerrain _ -> [||]
+        | EmptyShape -> [||]
+        | BoxShape boxShape -> PhysicsEngine2d.attachBoxBody bodySource bodyProperties boxShape body |> Array.singleton
+        | SphereShape sphereShape -> PhysicsEngine2d.attachSphereShape bodySource bodyProperties sphereShape body |> Array.singleton
+        | CapsuleShape capsuleShape -> PhysicsEngine2d.attachCapsuleShape bodySource bodyProperties capsuleShape body |> Array.ofSeq
+        | BoxRoundedShape boxRoundedShape -> PhysicsEngine2d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape body |> Array.ofSeq
+        | PointsShape pointsShape -> PhysicsEngine2d.attachBodyConvexHull bodySource bodyProperties pointsShape body |> Array.singleton
+        | GeometryShape geometryShape -> PhysicsEngine2d.attachGeometryShape bodySource bodyProperties geometryShape body
+        | StaticModelShape _ -> [||]
+        | StaticModelSurfaceShape _ -> [||]
+        | TerrainShape _ -> [||]
         | BodyShapes bodyShapes -> PhysicsEngine2d.attachBodyShapes bodySource bodyProperties bodyShapes body
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -321,11 +321,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
-    static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
-        let jointProperties = createJointMessage.JointProperties
-        match jointProperties.JointDevice with
-        | JointEmpty -> ()
-        | JointAngle jointAngle ->
+    static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
+        let bodyJointProperties = createBodyJointMessage.BodyJointProperties
+        match bodyJointProperties.BodyJoint with
+        | EmptyJoint -> ()
+        | AngleJoint jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
                 let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
@@ -336,23 +336,23 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
         | _ -> failwithnie ()
 
-    static member private createJoints (createJointsMessage : CreateJointsMessage) physicsEngine =
-        List.iter (fun (jointProperties : JointProperties) ->
-            let createJointMessage = { JointSource = createJointsMessage.JointsSource; JointProperties = jointProperties }
-            PhysicsEngine2d.createJoint createJointMessage physicsEngine)
-            createJointsMessage.JointsProperties
+    static member private createBodyJoints (createBodyJointsMessage : CreateBodyJointsMessage) physicsEngine =
+        List.iter (fun (bodyJointProperties : BodyJointProperties) ->
+            let createBodyJointMessage = { BodyJointSource = createBodyJointsMessage.BodyJointsSource; BodyJointProperties = bodyJointProperties }
+            PhysicsEngine2d.createBodyJoint createBodyJointMessage physicsEngine)
+            createBodyJointsMessage.BodyJointsProperties
 
-    static member private destroyJoint (destroyJointMessage : DestroyJointMessage) physicsEngine =
-        match physicsEngine.Joints.TryGetValue destroyJointMessage.JointId with
+    static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
+        match physicsEngine.Joints.TryGetValue destroyBodyJointMessage.BodyJointId with
         | (true, joint) ->
-            physicsEngine.Joints.Remove destroyJointMessage.JointId |> ignore
+            physicsEngine.Joints.Remove destroyBodyJointMessage.BodyJointId |> ignore
             physicsEngine.PhysicsContext.Remove joint
         | (false, _) -> ()
 
-    static member private destroyJoints (destroyJointsMessage : DestroyJointsMessage) physicsEngine =
-        List.iter (fun jointId ->
-            PhysicsEngine2d.destroyJoint { JointId = jointId } physicsEngine)
-            destroyJointsMessage.JointIds
+    static member private destroyBodyJoints (destroyBodyJointsMessage : DestroyBodyJointsMessage) physicsEngine =
+        List.iter (fun bodyJointId ->
+            PhysicsEngine2d.destroyBodyJoint { BodyJointId = bodyJointId } physicsEngine)
+            destroyBodyJointsMessage.BodyJointIds
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
@@ -435,10 +435,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | CreateBodiesMessage createBodiesMessage -> PhysicsEngine2d.createBodies createBodiesMessage physicsEngine
         | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine2d.destroyBody destroyBodyMessage physicsEngine
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine2d.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateJointMessage createJointMessage -> PhysicsEngine2d.createJoint createJointMessage physicsEngine
-        | CreateJointsMessage createJointsMessage -> PhysicsEngine2d.createJoints createJointsMessage physicsEngine
-        | DestroyJointMessage destroyJointMessage -> PhysicsEngine2d.destroyJoint destroyJointMessage physicsEngine
-        | DestroyJointsMessage destroyJointsMessage -> PhysicsEngine2d.destroyJoints destroyJointsMessage physicsEngine
+        | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine2d.createBodyJoint createBodyJointMessage physicsEngine
+        | CreateBodyJointsMessage createBodyJointsMessage -> PhysicsEngine2d.createBodyJoints createBodyJointsMessage physicsEngine
+        | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine2d.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | DestroyBodyJointsMessage destroyBodyJointsMessage -> PhysicsEngine2d.destroyBodyJoints destroyBodyJointsMessage physicsEngine
         | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine2d.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine2d.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine2d.setBodyRotation setBodyRotationMessage physicsEngine
@@ -492,7 +492,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let physicsEngine =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
               Bodies = Dictionary<BodyId, Vector3 option * Dynamics.Body> (HashIdentity.FromFunctions BodyId.hash BodyId.equals)
-              Joints = Dictionary<JointId, Dynamics.Joints.Joint> HashIdentity.Structural
+              Joints = Dictionary<BodyJointId, Dynamics.Joints.Joint> HashIdentity.Structural
               IntegrationMessages = integrationMessages
               CollisionHandler = collisionHandler
               SeparationHandler = separationHandler }

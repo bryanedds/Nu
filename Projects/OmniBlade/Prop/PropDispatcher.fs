@@ -35,48 +35,48 @@ module PropDispatcher =
              entity.BodyShape :=
                 match propPlus.Prop.PropData with
                 | Sprite _ ->
-                    BodyEmpty
+                    EmptyShape
                 | Portal _ ->
-                    BodyBox { Size = v3Dup 0.9f; TransformOpt = None; PropertiesOpt = None }
+                    BoxShape { Size = v3Dup 0.9f; TransformOpt = None; PropertiesOpt = None }
                 | Switch _ ->
-                    BodyBox { Size = v3One; TransformOpt = None; PropertiesOpt = None }
+                    BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None }
                 | SavePoint ->
-                    BodySphere { Radius = 0.1f; TransformOpt = None; PropertiesOpt = None }
+                    SphereShape { Radius = 0.1f; TransformOpt = None; PropertiesOpt = None }
                 | Door (doorType, _, _, _, _) ->
                     match propPlus.Prop.PropState with
-                    | DoorState true -> BodyEmpty
+                    | DoorState true -> EmptyShape
                     | _ ->
                         match doorType with
-                        | BarredDoor -> BodyBox { Size = v3 1.0f 0.5f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f -0.25f 0.0f)); PropertiesOpt = None }
-                        | _ -> BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                        | BarredDoor -> BoxShape { Size = v3 1.0f 0.5f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f -0.25f 0.0f)); PropertiesOpt = None }
+                        | _ -> BoxShape { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                 | Chest _ ->
-                    BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                    BoxShape { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                 | Sensor (_, shapeOpt, _, _, _) ->
                     match shapeOpt with
                     | Some shape -> shape
-                    | None -> BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                    | None -> BoxShape { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                 | Seal (_, _, requirements) ->
                     if propPlus.Advents.IsSupersetOf requirements
-                    then BodyBox { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
-                    else BodyEmpty
+                    then BoxShape { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                    else EmptyShape
                 | Character (_, _, _, _, _, requirements) ->
                     if propPlus.Advents.IsSupersetOf requirements
-                    then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
-                    else BodyEmpty
+                    then BoxShape { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                    else EmptyShape
                 | Npc (npcType, _, _, requirements) | NpcBranching (npcType, _, _, requirements) ->
                     if propPlus.Advents.IsSupersetOf requirements && NpcType.exists propPlus.Advents npcType then
                         match npcType with
                         | ShadeNpc | MaelNpc | RiainNpc | PericNpc
                         | RavelNpc | AdvenNpc | EildaenNpc | NostrusNpc
-                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
-                        | AraneaImplicitumNpc -> BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
-                    else BodyEmpty
+                        | MadTrixterNpc | HeavyArmorosNpc -> BoxShape { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                        | AraneaImplicitumNpc -> BoxShape { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                    else EmptyShape
                 | Shopkeep (_, _, _, requirements) ->
                     if propPlus.Advents.IsSupersetOf requirements
-                    then BodyBox { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
-                    else BodyEmpty
+                    then BoxShape { Size = v3 0.32f 0.32f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 -0.01f -0.36f 0.0f)); PropertiesOpt = None }
+                    else EmptyShape
                 | Flame _ | ChestSpawn | PortalSpawn | EmptyProp ->
-                    BodyEmpty]
+                    EmptyShape]
 
         override this.Render (propPlus, _, entity, world) =
             if entity.GetVisible world then
