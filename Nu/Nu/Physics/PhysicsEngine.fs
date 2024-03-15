@@ -382,7 +382,7 @@ type [<SymbolicExpansion>] KinematicCharacterProperties =
 
     /// The default kinematic character properties.
     static member defaultProperties =
-        { StepHeight = 0.25f
+        { StepHeight = 0.3f
           SlopeMax = Math.DegreesToRadians 45.0f
           PenetrationDepthMax = 0.01f }
 

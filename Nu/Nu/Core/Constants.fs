@@ -196,7 +196,7 @@ module Physics =
     let [<Literal>] Collision3dMargin = 0.01f
     let [<Uniform>] AxisSweepBoundsSize3d = 16384.0f
     let [<Literal>] AllowedCcdPenetration3d = 0.01f // NOTE: seems to also change the smoothness at which character slide.
-    let [<Literal>] KinematicCharacterCenterInterpolationSteps3d = 4
+    let [<Literal>] KinematicCharacterCenterInterpolationSteps3d = 3
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
     let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
     let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
