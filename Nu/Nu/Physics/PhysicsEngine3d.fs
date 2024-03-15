@@ -45,7 +45,8 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
         this.HashCode
 
 type KinematicCharacter3d =
-    { CenterOffset : Vector3
+    { GravityOverride : Vector3 option
+      CenterOffset : Vector3
       CenterInterpolations : Vector3 array
       mutable CenterInterpIndex : int
       mutable Center : Vector3
@@ -417,9 +418,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     let characterController = new KinematicCharacterController (ghost, convexShape, characterProperties.StepHeight, &up)
                     characterController.MaxPenetrationDepth <- characterProperties.PenetrationDepthMax
                     characterController.MaxSlope <- characterProperties.SlopeMax
+                    characterController.Gravity <- Option.defaultValue physicsEngine.PhysicsContext.Gravity bodyProperties.GravityOverride
                     physicsEngine.PhysicsContext.AddAction characterController
                     let character =
-                        { CenterOffset = shapeTransform.Translation
+                        { GravityOverride = bodyProperties.GravityOverride
+                          CenterOffset = shapeTransform.Translation
                           CenterInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> ghost.WorldTransform.Translation)
                           CenterInterpIndex = 0
                           Center = ghost.WorldTransform.Translation
@@ -652,13 +655,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | SetBodyObservableMessage setBodyObservableMessage -> PhysicsEngine3d.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
 
-            // set gravity of all non-static bodies
+            // set gravity of all gravitating bodies
             physicsEngine.PhysicsContext.Gravity <- gravity
             for bodyEntry in physicsEngine.BodiesGravitating do
                 let (gravityOverride, body) = bodyEntry.Value
                 match gravityOverride with
                 | Some gravity -> body.Gravity <- gravity
                 | None -> body.Gravity <- gravity
+
+            // set gravity of all character bodies
+            for characterEntry in physicsEngine.Characters do
+                let character = characterEntry.Value
+                match character.GravityOverride with
+                | Some gravity -> character.CharacterController.Gravity <- gravity
+                | None -> character.CharacterController.Gravity <- gravity
 
         | ClearPhysicsMessageInternal ->
 
@@ -813,8 +823,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 for i in 0 .. dec character.CenterInterpolations.Length do centerInterpolated <- centerInterpolated + character.CenterInterpolations.[i]
                 centerInterpolated <- centerInterpolated / single character.CenterInterpolations.Length
                 character.LinearVelocity <- centerInterpolated - character.Center
-                //let rpy = (character.Ghost.WorldTransform.Rotation - character.Rotation).RollPitchYaw
-                character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward //v3 rpy.Z rpy.Y rpy.X
+                character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward
                 character.Center <- centerInterpolated
                 character.Rotation <- character.Ghost.WorldTransform.Rotation
                 let bodyTransformMessage =
