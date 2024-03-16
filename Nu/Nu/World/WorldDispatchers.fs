@@ -350,7 +350,7 @@ module Character2dDispatcherModule =
         override this.Render (_, entity, world) =
             let bodyId = entity.GetBodyId world
             let facingLeft = entity.GetCharacter2dFacingLeft world
-            let velocity = World.getBodyLinearVelocity bodyId world
+            let velocity = entity.GetLinearVelocity world
             let celSize = entity.GetCelSize world
             let celRun = entity.GetCelRun world
             let animationDelay = entity.GetAnimationDelay world
@@ -704,24 +704,19 @@ module Character3dDispatcherModule =
         static member Properties =
             [define Entity.MaterialProperties MaterialProperties.empty
              define Entity.AnimatedModel Assets.Default.AnimatedModel
-             define Entity.BodyType Dynamic
+             define Entity.BodyType KinematicCharacter
              define Entity.SleepingAllowed false
-             define Entity.Friction 1.0f
-             define Entity.LinearDamping 0.5f
-             define Entity.AngularDamping 0.999f
-             define Entity.AngularFactor (v3 0.0f 0.1f 0.0f)
              define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
-
+             
         override this.Update (entity, world) =
-            let bodyId = entity.GetBodyId world
             let rotation = entity.GetRotation world
-            let linearVelocity = World.getBodyLinearVelocity bodyId world
-            let angularVelocity = World.getBodyAngularVelocity bodyId world
-            let forwardness = (Vector3.Dot (linearVelocity, rotation.Forward))
-            let backness = (Vector3.Dot (linearVelocity, -rotation.Forward))
-            let rightness = (Vector3.Dot (linearVelocity, rotation.Right))
-            let leftness = (Vector3.Dot (linearVelocity, -rotation.Right))
-            let turnRightness = (angularVelocity * v3Up).Length ()
+            let linearVelocity = entity.GetLinearVelocity world
+            let angularVelocity = entity.GetAngularVelocity world
+            let forwardness = (Vector3.Dot (linearVelocity * 32.0f, rotation.Forward))
+            let backness = (Vector3.Dot (linearVelocity * 32.0f, -rotation.Forward))
+            let rightness = (Vector3.Dot (linearVelocity * 32.0f, rotation.Right))
+            let leftness = (Vector3.Dot (linearVelocity * 32.0f, -rotation.Right))
+            let turnRightness = (angularVelocity * v3Up).Length () * 32.0f
             let turnLeftness = -turnRightness
             let animations = [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
             let animations =

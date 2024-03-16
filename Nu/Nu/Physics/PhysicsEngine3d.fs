@@ -226,7 +226,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties pointsShape.PropertiesOpt hull
         if not optimized then
             hull.OptimizeConvexHull ()
-            let unscaledPoints = Array.ofSeq hull.UnscaledPoints
+            let unscaledPoints =
+                match hull.UnscaledPoints with
+                | null -> [|v3Zero|] // guarding against null
+                | unscaledPoints -> Array.ofSeq unscaledPoints
             physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
         hull.LocalScaling <- bodyProperties.Scale
         hull.UserObject <-
@@ -409,38 +412,38 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     match BodyShape.getTransformOpt bodyProperties.BodyShape with
                     | Some transform -> transform
                     | None -> Affine.Identity
-                if shapeTransform.Rotation = quatIdentity && shapeTransform.Scale = v3One then
-                    let ghost = new PairCachingGhostObject ()
-                    ghost.CollisionShape <- convexShape
-                    ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
-                    ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
-                    ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
-                    ghost.UserIndex <- userIndex
-                    PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
-                    physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-                    let mutable up = v3Up
-                    let characterProperties = bodyProperties.KinematicCharacterProperties
-                    let characterController = new KinematicCharacterController (ghost, convexShape, characterProperties.StepHeight, &up)
-                    characterController.MaxPenetrationDepth <- characterProperties.PenetrationDepthMax
-                    characterController.MaxSlope <- characterProperties.SlopeMax
-                    characterController.Gravity <- Option.defaultValue physicsEngine.PhysicsContext.Gravity bodyProperties.GravityOverride
-                    physicsEngine.PhysicsContext.AddAction characterController
-                    let character =
-                        { GravityOverride = bodyProperties.GravityOverride
-                          CenterOffset = shapeTransform.Translation
-                          CenterInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> ghost.WorldTransform.Translation)
-                          CenterInterpIndex = 0
-                          Center = ghost.WorldTransform.Translation
-                          Rotation = ghost.WorldTransform.Rotation
-                          LinearVelocity = v3Zero
-                          AngularVelocity = v3Zero
-                          CharacterController = characterController
-                          Ghost = ghost }
-                    if physicsEngine.KinematicCharacters.TryAdd (bodyId, character)
-                    then physicsEngine.Objects.Add (bodyId, ghost)
-                    else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
-                else failwith "Locally rotated / scaled body shapes not supported for KinematicCharacter."
-            | _ -> failwith "Non-convex body shapes not supported for KinematicCharacter."
+                if shapeTransform.Rotation <> quatIdentity || shapeTransform.Scale <> v3One then
+                    Log.info "Shape rotation / scale are not supported for KinematicCharacter."
+                let ghost = new PairCachingGhostObject ()
+                ghost.CollisionShape <- convexShape
+                ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+                ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
+                ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
+                ghost.UserIndex <- userIndex
+                PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
+                physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
+                let mutable up = v3Up
+                let characterProperties = bodyProperties.KinematicCharacterProperties
+                let characterController = new KinematicCharacterController (ghost, convexShape, characterProperties.StepHeight, &up)
+                characterController.MaxPenetrationDepth <- characterProperties.PenetrationDepthMax
+                characterController.MaxSlope <- characterProperties.SlopeMax
+                characterController.Gravity <- Option.defaultValue physicsEngine.PhysicsContext.Gravity bodyProperties.GravityOverride
+                physicsEngine.PhysicsContext.AddAction characterController
+                let character =
+                    { GravityOverride = bodyProperties.GravityOverride
+                      CenterOffset = shapeTransform.Translation
+                      CenterInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> ghost.WorldTransform.Translation)
+                      CenterInterpIndex = 0
+                      Center = ghost.WorldTransform.Translation
+                      Rotation = ghost.WorldTransform.Rotation
+                      LinearVelocity = v3Zero
+                      AngularVelocity = v3Zero
+                      CharacterController = characterController
+                      Ghost = ghost }
+                if physicsEngine.KinematicCharacters.TryAdd (bodyId, character)
+                then physicsEngine.Objects.Add (bodyId, ghost)
+                else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+            | _ -> Log.debugOnce "Non-convex body shapes are unsupported for KinematicCharacter."
         else
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
