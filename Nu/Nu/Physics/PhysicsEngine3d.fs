@@ -48,8 +48,6 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
 type private KinematicCharacter3d =
     { GravityOverride : Vector3 option
       CenterOffset : Vector3
-      CenterInterpolations : Vector3 array
-      mutable CenterInterpIndex : int
       mutable Center : Vector3
       mutable Rotation : Quaternion
       mutable LinearVelocity : Vector3
@@ -432,8 +430,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let character =
                     { GravityOverride = bodyProperties.GravityOverride
                       CenterOffset = shapeTransform.Translation
-                      CenterInterpolations = Array.init Constants.Physics.KinematicCharacterCenterInterpolationSteps3d (fun _ -> ghost.WorldTransform.Translation)
-                      CenterInterpIndex = 0
                       Center = ghost.WorldTransform.Translation
                       Rotation = ghost.WorldTransform.Rotation
                       LinearVelocity = v3Zero
@@ -832,18 +828,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         for characterEntry in physicsEngine.KinematicCharacters do
             let character = characterEntry.Value
             if character.Ghost.IsActive then
-                let centerUninterpolated = character.Ghost.WorldTransform.Translation
-                character.CenterInterpIndex <- inc character.CenterInterpIndex
-                if character.CenterInterpIndex = character.CenterInterpolations.Length then character.CenterInterpIndex <- 0
-                character.CenterInterpolations.[character.CenterInterpIndex] <- centerUninterpolated
-                let mutable centerInterpolated = v3Zero
-                for i in 0 .. dec character.CenterInterpolations.Length do centerInterpolated <- centerInterpolated + character.CenterInterpolations.[i]
-                centerInterpolated <- centerInterpolated / single character.CenterInterpolations.Length
-                centerInterpolated.Y <- centerUninterpolated.Y // do not interpolate Y
-                character.LinearVelocity <- centerInterpolated - character.Center
+                let center = character.Ghost.WorldTransform.Translation
+                character.LinearVelocity <- center - character.Center
                 character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward
-                if Single.IsNaN character.AngularVelocity.X then character.AngularVelocity <- v3Zero
-                character.Center <- centerInterpolated
+                if Single.IsNaN character.AngularVelocity.X then character.AngularVelocity <- v3Zero // TODO: see if we can avoid NaN in the first place.
+                character.Center <- center
                 character.Rotation <- character.Ghost.WorldTransform.Rotation
                 let bodyTransformMessage =
                     BodyTransformMessage

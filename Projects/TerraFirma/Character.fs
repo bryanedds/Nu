@@ -33,7 +33,7 @@ module CharacterDispatcher =
     type CharacterDispatcher () =
         inherit Entity3dDispatcher<CharacterModel, CharacterMessage, CharacterCommand> (true, CharacterModel.initial)
 
-        static let [<Literal>] WalkSpeed = 0.08f
+        static let [<Literal>] WalkSpeed = 0.04f
         static let [<Literal>] TurnSpeed = 0.035f
         static let [<Literal>] JumpSpeed = 6.0f
 
