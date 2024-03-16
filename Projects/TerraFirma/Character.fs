@@ -43,9 +43,7 @@ module CharacterDispatcher =
 
         static member Properties =
             [define Entity.LinearVelocityPrevious v3Zero
-             define Entity.LinearVelocityPrevious2 v3Zero
-             define Entity.AngularVelocityPrevious v3Zero
-             define Entity.AngularVelocityPrevious2 v3Zero]
+             define Entity.AngularVelocityPrevious v3Zero]
 
         override this.Initialize (character, _) =
             [Entity.MaterialProperties == MaterialProperties.defaultProperties
@@ -91,12 +89,10 @@ module CharacterDispatcher =
                 let rotation = entity.GetRotation world
                 let linearVelocity = entity.GetLinearVelocity world
                 let linearVelocityPrevious = entity.GetLinearVelocityPrevious world
-                let linearVelocityPrevious2 = entity.GetLinearVelocityPrevious2 world
-                let linearVelocityAvg = (linearVelocity + linearVelocityPrevious + linearVelocityPrevious2) / 3.0f
+                let linearVelocityAvg = (linearVelocity + linearVelocityPrevious) * 0.5f
                 let angularVelocity = entity.GetAngularVelocity world
                 let angularVelocityPrevious = entity.GetAngularVelocityPrevious world
-                let angularVelocityPrevious2 = entity.GetAngularVelocityPrevious2 world
-                let angularVelocityAvg = (angularVelocity + angularVelocityPrevious + angularVelocityPrevious2) / 3.0f
+                let angularVelocityAvg = (angularVelocity + angularVelocityPrevious) * 0.5f
                 let forwardness = (Vector3.Dot (linearVelocityAvg * 32.0f, rotation.Forward))
                 let backness = (Vector3.Dot (linearVelocityAvg * 32.0f, -rotation.Forward))
                 let rightness = (Vector3.Dot (linearVelocityAvg * 32.0f, rotation.Right))
@@ -117,10 +113,8 @@ module CharacterDispatcher =
                     elif turnLeftness >= 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
                     else animations
                 let world = entity.SetAnimations (List.toArray animations) world
-                let world = entity.SetLinearVelocityPrevious linearVelocity world
-                let world = entity.SetLinearVelocityPrevious2 linearVelocityPrevious world
-                let world = entity.SetAngularVelocityPrevious angularVelocity world
-                let world = entity.SetAngularVelocityPrevious2 angularVelocityPrevious world
+                let world = entity.SetLinearVelocityPrevious linearVelocityAvg world
+                let world = entity.SetAngularVelocityPrevious angularVelocityAvg world
 
                 // apply walk velocity
                 let forward = rotation.Forward

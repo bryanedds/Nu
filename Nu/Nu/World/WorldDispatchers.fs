@@ -697,15 +697,9 @@ module Character3dDispatcherModule =
         member this.GetLinearVelocityPrevious world : Vector3 = this.Get (nameof this.LinearVelocityPrevious) world
         member this.SetLinearVelocityPrevious (value : Vector3) world = this.Set (nameof this.LinearVelocityPrevious) value world
         member this.LinearVelocityPrevious = lens (nameof this.LinearVelocityPrevious) this this.GetLinearVelocityPrevious this.SetLinearVelocityPrevious
-        member this.GetLinearVelocityPrevious2 world : Vector3 = this.Get (nameof this.LinearVelocityPrevious2) world
-        member this.SetLinearVelocityPrevious2 (value : Vector3) world = this.Set (nameof this.LinearVelocityPrevious2) value world
-        member this.LinearVelocityPrevious2 = lens (nameof this.LinearVelocityPrevious2) this this.GetLinearVelocityPrevious2 this.SetLinearVelocityPrevious2
         member this.GetAngularVelocityPrevious world : Vector3 = this.Get (nameof this.AngularVelocityPrevious) world
         member this.SetAngularVelocityPrevious (value : Vector3) world = this.Set (nameof this.AngularVelocityPrevious) value world
         member this.AngularVelocityPrevious = lens (nameof this.AngularVelocityPrevious) this this.GetAngularVelocityPrevious this.SetAngularVelocityPrevious
-        member this.GetAngularVelocityPrevious2 world : Vector3 = this.Get (nameof this.AngularVelocityPrevious2) world
-        member this.SetAngularVelocityPrevious2 (value : Vector3) world = this.Set (nameof this.AngularVelocityPrevious2) value world
-        member this.AngularVelocityPrevious2 = lens (nameof this.AngularVelocityPrevious2) this this.GetAngularVelocityPrevious2 this.SetAngularVelocityPrevious2
 
     /// Gives an entity the base behavior of a 3d character.
     type Character3dDispatcher () =
@@ -722,20 +716,16 @@ module Character3dDispatcherModule =
              define Entity.SleepingAllowed false
              define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
              define Entity.LinearVelocityPrevious v3Zero
-             define Entity.LinearVelocityPrevious2 v3Zero
-             define Entity.AngularVelocityPrevious v3Zero
-             define Entity.AngularVelocityPrevious2 v3Zero]
+             define Entity.AngularVelocityPrevious v3Zero]
              
         override this.Update (entity, world) =
             let rotation = entity.GetRotation world
             let linearVelocity = entity.GetLinearVelocity world
             let linearVelocityPrevious = entity.GetLinearVelocityPrevious world
-            let linearVelocityPrevious2 = entity.GetLinearVelocityPrevious2 world
-            let linearVelocityAvg = (linearVelocity + linearVelocityPrevious + linearVelocityPrevious2) / 3.0f
+            let linearVelocityAvg = (linearVelocity + linearVelocityPrevious) * 0.5f
             let angularVelocity = entity.GetAngularVelocity world
             let angularVelocityPrevious = entity.GetAngularVelocityPrevious world
-            let angularVelocityPrevious2 = entity.GetAngularVelocityPrevious2 world
-            let angularVelocityAvg = (angularVelocity + angularVelocityPrevious + angularVelocityPrevious2) / 3.0f
+            let angularVelocityAvg = (angularVelocity + angularVelocityPrevious) * 0.5f
             let forwardness = (Vector3.Dot (linearVelocityAvg * 32.0f, rotation.Forward))
             let backness = (Vector3.Dot (linearVelocityAvg * 32.0f, -rotation.Forward))
             let rightness = (Vector3.Dot (linearVelocityAvg * 32.0f, rotation.Right))
@@ -756,10 +746,8 @@ module Character3dDispatcherModule =
                 elif turnLeftness >= 0.1f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
                 else animations
             let world = entity.SetAnimations (List.toArray animations) world
-            let world = entity.SetLinearVelocityPrevious linearVelocity world
-            let world = entity.SetLinearVelocityPrevious2 linearVelocityPrevious world
-            let world = entity.SetAngularVelocityPrevious angularVelocity world
-            let world = entity.SetAngularVelocityPrevious2 angularVelocityPrevious world
+            let world = entity.SetLinearVelocityPrevious linearVelocityAvg world
+            let world = entity.SetAngularVelocityPrevious angularVelocityAvg world
             world
 
 [<AutoOpen>]
