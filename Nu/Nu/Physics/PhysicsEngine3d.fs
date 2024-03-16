@@ -129,6 +129,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
+        | DynamicCharacter ->
+            Log.infoOnce "DynamicCharacter not supported by PhysicsEngine3d. Using Dynamic configuration instead."
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         PhysicsEngine3d.configureCollisionObjectProperties bodyProperties body

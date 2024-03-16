@@ -573,7 +573,7 @@ module WorldModuleEntity =
                 property.PropertyType = typeof<BodyType> then
                 match property.PropertyValue :?> BodyType with
                 | Static | Kinematic | KinematicCharacter -> true
-                | Dynamic -> false
+                | Dynamic | DynamicCharacter -> false
             else true
 
         /// Check that an entity has any other entities mounted on it.
