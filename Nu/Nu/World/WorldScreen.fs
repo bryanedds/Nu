@@ -457,16 +457,16 @@ module WorldScreenModule =
                     RcConfig
                         (config.PartitionType,
                          config.CellSize, config.CellHeight,
-                         config.AgentMaxSlope, config.AgentHeight, config.AgentRadius, config.AgentMaxClimb,
-                         config.RegionMinSize, config.RegionMergeSize,
-                         config.EdgeMaxLength, config.EdgeMaxError,
-                         config.VertsPerPolygon, config.DetailSampleDistance, config.DetailSampleMaxError,
+                         config.AgentSlopeMax, config.AgentHeight, config.AgentRadius, config.AgentClimbMax,
+                         config.RegionSizeMin, config.RegionSizeMerge,
+                         config.EdgeLengthMax, config.EdgeErrorMax,
+                         config.VertsPerPolygon, config.DetailSampleDistance, config.DetailSampleErrorMax,
                          config.FilterLowHangingObstacles, config.FilterLedgeSpans, config.FilterWalkableLowHeightSpans,
                          SampleAreaModifications.SAMPLE_AREAMOD_WALKABLE, true)
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig)
-                let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentMaxClimb, rcBuilderResult)
+                let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
                 match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
                 | null -> None // some sort of argument issue
                 | dtMeshData ->

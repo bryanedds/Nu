@@ -69,15 +69,15 @@ type [<SymbolicExpansion>] Nav3dConfig =
       CellHeight : single
       AgentHeight : single
       AgentRadius : single
-      AgentMaxClimb : single
-      AgentMaxSlope : single
-      RegionMinSize : int
-      RegionMergeSize : int
-      EdgeMaxLength : single
-      EdgeMaxError : single
+      AgentClimbMax : single
+      AgentSlopeMax : single
+      RegionSizeMin : int
+      RegionSizeMerge : int
+      EdgeLengthMax : single
+      EdgeErrorMax : single
       VertsPerPolygon : int
       DetailSampleDistance : single
-      DetailSampleMaxError : single
+      DetailSampleErrorMax : single
       FilterLowHangingObstacles : bool
       FilterLedgeSpans : bool
       FilterWalkableLowHeightSpans : bool
@@ -89,15 +89,15 @@ type [<SymbolicExpansion>] Nav3dConfig =
           CellHeight = 0.1f
           AgentHeight = 1.5f
           AgentRadius = 0.35f // same as default character 3d radius (maybe should be slightly more?)
-          AgentMaxClimb = 0.35f
-          AgentMaxSlope = 45.0f
-          RegionMinSize = 8
-          RegionMergeSize = 20
-          EdgeMaxLength = 6.0f
-          EdgeMaxError = 1.3f
+          AgentClimbMax = 0.4f
+          AgentSlopeMax = 45.0f
+          RegionSizeMin = 8
+          RegionSizeMerge = 20
+          EdgeLengthMax = 6.0f
+          EdgeErrorMax = 1.3f
           VertsPerPolygon = 6
           DetailSampleDistance = 6.0f
-          DetailSampleMaxError = 1.0f
+          DetailSampleErrorMax = 1.0f
           FilterLowHangingObstacles = true
           FilterLedgeSpans = true
           FilterWalkableLowHeightSpans = true

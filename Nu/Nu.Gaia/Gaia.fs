@@ -1825,15 +1825,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let mutable cellHeight = nc.CellHeight
         let mutable agentHeight = nc.AgentHeight
         let mutable agentRadius = nc.AgentRadius
-        let mutable agentMaxClimb = nc.AgentMaxClimb
-        let mutable agentMaxSlope = nc.AgentMaxSlope
-        let mutable regionMinSize = nc.RegionMinSize
-        let mutable regionMergeSize = nc.RegionMergeSize
-        let mutable edgeMaxLength = nc.EdgeMaxLength
-        let mutable edgeMaxError = nc.EdgeMaxError
+        let mutable agentClimbMax = nc.AgentClimbMax
+        let mutable agentSlopeMax = nc.AgentSlopeMax
+        let mutable regionSizeMin = nc.RegionSizeMin
+        let mutable regionSizeMerge = nc.RegionSizeMerge
+        let mutable edgeLengthMax = nc.EdgeLengthMax
+        let mutable edgeErrorMax = nc.EdgeErrorMax
         let mutable vertsPerPolygon = nc.VertsPerPolygon
         let mutable detailSampleDistance = nc.DetailSampleDistance
-        let mutable detailSampleMaxError = nc.DetailSampleMaxError
+        let mutable detailSampleErrorMax = nc.DetailSampleErrorMax
         let mutable filterLowHangingObstacles = nc.FilterLowHangingObstacles
         let mutable filterLedgeSpans = nc.FilterLedgeSpans
         let mutable filterWalkableLowHeightSpans = nc.FilterWalkableLowHeightSpans
@@ -1846,23 +1846,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         if ImGui.SliderFloat ("AgentRadius", &agentRadius, 0.0f, 5.0f, "%.2f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("AgentMaxClimb", &agentMaxClimb, 0.1f, 5.0f, "%.2f") then changed <- true
+        if ImGui.SliderFloat ("AgentClimbMax", &agentClimbMax, 0.1f, 5.0f, "%.2f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("AgentMaxSlope", &agentMaxSlope, 1.0f, 90.0f, "%.0f") then changed <- true
+        if ImGui.SliderFloat ("AgentSlopeMax", &agentSlopeMax, 1.0f, 90.0f, "%.0f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderInt ("RegionMinSize", &regionMinSize, 1, 150) then changed <- true
+        if ImGui.SliderInt ("RegionSizeMin", &regionSizeMin, 1, 150) then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderInt ("RegionMergeSize", &regionMergeSize, 1, 150) then changed <- true
+        if ImGui.SliderInt ("RegionSizeMerge", &regionSizeMerge, 1, 150) then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("MaxEdgeLength", &edgeMaxLength, 0.0f, 50.0f, "%.1f") then changed <- true
+        if ImGui.SliderFloat ("EdgeLengthMax", &edgeLengthMax, 0.0f, 50.0f, "%.1f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("MaxEdgeError", &edgeMaxError, 0.1f, 3f, "%.1f") then changed <- true
+        if ImGui.SliderFloat ("EdgeErrorMax", &edgeErrorMax, 0.1f, 3f, "%.1f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         if ImGui.SliderInt ("VertPerPoly", &vertsPerPolygon, 3, 12) then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         if ImGui.SliderFloat ("DetailSampleDistance", &detailSampleDistance, 0.0f, 16.0f, "%.1f") then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-        if ImGui.SliderFloat ("DetailMaxSampleError", &detailSampleMaxError, 0.0f, 16.0f, "%.1f") then changed <- true        
+        if ImGui.SliderFloat ("DetailSampleErrorMax", &detailSampleErrorMax, 0.0f, 16.0f, "%.1f") then changed <- true        
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
         if ImGui.Checkbox ("FilterLowHangingObstacles", &filterLowHangingObstacles) then changed <- true
         if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -1885,15 +1885,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                   CellHeight = cellHeight
                   AgentHeight = agentHeight
                   AgentRadius = agentRadius
-                  AgentMaxClimb = agentMaxClimb
-                  AgentMaxSlope = agentMaxSlope
-                  RegionMinSize = regionMinSize
-                  RegionMergeSize = regionMergeSize
-                  EdgeMaxLength = edgeMaxLength
-                  EdgeMaxError = edgeMaxError
+                  AgentClimbMax = agentClimbMax
+                  AgentSlopeMax = agentSlopeMax
+                  RegionSizeMin = regionSizeMin
+                  RegionSizeMerge = regionSizeMerge
+                  EdgeLengthMax = edgeLengthMax
+                  EdgeErrorMax = edgeErrorMax
                   VertsPerPolygon = vertsPerPolygon
                   DetailSampleDistance = detailSampleDistance
-                  DetailSampleMaxError = detailSampleMaxError
+                  DetailSampleErrorMax = detailSampleErrorMax
                   FilterLowHangingObstacles = filterLowHangingObstacles
                   FilterLedgeSpans = filterLedgeSpans
                   FilterWalkableLowHeightSpans = filterWalkableLowHeightSpans
