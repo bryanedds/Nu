@@ -850,11 +850,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         use collisionConfigurationInfo = new DefaultCollisionConstructionInfo (DefaultMaxPersistentManifoldPoolSize = 80000, DefaultMaxCollisionAlgorithmPoolSize = 80000)
         let collisionConfiguration = new DefaultCollisionConfiguration (collisionConfigurationInfo)
         let collisionDispatcher = new CollisionDispatcherMultiThreaded (collisionConfiguration)
-        let broadphase = new AxisSweep3 (v3Dup (Constants.Physics.AxisSweepBoundsSize3d * -0.5f), v3Dup Constants.Physics.AxisSweepBoundsSize3d) // NOTE: seems to keep characters from falling through terrain.
+        let broadPhaseInterface = new AxisSweep3 (v3Dup (Constants.Physics.AxisSweepBoundsSize3d * -0.5f), v3Dup Constants.Physics.AxisSweepBoundsSize3d) // NOTE: seems to keep characters from falling through terrain.
         let ghostPairCallback = new GhostPairCallback ()
         let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
         let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()
-        let world = new DiscreteDynamicsWorldMultiThreaded (collisionDispatcher, broadphase, constraintSolverPool, constraintSolver, collisionConfiguration)
+        let world = new DiscreteDynamicsWorldMultiThreaded (collisionDispatcher, broadPhaseInterface, constraintSolverPool, constraintSolver, collisionConfiguration)
         world.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
         world.DispatchInfo.AllowedCcdPenetration <- Constants.Physics.AllowedCcdPenetration3d
         world.Gravity <- gravity
@@ -870,7 +870,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               CollisionsGround = dictPlus HashIdentity.Structural []
               CollisionConfiguration = collisionConfiguration
               CollisionDispatcher = collisionDispatcher
-              BroadPhaseInterface = broadphase
+              BroadPhaseInterface = broadPhaseInterface
               GhostPairCallback = ghostPairCallback
               ConstraintSolverPool = constraintSolverPool
               ConstraintSolver = constraintSolver
