@@ -423,7 +423,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
                 physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
                 let mutable up = v3Up
-                let characterProperties = bodyProperties.KinematicCharacterProperties
+                let characterProperties = bodyProperties.CharacterProperties
                 let characterController = new KinematicCharacterController (ghost, convexShape, characterProperties.StepHeight, &up)
                 characterController.MaxPenetrationDepth <- characterProperties.PenetrationDepthMax
                 characterController.MaxSlope <- characterProperties.SlopeMax
@@ -443,7 +443,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 if physicsEngine.KinematicCharacters.TryAdd (bodyId, character)
                 then physicsEngine.Objects.Add (bodyId, ghost)
                 else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
-            | _ -> Log.debugOnce "Non-convex body shapes are unsupported for KinematicCharacter."
+            | _ -> Log.info "Non-convex body shapes are unsupported for KinematicCharacter."
         else
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)

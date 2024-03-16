@@ -16,7 +16,7 @@ module WorldImGui =
             world.Subsystems.ImGui
 
         /// Render circles via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiCircles3dPlus absolute (positions : Vector3 seq) filled radius (computeColor : Vector3 -> Color) world =
+        static member imGuiCircles3dPlus absolute (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
@@ -34,12 +34,12 @@ module WorldImGui =
                     else drawList.AddCircle (positionWindow, radius, color.Abgr)
 
         /// Render segments via ImGui in the current eye 3d space.
-        static member imGuiCircles3d absolute position filled radius color world =
-            World.imGuiCircles3dPlus absolute position filled radius (constant color) world
+        static member imGuiCircles3d absolute position radius filled color world =
+            World.imGuiCircles3dPlus absolute position radius filled (constant color) world
 
         /// Render a circle via ImGui in the current eye 3d space.
-        static member imGuiCircle3d absolute position filled radius color world =
-            World.imGuiCircles3d absolute (SArray.singleton position) filled radius color world
+        static member imGuiCircle3d absolute position radius filled color world =
+            World.imGuiCircles3d absolute (SArray.singleton position) radius filled color world
 
         /// Render segments via ImGui in the current eye 3d space, computing color as specified.
         static member imGuiSegments3dPlus absolute (segments : struct (Vector3 * Vector3) seq) thickness (computeColor : struct (Vector3 * Vector3) -> Color) world =

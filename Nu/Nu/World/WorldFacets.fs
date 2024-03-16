@@ -1361,9 +1361,9 @@ module RigidBodyFacetModule =
         member this.GetGravityOverride world : Vector3 option = this.Get (nameof this.GravityOverride) world
         member this.SetGravityOverride (value : Vector3 option) world = this.Set (nameof this.GravityOverride) value world
         member this.GravityOverride = lens (nameof this.GravityOverride) this this.GetGravityOverride this.SetGravityOverride
-        member this.GetKinematicCharacterProperties world : KinematicCharacterProperties = this.Get (nameof this.KinematicCharacterProperties) world
-        member this.SetKinematicCharacterProperties (value : KinematicCharacterProperties) world = this.Set (nameof this.KinematicCharacterProperties) value world
-        member this.KinematicCharacterProperties = lens (nameof this.KinematicCharacterProperties) this this.GetKinematicCharacterProperties this.SetKinematicCharacterProperties
+        member this.GetCharacterProperties world : CharacterProperties = this.Get (nameof this.CharacterProperties) world
+        member this.SetCharacterProperties (value : CharacterProperties) world = this.Set (nameof this.CharacterProperties) value world
+        member this.CharacterProperties = lens (nameof this.CharacterProperties) this this.GetCharacterProperties this.SetCharacterProperties
         member this.GetCollisionDetection world : CollisionDetection = this.Get (nameof this.CollisionDetection) world
         member this.SetCollisionDetection (value : CollisionDetection) world = this.Set (nameof this.CollisionDetection) value world
         member this.CollisionDetection = lens (nameof this.CollisionDetection) this this.GetCollisionDetection this.SetCollisionDetection
@@ -1413,7 +1413,7 @@ module RigidBodyFacetModule =
              define Entity.AngularFactor v3One
              define Entity.Substance (Mass 1.0f)
              define Entity.GravityOverride None
-             define Entity.KinematicCharacterProperties KinematicCharacterProperties.defaultProperties
+             define Entity.CharacterProperties CharacterProperties.defaultProperties
              define Entity.CollisionDetection Discontinuous
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask Constants.Physics.CollisionWildcard
@@ -1447,7 +1447,7 @@ module RigidBodyFacetModule =
             let world = World.subscribePlus subIds.[15] propagatePhysics (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
             let world = World.subscribePlus subIds.[16] propagatePhysics (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
             let world = World.subscribePlus subIds.[17] propagatePhysics (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
-            let world = World.subscribePlus subIds.[18] propagatePhysics (entity.ChangeEvent (nameof entity.KinematicCharacterProperties)) entity world |> snd
+            let world = World.subscribePlus subIds.[18] propagatePhysics (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
             let world = World.subscribePlus subIds.[19] propagatePhysics (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
             let world = World.subscribePlus subIds.[10] propagatePhysics (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
             let world = World.subscribePlus subIds.[21] propagatePhysics (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
@@ -1486,7 +1486,7 @@ module RigidBodyFacetModule =
                   AngularFactor = entity.GetAngularFactor world
                   Substance = entity.GetSubstance world
                   GravityOverride = entity.GetGravityOverride world
-                  KinematicCharacterProperties = entity.GetKinematicCharacterProperties world
+                  CharacterProperties = entity.GetCharacterProperties world
                   CollisionDetection = entity.GetCollisionDetection world
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
@@ -2856,7 +2856,7 @@ module TerrainFacetModule =
                       AngularFactor = v3Zero
                       Substance = Mass 0.0f
                       GravityOverride = None
-                      KinematicCharacterProperties = KinematicCharacterProperties.defaultProperties
+                      CharacterProperties = CharacterProperties.defaultProperties
                       CollisionDetection = Discontinuous
                       CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                       CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
@@ -3091,7 +3091,7 @@ module Nav3dConfigFacetModule =
                     let computePointColor (point : Vector3) =
                         let height = Math.Lerp (0.0f, 1.0f, (point.Y - pointsMinY) / (pointsMaxY - pointsMinY))
                         Color (1.0f, 1.0f - height, height, 1.0f)
-                    World.imGuiCircles3dPlus false points true 2.5f computePointColor world
+                    World.imGuiCircles3dPlus false points 2.5f true computePointColor world
                     world
 
                 | None -> world
