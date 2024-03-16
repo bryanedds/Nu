@@ -3035,7 +3035,7 @@ module Nav3dConfigFacetModule =
                     let computeSegmentColor (segment : struct (Vector3 * Vector3)) =
                         let middleY = (fst' segment).Y + (snd' segment).Y * 0.5f
                         let height = Math.Lerp (0.0f, 1.0f, (middleY - segmentsMinY) / (segmentsMaxY - segmentsMinY))
-                        Color (1.0f, 1.0f - height, 0.0f, (1.0f - height) * 0.25f + 0.75f)
+                        Color (1.0f, 1.0f - height, height, 1.0f)
                     World.imGuiSegments3dPlus false segments 1.0f computeSegmentColor world
 
                     // draw interior edges
@@ -3090,7 +3090,7 @@ module Nav3dConfigFacetModule =
                                         point })
                     let computePointColor (point : Vector3) =
                         let height = Math.Lerp (0.0f, 1.0f, (point.Y - pointsMinY) / (pointsMaxY - pointsMinY))
-                        Color (1.0f, 1.0f - height, 0.0f, (1.0f - height) * 0.25f + 0.75f)
+                        Color (1.0f, 1.0f - height, height, 1.0f)
                     World.imGuiCircles3dPlus false points true 2.5f computePointColor world
                     world
 
