@@ -1687,11 +1687,9 @@ module WorldModule2 =
                                                                 if FrameTimer.IsRunning then
                                                                     while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
                                                                         let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - FrameTimer.Elapsed.TotalSeconds
-                                                                        if timeToSleep > 0.016 then Thread.Sleep 16
-                                                                        elif timeToSleep > 0.008 then Thread.Sleep 8
-                                                                        elif timeToSleep > 0.004 then Thread.Sleep 4
-                                                                        elif timeToSleep > 0.002 then Thread.Sleep 2
-                                                                        elif timeToSleep > 0.001 then Thread.Sleep 1
+                                                                        if timeToSleep > 0.008 then Thread.Sleep 7
+                                                                        elif timeToSleep > 0.004 then Thread.Sleep 3
+                                                                        elif timeToSleep > 0.002 then Thread.Sleep 1
                                                                         else Thread.Yield () |> ignore<bool>
                                                                 FrameTimer.Restart ()
 
