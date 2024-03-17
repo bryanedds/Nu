@@ -371,15 +371,15 @@ type BodyType =
 
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
-    { StepHeight : single // NOTE: percentage of stepper's height rather than absolute height.
+    { StepHeight : single
       SlopeMax : single // NOTE: setting much lower than 0.7f tends to cause a lot of terrain fall-throughs.
-      PenetrationDepthMax : single } // NOTE: setting lower or higher seems to cause a lot of terrain fall-throughs.
+      PenetrationDepthMax : single } // NOTE: setting much lower or higher seems to cause a lot of terrain fall-throughs.
 
     /// The default character properties.
     static member defaultProperties =
-        { StepHeight = 0.4f
+        { StepHeight = 0.3f
           SlopeMax = Math.DegreesToRadians 45.0f
-          PenetrationDepthMax = 0.04f }
+          PenetrationDepthMax = 0.05f }
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =

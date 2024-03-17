@@ -939,8 +939,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | None -> None
 
         member physicsEngine.IsBodyOnGround bodyId =
-            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
-            List.notEmpty groundNormals
+            match physicsEngine.KinematicCharacters.TryGetValue bodyId with
+            | (true, character) -> character.CharacterController.OnGround
+            | (false, _) ->
+                let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
+                List.notEmpty groundNormals
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
