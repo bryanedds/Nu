@@ -131,25 +131,6 @@
           [Position [-0.5 1.64 -4.7]]
           [PositionLocal [-0.5 0 -4.7]]
           [Presence Omnipresent]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Gameplay House] False None None]]]
-              [MountOpt [Some ^]]
-              [Name House]
-              [NavShape StaticModelNavShape]
-              [Offset [0 0.34999943 0]]
-              [Position [-0.5 1.64 -4.7]]
-              [PositionLocal [-0.5 0 -4.7]]
-              [Presence Omnipresent]
-              [Scale [5 5 5]]
-              [ScaleLocal [5 5 5]]
-              [Size [1.8728666 0.7000011 1.2728666]]
-              [Static True]
-              [StaticModel [Gameplay House]]]
-             []]]]
           [Scale [5 5 5]]
           [ScaleLocal [5 5 5]]
           [Size [1.8728666 0.7000011 1.2728666]]
@@ -187,25 +168,6 @@
           [Position [-6.7 1.64 2.6]]
           [PositionLocal [-6.7 0 2.6]]
           [Presence Omnipresent]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Gameplay House2] False None None]]]
-              [MountOpt [Some ^]]
-              [Name House2]
-              [NavShape StaticModelNavShape]
-              [Offset [0 0.6499994 0]]
-              [Position [-6.7 1.64 2.6]]
-              [PositionLocal [-6.7 0 2.6]]
-              [Presence Omnipresent]
-              [Scale [5 5 5]]
-              [ScaleLocal [5 5 5]]
-              [Size [1.8728666 1.300001 1.2728671]]
-              [Static True]
-              [StaticModel [Gameplay House2]]]
-             []]]]
           [Scale [5 5 5]]
           [ScaleLocal [5 5 5]]
           [Size [1.8728666 1.300001 1.2728671]]
@@ -249,33 +211,8 @@
           [MountOpt [Some ^]]
           [Name Well]
           [Offset [0 0.55383134 5.9604645E-08]]
-          [Position [2.4 1.64 3.7]]
-          [PositionLocal [2.4 0 3.7]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Gameplay Well] True None None]]]
-              [MaterialProperties
-               [[AlbedoOpt
-                 [Some [1 1 1 1]]]
-                [RoughnessOpt None]
-                [MetallicOpt None]
-                [AmbientOcclusionOpt None]
-                [EmissionOpt None]
-                [HeightOpt None]
-                [IgnoreLightMapsOpt None]
-                [OpaqueDistanceOpt None]]]
-              [MountOpt [Some ^]]
-              [Name Well]
-              [Offset [0 0.55383134 5.9604645E-08]]
-              [Position [2.4 1.64 3.7]]
-              [PositionLocal [2.4 0 3.7]]
-              [Size [1.3779953 1.1076627 1.2276577]]
-              [Static True]
-              [StaticModel [Gameplay Well]]]
-             []]]]
+          [Position [3.8 1.6 0.7]]
+          [PositionLocal [3.8 -0.03999996 0.7]]
           [Size [1.3779953 1.1076627 1.2276577]]
           [Static True]
           [StaticModel [Gameplay Well]]]
@@ -297,8 +234,8 @@
           [MountOpt [Some ^]]
           [Name Well-0033]
           [Offset [0 0.55383134 5.9604645E-08]]
-          [Position [-8.2 1.64 -13.5]]
-          [PositionLocal [-8.2 0 -13.5]]
+          [Position [-9.5 1.6 -14.3]]
+          [PositionLocal [-9.5 -0.03999996 -14.3]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Well]]
           [Size [1.3779953 1.1076627 1.2276577]]
           [Static True]
@@ -323,31 +260,6 @@
           [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
           [Position [-7.6 1.64 5.7]]
           [PositionLocal [-7.6 0 5.7]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Gameplay RedBarrel] True None None]]]
-              [MaterialProperties
-               [[AlbedoOpt
-                 [Some [1 1 1 1]]]
-                [RoughnessOpt None]
-                [MetallicOpt None]
-                [AmbientOcclusionOpt None]
-                [EmissionOpt None]
-                [HeightOpt None]
-                [IgnoreLightMapsOpt None]
-                [OpaqueDistanceOpt None]]]
-              [MountOpt [Some ^]]
-              [Name Barrel]
-              [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
-              [Position [-7.6 1.64 5.7]]
-              [PositionLocal [-7.6 0 5.7]]
-              [Size [0.59459853 0.8409852 0.59459865]]
-              [Static True]
-              [StaticModel [Gameplay RedBarrel]]]
-             []]]]
           [Size [0.59459853 0.8409852 0.59459865]]
           [Static True]
           [StaticModel [Gameplay RedBarrel]]]
@@ -471,35 +383,6 @@
           [Position [-6.7 1.64 7]]
           [PositionLocal [-6.7 0 7]]
           [Presence Omnipresent]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelSurfaceDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Gameplay Barrier] True None None]]]
-              [Material
-               [[AlbedoImageOpt
-                 [Some [Default Barrier_Albedo]]]
-                [RoughnessImageOpt None]
-                [MetallicImageOpt
-                 [Some [Default Barrier_Metallic]]]
-                [AmbientOcclusionImageOpt None]
-                [EmissionImageOpt None]
-                [NormalImageOpt
-                 [Some [Default Barrier_Normal]]]
-                [HeightImageOpt None]
-                [TwoSidedOpt None]]]
-              [MountOpt [Some ^]]
-              [Name Barrier]
-              [NavShape StaticModelNavShape]
-              [Offset [0.110984206 0.46470478 0.8669058]]
-              [Position [-6.7 1.64 7]]
-              [PositionLocal [-6.7 0 7]]
-              [Presence Omnipresent]
-              [Size [4.0000005 0.9294096 1.7338116]]
-              [Static True]
-              [StaticModel [Gameplay Barrier]]]
-             []]]]
           [Size [4.0000005 0.9294096 1.7338116]]
           [Static True]
           [StaticModel [Gameplay Barrier]]]
@@ -739,18 +622,6 @@
           [Position [-9.2 1.64 -19.7]]
           [PositionLocal [-9.2 0 -19.7]]
           [Presence Omnipresent]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default ConcreteBarrier] True None None]]]
-              [Name Barrier]
-              [Offset [0.110984206 0.46470478 0.8669058]]
-              [Position [-6.7 0 7]]
-              [Size [4.0000005 0.9294096 1.7338116]]
-              [StaticModel [Default ConcreteBarrier]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
           [Size [4.0000005 0.9294096 1.7338116]]
           [Static True]
@@ -779,18 +650,6 @@
           [Position [-5 1.64 -19.7]]
           [PositionLocal [-5 0 -19.7]]
           [Presence Omnipresent]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default ConcreteBarrier] True None None]]]
-              [Name Barrier]
-              [Offset [0.110984206 0.46470478 0.8669058]]
-              [Position [-6.7 0 7]]
-              [Size [4.0000005 0.9294096 1.7338116]]
-              [StaticModel [Default ConcreteBarrier]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
           [Size [4.0000005 0.9294096 1.7338116]]
           [Static True]
@@ -819,18 +678,6 @@
           [Position [-0.7 1.64 -19.5]]
           [PositionLocal [-0.7 0 -19.5]]
           [Presence Omnipresent]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default ConcreteBarrier] True None None]]]
-              [Name Barrier]
-              [Offset [0.110984206 0.46470478 0.8669058]]
-              [Position [-6.7 0 7]]
-              [Size [4.0000005 0.9294096 1.7338116]]
-              [StaticModel [Default ConcreteBarrier]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
           [Rotation [0 -0.043619394 0 0.99904823]]
           [RotationLocal [0 -0.04361939 0 0.99904823]]
@@ -856,32 +703,6 @@
           [Offset [0.004197847 0.052107863 -0.0011418983]]
           [Position [0.7 4.64 -6.7]]
           [PositionLocal [0.7 3 -6.7]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Gameplay Genorator] True None None]]]
-              [MaterialProperties
-               [[AlbedoOpt None]
-                [RoughnessOpt [Some 0.75]]
-                [MetallicOpt None]
-                [AmbientOcclusionOpt None]
-                [EmissionOpt None]
-                [HeightOpt None]
-                [IgnoreLightMapsOpt None]
-                [OpaqueDistanceOpt None]]]
-              [MountOpt [Some ^]]
-              [Name Generator]
-              [Offset [0.004197847 0.052107863 -0.0011418983]]
-              [Position [0.7 4.64 -6.7]]
-              [PositionLocal [0.7 3 -6.7]]
-              [Scale [5 5 5]]
-              [ScaleLocal [5 5 5]]
-              [Size [0.111337245 0.104215726 0.16522536]]
-              [Static True]
-              [StaticModel [Gameplay Genorator]]]
-             []]]]
           [Scale [5 5 5]]
           [ScaleLocal [5 5 5]]
           [Size [0.111337245 0.104215726 0.16522536]]
@@ -906,19 +727,6 @@
           [Offset [0.004197847 0.052107863 -0.0011418983]]
           [Position [9.4 4.64 -12.5]]
           [PositionLocal [9.4 3 -12.5]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default Genorator] True None None]]]
-              [Name Generator]
-              [Offset [0.004197847 0.052107863 -0.0011418983]]
-              [Position [0.7 3 -6.7]]
-              [Scale [5 5 5]]
-              [Size [0.111337245 0.104215726 0.16522536]]
-              [StaticModel [Default Genorator]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Generator]]
           [Rotation [0 0.70710665 0 0.7071069]]
           [RotationLocal [0 0.7071067 0 0.7071068]]
@@ -969,31 +777,10 @@
           [MountOpt [Some ^]]
           [Name Crate]
           [Offset [0 0.5 0]]
-          [Position [4.5 1.64 -1.3]]
-          [PositionLocal [4.5 0 -1.3]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Gameplay WoodenCrate] True None None]]]
-              [MaterialProperties
-               [[AlbedoOpt None]
-                [RoughnessOpt [Some 2]]
-                [MetallicOpt None]
-                [AmbientOcclusionOpt None]
-                [EmissionOpt None]
-                [HeightOpt None]
-                [IgnoreLightMapsOpt None]
-                [OpaqueDistanceOpt None]]]
-              [MountOpt [Some ^]]
-              [Name Crate]
-              [Offset [0 0.5 0]]
-              [Position [4.5 1.64 -1.3]]
-              [PositionLocal [4.5 0 -1.3]]
-              [Static True]
-              [StaticModel [Gameplay WoodenCrate]]]
-             []]]]
+          [Position [5.1 1.6 -2]]
+          [PositionLocal [5.1 -0.03999996 -2]]
+          [Rotation [0 -0.1305262 0 0.9914449]]
+          [RotationLocal [0 -0.1305262 0 0.9914449]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
@@ -1063,18 +850,9 @@
           [Offset [0 0.5 0]]
           [Position [-3.3 1.64 7.3]]
           [PositionLocal [-3.3 0 7.3]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default WoodenCrate] True None None]]]
-              [Name Crate]
-              [Offset [0 0.5 0]]
-              [Position [4.5482426 0 -1.3259361]]
-              [StaticModel [Default WoodenCrate]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
+          [Rotation [0 0.043619387 0 0.99904823]]
+          [RotationLocal [0 0.043619387 0 0.99904823]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
@@ -1107,17 +885,6 @@
           [Offset [0 0.5 0]]
           [Position [-5.7 1.64 -3.5]]
           [PositionLocal [-5.7 0 -3.5]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default WoodenCrate] True None None]]]
-              [Name Crate]
-              [Offset [0 0.5 0]]
-              [Position [4.5482426 0 -1.3259361]]
-              [StaticModel [Default WoodenCrate]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
@@ -1151,17 +918,6 @@
           [Offset [0 0.5 0]]
           [Position [-7.98 1.64 -5.49]]
           [PositionLocal [-7.98 0 -5.49]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default WoodenCrate] True None None]]]
-              [Name Crate]
-              [Offset [0 0.5 0]]
-              [Position [4.5482426 0 -1.3259361]]
-              [StaticModel [Default WoodenCrate]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
@@ -1195,17 +951,6 @@
           [Offset [0 0.5 0]]
           [Position [3.3 1.64 -18.2]]
           [PositionLocal [3.3 0 -18.2]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default WoodenCrate] True None None]]]
-              [Name Crate]
-              [Offset [0 0.5 0]]
-              [Position [4.5482426 0 -1.3259361]]
-              [StaticModel [Default WoodenCrate]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
           [Rotation [0 0.17364818 0 0.9848077]]
           [RotationLocal [0 0.17364816 0 0.9848078]]
@@ -1243,17 +988,6 @@
           [Offset [0 0.5 0]]
           [Position [4.8 1.64 -14.7]]
           [PositionLocal [4.8 0 -14.7]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelDispatcher
-             [[BodyShape
-               [StaticModelShape
-                [[Default WoodenCrate] True None None]]]
-              [Name Crate]
-              [Offset [0 0.5 0]]
-              [Position [4.5482426 0 -1.3259361]]
-              [StaticModel [Default WoodenCrate]]]
-             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
           [Rotation [0 -0.1305262 0 0.9914449]]
           [RotationLocal [0 -0.1305262 0 0.9914449]]
@@ -1280,54 +1014,6 @@
           [Offset [0 1.2706511 0]]
           [Position [13 0.30000007 -1.6]]
           [PositionLocal [13 -1.3399999 -1.6]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelSurfaceDispatcher
-             [[BodyShape
-               [StaticModelSurfaceShape
-                [0 [Gameplay PalmTree] True None None]]]
-              [Material
-               [[AlbedoImageOpt
-                 [Some [Default Palm_Tree_Albedo]]]
-                [RoughnessImageOpt None]
-                [MetallicImageOpt None]
-                [AmbientOcclusionImageOpt None]
-                [EmissionImageOpt None]
-                [NormalImageOpt
-                 [Some [Default Palm_Tree_Normal]]]
-                [HeightImageOpt None]
-                [TwoSidedOpt None]]]
-              [MountOpt [Some ^]]
-              [Name Palm]
-              [Offset [0 1.2706511 0]]
-              [Position [13 -0.6 -1.6]]
-              [PositionLocal [13 -2.24 -1.6]]
-              [Size [0.33933803 2.5910509 0.33933803]]
-              [Static True]
-              [StaticModel [Gameplay PalmTree]]]
-             [[RigidModelSurfaceDispatcher
-               [[BodyShape EmptyShape]
-                [Material
-                 [[AlbedoImageOpt
-                   [Some [Default Palm_Tree_Albedo]]]
-                  [RoughnessImageOpt None]
-                  [MetallicImageOpt None]
-                  [AmbientOcclusionImageOpt None]
-                  [EmissionImageOpt None]
-                  [NormalImageOpt
-                   [Some [Default Palm_Tree_Normal]]]
-                  [HeightImageOpt None]
-                  [TwoSidedOpt None]]]
-                [MountOpt [Some ^]]
-                [Name Leaves-0008]
-                [NavShape EmptyNavShape]
-                [Offset [-0.048617125 1.6080145 -0.043147564]]
-                [Position [13 -0.6 -1.6]]
-                [Size [2.9976737 3.216029 2.925362]]
-                [Static True]
-                [StaticModel [Gameplay PalmTree]]
-                [SurfaceIndex 1]]
-               []]]]]]
           [Size [0.33933803 2.5910509 0.33933803]]
           [Static True]
           [StaticModel [Gameplay PalmTree]]]
@@ -1583,52 +1269,6 @@
           [Offset [0 1.2706511 0]]
           [Position [0.1 -0.6 11.1]]
           [PositionLocal [0.1 -2.24 11.1]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelSurfaceDispatcher
-             [[BodyShape
-               [StaticModelSurfaceShape
-                [0 [Gameplay PalmTree] True None None]]]
-              [Material
-               [[AlbedoImageOpt
-                 [Some [Default Palm_Tree_Albedo]]]
-                [RoughnessImageOpt None]
-                [MetallicImageOpt None]
-                [AmbientOcclusionImageOpt None]
-                [EmissionImageOpt None]
-                [NormalImageOpt
-                 [Some [Default Palm_Tree_Normal]]]
-                [HeightImageOpt None]
-                [TwoSidedOpt None]]]
-              [Name RigidModelSurface-0006]
-              [Offset [0 1.2706511 0]]
-              [Position [13 -0.6 -1.6]]
-              [Size [0.33933803 2.5910509 0.33933803]]
-              [StaticModel [Gameplay PalmTree]]]
-             [[RigidModelSurfaceDispatcher
-               [[BodyShape
-                 [StaticModelSurfaceShape
-                  [1 [Gameplay PalmTree] True None None]]]
-                [Material
-                 [[AlbedoImageOpt
-                   [Some [Default Palm_Tree_Albedo]]]
-                  [RoughnessImageOpt None]
-                  [MetallicImageOpt None]
-                  [AmbientOcclusionImageOpt None]
-                  [EmissionImageOpt None]
-                  [NormalImageOpt
-                   [Some [Default Palm_Tree_Normal]]]
-                  [HeightImageOpt None]
-                  [TwoSidedOpt None]]]
-                [MountOpt [Some ^]]
-                [Name RigidModelSurface-0008]
-                [NavShape EmptyNavShape]
-                [Offset [-0.048617125 1.6080145 -0.043147564]]
-                [Position [13 -0.6 -1.6]]
-                [Size [2.9976737 3.216029 2.925362]]
-                [StaticModel [Gameplay PalmTree]]
-                [SurfaceIndex 1]]
-               []]]]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
           [Rotation [0 -0.42261827 0 0.90630776]]
           [RotationLocal [0 -0.42261827 0 0.90630776]]
@@ -1682,52 +1322,6 @@
           [Offset [0 1.2706511 0]]
           [Position [-3.4 -0.49999988 11.8]]
           [PositionLocal [-3.4 -2.1399999 11.8]]
-          [PropagatedDescriptorOpt
-           [Some
-            [RigidModelSurfaceDispatcher
-             [[BodyShape
-               [StaticModelSurfaceShape
-                [0 [Gameplay PalmTree] True None None]]]
-              [Material
-               [[AlbedoImageOpt
-                 [Some [Default Palm_Tree_Albedo]]]
-                [RoughnessImageOpt None]
-                [MetallicImageOpt None]
-                [AmbientOcclusionImageOpt None]
-                [EmissionImageOpt None]
-                [NormalImageOpt
-                 [Some [Default Palm_Tree_Normal]]]
-                [HeightImageOpt None]
-                [TwoSidedOpt None]]]
-              [Name RigidModelSurface-0006]
-              [Offset [0 1.2706511 0]]
-              [Position [13 -0.6 -1.6]]
-              [Size [0.33933803 2.5910509 0.33933803]]
-              [StaticModel [Gameplay PalmTree]]]
-             [[RigidModelSurfaceDispatcher
-               [[BodyShape
-                 [StaticModelSurfaceShape
-                  [1 [Gameplay PalmTree] True None None]]]
-                [Material
-                 [[AlbedoImageOpt
-                   [Some [Default Palm_Tree_Albedo]]]
-                  [RoughnessImageOpt None]
-                  [MetallicImageOpt None]
-                  [AmbientOcclusionImageOpt None]
-                  [EmissionImageOpt None]
-                  [NormalImageOpt
-                   [Some [Default Palm_Tree_Normal]]]
-                  [HeightImageOpt None]
-                  [TwoSidedOpt None]]]
-                [MountOpt [Some ^]]
-                [Name RigidModelSurface-0008]
-                [NavShape EmptyNavShape]
-                [Offset [-0.048617125 1.6080145 -0.043147564]]
-                [Position [13 -0.6 -1.6]]
-                [Size [2.9976737 3.216029 2.925362]]
-                [StaticModel [Gameplay PalmTree]]
-                [SurfaceIndex 1]]
-               []]]]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
           [Rotation [0 -0.70710665 0 0.7071069]]
           [RotationLocal [0 -0.7071067 0 0.7071068]]
@@ -1813,7 +1407,48 @@
             [Static True]
             [StaticModel [Gameplay PalmTree]]
             [SurfaceIndex 1]]
-           []]]]]]]]
+           []]]]
+        [RigidModelDispatcher
+         [[BodyShape
+           [StaticModelShape
+            [[Gameplay Container] True None None]]]
+          [MountOpt [Some ^]]
+          [Name Container]
+          [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+          [Position [0 3 -14.8]]
+          [PositionLocal [0 1.36 -14.8]]
+          [Rotation [0 -0.57357645 0 0.81915206]]
+          [RotationLocal [0 -0.57357645 0 0.81915206]]
+          [Size [2.5172486 2.5420742 5.4074244]]
+          [StaticModel [Gameplay Container]]]
+         []]
+        [RigidModelDispatcher
+         [[BodyShape
+           [StaticModelShape
+            [[Gameplay TireWall] True None None]]]
+          [MountOpt [Some ^]]
+          [Name Tires]
+          [Offset [0 0.5155037 -1.1920929E-07]]
+          [Position [-11.6 1.6 3.1]]
+          [PositionLocal [-11.6 -0.03999996 3.1]]
+          [Size [1.0259093 1.0310074 3.0259092]]
+          [StaticModel [Gameplay TireWall]]]
+         []]
+        [RigidModelDispatcher
+         [[BodyShape
+           [StaticModelShape
+            [[Gameplay TireWall] True None None]]]
+          [MountOpt [Some ^]]
+          [Name Tires-0004]
+          [Offset [0 0.5155037 -1.1920929E-07]]
+          [Position [-1.1 1.6 -8.1]]
+          [PositionLocal [-1.1 -0.03999996 -8.1]]
+          [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Tires]]
+          [Rotation [0 -0.70710677 0 0.70710677]]
+          [RotationLocal [0 -0.70710677 0 0.70710677]]
+          [Size [1.0259093 1.0310074 3.0259092]]
+          [StaticModel [Gameplay TireWall]]]
+         []]]]]]
     [Static True]]
    [[RigidModelSurfaceDispatcher
      [[Material
@@ -2009,8 +1644,8 @@
       [MountOpt [Some ^]]
       [Name Well]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [2.4 1.64 3.7]]
-      [PositionLocal [2.4 0 3.7]]
+      [Position [3.8 1.6 0.7]]
+      [PositionLocal [3.8 -0.03999996 0.7]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelDispatcher
@@ -2030,8 +1665,8 @@
           [MountOpt [Some ^]]
           [Name Well]
           [Offset [0 0.55383134 5.9604645E-08]]
-          [Position [2.4 1.64 3.7]]
-          [PositionLocal [2.4 0 3.7]]
+          [Position [3.8 1.6 0.7]]
+          [PositionLocal [3.8 -0.03999996 0.7]]
           [Size [1.3779953 1.1076627 1.2276577]]
           [Static True]
           [StaticModel [Gameplay Well]]]
@@ -2057,8 +1692,8 @@
       [MountOpt [Some ^]]
       [Name Well-0033]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [-8.2 1.64 -13.5]]
-      [PositionLocal [-8.2 0 -13.5]]
+      [Position [-9.5 1.6 -14.3]]
+      [PositionLocal [-9.5 -0.03999996 -14.3]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Well]]
       [Size [1.3779953 1.1076627 1.2276577]]
       [Static True]
@@ -2067,7 +1702,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2088,7 +1723,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrel] True None None]]]
+            [[Gameplay RedBarrelDestroyed] True None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -2106,16 +1741,16 @@
           [PositionLocal [-7.6 0 5.7]]
           [Size [0.59459853 0.8409852 0.59459865]]
           [Static True]
-          [StaticModel [Gameplay RedBarrel]]]
+          [StaticModel [Gameplay RedBarrelDestroyed]]]
          []]]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2134,12 +1769,12 @@
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2158,12 +1793,12 @@
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2182,12 +1817,12 @@
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -2206,7 +1841,7 @@
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelSurfaceDispatcher
      [[BodyShape
@@ -2729,8 +2364,8 @@
       [MountOpt [Some ^]]
       [Name Crate]
       [Offset [0 0.5 0]]
-      [Position [4.5 1.64 -1.3]]
-      [PositionLocal [4.5 0 -1.3]]
+      [Position [5.1 1.6 -2]]
+      [PositionLocal [5.1 -0.03999996 -2]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelDispatcher
@@ -2749,11 +2384,15 @@
           [MountOpt [Some ^]]
           [Name Crate]
           [Offset [0 0.5 0]]
-          [Position [4.5 1.64 -1.3]]
-          [PositionLocal [4.5 0 -1.3]]
+          [Position [5.1 1.6 -2]]
+          [PositionLocal [5.1 -0.03999996 -2]]
+          [Rotation [0 -0.1305262 0 0.9914449]]
+          [RotationLocal [0 -0.1305262 0 0.9914449]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]]]
+      [Rotation [0 -0.1305262 0 0.9914449]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
@@ -2835,6 +2474,8 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
+      [Rotation [0 0.043619387 0 0.99904823]]
+      [RotationLocal [0 0.043619387 0 0.99904823]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
@@ -3060,8 +2701,8 @@
           [MountOpt [Some ^]]
           [Name Palm]
           [Offset [0 1.2706511 0]]
-          [Position [13 -0.6 -1.6]]
-          [PositionLocal [13 -2.24 -1.6]]
+          [Position [13 0.30000007 -1.6]]
+          [PositionLocal [13 -1.3399999 -1.6]]
           [Size [0.33933803 2.5910509 0.33933803]]
           [Static True]
           [StaticModel [Gameplay PalmTree]]]
@@ -3082,7 +2723,7 @@
             [Name Leaves-0008]
             [NavShape EmptyNavShape]
             [Offset [-0.048617125 1.6080145 -0.043147564]]
-            [Position [13 -0.6 -1.6]]
+            [Position [13 0.30000007 -1.6]]
             [Size [2.9976737 3.216029 2.925362]]
             [Static True]
             [StaticModel [Gameplay PalmTree]]
@@ -3573,7 +3214,62 @@
         [Static True]
         [StaticModel [Gameplay PalmTree]]
         [SurfaceIndex 1]]
-       []]]]]]
+       []]]]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay Container] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Container]
+      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Position [0 3 -14.8]]
+      [PositionLocal [0 1.36 -14.8]]
+      [Rotation [0 -0.57357645 0 0.81915206]]
+      [RotationLocal [0 -0.57357645 0 0.81915206]]
+      [Size [2.5172486 2.5420742 5.4074244]]
+      [StaticModel [Gameplay Container]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [-11.6 1.6 3.1]]
+      [PositionLocal [-11.6 -0.03999996 3.1]]
+      [PropagatedDescriptorOpt
+       [Some
+        [RigidModelDispatcher
+         [[BodyShape
+           [StaticModelShape
+            [[Gameplay TireWall] True None None]]]
+          [MountOpt [Some ^]]
+          [Name Tires]
+          [Offset [0 0.5155037 -1.1920929E-07]]
+          [Position [-11.6 1.6 3.1]]
+          [PositionLocal [-11.6 -0.03999996 3.1]]
+          [Size [1.0259093 1.0310074 3.0259092]]
+          [StaticModel [Gameplay TireWall]]]
+         []]]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires-0004]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [-1.1 1.6 -8.1]]
+      [PositionLocal [-1.1 -0.03999996 -8.1]]
+      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Tires]]
+      [Rotation [0 -0.70710677 0 0.70710677]]
+      [RotationLocal [0 -0.70710677 0 0.70710677]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]]]
   [Entity3dDispatcher
    [[Name Villa-0002]
     [Position [-8.2 1.3 27.5]]
@@ -3802,8 +3498,8 @@
       [MountOpt [Some ^]]
       [Name Well]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [-11.9 1.3 29.9]]
-      [PositionLocal [2.4 0 3.7]]
+      [Position [-8.9 1.26 31.3]]
+      [PositionLocal [3.8 -0.03999996 0.7]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelSurfaceDispatcher
@@ -3854,8 +3550,8 @@
       [MountOpt [Some ^]]
       [Name Well-0033]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [5.2999988 1.3 19.300001]]
-      [PositionLocal [-8.2 0 -13.5]]
+      [Position [6.099999 1.26 18]]
+      [PositionLocal [-9.5 -0.03999996 -14.3]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Well]]
       [Rotation [0 -0.7071067 0 0.7071068]]
       [Scale [0.99999994 1 0.99999994]]
@@ -3905,7 +3601,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3926,12 +3622,12 @@
       [Scale [0.99999994 1 0.99999994]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3952,12 +3648,12 @@
       [Scale [0.99999994 1 0.99999994]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -3978,12 +3674,12 @@
       [Scale [0.99999994 1 0.99999994]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -4004,7 +3700,7 @@
       [Scale [0.99999994 1 0.99999994]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelSurfaceDispatcher
      [[BodyShape
@@ -4559,8 +4255,8 @@
       [MountOpt [Some ^]]
       [Name Crate]
       [Offset [0 0.5 0]]
-      [Position [-6.8999996 1.3 32]]
-      [PositionLocal [4.5 0 -1.3]]
+      [Position [-6.1999993 1.26 32.6]]
+      [PositionLocal [5.1 -0.03999996 -2]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelSurfaceDispatcher
@@ -4594,8 +4290,9 @@
           [PositionLocal [4.5 0 -1.3]]
           [StaticModel [Default WoodenCrate]]]
          []]]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
+      [Rotation [0 -0.7933534 0 0.6087614]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
+      [Scale [0.9999999 1 0.9999999]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
@@ -4677,7 +4374,8 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
+      [Rotation [0 -0.67559016 0 0.7372774]]
+      [RotationLocal [0 0.043619387 0 0.99904823]]
       [Scale [0.99999994 1 0.99999994]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
@@ -5427,7 +5125,66 @@
         [Static True]
         [StaticModel [Gameplay PalmTree]]
         [SurfaceIndex 1]]
-       []]]]]]
+       []]]]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay Container] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Container]
+      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Position [6.5999994 2.6599998 27.5]]
+      [PositionLocal [0 1.36 -14.8]]
+      [Rotation [0 0.9848078 0 -0.17364816]]
+      [RotationLocal [0 -0.57357645 0 0.81915206]]
+      [Scale [0.99999994 1 0.99999994]]
+      [Size [2.5172486 2.5420742 5.4074244]]
+      [StaticModel [Gameplay Container]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [-11.3 1.26 15.900001]]
+      [PositionLocal [-11.6 -0.03999996 3.1]]
+      [PropagatedDescriptorOpt
+       [Some
+        [RigidModelDispatcher
+         [[BodyShape
+           [StaticModelShape
+            [[Gameplay TireWall] True None None]]]
+          [MountOpt [Some ^]]
+          [Name Tires]
+          [Offset [0 0.5155037 -1.1920929E-07]]
+          [Position [-11.6 1.6 3.1]]
+          [PositionLocal [-11.6 -0.03999996 3.1]]
+          [Size [1.0259093 1.0310074 3.0259092]]
+          [StaticModel [Gameplay TireWall]]]
+         []]]]
+      [Rotation [0 -0.7071067 0 0.7071068]]
+      [Scale [0.99999994 1 0.99999994]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires-0004]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [-0.10000045 1.26 26.4]]
+      [PositionLocal [-1.1 -0.03999996 -8.1]]
+      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Tires]]
+      [Rotation [0 1 0 -5.960465E-08]]
+      [RotationLocal [0 -0.70710677 0 0.70710677]]
+      [Scale [0.9999999 1 0.9999999]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]]]
   [Entity3dDispatcher
    [[Name Villa-0003]
     [Position [24.7 2.1 22.7]]
@@ -5656,8 +5413,8 @@
       [MountOpt [Some ^]]
       [Name Well]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [22.300001 2.1 19]]
-      [PositionLocal [2.4 0 3.7]]
+      [Position [20.900002 2.06 22]]
+      [PositionLocal [3.8 -0.03999996 0.7]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelSurfaceDispatcher
@@ -5707,8 +5464,8 @@
       [MountOpt [Some ^]]
       [Name Well-0033]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [32.899998 2.1 36.2]]
-      [PositionLocal [-8.2 0 -13.5]]
+      [Position [34.199997 2.06 37]]
+      [PositionLocal [-9.5 -0.03999996 -14.3]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Well]]
       [Rotation [0 1 0 4.371139E-08]]
       [Size [1.3779953 1.1076627 1.2276577]]
@@ -5718,7 +5475,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -5752,12 +5509,12 @@
       [Rotation [0 1 0 4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -5777,12 +5534,12 @@
       [Rotation [0 1 0 4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -5802,12 +5559,12 @@
       [Rotation [0 1 0 4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -5827,12 +5584,12 @@
       [Rotation [0 1 0 4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -5852,7 +5609,7 @@
       [Rotation [0 1 0 4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelSurfaceDispatcher
      [[BodyShape
@@ -6400,8 +6157,8 @@
       [MountOpt [Some ^]]
       [Name Crate]
       [Offset [0 0.5 0]]
-      [Position [20.2 2.1 24]]
-      [PositionLocal [4.5 0 -1.3]]
+      [Position [19.6 2.06 24.7]]
+      [PositionLocal [5.1 -0.03999996 -2]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelSurfaceDispatcher
@@ -6435,7 +6192,8 @@
           [PositionLocal [4.5 0 -1.3]]
           [StaticModel [Default WoodenCrate]]]
          []]]]
-      [Rotation [0 1 0 4.371139E-08]]
+      [Rotation [0 0.9914448 0 0.13052626]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
@@ -6517,7 +6275,8 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 1 0 4.371139E-08]]
+      [Rotation [0 0.99904823 0 -0.043619346]]
+      [RotationLocal [0 0.043619387 0 0.99904823]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
@@ -7258,7 +7017,64 @@
         [Static True]
         [StaticModel [Gameplay PalmTree]]
         [SurfaceIndex 1]]
-       []]]]]]
+       []]]]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay Container] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Container]
+      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Position [24.699999 3.46 37.5]]
+      [PositionLocal [0 1.36 -14.8]]
+      [Rotation [0 0.81915206 0 0.5735765]]
+      [RotationLocal [0 -0.57357645 0 0.81915206]]
+      [Size [2.5172486 2.5420742 5.4074244]]
+      [StaticModel [Gameplay Container]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [36.300003 2.06 19.600002]]
+      [PositionLocal [-11.6 -0.03999996 3.1]]
+      [PropagatedDescriptorOpt
+       [Some
+        [RigidModelDispatcher
+         [[BodyShape
+           [StaticModelShape
+            [[Gameplay TireWall] True None None]]]
+          [MountOpt [Some ^]]
+          [Name Tires]
+          [Offset [0 0.5155037 -1.1920929E-07]]
+          [Position [-11.6 1.6 3.1]]
+          [PositionLocal [-11.6 -0.03999996 3.1]]
+          [Size [1.0259093 1.0310074 3.0259092]]
+          [StaticModel [Gameplay TireWall]]]
+         []]]]
+      [Rotation [0 1 0 4.371139E-08]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires-0004]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [25.800001 2.06 30.800001]]
+      [PositionLocal [-1.1 -0.03999996 -8.1]]
+      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Tires]]
+      [Rotation [0 0.70710677 0 0.70710677]]
+      [RotationLocal [0 -0.70710677 0 0.70710677]]
+      [Scale [0.99999994 1 0.99999994]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]]]
   [Entity3dDispatcher
    [[Name Villa-0004]
     [Position [24.8 2.1 -9]]
@@ -7487,8 +7303,8 @@
       [MountOpt [Some ^]]
       [Name Well]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [22.4 2.1 -12.7]]
-      [PositionLocal [2.4 0 3.7]]
+      [Position [21 2.06 -9.7]]
+      [PositionLocal [3.8 -0.03999996 0.7]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelSurfaceDispatcher
@@ -7538,8 +7354,8 @@
       [MountOpt [Some ^]]
       [Name Well-0033]
       [Offset [0 0.55383134 5.9604645E-08]]
-      [Position [33 2.1 4.499999]]
-      [PositionLocal [-8.2 0 -13.5]]
+      [Position [34.300003 2.06 5.299999]]
+      [PositionLocal [-9.5 -0.03999996 -14.3]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Well]]
       [Rotation [0 1 0 -4.371139E-08]]
       [Size [1.3779953 1.1076627 1.2276577]]
@@ -7587,7 +7403,7 @@
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -7607,12 +7423,12 @@
       [Rotation [0 1 0 -4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -7632,12 +7448,12 @@
       [Rotation [0 1 0 -4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -7657,12 +7473,12 @@
       [Rotation [0 1 0 -4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
-        [[Gameplay RedBarrel] True None None]]]
+        [[Gameplay RedBarrelDestroyed] True None None]]]
       [MaterialProperties
        [[AlbedoOpt
          [Some [1 1 1 1]]]
@@ -7682,7 +7498,7 @@
       [Rotation [0 1 0 -4.371139E-08]]
       [Size [0.59459853 0.8409852 0.59459865]]
       [Static True]
-      [StaticModel [Gameplay RedBarrel]]]
+      [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
     [RigidModelSurfaceDispatcher
      [[BodyShape
@@ -8232,8 +8048,8 @@
       [MountOpt [Some ^]]
       [Name Crate]
       [Offset [0 0.5 0]]
-      [Position [20.3 2.1 -7.6999993]]
-      [PositionLocal [4.5 0 -1.3]]
+      [Position [19.699999 2.06 -6.9999995]]
+      [PositionLocal [5.1 -0.03999996 -2]]
       [PropagatedDescriptorOpt
        [Some
         [RigidModelSurfaceDispatcher
@@ -8267,7 +8083,9 @@
           [PositionLocal [4.5 0 -1.3]]
           [StaticModel [Default WoodenCrate]]]
          []]]]
-      [Rotation [0 1 0 -4.371139E-08]]
+      [Rotation [0 0.9914449 0 0.13052617]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
+      [Scale [0.99999994 1 0.99999994]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
@@ -8349,7 +8167,8 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 1 0 -4.371139E-08]]
+      [Rotation [0 0.99904823 0 -0.043619435]]
+      [RotationLocal [0 0.043619387 0 0.99904823]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
@@ -9094,7 +8913,64 @@
         [Static True]
         [StaticModel [Gameplay PalmTree]]
         [SurfaceIndex 1]]
-       []]]]]]
+       []]]]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay Container] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Container]
+      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Position [24.800001 3.46 5.8]]
+      [PositionLocal [0 1.36 -14.8]]
+      [Rotation [0 0.819152 0 0.57357645]]
+      [RotationLocal [0 -0.57357645 0 0.81915206]]
+      [Size [2.5172486 2.5420742 5.4074244]]
+      [StaticModel [Gameplay Container]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [36.4 2.06 -12.100001]]
+      [PositionLocal [-11.6 -0.03999996 3.1]]
+      [PropagatedDescriptorOpt
+       [Some
+        [RigidModelDispatcher
+         [[BodyShape
+           [StaticModelShape
+            [[Gameplay TireWall] True None None]]]
+          [MountOpt [Some ^]]
+          [Name Tires]
+          [Offset [0 0.5155037 -1.1920929E-07]]
+          [Position [-11.6 1.6 3.1]]
+          [PositionLocal [-11.6 -0.03999996 3.1]]
+          [Size [1.0259093 1.0310074 3.0259092]]
+          [StaticModel [Gameplay TireWall]]]
+         []]]]
+      [Rotation [0 1 0 -4.371139E-08]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]
+    [RigidModelDispatcher
+     [[BodyShape
+       [StaticModelShape
+        [[Gameplay TireWall] True None None]]]
+      [MountOpt [Some ^]]
+      [Name Tires-0004]
+      [Offset [0 0.5155037 -1.1920929E-07]]
+      [Position [25.9 2.06 -0.89999974]]
+      [PositionLocal [-1.1 -0.03999996 -8.1]]
+      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Tires]]
+      [Rotation [0 0.7071068 0 0.7071067]]
+      [RotationLocal [0 -0.70710677 0 0.70710677]]
+      [Scale [0.99999994 1 0.99999994]]
+      [Size [1.0259093 1.0310074 3.0259092]]
+      [StaticModel [Gameplay TireWall]]]
+     []]]]
   [CharacterDispatcher
    [[AngularDamping 0.999]
     [AngularFactor [0 0.1 0]]
@@ -9129,7 +9005,7 @@
     [Name Player]
     [Position [-26.85977 2.9959106 46.090862]]
     [Presence Omnipresent]
-    [Rotation [-1.7924763E-09 -0.40201467 7.9216484E-08 0.9156332]]
+    [Rotation [-1.7924763E-09 -0.40201476 7.9216484E-08 0.9156332]]
     [Size [2.6602979 3.5022092 1.984515]]
     [SleepingAllowed False]]
    []]]]
