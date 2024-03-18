@@ -131,6 +131,25 @@
           [Position [-0.5 1.64 -4.7]]
           [PositionLocal [-0.5 0 -4.7]]
           [Presence Omnipresent]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay House] False None None]]]
+              [MountOpt [Some ^]]
+              [Name House]
+              [NavShape StaticModelNavShape]
+              [Offset [0 0.34999943 0]]
+              [Position [-0.5 1.64 -4.7]]
+              [PositionLocal [-0.5 0 -4.7]]
+              [Presence Omnipresent]
+              [Scale [5 5 5]]
+              [ScaleLocal [5 5 5]]
+              [Size [1.8728666 0.7000011 1.2728666]]
+              [Static True]
+              [StaticModel [Gameplay House]]]
+             []]]]
           [Scale [5 5 5]]
           [ScaleLocal [5 5 5]]
           [Size [1.8728666 0.7000011 1.2728666]]
@@ -168,6 +187,25 @@
           [Position [-6.7 1.64 2.6]]
           [PositionLocal [-6.7 0 2.6]]
           [Presence Omnipresent]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay House2] False None None]]]
+              [MountOpt [Some ^]]
+              [Name House2]
+              [NavShape StaticModelNavShape]
+              [Offset [0 0.6499994 0]]
+              [Position [-6.7 1.64 2.6]]
+              [PositionLocal [-6.7 0 2.6]]
+              [Presence Omnipresent]
+              [Scale [5 5 5]]
+              [ScaleLocal [5 5 5]]
+              [Size [1.8728666 1.300001 1.2728671]]
+              [Static True]
+              [StaticModel [Gameplay House2]]]
+             []]]]
           [Scale [5 5 5]]
           [ScaleLocal [5 5 5]]
           [Size [1.8728666 1.300001 1.2728671]]
@@ -213,6 +251,31 @@
           [Offset [0 0.55383134 5.9604645E-08]]
           [Position [3.8 1.6 0.7]]
           [PositionLocal [3.8 -0.03999996 0.7]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay Well] True None None]]]
+              [MaterialProperties
+               [[AlbedoOpt
+                 [Some [1 1 1 1]]]
+                [RoughnessOpt None]
+                [MetallicOpt None]
+                [AmbientOcclusionOpt None]
+                [EmissionOpt None]
+                [HeightOpt None]
+                [IgnoreLightMapsOpt None]
+                [OpaqueDistanceOpt None]]]
+              [MountOpt [Some ^]]
+              [Name Well]
+              [Offset [0 0.55383134 5.9604645E-08]]
+              [Position [3.8 1.6 0.7]]
+              [PositionLocal [3.8 -0.03999996 0.7]]
+              [Size [1.3779953 1.1076627 1.2276577]]
+              [Static True]
+              [StaticModel [Gameplay Well]]]
+             []]]]
           [Size [1.3779953 1.1076627 1.2276577]]
           [Static True]
           [StaticModel [Gameplay Well]]]
@@ -244,7 +307,7 @@
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrel] True None None]]]
+            [[Gameplay RedBarrelDestroyed] True None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -260,14 +323,39 @@
           [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
           [Position [-7.6 1.64 5.7]]
           [PositionLocal [-7.6 0 5.7]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay RedBarrelDestroyed] True None None]]]
+              [MaterialProperties
+               [[AlbedoOpt
+                 [Some [1 1 1 1]]]
+                [RoughnessOpt None]
+                [MetallicOpt None]
+                [AmbientOcclusionOpt None]
+                [EmissionOpt None]
+                [HeightOpt None]
+                [IgnoreLightMapsOpt None]
+                [OpaqueDistanceOpt None]]]
+              [MountOpt [Some ^]]
+              [Name Barrel]
+              [Offset [-5.9604645E-08 0.4204926 -2.9802322E-08]]
+              [Position [-7.6 1.64 5.7]]
+              [PositionLocal [-7.6 0 5.7]]
+              [Size [0.59459853 0.8409852 0.59459865]]
+              [Static True]
+              [StaticModel [Gameplay RedBarrelDestroyed]]]
+             []]]]
           [Size [0.59459853 0.8409852 0.59459865]]
           [Static True]
-          [StaticModel [Gameplay RedBarrel]]]
+          [StaticModel [Gameplay RedBarrelDestroyed]]]
          []]
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrel] True None None]]]
+            [[Gameplay RedBarrelDestroyed] True None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -286,12 +374,12 @@
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
           [Size [0.59459853 0.8409852 0.59459865]]
           [Static True]
-          [StaticModel [Gameplay RedBarrel]]]
+          [StaticModel [Gameplay RedBarrelDestroyed]]]
          []]
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrel] True None None]]]
+            [[Gameplay RedBarrelDestroyed] True None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -310,12 +398,12 @@
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
           [Size [0.59459853 0.8409852 0.59459865]]
           [Static True]
-          [StaticModel [Gameplay RedBarrel]]]
+          [StaticModel [Gameplay RedBarrelDestroyed]]]
          []]
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrel] True None None]]]
+            [[Gameplay RedBarrelDestroyed] True None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -334,12 +422,12 @@
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
           [Size [0.59459853 0.8409852 0.59459865]]
           [Static True]
-          [StaticModel [Gameplay RedBarrel]]]
+          [StaticModel [Gameplay RedBarrelDestroyed]]]
          []]
         [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
-            [[Gameplay RedBarrel] True None None]]]
+            [[Gameplay RedBarrelDestroyed] True None None]]]
           [MaterialProperties
            [[AlbedoOpt
              [Some [1 1 1 1]]]
@@ -358,24 +446,12 @@
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrel]]
           [Size [0.59459853 0.8409852 0.59459865]]
           [Static True]
-          [StaticModel [Gameplay RedBarrel]]]
+          [StaticModel [Gameplay RedBarrelDestroyed]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier]
           [NavShape StaticModelNavShape]
@@ -383,26 +459,31 @@
           [Position [-6.7 1.64 7]]
           [PositionLocal [-6.7 0 7]]
           [Presence Omnipresent]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay Barrier] True None None]]]
+              [MountOpt [Some ^]]
+              [Name Barrier]
+              [NavShape StaticModelNavShape]
+              [Offset [0.110984206 0.46470478 0.8669058]]
+              [Position [-6.7 1.64 7]]
+              [PositionLocal [-6.7 0 7]]
+              [Presence Omnipresent]
+              [Size [4.0000005 0.9294096 1.7338116]]
+              [Static True]
+              [StaticModel [Gameplay Barrier]]]
+             []]]]
           [Size [4.0000005 0.9294096 1.7338116]]
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0012]
           [NavShape StaticModelNavShape]
@@ -415,22 +496,10 @@
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0013]
           [NavShape StaticModelNavShape]
@@ -443,22 +512,10 @@
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0014]
           [NavShape StaticModelNavShape]
@@ -473,22 +530,10 @@
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0015]
           [NavShape StaticModelNavShape]
@@ -505,22 +550,10 @@
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0016]
           [NavShape StaticModelNavShape]
@@ -537,22 +570,10 @@
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0017]
           [NavShape StaticModelNavShape]
@@ -568,22 +589,10 @@
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0029]
           [NavShape StaticModelNavShape]
@@ -599,22 +608,10 @@
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0030]
           [NavShape StaticModelNavShape]
@@ -622,27 +619,27 @@
           [Position [-9.2 1.64 -19.7]]
           [PositionLocal [-9.2 0 -19.7]]
           [Presence Omnipresent]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default ConcreteBarrier] True None None]]]
+              [Name Barrier]
+              [Offset [0.110984206 0.46470478 0.8669058]]
+              [Position [-6.7 0 7]]
+              [Size [4.0000005 0.9294096 1.7338116]]
+              [StaticModel [Default ConcreteBarrier]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
           [Size [4.0000005 0.9294096 1.7338116]]
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0031]
           [NavShape StaticModelNavShape]
@@ -650,27 +647,27 @@
           [Position [-5 1.64 -19.7]]
           [PositionLocal [-5 0 -19.7]]
           [Presence Omnipresent]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default ConcreteBarrier] True None None]]]
+              [Name Barrier]
+              [Offset [0.110984206 0.46470478 0.8669058]]
+              [Position [-6.7 0 7]]
+              [Size [4.0000005 0.9294096 1.7338116]]
+              [StaticModel [Default ConcreteBarrier]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
           [Size [4.0000005 0.9294096 1.7338116]]
           [Static True]
           [StaticModel [Gameplay Barrier]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier-0032]
           [NavShape StaticModelNavShape]
@@ -678,6 +675,18 @@
           [Position [-0.7 1.64 -19.5]]
           [PositionLocal [-0.7 0 -19.5]]
           [Presence Omnipresent]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default ConcreteBarrier] True None None]]]
+              [Name Barrier]
+              [Offset [0.110984206 0.46470478 0.8669058]]
+              [Position [-6.7 0 7]]
+              [Size [4.0000005 0.9294096 1.7338116]]
+              [StaticModel [Default ConcreteBarrier]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
           [Rotation [0 -0.043619394 0 0.99904823]]
           [RotationLocal [0 -0.04361939 0 0.99904823]]
@@ -703,6 +712,32 @@
           [Offset [0.004197847 0.052107863 -0.0011418983]]
           [Position [0.7 4.64 -6.7]]
           [PositionLocal [0.7 3 -6.7]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay Genorator] True None None]]]
+              [MaterialProperties
+               [[AlbedoOpt None]
+                [RoughnessOpt [Some 0.75]]
+                [MetallicOpt None]
+                [AmbientOcclusionOpt None]
+                [EmissionOpt None]
+                [HeightOpt None]
+                [IgnoreLightMapsOpt None]
+                [OpaqueDistanceOpt None]]]
+              [MountOpt [Some ^]]
+              [Name Generator]
+              [Offset [0.004197847 0.052107863 -0.0011418983]]
+              [Position [0.7 4.64 -6.7]]
+              [PositionLocal [0.7 3 -6.7]]
+              [Scale [5 5 5]]
+              [ScaleLocal [5 5 5]]
+              [Size [0.111337245 0.104215726 0.16522536]]
+              [Static True]
+              [StaticModel [Gameplay Genorator]]]
+             []]]]
           [Scale [5 5 5]]
           [ScaleLocal [5 5 5]]
           [Size [0.111337245 0.104215726 0.16522536]]
@@ -727,6 +762,19 @@
           [Offset [0.004197847 0.052107863 -0.0011418983]]
           [Position [9.4 4.64 -12.5]]
           [PositionLocal [9.4 3 -12.5]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default Genorator] True None None]]]
+              [Name Generator]
+              [Offset [0.004197847 0.052107863 -0.0011418983]]
+              [Position [0.7 3 -6.7]]
+              [Scale [5 5 5]]
+              [Size [0.111337245 0.104215726 0.16522536]]
+              [StaticModel [Default Genorator]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Generator]]
           [Rotation [0 0.70710665 0 0.7071069]]
           [RotationLocal [0 0.7071067 0 0.7071068]]
@@ -779,26 +827,40 @@
           [Offset [0 0.5 0]]
           [Position [5.1 1.6 -2]]
           [PositionLocal [5.1 -0.03999996 -2]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay WoodenCrate] True None None]]]
+              [MaterialProperties
+               [[AlbedoOpt None]
+                [RoughnessOpt [Some 2]]
+                [MetallicOpt None]
+                [AmbientOcclusionOpt None]
+                [EmissionOpt None]
+                [HeightOpt None]
+                [IgnoreLightMapsOpt None]
+                [OpaqueDistanceOpt None]]]
+              [MountOpt [Some ^]]
+              [Name Crate]
+              [Offset [0 0.5 0]]
+              [Position [5.1 1.6 -2]]
+              [PositionLocal [5.1 -0.03999996 -2]]
+              [Rotation [0 -0.1305262 0 0.9914449]]
+              [RotationLocal [0 -0.1305262 0 0.9914449]]
+              [Static True]
+              [StaticModel [Gameplay WoodenCrate]]]
+             []]]]
           [Rotation [0 -0.1305262 0 0.9914449]]
           [RotationLocal [0 -0.1305262 0 0.9914449]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default WoodenCrate2_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt None]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default WoodenCrate2_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -821,21 +883,10 @@
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default WoodenCrate2_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt None]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default WoodenCrate2_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -850,27 +901,27 @@
           [Offset [0 0.5 0]]
           [Position [-3.3 1.64 7.3]]
           [PositionLocal [-3.3 0 7.3]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default WoodenCrate] True None None]]]
+              [Name Crate]
+              [Offset [0 0.5 0]]
+              [Position [4.5482426 0 -1.3259361]]
+              [StaticModel [Default WoodenCrate]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
           [Rotation [0 0.043619387 0 0.99904823]]
           [RotationLocal [0 0.043619387 0 0.99904823]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default WoodenCrate2_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt None]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default WoodenCrate2_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -885,25 +936,26 @@
           [Offset [0 0.5 0]]
           [Position [-5.7 1.64 -3.5]]
           [PositionLocal [-5.7 0 -3.5]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default WoodenCrate] True None None]]]
+              [Name Crate]
+              [Offset [0 0.5 0]]
+              [Position [4.5482426 0 -1.3259361]]
+              [StaticModel [Default WoodenCrate]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
+          [RotationLocal [0 -0.1305262 0 0.9914449]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default WoodenCrate2_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt None]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default WoodenCrate2_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -918,25 +970,26 @@
           [Offset [0 0.5 0]]
           [Position [-7.98 1.64 -5.49]]
           [PositionLocal [-7.98 0 -5.49]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default WoodenCrate] True None None]]]
+              [Name Crate]
+              [Offset [0 0.5 0]]
+              [Position [4.5482426 0 -1.3259361]]
+              [StaticModel [Default WoodenCrate]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
+          [RotationLocal [0 -0.1305262 0 0.9914449]]
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default WoodenCrate2_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt None]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default WoodenCrate2_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -951,6 +1004,17 @@
           [Offset [0 0.5 0]]
           [Position [3.3 1.64 -18.2]]
           [PositionLocal [3.3 0 -18.2]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default WoodenCrate] True None None]]]
+              [Name Crate]
+              [Offset [0 0.5 0]]
+              [Position [4.5482426 0 -1.3259361]]
+              [StaticModel [Default WoodenCrate]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
           [Rotation [0 0.17364818 0 0.9848077]]
           [RotationLocal [0 0.17364816 0 0.9848078]]
@@ -959,21 +1023,10 @@
           [Static True]
           [StaticModel [Gameplay WoodenCrate]]]
          []]
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default WoodenCrate2_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt None]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default WoodenCrate2_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
@@ -988,6 +1041,17 @@
           [Offset [0 0.5 0]]
           [Position [4.8 1.64 -14.7]]
           [PositionLocal [4.8 0 -14.7]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Default WoodenCrate] True None None]]]
+              [Name Crate]
+              [Offset [0 0.5 0]]
+              [Position [4.5482426 0 -1.3259361]]
+              [StaticModel [Default WoodenCrate]]]
+             []]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
           [Rotation [0 -0.1305262 0 0.9914449]]
           [RotationLocal [0 -0.1305262 0 0.9914449]]
@@ -1014,6 +1078,54 @@
           [Offset [0 1.2706511 0]]
           [Position [13 0.30000007 -1.6]]
           [PositionLocal [13 -1.3399999 -1.6]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelSurfaceDispatcher
+             [[BodyShape
+               [StaticModelSurfaceShape
+                [0 [Gameplay PalmTree] True None None]]]
+              [Material
+               [[AlbedoImageOpt
+                 [Some [Default Palm_Tree_Albedo]]]
+                [RoughnessImageOpt None]
+                [MetallicImageOpt None]
+                [AmbientOcclusionImageOpt None]
+                [EmissionImageOpt None]
+                [NormalImageOpt
+                 [Some [Default Palm_Tree_Normal]]]
+                [HeightImageOpt None]
+                [TwoSidedOpt None]]]
+              [MountOpt [Some ^]]
+              [Name Palm]
+              [Offset [0 1.2706511 0]]
+              [Position [13 0.30000007 -1.6]]
+              [PositionLocal [13 -1.3399999 -1.6]]
+              [Size [0.33933803 2.5910509 0.33933803]]
+              [Static True]
+              [StaticModel [Gameplay PalmTree]]]
+             [[RigidModelSurfaceDispatcher
+               [[BodyShape EmptyShape]
+                [Material
+                 [[AlbedoImageOpt
+                   [Some [Default Palm_Tree_Albedo]]]
+                  [RoughnessImageOpt None]
+                  [MetallicImageOpt None]
+                  [AmbientOcclusionImageOpt None]
+                  [EmissionImageOpt None]
+                  [NormalImageOpt
+                   [Some [Default Palm_Tree_Normal]]]
+                  [HeightImageOpt None]
+                  [TwoSidedOpt None]]]
+                [MountOpt [Some ^]]
+                [Name Leaves-0008]
+                [NavShape EmptyNavShape]
+                [Offset [-0.048617125 1.6080145 -0.043147564]]
+                [Position [13 0.30000007 -1.6]]
+                [Size [2.9976737 3.216029 2.925362]]
+                [Static True]
+                [StaticModel [Gameplay PalmTree]]
+                [SurfaceIndex 1]]
+               []]]]]]
           [Size [0.33933803 2.5910509 0.33933803]]
           [Static True]
           [StaticModel [Gameplay PalmTree]]]
@@ -1269,6 +1381,52 @@
           [Offset [0 1.2706511 0]]
           [Position [0.1 -0.6 11.1]]
           [PositionLocal [0.1 -2.24 11.1]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelSurfaceDispatcher
+             [[BodyShape
+               [StaticModelSurfaceShape
+                [0 [Gameplay PalmTree] True None None]]]
+              [Material
+               [[AlbedoImageOpt
+                 [Some [Default Palm_Tree_Albedo]]]
+                [RoughnessImageOpt None]
+                [MetallicImageOpt None]
+                [AmbientOcclusionImageOpt None]
+                [EmissionImageOpt None]
+                [NormalImageOpt
+                 [Some [Default Palm_Tree_Normal]]]
+                [HeightImageOpt None]
+                [TwoSidedOpt None]]]
+              [Name RigidModelSurface-0006]
+              [Offset [0 1.2706511 0]]
+              [Position [13 -0.6 -1.6]]
+              [Size [0.33933803 2.5910509 0.33933803]]
+              [StaticModel [Gameplay PalmTree]]]
+             [[RigidModelSurfaceDispatcher
+               [[BodyShape
+                 [StaticModelSurfaceShape
+                  [1 [Gameplay PalmTree] True None None]]]
+                [Material
+                 [[AlbedoImageOpt
+                   [Some [Default Palm_Tree_Albedo]]]
+                  [RoughnessImageOpt None]
+                  [MetallicImageOpt None]
+                  [AmbientOcclusionImageOpt None]
+                  [EmissionImageOpt None]
+                  [NormalImageOpt
+                   [Some [Default Palm_Tree_Normal]]]
+                  [HeightImageOpt None]
+                  [TwoSidedOpt None]]]
+                [MountOpt [Some ^]]
+                [Name RigidModelSurface-0008]
+                [NavShape EmptyNavShape]
+                [Offset [-0.048617125 1.6080145 -0.043147564]]
+                [Position [13 -0.6 -1.6]]
+                [Size [2.9976737 3.216029 2.925362]]
+                [StaticModel [Gameplay PalmTree]]
+                [SurfaceIndex 1]]
+               []]]]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
           [Rotation [0 -0.42261827 0 0.90630776]]
           [RotationLocal [0 -0.42261827 0 0.90630776]]
@@ -1322,6 +1480,52 @@
           [Offset [0 1.2706511 0]]
           [Position [-3.4 -0.49999988 11.8]]
           [PositionLocal [-3.4 -2.1399999 11.8]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelSurfaceDispatcher
+             [[BodyShape
+               [StaticModelSurfaceShape
+                [0 [Gameplay PalmTree] True None None]]]
+              [Material
+               [[AlbedoImageOpt
+                 [Some [Default Palm_Tree_Albedo]]]
+                [RoughnessImageOpt None]
+                [MetallicImageOpt None]
+                [AmbientOcclusionImageOpt None]
+                [EmissionImageOpt None]
+                [NormalImageOpt
+                 [Some [Default Palm_Tree_Normal]]]
+                [HeightImageOpt None]
+                [TwoSidedOpt None]]]
+              [Name RigidModelSurface-0006]
+              [Offset [0 1.2706511 0]]
+              [Position [13 -0.6 -1.6]]
+              [Size [0.33933803 2.5910509 0.33933803]]
+              [StaticModel [Gameplay PalmTree]]]
+             [[RigidModelSurfaceDispatcher
+               [[BodyShape
+                 [StaticModelSurfaceShape
+                  [1 [Gameplay PalmTree] True None None]]]
+                [Material
+                 [[AlbedoImageOpt
+                   [Some [Default Palm_Tree_Albedo]]]
+                  [RoughnessImageOpt None]
+                  [MetallicImageOpt None]
+                  [AmbientOcclusionImageOpt None]
+                  [EmissionImageOpt None]
+                  [NormalImageOpt
+                   [Some [Default Palm_Tree_Normal]]]
+                  [HeightImageOpt None]
+                  [TwoSidedOpt None]]]
+                [MountOpt [Some ^]]
+                [Name RigidModelSurface-0008]
+                [NavShape EmptyNavShape]
+                [Offset [-0.048617125 1.6080145 -0.043147564]]
+                [Position [13 -0.6 -1.6]]
+                [Size [2.9976737 3.216029 2.925362]]
+                [StaticModel [Gameplay PalmTree]]
+                [SurfaceIndex 1]]
+               []]]]]]
           [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Palm]]
           [Rotation [0 -0.70710665 0 0.7071069]]
           [RotationLocal [0 -0.7071067 0 0.7071068]]
@@ -1431,6 +1635,20 @@
           [Offset [0 0.5155037 -1.1920929E-07]]
           [Position [-11.6 1.6 3.1]]
           [PositionLocal [-11.6 -0.03999996 3.1]]
+          [PropagatedDescriptorOpt
+           [Some
+            [RigidModelDispatcher
+             [[BodyShape
+               [StaticModelShape
+                [[Gameplay TireWall] True None None]]]
+              [MountOpt [Some ^]]
+              [Name Tires]
+              [Offset [0 0.5155037 -1.1920929E-07]]
+              [Position [-11.6 1.6 3.1]]
+              [PositionLocal [-11.6 -0.03999996 3.1]]
+              [Size [1.0259093 1.0310074 3.0259092]]
+              [StaticModel [Gameplay TireWall]]]
+             []]]]
           [Size [1.0259093 1.0310074 3.0259092]]
           [StaticModel [Gameplay TireWall]]]
          []]
@@ -1843,22 +2061,10 @@
       [Static True]
       [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -1868,22 +2074,10 @@
       [Presence Omnipresent]
       [PropagatedDescriptorOpt
        [Some
-        [RigidModelSurfaceDispatcher
+        [RigidModelDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Barrier] True None None]]]
-          [Material
-           [[AlbedoImageOpt
-             [Some [Default Barrier_Albedo]]]
-            [RoughnessImageOpt None]
-            [MetallicImageOpt
-             [Some [Default Barrier_Metallic]]]
-            [AmbientOcclusionImageOpt None]
-            [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Default Barrier_Normal]]]
-            [HeightImageOpt None]
-            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Barrier]
           [NavShape StaticModelNavShape]
@@ -1899,22 +2093,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -1927,22 +2109,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -1955,22 +2125,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -1985,22 +2143,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -2017,22 +2163,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -2049,22 +2183,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0017]
       [NavShape StaticModelNavShape]
@@ -2080,22 +2202,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -2111,22 +2221,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0030]
       [NavShape StaticModelNavShape]
@@ -2151,22 +2249,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -2191,22 +2277,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -2396,21 +2470,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2433,21 +2496,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2479,21 +2531,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2520,24 +2561,14 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2564,24 +2595,14 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -2615,21 +2636,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -3702,22 +3712,10 @@
       [Static True]
       [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -3758,22 +3756,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -3788,22 +3774,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -3818,22 +3792,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -3849,22 +3811,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -3881,22 +3831,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -3913,22 +3851,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0017]
       [NavShape StaticModelNavShape]
@@ -3943,22 +3869,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -3973,22 +3887,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0030]
       [NavShape StaticModelNavShape]
@@ -4015,22 +3917,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -4057,22 +3947,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -4228,21 +4106,10 @@
       [Static True]
       [StaticModel [Gameplay Genorator]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4290,27 +4157,17 @@
           [PositionLocal [4.5 0 -1.3]]
           [StaticModel [Default WoodenCrate]]]
          []]]]
+      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
       [Rotation [0 -0.7933534 0 0.6087614]]
       [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Scale [0.9999999 1 0.9999999]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4333,21 +4190,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4380,21 +4226,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4421,26 +4256,16 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
+      [Rotation [0 -0.7933534 0 0.6087614]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
+      [Scale [0.9999999 1 0.9999999]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4467,26 +4292,16 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
+      [Rotation [0 -0.7933534 0 0.6087614]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
+      [Scale [0.9999999 1 0.9999999]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -4520,21 +4335,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -5611,22 +5415,10 @@
       [Static True]
       [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -5666,22 +5458,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -5695,22 +5475,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -5724,22 +5492,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -5754,22 +5510,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -5786,22 +5530,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -5818,22 +5550,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0017]
       [NavShape StaticModelNavShape]
@@ -5848,22 +5568,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -5878,22 +5586,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0030]
       [NavShape StaticModelNavShape]
@@ -5919,22 +5615,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -5960,22 +5644,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -6130,21 +5802,10 @@
       [Static True]
       [StaticModel [Gameplay Genorator]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -6192,26 +5853,16 @@
           [PositionLocal [4.5 0 -1.3]]
           [StaticModel [Default WoodenCrate]]]
          []]]]
+      [PropagationSourceOpt [Some Game/Gameplay/Scene/???]]
       [Rotation [0 0.9914448 0 0.13052626]]
       [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -6234,21 +5885,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -6280,21 +5920,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -6321,25 +5950,15 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 1 0 4.371139E-08]]
+      [Rotation [0 0.9914448 0 0.13052626]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -6366,25 +5985,15 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 1 0 4.371139E-08]]
+      [Rotation [0 0.9914448 0 0.13052626]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -6418,21 +6027,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -7500,22 +7098,10 @@
       [Static True]
       [StaticModel [Gameplay RedBarrelDestroyed]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier]
       [NavShape StaticModelNavShape]
@@ -7555,22 +7141,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0012]
       [NavShape StaticModelNavShape]
@@ -7584,22 +7158,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0013]
       [NavShape StaticModelNavShape]
@@ -7613,22 +7175,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0014]
       [NavShape StaticModelNavShape]
@@ -7643,22 +7193,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0015]
       [NavShape StaticModelNavShape]
@@ -7675,22 +7213,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0016]
       [NavShape StaticModelNavShape]
@@ -7707,22 +7233,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0017]
       [NavShape StaticModelNavShape]
@@ -7738,22 +7252,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0029]
       [NavShape StaticModelNavShape]
@@ -7769,22 +7271,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0030]
       [NavShape StaticModelNavShape]
@@ -7810,22 +7300,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0031]
       [NavShape StaticModelNavShape]
@@ -7851,22 +7329,10 @@
       [Static True]
       [StaticModel [Gameplay Barrier]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Barrier] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default Barrier_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt
-         [Some [Default Barrier_Metallic]]]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default Barrier_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Barrier-0032]
       [NavShape StaticModelNavShape]
@@ -8021,21 +7487,10 @@
       [Static True]
       [StaticModel [Gameplay Genorator]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -8083,27 +7538,17 @@
           [PositionLocal [4.5 0 -1.3]]
           [StaticModel [Default WoodenCrate]]]
          []]]]
+      [PropagationSourceOpt [Some Game/Gameplay/Scene/???]]
       [Rotation [0 0.9914449 0 0.13052617]]
       [RotationLocal [0 -0.1305262 0 0.9914449]]
       [Scale [0.99999994 1 0.99999994]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -8126,21 +7571,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -8172,21 +7606,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -8213,25 +7636,16 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 1 0 -4.371139E-08]]
+      [Rotation [0 0.9914449 0 0.13052617]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
+      [Scale [0.99999994 1 0.99999994]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -8258,25 +7672,16 @@
           [StaticModel [Default WoodenCrate]]]
          []]]]
       [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Crate]]
-      [Rotation [0 1 0 -4.371139E-08]]
+      [Rotation [0 0.9914449 0 0.13052617]]
+      [RotationLocal [0 -0.1305262 0 0.9914449]]
+      [Scale [0.99999994 1 0.99999994]]
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -8310,21 +7715,10 @@
       [Static True]
       [StaticModel [Gameplay WoodenCrate]]]
      []]
-    [RigidModelSurfaceDispatcher
+    [RigidModelDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] True None None]]]
-      [Material
-       [[AlbedoImageOpt
-         [Some [Default WoodenCrate2_Albedo]]]
-        [RoughnessImageOpt None]
-        [MetallicImageOpt None]
-        [AmbientOcclusionImageOpt None]
-        [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Default WoodenCrate2_Normal]]]
-        [HeightImageOpt None]
-        [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
@@ -8988,7 +8382,6 @@
      [[StepHeight 0.2] [SlopeMax 0.7853982] [PenetrationDepthMax 0.05]]]
     [Friction 1]
     [LinearDamping 0.5]
-    [LinearVelocityPrevious [-9.969432E-37 1.7142123E-37 9.1648955E-37]]
     [MaterialProperties
      [[AlbedoOpt
        [Some [1 1 1 1]]]
@@ -9001,11 +8394,17 @@
       [OpaqueDistanceOpt [Some 100000]]]]
     [Model
      ["TerraFirma.CharacterDispatcher+CharacterModel, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [7382 5047 7382 [Default AnimatedModel]]]]
+      [30962 9817 30962 [Default AnimatedModel]]]]
     [Name Player]
-    [Position [-26.85977 2.9959106 46.090862]]
+    [Position [3.747645 1.64 4.384518]]
     [Presence Omnipresent]
-    [Rotation [-1.7924763E-09 -0.40201476 7.9216484E-08 0.9156332]]
+    [Rotation [-5.1570126E-08 0.91072017 -6.0157994E-08 -0.41302395]]
     [Size [2.6602979 3.5022092 1.984515]]
     [SleepingAllowed False]]
+   []]
+  [LightProbe3dDispatcher
+   [[Name LightProbe3d-0001]
+    [Position [12.4 5.7 11.4]]
+    [ProbeBounds
+     [[-21.4 -0.6 -22.8] [63.9 13.400001 67.2]]]]
    []]]]
