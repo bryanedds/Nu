@@ -8,13 +8,15 @@
     [Name Environment]
     [Presence Omnipresent]]
    [[Light3dDispatcher
-     [[Brightness 11]
+     [[AttenuationLinear 0.005050505]
+      [AttenuationQuadratic 0.00028058363]
+      [Brightness 12]
       [DesireShadows True]
       [LightCutoff 18]
       [LightType DirectionalLight]
       [MountOpt [Some ^]]
       [Name Sun]
-      [Position [11.6 11 12.1]]
+      [Position [12.4 9.7 11.4]]
       [PositionLocal [11.6 11 12.1]]
       [Presence Omnipresent]
       [Rotation [-0.14231347 0.9163351 -0.08640594 0.3641578]]
@@ -45,6 +47,14 @@
           [[Gameplay TerraLayer4Albedo] [Gameplay TerraLayer4Roughness] [Gameplay TerraLayer4AmbientOcclusion] [Gameplay TerraLayer4Normal] [Gameplay TerraLayer4Height]]]
          [RedsMap
           [[Gameplay TerraLayerBlend] [Gameplay TerraLayer2Blend] [Gameplay TerraLayer3Blend] [Gameplay TerraLayer4Blend]]]]]]]
+     []]
+    [LightProbe3dDispatcher
+     [[MountOpt [Some ^]]
+      [Name LightProbe]
+      [Position [12.4 5.7 11.4]]
+      [PositionLocal [12.4 5.7 11.4]]
+      [ProbeBounds
+       [[-21.4 -0.6 -22.8] [63.9 13.400001 67.2]]]]
      []]]]
   [Entity3dDispatcher
    [[Name Villa]
@@ -4930,13 +4940,25 @@
         [StaticModel [Gameplay PalmTree]]
         [SurfaceIndex 1]]
        []]]]
-    [RigidModelDispatcher
+    [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] True None None]]]
+      [Material
+       [[AlbedoImageOpt
+         [Some [Default LightProbeModelAlbedo]]]
+        [RoughnessImageOpt
+         [Some [Default LightProbeModelRoughness]]]
+        [MetallicImageOpt
+         [Some [Default LightProbeModelMetallic]]]
+        [AmbientOcclusionImageOpt None]
+        [EmissionImageOpt None]
+        [NormalImageOpt None]
+        [HeightImageOpt None]
+        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Container]
-      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Offset [1.1920929E-07 -0.055164337 -2.3841858E-07]]
       [Position [6.5999994 2.6599998 27.5]]
       [PositionLocal [0 1.36 -14.8]]
       [Rotation [0 0.9848078 0 -0.17364816]]
@@ -8382,8 +8404,7 @@
      [[StepHeight 0.2] [SlopeMax 0.7853982] [PenetrationDepthMax 0.05]]]
     [Friction 1]
     [LinearDamping 0.5]
-    [LinearVelocity [0 -1.66893E-06 0]]
-    [LinearVelocityPrevious [-3.2447777E-36 -9.930978E-07 3.877019E-36]]
+    [LinearVelocityPrevious [-6.6255006E-37 0 1.3951821E-37]]
     [MaterialProperties
      [[AlbedoOpt
        [Some [1 1 1 1]]]
@@ -8403,10 +8424,4 @@
     [Rotation [-6.9566304E-09 -0.34142438 7.893082E-08 0.9399093]]
     [Size [2.6602979 3.5022092 1.984515]]
     [SleepingAllowed False]]
-   []]
-  [LightProbe3dDispatcher
-   [[Name LightProbe3d-0001]
-    [Position [12.4 5.7 11.4]]
-    [ProbeBounds
-     [[-21.4 -0.6 -22.8] [63.9 13.400001 67.2]]]]
    []]]]
