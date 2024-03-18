@@ -8382,6 +8382,8 @@
      [[StepHeight 0.2] [SlopeMax 0.7853982] [PenetrationDepthMax 0.05]]]
     [Friction 1]
     [LinearDamping 0.5]
+    [LinearVelocity [0 -1.66893E-06 0]]
+    [LinearVelocityPrevious [-3.2447777E-36 -9.930978E-07 3.877019E-36]]
     [MaterialProperties
      [[AlbedoOpt
        [Some [1 1 1 1]]]
@@ -8394,11 +8396,11 @@
       [OpaqueDistanceOpt [Some 100000]]]]
     [Model
      ["TerraFirma.CharacterDispatcher+CharacterModel, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [30962 9817 30962 [Default AnimatedModel]]]]
+      [0 0 0 [Default AnimatedModel]]]]
     [Name Player]
-    [Position [3.747645 1.64 4.384518]]
+    [Position [-22.474247 2.5592217 44.853165]]
     [Presence Omnipresent]
-    [Rotation [-5.1570126E-08 0.91072017 -6.0157994E-08 -0.41302395]]
+    [Rotation [-6.9566304E-09 -0.34142438 7.893082E-08 0.9399093]]
     [Size [2.6602979 3.5022092 1.984515]]
     [SleepingAllowed False]]
    []]
