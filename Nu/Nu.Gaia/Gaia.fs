@@ -991,11 +991,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         | Some _ | None -> false
 
-    let private tryPaste forwardPropagationSource atMouse parentOpt =
+    let private tryPaste tryForwardPropagationSource atMouse parentOpt =
         snapshot ()
         let positionSnapEir = if snaps2dSelected then Left (a__ snaps2d) else Right (a__ snaps3d)
         let parent = match parentOpt with Some parent -> parent | None -> selectedGroup :> Simulant
-        let (entityOpt, wtemp) = World.pasteEntityFromClipboard forwardPropagationSource newEntityDistance rightClickPosition positionSnapEir atMouse parent world in world <- wtemp
+        let (entityOpt, wtemp) = World.pasteEntityFromClipboard tryForwardPropagationSource newEntityDistance rightClickPosition positionSnapEir atMouse parent world in world <- wtemp
         match entityOpt with
         | Some entity ->
             selectEntityOpt (Some entity)
