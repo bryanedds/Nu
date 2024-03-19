@@ -44,9 +44,9 @@ let upperCaseToPascalCase (original : string) =
         // replace second and all following upper case letters to lower if there is no next lower (ABC -> Abc)
         (fun (strs : string seq) -> strs.Select (fun w -> firstCharFollowedByUpperCasesOnly.Replace(w, fun m -> m.Value.ToLowerInvariant ()))) |>
         // set upper case the first lower case following a number (Ab9cd -> Ab9Cd)
-        (fun (strs : string seq) -> strs.Select(fun w -> lowerCaseNextToNumber.Replace(w, fun m -> m.Value.ToUpperInvariant ()))) |>
+        (fun (strs : string seq) -> strs.Select(fun w -> lowerCaseNextToNumber.Replace (w, fun m -> m.Value.ToUpperInvariant ()))) |>
         // lower second and next upper case letters except the last if it follows by any lower (ABcDEf -> AbcDef)
-        (fun (strs : string seq) -> strs.Select(fun w -> upperCaseInside.Replace(w, fun m -> m.Value.ToLowerInvariant ())))
+        (fun (strs : string seq) -> strs.Select(fun w -> upperCaseInside.Replace (w, fun m -> m.Value.ToLowerInvariant ())))
     String.Concat pascalCase
 
 let enumEntries (ty : Type) =
@@ -60,6 +60,7 @@ let enumEntries (ty : Type) =
         else name) |>
     flip Seq.zip (ty.GetEnumValues () |> enumerable<int>) |>
     Seq.filter (fun (name, _) -> name <> "SDL_NUM_SCANCODES") |>
+    Seq.map (mapFst (fun (name : string) -> name.Replace ("RETURN", "ENTER"))) |> // NOTE: ImGui calls this the 'enter' key, so I choose that.
     Seq.map (mapFst upperCaseToPascalCase) |>
     List.ofSeq
 

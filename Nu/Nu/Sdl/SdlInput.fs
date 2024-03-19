@@ -95,6 +95,16 @@ module internal KeyboardState =
     let internal isKeyUp (key : KeyboardKey) =
         not (isKeyDown key)
 
+    /// Check that either enter key is down.
+    let internal isEnterDown () =
+        isKeyDown KeyboardKey.KpEnter ||
+        isKeyDown KeyboardKey.Enter
+
+    /// Check that either enter key is up.
+    let internal isEnterUp () =
+        isKeyUp KeyboardKey.KpEnter ||
+        isKeyUp KeyboardKey.Enter
+
     /// Check that either ctrl key is down.
     let internal isCtrlDown () =
         int (SDL.SDL_GetModState ()) &&& int SDL.SDL_Keymod.KMOD_CTRL <> 0

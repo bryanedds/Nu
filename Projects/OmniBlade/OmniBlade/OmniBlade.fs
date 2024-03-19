@@ -176,7 +176,7 @@ module OmniBlade =
 
                 // update full screen toggle
                 let world =
-                    if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.Return world then
+                    if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.Enter world then
                         match World.tryGetWindowFullScreen world with
                         | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
                         | None -> world

@@ -90,6 +90,16 @@ module WorldInputModule =
             ignore (world : World)
             KeyboardState.isAltUp ()
 
+        /// Check that a keyboard enter key is down.
+        static member isKeyboardEnterDown world =
+            ignore (world : World)
+            KeyboardState.isEnterDown ()
+
+        /// Check that a keyboard enter key is up.
+        static member isKeyboardEnterUp world =
+            ignore (world : World)
+            KeyboardState.isEnterUp ()
+
         /// Check that a keyboard ctrl key is down.
         static member isKeyboardCtrlDown world =
             ignore (world : World)

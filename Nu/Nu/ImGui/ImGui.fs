@@ -76,7 +76,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         keyMap.[int ImGuiKey.End] <- int KeyboardKey.End
         keyMap.[int ImGuiKey.Delete] <- int KeyboardKey.Delete
         keyMap.[int ImGuiKey.Backspace] <- int KeyboardKey.Backspace
-        keyMap.[int ImGuiKey.Enter] <- int KeyboardKey.Return
+        keyMap.[int ImGuiKey.Enter] <- int KeyboardKey.Enter
         keyMap.[int ImGuiKey.Escape] <- int KeyboardKey.Escape
         keyMap.[int ImGuiKey.LeftCtrl] <- int KeyboardKey.Lctrl
         keyMap.[int ImGuiKey.RightCtrl] <- int KeyboardKey.Rctrl
@@ -161,6 +161,17 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     static member IsMouseDraggingContinued (mouseButton : ImGuiMouseButton) =
         mouseDraggingContinued.[int mouseButton]
+
+    static member IsKeyUp key =
+        not (ImGui.IsKeyDown key)
+
+    static member IsEnterDown () =
+        ImGui.IsKeyDown ImGuiKey.Enter ||
+        ImGui.IsKeyDown ImGuiKey.KeypadEnter
+
+    static member IsEnterUp () =
+        ImGui.IsKeyUp ImGuiKey.Enter ||
+        ImGui.IsKeyUp ImGuiKey.KeypadEnter
 
     static member IsCtrlDown () =
         ImGui.IsKeyDown ImGuiKey.LeftCtrl ||
