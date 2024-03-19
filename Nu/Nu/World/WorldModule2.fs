@@ -438,10 +438,9 @@ module WorldModule2 =
                 else { targetDescriptor with EntityDispatcherName = currentDescriptor.EntityDispatcherName }
 
             // propagate properties at this level
-            let propertyNames =
-                Set.ofSeq currentDescriptor.EntityProperties.Keys |>
-                Set.addMany propagatedDescriptor.EntityProperties.Keys
             let propagatedDescriptor =
+                Set.ofSeq currentDescriptor.EntityProperties.Keys |>
+                Set.addMany propagatedDescriptor.EntityProperties.Keys |>
                 Seq.fold (fun targetDescriptor propertyName ->
                     if  propertyName <> nameof Entity.Name &&
                         propertyName <> nameof Entity.Position &&
@@ -510,7 +509,6 @@ module WorldModule2 =
                         | None -> targetDescriptor
                     else targetDescriptor)
                     propagatedDescriptor
-                    propertyNames
 
             // attempt to propagate entity descriptors
             let propagatedDescriptorOpts =
@@ -518,7 +516,7 @@ module WorldModule2 =
                 let currentDescriptorMap = World.mapEntityDescriptors currentDescriptor.EntityDescriptors
                 let targetDescriptorMap = World.mapEntityDescriptors targetDescriptor.EntityDescriptors
                 let keys = Set.ofSeq (previousDescriptorMap.Keys |> Seq.append currentDescriptorMap.Keys |> Seq.append targetDescriptorMap.Keys)
-                let entityDescriptorsList = [for key in keys do (previousDescriptorMap.TryFind key, currentDescriptorMap.TryFind key, targetDescriptorMap.TryFind key)]
+                let entityDescriptorOptsList = [for key in keys do (previousDescriptorMap.TryFind key, currentDescriptorMap.TryFind key, targetDescriptorMap.TryFind key)]
                 List.map (fun (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) ->
                     match (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) with
                     | (Some previousDescriptor, Some currentDescriptor, Some targetDescriptor) ->
@@ -536,7 +534,7 @@ module WorldModule2 =
                     | (None, Some currentDescriptor, Some targetDescriptor) ->
                         Some (World.propagateEntityDescriptor EntityDescriptor.empty currentDescriptor targetDescriptor world)
                     | (None, None, None) -> None)
-                    entityDescriptorsList
+                    entityDescriptorOptsList
 
             // compose fully propagated descriptor in the order they are found in the current descriptor
             let currentDescriptorsOrder =
@@ -567,7 +565,7 @@ module WorldModule2 =
             let world =
                 Seq.fold (fun world target ->
                     if World.getEntityExists target world then
-                        let targetDescriptor = World.writeEntity true EntityDescriptor.empty target world
+                        let targetDescriptor = World.writeEntity false EntityDescriptor.empty target world
                         let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world
                         let order = target.GetOrder world
                         let world = World.destroyEntityImmediate target world

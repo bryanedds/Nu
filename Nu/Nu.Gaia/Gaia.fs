@@ -1301,18 +1301,28 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else
                             let entity =
                                 if ImGui.IsCtrlDown () then
-                                    let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+                                    let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
                                     let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
                                     let parent = newEntityParentOpt |> Option.map cast |> Option.defaultValue entity.Group
-                                    let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                                    let (duplicate, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
                                     if ImGui.IsShiftDown () then
-                                        world <- newEntity.SetPropagationSourceOpt None world
-                                    elif Option.isNone (newEntity.GetPropagationSourceOpt world) then
-                                        world <- newEntity.SetPropagationSourceOpt (Some entity) world
-                                    selectEntityOpt (Some newEntity)
+                                        world <- duplicate.SetPropagationSourceOpt None world
+                                    elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                        world <- duplicate.SetPropagationSourceOpt (Some entity) world
+                                    let rec getDescendantPairs source entity world =
+                                        [for child in World.getEntityChildren entity world do
+                                            let childSource = source / child.Name
+                                            yield (childSource, child)
+                                            yield! getDescendantPairs childSource child world]
+                                    for (descendantSource, descendantDuplicate) in getDescendantPairs entity duplicate world do
+                                        if descendantDuplicate.Exists world then
+                                            world <- descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                            if descendantSource.Exists world && World.hasPropagationTargets descendantSource world then
+                                                world <- descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                                    selectEntityOpt (Some duplicate)
                                     ImGui.SetWindowFocus "Viewport"
                                     showSelectedEntity <- true
-                                    newEntity
+                                    duplicate
                                 else entity
                             let viewport = World.getViewport world
                             let eyeCenter = World.getEye2dCenter world
@@ -1558,15 +1568,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let sourceEntity = Nu.Entity sourceEntityAddressStr
                     if not (sourceEntity.GetProtected world) then
                         if ImGui.IsCtrlDown () then
-                            let entityDescriptor = World.writeEntity true EntityDescriptor.empty sourceEntity world
+                            let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
                             let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                            let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                            let (duplicate, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
                             if ImGui.IsShiftDown () then
-                                world <- newEntity.SetPropagationSourceOpt None world
-                            elif Option.isNone (newEntity.GetPropagationSourceOpt world) then
-                                world <- newEntity.SetPropagationSourceOpt (Some sourceEntity) world
-                            selectEntityOpt (Some newEntity)
+                                world <- duplicate.SetPropagationSourceOpt None world
+                            elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                world <- duplicate.SetPropagationSourceOpt (Some sourceEntity) world
+                            let rec getDescendantPairs source entity world =
+                                [for child in World.getEntityChildren entity world do
+                                    let childSource = source / child.Name
+                                    yield (childSource, child)
+                                    yield! getDescendantPairs childSource child world]
+                            for (descendantSource, descendantDuplicate) in getDescendantPairs entity duplicate world do
+                                if descendantDuplicate.Exists world then
+                                    world <- descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                    if descendantSource.Exists world && World.hasPropagationTargets descendantSource world then
+                                        world <- descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                            selectEntityOpt (Some duplicate)
                             showSelectedEntity <- true
                         elif ImGui.IsAltDown () then
                             let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
@@ -2726,18 +2746,28 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if scale.Z < 0.01f then scale.Z <- 0.01f
                             let entity =
                                 if copying then
-                                    let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+                                    let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
                                     let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
                                     let parent = newEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
-                                    let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                                    let (duplicate, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
                                     if ImGui.IsShiftDown () then
-                                        world <- newEntity.SetPropagationSourceOpt None world
-                                    elif Option.isNone (newEntity.GetPropagationSourceOpt world) then
-                                        world <- newEntity.SetPropagationSourceOpt (Some entity) world
-                                    selectEntityOpt (Some newEntity)
+                                        world <- duplicate.SetPropagationSourceOpt None world
+                                    elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                        world <- duplicate.SetPropagationSourceOpt (Some entity) world
+                                    let rec getDescendantPairs source entity world =
+                                        [for child in World.getEntityChildren entity world do
+                                            let childSource = source / child.Name
+                                            yield (childSource, child)
+                                            yield! getDescendantPairs childSource child world]
+                                    for (descendantSource, descendantDuplicate) in getDescendantPairs entity duplicate world do
+                                        if descendantDuplicate.Exists world then
+                                            world <- descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                            if descendantSource.Exists world && World.hasPropagationTargets descendantSource world then
+                                                world <- descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                                    selectEntityOpt (Some duplicate)
                                     ImGui.SetWindowFocus "Viewport"
                                     showSelectedEntity <- true
-                                    newEntity
+                                    duplicate
                                 else entity
                             match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
                             | Some mount ->
@@ -3057,15 +3087,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let sourceEntity = Nu.Entity sourceEntityAddressStr
                                     if not (sourceEntity.GetProtected world) then
                                         if ImGui.IsCtrlDown () then
-                                            let entityDescriptor = World.writeEntity true EntityDescriptor.empty sourceEntity world
+                                            let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
                                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
                                             let parent = sourceEntity.Group
-                                            let (newEntity, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
+                                            let (duplicate, wtemp) = World.readEntity entityDescriptor (Some entityName) parent world in world <- wtemp
                                             if ImGui.IsShiftDown () then
-                                                world <- newEntity.SetPropagationSourceOpt None world
-                                            elif Option.isNone (newEntity.GetPropagationSourceOpt world) then
-                                                world <- newEntity.SetPropagationSourceOpt (Some sourceEntity) world
-                                            selectEntityOpt (Some newEntity)
+                                                world <- duplicate.SetPropagationSourceOpt None world
+                                            elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                                world <- duplicate.SetPropagationSourceOpt (Some sourceEntity) world
+                                            let rec getDescendantPairs source entity world =
+                                                [for child in World.getEntityChildren entity world do
+                                                    let childSource = source / child.Name
+                                                    yield (childSource, child)
+                                                    yield! getDescendantPairs childSource child world]
+                                            for (descendantSource, descendantDuplicate) in getDescendantPairs sourceEntity duplicate world do
+                                                if descendantDuplicate.Exists world then
+                                                    world <- descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                                    if descendantSource.Exists world && World.hasPropagationTargets descendantSource world then
+                                                        world <- descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                                            selectEntityOpt (Some duplicate)
                                             showSelectedEntity <- true
                                         else
                                             let sourceEntity' = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)

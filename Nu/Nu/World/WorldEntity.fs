@@ -540,6 +540,9 @@ module WorldEntityModule =
         /// Traverse an entity's children.
         member this.TraverseChildren effect world = World.traverseEntityChildren effect this world
 
+        /// Get an entity's descendants.
+        member this.GetDescendants world = World.getEntityDescendants this world
+
         /// Apply physics changes to an entity.
         member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =
             let mutable transformOld = this.GetTransform world
@@ -825,7 +828,7 @@ module WorldEntityModule =
 
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
-            let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+            let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
             Clipboard <- Some (false, entityDescriptor, entity)
 
         /// Cut an entity to the world's clipboard.
@@ -898,6 +901,21 @@ module WorldEntityModule =
                             else world
                         | Some _ -> world
                     else entity.SetPropagationSourceOpt None world
+                let rec getDescendantPairs source entity world =
+                    [for child in World.getEntityChildren entity world do
+                        let childSource = source / child.Name
+                        yield (childSource, child)
+                        yield! getDescendantPairs childSource child world]
+                let world =
+                    getDescendantPairs entitySource entity world |>
+                    List.fold (fun world (descendantSource, descendentEntity) ->
+                        if descendentEntity.Exists world then
+                            let world = World.setEntityPropagatedDescriptorOpt None descendentEntity world |> snd'
+                            if descendantSource.Exists world && World.hasPropagationTargets descendantSource world
+                            then World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> snd'
+                            else world
+                        else world)
+                        world
                 let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
                 let world = entity.SetMountOpt mountOpt world
                 (Some entity, world)

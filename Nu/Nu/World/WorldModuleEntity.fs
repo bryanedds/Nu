@@ -566,6 +566,12 @@ module WorldModuleEntity =
             let mounters = World.getEntityChildren entity world
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
+        /// Get all of the entities descending from an entity.
+        static member getEntityDescendants (entity : Entity) world =
+            seq {
+                for child in World.getEntityChildren entity world do
+                    yield! World.getEntityDescendants child world }
+
         /// Check that an entity should be allowed to mount another entity.
         static member getEntityAllowedToMount entity world =
             let mutable property = Unchecked.defaultof<Property>
@@ -2424,22 +2430,6 @@ module WorldModuleEntity =
         /// Create an entity and add it to the world.
         static member createEntity<'d when 'd :> EntityDispatcher> overlayDescriptor surnamesOpt group world =
             World.createEntity5 typeof<'d>.Name overlayDescriptor surnamesOpt group world
-
-        /// Duplicate an entity.
-        static member duplicateEntity source (destination : Entity) world =
-            let entityStateOpt = World.getEntityStateOpt source world
-            match entityStateOpt :> obj with
-            | null -> world
-            | _ ->
-                let entityState = { entityStateOpt with Order = Core.getTimeStampUnique (); Id = Gen.id64; Surnames = destination.Surnames }
-                let world = World.addEntity false entityState destination world
-                let world =
-                    match World.getEntityPropagatedDescriptorOpt destination world with
-                    | None when World.hasPropagationTargets destination world ->
-                        let propagatedDescriptor = World.writeEntity false EntityDescriptor.empty destination world
-                        World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) destination world |> snd'
-                    | Some _ | None -> world
-                world
 
         /// Rename an entity. Note that since this destroys the renamed entity immediately, you should not call this
         /// inside an event handler that involves the reassigned entity itself. Note this also renames all of its
