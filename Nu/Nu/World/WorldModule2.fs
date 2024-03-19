@@ -427,7 +427,7 @@ module WorldModule2 =
                 | _ -> failwithumf ()) |>
             Map.ofList
 
-        static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world =
+        static member private propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (currentEntityOpt : Entity option) world =
 
             // propagate dispatcher at this level
             let propagatedDescriptor =
@@ -436,6 +436,22 @@ module WorldModule2 =
                     then { targetDescriptor with EntityDispatcherName = currentDescriptor.EntityDispatcherName }
                     else targetDescriptor
                 else { targetDescriptor with EntityDispatcherName = currentDescriptor.EntityDispatcherName }
+
+            // consider using current entity as propagation source at this level
+            let propagatedDescriptor =
+                let propagatedDescriptor = { propagatedDescriptor with EntityProperties = Map.remove Constants.Engine.PropagatedDescriptorOptPropertyName propagatedDescriptor.EntityProperties }
+                let considerUsingCurrentEntityAsPropagationSource =
+                    match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.PropagationSourceOptPropertyName with
+                    | (true, propagationSourceOptSymbol) -> propagationSourceOptSymbol |> symbolToValue<string option> |> Option.isNone
+                    | (false, _) -> true
+                if considerUsingCurrentEntityAsPropagationSource then
+                    match currentEntityOpt with
+                    | Some currentEntity ->
+                        if currentEntity.Exists world && World.hasPropagationTargets currentEntity world
+                        then { propagatedDescriptor with EntityProperties = Map.add Constants.Engine.PropagationSourceOptPropertyName (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
+                        else propagatedDescriptor
+                    | None -> propagatedDescriptor
+                else propagatedDescriptor
 
             // propagate properties at this level
             let propagatedDescriptor =
@@ -518,11 +534,28 @@ module WorldModule2 =
                 let keys = Set.ofSeq (previousDescriptorMap.Keys |> Seq.append currentDescriptorMap.Keys |> Seq.append targetDescriptorMap.Keys)
                 let entityDescriptorOptsList = [for key in keys do (previousDescriptorMap.TryFind key, currentDescriptorMap.TryFind key, targetDescriptorMap.TryFind key)]
                 List.map (fun (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) ->
+                    let currentEntityOpt =
+                        match currentEntityOpt with
+                        | Some currentEntity ->
+                            match currentDescriptorOpt with
+                            | Some currentDescriptor ->
+                                match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.NamePropertyName with
+                                | (true, nameSymbol) ->
+                                    match nameSymbol with
+                                    | Atom (name, _) | Text (name, _) ->
+                                        let currentEntity = currentEntity / name
+                                        if currentEntity.Exists world
+                                        then Some currentEntity
+                                        else None
+                                    | _ -> None
+                                | (false, _) -> None
+                            | None -> None
+                        | None -> None
                     match (previousDescriptorOpt, currentDescriptorOpt, targetDescriptorOpt) with
                     | (Some previousDescriptor, Some currentDescriptor, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world)
+                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor currentEntityOpt world)
                     | (Some previousDescriptor, Some currentDescriptor, None) ->
-                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor EntityDescriptor.empty world)
+                        Some (World.propagateEntityDescriptor previousDescriptor currentDescriptor EntityDescriptor.empty currentEntityOpt world)
                     | (Some _, None, None) ->
                         None
                     | (Some _, None, Some _) ->
@@ -532,7 +565,7 @@ module WorldModule2 =
                     | (None, Some currentDescriptor, None) ->
                         Some currentDescriptor
                     | (None, Some currentDescriptor, Some targetDescriptor) ->
-                        Some (World.propagateEntityDescriptor EntityDescriptor.empty currentDescriptor targetDescriptor world)
+                        Some (World.propagateEntityDescriptor EntityDescriptor.empty currentDescriptor targetDescriptor currentEntityOpt world)
                     | (None, None, None) -> None)
                     entityDescriptorOptsList
 
@@ -558,6 +591,7 @@ module WorldModule2 =
             { propagatedDescriptor with EntityDescriptors = propagatedDescriptors }
 
         /// Propagate the structure of an entity to all other entities with it as their propagation source.
+        /// TODO: expose this through Entity API.
         static member propagateEntityStructure entity world =
             let targets = World.getPropagationTargets entity world
             let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
@@ -566,7 +600,7 @@ module WorldModule2 =
                 Seq.fold (fun world target ->
                     if World.getEntityExists target world then
                         let targetDescriptor = World.writeEntity false EntityDescriptor.empty target world
-                        let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor world
+                        let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (Some entity) world
                         let order = target.GetOrder world
                         let world = World.destroyEntityImmediate target world
                         let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
