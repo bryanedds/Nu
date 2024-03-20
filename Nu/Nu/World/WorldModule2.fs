@@ -593,6 +593,8 @@ module WorldModule2 =
         /// Propagate the structure of an entity to all other entities with it as their propagation source.
         /// TODO: expose this through Entity API.
         static member propagateEntityStructure entity world =
+
+            // propagate entity
             let targets = World.getPropagationTargets entity world
             let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
@@ -610,7 +612,21 @@ module WorldModule2 =
                     else world)
                     world targets
             let currentDescriptor = { currentDescriptor with EntityProperties = Map.remove (nameof Entity.PropagatedDescriptorOpt) currentDescriptor.EntityProperties }
-            entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
+            let world = entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
+
+            // propagate sourced ancestor entities
+            seq {
+                for target in World.getPropagationTargets entity world do
+                    if target.Exists world then
+                        for ancestor in World.getEntityAncestors target world do
+                            if ancestor.Exists world && World.hasPropagationTargets ancestor world then
+                                ancestor } |>
+            Set.ofSeq |>
+            Set.fold (fun world ancestor ->
+                if ancestor.Exists world && World.hasPropagationTargets ancestor world
+                then World.propagateEntityStructure ancestor world
+                else world)
+                world
 
         /// Clear all propagation targets pointing back to the given entity.
         static member clearPropagationTargets entity world =

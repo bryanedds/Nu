@@ -938,11 +938,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             true
         | Some _ | None -> false
 
-    let private tryPropagateSelectedEntity () =
+    let rec private propagateEntityStructure entity =
+        snapshot ()
+        world <- World.propagateEntityStructure entity world
+
+    let private tryPropagateSelectedEntityStructure () =
         match selectedEntityOpt with
-        | Some entity when entity.Exists world ->
-            snapshot ()
-            world <- World.propagateEntityStructure entity world
+        | Some selectedEntity when selectedEntity.Exists world ->
+            propagateEntityStructure selectedEntity
             true
         | Some _ | None -> false
 
@@ -1460,7 +1463,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then showSaveEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then reloadAllRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.W && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryWipePropagationTargets () |> ignore<bool>
-            elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntity () |> ignore<bool>
+            elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntityStructure () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then showOpenProjectDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then
@@ -1539,7 +1542,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | Some _ | None -> ()
             ImGui.Separator ()
             if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
-            if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
+            if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure () |> ignore<bool>
             if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
             match selectedEntityOpt with
             | Some entity when entity.Exists world ->
@@ -1650,8 +1653,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SameLine ()
                 separatorInserted <- true
             if ImGui.SmallButton "Push" then
-                snapshot ()
-                world <- World.propagateEntityStructure entity world
+                propagateEntityStructure entity
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 ImGui.Text "Propagate entity structure to all targets."
                 ImGui.EndTooltip ()
@@ -2913,7 +2915,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     | Some _ | None -> ()
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntity () |> ignore<bool>
+                                if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure () |> ignore<bool>
                                 if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
                                 ImGui.EndMenu ()
                             ImGui.EndMenuBar ()
@@ -3916,7 +3918,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             | Some _ | None -> ()
                         ImGui.Separator ()
                         if ImGui.Button "Auto Bounds Entity" then tryAutoBoundsSelectedEntity () |> ignore<bool>
-                        if ImGui.Button "Propagate Entity" then tryPropagateSelectedEntity () |> ignore<bool>
+                        if ImGui.Button "Propagate Entity" then tryPropagateSelectedEntityStructure () |> ignore<bool>
                         if ImGui.Button "Wipe Propagation Targets" then tryWipePropagationTargets () |> ignore<bool>
                         if ImGui.Button "Show in Hierarchy" then showSelectedEntity <- true; showEntityContextMenu <- false
                         if ImGui.Button "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false

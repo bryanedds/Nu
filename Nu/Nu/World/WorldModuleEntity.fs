@@ -572,6 +572,15 @@ module WorldModuleEntity =
                 for child in World.getEntityChildren entity world do
                     yield! World.getEntityDescendants child world }
 
+        /// Get all of the entities parenting an entity.
+        static member getEntityAncestors (entity : Entity) world =
+            seq {
+                match entity.Parent with
+                | :? Entity as parent when World.getEntityExists parent world ->
+                    yield parent
+                    yield! World.getEntityAncestors parent world
+                | _ -> () }
+
         /// Check that an entity should be allowed to mount another entity.
         static member getEntityAllowedToMount entity world =
             let mutable property = Unchecked.defaultof<Property>
