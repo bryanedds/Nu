@@ -690,11 +690,7 @@ module WorldModuleEntity =
                 let config = World.getCollectionConfig world
                 let targets = USet.singleton HashIdentity.Structural config entity
                 let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add source targets world.WorldExtension.PropagationTargets }
-                let world = World.choose { world with WorldExtension = worldExtension }
-                if World.getEntityExists source world then
-                    let sourceDescriptor = World.writeEntity false EntityDescriptor.empty source world
-                    World.setEntityPropagatedDescriptorOpt (Some sourceDescriptor) source world |> snd'
-                else world
+                World.choose { world with WorldExtension = worldExtension }
 
         static member internal removeEntityFromPropagationTargets source entity world =
             match world.WorldExtension.PropagationTargets.TryGetValue source with
@@ -702,10 +698,7 @@ module WorldModuleEntity =
                 let targets = USet.remove entity targets
                 if USet.isEmpty targets then
                     let worldExtension = { world.WorldExtension with PropagationTargets = UMap.remove source world.WorldExtension.PropagationTargets }
-                    let world = World.choose { world with WorldExtension = worldExtension }
-                    if World.getEntityExists source world
-                    then World.setEntityPropagatedDescriptorOpt None source world |> snd'
-                    else world
+                    World.choose { world with WorldExtension = worldExtension }
                 else
                     let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add source targets world.WorldExtension.PropagationTargets }
                     World.choose { world with WorldExtension = worldExtension }
