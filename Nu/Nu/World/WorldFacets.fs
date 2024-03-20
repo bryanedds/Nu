@@ -3137,7 +3137,7 @@ module FollowerFacetModule =
             let mutable startStatus = DtStatus.DT_IN_PROGRESS
             let filter = DtQueryDefaultFilter (int SampleAreaModifications.SAMPLE_POLYFLAGS_ALL, int SampleAreaModifications.SAMPLE_POLYFLAGS_DISABLED, [||])
             while startStatus = DtStatus.DT_IN_PROGRESS do
-                startStatus <- query.FindNearestPoly (startPosition, RcVec3f (2f, 4f, 2f), filter, &startRef, &startPosition, &startIsOverPoly)
+                startStatus <- query.FindNearestPoly (startPosition, RcVec3f (4f, 4f, 4f), filter, &startRef, &startPosition, &startIsOverPoly)
 
             // attempt to compute end position information
             let mutable endRef = 0L
@@ -3145,7 +3145,7 @@ module FollowerFacetModule =
             let mutable endIsOverPoly = false
             let mutable endStatus = DtStatus.DT_IN_PROGRESS
             while endStatus = DtStatus.DT_IN_PROGRESS do
-                endStatus <- query.FindNearestPoly (endPosition, RcVec3f (2f, 4f, 2f), filter, &endRef, &endPosition, &endIsOverPoly)
+                endStatus <- query.FindNearestPoly (endPosition, RcVec3f (4f, 4f, 4f), filter, &endRef, &endPosition, &endIsOverPoly)
 
             // attempt to compute path
             if startStatus = DtStatus.DT_SUCCESS && endStatus = DtStatus.DT_SUCCESS then
@@ -3177,7 +3177,7 @@ module FollowerFacetModule =
 
         static member Properties =
             [define Entity.Following true
-             define Entity.FollowSpeed 0.05f
+             define Entity.FollowSpeed 2.5f
              define Entity.FollowDistanceMinOpt None
              define Entity.FollowDistanceMaxOpt None
              define Entity.FollowTargetOpt None]
@@ -3191,7 +3191,7 @@ module FollowerFacetModule =
                     let startPosition = entity.GetPosition world
                     let endPosition = followTarget.GetPosition world
                     let distance = (endPosition - startPosition).Magnitude
-                    let followSpeed = entity.GetFollowSpeed world
+                    let followSpeed = entity.GetFollowSpeed world * (let gd = world.GameDelta in gd.Seconds)
                     let followDistanceMinOpt = entity.GetFollowDistanceMinOpt world
                     let followDistanceMaxOpt = entity.GetFollowDistanceMaxOpt world
                     if  (followDistanceMinOpt.IsNone || distance > followDistanceMinOpt.Value) &&
