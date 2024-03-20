@@ -2168,8 +2168,8 @@ module WorldModuleEntity =
 
         static member internal registerEntity entity world =
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-            let facets = World.getEntityFacets entity world
             let world = dispatcher.Register (entity, world)
+            let facets = World.getEntityFacets entity world
             let world =
                 Array.fold (fun world (facet : Facet) ->
                     let world = facet.Register (entity, world)
@@ -2191,8 +2191,8 @@ module WorldModuleEntity =
             let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.UnregisteringEvent --> entity)
             let world = Array.fold (fun world eventAddress -> World.publishPlus () eventAddress eventTrace entity false false world) world eventAddresses
-            let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world
+            let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let world = dispatcher.Unregister (entity, world)
             Array.fold (fun world (facet : Facet) ->
                 let world = facet.Unregister (entity, world)
