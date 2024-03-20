@@ -216,7 +216,7 @@ module WorldEntityHierarchy =
             world
 
 [<AutoOpen>]
-module FreezeFacetModule =
+module FreezerFacetModule =
 
     type Entity with
         member this.GetFrozenRenderLightProbes3d world : LightProbe3dValue array = this.Get (nameof this.FrozenRenderLightProbes3d) world

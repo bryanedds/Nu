@@ -172,6 +172,7 @@ module WorldModule3 =
                  TerrainFacet ()
                  NavBodyFacet ()
                  Nav3dConfigFacet ()
+                 FollowerFacet ()
                  FreezerFacet ()]
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.

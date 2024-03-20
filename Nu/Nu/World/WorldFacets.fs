@@ -3,9 +3,14 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open ImGuiNET
 open TiledSharp
+open DotRecast.Core.Numerics
+open DotRecast.Detour
+open DotRecast.Recast.Toolset.Builder
+open DotRecast.Recast.Toolset.Tools
 open Prime
 open Nu
 open Nu.Particles
@@ -3099,3 +3104,109 @@ module Nav3dConfigFacetModule =
 
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.unimportant
+
+[<AutoOpen>]
+module FollowerFacetModule =
+
+    type Entity with
+        member this.GetFollowing world : bool = this.Get (nameof this.Following) world
+        member this.SetFollowing (value : bool) world = this.Set (nameof this.Following) value world
+        member this.Following = lens (nameof this.Following) this this.GetFollowing this.SetFollowing
+        member this.GetFollowSpeed world : single = this.Get (nameof this.FollowSpeed) world
+        member this.SetFollowSpeed (value : single) world = this.Set (nameof this.FollowSpeed) value world
+        member this.FollowSpeed = lens (nameof this.FollowSpeed) this this.GetFollowSpeed this.SetFollowSpeed
+        member this.GetFollowDistanceMinOpt world : single option = this.Get (nameof this.FollowDistanceMinOpt) world
+        member this.SetFollowDistanceMinOpt (value : single option) world = this.Set (nameof this.FollowDistanceMinOpt) value world
+        member this.FollowDistanceMinOpt = lens (nameof this.FollowDistanceMinOpt) this this.GetFollowDistanceMinOpt this.SetFollowDistanceMinOpt
+        member this.GetFollowDistanceMaxOpt world : single option = this.Get (nameof this.FollowDistanceMaxOpt) world
+        member this.SetFollowDistanceMaxOpt (value : single option) world = this.Set (nameof this.FollowDistanceMaxOpt) value world
+        member this.FollowDistanceMaxOpt = lens (nameof this.FollowDistanceMaxOpt) this this.GetFollowDistanceMaxOpt this.SetFollowDistanceMaxOpt
+        member this.GetFollowTargetOpt world : Entity option = this.Get (nameof this.FollowTargetOpt) world
+        member this.SetFollowTargetOpt (value : Entity option) world = this.Set (nameof this.FollowTargetOpt) value world
+        member this.FollowTargetOpt = lens (nameof this.FollowTargetOpt) this this.GetFollowTargetOpt this.SetFollowTargetOpt
+
+    type FollowerFacet () =
+        inherit Facet (false)
+
+        static let tryFollow followSpeed (startPosition : Vector3) (endPosition : Vector3) (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
+
+            // attempt to compute start position information
+            let mutable startRef = 0L
+            let mutable startPosition = RcVec3f (startPosition.X, startPosition.Y, startPosition.Z)
+            let mutable startIsOverPoly = false
+            let mutable startStatus = DtStatus.DT_IN_PROGRESS
+            let filter = DtQueryDefaultFilter (int SampleAreaModifications.SAMPLE_POLYFLAGS_ALL, int SampleAreaModifications.SAMPLE_POLYFLAGS_DISABLED, [||])
+            while startStatus = DtStatus.DT_IN_PROGRESS do
+                startStatus <- query.FindNearestPoly (startPosition, RcVec3f (2f, 4f, 2f), filter, &startRef, &startPosition, &startIsOverPoly)
+
+            // attempt to compute end position information
+            let mutable endRef = 0L
+            let mutable endPosition = RcVec3f (endPosition.X, endPosition.Y, endPosition.Z)
+            let mutable endIsOverPoly = false
+            let mutable endStatus = DtStatus.DT_IN_PROGRESS
+            while endStatus = DtStatus.DT_IN_PROGRESS do
+                endStatus <- query.FindNearestPoly (endPosition, RcVec3f (2f, 4f, 2f), filter, &endRef, &endPosition, &endIsOverPoly)
+
+            // attempt to compute path
+            if startStatus = DtStatus.DT_SUCCESS && endStatus = DtStatus.DT_SUCCESS then
+                let navMeshTool = RcTestNavMeshTool ()
+                let mutable polys = List ()
+                let mutable path = List ()
+                let mutable pathStatus = DtStatus.DT_IN_PROGRESS
+                while pathStatus = DtStatus.DT_IN_PROGRESS do
+                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, &path)
+                if pathStatus = DtStatus.DT_SUCCESS && path.Count > 0 then
+                    let mutable pathIndex = 0
+                    let mutable travel = 0.0f
+                    let mutable step = RcVec3f.Zero
+                    while pathIndex < path.Count && travel < followSpeed do
+                        let substep = path.[pathIndex] - startPosition
+                        let substepTrunc =
+                            if travel + substep.Length () > followSpeed then
+                                let travelOver = travel + substep.Length () - followSpeed
+                                let travelDelta = substep.Length () - travelOver + 0.0001f
+                                RcVec3f.Normalize substep * travelDelta
+                            else substep
+                        travel <- travel + substepTrunc.Length ()
+                        step <- step + substepTrunc
+                        pathIndex <- inc pathIndex
+                    let stepPosition = startPosition + step
+                    Some (v3 stepPosition.X stepPosition.Y stepPosition.Z)
+                else None
+            else None
+
+        static member Properties =
+            [define Entity.Following true
+             define Entity.FollowSpeed 0.05f
+             define Entity.FollowDistanceMinOpt None
+             define Entity.FollowDistanceMaxOpt None
+             define Entity.FollowTargetOpt None]
+
+        override this.Update (entity, world) =
+            let following = entity.GetFollowing world
+            if following then
+                let followTargetOpt = entity.GetFollowTargetOpt world
+                match followTargetOpt with
+                | Some followTarget when followTarget.Exists world ->
+                    let startPosition = entity.GetPosition world
+                    let endPosition = followTarget.GetPosition world
+                    let distance = (endPosition - startPosition).Magnitude
+                    let followSpeed = entity.GetFollowSpeed world
+                    let followDistanceMinOpt = entity.GetFollowDistanceMinOpt world
+                    let followDistanceMaxOpt = entity.GetFollowDistanceMaxOpt world
+                    if  (followDistanceMinOpt.IsNone || distance > followDistanceMinOpt.Value) &&
+                        (followDistanceMaxOpt.IsNone || distance <= followDistanceMaxOpt.Value) then
+                        if entity.GetIs2d world
+                        then world // TODO: implement for 2d navigation when it's available.
+                        else
+                            match World.tryQueryNav3d (tryFollow followSpeed startPosition endPosition) entity.Screen world with
+                            | Some (Some stepPosition) ->
+                                let velocity = stepPosition - startPosition
+                                let world = entity.SetPosition stepPosition world
+                                let world = entity.SetLinearVelocity velocity world
+                                let world = entity.SetRotation (Quaternion.CreateFromAxisAngle (v3Up, atan2 velocity.X velocity.Z + MathF.PI)) world
+                                world
+                            | _ -> world
+                    else world
+                | _ -> world
+            else world
