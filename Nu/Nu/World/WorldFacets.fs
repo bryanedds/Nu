@@ -3128,7 +3128,7 @@ module FollowerFacetModule =
     type FollowerFacet () =
         inherit Facet (false)
 
-        static let tryFollow followSpeed (startPosition : Vector3) (endPosition : Vector3) (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
+        static let tryFollow followSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
 
             // attempt to compute start position information
             let mutable startRef = 0L
@@ -3171,7 +3171,7 @@ module FollowerFacetModule =
                         step <- step + substepTrunc
                         pathIndex <- inc pathIndex
                     let stepPosition = startPosition + step
-                    Some (v3 stepPosition.X stepPosition.Y stepPosition.Z)
+                    Some (v3 stepPosition.X (stepPosition.Y - navConfig.CellHeight) stepPosition.Z)
                 else None
             else None
 

@@ -528,5 +528,5 @@ module WorldScreenModule =
         static member tryQueryNav3d query screen world =
             let nav3d = World.getScreenNav3d screen world
             match nav3d.Nav3dMeshOpt with
-            | Some (_, dtNavMesh, dtQuery) -> Some (query dtNavMesh dtQuery)
+            | Some (_, dtNavMesh, dtQuery) -> Some (query nav3d.Nav3dConfig dtNavMesh dtQuery)
             | None -> None
