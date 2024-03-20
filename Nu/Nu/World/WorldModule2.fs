@@ -2674,7 +2674,7 @@ module WorldModule2' =
                         else
                             let facets = entityState.Facets.Clone () :?> Facet array
                             facets.[index] <- facet
-                            let entityState = { entityState with Facets = Array.ofSeq entityState.Facets }
+                            let entityState = { entityState with Facets = Array.ofSeq facets }
                             World.setEntityState entityState entity world
                     | None -> world
                 | :? EntityDispatcher as entityDispatcher ->
