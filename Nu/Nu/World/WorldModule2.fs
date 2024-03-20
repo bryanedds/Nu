@@ -1722,7 +1722,7 @@ module WorldModule2 =
                                                                         if timeToSleep > 0.008 then Thread.Sleep 7
                                                                         elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                         elif timeToSleep > 0.002 then Thread.Sleep 1
-                                                                        else Thread.Yield () |> ignore<bool>
+                                                                        else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep 0|1 instead?
                                                                 FrameTimer.Restart ()
 
                                                                 // process rendering (2/2)
