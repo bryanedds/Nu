@@ -550,8 +550,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                     | :? BodyId as bodyId ->
                         match fixture.Tag with
                         | :? BodyShapeIndex as bodyShapeIndex ->
-                            if  (int fixture.CollisionCategories &&& collisionCategories) <> 0 &&
-                                (int fixture.CollidesWith &&& collisionMask) <> 0 then
+                            if (int fixture.CollidesWith &&& collisionCategories) <> 0 then
                                 let report = (v3 point.X point.Y 0.0f, v3 normal.X normal.Y 0.0f, fraction, bodyShapeIndex, bodyId)
                                 if fraction < fractionMin then
                                     fractionMin <- fraction
