@@ -545,6 +545,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             List.notEmpty groundNormals
 
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
+            ignore collisionMask // TODO: P1: try to figure out how this variable can / should be used here!
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
