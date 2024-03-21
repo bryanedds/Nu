@@ -53,11 +53,11 @@ module WorldImGui =
             let viewProjection = view * projection
             for segment in segments do
                 match Math.tryUnionSegmentAndFrustum (fst' segment) (snd' segment) eyeFrustum with
-                | Some (begin_, end_) ->
+                | Some (start, stop) ->
                     let color = computeColor segment
-                    let beginWindow = ImGui.PositionToWindow (viewProjection, begin_)
-                    let endWindow = ImGui.PositionToWindow (viewProjection, end_)
-                    drawList.AddLine (beginWindow, endWindow, color.Abgr, thickness)
+                    let startWindow = ImGui.PositionToWindow (viewProjection, start)
+                    let stopWindow = ImGui.PositionToWindow (viewProjection, stop)
+                    drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
                 | None -> ()
 
         /// Render segments via ImGui in the current eye 3d space.

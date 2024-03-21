@@ -3020,21 +3020,21 @@ module Nav3dConfigFacetModule =
                                         while k < 3 do
                                             let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
                                             if ef <> 0 then
-                                                let begin_ =
+                                                let start =
                                                     v3
                                                         dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
                                                         dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
                                                         dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
-                                                let end_ =
+                                                let stop =
                                                     v3
                                                         dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
                                                         dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
                                                         dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                                                if segmentsMinY > begin_.Y then segmentsMinY <- begin_.Y
-                                                if segmentsMaxY < begin_.Y then segmentsMaxY <- begin_.Y
-                                                if segmentsMinY > end_.Y then segmentsMinY <- end_.Y
-                                                if segmentsMaxY < end_.Y then segmentsMaxY <- end_.Y
-                                                struct (begin_, end_)
+                                                if segmentsMinY > start.Y then segmentsMinY <- start.Y
+                                                if segmentsMaxY < start.Y then segmentsMaxY <- start.Y
+                                                if segmentsMinY > stop.Y then segmentsMinY <- stop.Y
+                                                if segmentsMaxY < stop.Y then segmentsMaxY <- stop.Y
+                                                struct (start, stop)
                                             kp <- k
                                             k <- inc k })
                     let computeSegmentColor (segment : struct (Vector3 * Vector3)) =
@@ -3062,17 +3062,17 @@ module Nav3dConfigFacetModule =
                                         while k < 3 do
                                             let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
                                             if ef = 0 then
-                                                let begin_ =
+                                                let start =
                                                     v3
                                                         dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
                                                         dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
                                                         dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
-                                                let end_ =
+                                                let stop =
                                                     v3
                                                         dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
                                                         dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
                                                         dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                                                struct (begin_, end_)
+                                                struct (start, stop)
                                             kp <- k
                                             k <- inc k })
                     World.imGuiSegments3dPlus false segments 1.0f computeSegmentColor world

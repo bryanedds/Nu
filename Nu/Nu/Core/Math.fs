@@ -1051,18 +1051,6 @@ type LightType =
     | DirectionalLight
     | SpotLight of ConeInner : single * ConeOuter : single
 
-/// The input for a 2d ray cast operation.
-type [<Struct>] RayCast2Input =
-    { RayBegin : Vector2
-      RayEnd : Vector2 }
-      
-/// The output of a 2d ray cast operation.
-type [<Struct>] RayCast2Output =
-    { mutable Normal : Vector2
-      mutable Fraction : single }
-    static member inline defaultOutput =
-        Unchecked.defaultof<RayCast2Output>
-
 [<RequireQualifiedAccess>]
 module Math =
 
@@ -1135,25 +1123,25 @@ module Math =
         Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
 
     /// Find the the union of a line segment and a frustum if one exists.
-    let tryUnionSegmentAndFrustum (beginPoint : Vector3) (endPoint : Vector3) (frustum : Frustum) =
-        let beginContained = frustum.Contains beginPoint <> ContainmentType.Disjoint
-        let endContained = frustum.Contains endPoint <> ContainmentType.Disjoint
-        if beginContained || endContained then
-            let beginPoint =
-                if not beginContained then
-                    let ray = Ray3 (beginPoint, (endPoint - beginPoint).Normalized)
+    let tryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
+        let startContained = frustum.Contains start <> ContainmentType.Disjoint
+        let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
+        if startContained || stopContained then
+            let start =
+                if not startContained then
+                    let ray = Ray3 (start, (stop - start).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (beginPoint, endPoint, tOpt.Value)
-                    else beginPoint // TODO: figure out why intersection could fail here.
-                else beginPoint
-            let endPoint =
-                if not endContained then
-                    let ray = Ray3 (endPoint, (beginPoint - endPoint).Normalized)
+                    then Vector3.Lerp (start, stop, tOpt.Value)
+                    else start // TODO: figure out why intersection could fail here.
+                else start
+            let stop =
+                if not stopContained then
+                    let ray = Ray3 (stop, (start - stop).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (endPoint, beginPoint, tOpt.Value)
-                    else endPoint // TODO: figure out why intersection could fail here.
-                else endPoint
-            Some (beginPoint, endPoint)
+                    then Vector3.Lerp (stop, start, tOpt.Value)
+                    else stop // TODO: figure out why intersection could fail here.
+                else stop
+            Some (start, stop)
         else None
