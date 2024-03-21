@@ -668,6 +668,8 @@ type PhysicsEngine =
     abstract GetBodyToGroundContactNormalOpt : BodyId -> Vector3 option
     /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
     abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
+    /// Cast a ray.
+    abstract RayCast : Ray3 * int * int * bool -> (Vector3 * Vector3 * single * BodyShapeIndex * BodyId) array
     /// Check that the body with the given physics id is on the ground.
     abstract IsBodyOnGround : BodyId -> bool
     /// Handle a physics message from an external source.
@@ -689,6 +691,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormals _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.RayCast (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.IsBodyOnGround _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.Integrate _ = SArray.empty

@@ -540,6 +540,25 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             | Some normal -> Some (Vector3 (normal.Y, -normal.X, 0.0f))
             | None -> None
 
+        member physicsEngine.RayCast (ray : Ray3, collisionCategories, collisionMask, closestOnly) =
+            let results = List ()
+            let delegate_ =
+                RayCastReportFixtureDelegate (fun fixture point normal fraction ->
+                    match fixture.Body.Tag with
+                    | :? BodyId as bodyId ->
+                        match fixture.Tag with
+                        | :? BodyShapeIndex as bodyShapeIndex ->
+                            if  (int fixture.CollisionCategories &&& collisionCategories) <> 0 &&
+                                (int fixture.CollidesWith &&& collisionMask) <> 0 then
+                                results.Add (v3 point.X point.Y 0.0f, v3 normal.X normal.Y 0.0f, fraction, bodyShapeIndex, bodyId)
+                        | _ -> ()
+                    | _ -> ()
+                    if closestOnly then fraction else 1.0f)
+            let start = Common.Vector2 (ray.Origin.X, ray.Origin.Y)
+            let stop = Common.Vector2 (ray.Origin.X + ray.Direction.X, ray.Origin.Y + ray.Direction.Y)
+            physicsEngine.PhysicsContext.RayCast (delegate_, start, stop)
+            Array.ofSeq results
+
         member physicsEngine.IsBodyOnGround bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             List.notEmpty groundNormals
