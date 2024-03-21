@@ -155,12 +155,20 @@ module WorldPhysics =
         /// Check that the body with the given physics id is on the ground.
         static member getBodyGrounded bodyId world =
             if world.Subsystems.PhysicsEngine3d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine3d.IsBodyOnGround bodyId
+                world.Subsystems.PhysicsEngine3d.GetBodyGrounded bodyId
             elif world.Subsystems.PhysicsEngine2d.GetBodyExists bodyId then
-                world.Subsystems.PhysicsEngine2d.IsBodyOnGround bodyId
+                world.Subsystems.PhysicsEngine2d.GetBodyGrounded bodyId
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
                 false
+
+        /// Ray cast against 3d physics bodies.
+        static member rayCast3dBodies start stop collisionCategories collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine3d.RayCast (start, stop, collisionCategories, collisionMask, closestOnly)
+
+        /// Ray cast against 2d physics bodies.
+        static member rayCast2dBodies start stop collisionCategories collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine2d.RayCast (start, stop, collisionCategories, collisionMask, closestOnly)
 
         /// Send a physics message to create a physics body.
         static member createBody is2d bodyId (bodyProperties : BodyProperties) world =

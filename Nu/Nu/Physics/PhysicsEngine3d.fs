@@ -938,16 +938,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Some normal -> Some (Vector3.Cross (v3Forward, normal))
             | None -> None
 
-        member physicsEngine.RayCast (ray : Ray3, collisionCategories, collisionMask, closestOnly) =
-            let mutable start = ray.Origin
-            let mutable stop = ray.Origin + ray.Direction
+        member physicsEngine.GetBodyGrounded bodyId =
+            match physicsEngine.KinematicCharacters.TryGetValue bodyId with
+            | (true, character) -> character.CharacterController.OnGround
+            | (false, _) ->
+                let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
+                List.notEmpty groundNormals
+
+        member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
+            let mutable start = start
+            let mutable stop = stop
             use rrc =
                 if closestOnly
                 then new ClosestRayResultCallback (&start, &stop) :> RayResultCallback
                 else new AllHitsRayResultCallback (start, stop)
             rrc.CollisionFilterGroup <- collisionCategories
             rrc.CollisionFilterMask <- collisionMask
-            physicsEngine.PhysicsContext.RayTest (ray.Origin, ray.Origin + ray.Direction, rrc)
+            physicsEngine.PhysicsContext.RayTest (start, stop, rrc)
             if rrc.HasHit then
                 match rrc with
                 | :? ClosestRayResultCallback as crrc ->
@@ -971,13 +978,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         | _ -> failwithumf ()|]
                 | _ -> failwithumf ()
             else [||]
-
-        member physicsEngine.IsBodyOnGround bodyId =
-            match physicsEngine.KinematicCharacters.TryGetValue bodyId with
-            | (true, character) -> character.CharacterController.OnGround
-            | (false, _) ->
-                let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
-                List.notEmpty groundNormals
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage

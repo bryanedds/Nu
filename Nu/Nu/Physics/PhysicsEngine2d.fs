@@ -540,11 +540,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             | Some normal -> Some (Vector3 (normal.Y, -normal.X, 0.0f))
             | None -> None
 
-        member physicsEngine.RayCast (ray : Ray3, collisionCategories, collisionMask, closestOnly) =
+        member physicsEngine.GetBodyGrounded bodyId =
+            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
+            List.notEmpty groundNormals
+
+        member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
-            let delegate_ =
+            let callback =
                 RayCastReportFixtureDelegate (fun fixture point normal fraction ->
                     match fixture.Body.Tag with
                     | :? BodyId as bodyId ->
@@ -559,18 +563,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         | _ -> ()
                     | _ -> ()
                     if closestOnly then fraction else 1.0f)
-            let start = Common.Vector2 (ray.Origin.X, ray.Origin.Y)
-            let stop = Common.Vector2 (ray.Origin.X + ray.Direction.X, ray.Origin.Y + ray.Direction.Y)
-            physicsEngine.PhysicsContext.RayCast (delegate_, start, stop)
+            physicsEngine.PhysicsContext.RayCast
+                (callback,
+                 Common.Vector2 (start.X, start.Y),
+                 Common.Vector2 (stop.X, stop.Y))
             if closestOnly then
                 match closestOpt with
                 | Some closest -> [|closest|]
                 | None -> [||]
             else Array.ofSeq results
-
-        member physicsEngine.IsBodyOnGround bodyId =
-            let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
-            List.notEmpty groundNormals
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
