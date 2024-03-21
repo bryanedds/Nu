@@ -3200,7 +3200,7 @@ module FollowerFacetModule =
                         then world // TODO: implement for 2d navigation when it's available.
                         else
                             match World.tryQueryNav3d (tryFollow followSpeed startPosition endPosition) entity.Screen world with
-                            | Some (Some stepPosition) ->
+                            | Some (Some stepPosition) -> // TODO: consider doing an offset physics ray cast to align stepPosition with near ground.
                                 let velocity = stepPosition - startPosition
                                 let world = entity.SetPosition stepPosition world
                                 let world = entity.SetLinearVelocity velocity world
