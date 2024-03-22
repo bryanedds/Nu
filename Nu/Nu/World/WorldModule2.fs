@@ -1698,7 +1698,7 @@ module WorldModule2 =
                                                         match World.getLiveness world with
                                                         | Live ->
 
-                                                            // render simulants, skipping culling upon request (like if a light probe needs to be rendered)
+                                                            // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
                                                             RenderTimer.Start ()
                                                             let skipCulling = World.getUnculledRenderRequested world
                                                             let world = World.acknowledgeUnculledRenderRequest world
@@ -1722,15 +1722,16 @@ module WorldModule2 =
                                                                 let rendererProcess = World.getRendererProcess world
                                                                 if not firstFrame then rendererProcess.Swap ()
 
-                                                                // avoid updating faster than desired
-                                                                if FrameTimer.IsRunning then
-                                                                    while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                        let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - FrameTimer.Elapsed.TotalSeconds
-                                                                        if timeToSleep > 0.008 then Thread.Sleep 7
-                                                                        elif timeToSleep > 0.004 then Thread.Sleep 3
-                                                                        elif timeToSleep > 0.002 then Thread.Sleep 1
-                                                                        else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep 0|1 instead?
-                                                                FrameTimer.Restart ()
+                                                                // explicitly pace frame rate based on clock progression when desired
+                                                                if world.FramePacing then
+                                                                    if FrameTimer.IsRunning then
+                                                                        while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
+                                                                            let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - FrameTimer.Elapsed.TotalSeconds
+                                                                            if timeToSleep > 0.008 then Thread.Sleep 7
+                                                                            elif timeToSleep > 0.004 then Thread.Sleep 3
+                                                                            elif timeToSleep > 0.002 then Thread.Sleep 1
+                                                                            else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep 0|1 instead?
+                                                                    FrameTimer.Restart ()
 
                                                                 // process imgui frame
                                                                 let imGui = World.getImGui world

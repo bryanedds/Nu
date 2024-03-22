@@ -168,6 +168,10 @@ module WorldModule =
         static member setAdvancing advancing world =
             World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
+        /// Set whether the world's frame rate is being explicitly paced based on clock progression.
+        static member setFramePacing clockPacing world =
+            World.updateAmbientState (AmbientState.setFramePacing clockPacing) world
+
         /// Check that the world is executing with imperative semantics where applicable.
         static member getImperative (world : World) =
             world.Imperative

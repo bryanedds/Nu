@@ -237,6 +237,7 @@ module AmbientState =
     let [<Literal>] private ImperativeMask =    0b0001u
     let [<Literal>] private AccompaniedMask =   0b0010u
     let [<Literal>] private AdvancingMask =     0b0100u
+    let [<Literal>] private FramePacingMask =   0b1000u
 
     /// The ambient state of the world.
     type [<ReferenceEquality>] 'w AmbientState =
@@ -263,6 +264,7 @@ module AmbientState =
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
         member this.Advancing = this.Flags &&& AdvancingMask <> 0u
+        member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
 
     /// Get the the liveness state of the engine.
     let getLiveness state =
@@ -274,6 +276,10 @@ module AmbientState =
             if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
             { state with Flags = if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask }
         else state
+
+    /// Set whether the world's frame rate is being explicitly paced based on clock progression.
+    let setFramePacing framePacing (state : _ AmbientState) =
+        { state with Flags = if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask }
 
     /// Get the collection config value.
     let getConfig (state : 'w AmbientState) =
