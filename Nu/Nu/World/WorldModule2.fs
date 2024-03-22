@@ -67,6 +67,10 @@ module WorldModule2 =
     let private CachedHashSet3dNormal = HashSet (OctelementEqualityComparer ())
     let private CachedHashSet3dShadow = HashSet (OctelementEqualityComparer ())
 
+    (* Automatic Frame Pace Activation *)
+    let mutable private FramePaceIssues = 0
+    let mutable private FramePaceChecks = 0
+
     type World with
 
         static member internal rebuildQuadtree world =
@@ -1722,16 +1726,33 @@ module WorldModule2 =
                                                                 let rendererProcess = World.getRendererProcess world
                                                                 if not firstFrame then rendererProcess.Swap ()
 
-                                                                // explicitly pace frame rate based on clock progression when desired
-                                                                if world.FramePacing then
+                                                                // process frame pacing mechanics
+                                                                let world =
                                                                     if FrameTimer.IsRunning then
-                                                                        while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                            let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - FrameTimer.Elapsed.TotalSeconds
-                                                                            if timeToSleep > 0.008 then Thread.Sleep 7
-                                                                            elif timeToSleep > 0.004 then Thread.Sleep 3
-                                                                            elif timeToSleep > 0.002 then Thread.Sleep 1
-                                                                            else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep 0|1 instead?
-                                                                    FrameTimer.Restart ()
+
+                                                                        // automatically enable frame pacing when need is detected
+                                                                        let world =
+                                                                            if not world.FramePacing then
+                                                                                if FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                FramePaceChecks <- inc FramePaceChecks
+                                                                                let world = if FramePaceIssues = 15 then World.setFramePacing true world else world
+                                                                                if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
+                                                                                world
+                                                                            else world
+
+                                                                        // pace frame when enabled
+                                                                        if world.FramePacing then
+                                                                            while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
+                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - FrameTimer.Elapsed.TotalSeconds
+                                                                                if timeToSleep > 0.008 then Thread.Sleep 7
+                                                                                elif timeToSleep > 0.004 then Thread.Sleep 3
+                                                                                elif timeToSleep > 0.002 then Thread.Sleep 1
+                                                                                else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep 0|1 instead?
+                                                                        
+                                                                        // fin
+                                                                        world
+                                                                    else world
+                                                                FrameTimer.Restart ()
 
                                                                 // process imgui frame
                                                                 let imGui = World.getImGui world

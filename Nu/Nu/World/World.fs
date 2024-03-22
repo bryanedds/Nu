@@ -300,9 +300,8 @@ module WorldModule3 =
             let audioPlayer = StubAudioPlayer.make ()
 
             // make the world's ambient state
-            let ambientState =
-                let symbolics = Symbolics.makeEmpty ()
-                AmbientState.make config.Imperative config.Accompanied true symbolics Overlayer.empty None
+            let symbolics = Symbolics.makeEmpty ()
+            let ambientState = AmbientState.make config.Imperative config.Accompanied true false symbolics Overlayer.empty None
 
             // make the world's quadtree
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -387,9 +386,8 @@ module WorldModule3 =
                 | Right overlayer ->
 
                     // make the world's ambient state
-                    let ambientState =
-                        let symbolics = Symbolics.makeEmpty ()
-                        AmbientState.make config.Imperative config.Accompanied config.Advancing symbolics overlayer (Some sdlDeps)
+                    let symbolics = Symbolics.makeEmpty ()
+                    let ambientState = AmbientState.make config.Imperative config.Accompanied config.Advancing config.FramePacing symbolics overlayer (Some sdlDeps)
 
                     // make the world's quadtree
                     let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize

@@ -216,6 +216,7 @@ type [<ReferenceEquality>] WorldConfig =
     { Imperative : bool
       Accompanied : bool
       Advancing : bool
+      FramePacing : bool
       ModeOpt : string option
       SdlConfig : SdlConfig }
 
@@ -228,6 +229,7 @@ type [<ReferenceEquality>] WorldConfig =
         { Imperative = true
           Accompanied = false
           Advancing = true
+          FramePacing = false
           ModeOpt = None
           SdlConfig = SdlConfig.defaultConfig }
 
@@ -468,11 +470,12 @@ module AmbientState =
         { state with UnculledRenderRequested = true }
 
     /// Make an ambient state value.
-    let make imperative accompanied advancing symbolics overlayer sdlDepsOpt =
+    let make imperative accompanied advancing framePacing symbolics overlayer sdlDepsOpt =
         let flags =
             (if imperative then ImperativeMask else 0u) |||
             (if accompanied then AccompaniedMask else 0u) |||
-            (if advancing then AdvancingMask else 0u)
+            (if advancing then AdvancingMask else 0u) |||
+            (if framePacing then FramePacingMask else 0u)
         let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Flags = flags
           Liveness = Live
