@@ -75,7 +75,7 @@ type Message =
     interface Nu.Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 MMCC entities (goal: steady 60FPS, current: 59FPS)
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 118) // 13,924 MMCC entities (goal: 60FPS, current: 59FPS)
 
     override this.Initialize (_, _) =
         [Game.UpdateEvent => Inc]
