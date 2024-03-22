@@ -946,7 +946,7 @@ module Battle =
         layout
 
     let private randomizeEnemies allyCount waitSpeed enemies =
-        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
+        let origin = v2 -288.0f -240.0f // TODO: turn these duplicated vars into global consts.
         let tile = v2 48.0f 48.0f
         let (w, h) = (10, 8)
         let layout = randomizeEnemyLayout w h enemies
@@ -970,7 +970,7 @@ module Battle =
         enemies
 
     let spawnEnemies spawnTypes battle =
-        let origin = v2 -288.0f -240.0f // TODO: P1: turn these duplicated vars into global consts.
+        let origin = v2 -288.0f -240.0f // TODO: turn these duplicated vars into global consts.
         let tile = v2 48.0f 48.0f
         let (w, h) = (10, 8)
         let waitSpeed = battle.BattleSpeed_ = WaitSpeed
