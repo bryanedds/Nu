@@ -19,8 +19,9 @@ type MetricsEntityDispatcher () =
         let mutable transform = entity.GetTransform world
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
-        let properties = MaterialProperties.empty
-        World.renderStaticModelFast (false, &affineMatrix, presence, ValueNone, &properties, staticModel, DeferredRenderType, renderPass, world)
+        let material = Material.defaultMaterial
+        let properties = MaterialProperties.defaultProperties
+        World.renderStaticModelSurfaceFast (false, &affineMatrix, presence, ValueNone, &properties, &material, staticModel, 0, DeferredRenderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetModelGeneric world
@@ -74,7 +75,7 @@ type Message =
     interface Nu.Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 MMCC entities (goal: steady 60FPS, current: steady 60FPS)
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 MMCC entities (goal: steady 60FPS, current: steady 57FPS)
 
     override this.Initialize (_, _) =
         [Game.UpdateEvent => Inc]
@@ -93,8 +94,9 @@ type MmccGameDispatcher () =
                             [Entity.Position == v3 (single i * 4.25f - 250.0f) (single j * 2.25f - 125.0f) -250.0f
                              Entity.Scale := v3Dup (single (int % 10)) * 0.5f
                              Entity.Presence == Omnipresent]|]
-              Content.group "Fps" []
-                [Content.fps "Fps" [Entity.Position := v3 200.0f -250.0f 0.0f]]|]]
+              Content.group "Other" []
+                [Content.skyBox "SkyBox" []
+                 Content.fps "Fps" [Entity.Position := v3 200.0f -250.0f 0.0f]]|]]
 #endif
 
 type MetricsPlugin () =
