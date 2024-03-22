@@ -951,6 +951,14 @@ module FieldDispatcher =
                                  Entity.DownImage == Assets.Gui.ButtonShortDownImage
                                  Entity.Text == "Quit"
                                  Entity.ClickEvent => MenuOptionsQuitPrompt]
+                            Content.text "TitleAndVersion"
+                                [Entity.PositionLocal == v3 240.0f 120.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 480.0f 48.0f 0.0f
+                                 Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                                 Entity.Text == "OmniBlade Early Access v0.9.0"]
+                            Content.text "TitleAndVersionInfo"
+                                [Entity.PositionLocal == v3 180.0f 0.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 640.0f 108.0f 0.0f
+                                 Entity.Justification == Unjustified true
+                                 Entity.Text == "This build of OmniBlade contains all content excluding the final battles and ending."]
                          else
                             Content.text "Confirm Quit:"
                                 [Entity.PositionLocal == v3 384.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
