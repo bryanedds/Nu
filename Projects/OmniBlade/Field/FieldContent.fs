@@ -96,7 +96,7 @@ module FieldContent =
                     [Entity.PositionLocal == position - v3 0.0f 324.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                      Entity.UpImage == asset "Field" "OptionsButtonUp"
                      Entity.DownImage == asset "Field" "OptionsButtonDown"
-                     Entity.EnabledLocal := match field.Menu.MenuState with MenuOptions -> false | _ -> true
+                     Entity.EnabledLocal := match field.Menu.MenuState with MenuOptions _ -> false | _ -> true
                      Entity.ClickEvent => menuOptionsOpen ()]
                  Content.button "CloseButton"
                     [Entity.PositionLocal == position - v3 0.0f 405.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f

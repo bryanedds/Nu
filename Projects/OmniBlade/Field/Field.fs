@@ -36,6 +36,9 @@ type FieldMessage =
     | MenuKeyItemsSelect of int * (ItemType * int Option)
     | MenuOptionsOpen
     | MenuOptionsSelectBattleSpeed of BattleSpeed
+    | MenuOptionsQuitPrompt
+    | MenuOptionsQuitConfirm
+    | MenuOptionsQuitCancel
     | MenuClose
     | PartyMenuOpen
     | PartyMenuSelect of int
@@ -597,6 +600,19 @@ module Field =
         { incoming with Spirits_ = current.Spirits_ }
 
     (* High-Level Operations (signal-producing) *)
+
+    let quitPrompt field =
+        match field.Menu_.MenuState with
+        | MenuOptions false -> { field with Menu_ = { field.Menu_ with MenuState = MenuOptions true }}
+        | _ -> field
+
+    let quitConfirm field =
+        { field with FieldState_ = Quitting }
+
+    let quitCancel field =
+        match field.Menu_.MenuState with
+        | MenuOptions true -> { field with Menu_ = { field.Menu_ with MenuState = MenuOptions false }}
+        | _ -> field
 
     let private interactDialog dialog field =
         match Dialog.tryAdvance (detokenize field) dialog with

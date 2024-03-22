@@ -96,7 +96,7 @@ type MenuState =
     | MenuInventory of MenuInventory
     | MenuTechs of MenuTechs
     | MenuKeyItems of MenuKeyItems
-    | MenuOptions
+    | MenuOptions of bool
     | MenuClosed
 
 type [<SymbolicExpansion>] Menu =

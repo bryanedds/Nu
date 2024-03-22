@@ -320,12 +320,24 @@ module FieldDispatcher =
                 just field
 
             | MenuOptionsOpen ->
-                let state = MenuOptions
+                let state = MenuOptions false
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
                 just field
 
             | MenuOptionsSelectBattleSpeed battleSpeed ->
                 let field = Field.updateOptions (constant { BattleSpeed = battleSpeed }) field
+                just field
+
+            | MenuOptionsQuitPrompt ->
+                let field = Field.quitPrompt field
+                just field
+
+            | MenuOptionsQuitConfirm ->
+                let field = Field.quitConfirm field
+                withSignal (FadeOutSong 60L) field
+
+            | MenuOptionsQuitCancel ->
+                let field = Field.quitCancel field
                 just field
 
             | MenuClose ->
@@ -898,35 +910,64 @@ module FieldDispatcher =
                              Entity.ClickEvent => MenuKeyItemsPageDown]]
 
                  // options
-                 | MenuOptions ->
+                 | MenuOptions quitPrompt ->
                     Content.panel "Options"
                         [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
                          Entity.LabelImage == Assets.Gui.DialogXXLImage]
                         [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
-                         Content.text "BattleSpeed"
-                            [Entity.PositionLocal == v3 384.0f 432.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Text == "Battle Speed"]
-                         Content.radioButton "Wait"
-                            [Entity.PositionLocal == v3 180.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
-                             Entity.DialedImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Wait"
-                             Entity.Dialed := match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
-                             Entity.DialedEvent => MenuOptionsSelectBattleSpeed WaitSpeed]
-                         Content.radioButton "Paced"
-                            [Entity.PositionLocal == v3 408.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
-                             Entity.DialedImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Paced"
-                             Entity.Dialed := match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
-                             Entity.DialedEvent => MenuOptionsSelectBattleSpeed PacedSpeed]
-                         Content.radioButton "Swift"
-                            [Entity.PositionLocal == v3 636.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
-                             Entity.DialedImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Swift"
-                             Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
-                             Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]]
+                         if not quitPrompt then
+                            Content.text "BattleSpeed"
+                                [Entity.PositionLocal == v3 384.0f 432.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                 Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                                 Entity.Text == "Battle Speed"]
+                            Content.radioButton "Wait"
+                                [Entity.PositionLocal == v3 180.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                                 Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
+                                 Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                                 Entity.Text == "Wait"
+                                 Entity.Dialed := match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
+                                 Entity.DialedEvent => MenuOptionsSelectBattleSpeed WaitSpeed]
+                            Content.radioButton "Paced"
+                                [Entity.PositionLocal == v3 408.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                                 Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
+                                 Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                                 Entity.Text == "Paced"
+                                 Entity.Dialed := match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
+                                 Entity.DialedEvent => MenuOptionsSelectBattleSpeed PacedSpeed]
+                            Content.radioButton "Swift"
+                                [Entity.PositionLocal == v3 636.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                                 Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
+                                 Entity.DialedImage == Assets.Gui.ButtonShortDownImage
+                                 Entity.Text == "Swift"
+                                 Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
+                                 Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]
+                            Content.text "Quit Game"
+                                [Entity.PositionLocal == v3 384.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                 Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                                 Entity.Text == "Quit Game"]
+                            Content.button "Quit"
+                                [Entity.PositionLocal == v3 408.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                                 Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                                 Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                                 Entity.Text == "Quit"
+                                 Entity.ClickEvent => MenuOptionsQuitPrompt]
+                         else
+                            Content.text "Confirm Quit:"
+                                [Entity.PositionLocal == v3 384.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                 Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                                 Entity.Text == "Confirm Quit:"]
+                            Content.button "Cancel"
+                                [Entity.PositionLocal == v3 252.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                                 Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                                 Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                                 Entity.Text == "Cancel"
+                                 Entity.ClickEvent => MenuOptionsQuitCancel]
+                            Content.button "Quit!"
+                                [Entity.PositionLocal == v3 564.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                                 Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                                 Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                                 Entity.Text == "Quit!"
+                                 Entity.ClickEvent => MenuOptionsQuitConfirm]]
 
                  // closed
                  | MenuClosed -> ()
