@@ -519,13 +519,13 @@ module EffectDescriptors =
         let explosionSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
-                 v2i 32 32, 12, 4, 2L, Once,
+                 v2i 32 32, 12, 4, 4L, Once,
                  [|Position (v3 0.0f -384.0f 0.0f)
                    Size (v3 96.0f 96.0f 0.0f)
                    Colors
                     (Set, EaseOut, Once,
-                     [|{ TweenValue = Color.One; TweenLength = 30L }
-                       { TweenValue = Color.One; TweenLength = 30L }
+                     [|{ TweenValue = Color.One; TweenLength = 48L }
+                       { TweenValue = Color.One; TweenLength = 48L }
                        { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
                  Nil)
         { EffectName = "Bolt"
