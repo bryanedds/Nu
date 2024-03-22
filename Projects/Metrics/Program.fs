@@ -19,8 +19,8 @@ type MetricsEntityDispatcher () =
         let mutable transform = entity.GetTransform world
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
-        let material = Material.defaultMaterial
-        let properties = MaterialProperties.defaultProperties
+        let properties = MaterialProperties.empty
+        let material = Material.empty
         World.renderStaticModelSurfaceFast (false, &affineMatrix, presence, ValueNone, &properties, &material, staticModel, 0, DeferredRenderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
@@ -75,7 +75,7 @@ type Message =
     interface Nu.Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 MMCC entities (goal: steady 60FPS, current: steady 57FPS)
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 120) // 14,400 MMCC entities (goal: steady 60FPS, current: 59FPS)
 
     override this.Initialize (_, _) =
         [Game.UpdateEvent => Inc]
