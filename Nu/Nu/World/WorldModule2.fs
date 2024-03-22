@@ -1722,15 +1722,6 @@ module WorldModule2 =
                                                                 let rendererProcess = World.getRendererProcess world
                                                                 if not firstFrame then rendererProcess.Swap ()
 
-                                                                // process imgui frame
-                                                                let imGui = World.getImGui world
-                                                                if not firstFrame then imGui.EndFrame ()
-                                                                imGui.BeginFrame ()
-                                                                let world = World.imGuiProcess world
-                                                                let world = imGuiProcess world
-                                                                imGui.InputFrame ()
-                                                                let drawData = imGui.RenderFrame ()
-
                                                                 // avoid updating faster than desired
                                                                 if FrameTimer.IsRunning then
                                                                     while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
@@ -1740,6 +1731,15 @@ module WorldModule2 =
                                                                         elif timeToSleep > 0.002 then Thread.Sleep 1
                                                                         else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep 0|1 instead?
                                                                 FrameTimer.Restart ()
+
+                                                                // process imgui frame
+                                                                let imGui = World.getImGui world
+                                                                if not firstFrame then imGui.EndFrame ()
+                                                                imGui.BeginFrame ()
+                                                                let world = World.imGuiProcess world
+                                                                let world = imGuiProcess world
+                                                                imGui.InputFrame ()
+                                                                let drawData = imGui.RenderFrame ()
 
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
