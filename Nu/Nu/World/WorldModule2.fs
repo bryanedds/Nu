@@ -67,7 +67,7 @@ module WorldModule2 =
     let private CachedHashSet3dNormal = HashSet (OctelementEqualityComparer ())
     let private CachedHashSet3dShadow = HashSet (OctelementEqualityComparer ())
 
-    (* Automatic Frame Pace Activation *)
+    (* Frame Pacing *)
     let mutable private FramePaceIssues = 0
     let mutable private FramePaceChecks = 0
 

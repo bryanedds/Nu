@@ -4092,6 +4092,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 { Imperative = gaiaState.ProjectImperativeExecution
                   Accompanied = true
                   Advancing = false
+                  FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
             match tryMakeWorld sdlDeps worldConfig plugin with
