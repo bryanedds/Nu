@@ -268,10 +268,8 @@ module PropertyDescriptor =
     let containsPropertyDescriptor<'s when 's :> SimulantState> (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) world =
         let properties = typeof<'s>.GetProperties ()
         if Seq.exists (fun (property : PropertyInfo) ->
-            // NOTE: not including designer properties since their equivalence can't be detected without a value query.
-            // TODO: consider adding the required value query here?
             property.Name = propertyDescriptor.PropertyName &&
-            property.PropertyType = propertyDescriptor.PropertyType)
+            (property.PropertyType = propertyDescriptor.PropertyType || property.PropertyType = typeof<DesignerProperty>))
             properties then true
         else
             let state = World.getState simulant world

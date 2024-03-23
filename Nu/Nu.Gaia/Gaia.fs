@@ -495,8 +495,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match focusedPropertyDescriptorOpt with
             | Some (propertyDescriptor, :? Entity) ->
                 match entityOpt with
-                | Some entity when containsProperty propertyDescriptor entity ->
-                    focusedPropertyDescriptorOpt <- Some (propertyDescriptor, entity)
+                | Some entity ->
+                    match world |> EntityPropertyDescriptor.getPropertyDescriptors entity |> Seq.filter (fun pd -> pd.PropertyName = propertyDescriptor.PropertyName) |> Seq.tryHead with
+                    | Some propertyDescriptor -> focusedPropertyDescriptorOpt <- Some (propertyDescriptor, entity)
+                    | None -> focusedPropertyDescriptorOpt <- None
                 | Some _ | None -> focusedPropertyDescriptorOpt <- None
             | Some _ | None -> ()
 
