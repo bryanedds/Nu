@@ -222,11 +222,11 @@ module Gameplay =
                                     { gameplay with Player = player }
                                 else
                                     let enemyId = scvalueMemo entity.Name
-                                    match HMap.tryFind enemyId gameplay.Enemies with
-                                    | Some enemy ->
+                                    match gameplay.Enemies.TryGetValue enemyId with
+                                    | (true, enemy) ->
                                         let enemy = updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
                                         { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
-                                    | None -> gameplay
+                                    | (false, _) -> gameplay
                             | _ -> gameplay
                         | _ -> gameplay)
                         gameplay integrationData.IntegrationMessages
@@ -279,7 +279,7 @@ module Gameplay =
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                     [Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Character := gameplay.Player]
-                     for (enemyId, enemy) in gameplay.Enemies do
+                     for (enemyId, enemy) in gameplay.Enemies.Pairs do
                         Content.entity<CharacterDispatcher> (string enemyId)
                             [Entity.Character := enemy]]
              | Quit -> ()]
