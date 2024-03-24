@@ -65,6 +65,7 @@ module CharacterDispatcher =
         override this.Initialize (character, _) =
             [Entity.Position := character.Position
              Entity.Rotation := character.Rotation
+             Entity.Persistent == false
              Entity.LinearVelocity := character.LinearVelocity
              Entity.AngularVelocity := character.AngularVelocity
              Entity.MaterialProperties == MaterialProperties.defaultProperties

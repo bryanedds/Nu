@@ -12,7 +12,7 @@
       [AttenuationQuadratic 0.00028058363]
       [Brightness 12]
       [DesireShadows True]
-      [LightCutoff 18]
+      [LightCutoff 32]
       [LightType DirectionalLight]
       [MountOpt [Some ^]]
       [Name Sun]
