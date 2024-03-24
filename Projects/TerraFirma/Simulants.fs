@@ -30,4 +30,4 @@ module Simulants =
     let GameplayTime = GameplayGui / "Time"
     let GameplayQuit = GameplayGui / "Quit"
     let GameplayScene = Gameplay / "Scene"
-    let GameplayPlayer = Gameplay / "Player"
+    let GameplayPlayer = GameplayScene / "Player"
