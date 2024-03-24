@@ -8,6 +8,7 @@ module GameplayDispatcher =
 
     // this is our MMCC message type.
     type GameplayMessage =
+        | TimeUpdate
         | TryShift of Direction
         | StartQuitting
         | FinishQuitting
@@ -26,7 +27,8 @@ module GameplayDispatcher =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.DeselectingEvent => FinishQuitting
+            [Screen.TimeUpdateEvent => TimeUpdate
+             Screen.DeselectingEvent => FinishQuitting
              Game.KeyboardKeyDownEvent =|> fun evt ->
                 if not evt.Data.Repeated then
                     match evt.Data.KeyboardKey with
@@ -41,8 +43,12 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
 
             match message with
+            | TimeUpdate ->
+                just { gameplay with GameplayTime = inc gameplay.GameplayTime }
+
+
             | TryShift direction ->
-                if world.Advancing && gameplay.State = Playing then
+                if world.Advancing && gameplay.GameplayState = Playing then
                     let gameplay' =
                         match direction with
                         | Upward -> Gameplay.shiftUp gameplay
@@ -52,18 +58,18 @@ module GameplayDispatcher =
                     if Gameplay.detectTileChange gameplay gameplay' then
                         let gameplay = Gameplay.addTile gameplay'
                         if not (Gameplay.detectMoveAvailability gameplay)
-                        then just { gameplay with State = GameOver }
+                        then just { gameplay with GameplayState = GameOver }
                         else just gameplay
                     else just gameplay
                 else just gameplay
 
             | StartQuitting ->
-                match gameplay.State with
-                | Playing | GameOver -> just { gameplay with State = Quitting }
+                match gameplay.GameplayState with
+                | Playing | GameOver -> just { gameplay with GameplayState = Quitting }
                 | Quitting | Quit -> just gameplay
 
             | FinishQuitting ->
-                just { gameplay with State = Quit }
+                just { gameplay with GameplayState = Quit }
 
             | Nil ->
                 just gameplay
@@ -95,7 +101,7 @@ module GameplayDispatcher =
                      Entity.Text := "Score: " + string gameplay.Score]
 
                  // game over
-                 match gameplay.State with
+                 match gameplay.GameplayState with
                  | GameOver | Quitting ->
                     Content.text "GameOver"
                         [Entity.Position == v3 0.0f 232.0f 0.0f

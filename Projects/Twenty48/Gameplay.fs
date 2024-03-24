@@ -27,10 +27,11 @@ type GameplayState =
     | Quit
 
 type Gameplay =
-    { BoardSize : Vector2i
+    { GameplayTime : int64
+      GameplayState : GameplayState
+      BoardSize : Vector2i
       Tiles : Tile list
-      Score : int
-      State : GameplayState }
+      Score : int }
 
     member this.TilesOrdered =
         List.sortBy (fun t -> t.TileId) this.Tiles
@@ -139,14 +140,15 @@ type Gameplay =
         List.notEmpty movesAvailable
 
     static member empty =
-        { BoardSize = v2iDup 4
+        { GameplayTime = 0L
+          GameplayState = Quit
+          BoardSize = v2iDup 4
           Tiles = []
-          Score = 0
-          State = Quit }
+          Score = 0 }
 
     static member initial =
         let gameplay = Gameplay.empty
         let position = v2i (Gen.random1 gameplay.BoardSize.X) (Gen.random1 gameplay.BoardSize.Y)
         let value = if Gen.random1 10 = 0 then 4 else 2
         let tile = Tile.make position value
-        { gameplay with State = Playing; Tiles = [tile] }
+        { gameplay with GameplayState = Playing; Tiles = [tile] }

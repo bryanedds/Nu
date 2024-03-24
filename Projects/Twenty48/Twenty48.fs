@@ -47,7 +47,7 @@ module Twenty48 =
                 | Title -> Desire Simulants.Title
                 | Credits -> Desire Simulants.Credits
                 | Gameplay gameplay ->
-                    match gameplay.State with
+                    match gameplay.GameplayState with
                     | Playing | GameOver -> Desire Simulants.Gameplay
                     | Quitting | Quit -> Desire Simulants.Title
              match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
