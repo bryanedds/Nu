@@ -25,8 +25,8 @@ module Gameplay =
 
         static member initial =
             let enemies =
-                [for i in 0 .. dec 7 do
-                    for j in 0 .. dec 7 do
+                [for i in 0 .. dec 5 do
+                    for j in 0 .. dec 5 do
                         let enemy =
                             { Character.initial with
                                 Position = v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)
