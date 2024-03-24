@@ -1,6 +1,5 @@
 ﻿namespace TerraFirma
 open System
-open System.Numerics
 open Prime
 open Nu
 
@@ -86,8 +85,12 @@ module GameplayDispatcher =
              match gameplay.GameplayState with
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-                    [Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
+
+                    [// player
+                     Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Character := gameplay.Player]
+
+                     // enemies
                      for (enemyId, enemy) in gameplay.Enemies.Pairs do
                         Content.entity<CharacterDispatcher> (string enemyId)
                             [Entity.Character := enemy]]

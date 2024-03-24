@@ -36,28 +36,7 @@ type Gameplay =
       Player : Character
       Enemies : HMap<Guid, Character> }
 
-    static member initial =
-        let enemies =
-            [for i in 0 .. dec 5 do
-                for j in 0 .. dec 5 do
-                    let enemy =
-                        { Character.initial with
-                            Position = v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)
-                            FollowTargetOpt = Some Simulants.GameplayPlayer }
-                    (makeGuid (), enemy)]
-        { GameplayTime = 0L
-          GameplayState = Quit
-          Player = { Character.initial with Position = v3 0.0f 2.0f 0.0f }
-          Enemies = HMap.ofList enemies }
-
-    static member start =
-        let initial = Gameplay.initial
-        { initial with GameplayState = Playing }
-
-[<RequireQualifiedAccess>]
-module Gameplay =
-
-    let private updateCharacterPhysics time bodyCenter bodyRotation character (entity : Entity) world =
+    static member private updateCharacterPhysics time bodyCenter bodyRotation character (entity : Entity) world =
         let bodyId = entity.GetBodyId world
         let linearVelocity = World.getBodyLinearVelocity bodyId world
         let angularVelocity = World.getBodyAngularVelocity bodyId world
@@ -71,7 +50,7 @@ module Gameplay =
             AngularVelocityPrevious = character.AngularVelocity
             Jump.LastTimeOnGround = if grounded then time else character.Jump.LastTimeOnGround }
 
-    let private computeCharacterTraversalAnimations (character : Character) =
+    static member private computeCharacterTraversalAnimations (character : Character) =
         let linearVelocityAvg = (character.LinearVelocity + character.LinearVelocityPrevious) * 0.5f
         let angularVelocityAvg = (character.AngularVelocity + character.AngularVelocityPrevious) * 0.5f
         let forwardness = (Vector3.Dot (linearVelocityAvg * 32.0f, character.Rotation.Forward))
@@ -96,7 +75,7 @@ module Gameplay =
             else animations
         animations
 
-    let private tryComputeCharacterActionAnimation time attackOpt world =
+    static member private tryComputeCharacterActionAnimation time attackOpt world =
         match attackOpt with
         | Some attack ->
             let localTime = time - attack.AttackTime
@@ -111,7 +90,7 @@ module Gameplay =
             Some animation
         | None -> None
 
-    let private updateCharacterAttack time character =
+    static member private updateCharacterAttack time character =
         let attackOpt =
             match character.AttackOpt with
             | Some attack ->
@@ -122,18 +101,18 @@ module Gameplay =
             | None -> None
         { character with AttackOpt = attackOpt }
 
-    let private updateCharacterAnimation time character world =
-        let traversalAnimations = computeCharacterTraversalAnimations character
-        let actionAnimationOpt = tryComputeCharacterActionAnimation time character.AttackOpt world
+    static member private updateCharacterAnimation time character world =
+        let traversalAnimations = Gameplay.computeCharacterTraversalAnimations character
+        let actionAnimationOpt = Gameplay.tryComputeCharacterActionAnimation time character.AttackOpt world
         let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
         { character with Animations = animations }
 
-    let private updateCharacter time character world =
-        let character = updateCharacterAttack time character
-        let character = updateCharacterAnimation time character world
+    static member private updateCharacter time character world =
+        let character = Gameplay.updateCharacterAttack time character
+        let character = Gameplay.updateCharacterAnimation time character world
         character
 
-    let private updatePlayerInputScan player world =
+    static member private updatePlayerInputScan player world =
         let bodyId = Simulants.GameplayPlayer.GetBodyId world
         let grounded = World.getBodyGrounded bodyId world
         if player.AttackOpt.IsNone || not grounded then
@@ -160,7 +139,7 @@ module Gameplay =
 
         else player
 
-    let updatePlayerInputKey keyboardKeyData gameplay =
+    static member updatePlayerInputKey keyboardKeyData gameplay =
         let time = gameplay.GameplayTime
         let player = gameplay.Player
         let sinceJump = time - player.Jump.LastTime
@@ -184,7 +163,7 @@ module Gameplay =
         let gameplay = { gameplay with Player = player }
         withSignals signals gameplay
 
-    let updatePhysics (integrationData : IntegrationData) gameplay world =
+    static member updatePhysics (integrationData : IntegrationData) gameplay world =
         SArray.fold (fun gameplay integrationMessage ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
@@ -193,21 +172,39 @@ module Gameplay =
                 | :? Entity as entity ->
                     if entity.Name = Simulants.GameplayPlayer.Name then
                         let player = gameplay.Player
-                        let player = updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
+                        let player = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
                         { gameplay with Player = player }
                     else
                         let enemyId = scvalueMemo entity.Name
                         match gameplay.Enemies.TryGetValue enemyId with
                         | (true, enemy) ->
-                            let enemy = updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
+                            let enemy = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
                             { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
                         | (false, _) -> gameplay
                 | _ -> gameplay
             | _ -> gameplay)
             gameplay integrationData.IntegrationMessages
 
-    let update gameplay world =
-        let gameplay = { gameplay with Player = updateCharacter gameplay.GameplayTime gameplay.Player world }
-        let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
-        let gameplay = { gameplay with Player = updatePlayerInputScan gameplay.Player world }
+    static member update gameplay world =
+        let gameplay = { gameplay with Player = Gameplay.updateCharacter gameplay.GameplayTime gameplay.Player world }
+        let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> Gameplay.updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
+        let gameplay = { gameplay with Player = Gameplay.updatePlayerInputScan gameplay.Player world }
         gameplay
+
+    static member initial =
+        let enemies =
+            [for i in 0 .. dec 5 do
+                for j in 0 .. dec 5 do
+                    let enemy =
+                        { Character.initial with
+                            Position = v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)
+                            FollowTargetOpt = Some Simulants.GameplayPlayer }
+                    (makeGuid (), enemy)]
+        { GameplayTime = 0L
+          GameplayState = Quit
+          Player = { Character.initial with Position = v3 0.0f 2.0f 0.0f }
+          Enemies = HMap.ofList enemies }
+
+    static member start =
+        let initial = Gameplay.initial
+        { initial with GameplayState = Playing }
