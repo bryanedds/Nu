@@ -39,9 +39,8 @@ module Gameplay =
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | UpdatePlayerTransform of BodyTransformData
         | UpdatePlayerInputKey of KeyboardKeyData
-        | UpdateEnemyTransform of Guid * BodyTransformData
+        | UpdatePhysics of IntegrationData
         | Update
         | StartQuitting
         | FinishQuitting
@@ -147,6 +146,7 @@ module Gameplay =
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
             [Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
+             Game.IntegrationEvent =|> fun evt -> UpdatePhysics evt.Data
              Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => PostUpdateEye
              Screen.DeselectingEvent => FinishQuitting]
@@ -155,16 +155,6 @@ module Gameplay =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | UpdatePlayerTransform transformData ->
-                just { gameplay with Player.Position = transformData.BodyCenter; Player.Rotation = transformData.BodyRotation }
-
-            | UpdateEnemyTransform (enemyId, transformData) ->
-                match HMap.tryFind enemyId gameplay.Enemies with
-                | Some enemy ->
-                    let enemy = { enemy with Position = transformData.BodyCenter; Rotation = transformData.BodyRotation }
-                    just { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies }
-                | None -> just gameplay
-
             | UpdatePlayerInputKey keyboardKeyData ->
                 let time = gameplay.GameplayTime
                 let sinceJump = time - gameplay.Player.Jump.LastTime
@@ -184,6 +174,26 @@ module Gameplay =
                             { gameplay with Player.AttackOpt = Some (AttackState.make time) }
                     just gameplay
                 else just gameplay
+
+            | UpdatePhysics integrationData ->
+                let gameplay =
+                    SArray.fold (fun gameplay integrationMessage ->
+                        match integrationMessage with
+                        | BodyTransformMessage bodyTrandformMessage ->
+                            let bodyId = bodyTrandformMessage.BodyId
+                            match bodyId.BodySource with
+                            | :? Entity as entity ->
+                                if entity.Name = Simulants.GameplayPlayer.Name
+                                then { gameplay with Player.Position = bodyTrandformMessage.Center; Player.Rotation = bodyTrandformMessage.Rotation }
+                                else
+                                    let enemyId = scvalueMemo entity.Name
+                                    match HMap.tryFind enemyId gameplay.Enemies with
+                                    | Some enemy -> { gameplay with Enemies = HMap.add enemyId { enemy with Position = bodyTrandformMessage.Center; Rotation = bodyTrandformMessage.Rotation } gameplay.Enemies}
+                                    | None -> gameplay
+                            | _ -> gameplay
+                        | _ -> gameplay)
+                        gameplay integrationData.IntegrationMessages
+                just gameplay
 
             | Update ->
                 
@@ -272,10 +282,8 @@ module Gameplay =
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                     [Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
-                        [Entity.Character := gameplay.Player
-                         Entity.BodyTransformEvent =|> fun evt -> UpdatePlayerTransform evt.Data]
+                        [Entity.Character := gameplay.Player]
                      for (enemyId, enemy) in gameplay.Enemies do
                         Content.entity<CharacterDispatcher> (string enemyId)
-                            [Entity.Character := enemy
-                             Entity.BodyTransformEvent =|> fun evt -> UpdateEnemyTransform (enemyId, evt.Data)]]
+                            [Entity.Character := enemy]]
              | Quit -> ()]
