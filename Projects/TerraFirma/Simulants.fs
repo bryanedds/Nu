@@ -31,3 +31,4 @@ module Simulants =
     let GameplayQuit = GameplayGui / "Quit"
     let GameplayScene = Gameplay / "Scene"
     let GameplayPlayer = GameplayScene / "Player"
+    let GameplayEnemy (enemyId : Guid) = GameplayScene / string enemyId

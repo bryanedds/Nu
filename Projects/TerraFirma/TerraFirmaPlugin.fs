@@ -13,4 +13,4 @@ type TerraFirmaPlugin () =
             [("Splash", fun world -> Game.SetModel Splash world)
              ("Title", fun world -> Game.SetModel Title world)
              ("Credits", fun world -> Game.SetModel Credits world)
-             ("Gameplay", fun world -> Game.SetModel (Gameplay { GameplayTime = 0L; GameplayState = Playing; Player = Character.initial }) world)]
+             ("Gameplay", fun world -> Game.SetModel (Gameplay { Gameplay.initial with GameplayState = Playing }) world)]

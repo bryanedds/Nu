@@ -20,17 +20,29 @@ module Gameplay =
     type Gameplay =
         { GameplayTime : int64
           GameplayState : GameplayState
-          Player : Character }
+          Player : Character
+          Enemies : HMap<Guid, Character> }
+
+        static member initial =
+            let enemies =
+                [for i in 0 .. dec 7 do
+                    for j in 0 .. dec 7 do
+                        let enemy =
+                            { Character.initial with
+                                Position = v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)
+                                FollowTargetOpt = Some Simulants.GameplayPlayer }
+                        (makeGuid (), enemy)]
+            { GameplayTime = 0L
+              GameplayState = Quit
+              Player = { Character.initial with Position = v3 0.0f 2.0f 0.0f }
+              Enemies = HMap.ofList enemies }
 
     // this is our MMCC message type.
     type GameplayMessage =
         | UpdatePlayerTransform of BodyTransformData
-        | UpdatePlayerInputScan
         | UpdatePlayerInputKey of KeyboardKeyData
-        | UpdatePlayerPhysics
-        | UpdatePlayerAttack
-        | UpdatePlayerAnimation
-        | UpdateTime
+        | UpdateEnemyTransform of Guid * BodyTransformData
+        | Update
         | StartQuitting
         | FinishQuitting
         interface Message
@@ -50,7 +62,7 @@ module Gameplay =
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayTime = 0L; GameplayState = Quit; Player = Character.initial })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
         static let [<Literal>] WalkSpeed = 0.06f
         static let [<Literal>] TurnSpeed = 0.035f
@@ -120,15 +132,22 @@ module Gameplay =
 
             else (player.Position, player.Rotation)
 
+        static let updateCharacterPhysics time character (entity : Entity) world =
+            let bodyId = entity.GetBodyId world
+            let linearVelocity = World.getBodyLinearVelocity bodyId world
+            let angularVelocity = World.getBodyAngularVelocity bodyId world
+            let grounded = World.getBodyGrounded bodyId world
+            { character with
+                LinearVelocity = linearVelocity
+                LinearVelocityPrevious = character.LinearVelocity
+                AngularVelocity = angularVelocity
+                AngularVelocityPrevious = character.AngularVelocity
+                Jump.LastTimeOnGround = if grounded then time else character.Jump.LastTimeOnGround }
+
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Simulants.GameplayPlayer.BodyTransformEvent =|> fun evt -> UpdatePlayerTransform evt.Data
-             Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
-             Screen.UpdateEvent => UpdatePlayerInputScan
-             Screen.UpdateEvent => UpdatePlayerPhysics
-             Screen.UpdateEvent => UpdatePlayerAttack
-             Screen.UpdateEvent => UpdatePlayerAnimation
-             Screen.UpdateEvent => UpdateTime
+            [Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
+             Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => PostUpdateEye
              Screen.DeselectingEvent => FinishQuitting]
 
@@ -139,11 +158,12 @@ module Gameplay =
             | UpdatePlayerTransform transformData ->
                 just { gameplay with Player.Position = transformData.BodyCenter; Player.Rotation = transformData.BodyRotation }
 
-            | UpdatePlayerInputScan ->
-                let bodyId = Simulants.GameplayPlayer.GetBodyId world
-                let grounded = World.getBodyGrounded bodyId world
-                let (position, rotation) = computePlayerMovement WalkSpeed TurnSpeed gameplay.Player grounded world
-                just { gameplay with Player.Position = position; Player.Rotation = rotation }
+            | UpdateEnemyTransform (enemyId, transformData) ->
+                match HMap.tryFind enemyId gameplay.Enemies with
+                | Some enemy ->
+                    let enemy = { enemy with Position = transformData.BodyCenter; Rotation = transformData.BodyRotation }
+                    just { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies }
+                | None -> just gameplay
 
             | UpdatePlayerInputKey keyboardKeyData ->
                 let time = gameplay.GameplayTime
@@ -165,23 +185,22 @@ module Gameplay =
                     just gameplay
                 else just gameplay
 
-            | UpdatePlayerPhysics ->
-                let time = gameplay.GameplayTime
-                let bodyId = Simulants.GameplayPlayer.GetBodyId world
-                let player = gameplay.Player
-                let linearVelocity = World.getBodyLinearVelocity bodyId world
-                let angularVelocity = World.getBodyAngularVelocity bodyId world
-                let grounded = World.getBodyGrounded bodyId world
-                let player =
-                    { player with
-                        LinearVelocity = linearVelocity
-                        LinearVelocityPrevious = player.LinearVelocity
-                        AngularVelocity = angularVelocity
-                        AngularVelocityPrevious = player.AngularVelocity
-                        Jump.LastTimeOnGround = if grounded then time else player.Jump.LastTimeOnGround }
-                just { gameplay with Player = player }
+            | Update ->
+                
+                // update time
+                let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
 
-            | UpdatePlayerAttack ->
+                // update played input scan
+                let bodyId = Simulants.GameplayPlayer.GetBodyId world
+                let grounded = World.getBodyGrounded bodyId world
+                let (position, rotation) = computePlayerMovement WalkSpeed TurnSpeed gameplay.Player grounded world
+                let gameplay = { gameplay with Player.Position = position; Player.Rotation = rotation }
+
+                // update player physics
+                let player = updateCharacterPhysics gameplay.GameplayTime gameplay.Player Simulants.GameplayPlayer world
+                let gameplay = { gameplay with Player = player }
+
+                // update player attack
                 let attackOpt =
                     match gameplay.Player.AttackOpt with
                     | Some attack ->
@@ -190,16 +209,33 @@ module Gameplay =
                         then Some attack
                         else None
                     | None -> None
-                just { gameplay with Player.AttackOpt = attackOpt }
+                let gameplay = { gameplay with Player.AttackOpt = attackOpt }
 
-            | UpdatePlayerAnimation ->
+                // update player animation
                 let traversalAnimations = computeCharacterTraversalAnimations gameplay.Player
                 let actionAnimationOpt = tryComputeCharacterActionAnimation gameplay.GameplayTime gameplay.Player.AttackOpt world
                 let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
-                just { gameplay with Player.Animations = animations }
+                let gameplay = { gameplay with Player.Animations = animations }
 
-            | UpdateTime ->
-                just { gameplay with GameplayTime = inc gameplay.GameplayTime }
+                // update enemy physics
+                let enemies =
+                    HMap.map (fun enemyId enemy ->
+                        updateCharacterPhysics gameplay.GameplayTime enemy (Simulants.GameplayEnemy enemyId) world)
+                        gameplay.Enemies
+                let gameplay = { gameplay with Enemies = enemies }
+
+                // update enemy animations
+                let enemies =
+                    HMap.map (fun _ enemy ->
+                        let traversalAnimations = computeCharacterTraversalAnimations enemy
+                        let actionAnimationOpt = tryComputeCharacterActionAnimation gameplay.GameplayTime enemy.AttackOpt world
+                        let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
+                        { enemy with Animations = animations })
+                        gameplay.Enemies
+                let gameplay = { gameplay with Enemies = enemies }
+
+                // fin
+                just gameplay
 
             | StartQuitting ->
                 just { gameplay with GameplayState = Quitting }
@@ -236,5 +272,10 @@ module Gameplay =
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                     [Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
-                        [Entity.Character := gameplay.Player]]
+                        [Entity.Character := gameplay.Player
+                         Entity.BodyTransformEvent =|> fun evt -> UpdatePlayerTransform evt.Data]
+                     for (enemyId, enemy) in gameplay.Enemies do
+                        Content.entity<CharacterDispatcher> (string enemyId)
+                            [Entity.Character := enemy
+                             Entity.BodyTransformEvent =|> fun evt -> UpdateEnemyTransform (enemyId, evt.Data)]]
              | Quit -> ()]

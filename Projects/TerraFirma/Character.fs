@@ -30,6 +30,7 @@ type Character =
       Animations : Animation array
       Jump : JumpState
       AttackOpt : AttackState option
+      FollowTargetOpt : Entity option
       AnimatedModel : AnimatedModel AssetTag }
 
     static member initial =
@@ -42,6 +43,7 @@ type Character =
           Animations = [||]
           Jump = JumpState.initial
           AttackOpt = None
+          FollowTargetOpt = None
           AnimatedModel = Assets.Gameplay.JoanModel }
 
 [<AutoOpen>]
@@ -57,7 +59,8 @@ module CharacterDispatcher =
 
         static member Facets =
             [typeof<AnimatedModelFacet>
-             typeof<RigidBodyFacet>]
+             typeof<RigidBodyFacet>
+             typeof<FollowerFacet>]
 
         override this.Initialize (character, _) =
             [Entity.Position := character.Position
@@ -68,9 +71,17 @@ module CharacterDispatcher =
              Entity.Animations := character.Animations
              Entity.AnimatedModel := character.AnimatedModel
              Entity.BodyType == KinematicCharacter
-             Entity.SleepingAllowed == false
+             Entity.SleepingAllowed == true
              Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
-             Entity.ModelDriven == true]
+             Entity.ModelDriven == true
+             Entity.FollowTargetOpt := character.FollowTargetOpt
+             Entity.FollowDistanceMinOpt == Some 1.5f
+             Entity.FollowDistanceMaxOpt == Some 10.0f
+             Entity.CharacterProperties == { CharacterProperties.defaultProperties with PenetrationDepthMax = 0.1f }]
+
+        override this.Register (entity, world) =
+            let world = base.Register (entity, world)
+            entity.AutoBounds world
 
         override this.Update (entity, world) =
             let world = base.Update (entity, world)
