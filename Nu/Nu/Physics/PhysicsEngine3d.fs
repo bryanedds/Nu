@@ -551,19 +551,24 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyCenterMessage.BodyId with
         | (true, object) ->
-            let mutable transform = object.WorldTransform
-            match physicsEngine.KinematicCharacters.TryGetValue setBodyCenterMessage.BodyId with
-            | (true, character) -> transform.Translation <- setBodyCenterMessage.Center + character.CenterOffset
-            | (false, _) -> transform.Translation <- setBodyCenterMessage.Center
-            object.WorldTransform <- transform
-            object.Activate true // force activation so that a transform message will be produced
+            let translation =
+                match physicsEngine.KinematicCharacters.TryGetValue setBodyCenterMessage.BodyId with
+                | (true, character) -> setBodyCenterMessage.Center + character.CenterOffset
+                | (false, _) -> setBodyCenterMessage.Center
+            if object.WorldTransform.Translation <> translation then
+                let mutable transform = object.WorldTransform
+                transform.Translation <- translation
+                object.WorldTransform <- transform
+                object.Activate true // force activation so that a transform message will be produced
         | (false, _) -> ()
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyRotationMessage.BodyId with
         | (true, object) ->
-            object.WorldTransform <- object.WorldTransform.SetRotation setBodyRotationMessage.Rotation
-            object.Activate true // force activation so that a transform message will be produced
+            let transform = object.WorldTransform.SetRotation setBodyRotationMessage.Rotation
+            if object.WorldTransform <> transform then
+                object.WorldTransform <- object.WorldTransform.SetRotation setBodyRotationMessage.Rotation
+                object.Activate true // force activation so that a transform message will be produced
         | (false, _) -> ()
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =

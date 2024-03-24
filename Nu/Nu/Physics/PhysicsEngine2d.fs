@@ -363,15 +363,19 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
         | (true, (_, body)) ->
-            body.Position <- PhysicsEngine2d.toPhysicsV2 setBodyCenterMessage.Center
-            do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
+            let center = PhysicsEngine2d.toPhysicsV2 setBodyCenterMessage.Center
+            if body.Position <> center then
+                body.Position <- center
+                do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
         | (false, _) -> ()
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
         | (true, (_, body)) ->
-            body.Rotation <- setBodyRotationMessage.Rotation.RollPitchYaw.Z
-            do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
+            let rotation = setBodyRotationMessage.Rotation.RollPitchYaw.Z
+            if body.Rotation <> rotation then
+                body.Rotation <- rotation
+                do (body.Awake <- false; body.Awake <- true) // force sleep time to zero so that a transform message will be produced
         | (false, _) -> ()
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
