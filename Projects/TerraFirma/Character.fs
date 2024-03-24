@@ -20,7 +20,7 @@ type AttackState =
         { AttackTime = time
           FollowUpBuffered = false }
 
-type CharacterState =
+type Character =
     { Position : Vector3
       Rotation : Quaternion
       LinearVelocity : Vector3
@@ -48,28 +48,22 @@ type CharacterState =
 module CharacterDispatcher =
 
     type Entity with
-        member this.GetCharacterState world = this.GetModelGeneric<CharacterState> world
-        member this.SetCharacterState value world = this.SetModelGeneric<CharacterState> value world
-        member this.CharacterState = this.ModelGeneric<CharacterState> ()
+        member this.GetCharacter world = this.GetModelGeneric<Character> world
+        member this.SetCharacter value world = this.SetModelGeneric<Character> value world
+        member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit Entity3dDispatcher<CharacterState, Message, Command> (true, CharacterState.initial)
+        inherit Entity3dDispatcher<Character, Message, Command> (true, Character.initial)
 
         static member Facets =
             [typeof<AnimatedModelFacet>
              typeof<RigidBodyFacet>]
 
-        static member Properties =
-            [define Entity.LinearVelocityPrevious v3Zero
-             define Entity.AngularVelocityPrevious v3Zero]
-
         override this.Initialize (character, _) =
             [Entity.Position := character.Position
              Entity.Rotation := character.Rotation
              Entity.LinearVelocity := character.LinearVelocity
-             Entity.LinearVelocityPrevious := character.LinearVelocityPrevious
              Entity.AngularVelocity := character.AngularVelocity
-             Entity.AngularVelocityPrevious := character.AngularVelocityPrevious
              Entity.MaterialProperties == MaterialProperties.defaultProperties
              Entity.Animations := character.Animations
              Entity.AnimatedModel := character.AnimatedModel

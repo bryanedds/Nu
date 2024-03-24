@@ -19,8 +19,8 @@ module Gameplay =
     // you could use `GameplayTime : single` instead.
     type Gameplay =
         { GameplayTime : int64
-          Player : CharacterState
-          GameplayState : GameplayState }
+          GameplayState : GameplayState
+          Player : Character }
 
     // this is our MMCC message type.
     type GameplayMessage =
@@ -49,13 +49,13 @@ module Gameplay =
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayTime = 0L; Player = CharacterState.initial; GameplayState = Quit })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayTime = 0L; GameplayState = Quit; Player = Character.initial })
 
         static let [<Literal>] WalkSpeed = 0.06f
         static let [<Literal>] TurnSpeed = 0.035f
         static let [<Literal>] JumpSpeed = 6.0f
 
-        static let computeCharacterTraversalAnimations (character : CharacterState) =
+        static let computeCharacterTraversalAnimations (character : Character) =
             let linearVelocityAvg = (character.LinearVelocity + character.LinearVelocityPrevious) * 0.5f
             let angularVelocityAvg = (character.AngularVelocity + character.AngularVelocityPrevious) * 0.5f
             let forwardness = (Vector3.Dot (linearVelocityAvg * 32.0f, character.Rotation.Forward))
@@ -95,7 +95,7 @@ module Gameplay =
                 Some animation
             | None -> None
 
-        static let computePlayerMovement walkSpeed turnSpeed (player : CharacterState) grounded world =
+        static let computePlayerMovement walkSpeed turnSpeed (player : Character) grounded world =
             if player.AttackOpt.IsNone || not grounded then
 
                 // compute position
@@ -224,5 +224,5 @@ module Gameplay =
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                     [Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
-                        [Entity.CharacterState := gameplay.Player]]
+                        [Entity.Character := gameplay.Player]]
              | Quit -> ()]
