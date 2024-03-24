@@ -6,7 +6,7 @@ open Nu
 [<AutoOpen>]
 module Gameplay =
 
-    // this represents that state of the simulation during gameplay.
+    // this represents that state of gameplay simulation.
     type GameplayState =
         | Playing
         | Quitting
