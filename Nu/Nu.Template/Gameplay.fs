@@ -40,7 +40,7 @@ module Gameplay =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.UpdateEvent => PostUpdate
+            [Screen.PostUpdateEvent => PostUpdate
              Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the above messages
