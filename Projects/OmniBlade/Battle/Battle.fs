@@ -25,7 +25,7 @@ type BattleMessage =
 
 type BattleCommand =
     | UpdateEye
-    | PlaySound of int64 * single * AssetTag<Sound>
+    | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
     | FadeOutSong of GameTime
     | DisplayHop of Vector3 * Vector3

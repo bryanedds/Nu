@@ -7,21 +7,37 @@ open Nu
 [<AutoOpen>]
 module CharacterDispatcher =
 
+    type JumpState =
+        { LastTime : int64
+          LastTimeOnGround : int64 }
+
+        static member initial =
+            { LastTime = 0L
+              LastTimeOnGround = 0L }
+
+    type AttackState =
+        { AttackTime : int64
+          FollowUpBuffered : bool }
+
+        static member make time =
+            { AttackTime = time
+              FollowUpBuffered = false }
+
     type CharacterModel =
         { CharacterTime : int64
-          LastTimeJump : int64
-          LastTimeOnGround : int64
+          Jump : JumpState
+          AttackOpt : AttackState option
           AnimatedModel : AnimatedModel AssetTag }
 
         static member initial =
             { CharacterTime = 0L
-              LastTimeJump = 0L
-              LastTimeOnGround = 0L
+              Jump = JumpState.initial
+              AttackOpt = None
               AnimatedModel = Assets.Default.AnimatedModel }
 
     type CharacterMessage =
         | UpdateMessage
-        | TryJump of KeyboardKeyData
+        | TryAct of KeyboardKeyData
         interface Message
 
     type CharacterCommand =
@@ -54,7 +70,7 @@ module CharacterDispatcher =
              Entity.UpdateEvent => UpdateMessage
              Entity.UpdateEvent => UpdateCommand
              Game.PostUpdateEvent => PostUpdate
-             Game.KeyboardKeyDownEvent =|> fun evt -> TryJump evt.Data]
+             Game.KeyboardKeyDownEvent =|> fun evt -> TryAct evt.Data]
 
         override this.Message (character, message, entity, world) =
 
@@ -63,26 +79,44 @@ module CharacterDispatcher =
                 let time = inc character.CharacterTime
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
+                let character = { character with CharacterTime = time }
+                let character = if grounded then { character with Jump.LastTimeOnGround = time } else character
                 let character =
-                    { character with
-                        CharacterTime = time
-                        LastTimeOnGround = if grounded then time else character.LastTimeOnGround }
+                    match character.AttackOpt with
+                    | Some attack ->
+                        let localTime = character.CharacterTime - attack.AttackTime
+                        if localTime >= 55 && not attack.FollowUpBuffered || localTime >= 110
+                        then { character with AttackOpt = None }
+                        else character
+                    | None -> character
                 just character
 
-            | TryJump keyboardKeyData ->
-                let sinceJump = character.CharacterTime - character.LastTimeJump
-                let sinceOnGround = character.CharacterTime - character.LastTimeOnGround
+            | TryAct keyboardKeyData ->
+                let time = inc character.CharacterTime
+                let sinceJump = character.CharacterTime - character.Jump.LastTime
+                let sinceOnGround = character.CharacterTime - character.Jump.LastTimeOnGround
                 if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
-                    let character = { character with LastTimeJump = character.CharacterTime }
+                    let character = { character with Jump.LastTime = character.CharacterTime }
                     withSignal Jump character
+                elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
+                    let character =
+                        match character.AttackOpt with
+                        | Some attack ->
+                            let localTime = time - attack.AttackTime
+                            if localTime > 15L && not attack.FollowUpBuffered
+                            then { character with AttackOpt = Some { attack with FollowUpBuffered = true }}
+                            else character
+                        | None ->
+                            { character with AttackOpt = Some (AttackState.make time) }
+                    just character
                 else just character
 
-        override this.Command (_, command, entity, world) =
+        override this.Command (character, command, entity, world) =
 
             match command with
             | UpdateCommand ->
 
-                // apply physics-based animations
+                // compute physics-based animations
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let position = entity.GetPosition world
@@ -112,33 +146,53 @@ module CharacterDispatcher =
                     if turnRightness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f turnRightness; BoneFilterOpt = None } :: animations
                     elif turnLeftness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f turnLeftness; BoneFilterOpt = None } :: animations
                     else animations
+
+                // compute action animations
+                let animations =
+                    match character.AttackOpt with
+                    | Some attack ->
+                        let localTime = character.CharacterTime - attack.AttackTime
+                        let world =
+                            match localTime with
+                            | 0L -> World.playSound 1.0f Assets.Default.Sound world
+                            | 55L -> if attack.FollowUpBuffered then World.playSound 1.0f Assets.Default.Sound world else world
+                            | _ -> world
+                        let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
+                        let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
+                        { StartTime = animationStartTime; LifeTimeOpt = None; Name = animationName; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None } :: animations
+                    | None -> animations
+
+                // compute transforms
+                let (position, rotation) =
+                    if character.AttackOpt.IsNone || not grounded then
+
+                        // compute position
+                        let forward = rotation.Forward
+                        let right = rotation.Right
+                        let walkSpeed = if grounded then WalkSpeed else WalkSpeed * 0.75f
+                        let walkVelocity =
+                            (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
+                            (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
+                            (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
+                            (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
+                        let position = if walkVelocity <> v3Zero then position + walkVelocity else position
+
+                        // compute rotation
+                        let turnSpeed = if grounded then TurnSpeed else TurnSpeed * 0.75f
+                        let turnVelocity =
+                            (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
+                            (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
+                        let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
+                        (position, rotation)
+
+                    else (position, rotation)
+
+                // apply computed values
                 let world = entity.SetAnimations (List.toArray animations) world
                 let world = entity.SetLinearVelocityPrevious linearVelocityAvg world
                 let world = entity.SetAngularVelocityPrevious angularVelocityAvg world
-
-                // apply walk velocity
-                let forward = rotation.Forward
-                let right = rotation.Right
-                let walkSpeed = if grounded then WalkSpeed else WalkSpeed * 0.75f
-                let walkVelocity = 
-                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
-                let world =
-                    if walkVelocity <> v3Zero
-                    then World.setBodyCenter (position + walkVelocity) bodyId world
-                    else world
-
-                // apply turn velocity
-                let turnSpeed = if grounded then TurnSpeed else TurnSpeed * 0.75f
-                let turnVelocity =
-                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
-                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-                let world =
-                    if turnVelocity <> 0.0f
-                    then World.setBodyRotation (rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity)) bodyId world
-                    else world
+                let world = World.setBodyCenter position bodyId world
+                let world = World.setBodyRotation rotation bodyId world
                 just world
 
             | PostUpdate ->

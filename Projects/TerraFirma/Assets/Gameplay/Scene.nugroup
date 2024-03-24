@@ -6819,6 +6819,7 @@
   [CharacterDispatcher
    [[AngularDamping 0.999]
     [AngularFactor [0 0.1 0]]
+    [AnimatedModel [Gameplay Joan]]
     [Animations
      [[0 None Armature|Idle Loop 1 0.5 None]]]
     [BodyShape
@@ -6831,7 +6832,8 @@
     [BodyType KinematicCharacter]
     [Friction 1]
     [LinearDamping 0.5]
-    [LinearVelocityPrevious [0 -4.7683716E-07 0]]
+    [LinearVelocity [0 -9.536743E-07 0]]
+    [LinearVelocityPrevious [0 -7.1525574E-07 0]]
     [MaterialProperties
      [[AlbedoOpt
        [Some [1 1 1 1]]]
@@ -6844,11 +6846,11 @@
       [OpaqueDistanceOpt [Some 100000]]]]
     [Model
      ["TerraFirma.CharacterDispatcher+CharacterModel, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [0 0 0 [Default AnimatedModel]]]]
+      [0 [0 0] None [Gameplay Joan]]]]
     [Name Player]
-    [Position [49.38996 2.712512 -16.920319]]
+    [Position [43.38474 2.3985696 6.2920866]]
     [Presence Omnipresent]
-    [Rotation [-7.922454E-08 0.91365826 -1.4054217E-09 0.40648323]]
+    [Rotation [-7.662107E-08 0.7686038 2.0202506E-08 0.6397251]]
     [Size [2.6602979 3.5022092 1.984515]]
     [SleepingAllowed False]]
    []]]]

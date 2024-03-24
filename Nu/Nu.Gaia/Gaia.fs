@@ -2851,7 +2851,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginMenuBar () then
                             if ImGui.BeginMenu "Game" then
                                 if ImGui.MenuItem "New Project" then showNewProjectDialog <- true
-                                if ImGui.MenuItem "Open Project" then showOpenProjectDialog <- true
+                                if ImGui.MenuItem ("Open Project", "Ctrl+Shit+O") then showOpenProjectDialog <- true
                                 if ImGui.MenuItem "Close Project" then showCloseProjectDialog <- true
                                 ImGui.Separator ()
                                 if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
