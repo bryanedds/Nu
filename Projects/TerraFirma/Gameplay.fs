@@ -37,6 +37,10 @@ module Gameplay =
               Player = { Character.initial with Position = v3 0.0f 2.0f 0.0f }
               Enemies = HMap.ofList enemies }
 
+        static member start =
+            let initial = Gameplay.initial
+            { initial with GameplayState = Playing }
+
     // this is our MMCC message type.
     type GameplayMessage =
         | UpdatePlayerInputKey of KeyboardKeyData
