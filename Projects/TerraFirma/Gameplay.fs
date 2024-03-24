@@ -43,8 +43,8 @@ module Gameplay =
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | UpdatePlayerInputKey of KeyboardKeyData
         | UpdatePhysics of IntegrationData
+        | UpdatePlayerInputKey of KeyboardKeyData
         | Update
         | PostUpdate
         | StartQuitting
@@ -54,7 +54,7 @@ module Gameplay =
     // this is our MMCC command type.
     type GameplayCommand =
         | JumpPlayer
-        | PostUpdateEye
+        | TransformEye
         interface Command
 
     // this extends the Screen API to expose the above Gameplay model.
@@ -181,13 +181,33 @@ module Gameplay =
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
              Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => PostUpdate
-             Screen.PostUpdateEvent => PostUpdateEye
+             Screen.PostUpdateEvent => TransformEye
              Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the above messages
         override this.Message (gameplay, message, _, world) =
 
             match message with
+            | UpdatePlayerInputKey keyboardKeyData ->
+                let time = gameplay.GameplayTime
+                let sinceJump = time - gameplay.Player.Jump.LastTime
+                let sinceOnGround = time - gameplay.Player.Jump.LastTimeOnGround
+                if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
+                    let gameplay = { gameplay with Player.Jump.LastTime = time }
+                    withSignal JumpPlayer gameplay
+                elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
+                    let gameplay =
+                        match gameplay.Player.AttackOpt with
+                        | Some attack ->
+                            let localTime = time - attack.AttackTime
+                            if localTime > 15L && not attack.FollowUpBuffered
+                            then { gameplay with Player.AttackOpt = Some { attack with FollowUpBuffered = true }}
+                            else gameplay
+                        | None ->
+                            { gameplay with Player.AttackOpt = Some (AttackState.make time) }
+                    just gameplay
+                else just gameplay
+
             | UpdatePhysics integrationData ->
                 let gameplay =
                     SArray.fold (fun gameplay integrationMessage ->
@@ -212,26 +232,6 @@ module Gameplay =
                         gameplay integrationData.IntegrationMessages
                 just gameplay
 
-            | UpdatePlayerInputKey keyboardKeyData ->
-                let time = gameplay.GameplayTime
-                let sinceJump = time - gameplay.Player.Jump.LastTime
-                let sinceOnGround = time - gameplay.Player.Jump.LastTimeOnGround
-                if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
-                    let gameplay = { gameplay with Player.Jump.LastTime = time }
-                    withSignal JumpPlayer gameplay
-                elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
-                    let gameplay =
-                        match gameplay.Player.AttackOpt with
-                        | Some attack ->
-                            let localTime = time - attack.AttackTime
-                            if localTime > 15L && not attack.FollowUpBuffered
-                            then { gameplay with Player.AttackOpt = Some { attack with FollowUpBuffered = true }}
-                            else gameplay
-                        | None ->
-                            { gameplay with Player.AttackOpt = Some (AttackState.make time) }
-                    just gameplay
-                else just gameplay
-
             | Update ->
                 let gameplay = { gameplay with Player = updateCharacter gameplay.GameplayTime gameplay.Player world }
                 let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
@@ -255,7 +255,7 @@ module Gameplay =
                 let bodyId = Simulants.GameplayPlayer.GetBodyId world
                 let world = World.jumpBody true Constants.Gameplay.PlayerJumpSpeed bodyId world
                 just world
-            | PostUpdateEye ->
+            | TransformEye ->
                 let world = World.setEye3dCenter (gameplay.Player.Position + v3Up * 1.5f - gameplay.Player.Rotation.Forward * 3.0f) world
                 let world = World.setEye3dRotation gameplay.Player.Rotation world
                 just world
