@@ -28,6 +28,7 @@ module Gameplay =
         | UpdatePlayerInputScan
         | UpdatePlayerInputKey of KeyboardKeyData
         | UpdatePlayerPhysics
+        | UpdatePlayerAttack
         | UpdatePlayerAnimation
         | UpdateTime
         | StartQuitting
@@ -125,6 +126,7 @@ module Gameplay =
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
              Screen.UpdateEvent => UpdatePlayerInputScan
              Screen.UpdateEvent => UpdatePlayerPhysics
+             Screen.UpdateEvent => UpdatePlayerAttack
              Screen.UpdateEvent => UpdatePlayerAnimation
              Screen.UpdateEvent => UpdateTime
              Screen.PostUpdateEvent => PostUpdateEye
@@ -132,14 +134,17 @@ module Gameplay =
 
         // here we handle the above messages
         override this.Message (gameplay, message, _, world) =
+
             match message with
             | UpdatePlayerTransform transformData ->
                 just { gameplay with Player.Position = transformData.BodyCenter; Player.Rotation = transformData.BodyRotation }
+
             | UpdatePlayerInputScan ->
                 let bodyId = Simulants.GameplayPlayer.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let (position, rotation) = computePlayerMovement WalkSpeed TurnSpeed gameplay.Player grounded world
                 just { gameplay with Player.Position = position; Player.Rotation = rotation }
+
             | UpdatePlayerInputKey keyboardKeyData ->
                 let time = gameplay.GameplayTime
                 let sinceJump = time - gameplay.Player.Jump.LastTime
@@ -159,6 +164,7 @@ module Gameplay =
                             { gameplay with Player.AttackOpt = Some (AttackState.make time) }
                     just gameplay
                 else just gameplay
+
             | UpdatePlayerPhysics ->
                 let time = gameplay.GameplayTime
                 let bodyId = Simulants.GameplayPlayer.GetBodyId world
@@ -166,32 +172,38 @@ module Gameplay =
                 let linearVelocity = World.getBodyLinearVelocity bodyId world
                 let angularVelocity = World.getBodyAngularVelocity bodyId world
                 let grounded = World.getBodyGrounded bodyId world
-                let attackOpt =
-                    match player.AttackOpt with
-                    | Some attack ->
-                        let localTime = gameplay.GameplayTime - attack.AttackTime
-                        if localTime >= 55 && not attack.FollowUpBuffered || localTime >= 110
-                        then None
-                        else Some attack
-                    | None -> None
                 let player =
                     { player with
                         LinearVelocity = linearVelocity
                         LinearVelocityPrevious = player.LinearVelocity
                         AngularVelocity = angularVelocity
                         AngularVelocityPrevious = player.AngularVelocity
-                        Jump.LastTimeOnGround = if grounded then time else player.Jump.LastTimeOnGround
-                        AttackOpt = attackOpt }
+                        Jump.LastTimeOnGround = if grounded then time else player.Jump.LastTimeOnGround }
                 just { gameplay with Player = player }
+
+            | UpdatePlayerAttack ->
+                let attackOpt =
+                    match gameplay.Player.AttackOpt with
+                    | Some attack ->
+                        let localTime = gameplay.GameplayTime - attack.AttackTime
+                        if localTime >= 55 && not attack.FollowUpBuffered || localTime >= 110
+                        then None
+                        else Some attack
+                    | None -> None
+                just { gameplay with Player.AttackOpt = attackOpt }
+
             | UpdatePlayerAnimation ->
                 let traversalAnimations = computeCharacterTraversalAnimations gameplay.Player
                 let actionAnimationOpt = tryComputeCharacterActionAnimation gameplay.GameplayTime gameplay.Player.AttackOpt world
                 let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
                 just { gameplay with Player.Animations = animations }
+
             | UpdateTime ->
                 just { gameplay with GameplayTime = inc gameplay.GameplayTime }
+
             | StartQuitting ->
                 just { gameplay with GameplayState = Quitting }
+
             | FinishQuitting ->
                 just { gameplay with GameplayState = Quit }
 
