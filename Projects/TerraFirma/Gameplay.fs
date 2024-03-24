@@ -46,6 +46,7 @@ module Gameplay =
         | UpdatePlayerInputKey of KeyboardKeyData
         | UpdatePhysics of IntegrationData
         | Update
+        | PostUpdate
         | StartQuitting
         | FinishQuitting
         interface Message
@@ -183,6 +184,7 @@ module Gameplay =
             [Game.IntegrationEvent =|> fun evt -> UpdatePhysics evt.Data
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
              Screen.UpdateEvent => Update
+             Screen.PostUpdateEvent => PostUpdate
              Screen.PostUpdateEvent => PostUpdateEye
              Screen.DeselectingEvent => FinishQuitting]
 
@@ -235,10 +237,13 @@ module Gameplay =
                 else just gameplay
 
             | Update ->
-                let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
                 let gameplay = { gameplay with Player = updateCharacter gameplay.GameplayTime gameplay.Player world }
                 let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
                 let gameplay = { gameplay with Player = updatePlayerInputScan gameplay.Player world }
+                just gameplay
+
+            | PostUpdate ->
+                let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
                 just gameplay
 
             | StartQuitting ->
