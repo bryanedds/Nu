@@ -186,9 +186,9 @@ module Gameplay =
                     match gameplay.Player.AttackOpt with
                     | Some attack ->
                         let localTime = gameplay.GameplayTime - attack.AttackTime
-                        if localTime >= 55 && not attack.FollowUpBuffered || localTime >= 110
-                        then None
-                        else Some attack
+                        if localTime < 55 || localTime < 110 && attack.FollowUpBuffered
+                        then Some attack
+                        else None
                     | None -> None
                 just { gameplay with Player.AttackOpt = attackOpt }
 
