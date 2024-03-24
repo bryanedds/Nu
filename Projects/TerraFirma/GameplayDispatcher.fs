@@ -6,14 +6,13 @@ open Nu
 [<AutoOpen>]
 module GameplayDispatcher =
 
-    // this extends the Screen API to expose the above Gameplay model.
+    // this extends the Screen API to expose the Gameplay model.
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
-    // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
-    // empty Command type because there are no commands needed for this template.
+    // this is the screen dispatcher that defines the screen where gameplay takes place.
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
@@ -30,13 +29,13 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | UpdatePlayerInputKey keyboardKeyData ->
-                let (signals, gameplay) = Gameplay.updatePlayerInputKey keyboardKeyData gameplay
-                withSignals signals gameplay
-
             | UpdatePhysics integrationData ->
                 let gameplay = Gameplay.updatePhysics integrationData gameplay world
                 just gameplay
+
+            | UpdatePlayerInputKey keyboardKeyData ->
+                let (signals, gameplay) = Gameplay.updatePlayerInputKey keyboardKeyData gameplay
+                withSignals signals gameplay
 
             | Update ->
                 let gameplay = Gameplay.update gameplay world
@@ -68,7 +67,7 @@ module GameplayDispatcher =
                 let world = World.setEye3dRotation gameplay.Player.Rotation world
                 just world
 
-        // here we describe the content of the game including the level, the hud, and the player
+        // here we describe the content of the game including the hud, the scene, and the player
         override this.Content (gameplay, _) =
 
             [// the gui group

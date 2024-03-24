@@ -53,7 +53,7 @@ module Gameplay =
             | FinishQuitting ->
                 just { gameplay with GameplayState = Quit }
 
-        // here we describe the content of the game including the level, the hud, and the player
+        // here we describe the content of the game including the hud, the scene, and the player
         override this.Content (gameplay, _) =
 
             [// the gui group

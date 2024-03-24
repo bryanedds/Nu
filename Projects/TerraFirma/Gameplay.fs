@@ -139,6 +139,28 @@ type Gameplay =
 
         else player
 
+    static member updatePhysics (integrationData : IntegrationData) gameplay world =
+        SArray.fold (fun gameplay integrationMessage ->
+            match integrationMessage with
+            | BodyTransformMessage bodyTransformMessage ->
+                let bodyId = bodyTransformMessage.BodyId
+                match bodyId.BodySource with
+                | :? Entity as entity ->
+                    if entity.Name = Simulants.GameplayPlayer.Name then
+                        let player = gameplay.Player
+                        let player = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
+                        { gameplay with Player = player }
+                    else
+                        let enemyId = scvalueMemo entity.Name
+                        match gameplay.Enemies.TryGetValue enemyId with
+                        | (true, enemy) ->
+                            let enemy = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
+                            { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
+                        | (false, _) -> gameplay
+                | _ -> gameplay
+            | _ -> gameplay)
+            gameplay integrationData.IntegrationMessages
+
     static member updatePlayerInputKey keyboardKeyData gameplay =
         let time = gameplay.GameplayTime
         let player = gameplay.Player
@@ -162,28 +184,6 @@ type Gameplay =
             else just player
         let gameplay = { gameplay with Player = player }
         withSignals signals gameplay
-
-    static member updatePhysics (integrationData : IntegrationData) gameplay world =
-        SArray.fold (fun gameplay integrationMessage ->
-            match integrationMessage with
-            | BodyTransformMessage bodyTransformMessage ->
-                let bodyId = bodyTransformMessage.BodyId
-                match bodyId.BodySource with
-                | :? Entity as entity ->
-                    if entity.Name = Simulants.GameplayPlayer.Name then
-                        let player = gameplay.Player
-                        let player = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
-                        { gameplay with Player = player }
-                    else
-                        let enemyId = scvalueMemo entity.Name
-                        match gameplay.Enemies.TryGetValue enemyId with
-                        | (true, enemy) ->
-                            let enemy = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
-                            { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
-                        | (false, _) -> gameplay
-                | _ -> gameplay
-            | _ -> gameplay)
-            gameplay integrationData.IntegrationMessages
 
     static member update gameplay world =
         let gameplay = { gameplay with Player = Gameplay.updateCharacter gameplay.GameplayTime gameplay.Player world }
