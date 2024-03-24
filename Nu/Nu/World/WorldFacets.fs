@@ -1222,7 +1222,6 @@ module EffectFacetModule =
             let world = setEffect (entity.GetEffectSymbolOpt world) entity world
             (Cascade, world)
 
-#if DISABLE_ENTITY_PRE_UPDATE
         static let handlePreUpdate evt world =
             let entity = evt.Subscriber : Entity
             let world =
@@ -1232,9 +1231,7 @@ module EffectFacetModule =
                     | _ -> world
                 else world
             (Cascade, world)
-#endif
 
-#if DISABLE_ENTITY_POST_UPDATE
         static let handlePostUpdate evt world =
             let entity = evt.Subscriber : Entity
             let world =
@@ -1244,7 +1241,6 @@ module EffectFacetModule =
                     | _ -> world
                 else world
             (Cascade, world)
-#endif
 
         static member Properties =
             [define Entity.ParticleSystem Particles.ParticleSystem.empty
@@ -1268,27 +1264,10 @@ module EffectFacetModule =
             let world = World.sense handleEffectDescriptorChange (entity.GetChangeEvent (nameof entity.EffectDescriptor)) entity (nameof EffectFacet) world
             let world = World.sense handleEffectsChange (entity.GetChangeEvent (nameof entity.EffectSymbolOpt)) entity (nameof EffectFacet) world
             let world = World.sense handleAssetsReload Nu.Game.Handle.AssetsReloadEvent entity (nameof EffectFacet) world
-#if DISABLE_ENTITY_PRE_UPDATE
             let world = World.sense handlePreUpdate entity.Group.PreUpdateEvent entity (nameof EffectFacet) world
-#endif
-#if DISABLE_ENTITY_POST_UPDATE
             let world = World.sense handlePostUpdate entity.Group.PostUpdateEvent entity (nameof EffectFacet) world
-#endif
             world
 
-#if !DISABLE_ENTITY_PRE_UPDATE
-        override this.PreUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunEarly
-            then run entity world
-            else world
-#endif
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        override this.PostUpdate (entity, world) =
-            if entity.GetEnabled world && entity.GetRunMode world = RunLate
-            then run entity world
-            else world
-#endif
         override this.Render (renderPass, entity, world) =
 
             // render effect data token

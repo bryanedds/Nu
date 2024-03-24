@@ -532,21 +532,9 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     abstract Unregister : Entity * World -> World
     default this.Unregister (_, world) = world
 
-#if !DISABLE_ENTITY_PRE_UPDATE
-    /// Pre-update an entity.
-    abstract PreUpdate : Entity * World -> World
-    default this.PreUpdate (_, world) = world
-#endif
-
     /// Update an entity.
     abstract Update : Entity * World -> World
     default this.Update (_, world) = world
-
-#if !DISABLE_ENTITY_POST_UPDATE
-    /// Post-update an entity.
-    abstract PostUpdate : Entity * World -> World
-    default this.PostUpdate (_, world) = world
-#endif
 
     /// Render an entity.
     abstract Render : RenderPass * Entity * World -> unit
@@ -622,21 +610,9 @@ and Facet (physical) =
     abstract UnregisterPhysics : Entity * World -> World
     default this.UnregisterPhysics (_, world) = world
 
-#if !DISABLE_ENTITY_PRE_UPDATE
-    /// Pre-update a facet.
-    abstract PreUpdate : Entity * World -> World
-    default this.PreUpdate (_, world) = world
-#endif
-
     /// Update a facet.
     abstract Update : Entity * World -> World
     default this.Update (_, world) = world
-
-#if !DISABLE_ENTITY_POST_UPDATE
-    /// Post-update a facet.
-    abstract PostUpdate : Entity * World -> World
-    default this.PostUpdate (_, world) = world
-#endif
 
     /// Render a facet.
     abstract Render : RenderPass * Entity * World -> unit
@@ -1073,9 +1049,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
-    member this.PublishPreUpdates with get () = this.Transform.PublishPreUpdates and set value = this.Transform.PublishPreUpdates <- value
     member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
-    member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
     member this.Protected with get () = this.Transform.Protected and internal set value = this.Transform.Protected <- value
     member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value

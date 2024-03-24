@@ -27,9 +27,6 @@ module WorldModule2 =
     let private PreUpdateGameTimer = Stopwatch ()
     let private PreUpdateScreensTimer = Stopwatch ()
     let private PreUpdateGroupsTimer = Stopwatch ()
-#if !DISABLE_ENTITY_PRE_UPDATE
-    let private PreUpdateEntitiesTimer = Stopwatch ()
-#endif
     let private UpdateTimer = Stopwatch ()
     let private UpdateGatherTimer = Stopwatch ()
     let private UpdateGameTimer = Stopwatch ()
@@ -41,9 +38,6 @@ module WorldModule2 =
     let private PostUpdateGameTimer = Stopwatch ()
     let private PostUpdateScreensTimer = Stopwatch ()
     let private PostUpdateGroupsTimer = Stopwatch ()
-#if !DISABLE_ENTITY_POST_UPDATE
-    let private PostUpdateEntitiesTimer = Stopwatch ()
-#endif
     let private TaskletsTimer = Stopwatch ()
     let private DestructionTimer = Stopwatch ()
     let private PerProcessTimer = Stopwatch ()
@@ -660,18 +654,6 @@ module WorldModule2 =
                 if eventNamesLength >= 6 then
                     let eventFirstName = eventNames.[0]
                     match eventFirstName with
-#if !DISABLE_ENTITY_PRE_UPDATE
-                    | "PreUpdate" ->
-#if DEBUG
-                        if  Array.contains Address.WildcardName eventNames ||
-                            Array.contains Address.EllipsisName eventNames then
-                            Log.debug
-                                ("Subscribing to entity pre-update events with a wildcard or ellipsis is not supported. " +
-                                 "This will cause a bug where some entity pre-update events are not published.")
-#endif
-                        let entity = Nu.Entity (Array.skip 2 eventNames)
-                        World.updateEntityPublishPreUpdateFlag entity world |> snd'
-#endif
                     | "Update" ->
 #if DEBUG
                         if  Array.contains Address.WildcardName eventNames ||
@@ -682,18 +664,6 @@ module WorldModule2 =
 #endif
                         let entity = Nu.Entity (Array.skip 2 eventNames)
                         World.updateEntityPublishUpdateFlag entity world |> snd'
-#if !DISABLE_ENTITY_POST_UPDATE
-                    | "PostUpdate" ->
-#if DEBUG
-                        if  Array.contains Address.WildcardName eventNames ||
-                            Array.contains Address.EllipsisName eventNames then
-                            Log.debug
-                                ("Subscribing to entity post-update events with a wildcard or ellipsis is not supported. " +
-                                 "This will cause a bug where some entity post-update events are not published.")
-#endif
-                        let entity = Nu.Entity (Array.skip 2 eventNames)
-                        World.updateEntityPublishPostUpdateFlag entity world |> snd'
-#endif
                     | "BodyCollision" | "BodySeparationExplicit" ->
                         let entity = Nu.Entity (Array.skip 2 eventNames)
                         World.updateBodyObservable subscribing entity world
@@ -1249,10 +1219,6 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-#if !DISABLE_ENTITY_PRE_UPDATE
-            let (elements3d, world) = World.getElementsInPlay3d CachedHashSet3d world
-            let (elements2d, world) = World.getElementsInPlay2d CachedHashSet2d world
-#endif
             PreUpdateGatherTimer.Stop ()
 
             // pre-update game
@@ -1269,29 +1235,6 @@ module WorldModule2 =
             PreUpdateGroupsTimer.Start ()
             let world = Seq.fold (fun world group -> if advancing then World.preUpdateGroup group world else world) world groups
             PreUpdateGroupsTimer.Stop ()
-
-#if !DISABLE_ENTITY_PRE_UPDATE
-            // pre-update entities
-            PreUpdateEntitiesTimer.Start ()
-            let advancing = world.Advancing
-            let world =
-                Seq.fold (fun world (element : Entity Octelement) ->
-                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
-                    then World.preUpdateEntity element.Entry world
-                    else world)
-                    world elements3d
-            let world =
-                Seq.fold (fun world (element : Entity Quadelement) ->
-                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
-                    then World.preUpdateEntity element.Entry world
-                    else world)
-                    world elements2d
-            PreUpdateEntitiesTimer.Stop ()
-
-            // clear cached hash sets
-            CachedHashSet3d.Clear ()
-            CachedHashSet2d.Clear ()
-#endif
 
             // fin
             world
@@ -1358,20 +1301,6 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-#if !DISABLE_ENTITY_POST_UPDATE
-            let world =
-                Seq.fold (fun world (element : Entity Octelement) ->
-                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
-                    then World.postUpdateEntity element.Entry world
-                    else world)
-                    world elements3d
-            let world =
-                Seq.fold (fun world (element : Entity Quadelement) ->
-                    if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
-                    then World.postUpdateEntity element.Entry world
-                    else world)
-                    world elements2d
-#endif
             PostUpdateGatherTimer.Stop ()
 
             // post-update game
@@ -1388,19 +1317,6 @@ module WorldModule2 =
             PostUpdateGroupsTimer.Start ()
             let world = Seq.fold (fun world group -> if advancing then World.postUpdateGroup group world else world) world groups
             PostUpdateGroupsTimer.Stop ()
-
-#if !DISABLE_ENTITY_POST_UPDATE
-            // post-update entities
-            PostUpdateEntitiesTimer.Start ()
-            let advancing = world.Advancing
-            let world = Seq.fold (fun world (element : Entity Octelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.postUpdateEntity element.Entry world else world) world elements3d
-            let world = Seq.fold (fun world (element : Entity Quadelement) -> if not (element.Entry.GetStatic world) && (element.Entry.GetAlwaysUpdate world || advancing) then World.postUpdateEntity element.Entry world else world) world elements2d
-            PostUpdateEntitiesTimer.Stop ()
-
-            // clear cached hash sets
-            CachedHashSet3d.Clear ()
-            CachedHashSet2d.Clear ()
-#endif
 
             // fin
             world

@@ -313,13 +313,7 @@ module WorldEntityModule =
         member this.RegisterEvent = Events.RegisterEvent --> this
         member this.UnregisteringEvent = Events.UnregisteringEvent --> this
         member this.ChangeEvent propertyName = Events.ChangeEvent propertyName --> this
-#if !DISABLE_ENTITY_PRE_UPDATE
-        member this.PreUpdateEvent = Events.PreUpdateEvent --> this
-#endif
         member this.UpdateEvent = Events.UpdateEvent --> this
-#if !DISABLE_ENTITY_POST_UPDATE
-        member this.PostUpdateEvent = Events.PostUpdateEvent --> this
-#endif
         member this.MountEvent = Events.MountEvent --> this
         member this.UnmountEvent = Events.UnmountEvent --> this
         member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this
@@ -600,21 +594,6 @@ module WorldEntityModule =
             let dispatcher = entity.GetDispatcher world
             dispatcher.Render (renderPass, entity, world)
 
-#if !DISABLE_ENTITY_PRE_UPDATE
-        static member internal preUpdateEntity (entity : Entity) world =
-            let facets = entity.GetFacets world
-            let world =
-                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
-                then Array.fold (fun world (facet : Facet) -> facet.PreUpdate (entity, world)) world facets
-                else world
-            let dispatcher = entity.GetDispatcher world
-            let world = dispatcher.PreUpdate (entity, world)
-            if World.getEntityPublishPreUpdates entity world then
-                let eventTrace = EventTrace.debug "World" "preUpdateEntity" "" EventTrace.empty
-                World.publishPlus () entity.PreUpdateEvent eventTrace entity false false world
-            else world
-#endif
-
         static member internal updateEntity (entity : Entity) world =
             let facets = entity.GetFacets world
             let world =
@@ -627,21 +606,6 @@ module WorldEntityModule =
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
                 World.publishPlus () entity.UpdateEvent eventTrace entity false false world
             else world
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        static member internal postUpdateEntity (entity : Entity) world =
-            let facets = entity.GetFacets world
-            let world =
-                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
-                then Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
-                else world
-            let dispatcher = entity.GetDispatcher world
-            let world = dispatcher.PostUpdate (entity, world)
-            if World.getEntityPublishPostUpdates entity world then
-                let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
-                World.publishPlus () entity.PostUpdateEvent eventTrace entity false false world
-            else world
-#endif
 
         /// Edit an entity with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.
