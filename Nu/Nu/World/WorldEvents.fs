@@ -98,6 +98,7 @@ module Events =
     let PreUpdateEvent = stoa<unit> "PreUpdate/Event"
     let UpdateEvent = stoa<unit> "Update/Event"
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
+    let TimeUpdateEvent = stoa<unit> "TimeUpdate/Event"
     let SelectEvent = stoa<unit> "Select/Event"
     let DeselectingEvent = stoa<unit> "Deselecting/Event"
     let MountEvent = stoa<MountData> "Mount/Event"

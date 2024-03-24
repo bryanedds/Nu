@@ -53,6 +53,7 @@ module WorldScreenModule =
         member this.PreUpdateEvent = Events.PreUpdateEvent --> this
         member this.UpdateEvent = Events.UpdateEvent --> this
         member this.PostUpdateEvent = Events.PostUpdateEvent --> this
+        member this.TimeUpdateEvent = Events.TimeUpdateEvent --> this
         member this.SelectEvent = Events.SelectEvent --> this
         member this.DeselectingEvent = Events.DeselectingEvent --> this
         member this.IncomingStartEvent = Events.IncomingStartEvent --> this

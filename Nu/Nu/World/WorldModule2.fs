@@ -1783,8 +1783,13 @@ module WorldModule2 =
 
                                                                 // update time and recur
                                                                 TotalTimer.Stop ()
-                                                                let world = World.updateTime world
                                                                 WorldModule.TaskletProcessingStarted <- false
+                                                                let world = World.updateTime world
+                                                                let world = World.publish () (Events.TimeUpdateEvent --> Game) Game world
+                                                                let world =
+                                                                    match World.getSelectedScreenOpt world with
+                                                                    | Some selectedScreen -> World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
+                                                                    | None -> world
                                                                 World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
 
                                                             // fin

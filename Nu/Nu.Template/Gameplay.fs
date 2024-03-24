@@ -22,7 +22,7 @@ module Gameplay =
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | PostUpdate
+        | TimeUpdate
         | StartQuitting
         | FinishQuitting
         interface Message
@@ -40,13 +40,13 @@ module Gameplay =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.PostUpdateEvent => PostUpdate
+            [Screen.TimeUpdateEvent => TimeUpdate
              Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the above messages
         override this.Message (gameplay, message, _, world) =
             match message with
-            | PostUpdate ->
+            | TimeUpdate ->
                 just { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
             | StartQuitting ->
                 just { gameplay with GameplayState = Quitting }

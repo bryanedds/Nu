@@ -46,7 +46,7 @@ module Gameplay =
         | UpdatePhysics of IntegrationData
         | UpdatePlayerInputKey of KeyboardKeyData
         | Update
-        | PostUpdate
+        | TimeUpdate
         | StartQuitting
         | FinishQuitting
         interface Message
@@ -180,8 +180,8 @@ module Gameplay =
             [Game.IntegrationEvent =|> fun evt -> UpdatePhysics evt.Data
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
              Screen.UpdateEvent => Update
-             Screen.PostUpdateEvent => PostUpdate
              Screen.PostUpdateEvent => TransformEye
+             Screen.TimeUpdateEvent => TimeUpdate
              Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the above messages
@@ -238,7 +238,7 @@ module Gameplay =
                 let gameplay = { gameplay with Player = updatePlayerInputScan gameplay.Player world }
                 just gameplay
 
-            | PostUpdate ->
+            | TimeUpdate ->
                 let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
                 just gameplay
 
