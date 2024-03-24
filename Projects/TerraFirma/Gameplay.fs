@@ -108,30 +108,6 @@ module Gameplay =
                 Some animation
             | None -> None
 
-        static let computePlayerMovement (player : Character) grounded world =
-            if player.AttackOpt.IsNone || not grounded then
-
-                // compute position
-                let forward = player.Rotation.Forward
-                let right = player.Rotation.Right
-                let walkSpeed = Constants.Gameplay.PlayerWalkSpeed * if grounded then 1.0f else 0.75f
-                let walkVelocity =
-                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
-                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
-                let position = if walkVelocity <> v3Zero then player.Position + walkVelocity else player.Position
-
-                // compute rotation
-                let turnSpeed = Constants.Gameplay.PlayerTurnSpeed * if grounded then 1.0f else 0.75f
-                let turnVelocity =
-                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
-                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-                let rotation = if turnVelocity <> 0.0f then player.Rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else player.Rotation
-                (position, rotation)
-
-            else (player.Position, player.Rotation)
-
         static let updateCharacterPhysics time bodyCenter bodyRotation character (entity : Entity) world =
             let bodyId = entity.GetBodyId world
             let linearVelocity = World.getBodyLinearVelocity bodyId world
@@ -168,12 +144,82 @@ module Gameplay =
             let character = updateCharacterAnimation time character world
             character
 
+        static let updatePlayerInputKey time keyboardKeyData player =
+            let sinceJump = time - player.Jump.LastTime
+            let sinceOnGround = time - player.Jump.LastTimeOnGround
+            if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
+                let player = { player with Jump.LastTime = time }
+                withSignal JumpPlayer player
+            elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
+                let player =
+                    match player.AttackOpt with
+                    | Some attack ->
+                        let localTime = time - attack.AttackTime
+                        if localTime > 15L && not attack.FollowUpBuffered
+                        then { player with AttackOpt = Some { attack with FollowUpBuffered = true }}
+                        else player
+                    | None ->
+                        { player with AttackOpt = Some (AttackState.make time) }
+                just player
+            else just player
+
         static let updatePlayerInputScan player world =
             let bodyId = Simulants.GameplayPlayer.GetBodyId world
             let grounded = World.getBodyGrounded bodyId world
-            let (position, rotation) = computePlayerMovement player grounded world
-            let player = { player with Position = position; Rotation = rotation }
-            player
+            if player.AttackOpt.IsNone || not grounded then
+
+                // update player position
+                let forward = player.Rotation.Forward
+                let right = player.Rotation.Right
+                let walkSpeed = Constants.Gameplay.PlayerWalkSpeed * if grounded then 1.0f else 0.75f
+                let walkVelocity =
+                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
+                let position = if walkVelocity <> v3Zero then player.Position + walkVelocity else player.Position
+                let player = { player with Position = position }
+
+                // update player rotation
+                let turnSpeed = Constants.Gameplay.PlayerTurnSpeed * if grounded then 1.0f else 0.75f
+                let turnVelocity =
+                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
+                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
+                let rotation = if turnVelocity <> 0.0f then player.Rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else player.Rotation
+                { player with Rotation = rotation }
+
+            else player
+
+        static let updatePhysics (integrationData : IntegrationData) gameplay world =
+            SArray.fold (fun gameplay integrationMessage ->
+                match integrationMessage with
+                | BodyTransformMessage bodyTransformMessage ->
+                    let bodyId = bodyTransformMessage.BodyId
+                    match bodyId.BodySource with
+                    | :? Entity as entity ->
+                        if entity.Name = Simulants.GameplayPlayer.Name then
+                            let player = gameplay.Player
+                            let player = updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
+                            { gameplay with Player = player }
+                        else
+                            let enemyId = scvalueMemo entity.Name
+                            match gameplay.Enemies.TryGetValue enemyId with
+                            | (true, enemy) ->
+                                let enemy = updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
+                                { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
+                            | (false, _) -> gameplay
+                    | _ -> gameplay
+                | _ -> gameplay)
+                gameplay integrationData.IntegrationMessages
+
+        static let updateGameplay gameplay world =
+            let gameplay = { gameplay with Player = updateCharacter gameplay.GameplayTime gameplay.Player world }
+            let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
+            let gameplay = { gameplay with Player = updatePlayerInputScan gameplay.Player world }
+            gameplay
+
+        static let updateTime gameplay =
+            { gameplay with GameplayTime = inc gameplay.GameplayTime }
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
@@ -189,72 +235,39 @@ module Gameplay =
 
             match message with
             | UpdatePlayerInputKey keyboardKeyData ->
-                let time = gameplay.GameplayTime
-                let sinceJump = time - gameplay.Player.Jump.LastTime
-                let sinceOnGround = time - gameplay.Player.Jump.LastTimeOnGround
-                if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
-                    let gameplay = { gameplay with Player.Jump.LastTime = time }
-                    withSignal JumpPlayer gameplay
-                elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
-                    let gameplay =
-                        match gameplay.Player.AttackOpt with
-                        | Some attack ->
-                            let localTime = time - attack.AttackTime
-                            if localTime > 15L && not attack.FollowUpBuffered
-                            then { gameplay with Player.AttackOpt = Some { attack with FollowUpBuffered = true }}
-                            else gameplay
-                        | None ->
-                            { gameplay with Player.AttackOpt = Some (AttackState.make time) }
-                    just gameplay
-                else just gameplay
+                let (signals, player) = updatePlayerInputKey gameplay.GameplayTime keyboardKeyData gameplay.Player
+                let gameplay = { gameplay with Player = player }
+                withSignals signals gameplay
 
             | UpdatePhysics integrationData ->
-                let gameplay =
-                    SArray.fold (fun gameplay integrationMessage ->
-                        match integrationMessage with
-                        | BodyTransformMessage bodyTransformMessage ->
-                            let bodyId = bodyTransformMessage.BodyId
-                            match bodyId.BodySource with
-                            | :? Entity as entity ->
-                                if entity.Name = Simulants.GameplayPlayer.Name then
-                                    let player = gameplay.Player
-                                    let player = updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
-                                    { gameplay with Player = player }
-                                else
-                                    let enemyId = scvalueMemo entity.Name
-                                    match gameplay.Enemies.TryGetValue enemyId with
-                                    | (true, enemy) ->
-                                        let enemy = updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
-                                        { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
-                                    | (false, _) -> gameplay
-                            | _ -> gameplay
-                        | _ -> gameplay)
-                        gameplay integrationData.IntegrationMessages
+                let gameplay = updatePhysics integrationData gameplay world
                 just gameplay
 
             | Update ->
-                let gameplay = { gameplay with Player = updateCharacter gameplay.GameplayTime gameplay.Player world }
-                let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
-                let gameplay = { gameplay with Player = updatePlayerInputScan gameplay.Player world }
+                let gameplay = updateGameplay gameplay world
                 just gameplay
 
             | TimeUpdate ->
-                let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
+                let gameplay = updateTime gameplay
                 just gameplay
 
             | StartQuitting ->
-                just { gameplay with GameplayState = Quitting }
+                let gameplay = { gameplay with GameplayState = Quitting }
+                just gameplay
 
             | FinishQuitting ->
-                just { gameplay with GameplayState = Quit }
+                let gameplay = { gameplay with GameplayState = Quit }
+                just gameplay
 
         // here we handle the above commands
         override this.Command (gameplay, command, _, world) =
+
             match command with
             | JumpPlayer ->
                 let bodyId = Simulants.GameplayPlayer.GetBodyId world
                 let world = World.jumpBody true Constants.Gameplay.PlayerJumpSpeed bodyId world
                 just world
+
             | TransformEye ->
                 let world = World.setEye3dCenter (gameplay.Player.Position + v3Up * 1.5f - gameplay.Player.Rotation.Forward * 3.0f) world
                 let world = World.setEye3dRotation gameplay.Player.Rotation world
@@ -282,4 +295,5 @@ module Gameplay =
                      for (enemyId, enemy) in gameplay.Enemies.Pairs do
                         Content.entity<CharacterDispatcher> (string enemyId)
                             [Entity.Character := enemy]]
+
              | Quit -> ()]
