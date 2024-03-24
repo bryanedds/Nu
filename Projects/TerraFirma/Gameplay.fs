@@ -68,10 +68,6 @@ module Gameplay =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
-        static let [<Literal>] WalkSpeed = 0.06f
-        static let [<Literal>] TurnSpeed = 0.035f
-        static let [<Literal>] JumpSpeed = 6.0f
-
         static let computeCharacterTraversalAnimations (character : Character) =
             let linearVelocityAvg = (character.LinearVelocity + character.LinearVelocityPrevious) * 0.5f
             let angularVelocityAvg = (character.AngularVelocity + character.AngularVelocityPrevious) * 0.5f
@@ -112,13 +108,13 @@ module Gameplay =
                 Some animation
             | None -> None
 
-        static let computePlayerMovement walkSpeed turnSpeed (player : Character) grounded world =
+        static let computePlayerMovement (player : Character) grounded world =
             if player.AttackOpt.IsNone || not grounded then
 
                 // compute position
                 let forward = player.Rotation.Forward
                 let right = player.Rotation.Right
-                let walkSpeed = if grounded then walkSpeed else walkSpeed * 0.75f
+                let walkSpeed = Constants.Gameplay.PlayerWalkSpeed * if grounded then 1.0f else 0.75f
                 let walkVelocity =
                     (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
@@ -127,7 +123,7 @@ module Gameplay =
                 let position = if walkVelocity <> v3Zero then player.Position + walkVelocity else player.Position
 
                 // compute rotation
-                let turnSpeed = if grounded then turnSpeed else turnSpeed * 0.75f
+                let turnSpeed = Constants.Gameplay.PlayerTurnSpeed * if grounded then 1.0f else 0.75f
                 let turnVelocity =
                     (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                     (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
@@ -175,7 +171,7 @@ module Gameplay =
         static let updatePlayerInputScan player world =
             let bodyId = Simulants.GameplayPlayer.GetBodyId world
             let grounded = World.getBodyGrounded bodyId world
-            let (position, rotation) = computePlayerMovement WalkSpeed TurnSpeed player grounded world
+            let (position, rotation) = computePlayerMovement player grounded world
             let player = { player with Position = position; Rotation = rotation }
             player
 
@@ -257,7 +253,7 @@ module Gameplay =
             match command with
             | JumpPlayer ->
                 let bodyId = Simulants.GameplayPlayer.GetBodyId world
-                let world = World.jumpBody true JumpSpeed bodyId world
+                let world = World.jumpBody true Constants.Gameplay.PlayerJumpSpeed bodyId world
                 just world
             | PostUpdateEye ->
                 let world = World.setEye3dCenter (gameplay.Player.Position + v3Up * 1.5f - gameplay.Player.Rotation.Forward * 3.0f) world
