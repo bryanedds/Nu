@@ -1715,9 +1715,11 @@ module WorldModule2 =
                                                                                 world groups
                                                                         | None -> world
                                                                     else world
-                                                                World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
 
-                                                            // fin
+                                                                // recur or return
+                                                                match World.getLiveness world with
+                                                                | Live -> World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
+                                                                | Dead -> world
                                                             | Dead -> world
                                                         | Dead -> world
                                                     | Dead -> world
