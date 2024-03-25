@@ -46,7 +46,6 @@ module GameplayDispatcher =
             | TimeUpdate ->
                 just { gameplay with GameplayTime = inc gameplay.GameplayTime }
 
-
             | TryShift direction ->
                 if world.Advancing && gameplay.GameplayState = Playing then
                     let gameplay' =
