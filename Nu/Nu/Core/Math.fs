@@ -1025,16 +1025,31 @@ type [<Struct>] Affine =
     { mutable Translation : Vector3
       mutable Rotation : Quaternion
       mutable Scale : Vector3 }
+    
     member this.Matrix =
         Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
+    
     static member make translation rotation scale =
         { Translation = translation; Rotation = rotation; Scale = scale }
+    
+    static member makeFromMatrix affineMatrix =
+        let mutable scale = v3One
+        let mutable rotation = quatIdentity
+        let mutable translation = v3Zero
+        if not (Matrix4x4.Decompose (affineMatrix, &scale, &rotation, &translation)) then
+            Log.info "Matrix4x4.Decompose failed to find determinant. Using identity instead."
+            Affine.Identity
+        else Affine.make translation rotation scale
+    
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
+    
     static member makeRotation translation =
         Affine.make v3Zero translation v3One
+    
     static member makeScale scale =
         Affine.make v3Zero quatIdentity scale
+    
     static member Identity =
         Affine.make v3Zero quatIdentity v3One
 
