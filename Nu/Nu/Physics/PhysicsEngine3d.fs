@@ -732,13 +732,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
 
-    static member private integrate stepTime physicsEngine =        
+    static member private tryIntegrate stepTime physicsEngine =        
         match (Constants.GameTime.DesiredFrameRate, stepTime) with
         | (StaticFrameRate frameRate, UpdateTime frames) ->
             let physicsStepAmount = 1.0f / single frameRate * single frames
             if physicsStepAmount > 0.0f then
                 let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 16, 1.0f / single (frameRate * 2L))
                 ignore stepsTaken
+                true
+            else false
         | (DynamicFrameRate _, ClockTime physicsStepAmount) ->
             if physicsStepAmount > 0.0f then
                 // The following line is what Bullet seems to recommend (https://pybullet.org/Bullet/phpBB3/viewtopic.php?t=2438) -
@@ -746,6 +748,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 // However, the following line of code seems to give smoother results -
                 let stepsTaken = physicsEngine.PhysicsContext.StepSimulation (physicsStepAmount, 2, physicsStepAmount / 2.0f - 0.0001f)
                 ignore stepsTaken
+                true
+            else false
         | (_, _) -> failwithumf ()
 
     static member private createIntegrationMessages physicsEngine =
@@ -987,12 +991,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
 
-        member physicsEngine.Integrate stepTime =
-            PhysicsEngine3d.integrate stepTime physicsEngine
-            PhysicsEngine3d.createIntegrationMessages physicsEngine
-            let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
-            physicsEngine.IntegrationMessages.Clear ()
-            integrationMessages
+        member physicsEngine.TryIntegrate stepTime =
+            if PhysicsEngine3d.tryIntegrate stepTime physicsEngine then
+                PhysicsEngine3d.createIntegrationMessages physicsEngine
+                let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
+                physicsEngine.IntegrationMessages.Clear ()
+                Some integrationMessages
+            else None
 
         member physicsEngine.CleanUp () =
             PhysicsEngine3d.cleanUp physicsEngine

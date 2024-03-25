@@ -674,8 +674,8 @@ type PhysicsEngine =
     abstract RayCast : Vector3 * Vector3 * int * int * bool -> (Vector3 * Vector3 * single * BodyShapeIndex * BodyId) array
     /// Handle a physics message from an external source.
     abstract HandleMessage : PhysicsMessage -> unit
-    /// Integrate the physics system one step.
-    abstract Integrate : GameTime -> IntegrationMessage SArray
+    /// Attempt to integrate the physics system one step.
+    abstract TryIntegrate : GameTime -> IntegrationMessage SArray option
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 
@@ -694,7 +694,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyGrounded _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.RayCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
-        member physicsEngine.Integrate _ = SArray.empty
+        member physicsEngine.TryIntegrate _ = None
         member physicsEngine.CleanUp () = ()
 
 [<RequireQualifiedAccess>]

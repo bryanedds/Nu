@@ -1507,19 +1507,23 @@ module WorldModule2 =
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
-            let integrationMessages = physicsEngine.Integrate world.GameDelta
-            let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
-            let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
-            let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
-            world
+            match physicsEngine.TryIntegrate world.GameDelta with
+            | Some integrationMessages ->
+                let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
+                let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
+                let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
+                world
+            | None -> world
 
         static member private processPhysics3d world =
             let physicsEngine = World.getPhysicsEngine3d world
-            let integrationMessages = physicsEngine.Integrate world.GameDelta
-            let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
-            let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
-            let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
-            world
+            match physicsEngine.TryIntegrate world.GameDelta with
+            | Some integrationMessages ->
+                let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
+                let world = World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
+                let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
+                world
+            | None -> world
 
         static member private processPhysics world =
             let world = World.processPhysics3d world

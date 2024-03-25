@@ -581,18 +581,20 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine2d.handlePhysicsMessage physicsEngine physicsMessage
 
-        member physicsEngine.Integrate stepTime =
+        member physicsEngine.TryIntegrate stepTime =
             let physicsStepAmount =
                 match (Constants.GameTime.DesiredFrameRate, stepTime) with
                 | (StaticFrameRate frameRate, UpdateTime frames) -> 1.0f / single frameRate * single frames
                 | (DynamicFrameRate _, ClockTime time) -> if time > 0.0f && time < 0.001f then 0.001f elif time > 0.1f then 0.1f else time
                 | (_, _) -> failwithumf ()
-            PhysicsEngine2d.applyGravity physicsStepAmount physicsEngine
-            physicsEngine.PhysicsContext.Step physicsStepAmount
-            PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
-            let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
-            physicsEngine.IntegrationMessages.Clear ()
-            integrationMessages
+            if physicsStepAmount > 0.0f then
+                PhysicsEngine2d.applyGravity physicsStepAmount physicsEngine
+                physicsEngine.PhysicsContext.Step physicsStepAmount
+                PhysicsEngine2d.createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine
+                let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
+                physicsEngine.IntegrationMessages.Clear ()
+                Some integrationMessages
+            else None
 
         member physicsEngine.CleanUp () =
             ()
