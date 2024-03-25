@@ -57,7 +57,8 @@ type Gameplay =
             | (Some offsets, Some transforms) ->
                 let offset = offsets.[34]
                 let transform = transforms.[34]
-                offset.Inverted * transform
+                let affineMatrix = character.AnimatedModelAffineMatrix
+                offset.Inverted * transform * affineMatrix
             | (_, _) -> m4Identity
         { character with WeaponHand = weaponHand }
 

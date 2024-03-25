@@ -91,17 +91,17 @@ module GameplayDispatcher =
                      Content.composite<CharacterDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Character := gameplay.Player]
                         [Content.entity<WeaponDispatcher> Simulants.GameplayPlayerWeapon.Name
-                            [Entity.PositionLocal := gameplay.Player.WeaponHand.Translation
-                             Entity.RotationLocal := gameplay.Player.WeaponHand.Rotation
-                             Entity.ScaleLocal := v3Dup 0.1f]]
+                            [Entity.Position := gameplay.Player.WeaponHand.Translation
+                             Entity.Rotation := gameplay.Player.WeaponHand.Rotation
+                             Entity.Scale := v3 1.0f 0.1f 0.1f]]
 
                      // enemies
                      for (enemyId, enemy) in gameplay.Enemies.Pairs do
                         Content.composite<CharacterDispatcher> (string enemyId)
                             [Entity.Character := enemy]
                             [Content.entity<WeaponDispatcher> (Simulants.GameplayEnemyWeapon enemyId).Name
-                                [Entity.PositionLocal := enemy.WeaponHand.Translation
-                                 Entity.RotationLocal := enemy.WeaponHand.Rotation
-                                 Entity.ScaleLocal := v3Dup 0.1f]]]
+                                [Entity.Position := enemy.WeaponHand.Translation
+                                 Entity.Rotation := enemy.WeaponHand.Rotation
+                                 Entity.Scale := v3 1.0f 0.1f 0.1f]]]
 
              | Quit -> ()]
