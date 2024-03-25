@@ -1701,18 +1701,20 @@ module WorldModule2 =
                                                                 TotalTimer.Stop ()
                                                                 WorldModule.TaskletProcessingStarted <- false
                                                                 let world = World.updateTime world
-                                                                let world = World.publish () (Events.TimeUpdateEvent --> Game) Game world
                                                                 let world =
-                                                                    match World.getSelectedScreenOpt world with
-                                                                    | Some selectedScreen ->
-                                                                        let world = World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
-                                                                        let groups = World.getGroups selectedScreen world
-                                                                        Seq.fold (fun world (group : Group) ->
-                                                                            if group.Exists world
-                                                                            then World.publish () (Events.TimeUpdateEvent --> group) group world
-                                                                            else world)
-                                                                            world groups
-                                                                    | None -> world
+                                                                    if world.Advancing then
+                                                                        let world = World.publish () (Events.TimeUpdateEvent --> Game) Game world
+                                                                        match World.getSelectedScreenOpt world with
+                                                                        | Some selectedScreen ->
+                                                                            let world = World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
+                                                                            let groups = World.getGroups selectedScreen world
+                                                                            Seq.fold (fun world (group : Group) ->
+                                                                                if group.Exists world
+                                                                                then World.publish () (Events.TimeUpdateEvent --> group) group world
+                                                                                else world)
+                                                                                world groups
+                                                                        | None -> world
+                                                                    else world
                                                                 World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness false world
 
                                                             // fin
